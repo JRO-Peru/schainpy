@@ -9,6 +9,7 @@ import numpy
 
 def cmap1_init(colormap="gray"):
     
+    ncolor = None
     rgb_lvl = None
     
     # Routine for defining a specific color map 1 in HLS space.
@@ -18,6 +19,7 @@ def cmap1_init(colormap="gray"):
     # Independent variable of control points.
     i = numpy.array((0., 1.))
     if colormap=="gray":
+        ncolor = 256
         # Hue for control points.  Doesn't matter since saturation is zero.
         h = numpy.array((0., 0.))
         # Lightness ranging from half-dark (for interest) to light.
@@ -26,13 +28,14 @@ def cmap1_init(colormap="gray"):
         s = numpy.array((0., 0.))
         
         # number of cmap1 colours is 256 in this case.
-        plplot.plscmap1n(256)
+        plplot.plscmap1n(ncolor)
         # Interpolate between control points to set up cmap1.
         plplot.plscmap1l(0, i, h, l, s)
         
         return None
         
     if colormap=="br_black":
+        ncolor = 256
         # Hue ranges from blue (240 deg) to red (0 or 360 deg)
         h = numpy.array((240., 0.))
         # Lightness and saturation are constant (values taken from C example).
@@ -40,13 +43,14 @@ def cmap1_init(colormap="gray"):
         s = numpy.array((0.8, 0.8))
 
         # number of cmap1 colours is 256 in this case.
-        plplot.plscmap1n(256)
+        plplot.plscmap1n(ncolor)
         # Interpolate between control points to set up cmap1.
         plplot.plscmap1l(0, i, h, l, s)
         
         return None
     
     if colormap=="tricolor":
+        ncolor = 3
         # Hue ranges from blue (240 deg) to red (0 or 360 deg)
         h = numpy.array((240., 0.))
         # Lightness and saturation are constant (values taken from C example).
@@ -54,7 +58,7 @@ def cmap1_init(colormap="gray"):
         s = numpy.array((0.8, 0.8))
 
         # number of cmap1 colours is 256 in this case.
-        plplot.plscmap1n(3)
+        plplot.plscmap1n(ncolor)
         # Interpolate between control points to set up cmap1.
         plplot.plscmap1l(0, i, h, l, s)
         
@@ -129,7 +133,10 @@ def cmap1_init(colormap="gray"):
                     pos[ind] = ind/(ncolor-1.0)
                     ind += 1
         rgb_lvl = [8,8,4]  #Levels for RGB colors
-        
+    
+    if ncolor == None:
+        raise ValueError, "The colormap selected is not valid"
+    
     plplot.plscmap1n(ncolor)
     plplot.plscmap1l(1, pos, r, g, b)
     
@@ -139,6 +146,9 @@ class BasicGraph():
     """
     
     """
+    
+    hasRange = False
+    
     xrange = None
     yrange = None
     zrange = None
@@ -177,7 +187,27 @@ class BasicGraph():
         
         """
         pass
-    
+     
+    def hasNotXrange(self):
+        
+        if self.xrange == None:
+            return 1
+        
+        return 0
+
+    def hasNotYrange(self):
+        
+        if self.yrange == None:
+            return 1
+        
+        return 0
+
+    def hasNotZrange(self):
+        
+        if self.zrange == None:
+            return 1
+        
+        return 0
     def setName(self, name):
         self.__name = name
         
@@ -185,28 +215,38 @@ class BasicGraph():
         self.__xpos = xpos
         self.__ypos = ypos
     
-    def setScreenPos(self, xoff, yoff, xw, yw):
+    def setScreenPosbyWidth(self, xoff, yoff, xw, yw):
         self.__xpos = [xoff, xoff + xw]
         self.__ypos = [yoff, yoff + yw]
         
     def setSubpage(self, subpage):
         self.__subpage = subpage
+        
+    def setSzchar(self, szchar):
+        self.__szchar = szchar
+        
+    def setOpt(self, xopt, yopt):
+        self.__xopt = xopt
+        self.__yopt = yopt
 
-    def setRanges(self, xrange, yrange, zrange):
+    def setRanges(self, xrange, yrange, zrange=None):
         """
         """
         self.xrange = xrange
+        
         self.yrange = yrange
-        self.zrange = zrange
+        
+        if zrange != None:
+            self.zrange = zrange
     
-    def __setColormap(self, colormap=None):
+    def setColormap(self, colormap=None):
         
         if colormap == None:
             colormap = self.__colormap
             
         cmap1_init(colormap)
         
-    def __setBox(self):
+    def plotBox(self):
         """
         
         """
@@ -221,30 +261,62 @@ class BasicGraph():
         self.title = title
         self.xlabel = xlabel
         self.ylabel = ylabel
-        self.colormap = colormap
+        self.__colormap = colormap
     
     def initSubpage(self):
+        
+        if plplot.plgdev() == '':
+            raise ValueError, "Plot device has not been initialize"
+        
         plplot.pladv(self.__subpage)
         plplot.plschr(0.0, self.__szchar)
         
         if self.__xrangeIsTime:
             plplot.pltimefmt("%H:%M")
             
-        self.__setColormap()
+        self.setColormap()
         self.initPlot()
     
     def initPlot(self):
         """
         
         """
+        if plplot.plgdev() == '':
+            raise ValueError, "Plot device has not been initialize"
+        
+        xrange = self.xrange
+        if xrange == None:
+            xrange = [0., 1.]
+        
+        yrange = self.yrange
+        if yrange == None:
+            yrange = [0., 1.]
+        
         plplot.plvpor(self.__xpos[0], self.__xpos[1], self.__ypos[0], self.__ypos[1])
-        plplot.plwind(self.xrange[0], self.xrange[1], self.yrange[0], self.yrange[1])
+        plplot.plwind(xrange[0], xrange[1], yrange[0], yrange[1])
         plplot.plbox(self.__xopt, 0.0, 0, self.__yopt, 0.0, 0)
         plplot.pllab(self.xlabel, self.ylabel, self.title)
+    
+    def colorbarPlot(self):
+        data = numpy.arange(256)
+        data = numpy.reshape(data, (1,-1))
         
+        self.plotBox()
+        plplot.plimage(data,
+                       self.xrange[0],
+                       self.xrange[1],
+                       self.yrange[0],
+                       self.yrange[1],
+                       0.,
+                       255.,
+                       self.xrange[0],
+                       self.xrange[1],
+                       self.yrange[0],
+                       self.yrange[1],)
         
-    def basicXYPlot(self):
-        pass
+    def basicXYPlot(self, x, y):
+        self.plotBox()
+        plplot.plline(x, y)
     
     def basicXYwithErrorPlot(self):
         pass
@@ -256,7 +328,7 @@ class BasicGraph():
         """
         """
         
-        self.__setBox()
+        self.plotBox()
         plplot.plimage(data, xmin, xmax, ymin, ymax, zmin, zmax, xmin, xmax, ymin, ymax)
 
         
@@ -295,18 +367,14 @@ class Graph():
     
     def __init__(self):
         raise
-    
-    def setup(self):
-        raise
-    
-    def plotData(self):
-        raise
 
 class Spectrum(Graph):
+    
     
     showColorbar = False
     showPowerProfile = True
     
+    __szchar = 0.7
     
     def __init__(self):
         
@@ -318,20 +386,20 @@ class Spectrum(Graph):
         self.graphObjDict[key] = specObj
         
     
-    def setup(self, title="", xlabel="", ylabel="", colormap="jet", showColorbar=False, showPowerProfile=False):
+    def setup(self, subpage, title="", xlabel="", ylabel="", colormap="jet", showColorbar=False, showPowerProfile=False):
+        """
+        """
         
-        xi = 0.12
-        xw = 0.86
-        xf = xi + xw
+        xi = 0.12; xw = 0.78; xf = xi + xw
+        yi = 0.14; yw = 0.80; yf = yi + yw
         
-        yi = 0.14
-        yw = 0.80
-        yf = yi + yw
+        xcmapi = xcmapf = 0.; xpowi = xpowf = 0.
         
-        xcmapi = xcmapf = 0.
-        xpowi = xpowf = 0.
-        
-        specObj = self.graphObjDict[0]
+        key = "spec"
+        specObj = self.graphObjDict[key]
+        specObj.setSubpage(subpage)
+        specObj.setSzchar(self.__szchar)
+        specObj.setOpt("bcnts","bcnts")
         specObj.setup(title,
                       xlabel,
                       ylabel,
@@ -342,15 +410,18 @@ class Spectrum(Graph):
             
             cmapObj = BasicGraph()
             cmapObj.setName(key)
+            cmapObj.setSubpage(subpage)
+            cmapObj.setSzchar(self.__szchar)
+            cmapObj.setOpt("bc","bcmt")
             cmapObj.setup(title="dBs",
                           xlabel="",
                           ylabel="",
                           colormap=colormap)
             
-            self.graphObjDict[key] = cmapObject
+            self.graphObjDict[key] = cmapObj
             
             xcmapi = 0.
-            xcmapw = 0.16
+            xcmapw = 0.05
             xw -= xcmapw
         
         if showPowerProfile:
@@ -358,45 +429,50 @@ class Spectrum(Graph):
             
             powObj = BasicGraph()
             powObj.setName(key)
+            powObj.setSubpage(subpage)
+            powObj.setSzchar(self.__szchar)
+            plplot.pllsty(2)
+            powObj.setOpt("bcntg","bc")
+            plplot.pllsty(1)
             powObj.setup(title="Power Profile",
                          xlabel="dBs",
                          ylabel="")
             
-            self.graphObjDict[key] = powObject
+            self.graphObjDict[key] = powObj
             
             xpowi = 0.
-            xpoww = 0.23
+            xpoww = 0.24
             xw -= xpoww
         
         xf = xi + xw
         yf = yi + yw
         xcmapf = xf
         
-        specObj.setScreenPos([xi, yf], [yi, yf])
+        specObj.setScreenPos([xi, xf], [yi, yf])
         
         if showColorbar:
-            xcmapi = xf + 0.2
+            xcmapi = xf + 0.02
             xcmapf = xcmapi + xcmapw
-            cmapObj.setScreenPos([xcmapi, ycmapf], [ycmapi, ycmapf])
+            cmapObj.setScreenPos([xcmapi, xcmapf], [yi, yf])
             
         if showPowerProfile:
-            xpowi = xcmapf + 0.3
+            xpowi = xcmapf + 0.06
             xpowf = xpowi + xpoww
-            powObj.setScreenPos([xpowi, ypowf], [ypowi, ypowf])
+            powObj.setScreenPos([xpowi, xpowf], [yi, yf])
                 
         
-        specObj.initSubpage()
-        
-        if showColorbar:
-            cmapObj.initPlot()
-            
-        if showPowerProfile:
-            powObj.initPlot()
+#        specObj.initSubpage()
+#        
+#        if showColorbar:
+#            cmapObj.initPlot()
+#            
+#        if showPowerProfile:
+#            powObj.initPlot()
             
         self.showColorbar = showColorbar
         self.showPowerProfile = showPowerProfile
     
-    def setRanges(self, xrange=None, yrange=None, zrange=None):
+    def setRanges(self, xrange, yrange, zrange):
         
         key = "spec"
         specObj = self.graphObjDict[key]
@@ -407,17 +483,57 @@ class Spectrum(Graph):
         key = "colorbar"
         if key in keyList:
             cmapObj = self.graphObjDict[key]
-            cmapObj.setRanges([0., 1.], zrange, [0., 1.])
+            cmapObj.setRanges([0., 1.], zrange)
         
         key = "powerprof"
         if key in keyList:
             powObj = self.graphObjDict[key]
             powObj.setRanges(zrange, yrange)
     
-    def plotData(self, data , xmin, xmax, ymin, ymax):
+    def plotData(self, data , xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
         
-        pass
+        key = "spec"
+        specObj = self.graphObjDict[key]
+        specObj.initSubpage()
+        
+        if xmin == None:
+            xmin = 0.
+        
+        if xmax == None:
+            xmax = 1.
 
+        if ymin == None:
+            ymin = 0.
+        
+        if ymax == None:
+            ymax = 1.
+        
+        if zmin == None:
+            zmin = numpy.nanmin(data)
+        
+        if zmax == None:
+            zmax = numpy.nanmax(data)
+    
+        if not(specObj.hasRange):
+            self.setRanges([xmin, xmax], [ymin,ymax], [zmin,zmax])
+        
+        specObj.basicPcolorPlot(data, xmin, xmax, ymin, ymax, specObj.zrange[0], specObj.zrange[1])
+        
+        if self.showColorbar:
+            key = "colorbar"
+            cmapObj = self.graphObjDict[key]
+            cmapObj.colorbarPlot()
+        
+        if self.showPowerProfile:
+            power = numpy.average(data, axis=1)
+            
+            step = (ymax - ymin)/(power.shape[0]-1)
+            heis = numpy.arange(ymin, ymax + step, step)
+            
+            key = "powerprof"
+            powObj = self.graphObjDict[key]
+            powObj.basicXYPlot(power, heis)
+        
 class CrossSpectrum(Graph):
     
     def __init__(self):
@@ -968,7 +1084,30 @@ class PlotData():
 if __name__ == '__main__':
     
     import numpy
-    data = numpy.random.uniform(-50,50,(150,250))
+    plplot.plsetopt("geometry", "%dx%d" %(350*2, 300*2))
+    plplot.plsdev("xcairo")
+    plplot.plscolbg(255,255,255)
+    plplot.plscol0(1,0,0,0)
+    plplot.plinit()
+    plplot.plssub(2, 2)
+    
+    nx = 64
+    ny = 100
+    
+    data = numpy.random.uniform(-50,50,(nx,ny))
+    
+    specObj = Spectrum()
+    specObj.setup(1, "Spectrum", "Frequency", "Range", "br_black", True, True)
+    specObj.plotData(data)
+    
+    data = numpy.random.uniform(-50,50,(nx,ny))
+    
+    spec2Obj = Spectrum()
+    spec2Obj.setup(2, "Spectrum", "Frequency", "Range", "br_black", True, True)
+    spec2Obj.plotData(data)
+    
+    plplot.plend()
+    exit(0)
     
     objPlot = PlotData()
     objPlot.addGraph(1, "Frequency", "Height", "Channel A")
