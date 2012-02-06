@@ -11,8 +11,8 @@ import time
 objReader = VoltageReader.VoltageReader()
 
 path = '/Users/danielangelsuarezmunoz/Documents/Projects'
-startDateTime = datetime.datetime(2007,5,1,0,0,0)
-endDateTime = datetime.datetime(2007,5,1,23,59,0)
+startDateTime = datetime.datetime(2007,1,1,16,0,0)
+endDateTime = datetime.datetime(2007,12,1,17,1,0)
 set = None
 expLabel = ''
 ext = '*.r'
@@ -25,7 +25,7 @@ print time.time() - t0
 while(not(objReader.noMoreFiles)):
     
     objReader.getData()
-    print objReader.objBasicHeader.dataBlock
+    #print objReader.objStructShortHeader.dataBlock
     #print time.localtime(objReader.objStructShortHeader.universalTime)
     
     
