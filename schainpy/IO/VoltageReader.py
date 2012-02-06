@@ -50,7 +50,7 @@ class PROCFLAG:
     DATAARRANGE_MASK = numpy.uint32(0x00007000)
     ACQ_SYS_MASK = numpy.uint32(0x001C0000)
 
-class StructShortHeader():
+class BasicHeader():
     
     size = 0
     version = 0
@@ -88,7 +88,7 @@ class StructShortHeader():
         
         return 1
 
-class StructSystemHeader():
+class SystemHeader():
     size = 0 
     numSamples = 0
     numProfiles = 0
@@ -108,11 +108,18 @@ class StructSystemHeader():
         pass
 
     def read(self, fp):
+        header = numpy.fromfile(fp,self.struct,1)
+        self.size = header['nSize'][0]
+        self.numSamples = header['nNumSamples'][0]
+        self.numProfiles = header['nNumProfiles'][0]
+        self.numChannels = header['nNumChannels'][0]
+        self.adcResolution = header['nADCResolution'][0]
+        self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
         
         
         return 1
     
-class StructRadarController():
+class RadarControllerHeader():
     size = 0
     expType = 0
     nTx = 0
@@ -155,10 +162,31 @@ class StructRadarController():
         pass
 
     def read(self, fp):
+        header = numpy.fromfile(fp,self.struct,1)
+        self.size = header['nSize'][0]
+        self.expType = header['nExpType'][0]
+        self.nTx = header['nNTx'][0]
+        self.ipp = header['fIpp'][0]
+        self.txA = header['fTxA'][0]
+        self.txB = header['fTxB'][0]
+        self.numWindows = header['nNumWindows'][0]
+        self.numTaus = header['nNumTaus'][0]
+        self.codeType = header['nCodeType'][0]
+        self.line6Function = header['nLine6Function'][0]
+        self.line5Fuction = header['nLine5Function'][0]
+        self.fClock = header['fClock'][0]
+        self.prePulseBefore = header['nPrePulseBefore'][0]
+        self.prePulserAfter = header['nPrePulseAfter'][0]
+        self.rangeIpp = header['sRangeIPP'][0]
+        self.rangeTxA = header['sRangeTxA'][0]
+        self.rangeTxB = header['sRangeTxB'][0]
+        # jump Dynamic Radar Controller Header
+        jumpHeader = self.size - 116
+        fp.seek(fp.tell() + jumpHeader)
         
         return 1
     
-class StructProcessing():
+class ProcessingHeader():
     size = 0
     dataType = 0
     blockSize = 0
@@ -196,6 +224,28 @@ class StructProcessing():
         pass
     
     def read(self, fp):
+        header = numpy.fromfile(fp,self.struct,1)
+        self.size = header['nSize'][0]
+        self.dataType = header['nDataType'][0]
+        self.blockSize = header['nSizeOfDataBlock'][0]
+        self.profilesPerBlock = header['nProfilesperBlock'][0]
+        self.dataBlocksPerFile = header['nDataBlocksperFile'][0]
+        self.numWindows = header['nNumWindows'][0]
+        self.processFlags = header['nProcessFlags']
+        self.coherentInt = header['nCoherentIntegrations'][0]
+        self.incoherentInt = header['nIncoherentIntegrations'][0]
+        self.totalSpectra = header['nTotalSpectra'][0]
+        self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.numWindows)
+        self.numHeights = numpy.sum(self.samplingWindow['nsa'])
+        self.firstHeight = self.samplingWindow['h0']
+        self.deltaHeight = self.samplingWindow['dh']
+        self.samplesWin = self.samplingWindow['nsa']
+        self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
+        if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
+            self.numCode = numpy.fromfile(fp,'<u4',1)
+            self.numBaud = numpy.fromfile(fp,'<u4',1)
+            self.codes = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
+
         
         return 1
 
@@ -215,11 +265,9 @@ class VoltageReader(DataReader):
     
     __sizeOfFileByHeader = 0
     
-    __listOfPath = []
+    __pathList = []
     
     filenameList = []
-    
-    __flagReadShortHeader = 0
     
     __lastUTTime = 0
     
@@ -241,13 +289,13 @@ class VoltageReader(DataReader):
     
     basicHeaderSize = 24
     
-    objStructShortHeader = StructShortHeader()
+    objBasicHeader = BasicHeader()
     
-    objStructSystemHeader = StructSystemHeader()
+    objSystemHeader = SystemHeader()
     
-    objStructRadarController = StructRadarController()
+    objRadarControllerHeader = RadarControllerHeader()
     
-    objStructProcessing = StructProcessing()
+    objProcessingHeader = ProcessingHeader()
     
     __buffer = 0
     
@@ -256,61 +304,24 @@ class VoltageReader(DataReader):
     def __init__(self):
         pass
     
-    def __rdSystemHeader(self):
-        header = numpy.fromfile(self.__fp,self.objStructSystemHeader.struct,1)
-        self.objStructSystemHeader.size = header['nSize'][0]
-        self.objStructSystemHeader.numSamples = header['nNumSamples'][0]
-        self.objStructSystemHeader.numProfiles = header['nNumProfiles'][0]
-        self.objStructSystemHeader.numChannels = header['nNumChannels'][0]
-        self.objStructSystemHeader.adcResolution = header['nADCResolution'][0]
-        self.objStructSystemHeader.pciDioBusWidth = header['nPCDIOBusWidth'][0]
+    def __rdSystemHeader(self,fp=None):
+        if fp == None:
+            fp = self.__fp
+            
+        self.objSystemHeader.read(fp)
     
-    def __rdRadarControllerHeader(self):
-        header = numpy.fromfile(self.__fp,self.objStructRadarController.struct,1)
-        self.objStructRadarController.size = header['nSize'][0]
-        self.objStructRadarController.expType = header['nExpType'][0]
-        self.objStructRadarController.nTx = header['nNTx'][0]
-        self.objStructRadarController.ipp = header['fIpp'][0]
-        self.objStructRadarController.txA = header['fTxA'][0]
-        self.objStructRadarController.txB = header['fTxB'][0]
-        self.objStructRadarController.numWindows = header['nNumWindows'][0]
-        self.objStructRadarController.numTaus = header['nNumTaus'][0]
-        self.objStructRadarController.codeType = header['nCodeType'][0]
-        self.objStructRadarController.line6Function = header['nLine6Function'][0]
-        self.objStructRadarController.line5Fuction = header['nLine5Function'][0]
-        self.objStructRadarController.fClock = header['fClock'][0]
-        self.objStructRadarController.prePulseBefore = header['nPrePulseBefore'][0]
-        self.objStructRadarController.prePulserAfter = header['nPrePulseAfter'][0]
-        self.objStructRadarController.rangeIpp = header['sRangeIPP'][0]
-        self.objStructRadarController.rangeTxA = header['sRangeTxA'][0]
-        self.objStructRadarController.rangeTxB = header['sRangeTxB'][0]
-        # jump Dynamic Radar Controller Header
-        jumpHeader = self.objStructRadarController.size - 116
-        self.__fp.seek(self.__fp.tell() + jumpHeader)
+    def __rdRadarControllerHeader(self,fp=None):
+        if fp == None:
+            fp = self.__fp
+            
+        self.objRadarControllerHeader.read(fp)
         
-    def __rdProcessingHeader(self):
-        header = numpy.fromfile(self.__fp,self.objStructProcessing.struct,1)
-        self.objStructProcessing.size = header['nSize'][0]
-        self.objStructProcessing.dataType = header['nDataType'][0]
-        self.objStructProcessing.blockSize = header['nSizeOfDataBlock'][0]
-        self.objStructProcessing.profilesPerBlock = header['nProfilesperBlock'][0]
-        self.objStructProcessing.dataBlocksPerFile = header['nDataBlocksperFile'][0]
-        self.objStructProcessing.numWindows = header['nNumWindows'][0]
-        self.objStructProcessing.processFlags = header['nProcessFlags']
-        self.objStructProcessing.coherentInt = header['nCoherentIntegrations'][0]
-        self.objStructProcessing.incoherentInt = header['nIncoherentIntegrations'][0]
-        self.objStructProcessing.totalSpectra = header['nTotalSpectra'][0]
-        self.objStructProcessing.samplingWindow = numpy.fromfile(self.__fp,self.objStructProcessing.structSamplingWindow,self.objStructProcessing.numWindows)
-        self.objStructProcessing.numHeights = numpy.sum(self.objStructProcessing.samplingWindow['nsa'])
-        self.objStructProcessing.firstHeight = self.objStructProcessing.samplingWindow['h0']
-        self.objStructProcessing.deltaHeight = self.objStructProcessing.samplingWindow['dh']
-        self.objStructProcessing.samplesWin = self.objStructProcessing.samplingWindow['nsa']
-        self.objStructProcessing.spectraComb = numpy.fromfile(self.__fp,'u1',2*self.objStructProcessing.totalSpectra)
-        if self.objStructProcessing.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
-            self.objStructProcessing.numCode = numpy.fromfile(self.__fp,'<u4',1)
-            self.objStructProcessing.numBaud = numpy.fromfile(self.__fp,'<u4',1)
-            self.objStructProcessing.codes = numpy.fromfile(self.__fp,'<f4',self.objStructProcessing.numCode*self.objStructProcessing.numBaud).reshape(self.objStructProcessing.numBaud,self.objStructProcessing.numCode)
-    
+    def __rdProcessingHeader(self,fp=None):
+        if fp == None:
+            fp = self.__fp
+            
+        self.objProcessingHeader.read(fp)
+        
     def __searchFiles(self,path, startDateTime, endDateTime, set=None, expLabel = "", ext = "*.r"):
         
         startUtSeconds = time.mktime(startDateTime.timetuple())
@@ -345,7 +356,7 @@ class VoltageReader(DataReader):
                 #folders.append(os.path.join(path,thisPath))
                 folders.append(thisPath)
         
-        listOfPath = []
+        pathList = []
         dicOfPath = {}
         for year in rangeOfYears:
             for doy in doyList:        
@@ -353,17 +364,17 @@ class VoltageReader(DataReader):
                 if len(tmp) == 0:
                     continue
                 if expLabel == '':
-                    listOfPath.append(os.path.join(path,tmp[0]))
+                    pathList.append(os.path.join(path,tmp[0]))
                     dicOfPath.setdefault(os.path.join(path,tmp[0]))
                     dicOfPath[os.path.join(path,tmp[0])] = []
                 else:
-                    listOfPath.append(os.path.join(path,os.path.join(tmp[0],expLabel)))
+                    pathList.append(os.path.join(path,os.path.join(tmp[0],expLabel)))
                     dicOfPath.setdefault(os.path.join(path,os.path.join(tmp[0],expLabel)))
                     dicOfPath[os.path.join(path,os.path.join(tmp[0],expLabel))] = []
         
         
         filenameList = []
-        for thisPath in listOfPath:
+        for thisPath in pathList:
             fileList = glob.glob1(thisPath, ext)
             #dicOfPath[thisPath].append(fileList)
             fileList.sort()
@@ -374,8 +385,7 @@ class VoltageReader(DataReader):
                     
         self.filenameList = filenameList
         
-        return listOfPath, filenameList
-
+        return pathList, filenameList
 
     def isThisFileinRange(self, filename, startUTSeconds=None, endUTSeconds=None):
         
@@ -390,12 +400,14 @@ class VoltageReader(DataReader):
         if endUTSeconds==None:
             endUTSeconds = self.endUTCSeconds
             
-        objShortHeader = StructShortHeader()
+        objBasicHeader = BasicHeader()
         
-        if not(objShortHeader.read(fp)):
+        if not(objBasicHeader.read(fp)):
             return 0
         
-        if not ((startUTSeconds <= objShortHeader.utc) and (endUTSeconds >= objShortHeader.utc)):
+        fp.close()
+        
+        if not ((startUTSeconds <= objBasicHeader.utc) and (endUTSeconds >= objBasicHeader.utc)):
             return 0
         
         return 1
@@ -405,18 +417,17 @@ class VoltageReader(DataReader):
         if fp == None:
             fp = self.__fp
             
-        self.objStructShortHeader.read(fp)
+        self.objBasicHeader.read(fp)
     
-
     def __readFirstHeader(self):
         
         self.__readBasicHeader()
         self.__rdSystemHeader()
         self.__rdRadarControllerHeader()
         self.__rdProcessingHeader()
-        self.firstHeaderSize = self.objStructShortHeader.size
+        self.firstHeaderSize = self.objBasicHeader.size
         
-        data_type=int(numpy.log2((self.objStructProcessing.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
+        data_type=int(numpy.log2((self.objProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
         if data_type == 0:
             tmp=numpy.dtype([('real','<i1'),('imag','<i1')])
         elif data_type == 1:
@@ -435,9 +446,7 @@ class VoltageReader(DataReader):
         
         self.__flagIsNewFile = 0
         self.__dataType = tmp
-        self.__sizeOfFileByHeader = self.objStructProcessing.dataBlocksPerFile * self.objStructProcessing.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.objStructProcessing.dataBlocksPerFile - 1)        
-
-
+        self.__sizeOfFileByHeader = self.objProcessingHeader.dataBlocksPerFile * self.objProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.objProcessingHeader.dataBlocksPerFile - 1)        
 
     def __setNextFileOnline(self):
         return 0
@@ -458,7 +467,7 @@ class VoltageReader(DataReader):
             fp = open(filename,'rb')
             
             currentSize = fileSize - fp.tell()
-            neededSize = self.objStructProcessing.blockSize + self.firstHeaderSize
+            neededSize = self.objProcessingHeader.blockSize + self.firstHeaderSize
             
             if (currentSize < neededSize):
                 continue
@@ -485,7 +494,7 @@ class VoltageReader(DataReader):
     def __setNewBlock(self):
         
         currentSize = self.fileSize - self.__fp.tell()
-        neededSize = self.objStructProcessing.blockSize + self.basicHeaderSize
+        neededSize = self.objProcessingHeader.blockSize + self.basicHeaderSize
         
         # Bloque Completo
         if (currentSize >= neededSize):
@@ -495,7 +504,7 @@ class VoltageReader(DataReader):
         self.__setNextFile()
         self.__readFirstHeader()
         
-        deltaTime = self.objStructShortHeader.utc - self.__lastUTTime # check this
+        deltaTime = self.objBasicHeader.utc - self.__lastUTTime # check this
         if deltaTime > self.__maxTimeStep:
             self.__flagResetProcessing = 1
             
@@ -508,11 +517,11 @@ class VoltageReader(DataReader):
         seteado a 0
         """
         
-        pts2read = self.objStructProcessing.profilesPerBlock*self.objStructProcessing.numHeights*self.objStructSystemHeader.numChannels
+        pts2read = self.objProcessingHeader.profilesPerBlock*self.objProcessingHeader.numHeights*self.objSystemHeader.numChannels
         
         data = numpy.fromfile(self.__fp,self.__dataType,pts2read)
         
-        data = data.reshape((self.objStructProcessing.profilesPerBlock, self.objStructProcessing.numHeights, self.objStructSystemHeader.numChannels))
+        data = data.reshape((self.objProcessingHeader.profilesPerBlock, self.objProcessingHeader.numHeights, self.objSystemHeader.numChannels))
         
         self.__buffer = data
         
@@ -524,10 +533,10 @@ class VoltageReader(DataReader):
              
         self.__readBlock()
         
-        self.__lastUTTime = self.objStructShortHeader.utc
+        self.__lastUTTime = self.objBasicHeader.utc
  
     def __hasNotDataInBuffer(self):
-        if self.__buffer_id >= self.objStructProcessing.profilesPerBlock:
+        if self.__buffer_id >= self.objProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
@@ -587,6 +596,6 @@ class VoltageReader(DataReader):
         self.endDoy = endDateTime.timetuple().tm_yday
         #call fillHeaderValues() - to Data Object
             
-        self.__listOfPath = pathList
+        self.__pathList = pathList
         self.filenameList = filenameList 
         self.online = online
