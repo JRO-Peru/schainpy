@@ -3,7 +3,7 @@ import plplot
 
 from BasicGraph import *
 
-class Spectrum():
+class Spectrum:
     
     graphObjDict = {}
     showColorbar = False
@@ -169,7 +169,7 @@ class Spectrum():
             powObj = self.graphObjDict[key]
             powObj.basicXYPlot(power, heis)
         
-class CrossSpectrum():
+class CrossSpectrum:
     graphObjDict = {}
     showColorbar = False
     showPowerProfile = True

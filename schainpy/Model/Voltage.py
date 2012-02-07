@@ -10,9 +10,21 @@ class Voltage(Data):
     '''
 
 
+    m_RadarControllerHeader= RadarControllerHeader()
+
+    m_ProcessingHeader= ProcessingHeader()
+
+    m_SystemHeader= SystemHeader()
+
+    m_BasicHeader= BasicHeader()
+
+
     def __init__(self):
         '''
         Constructor
         '''
+        pass
+
+    def copy(self):
         pass
         

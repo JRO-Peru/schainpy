@@ -15,3 +15,6 @@ class Correlation(Data):
         Constructor
         '''
         pass
+
+    def copy(self):
+        pass

@@ -4,7 +4,7 @@ Created on Feb 7, 2012
 @author: roj-idl71
 '''
 
-class FtpServerList():
+class FtpServerList:
     '''
     classdocs
     '''
@@ -15,3 +15,5 @@ class FtpServerList():
         Constructor
         '''
         pass
+    m_FtpServer= FtpServer()
+

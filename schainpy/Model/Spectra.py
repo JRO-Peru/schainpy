@@ -15,4 +15,7 @@ class Spectra(Data):
         Constructor
         '''
         pass
+
+    def copy(self):
+        pass
         

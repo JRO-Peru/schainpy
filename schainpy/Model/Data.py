@@ -15,4 +15,7 @@ class Data:
         Constructor
         '''
         pass
+
+    def copy(self):
+        pass
         

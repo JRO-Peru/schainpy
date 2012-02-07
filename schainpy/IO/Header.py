@@ -113,6 +113,14 @@ class SystemHeader:
         
         
         return 1
+
+    def copy(self):
+        
+        obj = SystemHeader()
+        obj.size = self.size
+        
+        
+        return obj
     
 class RadarControllerHeader:
     size = 0
@@ -181,6 +189,14 @@ class RadarControllerHeader:
         
         return 1
     
+    def copy(self):
+        
+        obj = RadarControllerHeader()
+        obj.size = self.size
+        
+        
+        return obj
+    
 class ProcessingHeader:
     size = 0
     dataType = 0
@@ -243,3 +259,11 @@ class ProcessingHeader:
 
         
         return 1
+
+    def copy(self):
+        
+        obj = ProcessingHeader()
+        obj.size = self.size
+        
+        
+        return obj
