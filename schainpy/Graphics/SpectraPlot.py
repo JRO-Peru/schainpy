@@ -170,7 +170,11 @@ class Spectrum():
             powObj.basicXYPlot(power, heis)
         
 class CrossSpectrum():
+    graphObjDict = {}
+    showColorbar = False
+    showPowerProfile = True
     
+    __szchar = 0.7
     def __init__(self):
         pass
     
@@ -179,4 +183,31 @@ class CrossSpectrum():
     
     def plotData(self):
         pass
+
+if __name__ == '__main__':
     
+    import numpy
+    plplot.plsetopt("geometry", "%dx%d" %(350*2, 300*2))
+    plplot.plsdev("xcairo")
+    plplot.plscolbg(255,255,255)
+    plplot.plscol0(1,0,0,0)
+    plplot.plinit()
+    plplot.plssub(2, 2)
+    
+    nx = 64
+    ny = 100
+    
+    data = numpy.random.uniform(-50,50,(nx,ny))
+    
+    specObj = Spectrum()
+    specObj.setup(1, "Spectrum", "Frequency", "Range", "br_green", False, False)
+    specObj.plotData(data)
+    
+    data = numpy.random.uniform(-50,50,(nx,ny))
+    
+    spec2Obj = Spectrum()
+    spec2Obj.setup(2, "Spectrum", "Frequency", "Range", "br_green", True, True)
+    spec2Obj.plotData(data)
+    
+    plplot.plend()
+    exit(0)

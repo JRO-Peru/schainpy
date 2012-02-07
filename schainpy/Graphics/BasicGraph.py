@@ -1,6 +1,141 @@
 import numpy
 import plplot
 
+def cmap1_init(colormap="gray"):
+    
+    ncolor = None
+    rgb_lvl = None
+    
+    # Routine for defining a specific color map 1 in HLS space.
+    # if gray is true, use basic grayscale variation from half-dark to light.
+    # otherwise use false color variation from blue (240 deg) to red (360 deg).
+
+    # Independent variable of control points.
+    i = numpy.array((0., 1.))
+    if colormap=="gray":
+        ncolor = 256
+        # Hue for control points.  Doesn't matter since saturation is zero.
+        h = numpy.array((0., 0.))
+        # Lightness ranging from half-dark (for interest) to light.
+        l = numpy.array((0.5, 1.))
+        # Gray scale has zero saturation
+        s = numpy.array((0., 0.))
+        
+        # number of cmap1 colours is 256 in this case.
+        plplot.plscmap1n(ncolor)
+        # Interpolate between control points to set up cmap1.
+        plplot.plscmap1l(0, i, h, l, s)
+        
+        return None
+        
+    if colormap=="br_green":
+        ncolor = 256
+        # Hue ranges from blue (240 deg) to red (0 or 360 deg)
+        h = numpy.array((240., 0.))
+        # Lightness and saturation are constant (values taken from C example).
+        l = numpy.array((0.6, 0.6))
+        s = numpy.array((0.8, 0.8))
+
+        # number of cmap1 colours is 256 in this case.
+        plplot.plscmap1n(ncolor)
+        # Interpolate between control points to set up cmap1.
+        plplot.plscmap1l(0, i, h, l, s)
+        
+        return None
+    
+    if colormap=="tricolor":
+        ncolor = 3
+        # Hue ranges from blue (240 deg) to red (0 or 360 deg)
+        h = numpy.array((240., 0.))
+        # Lightness and saturation are constant (values taken from C example).
+        l = numpy.array((0.6, 0.6))
+        s = numpy.array((0.8, 0.8))
+
+        # number of cmap1 colours is 256 in this case.
+        plplot.plscmap1n(ncolor)
+        # Interpolate between control points to set up cmap1.
+        plplot.plscmap1l(0, i, h, l, s)
+        
+        return None
+    
+    if colormap == 'rgb' or colormap == 'rgb666':
+        
+        color_sz = 6
+        ncolor = color_sz*color_sz*color_sz
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(color_sz):
+            for gi in range(color_sz):
+                for bi in range(color_sz):
+                    r[ind] = ri/(color_sz-1.0)
+                    g[ind] = gi/(color_sz-1.0)
+                    b[ind] = bi/(color_sz-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [6,6,6]  #Levels for RGB colors
+        
+    if colormap == 'rgb676':
+        ncolor = 6*7*6
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(8):
+            for gi in range(8):
+                for bi in range(4):
+                    r[ind] = ri/(6-1.0)
+                    g[ind] = gi/(7-1.0)
+                    b[ind] = bi/(6-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [6,7,6]  #Levels for RGB colors
+    
+    if colormap == 'rgb685':
+        ncolor = 6*8*5
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(8):
+            for gi in range(8):
+                for bi in range(4):
+                    r[ind] = ri/(6-1.0)
+                    g[ind] = gi/(8-1.0)
+                    b[ind] = bi/(5-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [6,8,5]  #Levels for RGB colors
+                    
+    if colormap == 'rgb884':
+        ncolor = 8*8*4
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(8):
+            for gi in range(8):
+                for bi in range(4):
+                    r[ind] = ri/(8-1.0)
+                    g[ind] = gi/(8-1.0)
+                    b[ind] = bi/(4-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [8,8,4]  #Levels for RGB colors
+    
+    if ncolor == None:
+        raise ValueError, "The colormap selected is not valid"
+    
+    plplot.plscmap1n(ncolor)
+    plplot.plscmap1l(1, pos, r, g, b)
+    
+    return rgb_lvl
+
 class BasicGraph:
     """
     
