@@ -74,6 +74,14 @@ class BasicHeader:
         self.errorCount = header['nErrorCount'][0]
         
         return 1
+    
+    def copy(self):
+        
+        obj = BasicHeader()
+        obj.size = self.size
+        
+        
+        return obj
 
 class SystemHeader:
     size = 0 

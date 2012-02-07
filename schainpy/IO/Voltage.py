@@ -4,8 +4,9 @@ Created on 23/01/2012
 @author: danielangelsuarezmunoz
 '''
 
+
+import os, sys
 import numpy
-import os.path
 import glob
 import fnmatch
 import time
@@ -14,6 +15,11 @@ import datetime
 from Header import *
 from Data import DataReader
 from Data import DataWriter
+
+path = os.path.split(os.getcwd())[0]
+sys.path.append(os.path.join(path,"Model"))
+
+from Voltage import Voltage
 
 class VoltageReader(DataReader):
     
@@ -53,40 +59,41 @@ class VoltageReader(DataReader):
     
     basicHeaderSize = 24
     
-    basicHeaderObj = BasicHeader()
+    m_BasicHeader = BasicHeader()
     
-    systemHeaderObj = SystemHeader()
+    m_SystemHeader = SystemHeader()
     
-    radarControllerHeaderObj = RadarControllerHeader()
+    m_RadarControllerHeader = RadarControllerHeader()
     
-    processingHeaderObj = ProcessingHeader()
+    m_ProcessingHeader = ProcessingHeader()
+    
+    m_Voltage = None
     
     __buffer = 0
     
     __buffer_id = 9999
-    #m_Voltage= Voltage()
-
-                    
-    def __init__(self):
-        pass
+     
+    def __init__(self, m_Voltage):
+        
+        self.m_Voltage = m_Voltage
     
     def __rdSystemHeader(self,fp=None):
         if fp == None:
             fp = self.__fp
             
-        self.systemHeaderObj.read(fp)
+        self.m_SystemHeader.read(fp)
     
     def __rdRadarControllerHeader(self,fp=None):
         if fp == None:
             fp = self.__fp
             
-        self.radarControllerHeaderObj.read(fp)
+        self.m_RadarControllerHeader.read(fp)
         
     def __rdProcessingHeader(self,fp=None):
         if fp == None:
             fp = self.__fp
             
-        self.processingHeaderObj.read(fp)
+        self.m_ProcessingHeader.read(fp)
         
     def __searchFiles(self,path, startDateTime, endDateTime, set=None, expLabel = "", ext = "*.r"):
         
@@ -166,14 +173,14 @@ class VoltageReader(DataReader):
         if endUTSeconds==None:
             endUTSeconds = self.endUTCSeconds
             
-        basicHeaderObj = BasicHeader()
+        m_BasicHeader = BasicHeader()
         
-        if not(basicHeaderObj.read(fp)):
+        if not(m_BasicHeader.read(fp)):
             return 0
         
         fp.close()
         
-        if not ((startUTSeconds <= basicHeaderObj.utc) and (endUTSeconds >= basicHeaderObj.utc)):
+        if not ((startUTSeconds <= m_BasicHeader.utc) and (endUTSeconds >= m_BasicHeader.utc)):
             return 0
         
         return 1
@@ -183,7 +190,7 @@ class VoltageReader(DataReader):
         if fp == None:
             fp = self.__fp
             
-        self.basicHeaderObj.read(fp)
+        self.m_BasicHeader.read(fp)
     
     def __readFirstHeader(self):
         
@@ -191,9 +198,9 @@ class VoltageReader(DataReader):
         self.__rdSystemHeader()
         self.__rdRadarControllerHeader()
         self.__rdProcessingHeader()
-        self.firstHeaderSize = self.basicHeaderObj.size
+        self.firstHeaderSize = self.m_BasicHeader.size
         
-        data_type=int(numpy.log2((self.processingHeaderObj.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
+        data_type=int(numpy.log2((self.m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
         if data_type == 0:
             tmp=numpy.dtype([('real','<i1'),('imag','<i1')])
         elif data_type == 1:
@@ -211,7 +218,7 @@ class VoltageReader(DataReader):
             tmp = 0
         
         self.__dataType = tmp
-        self.__sizeOfFileByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.processingHeaderObj.dataBlocksPerFile - 1)        
+        self.__sizeOfFileByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)        
 
     def __setNextFileOnline(self):
         return 0
@@ -232,7 +239,7 @@ class VoltageReader(DataReader):
             fp = open(filename,'rb')
             
             currentSize = fileSize - fp.tell()
-            neededSize = self.processingHeaderObj.blockSize + self.firstHeaderSize
+            neededSize = self.m_ProcessingHeader.blockSize + self.firstHeaderSize
             
             if (currentSize < neededSize):
                 continue
@@ -262,7 +269,7 @@ class VoltageReader(DataReader):
             return 1
         
         currentSize = self.fileSize - self.__fp.tell()
-        neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
         
         # Bloque Completo
         if (currentSize >= neededSize):
@@ -274,7 +281,7 @@ class VoltageReader(DataReader):
         
         self.__readFirstHeader()
         
-        deltaTime = self.basicHeaderObj.utc - self.__lastUTTime # check this
+        deltaTime = self.m_BasicHeader.utc - self.__lastUTTime # check this
         
         self.flagResetProcessing = 0
         if deltaTime > self.__maxTimeStep:
@@ -289,11 +296,11 @@ class VoltageReader(DataReader):
         seteado a 0
         """
         
-        pts2read = self.processingHeaderObj.profilesPerBlock*self.processingHeaderObj.numHeights*self.systemHeaderObj.numChannels
+        pts2read = self.m_ProcessingHeader.profilesPerBlock*self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels
         
         data = numpy.fromfile(self.__fp,self.__dataType,pts2read)
         
-        data = data.reshape((self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.numHeights, self.systemHeaderObj.numChannels))
+        data = data.reshape((self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels))
         
         self.__flagIsNewFile = 0
         
@@ -308,12 +315,12 @@ class VoltageReader(DataReader):
              
         self.__readBlock()
         
-        self.__lastUTTime = self.basicHeaderObj.utc
+        self.__lastUTTime = self.m_BasicHeader.utc
         
         return 1
  
     def __hasNotDataInBuffer(self):
-        if self.__buffer_id >= self.processingHeaderObj.profilesPerBlock:
+        if self.__buffer_id >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
@@ -334,8 +341,14 @@ class VoltageReader(DataReader):
             return None
         
         data = self.__buffer[self.__buffer_id,:,:]
-        #time = timeblock + n*ipp
-        #print self.__buffer_id
+        time = 111
+        
+        self.m_Voltage.data = data
+        self.m_Voltage.timeProfile = time
+        self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
+        self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+        self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+        self.m_Voltage.m_SystemHeader = self.m_systemHeader.copy()
         
         self.__buffer_id += 1
         
@@ -380,6 +393,22 @@ class VoltageReader(DataReader):
 
 class VoltageWriter(DataWriter):
     
-    def __init__(self):
-        pass
+    m_BasicHeader= BasicHeader()
+
+
+    m_SystemHeader = SystemHeader()
+
+
+    m_RadarControllerHeader = RadarControllerHeader()
+
+
+    m_ProcessingHeader = ProcessingHeader()
+
+    m_Voltage = None
+    
+    def __init__(self, m_Voltage):
+        
+        self.m_Voltage = m_Voltage
+
+
     
