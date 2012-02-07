@@ -1,3 +1,5 @@
+import numpy
+
 class PROCFLAG:    
     COHERENT_INTEGRATION = numpy.uint32(0x00000001)
     DECODE_DATA = numpy.uint32(0x00000002) 
