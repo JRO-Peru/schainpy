@@ -43,11 +43,15 @@ class VoltageReader(DataReader):
     
     __maxTimeStep = 5 
     
-    flagResetProcessing = 0
-    
     __flagIsNewFile = 0
     
+    flagResetProcessing = 0    
+    
+    flagIsNewBlock = 0
+    
     noMoreFiles = 0
+    
+    nReadBlocks = 0
     
     online = 0
     
@@ -241,8 +245,7 @@ class VoltageReader(DataReader):
         elif data_type == 5:
             tmp=numpy.dtype([('real','<f8'),('imag','<f8')])
         else:
-            print 'no define data type'
-            tmp = 0
+            raise ValueError, 'Data type was not defined'
         
         self.__dataType = tmp
         self.__fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)        
@@ -316,6 +319,7 @@ class VoltageReader(DataReader):
         self.flagResetProcessing = 0
         if deltaTime > self.__maxTimeStep:
             self.flagResetProcessing = 1
+            self.nReadBlocks = 0
             
         return 1
     
@@ -333,6 +337,10 @@ class VoltageReader(DataReader):
         data = data.reshape((self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels))
         
         self.__flagIsNewFile = 0
+        
+        self.flagIsNewBlock = 1
+        
+        self.nReadBlocks += 1
         
         self.__buffer = data
         
@@ -361,6 +369,7 @@ class VoltageReader(DataReader):
         lectura es necesario hacer una nueva lectura de los bloques de datos usando "readNextBlock"
         """
         self.flagResetProcessing = 0
+        self.flagIsNewBlock = 0
         
         if self.__hasNotDataInBuffer():            
             self.readNextBlock() 
