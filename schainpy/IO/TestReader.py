@@ -12,15 +12,15 @@ objReader = Voltage.VoltageReader()
 
 
 path = '/home/roj-idl71/Data/RAWDATA/DP_Faraday/'
+#path = '/remote/puma/2011_03/DP_Faraday'
+
+
 startDateTime = datetime.datetime(2011,3,11,16,0,0)
-endDateTime = datetime.datetime(2011,3,11,20,1,0)
-set = None
-expLabel = ''
-ext = '*.r'
+endDateTime = datetime.datetime(2011,3,12,20,1,0)
 
 t0 = time.time()
 objReader.setup(path, startDateTime, endDateTime)
-#print time.time() - t0
+print time.time() - t0
 
 
 while(not(objReader.noMoreFiles)):

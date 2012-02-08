@@ -105,53 +105,74 @@ class VoltageReader(DataReader):
         startUtSeconds = time.mktime(startDateTime.timetuple())
         endUtSeconds = time.mktime(endDateTime.timetuple())
         
-        startYear = startDateTime.timetuple().tm_year 
-        endYear = endDateTime.timetuple().tm_year
+#        startYear = startDateTime.timetuple().tm_year 
+#        endYear = endDateTime.timetuple().tm_year
+#        
+#        startDoy = startDateTime.timetuple().tm_yday
+#        endDoy = endDateTime.timetuple().tm_yday
+#        
+#        yearRange = range(startYear,endYear+1)
+#        
+#        doyDoubleList = []
+#        if startYear == endYear:
+#            doyList = range(startDoy,endDoy+1)
+#        else:
+#            for year in yearRange:
+#                if (year == startYear):
+#                    doyDoubleList.append(range(startDoy,365+1))
+#                elif (year == endYear): 
+#                    doyDoubleList.append(range(1,endDoy+1))
+#                else:
+#                    doyDoubleList.append(range(1,365+1)) 
+#            doyList = []
+#            for list in doyDoubleList:
+#                doyList = doyList + list
+#            
+#        dirList = []
+#        for thisPath in os.listdir(path):
+#            if os.path.isdir(os.path.join(path,thisPath)):
+#                #dirList.append(os.path.join(path,thisPath))
+#                dirList.append(thisPath)
+#        
+#        pathList = []
+#        pathDict = {}
+#        for year in yearRange:
+#            for doy in doyList:        
+#                match = fnmatch.filter(dirList, 'D' + '%4.4d%3.3d' % (year,doy))
+#                if len(match) == 0:
+#                    match = fnmatch.filter(dirList, 'd' + '%4.4d%3.3d' % (year,doy))
+#                    if len(match) == 0: continue
+#                if expLabel == '':
+#                    pathList.append(os.path.join(path,match[0]))
+#                    pathDict.setdefault(os.path.join(path,match[0]))
+#                    pathDict[os.path.join(path,match[0])] = []
+#                else:
+#                    pathList.append(os.path.join(path,os.path.join(match[0],expLabel)))
+#                    pathDict.setdefault(os.path.join(path,os.path.join(match[0],expLabel)))
+#                    pathDict[os.path.join(path,os.path.join(match[0],expLabel))] = []
         
-        startDoy = startDateTime.timetuple().tm_yday
-        endDoy = endDateTime.timetuple().tm_yday
-        
-        yearRange = range(startYear,endYear+1)
-        
-        doyDoubleList = []
-        if startYear == endYear:
-            doyList = range(startDoy,endDoy+1)
-        else:
-            for year in yearRange:
-                if (year == startYear):
-                    doyDoubleList.append(range(startDoy,365+1))
-                elif (year == endYear): 
-                    doyDoubleList.append(range(1,endDoy+1))
-                else:
-                    doyDoubleList.append(range(1,365+1)) 
-            doyList = []
-            for list in doyDoubleList:
-                doyList = doyList + list
-            
-        doyPathList = []
+
+        dirList = []
         for thisPath in os.listdir(path):
             if os.path.isdir(os.path.join(path,thisPath)):
-                #doyPathList.append(os.path.join(path,thisPath))
-                doyPathList.append(thisPath)
-        
+                dirList.append(thisPath)
+
         pathList = []
-        pathDict = {}
-        for year in yearRange:
-            for doy in doyList:        
-                match = fnmatch.filter(doyPathList, 'D' + '%4.4d%3.3d' % (year,doy))
-                if len(match) == 0:
-                    match = fnmatch.filter(doyPathList, 'd' + '%4.4d%3.3d' % (year,doy))
-                    if len(match) == 0: continue
-                if expLabel == '':
-                    pathList.append(os.path.join(path,match[0]))
-                    pathDict.setdefault(os.path.join(path,match[0]))
-                    pathDict[os.path.join(path,match[0])] = []
-                else:
-                    pathList.append(os.path.join(path,os.path.join(match[0],expLabel)))
-                    pathDict.setdefault(os.path.join(path,os.path.join(match[0],expLabel)))
-                    pathDict[os.path.join(path,os.path.join(match[0],expLabel))] = []
         
+        thisDateTime = startDateTime
         
+        while(thisDateTime <= endDateTime):
+            year = thisDateTime.timetuple().tm_year
+            doy = thisDateTime.timetuple().tm_yday
+            
+            match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
+            if len(match) == 0:
+                thisDateTime += datetime.timedelta(1)
+                continue
+            
+            pathList.append(os.path.join(path,match[0],expLabel))
+            thisDateTime += datetime.timedelta(1)
+                
         filenameList = []
         for thisPath in pathList:
             fileList = glob.glob1(thisPath, "*%s" %ext)
@@ -335,10 +356,9 @@ class VoltageReader(DataReader):
         return 0
 
     def getData(self):
-        """Obtiene un unidad de datos del buffer de lectura y es copiada a la clase "Data"
+        """Obtiene un unidad de datos del buffer de lectura y es copiada a la clase "Voltage"
         con todos los parametros asociados a este. cuando no hay datos en el buffer de
-        lectura es necesario hacer una nueva lectura de los bloques de datos
-        "__readBlock"
+        lectura es necesario hacer una nueva lectura de los bloques de datos usando "readNextBlock"
         """
         self.flagResetProcessing = 0
         
