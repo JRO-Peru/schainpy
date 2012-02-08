@@ -17,23 +17,23 @@ from Data import DataReader
 from Data import DataWriter
 
 path = os.path.split(os.getcwd())[0]
-sys.path.append(os.path.join(path,"Model"))
+sys.path.append(path)
 
-from Voltage import Voltage
+from Model.Voltage import Voltage
 
 class VoltageReader(DataReader):
     
-    __idFile = 0
+    __idFile = None
     
-    __fp = 0
+    __fp = None
     
-    __startDateTime = 0
+    __startDateTime = None
     
-    __endDateTime = 0
+    __endDateTime = None
     
-    __dataType = 0
+    __dataType = None
     
-    __sizeOfFileByHeader = 0
+    __fileSizeByHeader = 0
     
     __pathList = []
     
@@ -51,9 +51,9 @@ class VoltageReader(DataReader):
     
     online = 0
     
-    filename = ''
+    filename = None
     
-    fileSize = 0
+    fileSize = None
     
     firstHeaderSize = 0
     
@@ -73,8 +73,11 @@ class VoltageReader(DataReader):
     
     __buffer_id = 9999
      
-    def __init__(self, m_Voltage):
+    def __init__(self, m_Voltage = None):
         
+        if m_Voltage == None:
+            m_Voltage = Voltage()
+            
         self.m_Voltage = m_Voltage
     
     def __rdSystemHeader(self,fp=None):
@@ -95,7 +98,9 @@ class VoltageReader(DataReader):
             
         self.m_ProcessingHeader.read(fp)
         
-    def __searchFiles(self,path, startDateTime, endDateTime, set=None, expLabel = "", ext = "*.r"):
+    def __searchFiles(self,path, startDateTime, endDateTime, set=None, expLabel = "", ext = ".r"):
+        
+        print "Searching files ..."
         
         startUtSeconds = time.mktime(startDateTime.timetuple())
         endUtSeconds = time.mktime(endDateTime.timetuple())
@@ -106,50 +111,51 @@ class VoltageReader(DataReader):
         startDoy = startDateTime.timetuple().tm_yday
         endDoy = endDateTime.timetuple().tm_yday
         
-        rangeOfYears = range(startYear,endYear+1)
+        yearRange = range(startYear,endYear+1)
         
-        listOfListDoys = []
+        doyDoubleList = []
         if startYear == endYear:
             doyList = range(startDoy,endDoy+1)
         else:
-            for year in rangeOfYears:
+            for year in yearRange:
                 if (year == startYear):
-                    listOfListDoys.append(range(startDoy,365+1))
+                    doyDoubleList.append(range(startDoy,365+1))
                 elif (year == endYear): 
-                    listOfListDoys.append(range(1,endDoy+1))
+                    doyDoubleList.append(range(1,endDoy+1))
                 else:
-                    listOfListDoys.append(range(1,365+1)) 
+                    doyDoubleList.append(range(1,365+1)) 
             doyList = []
-            for list in listOfListDoys:
+            for list in doyDoubleList:
                 doyList = doyList + list
             
-        folders = []
+        doyPathList = []
         for thisPath in os.listdir(path):
             if os.path.isdir(os.path.join(path,thisPath)):
-                #folders.append(os.path.join(path,thisPath))
-                folders.append(thisPath)
+                #doyPathList.append(os.path.join(path,thisPath))
+                doyPathList.append(thisPath)
         
         pathList = []
-        dicOfPath = {}
-        for year in rangeOfYears:
+        pathDict = {}
+        for year in yearRange:
             for doy in doyList:        
-                tmp = fnmatch.filter(folders, 'D' + '%4.4d%3.3d' % (year,doy))
-                if len(tmp) == 0:
-                    continue
+                match = fnmatch.filter(doyPathList, 'D' + '%4.4d%3.3d' % (year,doy))
+                if len(match) == 0:
+                    match = fnmatch.filter(doyPathList, 'd' + '%4.4d%3.3d' % (year,doy))
+                    if len(match) == 0: continue
                 if expLabel == '':
-                    pathList.append(os.path.join(path,tmp[0]))
-                    dicOfPath.setdefault(os.path.join(path,tmp[0]))
-                    dicOfPath[os.path.join(path,tmp[0])] = []
+                    pathList.append(os.path.join(path,match[0]))
+                    pathDict.setdefault(os.path.join(path,match[0]))
+                    pathDict[os.path.join(path,match[0])] = []
                 else:
-                    pathList.append(os.path.join(path,os.path.join(tmp[0],expLabel)))
-                    dicOfPath.setdefault(os.path.join(path,os.path.join(tmp[0],expLabel)))
-                    dicOfPath[os.path.join(path,os.path.join(tmp[0],expLabel))] = []
+                    pathList.append(os.path.join(path,os.path.join(match[0],expLabel)))
+                    pathDict.setdefault(os.path.join(path,os.path.join(match[0],expLabel)))
+                    pathDict[os.path.join(path,os.path.join(match[0],expLabel))] = []
         
         
         filenameList = []
         for thisPath in pathList:
-            fileList = glob.glob1(thisPath, ext)
-            #dicOfPath[thisPath].append(fileList)
+            fileList = glob.glob1(thisPath, "*%s" %ext)
+            #pathDict[thisPath].append(fileList)
             fileList.sort()
             for file in fileList:
                 filename = os.path.join(thisPath,file)
@@ -218,7 +224,7 @@ class VoltageReader(DataReader):
             tmp = 0
         
         self.__dataType = tmp
-        self.__sizeOfFileByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)        
+        self.__fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)        
 
     def __setNextFileOnline(self):
         return 0
@@ -265,6 +271,9 @@ class VoltageReader(DataReader):
     
     def __setNewBlock(self):
         
+        if self.__fp == None:
+            return 0
+            
         if self.__flagIsNewFile:
             return 1
         
@@ -337,18 +346,18 @@ class VoltageReader(DataReader):
             self.readNextBlock() 
         
         if self.noMoreFiles == 1:
-            print 'read finished'
+            print 'Process finished'
             return None
         
         data = self.__buffer[self.__buffer_id,:,:]
         time = 111
         
-        self.m_Voltage.data = data
-        self.m_Voltage.timeProfile = time
-        self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
-        self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-        self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-        self.m_Voltage.m_SystemHeader = self.m_systemHeader.copy()
+#        self.m_Voltage.data = data
+#        self.m_Voltage.timeProfile = time
+#        self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
+#        self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+#        self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+#        self.m_Voltage.m_SystemHeader = self.m_systemHeader.copy()
         
         self.__buffer_id += 1
         
@@ -363,6 +372,8 @@ class VoltageReader(DataReader):
             pathList, filenameList = self.__searchFiles(path, startDateTime, endDateTime, set, expLabel, ext)
             
             if len(filenameList) == 0:
+                self.__fp = None
+                self.noMoreFiles = 1
                 print 'Do not exist files in range: %s - %s'%(startDateTime.ctime(), endDateTime.ctime())
                 return 0
     

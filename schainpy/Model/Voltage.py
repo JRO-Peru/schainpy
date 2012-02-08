@@ -3,6 +3,13 @@ Created on Feb 7, 2012
 
 @author: roj-idl71
 '''
+import os, sys
+
+path = os.path.split(os.getcwd())[0]
+sys.path.append(path)
+
+from Model.Data import Data
+from IO.Header import *
 
 class Voltage(Data):
     '''

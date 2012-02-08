@@ -10,6 +10,11 @@ class Spectrum:
     showPowerProfile = True
     
     __szchar = 0.7
+    __xrange = None
+    __yrange = None
+    __zrange = None
+    specObj = BasicGraph()
+
     
     def __init__(self):
         
@@ -175,13 +180,22 @@ class CrossSpectrum:
     showPowerProfile = True
     
     __szchar = 0.7
+    __showPhase = False
+    __xrange = None
+    __yrange = None
+    __zrange = None
+    m_BasicGraph= BasicGraph()
+
     def __init__(self):
         pass
-    
-    def setup(self):
+
+    def setup(self, subpage, title, xlabel, ylabel, colormap, showColorbar, showPowerProfile):
         pass
-    
-    def plotData(self):
+
+    def setRanges(self, xrange, yrange, zrange):
+        pass
+
+    def plotData(self, data, xmin, xmax, ymin, ymax, zmin, zmax):
         pass
 
 if __name__ == '__main__':
