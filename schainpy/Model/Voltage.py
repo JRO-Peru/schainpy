@@ -24,6 +24,10 @@ class Voltage(Data):
     m_SystemHeader= SystemHeader()
 
     m_BasicHeader= BasicHeader()
+    
+    data = None
+    
+    noData = True
 
 
     def __init__(self):
@@ -33,5 +37,11 @@ class Voltage(Data):
         pass
 
     def copy(self):
-        pass
+        obj = Voltage()
+        obj.m_BasicHeader = self.m_BasicHeader.copy()
+        obj.m_SystemHeader = self.m_SystemHeader.copy()
+        obj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+        obj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+        
+        return obj
         

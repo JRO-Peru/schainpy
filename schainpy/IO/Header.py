@@ -79,7 +79,13 @@ class BasicHeader:
         
         obj = BasicHeader()
         obj.size = self.size
-        
+        obj.version = self.version
+        obj.dataBlock = self.dataBlock
+        obj.utc = self.utc
+        obj.miliSecond = self.miliSecond
+        obj.timeZone = self.timeZone
+        obj.dstFlag = self.dstFlag
+        obj.errorCount = self.errorCount
         
         return obj
 
@@ -118,6 +124,11 @@ class SystemHeader:
         
         obj = SystemHeader()
         obj.size = self.size
+        obj.numSamples = self.numSamples
+        obj.numProfiles = self.numProfiles
+        obj.numChannels = self.numChannels
+        obj.adcResolution = self.adcResolution
+        self.pciDioBusWidth = self.pciDioBusWidth
         
         
         return obj
@@ -193,7 +204,22 @@ class RadarControllerHeader:
         
         obj = RadarControllerHeader()
         obj.size = self.size
-        
+        obj.expType = self.expType
+        obj.nTx = self.nTx
+        obj.ipp = self.ipp
+        obj.txA = self.txA
+        obj.txB = self.txB
+        obj.numWindows = self.numWindows
+        obj.numTaus = self.numTaus
+        obj.codeType = self.codeType
+        obj.line6Function = self.line6Function
+        obj.line5Fuction = self.line5Fuction
+        obj.fClock = self.fClock
+        obj.prePulseBefore = self.prePulseBefore
+        obj.prePulserAfter = self.prePulserAfter
+        obj.rangeIpp = self.rangeIpp
+        obj.rangeTxA = self.rangeTxA
+        obj.rangeTxB = self.rangeTxB
         
         return obj
     
@@ -264,6 +290,23 @@ class ProcessingHeader:
         
         obj = ProcessingHeader()
         obj.size = self.size
-        
+        obj.dataType = self.dataType
+        obj.blockSize = self.blockSize
+        obj.profilesPerBlock = self.profilesPerBlock
+        obj.dataBlocksPerFile = self.dataBlocksPerFile
+        obj.numWindows = self.numWindows
+        obj.processFlags = self.processFlags
+        obj.coherentInt = self.coherentInt
+        obj.incoherentInt = self.incoherentInt
+        obj.totalSpectra = self.totalSpectra
+        obj.samplingWindow = self.samplingWindow
+        obj.numHeights = self.numHeights
+        obj.firstHeight = self.firstHeight
+        obj.deltaHeight = self.deltaHeight
+        obj.samplesWin = self.samplesWin
+        obj.spectraComb = self.spectraComb
+        obj.numCode = self.numCode
+        obj.numBaud = self.numBaud
+        obj.codes = self.codes
         
         return obj

@@ -12,9 +12,9 @@ import fnmatch
 import time
 import datetime
 
-from Header import *
-from Data import DataReader
-from Data import DataWriter
+from IO.Header import *
+from IO.Data import DataReader
+from IO.Data import DataWriter
 
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
@@ -44,6 +44,8 @@ class VoltageReader(DataReader):
     __maxTimeStep = 5 
     
     __flagIsNewFile = 0
+    
+    __ippSeconds = 0
     
     flagResetProcessing = 0    
     
@@ -249,7 +251,9 @@ class VoltageReader(DataReader):
         
         self.__dataType = tmp
         self.__fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)        
-
+        c=3E8
+        self.__ippSeconds = 2*1000*self.m_RadarControllerHeader.ipp/c
+        
     def __setNextFileOnline(self):
         return 0
 
@@ -379,14 +383,15 @@ class VoltageReader(DataReader):
             return None
         
         data = self.__buffer[self.__buffer_id,:,:]
-        time = 111
         
-#        self.m_Voltage.data = data
-#        self.m_Voltage.timeProfile = time
-#        self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
-#        self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-#        self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-#        self.m_Voltage.m_SystemHeader = self.m_systemHeader.copy()
+        time = self.m_BasicHeader.utc + self.__buffer_id*self.__ippSeconds
+        
+        self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
+        self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+        self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+        self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
+        self.m_Voltage.m_BasicHeader.utc = time
+        self.m_Voltage.data = data
         
         self.__buffer_id += 1
         
