@@ -1,9 +1,9 @@
 '''
 Created on 23/01/2012
 
-@author: danielangelsuarezmunoz
+@author $Author$
+@version $Id$
 '''
-
 
 import os, sys
 import numpy
