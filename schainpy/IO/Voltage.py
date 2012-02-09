@@ -12,12 +12,12 @@ import fnmatch
 import time
 import datetime
 
+path = os.path.split(os.getcwd())[0]
+sys.path.append(path)
+
 from IO.Header import *
 from IO.Data import DataReader
 from IO.Data import DataWriter
-
-path = os.path.split(os.getcwd())[0]
-sys.path.append(path)
 
 from Model.Voltage import Voltage
 
@@ -382,6 +382,7 @@ class VoltageReader(DataReader):
             print 'Process finished'
             return None
         
+        #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         data = self.__buffer[self.__buffer_id,:,:]
         
         time = self.m_BasicHeader.utc + self.__buffer_id*self.__ippSeconds

@@ -26,6 +26,7 @@ class Voltage(Data):
 
     m_BasicHeader= BasicHeader()
     
+    #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
     data = None
     
     noData = True

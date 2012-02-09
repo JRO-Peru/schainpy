@@ -8,7 +8,7 @@ Created on Feb 7, 2012
 import numpy
 import plplot
 
-from BasicGraph import *
+from BaseGraph import *
 
 class Spectrum:
     
@@ -20,17 +20,17 @@ class Spectrum:
     __xrange = None
     __yrange = None
     __zrange = None
-    specObj = BasicGraph()
+    baseObj = BaseGraph()
 
     
     def __init__(self):
         
         key = "spec"
         
-        specObj = BasicGraph()
-        specObj.setName(key)
+        baseObj = BaseGraph()
+        baseObj.setName(key)
            
-        self.graphObjDict[key] = specObj
+        self.graphObjDict[key] = baseObj
         
     
     def setup(self, subpage, title="", xlabel="", ylabel="", colormap="jet", showColorbar=False, showPowerProfile=False):
@@ -43,11 +43,11 @@ class Spectrum:
         xcmapi = xcmapf = 0.; xpowi = xpowf = 0.
         
         key = "spec"
-        specObj = self.graphObjDict[key]
-        specObj.setSubpage(subpage)
-        specObj.setSzchar(self.__szchar)
-        specObj.setOpt("bcnts","bcnts")
-        specObj.setup(title,
+        baseObj = self.graphObjDict[key]
+        baseObj.setSubpage(subpage)
+        baseObj.setSzchar(self.__szchar)
+        baseObj.setOpt("bcnts","bcnts")
+        baseObj.setup(title,
                       xlabel,
                       ylabel,
                       colormap)
@@ -55,7 +55,7 @@ class Spectrum:
         if showColorbar:
             key = "colorbar"
             
-            cmapObj = BasicGraph()
+            cmapObj = BaseGraph()
             cmapObj.setName(key)
             cmapObj.setSubpage(subpage)
             cmapObj.setSzchar(self.__szchar)
@@ -74,7 +74,7 @@ class Spectrum:
         if showPowerProfile:
             key = "powerprof"
             
-            powObj = BasicGraph()
+            powObj = BaseGraph()
             powObj.setName(key)
             powObj.setSubpage(subpage)
             powObj.setSzchar(self.__szchar)
@@ -95,7 +95,7 @@ class Spectrum:
         yf = yi + yw
         xcmapf = xf
         
-        specObj.setScreenPos([xi, xf], [yi, yf])
+        baseObj.setScreenPos([xi, xf], [yi, yf])
         
         if showColorbar:
             xcmapi = xf + 0.02
@@ -108,7 +108,7 @@ class Spectrum:
             powObj.setScreenPos([xpowi, xpowf], [yi, yf])
                 
         
-#        specObj.initSubpage()
+#        baseObj.initSubpage()
 #        
 #        if showColorbar:
 #            cmapObj.initPlot()
@@ -122,8 +122,8 @@ class Spectrum:
     def setRanges(self, xrange, yrange, zrange):
         
         key = "spec"
-        specObj = self.graphObjDict[key]
-        specObj.setRanges(xrange, yrange, zrange)
+        baseObj = self.graphObjDict[key]
+        baseObj.setRanges(xrange, yrange, zrange)
         
         keyList = self.graphObjDict.keys()
         
@@ -140,8 +140,8 @@ class Spectrum:
     def plotData(self, data , xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
         
         key = "spec"
-        specObj = self.graphObjDict[key]
-        specObj.initSubpage()
+        baseObj = self.graphObjDict[key]
+        baseObj.initSubpage()
         
         if xmin == None:
             xmin = 0.
@@ -161,10 +161,10 @@ class Spectrum:
         if zmax == None:
             zmax = numpy.nanmax(data)
     
-        if not(specObj.hasRange):
+        if not(baseObj.hasRange):
             self.setRanges([xmin, xmax], [ymin,ymax], [zmin,zmax])
         
-        specObj.basicPcolorPlot(data, xmin, xmax, ymin, ymax, specObj.zrange[0], specObj.zrange[1])
+        baseObj.basicPcolorPlot(data, xmin, xmax, ymin, ymax, baseObj.zrange[0], baseObj.zrange[1])
         
         if self.showColorbar:
             key = "colorbar"
@@ -191,7 +191,7 @@ class CrossSpectrum:
     __xrange = None
     __yrange = None
     __zrange = None
-    m_BasicGraph= BasicGraph()
+    m_BaseGraph= BaseGraph()
 
     def __init__(self):
         pass
@@ -220,13 +220,13 @@ if __name__ == '__main__':
     
     data = numpy.random.uniform(-50,50,(nx,ny))
     
-    specObj = Spectrum()
-    specObj.setup(1, "Spectrum", "Frequency", "Range", "br_green", False, False)
-    specObj.plotData(data)
+    baseObj = ColorPlot()
+    baseObj.setup(1, "Spectrum", "Frequency", "Range", "br_green", False, False)
+    baseObj.plotData(data)
     
     data = numpy.random.uniform(-50,50,(nx,ny))
     
-    spec2Obj = Spectrum()
+    spec2Obj = ColorPlot()
     spec2Obj.setup(2, "Spectrum", "Frequency", "Range", "br_green", True, True)
     spec2Obj.plotData(data)
     
