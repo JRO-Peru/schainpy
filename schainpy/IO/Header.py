@@ -46,26 +46,25 @@ class PROCFLAG:
 
 class BasicHeader:
     
-    size = 0
-    version = 0
-    dataBlock = 0
-    utc = 0
-    miliSecond = 0
-    timeZone = 0
-    dstFlag = 0
-    errorCount = 0
-    struct = numpy.dtype([
-                          ('nSize','<u4'),
-                          ('nVersion','<u2'),
-                          ('nDataBlockId','<u4'),
-                          ('nUtime','<u4'),
-                          ('nMilsec','<u2'),     
-                          ('nTimezone','<i2'),
-                          ('nDstflag','<i2'),
-                          ('nErrorCount','<u4')
-                          ])   
-        
     def __init__(self):
+        self.size = 0
+        self.version = 0
+        self.dataBlock = 0
+        self.utc = 0
+        self.miliSecond = 0
+        self.timeZone = 0
+        self.dstFlag = 0
+        self.errorCount = 0
+        self.struct = numpy.dtype([
+                              ('nSize','<u4'),
+                              ('nVersion','<u2'),
+                              ('nDataBlockId','<u4'),
+                              ('nUtime','<u4'),
+                              ('nMilsec','<u2'),     
+                              ('nTimezone','<i2'),
+                              ('nDstflag','<i2'),
+                              ('nErrorCount','<u4')
+                              ])   
         pass
     
     def read(self, fp):
@@ -97,23 +96,23 @@ class BasicHeader:
         return obj
 
 class SystemHeader:
-    size = 0 
-    numSamples = 0
-    numProfiles = 0
-    numChannels = 0
-    adcResolution = 0
-    pciDioBusWidth = 0
-    struct = numpy.dtype([
-                        ('nSize','<u4'),
-                        ('nNumSamples','<u4'),
-                        ('nNumProfiles','<u4'),
-                        ('nNumChannels','<u4'),
-                        ('nADCResolution','<u4'),
-                        ('nPCDIOBusWidth','<u4'),
-                        ])
     
     def __init__(self):
-        pass
+        self.size = 0 
+        self.numSamples = 0
+        self.numProfiles = 0
+        self.numChannels = 0
+        self.adcResolution = 0
+        self.pciDioBusWidth = 0
+        self.struct = numpy.dtype([
+                            ('nSize','<u4'),
+                            ('nNumSamples','<u4'),
+                            ('nNumProfiles','<u4'),
+                            ('nNumChannels','<u4'),
+                            ('nADCResolution','<u4'),
+                            ('nPCDIOBusWidth','<u4'),
+                            ])
+    
 
     def read(self, fp):
         header = numpy.fromfile(fp,self.struct,1)
@@ -141,46 +140,46 @@ class SystemHeader:
         return obj
     
 class RadarControllerHeader:
-    size = 0
-    expType = 0
-    nTx = 0
-    ipp = 0
-    txA = 0
-    txB = 0
-    numWindows = 0
-    numTaus = 0
-    codeType = 0
-    line6Function = 0
-    line5Fuction = 0
-    fClock = 0
-    prePulseBefore = 0
-    prePulserAfter = 0
-    rangeIpp = 0
-    rangeTxA = 0
-    rangeTxB = 0
-    struct = numpy.dtype([
-                         ('nSize','<u4'),
-                         ('nExpType','<u4'),
-                         ('nNTx','<u4'),
-                         ('fIpp','<f4'),
-                         ('fTxA','<f4'),
-                         ('fTxB','<f4'),
-                         ('nNumWindows','<u4'),
-                         ('nNumTaus','<u4'),
-                         ('nCodeType','<u4'),
-                         ('nLine6Function','<u4'),
-                         ('nLine5Function','<u4'),
-                         ('fClock','<f4'),
-                         ('nPrePulseBefore','<u4'),
-                         ('nPrePulseAfter','<u4'),
-                         ('sRangeIPP','<a20'),
-                         ('sRangeTxA','<a20'),
-                         ('sRangeTxB','<a20'),
-                         ])
     
     
     def __init__(self):
-        pass
+        self.size = 0
+        self.expType = 0
+        self.nTx = 0
+        self.ipp = 0
+        self.txA = 0
+        self.txB = 0
+        self.numWindows = 0
+        self.numTaus = 0
+        self.codeType = 0
+        self.line6Function = 0
+        self.line5Fuction = 0
+        self.fClock = 0
+        self.prePulseBefore = 0
+        self.prePulserAfter = 0
+        self.rangeIpp = 0
+        self.rangeTxA = 0
+        self.rangeTxB = 0
+        self.struct = numpy.dtype([
+                             ('nSize','<u4'),
+                             ('nExpType','<u4'),
+                             ('nNTx','<u4'),
+                             ('fIpp','<f4'),
+                             ('fTxA','<f4'),
+                             ('fTxB','<f4'),
+                             ('nNumWindows','<u4'),
+                             ('nNumTaus','<u4'),
+                             ('nCodeType','<u4'),
+                             ('nLine6Function','<u4'),
+                             ('nLine5Function','<u4'),
+                             ('fClock','<f4'),
+                             ('nPrePulseBefore','<u4'),
+                             ('nPrePulseAfter','<u4'),
+                             ('sRangeIPP','<a20'),
+                             ('sRangeTxA','<a20'),
+                             ('sRangeTxB','<a20'),
+                             ])
+        
 
     def read(self, fp):
         header = numpy.fromfile(fp,self.struct,1)
@@ -231,41 +230,40 @@ class RadarControllerHeader:
         return obj
     
 class ProcessingHeader:
-    size = 0
-    dataType = 0
-    blockSize = 0
-    profilesPerBlock = 0
-    dataBlocksPerFile = 0
-    numWindows = 0
-    processFlags = 0
-    coherentInt = 0
-    incoherentInt = 0
-    totalSpectra = 0
-    struct = numpy.dtype([
-                           ('nSize','<u4'),
-                           ('nDataType','<u4'),
-                           ('nSizeOfDataBlock','<u4'),
-                           ('nProfilesperBlock','<u4'),
-                           ('nDataBlocksperFile','<u4'),
-                           ('nNumWindows','<u4'),
-                           ('nProcessFlags','<u4'),
-                           ('nCoherentIntegrations','<u4'),
-                           ('nIncoherentIntegrations','<u4'),
-                           ('nTotalSpectra','<u4')
-                           ])
-    samplingWindow = 0
-    structSamplingWindow = numpy.dtype([('h0','<f4'),('dh','<f4'),('nsa','<u4')])
-    numHeights = 0
-    firstHeight = 0
-    deltaHeight = 0
-    samplesWin = 0
-    spectraComb = 0
-    numCode = 0
-    codes = 0
-    numBaud = 0
     
     def __init__(self):
-        pass
+        self.size = 0
+        self.dataType = 0
+        self.blockSize = 0
+        self.profilesPerBlock = 0
+        self.dataBlocksPerFile = 0
+        self.numWindows = 0
+        self.processFlags = 0
+        self.coherentInt = 0
+        self.incoherentInt = 0
+        self.totalSpectra = 0
+        self.struct = numpy.dtype([
+                               ('nSize','<u4'),
+                               ('nDataType','<u4'),
+                               ('nSizeOfDataBlock','<u4'),
+                               ('nProfilesperBlock','<u4'),
+                               ('nDataBlocksperFile','<u4'),
+                               ('nNumWindows','<u4'),
+                               ('nProcessFlags','<u4'),
+                               ('nCoherentIntegrations','<u4'),
+                               ('nIncoherentIntegrations','<u4'),
+                               ('nTotalSpectra','<u4')
+                               ])
+        self.samplingWindow = 0
+        self.structSamplingWindow = numpy.dtype([('h0','<f4'),('dh','<f4'),('nsa','<u4')])
+        self.numHeights = 0
+        self.firstHeight = 0
+        self.deltaHeight = 0
+        self.samplesWin = 0
+        self.spectraComb = 0
+        self.numCode = 0
+        self.codes = 0
+        self.numBaud = 0
     
     def read(self, fp):
         header = numpy.fromfile(fp,self.struct,1)

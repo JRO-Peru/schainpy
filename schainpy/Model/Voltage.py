@@ -18,25 +18,30 @@ class Voltage(Data):
     '''
 
 
-    m_RadarControllerHeader= RadarControllerHeader()
-
-    m_ProcessingHeader= ProcessingHeader()
-
-    m_SystemHeader= SystemHeader()
-
-    m_BasicHeader= BasicHeader()
     
-    #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
-    data = None
-    
-    noData = True
 
 
     def __init__(self):
         '''
         Constructor
         '''
-        pass
+        
+        self.m_RadarControllerHeader= RadarControllerHeader()
+
+        self.m_ProcessingHeader= ProcessingHeader()
+        
+        self.m_SystemHeader= SystemHeader()
+        
+        self.m_BasicHeader= BasicHeader()
+        
+        #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
+        self.data = None
+        
+        self.dataType = None
+        
+        self.noData = True
+        
+        
 
     def copy(self):
         obj = Voltage()

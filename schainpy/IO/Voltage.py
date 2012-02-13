@@ -23,68 +23,66 @@ from Model.Voltage import Voltage
 
 class VoltageReader(DataReader):
     
-    __idFile = None
-    
-    __fp = None
-    
-    __startDateTime = None
-    
-    __endDateTime = None
-    
-    __dataType = None
-    
-    __fileSizeByHeader = 0
-    
-    __pathList = []
-    
-    filenameList = []
-    
-    __lastUTTime = 0
-    
-    __maxTimeStep = 5 
-    
-    __flagIsNewFile = 0
-    
-    __ippSeconds = 0
-    
-    flagResetProcessing = 0    
-    
-    flagIsNewBlock = 0
-    
-    noMoreFiles = 0
-    
-    nReadBlocks = 0
-    
-    online = 0
-    
-    filename = None
-    
-    fileSize = None
-    
-    firstHeaderSize = 0
-    
-    basicHeaderSize = 24
-    
-    m_BasicHeader = BasicHeader()
-    
-    m_SystemHeader = SystemHeader()
-    
-    m_RadarControllerHeader = RadarControllerHeader()
-    
-    m_ProcessingHeader = ProcessingHeader()
-    
-    m_Voltage = None
-    
-    __buffer = 0
-    
-    __buffer_id = 9999
-     
     def __init__(self, m_Voltage = None):
         
         if m_Voltage == None:
             m_Voltage = Voltage()
             
         self.m_Voltage = m_Voltage
+        
+        self.__idFile = None
+    
+        self.__fp = None
+        
+        self.__startDateTime = None
+        
+        self.__endDateTime = None
+        
+        self.__dataType = None
+        
+        self.__fileSizeByHeader = 0
+        
+        self.__pathList = []
+        
+        self.filenameList = []
+        
+        self.__lastUTTime = 0
+        
+        self.__maxTimeStep = 5 
+        
+        self.__flagIsNewFile = 0
+        
+        self.__ippSeconds = 0
+        
+        self.flagResetProcessing = 0    
+        
+        self.flagIsNewBlock = 0
+        
+        self.noMoreFiles = 0
+        
+        self.nReadBlocks = 0
+        
+        self.online = 0
+        
+        self.filename = None
+        
+        self.fileSize = None
+        
+        self.firstHeaderSize = 0
+        
+        self.basicHeaderSize = 24
+        
+        self.m_BasicHeader = BasicHeader()
+        
+        self.m_SystemHeader = SystemHeader()
+        
+        self.m_RadarControllerHeader = RadarControllerHeader()
+        
+        self.m_ProcessingHeader = ProcessingHeader()
+        
+        self.__buffer = 0
+        
+        self.__buffer_id = 9999
     
     def __rdSystemHeader(self,fp=None):
         if fp == None:
@@ -393,6 +391,7 @@ class VoltageReader(DataReader):
         self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
         self.m_Voltage.m_BasicHeader.utc = time
         self.m_Voltage.data = data
+        self.m_Voltage.dataType = self.__dataType
         
         self.__buffer_id += 1
         
@@ -438,23 +437,190 @@ class VoltageReader(DataReader):
         self.online = online
 
 class VoltageWriter(DataWriter):
+
     
-    m_BasicHeader= BasicHeader()
-
-
-    m_SystemHeader = SystemHeader()
-
-
-    m_RadarControllerHeader = RadarControllerHeader()
-
-
-    m_ProcessingHeader = ProcessingHeader()
-
-    m_Voltage = None
-    
-    def __init__(self, m_Voltage):
+    def __init__(self, m_Voltage = None):
+        
+        if m_Voltage == None:
+            m_Voltage = Voltage()    
         
         self.m_Voltage = m_Voltage
-
+        
+        self.__fp = None
+    
+        self.__blocksCounter = 0
+        
+        self.__setFile = None
+        
+        self.__flagIsNewFile = 0
+        
+        self.__buffer = 0
+        
+        self.__buffer_id = 0
+        
+        self.__dataType = None
+        
+        self.__ext = None
+        
+        self.nWriteBlocks = 0 
+        
+        self.flagIsNewBlock = 0
+        
+        self.noMoreFiles = 0
+        
+        self.filename = None
+        
+        self.m_BasicHeader= BasicHeader()
+    
+        self.m_SystemHeader = SystemHeader()
+    
+        self.m_RadarControllerHeader = RadarControllerHeader()
+    
+        self.m_ProcessingHeader = ProcessingHeader()
+    
+    def __setNextFile(self):
+        setFile = self.__setFile
+        ext = self.__ext
+        path = self.__path
+        
+        setFile += 1
+         
+        if not(self.__blocksCounter >= self.m_ProcessingHeader.dataBlocksPerFile):
+            self.__fp.close()
+            return 0
+        
+        timeTuple = time.localtime(self.m_Voltage.m_BasicHeader.utc) # utc from m_Voltage
+        file = 'D%4.4d%3.3d%3.3d%s' % (timeTuple.tm_year,timeTuple.tm_doy,setFile,ext)
+        subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_doy) 
+        tmp = os.path.join(path,subfolder)
+        if not(os.path.exists(tmp)):
+            os.mkdir(tmp)
+   
+        filename = os.path.join(path,subfolder,file)
+        fp = open(filename,'wb')
+        
+        
+        
+        #guardando atributos 
+        self.filename = filename
+        self.__subfolder = subfolder
+        self.__fp = fp
+        self.__setFile = setFile
+        self.__flagIsNewFile = 1
+        
+        print 'Writing the file: %s'%self.filename
+        
+        return 1
+            
 
     
+    def __setNewBlock(self):
+        if self.__fp == None:
+            return 0
+        
+        if self.__flagIsNewFile:
+            return 1
+        
+        #Bloques completados?
+        if self.__blocksCounter < self.m_ProcessingHeader.profilesPerBlock:
+            self.__writeBasicHeader()
+            return 1
+        
+        if not(self.__setNextFile()):
+            return 0
+        
+        self.__writeFirstHeader()
+        
+        return 1
+    
+    def __writeBlock(self):
+        
+        numpy.save(self.__fp,self.__buffer)
+        
+        self.__buffer = numpy.array([],self.__dataType)
+        
+        self.__buffer_id = 0 
+        
+        self.__flagIsNewFile = 0
+        
+        self.flagIsNewBlock = 1
+        
+        self.nWriteBlocks += 1
+        
+        self.__blocksCounter += 1
+    
+    def writeNextBlock(self):
+        if not(self.__setNewBlock()):
+            return 0
+        
+        self.__writeBlock()
+        
+        return 1
+    
+    def __hasAllDataInBuffer(self):
+        if self.__buffer_id >= self.m_ProcessingHeader.profilesPerBlock:
+            return 1
+        
+        return 0
+    
+    def putData(self):
+        self.flagIsNewBlock = 0
+        
+        if self.m_Voltage.noData:
+            return None
+        
+        shape = self.m_Voltage.data.shape
+        data = numpy.zeros(shape,self.__dataType)
+        data['real'] = self.m_Voltage.data.real
+        data['imag'] = self.m_Voltage.data.imag
+        data = data.reshape((-1))
+        
+        self.__buffer = numpy.hstack((self.__buffer,data))
+        
+        self.__buffer_id += 1
+        
+        if __hasAllDataInBuffer():
+            self.writeNextBlock()
+        
+        
+        if self.noMoreFiles:
+            print 'Process finished'
+            return None
+        
+        return 1
+    
+
+    def setup(self,path,set=None,format=None):
+        
+        if set == None:
+            set = -1
+        else:
+            set -= 1
+        
+        if format == 'hdf5':
+            ext = '.hdf5'
+            print 'call hdf5 library'
+            return 0
+        
+        if format == 'rawdata':
+            ext = '.r'
+        
+        #call to config_headers
+        
+        self.__setFile = set
+        
+        if not(self.__setNextFile()):
+            print "zzzzzzzzzzzz"
+            return 0
+        
+        self.__writeFirstHeader() # dentro de esta funcion se debe setear e __dataType
+        
+        self.__buffer = numpy.array([],self.__dataType)
+        
+    
+    
+    def __writeBasicHeader(self):
+        pass
+    
+    def __writeFirstHeader(self):
+        pass
