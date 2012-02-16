@@ -5,8 +5,8 @@ Created on 23/01/2012
 @version $Id$
 '''
 
-from Data import DataReader
-from Data import DataWriter
+from DataIO import DataReader
+from DataIO import DataWriter
 
 class CorrelationReader(DataReader):
     def __init__(self):

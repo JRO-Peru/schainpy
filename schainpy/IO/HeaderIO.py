@@ -7,43 +7,6 @@ Created on 23/01/2012
 
 import numpy
 
-class PROCFLAG:    
-    COHERENT_INTEGRATION = numpy.uint32(0x00000001)
-    DECODE_DATA = numpy.uint32(0x00000002) 
-    SPECTRA_CALC = numpy.uint32(0x00000004)
-    INCOHERENT_INTEGRATION = numpy.uint32(0x00000008) 
-    POST_COHERENT_INTEGRATION = numpy.uint32(0x00000010)
-    SHIFT_FFT_DATA = numpy.uint32(0x00000020)
-    
-    DATATYPE_CHAR = numpy.uint32(0x00000040)
-    DATATYPE_SHORT = numpy.uint32(0x00000080)
-    DATATYPE_LONG = numpy.uint32(0x00000100)
-    DATATYPE_INT64 = numpy.uint32(0x00000200)
-    DATATYPE_FLOAT = numpy.uint32(0x00000400)
-    DATATYPE_DOUBLE = numpy.uint32(0x00000800)
-    
-    DATAARRANGE_CONTIGUOUS_CH = numpy.uint32(0x00001000) 
-    DATAARRANGE_CONTIGUOUS_H = numpy.uint32(0x00002000) 
-    DATAARRANGE_CONTIGUOUS_P = numpy.uint32(0x00004000) 
-    
-    SAVE_CHANNELS_DC = numpy.uint32(0x00008000)
-    DEFLIP_DATA = numpy.uint32(0x00010000)    
-    DEFINE_PROCESS_CODE = numpy.uint32(0x00020000) 
-     
-    ACQ_SYS_NATALIA = numpy.uint32(0x00040000)
-    ACQ_SYS_ECHOTEK = numpy.uint32(0x00080000)
-    ACQ_SYS_ADRXD = numpy.uint32(0x000C0000)
-    ACQ_SYS_JULIA = numpy.uint32(0x00100000)
-    ACQ_SYS_XXXXXX = numpy.uint32(0x00140000)
-    
-    EXP_NAME_ESP = numpy.uint32(0x00200000)
-    CHANNEL_NAMES_ESP = numpy.uint32(0x00400000)
-        
-    OPERATION_MASK = numpy.uint32(0x0000003F)
-    DATATYPE_MASK = numpy.uint32(0x00000FC0)
-    DATAARRANGE_MASK = numpy.uint32(0x00007000)
-    ACQ_SYS_MASK = numpy.uint32(0x001C0000)
-
 class BasicHeader:
     
     def __init__(self):
@@ -315,3 +278,40 @@ class ProcessingHeader:
         obj.codes = self.codes
         
         return obj
+
+class PROCFLAG:    
+    COHERENT_INTEGRATION = numpy.uint32(0x00000001)
+    DECODE_DATA = numpy.uint32(0x00000002) 
+    SPECTRA_CALC = numpy.uint32(0x00000004)
+    INCOHERENT_INTEGRATION = numpy.uint32(0x00000008) 
+    POST_COHERENT_INTEGRATION = numpy.uint32(0x00000010)
+    SHIFT_FFT_DATA = numpy.uint32(0x00000020)
+    
+    DATATYPE_CHAR = numpy.uint32(0x00000040)
+    DATATYPE_SHORT = numpy.uint32(0x00000080)
+    DATATYPE_LONG = numpy.uint32(0x00000100)
+    DATATYPE_INT64 = numpy.uint32(0x00000200)
+    DATATYPE_FLOAT = numpy.uint32(0x00000400)
+    DATATYPE_DOUBLE = numpy.uint32(0x00000800)
+    
+    DATAARRANGE_CONTIGUOUS_CH = numpy.uint32(0x00001000) 
+    DATAARRANGE_CONTIGUOUS_H = numpy.uint32(0x00002000) 
+    DATAARRANGE_CONTIGUOUS_P = numpy.uint32(0x00004000) 
+    
+    SAVE_CHANNELS_DC = numpy.uint32(0x00008000)
+    DEFLIP_DATA = numpy.uint32(0x00010000)    
+    DEFINE_PROCESS_CODE = numpy.uint32(0x00020000) 
+     
+    ACQ_SYS_NATALIA = numpy.uint32(0x00040000)
+    ACQ_SYS_ECHOTEK = numpy.uint32(0x00080000)
+    ACQ_SYS_ADRXD = numpy.uint32(0x000C0000)
+    ACQ_SYS_JULIA = numpy.uint32(0x00100000)
+    ACQ_SYS_XXXXXX = numpy.uint32(0x00140000)
+    
+    EXP_NAME_ESP = numpy.uint32(0x00200000)
+    CHANNEL_NAMES_ESP = numpy.uint32(0x00400000)
+        
+    OPERATION_MASK = numpy.uint32(0x0000003F)
+    DATATYPE_MASK = numpy.uint32(0x00000FC0)
+    DATAARRANGE_MASK = numpy.uint32(0x00007000)
+    ACQ_SYS_MASK = numpy.uint32(0x001C0000)

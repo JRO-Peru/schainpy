@@ -6,8 +6,8 @@ Created on 23/01/2012
 '''
 
 from Header import *
-from Data import DataReader
-from Data import DataWriter
+from DataIO import DataReader
+from DataIO import DataWriter
 
 
 class SpectraReader(DataReader):

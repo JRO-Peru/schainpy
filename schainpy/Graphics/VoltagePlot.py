@@ -11,39 +11,118 @@ import plplot
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Graphics.BasicGraph import *
+from Graphics.BaseGraph import *
 from Model.Voltage import Voltage
 
 class Osciloscope():
     
-    graphObjDict = {}
-    showPower = True
-    
-    __szchar = 0.7
-    __xrange = None
-    __yrange = None
-    __zrange = None
-     
-    def __init__(self):
-        key = "osc"
+    def __init__(self, Voltage):
         
-        baseObj = BasicGraph()
-        baseObj.setName(key)
+        """
         
-        self.graphObjDict[key] = baseObj
+        Inputs:
+            
+            type:   "power" ->> Potencia
+                    "iq"    ->> Real + Imaginario
+        """
+        
+        self.__isPlotConfig = False
+        
+        self.__isPlotIni = False
+        
+        self.__xrange = None
+        
+        self.__yrange = None
+        
+        self.m_Voltage = None
+        
+        self.nGraphs = 0
+        
+        self.graphObjList = [] 
+           
+        self.m_Voltage = Voltage
         
     
-    def setup(self, subpage, title="", xlabel="", ylabel="", colormap="jet", showColorbar=False, showPowerProfile=False):
-        pass
+    def __addGraph(self, subpage, title="", xlabel="", ylabel="", XAxisAsTime=False):
+        
+        graphObj = LinearPlot()
+        graphObj.setup(subpage, title="", xlabel="", ylabel="", XAxisAsTime=False)
+        #graphObj.setScreenPos()
+                
+        self.graphObjList.append(graphObj)
+        
+        del graphObj
     
-    def setRanges(self, xrange, yrange, zrange):
-        pass
-    
-    def plotData(self, data , xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
-        pass
+#    def setXRange(self, xmin, xmax):
+#        self.__xrange = (xmin, xmax)
+#    
+#    def setYRange(self, ymin, ymax):
+#        self.__yrange = (ymin, ymax)    
 
-
     
+    def setup(self, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False):
+        
+        nChan = int(self.m_Voltage.m_SystemHeader.numChannels)
+        
+        myTitle = ""
+        myXlabel = ""
+        myYlabel = ""
+        
+        for i in range(nChan):
+            if titleList != None:
+                myTitle = titleList[i]
+                myXlabel = xlabelList[i]
+                myYlabel = ylabelList[i]
+                
+            self.__addGraph(i+1, title=myTitle, xlabel=myXlabel, ylabel=myYlabel, XAxisAsTime=XAxisAsTime)
+        
+        self.nGraphs = nChan
+        self.__isPlotConfig = True
+
+    def iniPlot(self):
+        plplot.plsetopt("geometry", "%dx%d" %(700, 115*self.nGraphs))
+        plplot.plsdev("xcairo")
+        plplot.plscolbg(255,255,255)
+        plplot.plscol0(1,0,0,0)
+        plplot.plinit()
+        plplot.plspause(False)
+        plplot.plssub(1, self.nGraphs)
+        
+        self.__isPlotIni = True     
+    
+    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, idProfile=None, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False, type='iq'):
+        
+        if idProfile != None and idProfile != self.m_Voltage.idProfile:
+            return
+        
+        if not(self.__isPlotConfig):
+            self.setup(titleList, xlabelList, ylabelList, XAxisAsTime)
+        
+        if not(self.__isPlotIni):
+            self.iniPlot()
+        
+        data = self.m_Voltage.data
+              
+        x = self.m_Voltage.heights
+        
+        if xmin == None: xmin = x[0]
+        if xmax == None: xmax = x[-1]
+        if ymin == None: ymin = numpy.nanmin(abs(data))
+        if ymax == None: ymax = numpy.nanmax(abs(data))
+        
+        plplot.plbop()
+        for i in range(self.nGraphs):
+            y = data[:,i]
+            
+            self.graphObjList[i].iniSubpage()
+            self.graphObjList[i].plotComplexData(x, y, xmin, xmax, ymin, ymax, 8, type)
+        
+        plplot.plflush()
+        plplot.pleop()
+    
+    def end(self):
+        plplot.plend()
+        
 class VoltagePlot(object):
     '''
     classdocs

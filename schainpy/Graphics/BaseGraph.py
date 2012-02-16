@@ -14,122 +14,59 @@ class BaseGraph:
     
     """
     
-    hasNotRange = True
-    
-    xrange = None
-    yrange = None
-    zrange = None
-    
-    xlabel = None
-    ylabel = None
-    title = None
-    
-    legends = None
-    
-    __name = None
-    __subpage = None
-    __szchar = None
-    
-    __colormap = None
-    __colbox  = None
-    __colleg = None    
-     
-    __xpos = None
-    __ypos = None
-    
-    __xopt = None #"bcnst"
-    __yopt = None #"bcnstv"
-      
-    __xlpos = None
-    __ylpos = None
-    
-    __xrangeIsTime = False
-    
-    #Advanced
-    __xg = None
-    __yg = None
+
     
     def __init__(self):
         """
         
         """
-        pass
-     
-    def hasNotXrange(self):
+        self.hasNotRange = True
         
-        if self.xrange == None:
-            return 1
+        self.xrange = None
+        self.yrange = None
+        self.zrange = None
         
-        return 0
-
-    def hasNotYrange(self):
+        self.xlabel = None
+        self.ylabel = None
+        self.title = None
         
-        if self.yrange == None:
-            return 1
+        self.legends = None
         
-        return 0
-
-    def hasNotZrange(self):
+        self.__name = None
         
-        if self.zrange == None:
-            return 1
+        self.__colormap = None
+        self.__colbox  = None
+        self.__colleg = None    
+         
+        self.__xpos = None
+        self.__ypos = None
         
-        return 0
+        self.__xopt = None #"bcnst"
+        self.__yopt = None #"bcnstv"
+          
+        self.__xlpos = None
+        self.__ylpos = None
+        
+        self.__xrangeIsTime = False
+        
+        #Advanced
+        self.__xg = None
+        self.__yg = None
+        
     def setName(self, name):
         self.__name = name
         
     def setScreenPos(self, xpos, ypos):
         self.__xpos = xpos
         self.__ypos = ypos
-    
-    def setScreenPosbyWidth(self, xoff, yoff, xw, yw):
-        self.__xpos = [xoff, xoff + xw]
-        self.__ypos = [yoff, yoff + yw]
-        
-    def setSubpage(self, subpage):
-        self.__subpage = subpage
-        
-    def setSzchar(self, szchar):
-        self.__szchar = szchar
         
     def setOpt(self, xopt, yopt):
         self.__xopt = xopt
         self.__yopt = yopt
-
-    def setRanges(self, xrange, yrange, zrange=None):
-        """
-        """
-        self.xrange = xrange
         
-        self.yrange = yrange
-        
-        if zrange != None:
-            self.zrange = zrange
-        
-        self.hasNotRange = False
-    
-    def setColormap(self, colormap=None):
-        
-        if colormap == None:
-            colormap = self.__colormap
-            
-        cmap1_init(colormap)
-    
     def setXAxisAsTime(self):
         self.__xrangeIsTime = True
-    
-    def plotBox(self):
-        """
-        
-        """
-        plplot.plvpor(self.__xpos[0], self.__xpos[1], self.__ypos[0], self.__ypos[1])
-        plplot.plwind(float(self.xrange[0]),
-                      float(self.xrange[1]),
-                      float(self.yrange[0]),
-                      float(self.yrange[1])
-                      )
-        plplot.plbox(self.__xopt, 0.0, 0, self.__yopt, 0.0, 0)
-        plplot.pllab(self.xlabel, self.ylabel, self.title)
+
       
     def setup(self, title=None, xlabel=None, ylabel=None, colormap=None):
         """
@@ -138,64 +75,63 @@ class BaseGraph:
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.__colormap = colormap
-    
-    def initSubpage(self):
+          
+    def plotBox(self, xmin, xmax, ymin, ymax):
+        """
         
-        if plplot.plgdev() == '':
-            raise ValueError, "Plot device has not been initialize"
-        
-        plplot.pladv(self.__subpage)
-        plplot.plschr(0.0, self.__szchar)
-        
+        """
         if self.__xrangeIsTime:
             plplot.pltimefmt("%H:%M")
             
-        self.setColormap()
-        self.initPlot()
+        plplot.plvpor(self.__xpos[0], self.__xpos[1], self.__ypos[0], self.__ypos[1])
+        plplot.plwind(float(xmin),
+                      float(xmax),
+                      float(ymin),
+                      float(ymax)
+                      )
+        plplot.plbox(self.__xopt, 0.0, 0, self.__yopt, 0.0, 0)
+        plplot.pllab(self.xlabel, self.ylabel, self.title)
+
     
-    def initPlot(self):
-        """
-        
-        """
-        if plplot.plgdev() == '':
-            raise ValueError, "Plot device has not been initialize"
-        
-        xrange = self.xrange
-        if xrange == None:
-            xrange = [0., 1.]
-        
-        yrange = self.yrange
-        if yrange == None:
-            yrange = [0., 1.]
-        
-        self.plotBox()
-    
-    def colorbarPlot(self):
+    def colorbarPlot(self, xmin=0., xmax=1., ymin=0., ymax=1.):
         data = numpy.arange(256)
         data = numpy.reshape(data, (1,-1))
         
-        self.plotBox()
+        self.plotBox(xmin, xmax, ymin, ymax)
         plplot.plimage(data,
-                       self.xrange[0],
-                       self.xrange[1],
-                       self.yrange[0],
-                       self.yrange[1],
+                       float(xmin),
+                       float(xmax),
+                       float(ymin),
+                       float(ymax),
                        0.,
                        255.,
-                       self.xrange[0],
-                       self.xrange[1],
-                       self.yrange[0],
-                       self.yrange[1],)
+                       float(xmin),
+                       float(xmax),
+                       float(ymin),
+                       float(ymax))
         
-    def basicXYPlot(self, x, y):
-        self.plotBox()
+    def basicXYPlot(self, x, y, xmin=None, xmax=None, ymin=None, ymax=None):
+        
+        if xmin == None: xmin = x[0]
+        if xmax == None: xmax = x[-1]
+        if ymin == None: ymin = y[0]
+        if ymax == None: ymax = y[-1]
+        
         plplot.plline(x, y)
     
     def basicXYwithErrorPlot(self):
         pass
     
-    def basicLineTimePlot(self):
-        pass
+    def basicLineTimePlot(self, x, y, xmin=None, xmax=None, ymin=None, ymax=None, colline=1):
+        
+        if xmin == None: xmin = x[0]
+        if xmax == None: xmax = x[-1]
+        if ymin == None: ymin = y[0]
+        if ymax == None: ymax = y[-1]
+        
+        plplot.plcol0(colline)
+        plplot.plline(x, y)
+        plplot.plcol0(1)
     
     def basicPcolorPlot(self, data, x, y, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
         """
@@ -207,7 +143,6 @@ class BaseGraph:
         if zmin == None: zmin = numpy.nanmin(data)
         if zmax == None: zmax = numpy.nanmax(data)
         
-        self.plotBox()
         plplot.plimage(data,
                        float(x[0]),
                        float(x[-1]),
@@ -248,6 +183,129 @@ class BaseGraph:
         plplot.plimagefr(data, x[0], x[-1], y[0], y[-1], 0., 0., zmin, zmax, plplot.pltr2, self.__xg, self.__yg)
 
 
+class LinearPlot():
+    
+    __szchar = 1.0
+    __xrange = None
+    __yrange = None
+    
+    m_BaseGraph = None
+    
+    def __init__(self):
+        
+        
+        key = "linearplot"
+        self.m_BaseGraph = BaseGraph()
+        self.m_BaseGraph.setName(key)
+
+    def setColormap(self, colormap="br_green"):
+        
+        if colormap == None:
+            colormap = self.__colormap
+            
+        cmap1_init(colormap)
+        
+    def iniSubpage(self):
+        
+        if plplot.plgdev() == '':
+            raise ValueError, "Plot device has not been initialize"
+        
+        plplot.pladv(self.__subpage)
+        plplot.plschr(0.0, self.__szchar)
+        
+        self.setColormap()
+        
+    def setScreenPos(self, width='small'):
+        
+        if width == 'small':
+            xi = 0.12; yi = 0.14; xw = 0.78; yw = 0.80
+        
+        if width == 'medium':
+            xi = 0.07; yi = 0.10; xw = 0.90; yw = 0.60
+            
+        xf = xi + xw
+        yf = yi + yw
+        
+        self.m_BaseGraph.setScreenPos([xi, xf], [yi, yf])    
+
+    def setup(self, subpage, title="", xlabel="", ylabel="", XAxisAsTime=False):
+        """
+        """
+        
+        self.m_BaseGraph.setOpt("bcnts","bcntsv")
+        self.m_BaseGraph.setup(title,
+                               xlabel,
+                               ylabel
+                               )
+        
+        self.setScreenPos(width='medium')
+        
+        if XAxisAsTime:
+            self.m_BaseGraph.setXAxisAsTime()
+        
+        self.__subpage = subpage
+#    def setRanges(self, xrange, yrange, zrange):
+#        
+#        self.m_BaseGraph.setRanges(xrange, yrange, zrange)
+    
+    def plotData(self, x, y=None, xmin=None, xmax=None, ymin=None, ymax=None, colline=1):
+        """
+        Inputs:
+            
+            x    :    Numpy array of dimension 1
+            y    :    Numpy array of dimension 1
+        
+        """
+        
+        try:
+            nX = numpy.shape(x)
+        except:
+            raise ValueError, "x is not a numpy array"
+        
+        if y == None: y = numpy.arange(nX)
+        
+        if xmin == None: xmin = x[0]
+        if xmax == None: xmax = x[-1]
+        if ymin == None: ymin = y[0]
+        if ymax == None: ymax = y[-1]
+        
+        self.m_BaseGraph.plotBox(xmin, xmax, ymin, ymax)
+        self.m_BaseGraph.basicLineTimePlot(x, y, xmin, xmax, ymin, ymax, colline)
+
+    def plotComplexData(self, x, y, xmin=None, xmax=None, ymin=None, ymax=None, colline=1, type='power'):
+        """
+        Inputs:
+            
+            x    :    Numpy array of dimension 1
+            y    :    Complex numpy array of dimension 1
+        
+        """
+        
+        try:
+            nX = numpy.shape(x)
+        except:
+            raise ValueError, "x is not a numpy array"
+        
+        try:
+            nY = numpy.shape(y)
+        except:
+            raise ValueError, "y is not a numpy array"
+        
+        if xmin == None: xmin = x[0]
+        if xmax == None: xmax = x[-1]
+        if ymin == None: ymin = y[0]
+        if ymax == None: ymax = y[-1]
+        
+        self.m_BaseGraph.plotBox(xmin, xmax, ymin, ymax)
+        
+        if type.lower() == 'power':
+            self.m_BaseGraph.basicLineTimePlot(x, abs(y), xmin, xmax, ymin, ymax, colline)
+        
+        if type.lower() == 'iq':
+            
+            self.m_BaseGraph.basicLineTimePlot(x, y.real, xmin, xmax, ymin, ymax, colline)
+            self.m_BaseGraph.basicLineTimePlot(x, y.imag, xmin, xmax, ymin, ymax, colline+1)
+
 class ColorPlot():
 
     
@@ -275,7 +333,7 @@ class ColorPlot():
         
         self.m_BaseGraph.setSubpage(subpage)
         self.m_BaseGraph.setSzchar(self.__szchar)
-        self.m_BaseGraph.setOpt("bcnts","bcnts")
+        self.m_BaseGraph.setOpt("bcnts","bcntsv")
         self.m_BaseGraph.setup(title,
                       xlabel,
                       ylabel,
@@ -315,14 +373,14 @@ class ColorPlot():
             
         self.showColorbar = showColorbar
         self.showPowerProfile = showPowerProfile
-        self.setPos()
+        self.setScreenPos()
         
         if XAxisAsTime:
             self.m_BaseGraph.setXAxisAsTime()
-        #self.setPos(xi = 0.05, yi = 0.18, xw = 0.92, yw = 0.74, xcmapw = 0.015, xpoww = 0.14, deltaxcmap = 0.01, deltaxpow = 0.02)
+        #self.setScreenPos(xi = 0.05, yi = 0.18, xw = 0.92, yw = 0.74, xcmapw = 0.015, xpoww = 0.14, deltaxcmap = 0.01, deltaxpow = 0.02)
         
     
-    def setPos(self, xi = 0.12, yi = 0.14, xw = 0.78, yw = 0.80, xcmapw = 0.05, xpoww = 0.24, deltaxcmap = 0.02, deltaxpow = 0.06):
+    def setScreenPos(self, xi = 0.12, yi = 0.14, xw = 0.78, yw = 0.80, xcmapw = 0.05, xpoww = 0.24, deltaxcmap = 0.02, deltaxpow = 0.06):
         
         if self.showColorbar:
             xw -= xcmapw + deltaxcmap
@@ -408,67 +466,6 @@ class ColorPlot():
             key = "powerprof"
             powObj = self.graphObjDict[key]
             powObj.basicXYPlot(power, heis)
-
-class LinearPlot():
-    
-    __szchar = 0.7
-    __xrange = None
-    __yrange = None
-    
-    m_BaseGraph = BaseGraph()
-    
-    def __init__(self):
-        
-        key = "linearplot"
-        self.m_BaseGraph.setName(key)
-        
-        self.graphObjDict[key] = self.m_BaseGraph
-    
-    def setup(self, subpage, title="", xlabel="", ylabel="", colormap="jet", XAxisAsTime=False):
-        """
-        """
-        
-        self.m_BaseGraph.setSubpage(subpage)
-        self.m_BaseGraph.setSzchar(self.__szchar)
-        self.m_BaseGraph.setOpt("bcnts","bcnts")
-        self.m_BaseGraph.setup(title,
-                               xlabel,
-                               ylabel,
-                               colormap)
-        
-        self.setPos()
-        
-        if XAxisAsTime:
-            self.m_BaseGraph.setXAxisAsTime()
-        #self.setPos(xi = 0.05, yi = 0.18, xw = 0.92, yw = 0.74, xcmapw = 0.015, xpoww = 0.14, deltaxcmap = 0.01, deltaxpow = 0.02)
-        
-    
-    def setPos(self, xi = 0.12, yi = 0.14, xw = 0.78, yw = 0.80):
-        
-        xf = xi + xw
-        yf = yi + yw
-        
-        self.m_BaseGraph.setScreenPos([xi, xf], [yi, yf])
-    
-    def setRanges(self, xrange, yrange, zrange):
-        
-        self.m_BaseGraph.setRanges(xrange, yrange, zrange)
-    
-    def plotData(self, x, y):
-        """
-        """
-        xmin = x[0]
-        xmax = x[-1]
-
-        ymin = y[0]
-        ymax = y[-1]
-           
-        if self.m_BaseGraph.hasNotRange:
-            self.setRanges([xmin, xmax], [ymin,ymax])
-        
-        self.m_BaseGraph.initSubpage()
-        self.m_BaseGraph.basicLineTimePlot(x, y)
-
 
 def cmap1_init(colormap="gray"):
     
