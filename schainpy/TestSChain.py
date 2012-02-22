@@ -23,7 +23,7 @@ class TestSChain():
     def setValues(self):
         
         self.path = '/home/roj-idl71/Data/RAWDATA/DP_Faraday/'
-        self.path = '/home/roj-idl71/Data/RAWDATA/IMAGING'
+        self.path = '/Users/danielangelsuarezmunoz/Documents/Projects/testWR'
         #self.path = '/remote/puma/2004_11/DVD/'
         self.startDateTime = datetime.datetime(2004,5,1,17,49,0)
         self.endDateTime = datetime.datetime(2012,5,1,18,10,0)

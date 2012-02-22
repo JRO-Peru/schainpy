@@ -35,13 +35,15 @@ class Voltage(Data):
         
         self.heights = None
         
-        self.noData = True
+        self.flagNoData = True
         
         self.nProfiles = None
         
         self.idProfile = None
         
         self.dataType = None
+        
+        self.flagResetProcessing = False
         
     def copy(self):
         obj = Voltage()
@@ -52,10 +54,12 @@ class Voltage(Data):
         
         obj.data = self.data
         obj.heights = self.heights
-        obj.noData = self.noData
+        obj.flagNoData = self.flagNoData
         
         obj.nProfiles = self.nProfiles
         obj.idProfile = self.idProfile
+        obj.dataType = self.dataType
+        obj.flagResetProcessing = self.flagResetProcessing
         
         return obj
         

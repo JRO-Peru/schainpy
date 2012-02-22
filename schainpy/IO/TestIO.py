@@ -20,20 +20,25 @@ class TestIO():
     def setValues(self):
         
         
-        self.path = '/Users/danielangelsuarezmunoz/Documents/Projects'
+        self.path = '/Users/danielangelsuarezmunoz/Documents/Projects/testWR'
         self.startDateTime = datetime.datetime(2007,5,1,17,49,0)
-        self.endDateTime = datetime.datetime(2007,5,1,18,10,0)
+        self.endDateTime = datetime.datetime(2007,5,1,18,15,0)
     
     def createVoltageObjects(self):
         path = os.path.split(os.getcwd())[0]
         sys.path.append(path)
         
-        from IO.Voltage import VoltageReader
+        from IO.VoltageIO import VoltageReader
+        from IO.VoltageIO import VoltageWriter
         from Model.Voltage import Voltage
         
         self.voltageModelObj = Voltage()
         self.voltageReaderObj = VoltageReader(self.voltageModelObj)
         self.voltageReaderObj.setup(self.path, self.startDateTime, self.endDateTime)
+        
+#        self.voltageWriterObj = VoltageWriter(self.voltageModelObj)
+#        self.voltageWriterObj.setup('/Users/danielangelsuarezmunoz/Documents/Projects/testWR')
+
     
     def testReadVoltage(self):
         while(not(self.voltageReaderObj.noMoreFiles)):
@@ -45,6 +50,8 @@ class TestIO():
             if self.voltageReaderObj.flagIsNewBlock:
                 print 'Block No %04d, Time: %s'%(self.voltageReaderObj.nReadBlocks,
                                                  datetime.datetime.fromtimestamp(self.voltageReaderObj.m_BasicHeader.utc))
+            
+#            self.voltageWriterObj.putData()
 
 if __name__ == '__main__':
     TestIO()

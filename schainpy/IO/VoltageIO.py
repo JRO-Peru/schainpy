@@ -531,7 +531,12 @@ class VoltageReader(DataReader):
         
         self.startDoy = startDateTime.timetuple().tm_yday
         self.endDoy = endDateTime.timetuple().tm_yday
-        #call fillHeaderValues() - to Data Object
+        
+        self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
+        self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+        self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+        self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
+        self.m_Voltage.dataType = self.__dataType
             
         self.__pathList = pathList
         self.filenameList = filenameList 
@@ -597,6 +602,8 @@ class VoltageReader(DataReader):
         self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
         self.m_Voltage.m_BasicHeader.utc = time
         self.m_Voltage.data = data
+        self.m_Voltage.flagNoData = False
+        self.m_Voltage.flagResetProcessing = self.flagResetProcessing
         self.m_Voltage.heights = self.__heights
         self.m_Voltage.idProfile = self.idProfile
         self.m_Voltage.dataType = self.__dataType
@@ -608,11 +615,8 @@ class VoltageReader(DataReader):
     
         return data
 
-
-
-
 class VoltageWriter(DataWriter):
-
+    __configHeaderFile = 'wrSetHeadet.txt'
     
     def __init__(self, m_Voltage = None):
         
@@ -621,13 +625,17 @@ class VoltageWriter(DataWriter):
         
         self.m_Voltage = m_Voltage
         
+        self.__path = None
+        
         self.__fp = None
+        
+        self.__format = None
     
         self.__blocksCounter = 0
         
         self.__setFile = None
         
-        self.__flagIsNewFile = 0
+        self.__flagIsNewFile = 1
         
         self.__buffer = 0
         
@@ -653,20 +661,53 @@ class VoltageWriter(DataWriter):
     
         self.m_ProcessingHeader = ProcessingHeader()
     
+    
+    def __writeBasicHeader(self, fp=None):
+        if fp == None:
+            fp = self.__fp
+            
+        self.m_BasicHeader.write(fp)
+    
+    def __wrSystemHeader(self,fp=None):
+        if fp == None:
+            fp = self.__fp
+            
+        self.m_SystemHeader.write(fp)
+    
+    def __wrRadarControllerHeader(self,fp=None):
+        if fp == None:
+            fp = self.__fp
+        
+        self.m_RadarControllerHeader.write(fp)
+        
+    def __wrProcessingHeader(self,fp=None):
+        if fp == None:
+            fp = self.__fp
+            
+        self.m_ProcessingHeader.write(fp)
+    
+    def __writeFirstHeader(self):
+        self.__writeBasicHeader()
+        self.__wrSystemHeader()
+        self.__wrRadarControllerHeader()
+        self.__wrProcessingHeader()
+        self.__dataType = self.m_Voltage.dataType
+    
+ 
     def __setNextFile(self):
+        
         setFile = self.__setFile
         ext = self.__ext
         path = self.__path
         
         setFile += 1
-         
-        if not(self.__blocksCounter >= self.m_ProcessingHeader.dataBlocksPerFile):
+        
+        if self.__fp != None:
             self.__fp.close()
-            return 0
         
         timeTuple = time.localtime(self.m_Voltage.m_BasicHeader.utc) # utc from m_Voltage
-        file = 'D%4.4d%3.3d%3.3d%s' % (timeTuple.tm_year,timeTuple.tm_doy,setFile,ext)
-        subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_doy) 
+        file = 'D%4.4d%3.3d%3.3d%s' % (timeTuple.tm_year,timeTuple.tm_yday,setFile,ext)
+        subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday) 
         tmp = os.path.join(path,subfolder)
         if not(os.path.exists(tmp)):
             os.mkdir(tmp)
@@ -674,7 +715,7 @@ class VoltageWriter(DataWriter):
         filename = os.path.join(path,subfolder,file)
         fp = open(filename,'wb')
         
-        
+        self.__blocksCounter = 0
         
         #guardando atributos 
         self.filename = filename
@@ -685,9 +726,9 @@ class VoltageWriter(DataWriter):
         
         print 'Writing the file: %s'%self.filename
         
+        self.__writeFirstHeader()
+        
         return 1
-            
-
     
     def __setNewBlock(self):
         if self.__fp == None:
@@ -696,21 +737,18 @@ class VoltageWriter(DataWriter):
         if self.__flagIsNewFile:
             return 1
         
-        #Bloques completados?
-        if self.__blocksCounter < self.m_ProcessingHeader.profilesPerBlock:
+        if self.__blocksCounter < self.m_ProcessingHeader.dataBlocksPerFile:
             self.__writeBasicHeader()
             return 1
         
         if not(self.__setNextFile()):
             return 0
         
-        self.__writeFirstHeader()
-        
         return 1
     
     def __writeBlock(self):
-        
-        numpy.save(self.__fp,self.__buffer)
+    
+        self.__buffer.tofile(self.__fp)
         
         self.__buffer = numpy.array([],self.__dataType)
         
@@ -724,37 +762,48 @@ class VoltageWriter(DataWriter):
         
         self.__blocksCounter += 1
     
+
     def writeNextBlock(self):
+        
         if not(self.__setNewBlock()):
             return 0
         
         self.__writeBlock()
         
         return 1
-    
+
     def __hasAllDataInBuffer(self):
         if self.__buffer_id >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
-    
+
     def putData(self):
         self.flagIsNewBlock = 0
         
-        if self.m_Voltage.noData:
+        if self.m_Voltage.flagNoData:
             return None
         
-        shape = self.m_Voltage.data.shape
+        if self.m_Voltage.flagResetProcessing:
+            self.__buffer = numpy.array([],self.__dataType)
+            self.__buffer_id = 0
+            self.__setNextFile()
+        
+        self.__setHeaderByObj()
+        
+        shape =  self.m_Voltage.data.shape
         data = numpy.zeros(shape,self.__dataType)
+        
         data['real'] = self.m_Voltage.data.real
         data['imag'] = self.m_Voltage.data.imag
+        
         data = data.reshape((-1))
         
         self.__buffer = numpy.hstack((self.__buffer,data))
         
         self.__buffer_id += 1
         
-        if __hasAllDataInBuffer():
+        if self.__hasAllDataInBuffer():
             self.writeNextBlock()
         
         
@@ -763,39 +812,118 @@ class VoltageWriter(DataWriter):
             return None
         
         return 1
-    
 
-    def setup(self,path,set=None,format=None):
+    def __setHeaderByObj(self):
+        self.m_BasicHeader = self.m_Voltage.m_BasicHeader.copy()
+        self.m_SystemHeader = self.m_Voltage.m_SystemHeader.copy()
+        self.m_RadarControllerHeader = self.m_Voltage.m_RadarControllerHeader.copy()
+        self.m_ProcessingHeader = self.m_Voltage.m_ProcessingHeader.copy()
+        self.__dataType = self.m_Voltage.dataType
+            
+    def __setHeaderByFile(self): 
+         
+        format = self.__format
+        header = ['Basic','System','RadarController','Processing']                       
         
-        if set == None:
-            set = -1
+        fmtFromFile = None
+        headerFromFile = None  
+
+        
+        fileTable = self.__configHeaderFile
+        
+        if os.access(fileTable, os.R_OK):
+            import re, string
+            
+            f = open(fileTable,'r')
+            lines = f.read()
+            f.close()
+            
+            #Delete comments into expConfig
+            while 1:
+                
+                startComment = string.find(lines.lower(),'#')
+                if startComment == -1:
+                    break
+                endComment = string.find(lines.lower(),'\n',startComment)
+                lines = string.replace(lines,lines[startComment:endComment+1],'', 1)
+            
+            while expFromFile == None:
+
+                currFmt = string.find(lines.lower(),'format="%s"' %(expName))
+                nextFmt = string.find(lines.lower(),'format',currFmt+10)
+                                   
+                if currFmt == -1:
+                    break
+                if nextFmt == -1:
+                    nextFmt = len(lines)-1  
+                             
+                fmtTable = lines[currFmt:nextFmt]
+                lines = lines[nextFmt:]    
+                
+                fmtRead = self.__getValueFromArg(fmtTable,'format')                
+                if fmtRead != format:
+                    continue                
+                fmtFromFile = fmtRead
+                
+                lines2 = fmtTable
+                
+                while headerFromFile == None:
+                    
+                    currHeader = string.find(lines2.lower(),'header="%s"' %(header))
+                    nextHeader = string.find(lines2.lower(),'header',currHeader+10) 
+                    
+                    if currHeader == -1:
+                        break
+                    if nextHeader == -1:
+                        nextHeader = len(lines2)-1
+                                        
+                    headerTable = lines2[currHeader:nextHeader]
+                    lines2 = lines2[nextHeader:]
+                    
+                    headerRead = self.__getValueFromArg(headerTable,'site')                
+                    if not(headerRead in header):
+                        continue                
+                    headerFromFile = headerRead
+                    
+                    if headerRead == 'Basic':
+                        self.m_BasicHeader.size = self.__getValueFromArg(headerTable,'size',lower=False)
+                        self.m_BasicHeader.version = self.__getValueFromArg(headerTable,'version',lower=False)
+                        self.m_BasicHeader.dataBlock = self.__getValueFromArg(headerTable,'dataBlock',lower=False)
+                        self.m_BasicHeader.utc = self.__getValueFromArg(headerTable,'utc',lower=False)
+                        self.m_BasicHeader.miliSecond = self.__getValueFromArg(headerTable,'miliSecond',lower=False)
+                        self.m_BasicHeader.timeZone = self.__getValueFromArg(headerTable,'timeZone',lower=False)
+                        self.m_BasicHeader.dstFlag = self.__getValueFromArg(headerTable,'dstFlag',lower=False)
+                        self.m_BasicHeader.errorCount = self.__getValueFromArg(headerTable,'errorCount',lower=False)
+
         else:
-            set -= 1
+            print "file access denied:%s"%fileTable
+            sys.exit(0)
+
+    def setup(self,path,set=0,format='rawdata'):
+        
         
         if format == 'hdf5':
             ext = '.hdf5'
+            format = 'hdf5'
             print 'call hdf5 library'
             return 0
         
         if format == 'rawdata':
             ext = '.r'
+            format = 'Jicamarca'
         
         #call to config_headers
-        
-        self.__setFile = set
-        
-        if not(self.__setNextFile()):
-            print "zzzzzzzzzzzz"
-            return 0
-        
-        self.__writeFirstHeader() # dentro de esta funcion se debe setear e __dataType
-        
+        #self.__setHeaderByFile()
+        self.__setHeaderByObj()
+        self.__path = path
+        self.__setFile = set - 1
+        self.__ext = ext
+        self.__format = format
         self.__buffer = numpy.array([],self.__dataType)
         
+        if not(self.__setNextFile()):
+            return 0
+        
+        
+        
     
-    
-    def __writeBasicHeader(self):
-        pass
-    
-    def __writeFirstHeader(self):
-        pass
