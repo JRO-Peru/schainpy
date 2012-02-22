@@ -180,7 +180,7 @@ class VoltageReader(DataReader):
         
         self.idProfile = 0
         
-        self.__buffer = 0
+        self.__buffer = None
         
         self.__buffer_id = 9999
     
@@ -542,6 +542,8 @@ class VoltageReader(DataReader):
         self.filenameList = filenameList 
         self.online = online
         
+        return 1 
+    
     def readNextBlock(self):
         """
         readNextBlock establece un nuevo bloque de datos a leer y los lee, si es que no existiese
@@ -584,36 +586,38 @@ class VoltageReader(DataReader):
         self.flagResetProcessing = 0
         self.flagIsNewBlock = 0
         
-        if self.__hasNotDataInBuffer():            
-            self.readNextBlock() 
-        
+        if self.__hasNotDataInBuffer():
+            self.readNextBlock()
+            
+            self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
+            self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+            self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+            self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
+            
+            self.m_Voltage.heights = self.__heights
+            self.m_Voltage.dataType = self.__dataType
+            
         if self.noMoreFiles == 1:
             print 'Process finished'
             return None
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
-        data = self.__buffer[self.__buffer_id,:,:]
         
         time = self.m_BasicHeader.utc + self.__buffer_id*self.__ippSeconds
-        
-        self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
-        self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-        self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-        self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
-        self.m_Voltage.m_BasicHeader.utc = time
-        self.m_Voltage.data = data
+        self.m_Voltage.m_BasicHeader.utc = time  
+        self.m_Voltage.data = self.__buffer[self.__buffer_id,:,:]
         self.m_Voltage.flagNoData = False
         self.m_Voltage.flagResetProcessing = self.flagResetProcessing
-        self.m_Voltage.heights = self.__heights
+        
         self.m_Voltage.idProfile = self.idProfile
-        self.m_Voltage.dataType = self.__dataType
+        
         
         self.__buffer_id += 1
         self.idProfile += 1
         
         #call setData - to Data Object
     
-        return data
+        return 1
 
 class VoltageWriter(DataWriter):
     __configHeaderFile = 'wrSetHeadet.txt'
@@ -637,13 +641,15 @@ class VoltageWriter(DataWriter):
         
         self.__flagIsNewFile = 1
         
-        self.__buffer = 0
+        self.__buffer = None
         
         self.__buffer_id = 0
         
         self.__dataType = None
         
         self.__ext = None
+        
+        self.__shapeBuffer = None
         
         self.nWriteBlocks = 0 
         
@@ -731,8 +737,9 @@ class VoltageWriter(DataWriter):
         return 1
     
     def __setNewBlock(self):
+        
         if self.__fp == None:
-            return 0
+            self.__setNextFile()
         
         if self.__flagIsNewFile:
             return 1
@@ -747,10 +754,17 @@ class VoltageWriter(DataWriter):
         return 1
     
     def __writeBlock(self):
-    
-        self.__buffer.tofile(self.__fp)
         
-        self.__buffer = numpy.array([],self.__dataType)
+        data = numpy.zeros(self.__shapeBuffer, self.__dataType)
+        
+        data['real'] = self.__buffer.real
+        data['imag'] = self.__buffer.imag
+        
+        data = data.reshape((-1))
+            
+        data.tofile(self.__fp)
+        
+        self.__buffer.fill(0)
         
         self.__buffer_id = 0 
         
@@ -779,41 +793,35 @@ class VoltageWriter(DataWriter):
         return 0
 
     def putData(self):
+        
         self.flagIsNewBlock = 0
         
         if self.m_Voltage.flagNoData:
-            return None
+            return 0
         
         if self.m_Voltage.flagResetProcessing:
-            self.__buffer = numpy.array([],self.__dataType)
+            
+            self.__buffer.fill(0)
+            
             self.__buffer_id = 0
             self.__setNextFile()
         
-        self.__setHeaderByObj()
-        
-        shape =  self.m_Voltage.data.shape
-        data = numpy.zeros(shape,self.__dataType)
-        
-        data['real'] = self.m_Voltage.data.real
-        data['imag'] = self.m_Voltage.data.imag
-        
-        data = data.reshape((-1))
-        
-        self.__buffer = numpy.hstack((self.__buffer,data))
+        self.__buffer[self.__buffer_id,:,:] = self.m_Voltage.data
         
         self.__buffer_id += 1
         
         if self.__hasAllDataInBuffer():
+                     
+            self.__getHeader()
             self.writeNextBlock()
         
-        
         if self.noMoreFiles:
-            print 'Process finished'
-            return None
+            #print 'Process finished'
+            return 0
         
         return 1
 
-    def __setHeaderByObj(self):
+    def __getHeader(self):
         self.m_BasicHeader = self.m_Voltage.m_BasicHeader.copy()
         self.m_SystemHeader = self.m_Voltage.m_SystemHeader.copy()
         self.m_RadarControllerHeader = self.m_Voltage.m_RadarControllerHeader.copy()
@@ -899,7 +907,7 @@ class VoltageWriter(DataWriter):
             print "file access denied:%s"%fileTable
             sys.exit(0)
 
-    def setup(self,path,set=0,format='rawdata'):
+    def setup(self, path, set=0, format='rawdata'):
         
         
         if format == 'hdf5':
@@ -914,16 +922,24 @@ class VoltageWriter(DataWriter):
         
         #call to config_headers
         #self.__setHeaderByFile()
-        self.__setHeaderByObj()
+        
         self.__path = path
         self.__setFile = set - 1
         self.__ext = ext
         self.__format = format
-        self.__buffer = numpy.array([],self.__dataType)
         
-        if not(self.__setNextFile()):
-            return 0
+        self.__getHeader()
+        self.__shapeBuffer =  (self.m_ProcessingHeader.profilesPerBlock,
+                               self.m_ProcessingHeader.numHeights,
+                               self.m_SystemHeader.numChannels )
+            
+        self.__buffer = numpy.zeros(self.__shapeBuffer, numpy.dtype('complex'))
         
+#        if not(self.__setNextFile()):
+#            return 0
+        return 1
+        
+            
         
         
     
