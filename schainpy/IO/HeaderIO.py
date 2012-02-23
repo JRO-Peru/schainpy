@@ -291,11 +291,17 @@ class ProcessingHeader:
         self.deltaHeight = self.samplingWindow['dh']
         self.samplesWin = self.samplingWindow['nsa']
         self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
+        
         if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
             self.numCode = numpy.fromfile(fp,'<u4',1)
             self.numBaud = numpy.fromfile(fp,'<u4',1)
             self.codes = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
-
+        
+        if self.processFlags & PROCFLAG.SHIFT_FFT_DATA == PROCFLAG.SHIFT_FFT_DATA:
+            self.shif_fft = True
+        else:
+            self.shif_fft = False
+            
         
         return 1
 
@@ -322,6 +328,7 @@ class ProcessingHeader:
         obj.numBaud = self.numBaud
         obj.codes = self.codes
         
+        obj.shif_fft = self.shif_fft
         return obj
     
     def write(self, fp):

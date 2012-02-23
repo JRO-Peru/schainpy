@@ -45,6 +45,8 @@ class Voltage(Data):
         
         self.flagResetProcessing = False
         
+        self.noise = noise
+        
     def copy(self):
         obj = Voltage()
         obj.m_BasicHeader = self.m_BasicHeader.copy()
@@ -60,6 +62,8 @@ class Voltage(Data):
         obj.idProfile = self.idProfile
         obj.dataType = self.dataType
         obj.flagResetProcessing = self.flagResetProcessing
+        
+        obj.noise = self.noise
         
         return obj
         

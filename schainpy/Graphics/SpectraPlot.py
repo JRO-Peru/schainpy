@@ -59,16 +59,23 @@ class Spectrum():
     def setup(self, titleList=None, xlabelList=None, ylabelList=None, showColorbar=False, showPowerProfile=True, XAxisAsTime=False):
         
         nChan = int(self.m_Spectra.m_SystemHeader.numChannels)
+        channels = range(nChan)
         
-        myTitle = ""
-        myXlabel = ""
-        myYlabel = ""
+        myXlabel = "Radial Velocity (m/s)"
+        myYlabel = "Range (km)"
         
-        for i in range(nChan):
+        for i in channels:
             if titleList != None:
                 myTitle = titleList[i]
                 myXlabel = xlabelList[i]
                 myYlabel = ylabelList[i]
+            
+            if self.m_Spectra.noise != None:
+                noise = '%4.2fdB' %(self.m_Spectra.noise[i])
+            else:
+                noise = '--'
+            
+            myTitle = "Channel: %d - Noise: %s" %(i, noise)
                 
             self.__addGraph(i+1,
                             title=myTitle,
@@ -86,7 +93,7 @@ class Spectrum():
         nx = int(numpy.sqrt(self.nGraphs)+1)
         #ny = int(self.nGraphs/nx)
         
-        plplot.plsetopt("geometry", "%dx%d" %(400*nx, 300*nx))
+        plplot.plsetopt("geometry", "%dx%d" %(300*nx, 240*nx))
         plplot.plsdev("xcairo")
         plplot.plscolbg(255,255,255)
         plplot.plscol0(1,0,0,0)
@@ -110,7 +117,7 @@ class Spectrum():
         if not(self.__isPlotIni):
             self.iniPlot()
         
-        data = numpy.log10(self.m_Spectra.data_spc)
+        data = 10.*numpy.log10(self.m_Spectra.data_spc)
         
         nX, nY, nChan = numpy.shape(data)
         
@@ -127,7 +134,7 @@ class Spectrum():
         plplot.plbop()
         for i in range(self.nGraphs):
             self.graphObjList[i].iniSubpage()
-            self.graphObjList[i].plotData(data[:,:,i],
+            self.graphObjList[i].plotData(data[i,:,:],
                                           x,
                                           y,
                                           xmin=xmin,

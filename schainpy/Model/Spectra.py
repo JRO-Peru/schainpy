@@ -46,6 +46,8 @@ class Spectra(Data):
         self.nProfiles = None
         
         self.dataType = None
+        
+        self.noise = None
 
     def copy(self):
         obj = Spectra()
@@ -62,6 +64,8 @@ class Spectra(Data):
         obj.noData = self.noData
         
         obj.nProfiles = self.nProfiles
+        
+        obj.noise = self.noise
         
         return obj
         

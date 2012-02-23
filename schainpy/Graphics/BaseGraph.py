@@ -211,7 +211,7 @@ class BaseGraph:
         self.ylabel = ylabel
         self.__colormap = colormap
           
-    def plotBox(self, xmin, xmax, ymin, ymax):
+    def plotBox(self, xmin, xmax, ymin, ymax, xopt=None, yopt=None):
         """
         
         """
@@ -224,7 +224,12 @@ class BaseGraph:
                       float(ymin),
                       float(ymax)
                       )
-        plplot.plbox(self.__xopt, 0.0, 0, self.__yopt, 0.0, 0)
+        
+        if xopt == None: xopt = self.__xopt
+        if yopt == None: yopt = self.__yopt 
+        
+        plplot.plbox(xopt, 0.0, 0, yopt, 0.0, 0)
+        
         plplot.pllab(self.xlabel, self.ylabel, self.title)
 
     
@@ -497,7 +502,7 @@ class ColorPlot():
             powObj.setName(key)
             powObj.setOpt("bcntg","bc")
             powObj.setup(title="Power Profile",
-                         xlabel="dBs",
+                         xlabel="dB",
                          ylabel="")
             
             self.graphObjDict[key] = powObj
@@ -529,7 +534,7 @@ class ColorPlot():
     def setScreenPos(self, width='small'):
         
         if width == 'small':
-            xi = 0.12; yi = 0.12; xw = 0.86; yw = 0.70; xcmapw = 0.05; xpoww = 0.26; deltaxcmap = 0.02; deltaxpow = 0.06
+            xi = 0.13; yi = 0.12; xw = 0.86; yw = 0.70; xcmapw = 0.05; xpoww = 0.26; deltaxcmap = 0.02; deltaxpow = 0.05
         
         if width == 'medium':
             xi = 0.07; yi = 0.10; xw = 0.90; yw = 0.60; xcmapw = 0.05; xpoww = 0.24; deltaxcmap = 0.02; deltaxpow = 0.06
@@ -599,7 +604,7 @@ class ColorPlot():
             cmapObj.colorbarPlot(0., 1., zmin, zmax)
         
         if self.__showPowerProfile:
-            power = numpy.average(data, axis=0)
+            power = numpy.max(data, axis=0)
             
             step = (ymax - ymin)/(nY-1)
             heis = numpy.arange(ymin, ymax + step, step)
@@ -610,7 +615,10 @@ class ColorPlot():
             plplot.pllsty(2)
             powObj.plotBox(zmin, zmax, ymin, ymax)
             plplot.pllsty(1)
+            powObj.plotBox(zmin, zmax, ymin, ymax, xopt='bc', yopt='bc')
+            plplot.plcol0(9)
             powObj.basicXYPlot(power, heis)
+            plplot.plcol0(1)
     
 
 class ColorPlotX():

@@ -33,7 +33,7 @@ class TestSChain():
         #self.path = '/remote/puma/2004_11/DVD/'
         
         self.ppath = "/home/roj-idl71/tmp/data"
-        self.startDateTime = datetime.datetime(2011,1,1,17,49,0)
+        self.startDateTime = datetime.datetime(2011,1,24,18,20,0)
         self.endDateTime = datetime.datetime(2011,1,30,18,10,0)
     
     def createObjects(self):        
@@ -54,7 +54,7 @@ class TestSChain():
         ini = time.time()
         while(True):
             self.readerObj.getData()
-            self.plotObj.plotData(showColorbar=False, showPowerProfile=True)
+            self.plotObj.plotData(zmin=40, zmax=140, showColorbar=True, showPowerProfile=True)
             
 #            self.writerObj.putData()
             

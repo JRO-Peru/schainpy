@@ -385,9 +385,17 @@ class SpectraReader(DataReader):
         cspc  = numpy.fromfile(self.__fp, self.__dataType, int(pts2read*Npair_CrossSpectra))
         dc  = numpy.fromfile(self.__fp, self.__dataType, int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
                 
-        spc = spc.reshape((self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, Npair_SelfSpectra))
-        cspc = cspc.reshape((self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, Npair_CrossSpectra))
-        dc = dc.reshape((self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels))
+        spc = spc.reshape((Npair_SelfSpectra, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock))
+        cspc = cspc.reshape((Npair_CrossSpectra, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock))
+        dc = dc.reshape((self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights))
+        
+        if not(self.m_ProcessingHeader.shif_fft):
+            spc = numpy.roll(spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2)
+            cspc = numpy.roll(cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2)
+        
+        spc = numpy.transpose(spc, (0,2,1))
+        cspc = numpy.transpose(cspc, (0,2,1))
+        #dc = numpy.transpose(dc, (0,2,1))
         
         data_spc = spc
         data_cspc = cspc['real'] + cspc['imag']*1j
