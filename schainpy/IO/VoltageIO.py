@@ -84,9 +84,14 @@ class VoltageReader(DataReader):
         
         while(True):
             
-            readerObj.getData()
+            #to get one profile 
+            profile =  readerObj.getData()
             
-            print readerObj.m_Voltage.data
+            #print the profile
+            print profile
+            
+            #If you want to see all datablock
+            print readerObj.datablock
             
             if readerObj.noMoreFiles:
                 break
@@ -180,9 +185,9 @@ class VoltageReader(DataReader):
         
         self.idProfile = 0
         
-        self.__buffer = None
+        self.datablock = None
         
-        self.__buffer_id = 9999
+        self.datablock_id = 9999
     
     def __rdSystemHeader(self,fp=None):
         if fp == None:
@@ -349,9 +354,9 @@ class VoltageReader(DataReader):
         
         Variables afectadas:
         
-            self.__buffer_id
+            self.datablock_id
             
-            self.__buffer
+            self.datablock
             
             self.__flagIsNewFile
             
@@ -371,9 +376,9 @@ class VoltageReader(DataReader):
         
         data = junk['real'] + junk['imag']*1j
         
-        self.__buffer_id = 0
+        self.datablock_id = 0
         
-        self.__buffer = data
+        self.datablock = data
         
         self.__flagIsNewFile = 0
         
@@ -384,7 +389,7 @@ class VoltageReader(DataReader):
         self.nReadBlocks += 1
  
     def __hasNotDataInBuffer(self):
-        if self.__buffer_id >= self.m_ProcessingHeader.profilesPerBlock:
+        if self.datablock_id >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
@@ -577,7 +582,7 @@ class VoltageReader(DataReader):
             
         Variables afectadas:
             self.m_Voltage
-            self.__buffer_id
+            self.datablock_id
             self.idProfile
             
         Excepciones:
@@ -603,21 +608,21 @@ class VoltageReader(DataReader):
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         
-        time = self.m_BasicHeader.utc + self.__buffer_id*self.__ippSeconds
+        time = self.m_BasicHeader.utc + self.datablock_id*self.__ippSeconds
         self.m_Voltage.m_BasicHeader.utc = time  
-        self.m_Voltage.data = self.__buffer[self.__buffer_id,:,:]
+        self.m_Voltage.data = self.datablock[self.datablock_id,:,:]
         self.m_Voltage.flagNoData = False
         self.m_Voltage.flagResetProcessing = self.flagResetProcessing
         
         self.m_Voltage.idProfile = self.idProfile
         
         
-        self.__buffer_id += 1
+        self.datablock_id += 1
         self.idProfile += 1
         
         #call setData - to Data Object
     
-        return 1
+        return self.m_Voltage.data
 
 class VoltageWriter(DataWriter):
     __configHeaderFile = 'wrSetHeadet.txt'
@@ -641,9 +646,9 @@ class VoltageWriter(DataWriter):
         
         self.__flagIsNewFile = 1
         
-        self.__buffer = None
+        self.datablock = None
         
-        self.__buffer_id = 0
+        self.datablock_id = 0
         
         self.__dataType = None
         
@@ -757,16 +762,16 @@ class VoltageWriter(DataWriter):
         
         data = numpy.zeros(self.__shapeBuffer, self.__dataType)
         
-        data['real'] = self.__buffer.real
-        data['imag'] = self.__buffer.imag
+        data['real'] = self.datablock.real
+        data['imag'] = self.datablock.imag
         
         data = data.reshape((-1))
             
         data.tofile(self.__fp)
         
-        self.__buffer.fill(0)
+        self.datablock.fill(0)
         
-        self.__buffer_id = 0 
+        self.datablock_id = 0 
         
         self.__flagIsNewFile = 0
         
@@ -787,7 +792,7 @@ class VoltageWriter(DataWriter):
         return 1
 
     def __hasAllDataInBuffer(self):
-        if self.__buffer_id >= self.m_ProcessingHeader.profilesPerBlock:
+        if self.datablock_id >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
@@ -801,14 +806,14 @@ class VoltageWriter(DataWriter):
         
         if self.m_Voltage.flagResetProcessing:
             
-            self.__buffer.fill(0)
+            self.datablock.fill(0)
             
-            self.__buffer_id = 0
+            self.datablock_id = 0
             self.__setNextFile()
         
-        self.__buffer[self.__buffer_id,:,:] = self.m_Voltage.data
+        self.datablock[self.datablock_id,:,:] = self.m_Voltage.data
         
-        self.__buffer_id += 1
+        self.datablock_id += 1
         
         if self.__hasAllDataInBuffer():
                      
@@ -933,7 +938,7 @@ class VoltageWriter(DataWriter):
                                self.m_ProcessingHeader.numHeights,
                                self.m_SystemHeader.numChannels )
             
-        self.__buffer = numpy.zeros(self.__shapeBuffer, numpy.dtype('complex'))
+        self.datablock = numpy.zeros(self.__shapeBuffer, numpy.dtype('complex'))
         
 #        if not(self.__setNextFile()):
 #            return 0

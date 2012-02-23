@@ -9,6 +9,141 @@ Created on Feb 7, 2012
 import numpy
 import plplot
 
+def cmap1_init(colormap="gray"):
+    
+    ncolor = None
+    rgb_lvl = None
+    
+    # Routine for defining a specific color map 1 in HLS space.
+    # if gray is true, use basic grayscale variation from half-dark to light.
+    # otherwise use false color variation from blue (240 deg) to red (360 deg).
+
+    # Independent variable of control points.
+    i = numpy.array((0., 1.))
+    if colormap=="gray":
+        ncolor = 256
+        # Hue for control points.  Doesn't matter since saturation is zero.
+        h = numpy.array((0., 0.))
+        # Lightness ranging from half-dark (for interest) to light.
+        l = numpy.array((0.5, 1.))
+        # Gray scale has zero saturation
+        s = numpy.array((0., 0.))
+        
+        # number of cmap1 colours is 256 in this case.
+        plplot.plscmap1n(ncolor)
+        # Interpolate between control points to set up cmap1.
+        plplot.plscmap1l(0, i, h, l, s)
+        
+        return None
+        
+    if colormap=="br_green":
+        ncolor = 256
+        # Hue ranges from blue (240 deg) to red (0 or 360 deg)
+        h = numpy.array((240., 0.))
+        # Lightness and saturation are constant (values taken from C example).
+        l = numpy.array((0.6, 0.6))
+        s = numpy.array((0.8, 0.8))
+
+        # number of cmap1 colours is 256 in this case.
+        plplot.plscmap1n(ncolor)
+        # Interpolate between control points to set up cmap1.
+        plplot.plscmap1l(0, i, h, l, s)
+        
+        return None
+    
+    if colormap=="tricolor":
+        ncolor = 3
+        # Hue ranges from blue (240 deg) to red (0 or 360 deg)
+        h = numpy.array((240., 0.))
+        # Lightness and saturation are constant (values taken from C example).
+        l = numpy.array((0.6, 0.6))
+        s = numpy.array((0.8, 0.8))
+
+        # number of cmap1 colours is 256 in this case.
+        plplot.plscmap1n(ncolor)
+        # Interpolate between control points to set up cmap1.
+        plplot.plscmap1l(0, i, h, l, s)
+        
+        return None
+    
+    if colormap == 'rgb' or colormap == 'rgb666':
+        
+        color_sz = 6
+        ncolor = color_sz*color_sz*color_sz
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(color_sz):
+            for gi in range(color_sz):
+                for bi in range(color_sz):
+                    r[ind] = ri/(color_sz-1.0)
+                    g[ind] = gi/(color_sz-1.0)
+                    b[ind] = bi/(color_sz-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [6,6,6]  #Levels for RGB colors
+        
+    if colormap == 'rgb676':
+        ncolor = 6*7*6
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(8):
+            for gi in range(8):
+                for bi in range(4):
+                    r[ind] = ri/(6-1.0)
+                    g[ind] = gi/(7-1.0)
+                    b[ind] = bi/(6-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [6,7,6]  #Levels for RGB colors
+    
+    if colormap == 'rgb685':
+        ncolor = 6*8*5
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(8):
+            for gi in range(8):
+                for bi in range(4):
+                    r[ind] = ri/(6-1.0)
+                    g[ind] = gi/(8-1.0)
+                    b[ind] = bi/(5-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [6,8,5]  #Levels for RGB colors
+                    
+    if colormap == 'rgb884':
+        ncolor = 8*8*4
+        pos = numpy.zeros((ncolor))
+        r = numpy.zeros((ncolor))
+        g = numpy.zeros((ncolor))
+        b = numpy.zeros((ncolor))
+        ind = 0
+        for ri in range(8):
+            for gi in range(8):
+                for bi in range(4):
+                    r[ind] = ri/(8-1.0)
+                    g[ind] = gi/(8-1.0)
+                    b[ind] = bi/(4-1.0)
+                    pos[ind] = ind/(ncolor-1.0)
+                    ind += 1
+        rgb_lvl = [8,8,4]  #Levels for RGB colors
+    
+    if ncolor == None:
+        raise ValueError, "The colormap selected is not valid"
+    
+    plplot.plscmap1n(ncolor)
+    plplot.plscmap1l(1, pos, r, g, b)
+    
+    return rgb_lvl
+
 class BaseGraph:
     """
     
@@ -97,7 +232,6 @@ class BaseGraph:
         data = numpy.arange(256)
         data = numpy.reshape(data, (1,-1))
         
-        self.plotBox(xmin, xmax, ymin, ymax)
         plplot.plimage(data,
                        float(xmin),
                        float(xmax),
@@ -197,7 +331,9 @@ class LinearPlot():
         key = "linearplot"
         self.m_BaseGraph = BaseGraph()
         self.m_BaseGraph.setName(key)
-
+        
+        self.__subpage = 0
+        
     def setColormap(self, colormap="br_green"):
         
         if colormap == None:
@@ -307,6 +443,177 @@ class LinearPlot():
             self.m_BaseGraph.basicLineTimePlot(x, y.imag, xmin, xmax, ymin, ymax, colline+1)
 
 class ColorPlot():
+        
+    def __init__(self):
+        
+        self.graphObjDict = {}
+        
+        self.__subpage = 0
+        self.__showColorbar = False
+        self.__showPowerProfile = True
+        
+        self.__szchar = 0.7
+        self.__xrange = None
+        self.__yrange = None
+        self.__zrange = None
+        
+        key = "colorplot"
+        self.m_BaseGraph = BaseGraph()
+        self.m_BaseGraph.setName(key)
+
+    def setup(self, subpage, title="", xlabel="Frequency", ylabel="Range", colormap="jet", showColorbar=False, showPowerProfile=False, XAxisAsTime=False):
+        """
+        """
+        
+        self.m_BaseGraph.setOpt("bcnts","bcntsv")
+        self.m_BaseGraph.setup(title,
+                               xlabel,
+                               ylabel
+                               )
+        
+        self.__subpage = subpage
+        self.__colormap = colormap
+        self.__showColorbar = showColorbar
+        self.__showPowerProfile = showPowerProfile        
+        
+        if showColorbar:
+            key = "colorbar"
+            
+            cmapObj = BaseGraph()
+            cmapObj.setName(key)
+            cmapObj.setOpt("bc","bcmt")
+            cmapObj.setup(title="dBs",
+                          xlabel="",
+                          ylabel="",
+                          colormap=colormap)
+            
+            self.graphObjDict[key] = cmapObj
+            
+        
+        if showPowerProfile:
+            key = "powerprof"
+            
+            powObj = BaseGraph()
+            powObj.setName(key)
+            powObj.setOpt("bcntg","bc")
+            powObj.setup(title="Power Profile",
+                         xlabel="dBs",
+                         ylabel="")
+            
+            self.graphObjDict[key] = powObj
+            
+        self.setScreenPos(width='small')
+        
+        if XAxisAsTime:
+            self.m_BaseGraph.setXAxisAsTime()
+        
+
+           
+    def setColormap(self, colormap="br_green"):
+        
+        if colormap == None:
+            colormap = self.__colormap
+            
+        cmap1_init(colormap)
+        
+    def iniSubpage(self):
+        
+        if plplot.plgdev() == '':
+            raise ValueError, "Plot device has not been initialize"
+        
+        plplot.pladv(self.__subpage)
+        plplot.plschr(0.0, self.__szchar)
+        
+        self.setColormap()
+            
+    def setScreenPos(self, width='small'):
+        
+        if width == 'small':
+            xi = 0.12; yi = 0.12; xw = 0.86; yw = 0.70; xcmapw = 0.05; xpoww = 0.26; deltaxcmap = 0.02; deltaxpow = 0.06
+        
+        if width == 'medium':
+            xi = 0.07; yi = 0.10; xw = 0.90; yw = 0.60; xcmapw = 0.05; xpoww = 0.24; deltaxcmap = 0.02; deltaxpow = 0.06
+        
+        if self.__showColorbar:
+            xw -= xcmapw + deltaxcmap
+        
+        if self.__showPowerProfile:
+            xw -= xpoww + deltaxpow
+                      
+        xf = xi + xw
+        yf = yi + yw
+        xcmapf = xf
+        
+        self.m_BaseGraph.setScreenPos([xi, xf], [yi, yf])
+
+        if self.__showColorbar:
+            xcmapi = xf + deltaxcmap
+            xcmapf = xcmapi + xcmapw
+            
+            key = "colorbar"
+            cmapObj = self.graphObjDict[key]
+            cmapObj.setScreenPos([xcmapi, xcmapf], [yi, yf])
+        
+        if self.__showPowerProfile:
+            
+            xpowi = xcmapf + deltaxpow
+            xpowf = xpowi + xpoww
+            
+            key = "powerprof"
+            powObj = self.graphObjDict[key]
+            powObj.setScreenPos([xpowi, xpowf], [yi, yf])    
+
+
+    
+    def plotData(self, data, x=None, y=None, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
+        """
+        Inputs:
+            
+            x    :    Numpy array of dimension 1
+            y    :    Numpy array of dimension 1
+        
+        """
+        
+        try:
+            nX, nY = numpy.shape(data)
+        except:
+            raise ValueError, "data is not a numpy array"
+        
+        if x == None: x = numpy.arange(nX)
+        if y == None: y = numpy.arange(nY)
+        
+        if xmin == None: xmin = x[0]
+        if xmax == None: xmax = x[-1]
+        if ymin == None: ymin = y[0]
+        if ymax == None: ymax = y[-1]
+        if zmin == None: zmin = numpy.nanmin(data)
+        if zmax == None: zmax = numpy.nanmax(data)
+        
+        self.m_BaseGraph.plotBox(xmin, xmax, ymin, ymax)
+        self.m_BaseGraph.basicPcolorPlot(data, x, y, xmin, xmax, ymin, ymax, zmin, zmax)
+        
+        if self.__showColorbar:
+            key = "colorbar"
+            cmapObj = self.graphObjDict[key]
+            cmapObj.plotBox(0., 1., zmin, zmax)
+            cmapObj.colorbarPlot(0., 1., zmin, zmax)
+        
+        if self.__showPowerProfile:
+            power = numpy.average(data, axis=0)
+            
+            step = (ymax - ymin)/(nY-1)
+            heis = numpy.arange(ymin, ymax + step, step)
+            
+            key = "powerprof"
+            powObj = self.graphObjDict[key]
+            
+            plplot.pllsty(2)
+            powObj.plotBox(zmin, zmax, ymin, ymax)
+            plplot.pllsty(1)
+            powObj.basicXYPlot(power, heis)
+    
+
+class ColorPlotX():
 
     
     graphObjDict = {}
@@ -325,8 +632,27 @@ class ColorPlot():
         key = "colorplot"
         self.m_BaseGraph.setName(key)
         
+        self.__subpage = 0
+        
         self.graphObjDict[key] = self.m_BaseGraph
-    
+        
+    def setColormap(self, colormap="br_green"):
+        
+        if colormap == None:
+            colormap = self.__colormap
+            
+        cmap1_init(colormap)
+        
+    def iniSubpage(self):
+        
+        if plplot.plgdev() == '':
+            raise ValueError, "Plot device has not been initialize"
+        
+        plplot.pladv(self.__subpage)
+        plplot.plschr(0.0, self.__szchar)
+        
+        self.setColormap()
+        
     def setup(self, subpage, title="", xlabel="", ylabel="", colormap="jet", showColorbar=False, showPowerProfile=False, XAxisAsTime=False):
         """
         """
@@ -467,137 +793,52 @@ class ColorPlot():
             powObj = self.graphObjDict[key]
             powObj.basicXYPlot(power, heis)
 
-def cmap1_init(colormap="gray"):
+if __name__ == '__main__':
     
-    ncolor = None
-    rgb_lvl = None
+    import numpy
+    plplot.plsetopt("geometry", "%dx%d" %(350*2, 300*2))
+    plplot.plsdev("xwin")
+    plplot.plscolbg(255,255,255)
+    plplot.plscol0(1,0,0,0)
+    plplot.plspause(False)
+    plplot.plinit()
+    plplot.plssub(2, 2)
     
-    # Routine for defining a specific color map 1 in HLS space.
-    # if gray is true, use basic grayscale variation from half-dark to light.
-    # otherwise use false color variation from blue (240 deg) to red (360 deg).
+    nx = 64
+    ny = 100
+    
+    data = numpy.random.uniform(-50,50,(nx,ny))
+    
+    baseObj = ColorPlot()
+    specObj = ColorPlot()
+    baseObj1 = ColorPlot()
+    specObj1 = ColorPlot()
+    
+    baseObj.setup(1, "Spectrum", "Frequency", "Range", "br_green", True, True)
+    specObj.setup(2, "Spectrum", "Frequency", "Range", "br_green", False, True)
 
-    # Independent variable of control points.
-    i = numpy.array((0., 1.))
-    if colormap=="gray":
-        ncolor = 256
-        # Hue for control points.  Doesn't matter since saturation is zero.
-        h = numpy.array((0., 0.))
-        # Lightness ranging from half-dark (for interest) to light.
-        l = numpy.array((0.5, 1.))
-        # Gray scale has zero saturation
-        s = numpy.array((0., 0.))
+    baseObj1.setup(3, "Spectrum", "Frequency", "Range", "br_green", False, True)
+    specObj1.setup(4, "Spectrum", "Frequency", "Range", "br_green", False, True)
         
-        # number of cmap1 colours is 256 in this case.
-        plplot.plscmap1n(ncolor)
-        # Interpolate between control points to set up cmap1.
-        plplot.plscmap1l(0, i, h, l, s)
-        
-        return None
-        
-    if colormap=="br_green":
-        ncolor = 256
-        # Hue ranges from blue (240 deg) to red (0 or 360 deg)
-        h = numpy.array((240., 0.))
-        # Lightness and saturation are constant (values taken from C example).
-        l = numpy.array((0.6, 0.6))
-        s = numpy.array((0.8, 0.8))
+    data = numpy.random.uniform(-50,50,(nx,ny))
+    
+    plplot.plbop()
+    baseObj.iniSubpage()
+    baseObj.plotData(data)
+    
+    specObj.iniSubpage()
+    specObj.plotData(data)
+    
+    baseObj1.iniSubpage()
+    baseObj1.plotData(data)
+    
+    specObj1.iniSubpage()
+    specObj1.plotData(data)
+    
+    plplot.plflush()      
+    
+    plplot.plspause(1)
+    plplot.plend()
+    exit(0)
 
-        # number of cmap1 colours is 256 in this case.
-        plplot.plscmap1n(ncolor)
-        # Interpolate between control points to set up cmap1.
-        plplot.plscmap1l(0, i, h, l, s)
-        
-        return None
-    
-    if colormap=="tricolor":
-        ncolor = 3
-        # Hue ranges from blue (240 deg) to red (0 or 360 deg)
-        h = numpy.array((240., 0.))
-        # Lightness and saturation are constant (values taken from C example).
-        l = numpy.array((0.6, 0.6))
-        s = numpy.array((0.8, 0.8))
 
-        # number of cmap1 colours is 256 in this case.
-        plplot.plscmap1n(ncolor)
-        # Interpolate between control points to set up cmap1.
-        plplot.plscmap1l(0, i, h, l, s)
-        
-        return None
-    
-    if colormap == 'rgb' or colormap == 'rgb666':
-        
-        color_sz = 6
-        ncolor = color_sz*color_sz*color_sz
-        pos = numpy.zeros((ncolor))
-        r = numpy.zeros((ncolor))
-        g = numpy.zeros((ncolor))
-        b = numpy.zeros((ncolor))
-        ind = 0
-        for ri in range(color_sz):
-            for gi in range(color_sz):
-                for bi in range(color_sz):
-                    r[ind] = ri/(color_sz-1.0)
-                    g[ind] = gi/(color_sz-1.0)
-                    b[ind] = bi/(color_sz-1.0)
-                    pos[ind] = ind/(ncolor-1.0)
-                    ind += 1
-        rgb_lvl = [6,6,6]  #Levels for RGB colors
-        
-    if colormap == 'rgb676':
-        ncolor = 6*7*6
-        pos = numpy.zeros((ncolor))
-        r = numpy.zeros((ncolor))
-        g = numpy.zeros((ncolor))
-        b = numpy.zeros((ncolor))
-        ind = 0
-        for ri in range(8):
-            for gi in range(8):
-                for bi in range(4):
-                    r[ind] = ri/(6-1.0)
-                    g[ind] = gi/(7-1.0)
-                    b[ind] = bi/(6-1.0)
-                    pos[ind] = ind/(ncolor-1.0)
-                    ind += 1
-        rgb_lvl = [6,7,6]  #Levels for RGB colors
-    
-    if colormap == 'rgb685':
-        ncolor = 6*8*5
-        pos = numpy.zeros((ncolor))
-        r = numpy.zeros((ncolor))
-        g = numpy.zeros((ncolor))
-        b = numpy.zeros((ncolor))
-        ind = 0
-        for ri in range(8):
-            for gi in range(8):
-                for bi in range(4):
-                    r[ind] = ri/(6-1.0)
-                    g[ind] = gi/(8-1.0)
-                    b[ind] = bi/(5-1.0)
-                    pos[ind] = ind/(ncolor-1.0)
-                    ind += 1
-        rgb_lvl = [6,8,5]  #Levels for RGB colors
-                    
-    if colormap == 'rgb884':
-        ncolor = 8*8*4
-        pos = numpy.zeros((ncolor))
-        r = numpy.zeros((ncolor))
-        g = numpy.zeros((ncolor))
-        b = numpy.zeros((ncolor))
-        ind = 0
-        for ri in range(8):
-            for gi in range(8):
-                for bi in range(4):
-                    r[ind] = ri/(8-1.0)
-                    g[ind] = gi/(8-1.0)
-                    b[ind] = bi/(4-1.0)
-                    pos[ind] = ind/(ncolor-1.0)
-                    ind += 1
-        rgb_lvl = [8,8,4]  #Levels for RGB colors
-    
-    if ncolor == None:
-        raise ValueError, "The colormap selected is not valid"
-    
-    plplot.plscmap1n(ncolor)
-    plplot.plscmap1l(1, pos, r, g, b)
-    
-    return rgb_lvl
