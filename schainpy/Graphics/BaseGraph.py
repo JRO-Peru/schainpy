@@ -211,7 +211,7 @@ class BaseGraph:
         self.ylabel = ylabel
         self.__colormap = colormap
           
-    def plotBox(self, xmin, xmax, ymin, ymax, xopt=None, yopt=None):
+    def plotBox(self, xmin, xmax, ymin, ymax, xopt=None, yopt=None, nolabels=False):
         """
         
         """
@@ -230,7 +230,8 @@ class BaseGraph:
         
         plplot.plbox(xopt, 0.0, 0, yopt, 0.0, 0)
         
-        plplot.pllab(self.xlabel, self.ylabel, self.title)
+        if not(nolabels):
+            plplot.pllab(self.xlabel, self.ylabel, self.title)
 
     
     def colorbarPlot(self, xmin=0., xmax=1., ymin=0., ymax=1.):
@@ -457,7 +458,7 @@ class ColorPlot():
         self.__showColorbar = False
         self.__showPowerProfile = True
         
-        self.__szchar = 0.7
+        self.__szchar = 0.65
         self.__xrange = None
         self.__yrange = None
         self.__zrange = None
@@ -486,7 +487,7 @@ class ColorPlot():
             
             cmapObj = BaseGraph()
             cmapObj.setName(key)
-            cmapObj.setOpt("bc","bcmt")
+            cmapObj.setOpt("bc","bcmtv")
             cmapObj.setup(title="dBs",
                           xlabel="",
                           ylabel="",
@@ -534,10 +535,10 @@ class ColorPlot():
     def setScreenPos(self, width='small'):
         
         if width == 'small':
-            xi = 0.13; yi = 0.12; xw = 0.86; yw = 0.70; xcmapw = 0.05; xpoww = 0.26; deltaxcmap = 0.02; deltaxpow = 0.05
+            xi = 0.13; yi = 0.12; xw = 0.86; yw = 0.70; xcmapw = 0.04; xpoww = 0.25; deltaxcmap = 0.02; deltaxpow = 0.06
         
         if width == 'medium':
-            xi = 0.07; yi = 0.10; xw = 0.90; yw = 0.60; xcmapw = 0.05; xpoww = 0.24; deltaxcmap = 0.02; deltaxpow = 0.06
+            xi = 0.07; yi = 0.10; xw = 0.90; yw = 0.60; xcmapw = 0.04; xpoww = 0.24; deltaxcmap = 0.02; deltaxpow = 0.06
         
         if self.__showColorbar:
             xw -= xcmapw + deltaxcmap
@@ -594,12 +595,18 @@ class ColorPlot():
         if zmin == None: zmin = numpy.nanmin(data)
         if zmax == None: zmax = numpy.nanmax(data)
         
+        plplot.plschr(0.0, self.__szchar)
+        
         self.m_BaseGraph.plotBox(xmin, xmax, ymin, ymax)
         self.m_BaseGraph.basicPcolorPlot(data, x, y, xmin, xmax, ymin, ymax, zmin, zmax)
         
         if self.__showColorbar:
+            
+            
             key = "colorbar"
             cmapObj = self.graphObjDict[key]
+            
+            plplot.plschr(0.0, self.__szchar-0.05)
             cmapObj.plotBox(0., 1., zmin, zmax)
             cmapObj.colorbarPlot(0., 1., zmin, zmax)
         
@@ -613,9 +620,13 @@ class ColorPlot():
             powObj = self.graphObjDict[key]
             
             plplot.pllsty(2)
-            powObj.plotBox(zmin, zmax, ymin, ymax)
+            plplot.plschr(0.0, self.__szchar-0.05)
+            powObj.plotBox(zmin, zmax, ymin, ymax, nolabels=True)
+            
             plplot.pllsty(1)
+            plplot.plschr(0.0, self.__szchar)
             powObj.plotBox(zmin, zmax, ymin, ymax, xopt='bc', yopt='bc')
+            
             plplot.plcol0(9)
             powObj.basicXYPlot(power, heis)
             plplot.plcol0(1)

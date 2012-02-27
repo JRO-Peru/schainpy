@@ -7,6 +7,7 @@ Created on Feb 7, 2012
 
 import os, sys
 import numpy
+import datetime
 import plplot
 
 path = os.path.split(os.getcwd())[0]
@@ -102,7 +103,10 @@ class Spectrum():
         plplot.pladv(0)
         plplot.plssub(nx, nx)
         
-        self.__isPlotIni = True     
+        self.__nx = nx
+        self.__ny = nx
+        self.__isPlotIni = True
+         
     
     def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, titleList=None, xlabelList=None, ylabelList=None, showColorbar=False, showPowerProfile=True, XAxisAsTime=False):
         
@@ -124,6 +128,9 @@ class Spectrum():
         x = numpy.arange(nX)        
         y = self.m_Spectra.heights
         
+        thisDatetime = datetime.datetime.fromtimestamp(self.m_Spectra.m_BasicHeader.utc)
+        txtDate = "Self Spectra - Date: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        
         if xmin == None: xmin = x[0]
         if xmax == None: xmax = x[-1]
         if ymin == None: ymin = y[0]
@@ -132,6 +139,8 @@ class Spectrum():
         if zmax == None: zmax = numpy.nanmax(abs(data))
         
         plplot.plbop()
+        
+        plplot.plssub(self.__nx, self.__ny)
         for i in range(self.nGraphs):
             self.graphObjList[i].iniSubpage()
             self.graphObjList[i].plotData(data[i,:,:],
@@ -143,8 +152,11 @@ class Spectrum():
                                           ymax=ymax,
                                           zmin=zmin,
                                           zmax=zmax)
-            
         
+        plplot.plssub(1,0)
+        plplot.pladv(0)
+        plplot.plvpor(0., 1., 0., 1.)
+        plplot.plmtex("t",-1., 0.5, 0.5, txtDate)
         plplot.plflush()
         plplot.pleop()
     
