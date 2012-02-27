@@ -21,32 +21,34 @@ from DataIO import DataWriter
 
 from Model.Spectra import Spectra
 
-def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
-    """
-    Esta funcion determina si un archivo de datos  en formato Jicamarca(.r) se encuentra
-    o no dentro del rango de fecha especificado.
-    
-    Inputs:
+
+def isThisFileinRange( filename, startUTSeconds, endUTSeconds ):
+    """ 
+    Desc        : 
+        Esta funcion determina si un archivo de datos  en formato Jicamarca(.r) se encuentra
+        o no dentro del rango de fecha especificado.
+
+    Inputs      : 
         filename            :    nombre completo del archivo de datos en formato Jicamarca (.r)
-        
+                        
         startUTSeconds      :    fecha inicial del rango seleccionado. La fecha esta dada en
                                  segundos contados desde 01/01/1970.
+
         endUTSeconds        :    fecha final del rango seleccionado. La fecha esta dada en
                                  segundos contados desde 01/01/1970.
-    
-    Return:
+         
+    Return      : 
         Boolean    :    Retorna True si el archivo de datos contiene datos en el rango de
                         fecha especificado, de lo contrario retorna False.
-    
-    Excepciones:
+         
+    Excepciones : 
         Si el archivo no existe o no puede ser abierto
         Si la cabecera no puede ser leida.
-        
     """
     m_BasicHeader = BasicHeader()
     
     try:
-        fp = open(filename,'rb')
+        fp = open( filename,'rb' ) #lectura binaria
     except:
         raise IOError, "The file %s can't be opened" %(filename)
     
@@ -61,19 +63,19 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     return 1
 
 
-class SpectraReader(DataReader):
-    """
-    Esta clase permite leer datos de espectros desde archivos procesados (.pdata). La lectura
-    de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones: 
-    perfiless*alturas*canales) son almacenados en la variable "buffer".
-     
-    Esta clase contiene instancias (objetos) de las clases BasicHeader, SystemHeader, 
-    RadarControllerHeader y Spectra. Los tres primeros se usan para almacenar informacion de la
-    cabecera de datos (metadata), y el cuarto (Spectra) para obtener y almacenar un bloque de
-    datos desde el "buffer" cada vez que se ejecute el metodo "getData".
+class SpectraReader( DataReader ):
+    """ 
+    Desc        : 
+        Esta clase permite leer datos de espectros desde archivos procesados (.pdata). La lectura
+        de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones) 
+        son almacenados en tres buffer's para el Self Spectra, el Cross Spectra y el DC Channel.
+
+        Esta clase contiene instancias (objetos) de las clases BasicHeader, SystemHeader, 
+        RadarControllerHeader y Spectra. Los tres primeros se usan para almacenar informacion de la
+        cabecera de datos (metadata), y el cuarto (Spectra) para obtener y almacenar un bloque de
+        datos desde el "buffer" cada vez que se ejecute el metodo "getData".
     
-    Example:
-    
+    Example     :     
         dpath = "/home/myuser/data"
         
         startTime = datetime.datetime(2010,1,20,0,0,0,0,0,0)
@@ -98,29 +100,28 @@ class SpectraReader(DataReader):
     #speed of light
     __c = 3E8
     
+    
     def __init__( self, m_Spectra = None ):
-        """
-        Inicializador de la clase SpectraReader para la lectura de datos de espectros.
-        
-        Input:
+        """ 
+        Desc        : 
+            Inicializador de la clase SpectraReader para la lectura de datos de espectros.
+
+        Inputs      : 
             m_Spectra    :    Objeto de la clase Spectra. Este objeto sera utilizado para
                               almacenar un perfil de datos cada vez que se haga un requerimiento
                               (getData). El perfil sera obtenido a partir del buffer de datos,
                               si el buffer esta vacio se hara un nuevo proceso de lectura de un
                               bloque de datos.
                               Si este parametro no es pasado se creara uno internamente.
-        
-        Variables afectadas:
+         
+        Affected    : 
             self.m_Spectra
             self.m_BasicHeader
             self.m_SystemHeader
             self.m_RadarControllerHeader
             self.m_ProcessingHeader
-            
-        
-        Return:
-            Void
-        
+
+        Return      : Nada
         """
         if m_Spectra == None:
             m_Spectra = Spectra()
@@ -180,7 +181,13 @@ class SpectraReader(DataReader):
         
         self.__buffer_spc = None
         self.__buffer_cspc = None
-        self.__buffer_dc  = None
+        self.__buffer_dc = None
+
+        self.Npair_SelfSpectra = 0
+        self.Npair_CrossSpectra = 0
+        
+        self.pts2read_SelfSpectra = 0
+        self.pts2read_CrossSpectra = 0
         
         self.__buffer_id = 0
         
@@ -192,31 +199,105 @@ class SpectraReader(DataReader):
         
         self.nChannels = 0
         
+        
     def __rdSystemHeader( self, fp=None ):
+        """ 
+        Desc        : 
+            Lectura del System Header
+
+        Inputs      : 
+            fp    :    file pointer
+         
+        Affected    : Nada
+            self.m_SystemHeader
+
+        Return      : Nada
+        """
         if fp == None:
             fp = self.__fp
             
         self.m_SystemHeader.read( fp )
+
     
     def __rdRadarControllerHeader( self, fp=None ):
+        """ 
+        Desc        : 
+            Lectura del Radar Controller Header
+
+        Inputs      : 
+            fp    :    file pointer
+         
+        Affected    : 
+            self.m_RadarControllerHeader
+
+        Return      : Nada
+        """
         if fp == None:
             fp = self.__fp
             
         self.m_RadarControllerHeader.read(fp)
+
         
     def __rdProcessingHeader( self,fp=None ):
+        """ 
+        Desc        : 
+            Lectura del Processing Header
+
+        Inputs      : 
+            fp    :    file pointer
+         
+        Affected    : 
+            self.m_ProcessingHeader
+
+        Return      : Nada
+        """
         if fp == None:
             fp = self.__fp
             
         self.m_ProcessingHeader.read(fp)
 
+
     def __rdBasicHeader( self, fp=None ):
+        """ 
+        Desc        : 
+            Lectura del  Basic Header
+
+        Inputs      : 
+            fp    :    file pointer
+         
+        Affected    : 
+            self.m_BasicHeader
+
+        Return      : Nada
+        """
         if fp == None:
             fp = self.__fp
             
         self.m_BasicHeader.read(fp)
+
     
     def __readFirstHeader( self ):
+        """ 
+        Desc        : 
+            Lectura del First Header, es decir el Basic Header y el Long Header
+            
+        Affected    : Nada
+            self.m_BasicHeader
+            self.m_SystemHeader
+            self.m_RadarControllerHeader
+            self.m_ProcessingHeader
+            self.firstHeaderSize
+            self.__heights
+            self.__dataType
+            self.__fileSizeByHeader
+            self.__ippSeconds
+            self.Npair_SelfSpectra
+            self.Npair_CrossSpectra
+            self.pts2read_SelfSpectra
+            self.pts2read_CrossSpectra
+            
+        Return      : None
+        """
         self.__rdBasicHeader()
         self.__rdSystemHeader()
         self.__rdRadarControllerHeader()
@@ -254,10 +335,43 @@ class SpectraReader(DataReader):
         self.__fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
         self.__ippSeconds       = 2 * 1000 * self.m_RadarControllerHeader.ipp/self.__c
         
+        self.Npair_SelfSpectra = 0
+        self.Npair_CrossSpectra = 0
+        
+        for i in range( 0, self.m_ProcessingHeader.totalSpectra*2, 2 ):
+            if self.m_ProcessingHeader.spectraComb[i] == self.m_ProcessingHeader.spectraComb[i+1]:
+                self.Npair_SelfSpectra = self.Npair_SelfSpectra + 1 
+            else:
+                self.Npair_CrossSpectra = self.Npair_CrossSpectra + 1
+        
+        pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights
+        self.pts2read_SelfSpectra = int( pts2read * self.Npair_SelfSpectra )
+        self.pts2read_CrossSpectra = int( pts2read * self.Npair_CrossSpectra )
+
+
     def __setNextFileOnline( self ):
         return 1
 
+
     def __setNextFileOffline( self ):
+        """ 
+        Desc        : 
+            Busca el siguiente file dentro de un folder que tenga suficiente data para ser leida
+            
+        Affected    : 
+            self.__flagIsNewFile
+            self.__idFile
+            self.filename
+            self.fileSize
+            self.__fp
+
+        Return      : 
+            0    : si un determinado file no puede ser abierto
+            1    : si el file fue abierto con exito 
+        
+        Excepciones : 
+            Si un determinado file no puede ser abierto
+        """
         idFile = self.__idFile
 
         while(True):
@@ -294,7 +408,23 @@ class SpectraReader(DataReader):
         
         return 1
 
-    def __setNextFile(self):
+
+    def __setNextFile( self ):
+        """ 
+        Desc        : 
+            Determina el siguiente file a leer y si hay uno disponible lee el First Header
+            
+        Affected    : 
+            self.m_BasicHeader
+            self.m_SystemHeader
+            self.m_RadarControllerHeader
+            self.m_ProcessingHeader
+            self.firstHeaderSize
+
+        Return      : 
+            0    :    Si no hay files disponibles
+            1    :    Si hay mas files disponibles
+        """
         if self.online:
             newFile = self.__setNextFileOnline()
         else:
@@ -307,7 +437,20 @@ class SpectraReader(DataReader):
         
         return 1
     
+    
     def __setNewBlock( self ):
+        """ 
+        Desc        : 
+            Lee el Basic Header y posiciona le file pointer en la posicion inicial del bloque a leer
+
+        Affected    : 
+            self.flagResetProcessing
+            self.ns
+
+        Return      : 
+            0    :    Si el file no tiene un Basic Header que pueda ser leido
+            1    :    Si se pudo leer el Basic Header
+        """
         if self.__fp == None:
             return 0
         
@@ -337,66 +480,48 @@ class SpectraReader(DataReader):
         return 1
     
 
-
     def __readBlock(self):
         """
-        __readBlock lee el bloque de datos desde la posicion actual del puntero del archivo
-        (self.__fp) y actualiza todos los parametros relacionados al bloque de datos
-        (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
-        es seteado a 0
+        Desc        : 
+            __readBlock lee el bloque de datos desde la posicion actual del puntero del archivo
+            (self.__fp) y actualiza todos los parametros relacionados al bloque de datos
+            (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
+            es seteado a 0
         
-        Inputs:
-            None
-            
         Return:
             None
         
         Variables afectadas:
-        
             self.__buffer_id
-            
-            self.__buffer_sspc
-            
             self.__flagIsNewFile
-            
             self.flagIsNewBlock
-            
             self.nReadBlocks
-            
+            self.__buffer_spc
+            self.__buffer_cspc
+            self.__buffer_dc
         """
-        Npair_SelfSpectra = 0
-        Npair_CrossSpectra = 0
-        
-        for i in range( 0,self.m_ProcessingHeader.totalSpectra*2,2 ):
-            if self.m_ProcessingHeader.spectraComb[i] == self.m_ProcessingHeader.spectraComb[i+1]:
-                Npair_SelfSpectra = Npair_SelfSpectra + 1 
-            else:
-                Npair_CrossSpectra = Npair_CrossSpectra + 1
-                
-#        self.__buffer_sspc = numpy.concatenate( (data_sspc,data_cspc,data_dcc), axis=0 )
-        
         self.__buffer_id = 0
         self.__flagIsNewFile = 0
         self.flagIsNewBlock = 1
 
-        pts2read = self.m_ProcessingHeader.profilesPerBlock*self.m_ProcessingHeader.numHeights
-        
-        spc  = numpy.fromfile(self.__fp, self.__dataType[0], int(pts2read*Npair_SelfSpectra))
-        cspc  = numpy.fromfile(self.__fp, self.__dataType, int(pts2read*Npair_CrossSpectra))
-        dc  = numpy.fromfile(self.__fp, self.__dataType, int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
+        spc = numpy.fromfile( self.__fp, self.__dataType[0], self.pts2read_SelfSpectra )
+        cspc = numpy.fromfile( self.__fp, self.__dataType, self.pts2read_CrossSpectra )
+        dc = numpy.fromfile( self.__fp, self.__dataType, int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
                 
-        spc = spc.reshape((Npair_SelfSpectra, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock))
-        cspc = cspc.reshape((Npair_CrossSpectra, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock))
-        dc = dc.reshape((self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights))
+        spc = spc.reshape( (self.Npair_SelfSpectra, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
+
+        cspc = cspc.reshape( (self.Npair_CrossSpectra, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
+        dc = dc.reshape( (self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights) ) #transforma a un arreglo 2D
         
-        if not(self.m_ProcessingHeader.shif_fft):
-            spc = numpy.roll(spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2)
-            cspc = numpy.roll(cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2)
+        if not( self.m_ProcessingHeader.shif_fft ):
+            spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+            cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         
-        spc = numpy.transpose(spc, (0,2,1))
-        cspc = numpy.transpose(cspc, (0,2,1))
+        spc = numpy.transpose( spc, (0,2,1) )
+        cspc = numpy.transpose( cspc, (0,2,1) )
         #dc = numpy.transpose(dc, (0,2,1))
-        
+
+        """
         data_spc = spc
         data_cspc = cspc['real'] + cspc['imag']*1j
         data_dc = dc['real'] + dc['imag']*1j
@@ -404,7 +529,11 @@ class SpectraReader(DataReader):
         self.__buffer_spc = data_spc
         self.__buffer_cspc = data_cspc
         self.__buffer_dc  = data_dc
-        
+        """
+        self.__buffer_spc = spc
+        self.__buffer_cspc = cspc['real'] + cspc['imag']*1j
+        self.__buffer_dc = dc['real'] + dc['imag']*1j
+
         self.__flagIsNewFile = 0
         
         self.flagIsNewBlock = 1
@@ -412,20 +541,22 @@ class SpectraReader(DataReader):
         self.nReadBlocks += 1
         
  
-    def __hasNotDataInBuffer(self):
+    def __hasNotDataInBuffer( self ):
         return 1
+    
 
-    def __searchFiles(self, path, startDateTime, endDateTime, set=None, expLabel = "", ext = ".pdata"):
+    def __searchFiles( self, path, startDateTime, endDateTime, set=None, expLabel = "", ext = ".pdata" ):
         """
-        __searchFiles realiza una busqueda de los archivos que coincidan con los parametros
-        especificados y se encuentren ubicados en el path indicado. Para realizar una busqueda
-        correcta la estructura de directorios debe ser la siguiente:
+        Desc        : 
+            __searchFiles realiza una busqueda de los archivos que coincidan con los parametros
+            especificados y se encuentren ubicados en el path indicado. Para realizar una busqueda
+            correcta la estructura de directorios debe ser la siguiente:
         
-        ...path/D[yyyy][ddd]/expLabel/D[yyyy][ddd][sss].ext
+            ...path/D[yyyy][ddd]/expLabel/D[yyyy][ddd][sss].ext
         
-        [yyyy]: anio
-        [ddd] : dia del anio
-        [sss] : set del archivo        
+            [yyyy]: anio
+            [ddd] : dia del anio
+            [sss] : set del archivo        
         
         Inputs:
             path           :    Directorio de datos donde se realizara la busqueda. Todos los
@@ -458,9 +589,6 @@ class SpectraReader(DataReader):
                                   como fuente para leer los bloque de datos, si se termina
                                   de leer todos los bloques de datos de un determinado 
                                   archivo se pasa al siguiente archivo de la lista.
-             
-        Excepciones:
-        
         """
         
         print "Searching files ..."
@@ -505,11 +633,12 @@ class SpectraReader(DataReader):
     
     def setup( self, path, startDateTime, endDateTime=None, set=None, expLabel = "", ext = ".pdata", online = 0 ):
         """
-        setup configura los parametros de lectura de la clase SpectraReader.
+        Desc        : 
+            setup configura los parametros de lectura de la clase SpectraReader.
         
-        Si el modo de lectura es offline, primero se realiza una busqueda de todos los archivos
-        que coincidan con los parametros especificados; esta lista de archivos son almacenados en
-        self.filenameList.
+            Si el modo de lectura es offline, primero se realiza una busqueda de todos los archivos
+            que coincidan con los parametros especificados; esta lista de archivos son almacenados en
+            self.filenameList.
         
         Input:
             path                :    Directorios donde se ubican los datos a leer. Dentro de este
@@ -529,19 +658,25 @@ class SpectraReader(DataReader):
             
             ext                 :    Extension de los archivos a leer. Por defecto .r
             
-            online              :    
+            online              :    Si es == a 0 entonces busca files que cumplan con las condiciones dadas 
             
         Return:
+            0    :    Si no encuentra files que cumplan con las condiciones dadas
+            1    :    Si encuentra files que cumplan con las condiciones dadas
         
         Affected:
-        
-        Excepciones:
-        
-        Example:       
-        
+            self.startUTCSeconds
+            self.endUTCSeconds
+            self.startYear 
+            self.endYear
+            self.startDoy
+            self.endDoy
+            self.__pathList
+            self.filenameList 
+            self.online
         """
         if online == 0:
-            pathList, filenameList = self.__searchFiles(path, startDateTime, endDateTime, set, expLabel, ext)
+            pathList, filenameList = self.__searchFiles( path, startDateTime, endDateTime, set, expLabel, ext )
         
         self.__idFile = -1
         
@@ -564,12 +699,18 @@ class SpectraReader(DataReader):
         self.online = online
         
         return 1
+    
         
     def readNextBlock(self):
-        """
-        readNextBlock establece un nuevo bloque de datos a leer y los lee, si es que no existiese
-        mas bloques disponibles en el archivo actual salta al siguiente.
-        
+        """ 
+        Desc: 
+            Establece un nuevo bloque de datos a leer y los lee, si es que no existiese
+            mas bloques disponibles en el archivo actual salta al siguiente.
+
+        Affected: 
+            self.__lastUTTime
+
+        Return: None
         """
 
         if not( self.__setNewBlock() ):
@@ -584,23 +725,20 @@ class SpectraReader(DataReader):
    
     def getData(self):
         """
-        getData copia el buffer de lectura a la clase "Spectra",
-        con todos los parametros asociados a este (metadata). cuando no hay datos en el buffer de
-        lectura es necesario hacer una nueva lectura de los bloques de datos usando "readNextBlock"
+        Desc: 
+            Copia el buffer de lectura a la clase "Spectra",
+            con todos los parametros asociados a este (metadata). cuando no hay datos en el buffer de
+            lectura es necesario hacer una nueva lectura de los bloques de datos usando "readNextBlock"
         
-        Inputs:
-            None
-            
         Return:
-            data    :    retorna un bloque de datos (nFFTs * alturas * canales) copiados desde el
-                         buffer. Si no hay mas archivos a leer retorna None.
+            0    :    Si no hay mas archivos disponibles
+            1    :    Si hizo una buena copia del buffer
             
         Variables afectadas:
             self.m_Spectra
             self.__buffer_id
-            
-        Excepciones:
-        
+            self.flagResetProcessing
+            self.flagIsNewBlock
         """
 
         self.flagResetProcessing = 0
@@ -621,7 +759,6 @@ class SpectraReader(DataReader):
             return 0
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
-        #print type(self.__buffer_sspc)
                 
         time = self.m_BasicHeader.utc + self.__buffer_id*self.__ippSeconds
         
@@ -631,13 +768,30 @@ class SpectraReader(DataReader):
         self.m_Spectra.data_dc = self.__buffer_dc
         
         #call setData - to Data Object
-    
         return 1
 
 
-class SpectraWriter(DataWriter):
+class SpectraWriter( DataWriter ):
+    """ 
+    Desc: 
+        Esta clase permite escribir datos de espectros a archivos procesados (.pdata). La escritura
+        de los datos siempre se realiza por bloques. 
+    """
     
     def __init__(self):
+        """ 
+        Desc        : 
+            Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
+         
+        Affected    : 
+            self.m_Spectra
+            self.m_BasicHeader
+            self.m_SystemHeader
+            self.m_RadarControllerHeader
+            self.m_ProcessingHeader
+
+        Return      : None
+        """
         if m_Spectra == None:
             m_Spectra = Spectra()    
                                                                                                                     
@@ -651,7 +805,7 @@ class SpectraWriter(DataWriter):
         
         self.__flagIsNewFile = 0
         
-        self.__buffer_sspc = 0
+        self.__buffer_spc = 0
         
         self.__buffer_id = 0
         
@@ -674,15 +828,31 @@ class SpectraWriter(DataWriter):
         self.m_RadarControllerHeader = RadarControllerHeader()
     
         self.m_ProcessingHeader = ProcessingHeader()
+
     
     def __setNextFile(self):
+        """ 
+        Desc: 
+            Determina el siguiente file que sera escrito
+
+        Affected: 
+            self.filename
+            self.__subfolder
+            self.__fp
+            self.__setFile
+            self.__flagIsNewFile
+
+        Return:
+            0    :    Si el archivo no puede ser escrito
+            1    :    Si el archivo esta listo para ser escrito
+        """
         setFile = self.__setFile
         ext = self.__ext
         path = self.__path
         
         setFile += 1
          
-        if not(self.__blocksCounter >= self.m_ProcessingHeader.dataBlocksPerFile):
+        if not( self.__blocksCounter >= self.m_ProcessingHeader.dataBlocksPerFile ):
             self.__fp.close()
             return 0
         
@@ -707,9 +877,16 @@ class SpectraWriter(DataWriter):
         
         return 1
             
-
     
-    def __setNewBlock(self):
+    def __setNewBlock( self ):
+        """
+        Desc:
+            Si es un nuevo file escribe el First Header caso contrario escribe solo el Basic Header
+        
+        Return:
+            0    :    si no pudo escribir nada
+            1    :    Si escribio el Basic el First Header
+        """        
         if self.__fp == None:
             return 0
         
@@ -727,12 +904,28 @@ class SpectraWriter(DataWriter):
         self.__writeFirstHeader()
         
         return 1
+
     
     def __writeBlock(self):
+        """
+        Desc:
+            Escribe el buffer en el file designado
+            
+        Return: None
         
-        numpy.save(self.__fp,self.__buffer_sspc)
+        Affected:
+            self.__buffer_spc
+            self.__buffer_id
+            self.__flagIsNewFile
+            self.flagIsNewBlock
+            self.nWriteBlocks
+            self.__blocksCounter    
+            
+        Return: None
+        """
+        numpy.save(self.__fp,self.__buffer_spc)
         
-        self.__buffer_sspc = numpy.array([],self.__dataType)
+        self.__buffer_spc = numpy.array([],self.__dataType)
         
         self.__buffer_id = 0 
         
@@ -744,21 +937,52 @@ class SpectraWriter(DataWriter):
         
         self.__blocksCounter += 1
     
+    
     def writeNextBlock(self):
+        """
+        Desc:
+            Selecciona el bloque siguiente de datos y los escribe en un file
+            
+        Return: 
+            0    :    Si no hizo pudo escribir el bloque de datos 
+            1    :    Si no pudo escribir el bloque de datos
+        """
         if not(self.__setNewBlock()):
             return 0
         
         self.__writeBlock()
         
         return 1
+
     
-    def __hasAllDataInBuffer(self):
+    def __hasAllDataInBuffer( self ):
+        """
+        Desc:
+            Determina si se tiene toda la data en el buffer
+            
+        Return: 
+            0    :    Si no tiene toda la data 
+            1    :    Si tiene toda la data
+        """
         if self.__buffer_id >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
+
     
-    def putData(self):
+    def putData( self ):
+        """
+        Desc:
+            Setea un bloque de datos y luego los escribe en un file 
+            
+        Return: 
+            None :    Si no hay data o no hay mas files que puedan escribirse 
+            1    :    Si se escribio la data de un bloque en un file
+
+        Affected:
+            self.__buffer_spc
+            self.__buffer_id
+        """
         self.flagIsNewBlock = 0
         
         if self.m_Spectra.noData:
@@ -770,13 +994,12 @@ class SpectraWriter(DataWriter):
         data['imag'] = self.m_Spectra.data.imag
         data = data.reshape((-1))
         
-        self.__buffer_sspc = numpy.hstack((self.__buffer_sspc,data))
+        self.__buffer_spc = numpy.hstack((self.__buffer_spc,data))
         
         self.__buffer_id += 1
         
         if __hasAllDataInBuffer():
-            self.writeNextBlock()
-        
+            self.writeNextBlock()        
         
         if self.noMoreFiles:
             print 'Process finished'
@@ -785,8 +1008,15 @@ class SpectraWriter(DataWriter):
         return 1
     
 
-    def setup(self,path,set=None,format=None):
-        
+    def setup( self, set=None, format=None ):
+        """
+        Desc: 
+            Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
+            
+        Inputs:
+            set       :    el seteo del file a salvar
+            format    :    formato en el cual sera salvado un file
+        """
         if set == None:
             set = -1
         else:
@@ -804,18 +1034,18 @@ class SpectraWriter(DataWriter):
         
         self.__setFile = set
         
-        if not(self.__setNextFile()):
+        if not( self.__setNextFile() ):
             print "zzzzzzzzzzzz"
             return 0
         
         self.__writeFirstHeader() # dentro de esta funcion se debe setear e __dataType
         
-        self.__buffer_sspc = numpy.array([],self.__dataType)
+        self.__buffer_spc = numpy.array( [],self.__dataType )
         
-    
     
     def __writeBasicHeader(self):
         pass
-    
+
+   
     def __writeFirstHeader(self):
         pass
