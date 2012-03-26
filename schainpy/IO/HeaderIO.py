@@ -104,7 +104,7 @@ class SystemHeader:
         obj.numProfiles = self.numProfiles
         obj.numChannels = self.numChannels
         obj.adcResolution = self.adcResolution
-        self.pciDioBusWidth = self.pciDioBusWidth
+        obj.pciDioBusWidth = self.pciDioBusWidth
         
         
         return obj
@@ -272,6 +272,7 @@ class ProcessingHeader:
         self.numCode = 0
         self.codes = 0
         self.numBaud = 0
+        self.shif_fft = False
     
     def read(self, fp):
         header = numpy.fromfile(fp,self.struct,1)
