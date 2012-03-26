@@ -664,6 +664,20 @@ class SpectraReader( DataReader ):
         if ( currentSize >= neededSize ):
             self.__rdBasicHeader()
             return 1
+        elif self.online:
+            nTries = 0
+            while( nTries < self.__nTries ):
+                nTries += 1 
+                print "Waiting for the next block, try %03d ..." % nTries
+                time.sleep( self.__delay )
+                
+                fileSize = os.path.getsize(self.filename)
+                currentSize = fileSize - self.__fp.tell()
+                neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
+
+                if ( currentSize >= neededSize ):
+                    self.__rdBasicHeader()
+                    return 1
         
         #Setting new file 
         if not( self.__setNextFile() ):
@@ -702,10 +716,29 @@ class SpectraReader( DataReader ):
         self.__flagIsNewFile = 0
         self.flagIsNewBlock = 1
 
+        fpointer = self.__fp.tell()
+
         spc = numpy.fromfile( self.__fp, self.__dataType[0], self.__pts2read_SelfSpectra )
         cspc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_CrossSpectra )
         dc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
-                
+
+        if (spc.size + cspc.size + dc.size) != self.__blocksize:
+            nTries = 0
+            while( nTries < self.__nTries ):
+                nTries += 1 
+                print "Waiting for the next block, try %03d ..." % nTries
+                time.sleep( self.__delay )
+                self.__fp.seek( fpointer )
+                fpointer = self.__fp.tell() 
+                spc = numpy.fromfile( self.__fp, self.__dataType[0], self.__pts2read_SelfSpectra )
+                cspc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_CrossSpectra )
+                dc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
+                if (spc.size + cspc.size + dc.size) == self.__blocksize:
+                    nTries = 0
+                    break
+            if nTries > 0:
+                return
+        
         spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
 
         cspc = cspc.reshape( (self.nPairs, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
@@ -1089,18 +1122,8 @@ class SpectraReader( DataReader ):
 
         if not( self.__setNewBlock() ):
             return 0
-             
-        if self.online:
-            nTries = 0
-            while( nTries < self.__nTries ):
-                nTries += 1 
-                if self.__readBlock() == 0:
-                    print "Waiting for the next block ..."
-                    time.sleep( self.__delay )
-                else:
-                    break 
-        else:
-            self.__readBlock()
+
+        self.__readBlock()
         
         self.__lastUTTime = self.m_BasicHeader.utc
         
@@ -1128,6 +1151,7 @@ class SpectraReader( DataReader ):
         self.flagIsNewBlock = 0
         
         if self.__hasNotDataInBuffer():            
+
             self.readNextBlock() 
             
             self.m_Spectra.m_BasicHeader = self.m_BasicHeader.copy()
