@@ -187,7 +187,7 @@ class VoltageReader(DataReader):
         
         self.datablock = None
         
-        self.datablock_id = 9999
+        self.__datablockIndex = 9999
     
     def __rdSystemHeader(self,fp=None):
         if fp == None:
@@ -354,7 +354,7 @@ class VoltageReader(DataReader):
         
         Variables afectadas:
         
-            self.datablock_id
+            self.__datablockIndex
             
             self.datablock
             
@@ -376,7 +376,7 @@ class VoltageReader(DataReader):
         
         data = junk['real'] + junk['imag']*1j
         
-        self.datablock_id = 0
+        self.__datablockIndex = 0
         
         self.datablock = data
         
@@ -389,7 +389,7 @@ class VoltageReader(DataReader):
         self.nReadBlocks += 1
  
     def __hasNotDataInBuffer(self):
-        if self.datablock_id >= self.m_ProcessingHeader.profilesPerBlock:
+        if self.__datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
@@ -533,7 +533,6 @@ class VoltageReader(DataReader):
         
         self.startYear = startDateTime.timetuple().tm_year 
         self.endYear = endDateTime.timetuple().tm_year
-        
         self.startDoy = startDateTime.timetuple().tm_yday
         self.endDoy = endDateTime.timetuple().tm_yday
         
@@ -582,7 +581,7 @@ class VoltageReader(DataReader):
             
         Variables afectadas:
             self.m_Voltage
-            self.datablock_id
+            self.__datablockIndex
             self.idProfile
             
         Excepciones:
@@ -608,16 +607,16 @@ class VoltageReader(DataReader):
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         
-        time = self.m_BasicHeader.utc + self.datablock_id*self.__ippSeconds
+        time = self.m_BasicHeader.utc + self.__datablockIndex*self.__ippSeconds
         self.m_Voltage.m_BasicHeader.utc = time  
-        self.m_Voltage.data = self.datablock[self.datablock_id,:,:]
         self.m_Voltage.flagNoData = False
         self.m_Voltage.flagResetProcessing = self.flagResetProcessing
         
+        self.m_Voltage.data = self.datablock[self.__datablockIndex,:,:]
         self.m_Voltage.idProfile = self.idProfile
         
         
-        self.datablock_id += 1
+        self.__datablockIndex += 1
         self.idProfile += 1
         
         #call setData - to Data Object
@@ -648,7 +647,7 @@ class VoltageWriter(DataWriter):
         
         self.datablock = None
         
-        self.datablock_id = 0
+        self.__datablockIndex = 0
         
         self.__dataType = None
         
@@ -672,6 +671,13 @@ class VoltageWriter(DataWriter):
     
         self.m_ProcessingHeader = ProcessingHeader()
     
+    
+    def __writeFirstHeader(self):
+        self.__writeBasicHeader()
+        self.__wrSystemHeader()
+        self.__wrRadarControllerHeader()
+        self.__wrProcessingHeader()
+        self.__dataType = self.m_Voltage.dataType
     
     def __writeBasicHeader(self, fp=None):
         if fp == None:
@@ -697,14 +703,6 @@ class VoltageWriter(DataWriter):
             
         self.m_ProcessingHeader.write(fp)
     
-    def __writeFirstHeader(self):
-        self.__writeBasicHeader()
-        self.__wrSystemHeader()
-        self.__wrRadarControllerHeader()
-        self.__wrProcessingHeader()
-        self.__dataType = self.m_Voltage.dataType
-    
- 
     def __setNextFile(self):
         
         setFile = self.__setFile
@@ -771,7 +769,7 @@ class VoltageWriter(DataWriter):
         
         self.datablock.fill(0)
         
-        self.datablock_id = 0 
+        self.__datablockIndex = 0 
         
         self.__flagIsNewFile = 0
         
@@ -792,7 +790,7 @@ class VoltageWriter(DataWriter):
         return 1
 
     def __hasAllDataInBuffer(self):
-        if self.datablock_id >= self.m_ProcessingHeader.profilesPerBlock:
+        if self.__datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
@@ -808,12 +806,12 @@ class VoltageWriter(DataWriter):
             
             self.datablock.fill(0)
             
-            self.datablock_id = 0
+            self.__datablockIndex = 0
             self.__setNextFile()
         
-        self.datablock[self.datablock_id,:,:] = self.m_Voltage.data
+        self.datablock[self.__datablockIndex,:,:] = self.m_Voltage.data
         
-        self.datablock_id += 1
+        self.__datablockIndex += 1
         
         if self.__hasAllDataInBuffer():
                      
