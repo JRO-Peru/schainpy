@@ -45,7 +45,7 @@ class Voltage(Data):
         
         self.flagResetProcessing = False
         
-        self.noise = noise
+        self.noise = 0 #noise
         
     def copy(self):
         obj = Voltage()
