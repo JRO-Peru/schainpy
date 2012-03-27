@@ -21,6 +21,86 @@ from DataIO import DataWriter
 
 from Model.Spectra import Spectra
 
+
+def getlastFileFromPath( pathList, ext ):
+    """
+    Depura el pathList dejando solo los que cumplan el formato de "PYYYYDDDSSS.ext"
+    al final de la depuracion devuelve el ultimo file de la lista que quedo.  
+    
+    Input: 
+        pathList    :    lista conteniendo todos los filename completos que componen una determinada carpeta
+        ext         :    extension de los files contenidos en una carpeta 
+            
+    Return:
+        El ultimo file de una determinada carpeta
+    """
+    
+    filesList = []
+    filename = None
+
+    # 0 1234 567 89A BCDE
+    # P YYYY DDD SSS .ext
+    
+    for filename in pathList:
+        year = filename[1:5]
+        doy  = filename[5:8]
+        leng = len( ext )
+        
+        if ( filename[-leng:].upper() != ext.upper() ) : continue 
+        if not( isNumber( year ) )  : continue
+        if not( isNumber( doy )  )  : continue
+
+        filesList.append(filename)
+
+    if len( filesList ) > 0:
+        #filesList.sort()
+        filesList = sorted( filesList, key=str.lower )
+        filename = filesList[-1]
+
+    return filename
+    
+
+def checkForRealPath( path, year, doy, set, ext ):
+    """
+    Por ser Linux Case Sensitive entonces checkForRealPath encuentra el nombre correcto de un path,
+    Prueba por varias combinaciones de nombres entre mayusculas y minusculas para determinar
+    el path exacto de un determinado file.
+    
+    Example    :
+        nombre correcto del file es  ../RAWDATA/D2009307/P2009307367
+        
+        Entonces la funcion prueba con las siguientes combinaciones
+            ../RAWDATA/d2009307/p2009307367
+            ../RAWDATA/d2009307/P2009307367
+            ../RAWDATA/D2009307/p2009307367
+            ../RAWDATA/D2009307/P2009307367
+        siendo para este caso, la ultima combinacion de letras, identica al file buscado 
+        
+    Return:
+        Si encuentra la cobinacion adecuada devuelve el path completo y el nombre del file 
+        caso contrario devuelve None como path y el la ultima combinacion de nombre en mayusculas 
+        para el filename  
+    """
+    filepath = None
+    find_flag = False
+    filename = None
+    
+    for dir in "dD": #barrido por las dos combinaciones posibles de "D"
+        for fil in "pP": #barrido por las dos combinaciones posibles de "D"
+            doypath = "%s%04d%03d" % ( dir, year, doy ) #formo el nombre del directorio xYYYYDDD (x=d o x=D)
+            filename = "%s%04d%03d%03d%s" % ( fil, year, doy, set, ext ) #formo el nombre del file xYYYYDDDSSS.ext (p=d o p=D)
+            filepath = os.path.join( path, doypath, filename ) #formo el path completo
+            if os.path.exists( filepath ): #verifico que exista
+                find_flag = True
+                break
+        if find_flag:
+            break
+
+    if not(find_flag):
+        return None, filename
+
+    return filepath, filename
+
 def isNumber( str ):
     """
     Chequea si el conjunto de caracteres que componen un string puede ser convertidos a un numero.
@@ -379,46 +459,6 @@ class SpectraReader( DataReader ):
         self.m_Spectra.nPairs = self.nPairs
          
         
-    def __checkForRealPath( self ):
-        """
-        Prueba por varias combinaciones de nombres entre mayusculas y minusculas para determinar
-        el path exacto de un determinado file.
-        
-        Example    :
-            nombre correcto del file es  ../RAWDATA/D2009307/P2009307367
-            
-            Entonces la funcion prueba con las siguientes combinaciones
-                ../RAWDATA/d2009307/p2009307367
-                ../RAWDATA/d2009307/P2009307367
-                ../RAWDATA/D2009307/p2009307367
-                ../RAWDATA/D2009307/P2009307367
-            siendo para este caso, la ultima combinacion de letras, identica al file buscado 
-            
-        Return:
-            Si encuentra la cobinacion adecuada devuelve el path completo y el nombre del file 
-            caso contrario devuelve None 
-        """
-        filepath = None
-        find_flag = False
-        filename = None
-        
-        for dir in "dD": #barrido por las dos combinaciones posibles de "D"
-            for fil in "pP": #barrido por las dos combinaciones posibles de "D"
-                doypath = "%s%04d%03d" % ( dir, self.__year, self.__doy ) #formo el nombre del directorio xYYYYDDD (x=d o x=D)
-                filename = "%s%04d%03d%03d%s" % ( fil, self.__year, self.__doy, self.__set, self.__ext ) #formo el nombre del file xYYYYDDDSSS.ext (p=d o p=D)
-                filepath = os.path.join( self.__path, doypath, filename ) #formo el path completo
-                if os.path.exists( filepath ): #verifico que exista
-                    find_flag = True
-                    break
-            if find_flag:
-                break
-
-        if not(find_flag):
-            return None, filename
-
-        return filepath, filename
-    
-
     def __setNextFileOnline( self ):
         """
         Busca el siguiente file que tenga suficiente data para ser leida, dentro de un folder especifico, si
@@ -479,7 +519,7 @@ class SpectraReader( DataReader ):
                 if( countTries >= self.__nTries ): #checkeo que no haya ido mas alla de la cantidad de intentos
                     break
                 
-                file, filename = self.__checkForRealPath()
+                file, filename = checkForRealPath( self.__path, self.__year, self.__doy, self.__set, self.__ext )
                 if file != None:
                     break
                 
@@ -722,22 +762,23 @@ class SpectraReader( DataReader ):
         cspc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_CrossSpectra )
         dc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
 
-        if (spc.size + cspc.size + dc.size) != self.__blocksize:
-            nTries = 0
-            while( nTries < self.__nTries ):
-                nTries += 1 
-                print "Waiting for the next block, try %03d ..." % nTries
-                time.sleep( self.__delay )
-                self.__fp.seek( fpointer )
-                fpointer = self.__fp.tell() 
-                spc = numpy.fromfile( self.__fp, self.__dataType[0], self.__pts2read_SelfSpectra )
-                cspc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_CrossSpectra )
-                dc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
-                if (spc.size + cspc.size + dc.size) == self.__blocksize:
-                    nTries = 0
-                    break
-            if nTries > 0:
-                return
+        if self.online:
+            if (spc.size + cspc.size + dc.size) != self.__blocksize:
+                nTries = 0
+                while( nTries < self.__nTries ):
+                    nTries += 1 
+                    print "Waiting for the next block, try %03d ..." % nTries
+                    time.sleep( self.__delay )
+                    self.__fp.seek( fpointer )
+                    fpointer = self.__fp.tell() 
+                    spc = numpy.fromfile( self.__fp, self.__dataType[0], self.__pts2read_SelfSpectra )
+                    cspc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_CrossSpectra )
+                    dc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
+                    if (spc.size + cspc.size + dc.size) == self.__blocksize:
+                        nTries = 0
+                        break
+                if nTries > 0:
+                    return
         
         spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
 
@@ -769,44 +810,6 @@ class SpectraReader( DataReader ):
         #if self.datablock_id >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
 
-
-    def __getlastFileFromPath( self, pathList, ext ):
-        """
-        Depura el pathList dejando solo los que cumplan el formato de "PYYYYDDDSSS.ext"
-        al final de la depuracion devuelve el ultimo file de la lista que quedo.  
-        
-        Input: 
-            pathList    :    lista conteniendo todos los filename completos que componen una determinada carpeta
-            ext         :    extension de los files contenidos en una carpeta 
-                
-        Return:
-            El ultimo file de una determinada carpeta
-        """
-        
-        filesList = []
-        filename = None
-
-        # 0123456789ABCDE
-        # PYYYYDDDSSS.ext
-        
-        for filename in pathList:
-            year = filename[1:5]
-            doy  = filename[5:8]
-            leng = len( ext )
-            
-            if ( filename[-leng:].upper() != ext.upper() ) : continue 
-            if not( isNumber( year ) )  : continue
-            if not( isNumber( doy )  )  : continue
-
-            filesList.append(filename)
-
-        if len( filesList ) > 0:
-            #filesList.sort()
-            filesList = sorted( filesList, key=str.lower )
-            filename = filesList[-1]
-
-        return filename
-    
 
     def __searchFilesOnLine( self, path, startDateTime=None, ext = ".pdata" ):
         """
@@ -854,7 +857,7 @@ class SpectraReader( DataReader ):
         if directory == None:
             return 0, 0, 0, None, None   
         
-        filename = self.__getlastFileFromPath( os.listdir( os.path.join(path,directory) ), ext )
+        filename = getlastFileFromPath( os.listdir( os.path.join(path,directory) ), ext )
 
         if filename == None:
             return 0, 0, 0, None, None 
@@ -1500,7 +1503,7 @@ class SpectraWriter( DataWriter ):
         self.__data_dc = self.m_Spectra.data_dc
         
         if True:
-            time.sleep( 3 )
+            #time.sleep( 3 )
             self.__getHeader()
             self.writeNextBlock()
         
