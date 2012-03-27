@@ -20,6 +20,106 @@ from IO.DataIO import DataWriter
 
 from Model.Voltage import Voltage
 
+
+def getlastFileFromPath( pathList, ext ):
+    """
+    Depura el pathList dejando solo los que cumplan el formato de "PYYYYDDDSSS.ext"
+    al final de la depuracion devuelve el ultimo file de la lista que quedo.  
+    
+    Input: 
+        pathList    :    lista conteniendo todos los filename completos que componen una determinada carpeta
+        ext         :    extension de los files contenidos en una carpeta 
+            
+    Return:
+        El ultimo file de una determinada carpeta
+    """
+    
+    filesList = []
+    filename = None
+
+    # 0 1234 567 89A BCDE
+    # D YYYY DDD SSS .ext
+    
+    for filename in pathList:
+        year = filename[1:5]
+        doy  = filename[5:8]
+        leng = len( ext )
+        
+        if ( filename[-leng:].upper() != ext.upper() ) : continue 
+        if not( isNumber( year ) )  : continue
+        if not( isNumber( doy )  )  : continue
+
+        filesList.append(filename)
+
+    if len( filesList ) > 0:
+        filesList = sorted( filesList, key=str.lower )
+        filename = filesList[-1]
+
+    return filename
+    
+
+def checkForRealPath( path, year, doy, set, ext ):
+    """
+    Por ser Linux Case Sensitive entonces checkForRealPath encuentra el nombre correcto de un path,
+    Prueba por varias combinaciones de nombres entre mayusculas y minusculas para determinar
+    el path exacto de un determinado file.
+    
+    Example    :
+        nombre correcto del file es  ../RAWDATA/D2009307/P2009307367
+        
+        Entonces la funcion prueba con las siguientes combinaciones
+            ../RAWDATA/d2009307/p2009307367
+            ../RAWDATA/d2009307/P2009307367
+            ../RAWDATA/D2009307/p2009307367
+            ../RAWDATA/D2009307/P2009307367
+        siendo para este caso, la ultima combinacion de letras, identica al file buscado 
+        
+    Return:
+        Si encuentra la cobinacion adecuada devuelve el path completo y el nombre del file 
+        caso contrario devuelve None como path y el la ultima combinacion de nombre en mayusculas 
+        para el filename  
+    """
+    filepath = None
+    find_flag = False
+    filename = None
+    
+    for dir in "dD": #barrido por las dos combinaciones posibles de "D"
+        for fil in "dD": #barrido por las dos combinaciones posibles de "D"
+            doypath = "%s%04d%03d" % ( dir, year, doy ) #formo el nombre del directorio xYYYYDDD (x=d o x=D)
+            filename = "%s%04d%03d%03d%s" % ( fil, year, doy, set, ext ) #formo el nombre del file xYYYYDDDSSS.ext (p=d o p=D)
+            filepath = os.path.join( path, doypath, filename ) #formo el path completo
+            if os.path.exists( filepath ): #verifico que exista
+                find_flag = True
+                break
+        if find_flag:
+            break
+
+    if not(find_flag):
+        return None, filename
+
+    return filepath, filename
+
+
+def isNumber( str ):
+    """
+    Chequea si el conjunto de caracteres que componen un string puede ser convertidos a un numero.
+
+    Excepciones: 
+        Si un determinado string no puede ser convertido a numero
+    Input:
+        str, string al cual se le analiza para determinar si convertible a un numero o no
+        
+    Return:
+        True    :    si el string es uno numerico
+        False   :    no es un string numerico
+    """
+    try:
+        float( str )
+        return True
+    except:
+        return False
+
+
 def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     """
     Esta funcion determina si un archivo de datos  en formato Jicamarca(.r) se encuentra
@@ -188,6 +288,17 @@ class VoltageReader(DataReader):
         self.datablock = None
         
         self.__datablockIndex = 9999
+
+        self.__delay  = 7   #seconds
+        self.__nTries  = 3  #quantity tries
+        self.__nFiles = 3   #number of files for searching
+        self.__year = 0 
+        self.__doy = 0 
+        self.__set = 0 
+        self.__ext = None
+        self.__path = None
+        self.__pts2read = 0
+        self.__blocksize = 0
     
     def __rdSystemHeader(self,fp=None):
         if fp == None:
@@ -252,9 +363,141 @@ class VoltageReader(DataReader):
         self.__dataType = tmp
         self.__fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
         self.__ippSeconds = 2*1000*self.m_RadarControllerHeader.ipp/self.__c
+
+        self.__pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels
+        self.__blocksize = self.__pts2read
+
         
-    def __setNextFileOnline(self):
-        return 0
+    def __setNextFileOnline( self ):
+        """
+        Busca el siguiente file que tenga suficiente data para ser leida, dentro de un folder especifico, si
+        no encuentra un file valido espera un tiempo determinado y luego busca en los posibles n files
+        siguientes.   
+            
+        Affected: 
+            self.__flagIsNewFile
+            self.filename
+            self.fileSize
+            self.__fp
+            self.__set
+            self.noMoreFiles
+
+        Return: 
+            0    : si luego de una busqueda del siguiente file valido este no pudo ser encontrado
+            1    : si el file fue abierto con exito y esta listo a ser leido
+        
+        Excepciones: 
+            Si un determinado file no puede ser abierto
+        """
+        countFiles = 0
+        countTries = 0
+        
+        fileStatus = 0
+        notFirstTime_flag = False
+        bChangeDir = False
+        
+        fileSize = 0
+        fp = None
+        
+        self.__flagIsNewFile = 0
+        
+        while( True ): #este loop permite llevar la cuenta de intentos, de files y carpetas, 
+                     #si no encuentra alguno sale del bucle   
+            countFiles += 1
+            
+            if countFiles > (self.__nFiles + 1):
+                break
+            
+            self.__set += 1
+                
+            if countFiles > self.__nFiles: #si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
+                self.__set = 0
+                self.__doy += 1
+                bChangeDir = True 
+            
+            file = None
+            filename = None
+            
+            countTries = 0
+            
+            #espero hasta encontrar el 1er file disponible
+            while( True ):
+                
+                countTries += 1
+                if( countTries >= self.__nTries ): #checkeo que no haya ido mas alla de la cantidad de intentos
+                    break
+                
+                file, filename = checkForRealPath( self.__path, self.__year, self.__doy, self.__set, self.__ext )
+                if file != None:
+                    break
+                
+                if notFirstTime_flag: #este flag me sirve solo para esperar por el 1er file, en lo siguientes no espera solo checkea si existe o no
+                    countTries = self.__nTries
+                    print "\tsearching next \"%s\" file ..." % filename 
+                    break 
+                
+                print "\twaiting new \"%s\" file ..." % filename 
+                time.sleep( self.__delay )
+                
+            if countTries >= self.__nTries: #se realizaron n intentos y no hubo un file nuevo 
+                notFirstTime_flag = True
+                continue #vuelvo al inico del while principal        
+            
+            countTries = 0
+            
+            #una vez que se obtuvo el 1er file valido se procede a checkear su contenido, y se espera una cierta cantidad
+            #de tiempo por una cierta cantidad de veces hasta que el contenido del file sea un contenido valido
+            while( True ):
+                countTries += 1
+                if countTries > self.__nTries:
+                    break
+                
+                try:
+                    fp = open(file)
+                except:
+                    print "The file \"%s\" can't be opened" % file
+                    break
+                
+                fileSize = os.path.getsize( file )
+                currentSize = fileSize - fp.tell()
+                neededSize = self.m_ProcessingHeader.blockSize + self.firstHeaderSize
+                
+                if currentSize > neededSize:
+                    fileStatus = 1
+                    break
+                
+                fp.close()
+                
+                if bChangeDir: #si al buscar un file cambie de directorio ya no espero y salgo del bucle while
+                    print "\tsearching next \"%s\" file ..." % filename
+                    break
+                
+                print "\twaiting for block of \"%s\" file ..." % filename 
+                time.sleep( self.__delay )
+            
+            if fileStatus == 1:
+                break
+            
+            print "Skipping the file \"%s\" due to this files is empty" % filename
+            countFiles = 0
+        
+        
+        if fileStatus == 1:
+            self.fileSize = fileSize
+            self.filename = file
+            self.__flagIsNewFile = 1
+            self.__fp = fp
+            self.noMoreFiles = 0
+            print 'Setting the file: %s' % file
+        else:
+            self.fileSize = 0
+            self.filename = None
+            self.__fp = None
+            self.noMoreFiles = 1
+            print 'No more Files'
+
+        return fileStatus
+
 
     def __setNextFileOffline(self):
         
@@ -294,8 +537,24 @@ class VoltageReader(DataReader):
         
         return 1
 
-    def __setNextFile(self):
-        
+    def __setNextFile( self ):
+        """ 
+        Determina el siguiente file a leer y si hay uno disponible lee el First Header
+            
+        Affected: 
+            self.m_BasicHeader
+            self.m_SystemHeader
+            self.m_RadarControllerHeader
+            self.m_ProcessingHeader
+            self.firstHeaderSize
+
+        Return: 
+            0    :    Si no hay files disponibles
+            1    :    Si hay mas files disponibles
+        """
+        if self.__fp != None:
+            self.__fp.close()
+
         if self.online:
             newFile = self.__setNextFileOnline()
         else:
@@ -307,9 +566,21 @@ class VoltageReader(DataReader):
         self.__readFirstHeader()
         
         return 1
-    
-    def __setNewBlock(self):
         
+    
+    def __setNewBlock( self ):
+        """ 
+        Lee el Basic Header y posiciona le file pointer en la posicion inicial del bloque a leer
+
+        Affected: 
+            self.m_BasicHeader
+            self.flagResetProcessing
+            self.ns
+
+        Return: 
+            0    :    Si el file no tiene un Basic Header que pueda ser leido
+            1    :    Si se pudo leer el Basic Header
+        """
         if self.__fp == None:
             return 0
         
@@ -320,12 +591,26 @@ class VoltageReader(DataReader):
         neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
         
         #If there is enough data setting new data block
-        if (currentSize >= neededSize):
+        if ( currentSize >= neededSize ):
             self.__rdBasicHeader()
             return 1
+        elif self.online:
+            nTries = 0
+            while( nTries < self.__nTries ):
+                nTries += 1 
+                print "Waiting for the next block, try %03d ..." % nTries
+                time.sleep( self.__delay )
+                
+                fileSize = os.path.getsize(self.filename)
+                currentSize = fileSize - self.__fp.tell()
+                neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
+
+                if ( currentSize >= neededSize ):
+                    self.__rdBasicHeader()
+                    return 1
         
         #Setting new file 
-        if not(self.__setNextFile()):
+        if not( self.__setNextFile() ):
             return 0
         
         deltaTime = self.m_BasicHeader.utc - self.__lastUTTime # check this
@@ -368,11 +653,29 @@ class VoltageReader(DataReader):
             
         """
         
-        pts2read = self.m_ProcessingHeader.profilesPerBlock*self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels
+        #pts2read = self.m_ProcessingHeader.profilesPerBlock*self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels
         
-        junk = numpy.fromfile(self.__fp, self.__dataType, pts2read)
+        fpointer = self.__fp.tell()
         
-        junk = junk.reshape((self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels))
+        junk = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read )
+        
+        if self.online:
+            if junk.size != self.__blocksize:
+                nTries = 0
+                while( nTries < self.__nTries ):
+                    nTries += 1 
+                    print "Waiting for the next block, try %03d ..." % nTries
+                    time.sleep( self.__delay )
+                    self.__fp.seek( fpointer )
+                    fpointer = self.__fp.tell() 
+                    junk = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read )
+                    if junk.size == self.__blocksize:
+                        nTries = 0
+                        break
+                if nTries > 0:
+                    return
+        
+        junk = junk.reshape( (self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels) )
         
         data = junk['real'] + junk['imag']*1j
         
@@ -394,9 +697,69 @@ class VoltageReader(DataReader):
         
         return 0
 
-    def __searchFiles(self, path, startDateTime, endDateTime, set=None, expLabel = "", ext = ".r"):
+
+    def __searchFilesOnLine( self, path, startDateTime=None, ext = ".r" ):
         """
-        __searchFiles realiza una busqueda de los archivos que coincidan con los parametros
+        Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
+        devuelve el archivo encontrado ademas de otros datos.
+        
+        Input: 
+            path             :    carpeta donde estan contenidos los files que contiene data  
+            startDateTime    :    punto especifico en el tiempo del cual se requiere la data
+            ext              :    extension de los files  
+
+        Return:
+            year        :    el anho
+            doy         :    el numero de dia del anho
+            set         :    el set del archivo
+            filename    :    el ultimo file de una determinada carpeta
+            directory   :    eL directorio donde esta el file encontrado
+        """
+
+        print "Searching files ..."
+
+        dirList = []
+        directory = None
+        
+        if startDateTime == None:
+            for thisPath in os.listdir(path):
+                if os.path.isdir( os.path.join(path,thisPath) ):
+                    dirList.append( thisPath )
+
+            dirList = sorted( dirList, key=str.lower ) #para que quede ordenado al margen de si el nombre esta en mayusculas o minusculas, utilizo la funcion sorted 
+            if len(dirList) > 0 :
+                directory = dirList[-1]
+        else:
+            year = startDateTime.timetuple().tm_year
+            doy = startDateTime.timetuple().tm_yday
+
+            doyPath = "D%04d%03d" % (year,doy)  #caso del nombre en mayusculas
+            if os.path.isdir( os.path.join(path,doyPath) ):
+                directory = doyPath
+            
+            doyPath = doyPath.lower()   #caso del nombre en minusculas
+            if os.path.isdir( os.path.join(path,doyPath) ):
+                directory = doyPath
+
+        if directory == None:
+            return 0, 0, 0, None, None   
+        
+        filename = getlastFileFromPath( os.listdir( os.path.join(path,directory) ), ext )
+
+        if filename == None:
+            return 0, 0, 0, None, None 
+
+        year = int( directory[-7:-3] )
+        doy  = int( directory[-3:] )
+        ln   = len( ext )
+        set  = int( filename[-ln-3:-ln] )
+        
+        return year, doy, set, filename, directory
+
+
+    def __searchFilesOffLine(self, path, startDateTime, endDateTime, set=None, expLabel = "", ext = ".r"):
+        """
+        Realiza una busqueda de los archivos que coincidan con los parametros
         especificados y se encuentren ubicados en el path indicado. Para realizar una busqueda
         correcta la estructura de directorios debe ser la siguiente:
         
@@ -480,6 +843,56 @@ class VoltageReader(DataReader):
         self.filenameList = filenameList
         
         return pathList, filenameList
+
+
+    def __initFilesOnline( self, path, dirfilename, filename ):
+        """
+        Verifica que el primer file tenga una data valida, para ello leo el 1er bloque
+        del file, si no es un file valido espera una cierta cantidad de tiempo a que 
+        lo sea, si transcurrido el tiempo no logra validar el file entonces el metodo
+        devuelve 0 caso contrario devuelve 1
+        
+        Affected:
+            m_BasicHeader
+                   
+        Return:
+            0    :    file no valido para ser leido
+            1    :    file valido para ser leido
+        """
+        m_BasicHeader = BasicHeader()
+    
+        file = os.path.join( path, dirfilename, filename )
+        
+        nTries = 0
+        while(True):
+            
+            nTries += 1
+            if nTries > self.__nTries:
+                break
+            
+            try:
+                fp = open( file,'rb' ) #lectura binaria
+            except:
+                raise IOError, "The file %s can't be opened" %(file)
+            
+            try:
+                m_BasicHeader.read(fp)
+            except:
+                print "The file %s is empty" % filename
+            
+            fp.close()
+            
+            if m_BasicHeader.size > 24:
+                break
+            
+            print 'waiting for new block: try %02d' % ( nTries )
+            time.sleep( self.__delay)
+            
+        if m_BasicHeader.size <= 24:
+            return 0
+        
+        return 1
+
     
     def setup(self, path, startDateTime, endDateTime=None, set=None, expLabel = "", ext = ".r", online = 0):
         """
@@ -507,34 +920,77 @@ class VoltageReader(DataReader):
             
             ext                 :    Extension de los archivos a leer. Por defecto .r
             
-            online              :    
+            online              :    Si es == a 0 entonces busca files que cumplan con las condiciones dadas
             
         Return:
+            0    :    Si no encuentra files que cumplan con las condiciones dadas
+            1    :    Si encuentra files que cumplan con las condiciones dadas
         
         Affected:
-        
-        Excepciones:
-        
-        Example:       
-        
+            self.startUTCSeconds
+            self.endUTCSeconds
+            self.startYear 
+            self.endYear
+            self.startDoy
+            self.endDoy
+            self.__pathList
+            self.filenameList 
+            self.online
         """
-        
-        if online == 0:
-            pathList, filenameList = self.__searchFiles(path, startDateTime, endDateTime, set, expLabel, ext)
-        
-        self.__idFile = -1
-        
-        if not(self.__setNextFile()):
-            print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
+        if online:
+            nTries = 0 
+            while( nTries < self.__nTries ):
+               nTries += 1 
+               subfolder = "D%04d%03d" % ( startDateTime.timetuple().tm_year, startDateTime.timetuple().tm_yday )
+               year, doy, set, filename, dirfilename = self.__searchFilesOnLine( path, startDateTime, ext )
+               if filename == None:
+                   file = os.path.join( path, subfolder )
+                   print "Searching first file in \"%s\", try %03d ..." % ( file, nTries ) 
+                   time.sleep( self.__delay )
+               else:
+                   break
+
+            if filename == None:
+                print "No files  On Line"
+                return 0
+
+            if self.__initFilesOnline( path, dirfilename, filename ) == 0:
+                print "The file %s hasn't enough data"
+                return 0            
+
+            self.__year = year
+            self.__doy  = doy
+            self.__set  = set - 1
+            self.__path = path
+
+        else:
+            pathList, filenameList = self.__searchFilesOffLine( path, startDateTime, endDateTime, set, expLabel, ext )
+            self.__idFile = -1
+            self.__pathList = pathList
+            self.filenameList = filenameList
+             
+        self.online = online
+        self.__ext = ext
+
+        if not( self.__setNextFile() ):
+            if (startDateTime != None) and (endDateTime != None):
+                print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
+            elif startDateTime != None:
+                print "No files in : %s" % startDateTime.ctime()
+            else:
+                print "No files"
             return 0
         
-        self.startUTCSeconds = time.mktime(startDateTime.timetuple())
-        self.endUTCSeconds = time.mktime(endDateTime.timetuple())
+        if startDateTime != None:
+            self.startUTCSeconds = time.mktime(startDateTime.timetuple())
+            self.startYear = startDateTime.timetuple().tm_year 
+            self.startDoy = startDateTime.timetuple().tm_yday
         
-        self.startYear = startDateTime.timetuple().tm_year 
-        self.endYear = endDateTime.timetuple().tm_year
-        self.startDoy = startDateTime.timetuple().tm_yday
-        self.endDoy = endDateTime.timetuple().tm_yday
+        if endDateTime != None:
+            self.endUTCSeconds = time.mktime(endDateTime.timetuple())
+            self.endYear = endDateTime.timetuple().tm_year
+            self.endDoy = endDateTime.timetuple().tm_yday
+        #call fillHeaderValues() - to Data Object
         
         self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
         self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
@@ -542,19 +998,19 @@ class VoltageReader(DataReader):
         self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
         self.m_Voltage.dataType = self.__dataType
             
-        self.__pathList = pathList
-        self.filenameList = filenameList 
-        self.online = online
-        
         return 1 
+
     
-    def readNextBlock(self):
-        """
-        readNextBlock establece un nuevo bloque de datos a leer y los lee, si es que no existiese
+    def readNextBlock( self ):
+        """ 
+        Establece un nuevo bloque de datos a leer y los lee, si es que no existiese
         mas bloques disponibles en el archivo actual salta al siguiente.
-        
+
+        Affected: 
+            self.__lastUTTime
+
+        Return: None
         """
-        
         if not(self.__setNewBlock()):
             return 0
              
@@ -563,8 +1019,9 @@ class VoltageReader(DataReader):
         self.__lastUTTime = self.m_BasicHeader.utc
         
         return 1
+
     
-    def getData(self):
+    def getData( self ):
         """
         getData obtiene una unidad de datos del buffer de lectura y la copia a la clase "Voltage"
         con todos los parametros asociados a este (metadata). cuando no hay datos en el buffer de
@@ -572,9 +1029,6 @@ class VoltageReader(DataReader):
         
         Ademas incrementa el contador del buffer en 1.
         
-        Inputs:
-            None
-            
         Return:
             data    :    retorna un perfil de voltages (alturas * canales) copiados desde el
                          buffer. Si no hay mas archivos a leer retorna None.
@@ -584,20 +1038,24 @@ class VoltageReader(DataReader):
             self.__datablockIndex
             self.idProfile
             
-        Excepciones:
-        
+        Affected:
+            self.m_Voltage
+            self.__datablockIndex
+            self.flagResetProcessing
+            self.flagIsNewBlock
+            self.idProfile
         """
         self.flagResetProcessing = 0
         self.flagIsNewBlock = 0
         
         if self.__hasNotDataInBuffer():
+
             self.readNextBlock()
             
             self.m_Voltage.m_BasicHeader = self.m_BasicHeader.copy()
             self.m_Voltage.m_ProcessingHeader = self.m_ProcessingHeader.copy()
             self.m_Voltage.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
             self.m_Voltage.m_SystemHeader = self.m_SystemHeader.copy()
-            
             self.m_Voltage.heights = self.__heights
             self.m_Voltage.dataType = self.__dataType
             
@@ -607,14 +1065,14 @@ class VoltageReader(DataReader):
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         
-        time = self.m_BasicHeader.utc + self.__datablockIndex*self.__ippSeconds
+        time = self.m_BasicHeader.utc + self.__datablockIndex * self.__ippSeconds
         self.m_Voltage.m_BasicHeader.utc = time  
+        
         self.m_Voltage.flagNoData = False
         self.m_Voltage.flagResetProcessing = self.flagResetProcessing
         
         self.m_Voltage.data = self.datablock[self.__datablockIndex,:,:]
         self.m_Voltage.idProfile = self.idProfile
-        
         
         self.__datablockIndex += 1
         self.idProfile += 1
@@ -623,11 +1081,27 @@ class VoltageReader(DataReader):
     
         return self.m_Voltage.data
 
-class VoltageWriter(DataWriter):
+
+class VoltageWriter( DataWriter ):
+    """ 
+    Esta clase permite escribir datos de voltajes a archivos procesados (.r). La escritura
+    de los datos siempre se realiza por bloques. 
+    """
     __configHeaderFile = 'wrSetHeadet.txt'
     
-    def __init__(self, m_Voltage = None):
-        
+    def __init__( self, m_Voltage = None ):
+        """ 
+        Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
+         
+        Affected: 
+            self.m_Voltage
+            self.m_BasicHeader
+            self.m_SystemHeader
+            self.m_RadarControllerHeader
+            self.m_ProcessingHeader
+
+        Return: None
+        """
         if m_Voltage == None:
             m_Voltage = Voltage()    
         
@@ -670,59 +1144,141 @@ class VoltageWriter(DataWriter):
         self.m_RadarControllerHeader = RadarControllerHeader()
     
         self.m_ProcessingHeader = ProcessingHeader()
+
     
-    
-    def __writeFirstHeader(self):
+    def __writeFirstHeader( self ):
+        """
+        Escribe el primer header del file es decir el Basic header y el Long header (SystemHeader, RadarControllerHeader, ProcessingHeader)
+        
+        Affected:
+            __dataType
+            
+        Return:
+            None
+        """
         self.__writeBasicHeader()
         self.__wrSystemHeader()
         self.__wrRadarControllerHeader()
         self.__wrProcessingHeader()
         self.__dataType = self.m_Voltage.dataType
+
     
-    def __writeBasicHeader(self, fp=None):
+    def __writeBasicHeader( self, fp=None ):
+        """
+        Escribe solo el Basic header en el file creado
+
+        Return:
+            None
+        """
         if fp == None:
             fp = self.__fp
             
         self.m_BasicHeader.write(fp)
+
     
-    def __wrSystemHeader(self,fp=None):
+    def __wrSystemHeader( self, fp=None ):
+        """
+        Escribe solo el System header en el file creado
+
+        Return:
+            None
+        """
         if fp == None:
             fp = self.__fp
             
         self.m_SystemHeader.write(fp)
+
     
-    def __wrRadarControllerHeader(self,fp=None):
+    def __wrRadarControllerHeader( self, fp=None ):
+        """
+        Escribe solo el RadarController header en el file creado
+
+        Return:
+            None
+        """
         if fp == None:
             fp = self.__fp
         
         self.m_RadarControllerHeader.write(fp)
+
         
-    def __wrProcessingHeader(self,fp=None):
+    def __wrProcessingHeader( self, fp=None ):
+        """
+        Escribe solo el Processing header en el file creado
+
+        Return:
+            None
+        """
         if fp == None:
             fp = self.__fp
             
         self.m_ProcessingHeader.write(fp)
     
-    def __setNextFile(self):
-        
-        setFile = self.__setFile
+    def __setNextFile( self ):
+        """ 
+        Determina el siguiente file que sera escrito
+
+        Affected: 
+            self.filename
+            self.__subfolder
+            self.__fp
+            self.__setFile
+            self.__flagIsNewFile
+
+        Return:
+            0    :    Si el archivo no puede ser escrito
+            1    :    Si el archivo esta listo para ser escrito
+        """
+        #setFile = self.__setFile
         ext = self.__ext
         path = self.__path
         
-        setFile += 1
+        #setFile += 1
         
         if self.__fp != None:
             self.__fp.close()
         
+        """        
         timeTuple = time.localtime(self.m_Voltage.m_BasicHeader.utc) # utc from m_Voltage
         file = 'D%4.4d%3.3d%3.3d%s' % (timeTuple.tm_year,timeTuple.tm_yday,setFile,ext)
         subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday) 
         tmp = os.path.join(path,subfolder)
         if not(os.path.exists(tmp)):
             os.mkdir(tmp)
-   
-        filename = os.path.join(path,subfolder,file)
-        fp = open(filename,'wb')
+        """
+        ##################################
+        if self.m_BasicHeader.size <= 24: return 0 #no existe la suficiente data para ser escrita
+        
+        timeTuple = time.localtime( self.m_Voltage.m_BasicHeader.utc ) # utc from m_Voltage
+        subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
+
+        tmp = os.path.join( path, subfolder )
+        if not( os.path.exists(tmp) ):
+            os.mkdir(tmp)
+            self.__setFile = -1 #inicializo mi contador de seteo
+        else:
+            filesList = os.listdir( tmp )
+            if len( filesList ) > 0:
+                filesList = sorted( filesList, key=str.lower )
+                filen = filesList[-1]
+                # el filename debera tener el siguiente formato
+                # 0 1234 567 89A BCDE (hex)
+                # D YYYY DDD SSS .ext
+                if isNumber( filen[8:11] ):
+                    self.__setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
+                else:    
+                    self.__setFile = -1
+            else:
+                self.__setFile = -1 #inicializo mi contador de seteo
+                
+        setFile = self.__setFile
+        setFile += 1
+        file = 'D%4.4d%3.3d%3.3d%s' % ( timeTuple.tm_year, timeTuple.tm_yday, setFile, ext )
+        ##################################
+
+        filename = os.path.join( path, subfolder, file )
+
+        fp = open( filename,'wb' )
         
         self.__blocksCounter = 0
         
@@ -738,9 +1294,16 @@ class VoltageWriter(DataWriter):
         self.__writeFirstHeader()
         
         return 1
+
     
-    def __setNewBlock(self):
+    def __setNewBlock( self ):
+        """
+        Si es un nuevo file escribe el First Header caso contrario escribe solo el Basic Header
         
+        Return:
+            0    :    si no pudo escribir nada
+            1    :    Si escribio el Basic el First Header
+        """        
         if self.__fp == None:
             self.__setNextFile()
         
@@ -751,21 +1314,32 @@ class VoltageWriter(DataWriter):
             self.__writeBasicHeader()
             return 1
         
-        if not(self.__setNextFile()):
+        if not( self.__setNextFile() ):
             return 0
         
         return 1
     
-    def __writeBlock(self):
-        
-        data = numpy.zeros(self.__shapeBuffer, self.__dataType)
+    def __writeBlock( self ):
+        """
+        Escribe el buffer en el file designado
+            
+        Affected:
+            self.__datablockIndex 
+            self.__flagIsNewFile
+            self.flagIsNewBlock
+            self.nWriteBlocks
+            self.__blocksCounter    
+            
+        Return: None
+        """
+        data = numpy.zeros( self.__shapeBuffer, self.__dataType )
         
         data['real'] = self.datablock.real
         data['imag'] = self.datablock.imag
         
-        data = data.reshape((-1))
+        data = data.reshape( (-1) )
             
-        data.tofile(self.__fp)
+        data.tofile( self.__fp )
         
         self.datablock.fill(0)
         
@@ -780,8 +1354,14 @@ class VoltageWriter(DataWriter):
         self.__blocksCounter += 1
     
 
-    def writeNextBlock(self):
-        
+    def writeNextBlock( self ):
+        """
+        Selecciona el bloque siguiente de datos y los escribe en un file
+            
+        Return: 
+            0    :    Si no hizo pudo escribir el bloque de datos 
+            1    :    Si no pudo escribir el bloque de datos
+        """
         if not(self.__setNewBlock()):
             return 0
         
@@ -789,14 +1369,26 @@ class VoltageWriter(DataWriter):
         
         return 1
 
-    def __hasAllDataInBuffer(self):
+
+    def __hasAllDataInBuffer( self ):
         if self.__datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         
         return 0
+    
 
-    def putData(self):
-        
+    def putData( self ):
+        """
+        Setea un bloque de datos y luego los escribe en un file 
+            
+        Affected:
+            self.flagIsNewBlock
+            self.__datablockIndex
+
+        Return: 
+            0    :    Si no hay data o no hay mas files que puedan escribirse 
+            1    :    Si se escribio la data de un bloque en un file
+        """
         self.flagIsNewBlock = 0
         
         if self.m_Voltage.flagNoData:
@@ -824,14 +1416,29 @@ class VoltageWriter(DataWriter):
         
         return 1
 
-    def __getHeader(self):
+
+    def __getHeader( self ):
+        """
+        Obtiene una copia del First Header
+         
+        Affected:
+            self.m_BasicHeader
+            self.m_SystemHeader
+            self.m_RadarControllerHeader
+            self.m_ProcessingHeader
+            self.__dataType
+
+        Return: 
+            None
+        """
         self.m_BasicHeader = self.m_Voltage.m_BasicHeader.copy()
         self.m_SystemHeader = self.m_Voltage.m_SystemHeader.copy()
         self.m_RadarControllerHeader = self.m_Voltage.m_RadarControllerHeader.copy()
         self.m_ProcessingHeader = self.m_Voltage.m_ProcessingHeader.copy()
         self.__dataType = self.m_Voltage.dataType
+
             
-    def __setHeaderByFile(self): 
+    def __setHeaderByFile( self ): 
          
         format = self.__format
         header = ['Basic','System','RadarController','Processing']                       
@@ -910,9 +1517,20 @@ class VoltageWriter(DataWriter):
             print "file access denied:%s"%fileTable
             sys.exit(0)
 
-    def setup(self, path, set=0, format='rawdata'):
-        
-        
+
+    def setup( self, path, set=0, format='rawdata' ):
+        """
+        Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
+            
+        Inputs:
+            path      :    el path destino en el cual se escribiran los files a crear
+            format    :    formato en el cual sera salvado un file
+            set       :    el setebo del file
+            
+        Return:
+            0    :    Si no realizo un buen seteo
+            1    :    Si realizo un buen seteo 
+        """
         if format == 'hdf5':
             ext = '.hdf5'
             format = 'hdf5'
