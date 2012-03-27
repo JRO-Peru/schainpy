@@ -53,7 +53,6 @@ def getlastFileFromPath( pathList, ext ):
         filesList.append(filename)
 
     if len( filesList ) > 0:
-        #filesList.sort()
         filesList = sorted( filesList, key=str.lower )
         filename = filesList[-1]
 
@@ -296,6 +295,8 @@ class SpectraReader( DataReader ):
         
         self.nCrossPairs = 0
         
+        self.datablock_id = 9999
+
         self.__delay  = 7   #seconds
         self.__nTries  = 3  #quantity tries
         self.__nFiles = 3   #number of files for searching
@@ -304,7 +305,6 @@ class SpectraReader( DataReader ):
         self.__set = 0 
         self.__ext = None
         self.__path = None
-        self.datablock_id = 9999
 
         
     def __rdSystemHeader( self, fp=None ):
@@ -455,6 +455,8 @@ class SpectraReader( DataReader ):
         
         self.__blocksize = self.__pts2read_SelfSpectra + self.__pts2read_CrossSpectra + self.__pts2read_DCchannels   
         
+        print "SIZEEEE ",self.__blocksize, self.m_ProcessingHeader.blockSize 
+         
         self.m_Spectra.nChannels = self.nChannels
         self.m_Spectra.nPairs = self.nPairs
          
@@ -729,7 +731,7 @@ class SpectraReader( DataReader ):
         
         if deltaTime > self.__maxTimeStep:
             self.flagResetProcessing = 1
-            self.ns = 0
+            self.nReadBlocks = 0
             
         return 1
     
@@ -1052,11 +1054,11 @@ class SpectraReader( DataReader ):
             nTries = 0 
             while( nTries < self.__nTries ):
                nTries += 1 
-               subfolder = "D%04d%03d" % ( startDateTime.timetuple().tm_year,startDateTime.timetuple().tm_yday )
-               file = os.path.join( path, subfolder )
-               print "Searching first file in \"%s\", try %03d ..." % ( file, nTries ) 
+               subfolder = "D%04d%03d" % ( startDateTime.timetuple().tm_year, startDateTime.timetuple().tm_yday )
                year, doy, set, filename, dirfilename = self.__searchFilesOnLine( path, startDateTime, ext )
                if filename == None:
+                   file = os.path.join( path, subfolder )
+                   print "Searching first file in \"%s\", try %03d ..." % ( file, nTries ) 
                    time.sleep( self.__delay )
                else:
                    break
@@ -1083,7 +1085,7 @@ class SpectraReader( DataReader ):
         self.online = online
         self.__ext = ext
         
-        if not(self.__setNextFile()):
+        if not( self.__setNextFile() ):
             if (startDateTime != None) and (endDateTime != None):
                 print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
             elif startDateTime != None:
@@ -1112,7 +1114,7 @@ class SpectraReader( DataReader ):
         return 1
     
         
-    def readNextBlock(self):
+    def readNextBlock( self ):
         """ 
         Establece un nuevo bloque de datos a leer y los lee, si es que no existiese
         mas bloques disponibles en el archivo actual salta al siguiente.
@@ -1133,7 +1135,7 @@ class SpectraReader( DataReader ):
         return 1
 
    
-    def getData(self):
+    def getData( self ):
         """
         Copia el buffer de lectura a la clase "Spectra",
         con todos los parametros asociados a este (metadata). cuando no hay datos en el buffer de
@@ -1143,7 +1145,7 @@ class SpectraReader( DataReader ):
             0    :    Si no hay mas archivos disponibles
             1    :    Si hizo una buena copia del buffer
             
-        Variables afectadas:
+        Affected:
             self.m_Spectra
             self.__datablockIndex
             self.flagResetProcessing
@@ -1399,7 +1401,7 @@ class SpectraWriter( DataWriter ):
             self.__writeBasicHeader()
             return 1
         
-        if not(self.__setNextFile()):
+        if not( self.__setNextFile() ):
             return 0
         
         return 1
@@ -1533,7 +1535,8 @@ class SpectraWriter( DataWriter ):
         self.m_ProcessingHeader = self.m_Spectra.m_ProcessingHeader.copy()
         self.__dataType = self.m_Spectra.dataType
             
-    def __setHeaderByFile(self): 
+            
+    def __setHeaderByFile( self ): 
          
         format = self.__format
         header = ['Basic','System','RadarController','Processing']                       
@@ -1611,6 +1614,7 @@ class SpectraWriter( DataWriter ):
         else:
             print "file access denied:%s"%fileTable
             sys.exit(0)
+            
 
     def setup( self, path, format='pdata' ):
         """
