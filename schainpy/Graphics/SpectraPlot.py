@@ -98,7 +98,7 @@ class Spectrum():
         
         plplot.plsstrm(self.indexPlot)
         plplot.plsetopt("geometry", "%dx%d" %(300*nx, 240*nx))
-        plplot.plsdev("xcairo")
+        plplot.plsdev("xwin")
         plplot.plscolbg(255,255,255)
         plplot.plscol0(1,0,0,0)
         plplot.plinit()

@@ -85,7 +85,7 @@ class Osciloscope():
         
         plplot.plsstrm(self.indexPlot)
         plplot.plsetopt("geometry", "%dx%d" %(700, 115*self.nGraphs))
-        plplot.plsdev("xcairo")
+        plplot.plsdev("xwin")
         plplot.plscolbg(255,255,255)
         plplot.plscol0(1,0,0,0)
         plplot.plinit()
