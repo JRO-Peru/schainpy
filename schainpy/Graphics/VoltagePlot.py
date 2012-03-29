@@ -16,7 +16,7 @@ from Model.Voltage import Voltage
 
 class Osciloscope():
     
-    def __init__(self, Voltage):
+    def __init__(self, Voltage, index=0):
         
         """
         
@@ -38,8 +38,10 @@ class Osciloscope():
         
         self.nGraphs = 0
         
+        self.indexPlot = index
+        
         self.graphObjList = [] 
-           
+        
         self.m_Voltage = Voltage
         
     
@@ -80,6 +82,8 @@ class Osciloscope():
         self.__isPlotConfig = True
 
     def iniPlot(self):
+        
+        plplot.plsstrm(self.indexPlot)
         plplot.plsetopt("geometry", "%dx%d" %(700, 115*self.nGraphs))
         plplot.plsdev("xcairo")
         plplot.plscolbg(255,255,255)

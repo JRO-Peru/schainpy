@@ -18,7 +18,7 @@ from Model.Spectra import Spectra
 
 class Spectrum():
     
-    def __init__(self, Spectra):
+    def __init__(self, Spectra, index=0):
         
         """
         
@@ -37,6 +37,8 @@ class Spectrum():
         self.__yrange = None
         
         self.nGraphs = 0
+        
+        self.indexPlot = index
         
         self.graphObjList = [] 
            
@@ -94,6 +96,7 @@ class Spectrum():
         nx = int(numpy.sqrt(self.nGraphs)+1)
         #ny = int(self.nGraphs/nx)
         
+        plplot.plsstrm(self.indexPlot)
         plplot.plsetopt("geometry", "%dx%d" %(300*nx, 240*nx))
         plplot.plsdev("xcairo")
         plplot.plscolbg(255,255,255)
