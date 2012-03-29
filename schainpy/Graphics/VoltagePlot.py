@@ -105,6 +105,8 @@ class Osciloscope():
         if not(self.__isPlotIni):
             self.iniPlot()
         
+        plplot.plsstrm(self.indexPlot)
+        
         data = self.m_Voltage.data
               
         x = self.m_Voltage.heights

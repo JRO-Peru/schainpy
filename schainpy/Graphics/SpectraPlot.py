@@ -124,6 +124,8 @@ class Spectrum():
         if not(self.__isPlotIni):
             self.iniPlot()
         
+        plplot.plsstrm(self.indexPlot)
+        
         data = 10.*numpy.log10(self.m_Spectra.data_spc)
         
         nX, nY, nChan = numpy.shape(data)
