@@ -19,13 +19,13 @@ class Data:
         '''
         raise ValueError, "This class has not been implemented"
     
-    def copy(self, obj=None):
+    def copy(self, objIn=None):
         
-        if obj == None:
+        if objIn == None:
             return copy.deepcopy(self)
         
-        for key in self.__dict__.keys():
-            obj.__dict__[key] = self.__dict__[key]
+        for key in objIn.__dict__.keys():
+            self.__dict__[key] = objIn.__dict__[key]
     
     def deepcopy(self):
         
