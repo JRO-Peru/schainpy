@@ -19,14 +19,18 @@ class Data:
         '''
         raise ValueError, "This class has not been implemented"
     
-    def copy(self):
+    def copy(self, obj=None):
         
-        return copy.copy(self)
+        if obj == None:
+            return copy.deepcopy(self)
+        
+        for key in self.__dict__.keys():
+            obj.__dict__[key] = self.__dict__[key]
     
-    def deepcopy(self, obj):
+    def deepcopy(self):
         
         return copy.deepcopy(self)
-
+    
 class Noise(Data):
     '''
     classdocs
