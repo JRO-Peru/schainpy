@@ -21,6 +21,10 @@ class Data:
     
     def copy(self):
         
+        return copy.copy(self)
+    
+    def deepcopy(self, obj):
+        
         return copy.deepcopy(self)
 
 class Noise(Data):
