@@ -14,14 +14,13 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from IO.HeaderIO import *
-from IO.DataIO import DataReader
-from IO.DataIO import DataWriter
-
+from Model.JROHeader import *
 from Model.Voltage import Voltage
 
+from IO.DataIO import JRODataReader
+from IO.DataIO import JRODataWriter
 
-def isFileOK(filename):    
+def isFileOK(filename):
     """
     Determina si la cabecera de un archivo es valido o no, si lo es entonces seria un archivo que podria contener data,
     si no seria un archivo invalido
@@ -192,8 +191,7 @@ def isThisFileinRange(filename,startUTSeconds,endUTSeconds):
     
     return 1
 
-
-class VoltageReader(DataReader):
+class VoltageReader(JRODataReader):
     """
     Esta clase permite leer datos de voltage desde archivos en formato rawdata (.r). La lectura
     de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones: 
@@ -1150,8 +1148,7 @@ class VoltageReader(DataReader):
     
         return 1 #self.m_Voltage.data
 
-
-class VoltageWriter(DataWriter):
+class VoltageWriter( JRODataWriter ):
     """ 
     Esta clase permite escribir datos de voltajes a archivos procesados (.r). La escritura
     de los datos siempre se realiza por bloques. 

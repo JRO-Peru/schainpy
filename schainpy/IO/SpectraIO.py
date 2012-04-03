@@ -15,12 +15,11 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from HeaderIO import *
-from DataIO import DataReader
-from DataIO import DataWriter
-
+from Model.JROHeader import *
 from Model.Spectra import Spectra
 
+from DataIO import JRODataReader
+from DataIO import JRODataWriter
 
 def isFileOK(filename):
     """
@@ -194,7 +193,7 @@ def isThisFileinRange(filename,startUTSeconds,endUTSeconds):
     return 1
 
 
-class SpectraReader(DataReader):
+class SpectraReader( JRODataReader ):
     """ 
     Esta clase permite leer datos de espectros desde archivos procesados (.pdata). La lectura
     de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones) 
@@ -1270,8 +1269,7 @@ class SpectraReader(DataReader):
 
         return 1
 
-
-class SpectraWriter(DataWriter):
+class SpectraWriter( JRODataWriter ):
     """ 
     Esta clase permite escribir datos de espectros a archivos procesados (.pdata). La escritura
     de los datos siempre se realiza por bloques. 
