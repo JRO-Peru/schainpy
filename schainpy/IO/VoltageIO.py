@@ -21,7 +21,7 @@ from IO.DataIO import DataWriter
 from Model.Voltage import Voltage
 
 
-def isFileOK(filename):
+def isFileOK(filename):    
     """
     Determina si la cabecera de un archivo es valido o no, si lo es entonces seria un archivo que podria contener data,
     si no seria un archivo invalido
