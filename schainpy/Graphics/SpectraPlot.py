@@ -73,10 +73,10 @@ class Spectrum():
                 myXlabel = xlabelList[i]
                 myYlabel = ylabelList[i]
             
-            if self.m_Spectra.noise != None:
-                noise = '%4.2fdB' %(self.m_Spectra.noise[i])
-            else:
-                noise = '--'
+#            if self.m_Spectra.m_NoiseObj != None:
+#                noise = '%4.2fdB' %(self.m_Spectra.m_NoiseObj[i])
+#            else:
+            noise = '--'
             
             myTitle = "Channel: %d - Noise: %s" %(i, noise)
                 
