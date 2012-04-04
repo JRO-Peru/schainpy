@@ -104,7 +104,7 @@ class Osciloscope():
             self.setup(titleList, xlabelList, ylabelList, XAxisAsTime)
         
         if not(self.__isPlotIni):
-            self.iniPlot()
+            self.iniPlot(winTitle)
         
         plplot.plsstrm(self.indexPlot)
         
