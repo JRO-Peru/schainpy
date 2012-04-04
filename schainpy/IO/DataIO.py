@@ -17,40 +17,6 @@ sys.path.append(path)
 from Model.JROHeader import *
 from Model.JROData import JROData
 
-
-def isFileOK(filename):
-    """
-    Determina si la cabecera de un archivo es valido o no, si lo es entonces seria un archivo que podria contener data,
-    si no seria un archivo invalido
-    
-    Return:
-        True    :    si es un archivo valido
-        False   :    si no es un archivo valido
-        
-    Exceptions:
-        Si al leer la cabecera esta no coincide con el tipo de las variables que la contienen entonces se dispara
-        una exception 
-    """
-    m_BasicHeader = BasicHeader()
-    m_ProcessingHeader = ProcessingHeader()
-    m_RadarControllerHeader = RadarControllerHeader()
-    m_SystemHeader = SystemHeader()
-    fp = None
-    
-    try:
-        fp = open( filename,'rb' )
-        m_BasicHeader.read(fp)
-        m_SystemHeader.read(fp)
-        m_RadarControllerHeader.read(fp)
-        m_ProcessingHeader.read(fp)
-        fp.close()
-    except:
-        if fp != None: fp.close()
-        return False
-
-    return True
-    
-
 def checkForRealPath(path, year, doy, set, ext):
     """
     Por ser Linux Case Sensitive entonces checkForRealPath encuentra el nombre correcto de un path,
@@ -150,10 +116,12 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     except:
         raise IOError, "The file %s can't be opened" %(filename)
     
-    if not(m_BasicHeader.read(fp)):
-        raise IOError, "The file %s has not a valid header" %(filename)
-    
+    sts = m_BasicHeader.read(fp)
     fp.close()
+    
+    if not(sts):
+        print "Skipping the file %s because it has not a valid header" %(filename)
+        return 0
     
     if not ((startUTSeconds <= m_BasicHeader.utc) and (endUTSeconds >= m_BasicHeader.utc)):
         return 0
@@ -161,41 +129,41 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     return 1
 
         
-def getlastFileFromPath(pathList, ext):
+def getlastFileFromPath(path, ext):
     """
-    Depura el pathList dejando solo los que cumplan el formato de "PYYYYDDDSSS.ext"
+    Depura el fileList dejando solo los que cumplan el formato de "PYYYYDDDSSS.ext"
     al final de la depuracion devuelve el ultimo file de la lista que quedo.  
     
     Input: 
-        pathList    :    lista conteniendo todos los filename completos que componen una determinada carpeta
+        fileList    :    lista conteniendo todos los files (sin path) que componen una determinada carpeta
         ext         :    extension de los files contenidos en una carpeta 
             
     Return:
-        El ultimo file de una determinada carpeta
+        El ultimo file de una determinada carpeta, no se considera el path.
     """
     
-    filesList = []
-    filename = None
-
+    validFilelist = []
+    fileList = os.listdir(path)
+    
     # 0 1234 567 89A BCDE
     # D YYYY DDD SSS .ext
     
-    for filename in pathList:
-        year = filename[1:5]
-        doy  = filename[5:8]
-        leng = len( ext )
+    for file in fileList:
+        try:
+            year = int(file[1:5])
+            doy  = int(file[5:8])
+        except:
+            continue
         
-        if ( filename[-leng:].upper() != ext.upper() ) : continue 
-        if not( isNumber( year ) )  : continue
-        if not( isNumber( doy )  )  : continue
+        if (os.path.splitext(file)[-1].upper() != ext.upper()) : continue
 
-        filesList.append(filename)
+        validFilelist.append(file)
 
-    if len( filesList ) > 0:
-        filesList = sorted( filesList, key=str.lower )
-        filename = filesList[-1]
+    if len(validFilelist) > 0:
+        validFilelist = sorted( validFilelist, key=str.lower )
+        return validFilelist[-1]
 
-    return filename
+    return None
 
 
 class DataReader():
@@ -227,7 +195,6 @@ class JRODataReader(DataReader):
     el "datablock" cada vez que se ejecute el metodo "getData".
     """
     
-    """
     m_BasicHeader = BasicHeader()
     
     m_SystemHeader = SystemHeader()
@@ -240,19 +207,19 @@ class JRODataReader(DataReader):
     
     online = 0
     
-    __startDateTime = None
+    startDateTime = None
     
-    __endDateTime = None    
+    endDateTime = None    
     
-    __fp = None
+    fp = None
     
-    __fileSizeByHeader = None
+    fileSizeByHeader = None
     
-    __pathList = []
+    pathList = []
     
-    __filenameList = []
+    filenameList = []
     
-    __fileIndex = None
+    fileIndex = None
     
     filename = None
     
@@ -262,40 +229,45 @@ class JRODataReader(DataReader):
     
     basicHeaderSize = 24
     
-    __dataType = None
+    dataType = None
     
-    __blocksize = 0
+    blocksize = 0
         
     datablock = None
       
-    __datablockIndex = None
+    datablockIndex = None
 
-    __pts2read = 0
+    pts2read = 0
     
     #Parametros para el procesamiento en linea
-    __year = 0
+    year = 0
     
-    __doy = 0
+    doy = 0
     
-    __set = 0
+    set = 0
     
-    __ext = None
+    ext = None
     
-    __path = None
+    path = None
     
-    __delay  = 60   #seconds
+    optchar = None
     
-    __nTries  = 3  #quantity tries
+    delay  = 7   #seconds
     
-    __nFiles = 3   #number of files for searching
+    nTries  = 3  #quantity tries
     
-    __pts2read = 0
-    __blocksize = 0
-    __utc = 0
+    nFiles = 3   #number of files for searching
+    
+    pts2read = 0
+    
+    blocksize = 0
+    
+    utc = 0
+    
     nBlocks = 0
-    """
+    
     #speed of light
-    __c = 3E8
+    c = 3E8
     
     def __init__(self, m_DataObj=None):
         """
@@ -319,109 +291,28 @@ class JRODataReader(DataReader):
         Return:
             None
         """
-        if m_DataObj == None:
-            m_DataObj = JROData()
         
-        if not(isinstance(m_DataObj, JROData)):
-            raise ValueError, "in JRODataReader, m_DataObj must be an class object"
-
-        self.m_DataObj = m_DataObj
-        
-        self.m_BasicHeader = BasicHeader()
-        
-        self.m_SystemHeader = SystemHeader()
-        
-        self.m_RadarControllerHeader = RadarControllerHeader()
-        
-        self.m_ProcessingHeader = ProcessingHeader()
-    
-        self.__fp = None
-        
-        self.__fileIndex = None
-        
-        self.__startDateTime = None
-        
-        self.__endDateTime = None
-        
-        self.__dataType = None
-        
-        self.__fileSizeByHeader = 0
-        
-        self.__pathList = []
-        
-        self.filenameList = []
-        
-        self.__lastUTTime = 0
-        
-        self.__maxTimeStep = 30
-        
-        self.__flagIsNewFile = 0
-        
-        self.__ippSeconds = 0
-        
-        self.flagResetProcessing = 0    
-        
-        self.flagIsNewBlock = 0
-        
-        self.noMoreFiles = 0
-        
-        self.nReadBlocks = 0
-        
-        self.online = 0
-        
-        self.filename = None
-        
-        self.fileSize = None
-        
-        self.firstHeaderSize = 0
-        
-        self.basicHeaderSize = 24
-        
-        self.idProfile = 0
-        
-        self.datablock = None
-        
-        self.__datablockIndex = 9999
-
-        self.__delay  = 7  #seconds
-        self.__nTries  = 3  #quantity tries
-        self.__nFiles = 3   #number of files for searching
-        self.__year = 0 
-        self.__doy = 0 
-        self.__set = 0 
-        self.__ext = None
-        self.__path = None
-        self.__blocksize = 0
-        self.__utc = 0
-        self.nBlocks = 0
-
-        self.__pts2read = 0
-        self.__pts2read_SelfSpectra = 0
-        self.__pts2read_CrossSpectra = 0
-        self.__pts2read_DCchannels = 0
-        self.__blocksize = 0
-
-        self.__format = None
+        raise ValueError, "This class can't be instanced"
 
     
     def __rdSystemHeader(self, fp=None):
         
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
             
         self.m_SystemHeader.read(fp)
 
     
     def __rdRadarControllerHeader(self, fp=None):
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
             
         self.m_RadarControllerHeader.read(fp)
 
         
     def __rdProcessingHeader(self, fp=None):
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
             
         self.m_ProcessingHeader.read(fp)
 
@@ -429,10 +320,9 @@ class JRODataReader(DataReader):
     def __rdBasicHeader(self, fp=None):
         
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
             
         self.m_BasicHeader.read(fp)
-
     
     def __readFirstHeader(self):
         """ 
@@ -444,14 +334,14 @@ class JRODataReader(DataReader):
             self.m_RadarControllerHeader
             self.m_ProcessingHeader
             self.firstHeaderSize
-            self.__heights
-            self.__dataType
-            self.__fileSizeByHeader
-            self.__ippSeconds
+            self.heights
+            self.dataType
+            self.fileSizeByHeader
+            self.ippSeconds
             self.nChannels
             self.nPairs
-            self.__pts2read_SelfSpectra
-            self.__pts2read_CrossSpectra
+            self.pts2read_SelfSpectra
+            self.pts2read_CrossSpectra
             
         Return: 
             None
@@ -488,36 +378,12 @@ class JRODataReader(DataReader):
         step = self.m_ProcessingHeader.deltaHeight
         xf = xi + self.m_ProcessingHeader.numHeights*step
         
-        self.__heights = numpy.arange(xi, xf, step)
-        self.__dataType = tmp
-        self.__fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
-        self.__ippSeconds = 2 * 1000 * self.m_RadarControllerHeader.ipp / self.__c
-
-        if self.__format == "jicamarca":
-            self.__pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels
-            self.__blocksize = self.__pts2read
-
-        elif self.__format == "pdata":
-            self.nChannels = 0
-            self.nPairs = 0
-            
-            for i in range( 0, self.m_ProcessingHeader.totalSpectra*2, 2 ):
-                if self.m_ProcessingHeader.spectraComb[i] == self.m_ProcessingHeader.spectraComb[i+1]:
-                    self.nChannels = self.nChannels + 1 
-                else:
-                    self.nPairs = self.nPairs + 1
-            
-            pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights
-            self.__pts2read_SelfSpectra = int( pts2read * self.nChannels )
-            self.__pts2read_CrossSpectra = int( pts2read * self.nPairs )
-            self.__pts2read_DCchannels = int( self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels )
-            
-            self.__blocksize = self.__pts2read_SelfSpectra + self.__pts2read_CrossSpectra + self.__pts2read_DCchannels   
-            
-            self.m_DataObj.nChannels = self.nChannels
-            self.m_DataObj.nPairs = self.nPairs
-            
+        self.heights = numpy.arange(xi, xf, step)
+        self.dataType = tmp
+        self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
+        self.ippSeconds = 2 * 1000 * self.m_RadarControllerHeader.ipp / self.c
         
+        self.getBlockDimension()
 
     def __setNextFileOnline(self):
         """
@@ -526,11 +392,11 @@ class JRODataReader(DataReader):
         siguientes.   
             
         Affected: 
-            self.__flagNewFile
+            self.flagIsNewFile
             self.filename
             self.fileSize
-            self.__fp
-            self.__set
+            self.fp
+            self.set
             self.flagNoMoreFiles
 
         Return: 
@@ -546,20 +412,20 @@ class JRODataReader(DataReader):
         notFirstTime_flag = False
         fileOk_flag = False        
         changeDir_flag = False
-        self.__flagIsNewFile = 0
+        self.flagIsNewFile = 0
         
         while( True ):  #este loop permite llevar la cuenta de intentos, de files y carpetas, 
                         #si no encuentra alguno sale del bucle   
             countFiles += 1
             
-            if countFiles > (self.__nFiles + 1):
+            if countFiles > (self.nFiles + 1):
                 break
             
-            self.__set += 1
+            self.set += 1
                 
-            if countFiles > self.__nFiles: #si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
-                self.__set = 0
-                self.__doy += 1
+            if countFiles > self.nFiles: #si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
+                self.set = 0
+                self.doy += 1
                 changeDir_flag = True 
             
             file = None
@@ -567,18 +433,18 @@ class JRODataReader(DataReader):
             fileOk_flag = False
             
             #busca el 1er file disponible
-            file, filename = checkForRealPath( self.__path, self.__year, self.__doy, self.__set, self.__ext )
+            file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
 
             if file == None:
                 if notFirstTime_flag: #si no es la primera vez que busca el file entonces no espera y busca for el siguiente file
                     print "\tsearching next \"%s\" file ..." % ( filename )
                     continue 
-                else: #si es la primera vez que busca el file entonces espera self.__nTries veces hasta encontrarlo o no 
-                    for nTries in range( self.__nTries ): 
+                else: #si es la primera vez que busca el file entonces espera self.nTries veces hasta encontrarlo o no 
+                    for nTries in range( self.nTries ): 
                         print "\twaiting new \"%s\" file, try %03d ..." % ( filename, nTries+1 ) 
-                        time.sleep( self.__delay )
+                        time.sleep( self.delay )
     
-                        file, filename = checkForRealPath( self.__path, self.__year, self.__doy, self.__set, self.__ext )
+                        file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
                         if file != None:
                             fileOk_flag = True
                             break
@@ -604,9 +470,9 @@ class JRODataReader(DataReader):
                 changeDir_flag = False
                 continue
 
-            for nTries in range( self.__nTries ):
+            for nTries in range( self.nTries ):
                 print "\twaiting for the First Header block of \"%s\" file, try %03d ..." % ( filename, nTries+1 ) 
-                time.sleep( self.__delay )
+                time.sleep( self.delay )
 
                 currentSize = os.path.getsize( file )
                 neededSize = self.m_ProcessingHeader.blockSize + self.firstHeaderSize
@@ -624,15 +490,15 @@ class JRODataReader(DataReader):
         if fileOk_flag:
             self.fileSize = os.path.getsize( file )
             self.filename = file
-            self.__flagIsNewFile = 1
-            if self.__fp != None: self.__fp.close() 
-            self.__fp = open(file)
+            self.flagIsNewFile = 1
+            if self.fp != None: self.fp.close() 
+            self.fp = open(file)
             self.noMoreFiles = 0
             print 'Setting the file: %s' % file
         else:
             self.fileSize = 0
             self.filename = None
-            self.__fp = None
+            self.fp = None
             self.noMoreFiles = 1
             print 'No more Files'
 
@@ -644,11 +510,11 @@ class JRODataReader(DataReader):
         Busca el siguiente file dentro de un folder que tenga suficiente data para ser leida
             
         Affected: 
-            self.__flagIsNewFile
-            self.__fileIndex
+            self.flagIsNewFile
+            self.fileIndex
             self.filename
             self.fileSize
-            self.__fp
+            self.fp
 
         Return: 
             0    : si un determinado file no puede ser abierto
@@ -657,17 +523,17 @@ class JRODataReader(DataReader):
         Excepciones: 
             Si un determinado file no puede ser abierto
         """
-        idFile = self.__fileIndex
+        idFile = self.fileIndex
         while(True):
             
             idFile += 1
             
-            if not(idFile < len(self.__filenameList)):
+            if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
                 print 'No more Files'
                 return 0
             
-            filename = self.__filenameList[idFile]
+            filename = self.filenameList[idFile]
             fileSize = os.path.getsize(filename)
             
             try:
@@ -684,11 +550,11 @@ class JRODataReader(DataReader):
             
             break
         
-        self.__flagNewFile = 1
-        self.__fileIndex = idFile
+        self.flagIsNewFile = 1
+        self.fileIndex = idFile
         self.filename = filename
         self.fileSize = fileSize
-        self.__fp = fp
+        self.fp = fp
         
         print 'Setting the file: %s'%self.filename
         
@@ -710,8 +576,8 @@ class JRODataReader(DataReader):
             0    :    Si no hay files disponibles
             1    :    Si hay mas files disponibles
         """
-        if self.__fp != None:
-            self.__fp.close()
+        if self.fp != None:
+            self.fp.close()
 
         if self.online:
             newFile = self.__setNextFileOnline()
@@ -742,13 +608,13 @@ class JRODataReader(DataReader):
             0    :    Si el file no tiene un Basic Header que pueda ser leido
             1    :    Si se pudo leer el Basic Header
         """
-        if self.__fp == None:
+        if self.fp == None:
             return 0
         
-        if self.__flagIsNewFile:
+        if self.flagIsNewFile:
             return 1
         
-        currentSize = self.fileSize - self.__fp.tell()
+        currentSize = self.fileSize - self.fp.tell()
         neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
         
         #If there is enough data setting new data block
@@ -758,196 +624,49 @@ class JRODataReader(DataReader):
         
         #si es OnLine y ademas aun no se han leido un bloque completo entonces se espera por uno valido
         elif (self.nBlocks != self.m_ProcessingHeader.dataBlocksPerFile) and self.online:
-            for nTries in range( self.__nTries ):
+            for nTries in range( self.nTries ):
 
-                fpointer = self.__fp.tell()
-                self.__fp.close()
+                fpointer = self.fp.tell()
+                self.fp.close()
 
                 print "\tWaiting for the next block, try %03d ..." % (nTries+1)
-                time.sleep( self.__delay )
+                time.sleep( self.delay )
 
-                self.__fp = open( self.filename, 'rb' )
-                self.__fp.seek( fpointer )
+                self.fp = open( self.filename, 'rb' )
+                self.fp.seek( fpointer )
 
                 self.fileSize = os.path.getsize( self.filename )
-                currentSize = self.fileSize - self.__fp.tell()
+                currentSize = self.fileSize - self.fp.tell()
                 neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
 
                 if ( currentSize >= neededSize ):
-                    self.__rdBasicHeader()
+                    self.rdBasicHeader()
                     return 1
                 
         #Setting new file 
         if not( self.__setNextFile() ):
             return 0
         
-        deltaTime = self.m_BasicHeader.utc - self.__lastUTTime # check this
+        deltaTime = self.m_BasicHeader.utc - self.lastUTTime # check this
         
         self.flagResetProcessing = 0
         
-        if deltaTime > self.__maxTimeStep:
+        if deltaTime > self.maxTimeStep:
             self.flagResetProcessing = 1
             #self.nReadBlocks = 0
             
         return 1
-
     
-    def __readBlockVoltage(self):
-        """
-        __readBlock lee el bloque de datos desde la posicion actual del puntero del archivo
-        (self.__fp) y actualiza todos los parametros relacionados al bloque de datos
-        (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
-        es seteado a 0
+    def getBlockDimension(self):
         
-        Inputs:
-            None
-            
-        Return:
-            None
+        raise ValueError, "No implemented"
+    
+    def hasNotDataInBuffer(self):
         
-        Affected:
-            self.__datablockIndex
-            self.datablock
-            self.__flagIsNewFile
-            self.idProfile
-            self.flagIsNewBlock
-            self.nReadBlocks
-            
-        Exceptions: 
-            Si un bloque leido no es un bloque valido
-        """
-        blockOk_flag = False
-        fpointer = self.__fp.tell()
-        
-        junk = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read )
-        
-        if self.online:
-            if junk.size != self.__blocksize:
-                for nTries in range( self.__nTries ):
-                    print "\tWaiting for the next block, try %03d ..." % (nTries+1)
-                    time.sleep( self.__delay )
-                    self.__fp.seek( fpointer )
-                    fpointer = self.__fp.tell() 
-                    junk = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read )
-                    if junk.size == self.__blocksize:
-                        blockOk_flag = True
-                        break
-                
-                if not( blockOk_flag ):
-                    return 0
-        
-        try:
-            junk = junk.reshape( (self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels) )
-        except:
-            print "Data file %s is invalid" % self.filename
-            return 0
-        
-        self.datablock = junk['real'] + junk['imag']*1j
-        
-        self.__datablockIndex = 0
-        self.__flagIsNewFile = 0
-        self.idProfile = 0
-        self.flagIsNewBlock = 1
-
-        self.nReadBlocks += 1
-        self.nBlocks += 1
-          
-        return 1
+        raise ValueError, "Not implemented"
 
 
-    def __readBlockSpectra(self):
-        """
-        Lee el bloque de datos desde la posicion actual del puntero del archivo
-        (self.__fp) y actualiza todos los parametros relacionados al bloque de datos
-        (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
-        es seteado a 0
-        
-        Return: None
-        
-        Variables afectadas:
-            self.__datablockIndex
-            self.__flagIsNewFile
-            self.flagIsNewBlock
-            self.nReadBlocks
-            self.__data_spc
-            self.__data_cspc
-            self.__data_dc
-
-        Exceptions: 
-            Si un bloque leido no es un bloque valido
-        """
-        blockOk_flag = False
-        fpointer = self.__fp.tell()
-
-        spc = numpy.fromfile( self.__fp, self.__dataType[0], self.__pts2read_SelfSpectra )
-        cspc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_CrossSpectra )
-        dc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
-
-        if self.online:
-            if (spc.size + cspc.size + dc.size) != self.__blocksize:
-                for nTries in range( self.__nTries ):
-                    #nTries = 0
-                    #while( nTries < self.__nTries ):
-                    #nTries += 1 
-                    print "\tWaiting for the next block, try %03d ..." % (nTries+1)
-                    time.sleep( self.__delay )
-                    self.__fp.seek( fpointer )
-                    fpointer = self.__fp.tell() 
-                    spc = numpy.fromfile( self.__fp, self.__dataType[0], self.__pts2read_SelfSpectra )
-                    cspc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_CrossSpectra )
-                    dc = numpy.fromfile( self.__fp, self.__dataType, self.__pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
-                    
-                    if (spc.size + cspc.size + dc.size) == self.__blocksize:
-                        blockOk_flag = True
-                        break
-                    #if (spc.size + cspc.size + dc.size) == self.__blocksize:
-                    #    nTries = 0
-                    #    break
-                if not( blockOk_flag ):
-                    return 0
-                #if nTries > 0:
-                #    return 0
-        
-        try:
-            spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
-            cspc = cspc.reshape( (self.nPairs, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
-            dc = dc.reshape( (self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights) ) #transforma a un arreglo 2D
-        except:
-            print "Data file %s is invalid" % self.filename
-            return 0
-        
-        if not( self.m_ProcessingHeader.shif_fft ):
-            spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
-            cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
-        
-        spc = numpy.transpose( spc, (0,2,1) )
-        cspc = numpy.transpose( cspc, (0,2,1) )
-        #dc = numpy.transpose(dc, (0,2,1))
-
-        self.__data_spc = spc
-        self.__data_cspc = cspc['real'] + cspc['imag']*1j
-        self.__data_dc = dc['real'] + dc['imag']*1j
-
-        self.datablock_id = 0
-        self.__flagIsNewFile = 0
-        self.flagIsNewBlock = 1
-
-        self.nReadBlocks += 1
-        self.nBlocks += 1
-
-        return 1
-
- 
-    def __hasNotDataInBuffer(self):
-        if self.__format == "jicamarca":
-            if self.__datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
-                return 1
-            else: return 0
-
-        return 1    
-
-
-    def __searchFilesOnLine( self, path, startDateTime=None, ext = ".pdata" ):
+    def __searchFilesOnLine( self, path, startDateTime=None, endDateTime=None, expLabel = "", ext = ".pdata" ):
         """
         Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
         devuelve el archivo encontrado ademas de otros datos.
@@ -965,45 +684,64 @@ class JRODataReader(DataReader):
             directory   :    eL directorio donde esta el file encontrado
         """
 
-        print "Searching files ..."
-
+        print "Searching files ..."  
+               
         dirList = []
-        directory = None
+        for thisPath in os.listdir(path):
+            if os.path.isdir(os.path.join(path,thisPath)):
+                dirList.append(thisPath)
+
+        pathList = dirList
         
-        if startDateTime == None:
-            for thisPath in os.listdir(path):
-                if os.path.isdir( os.path.join(path,thisPath) ):
-                    dirList.append( thisPath )
-
-            dirList = sorted( dirList, key=str.lower ) #para que quede ordenado al margen de si el nombre esta en mayusculas o minusculas, utilizo la funcion sorted 
-            if len(dirList) > 0 :
-                directory = dirList[-1] #me quedo con el ultimo directorio de una carpeta
-        else:
-            year = startDateTime.timetuple().tm_year
-            doy = startDateTime.timetuple().tm_yday
-
-            doyPath = "D%04d%03d" % (year,doy)  #caso del nombre en mayusculas
-            if os.path.isdir( os.path.join(path,doyPath) ):
-                directory = doyPath
+        if startDateTime != None:
+            pathList = []
+            thisDateTime = startDateTime
+            if endDateTime == None: endDateTime = startDateTime
             
-            doyPath = doyPath.lower()   #caso del nombre en minusculas
-            if os.path.isdir( os.path.join(path,doyPath) ):
-                directory = doyPath
+            while(thisDateTime <= endDateTime):
+                year = thisDateTime.timetuple().tm_year
+                doy = thisDateTime.timetuple().tm_yday
+                
+                match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
+                if len(match) == 0:
+                    thisDateTime += datetime.timedelta(1)
+                    continue
+                
+                pathList.append(os.path.join(path,match[0], expLabel))
+                thisDateTime += datetime.timedelta(1)
+            
+        
+        directory = pathList[-1]
 
         if directory == None:
             return 0, 0, 0, None, None   
         
-        filename = getlastFileFromPath( os.listdir( os.path.join(path,directory) ), ext )
-
-        if filename == None:
-            return 0, 0, 0, None, None 
-
-        year = int( directory[-7:-3] )
-        doy  = int( directory[-3:] )
-        ln   = len( ext )
-        set  = int( filename[-ln-3:-ln] )
         
-        return year, doy, set, filename, directory
+        nTries = 0
+        while True:
+            if nTries >= self.nTries:
+                break
+            filename = getlastFileFromPath(directory, ext )
+            
+            if filename != None:
+                break
+            
+            print "Waiting %d seconds for the first file with extension (%s) on %s..." %(self.delay, ext, directory)
+            time.sleep(self.delay)
+            nTries += 1
+        
+        if filename == None:
+            return None, None, None, None, None
+
+        if not(self.__verifyFile(os.path.join(directory, filename))):
+            print "The file %s hasn't enough data" % filename
+            return None, None, None, None, None
+        
+        year = int( filename[1:5] )
+        doy  = int( filename[5:8] )
+        set  = int( filename[8:11] )        
+        
+        return directory, filename, year, doy, set
 
 
     def __searchFilesOffLine(self, path, startDateTime, endDateTime, set=None, expLabel = "", ext = ".r"):
@@ -1045,7 +783,7 @@ class JRODataReader(DataReader):
         
         Variables afectadas:
         
-            self.__filenameList:    Lista de archivos (ruta completa) que la clase utiliza
+            self.filenameList:    Lista de archivos (ruta completa) que la clase utiliza
                                   como fuente para leer los bloque de datos, si se termina
                                   de leer todos los bloques de datos de un determinado 
                                   archivo se pasa al siguiente archivo de la lista.
@@ -1089,14 +827,14 @@ class JRODataReader(DataReader):
                 if isThisFileinRange(filename, startUtSeconds, endUtSeconds):
                     filenameList.append(filename)
                     
-        self.__filenameList = filenameList
+        self.filenameList = filenameList
         
         return pathList, filenameList
 
 
-    def __initFilesOnline( self, path, dirfilename, filename ):
+    def __verifyFile( self, filename ):
         """
-        Verifica que el primer file tenga una data valida, para ello leo el 1er bloque
+        Verifica que el filename tenga data valida, para ello leo el 1er bloque
         del file, si no es un file valido espera una cierta cantidad de tiempo a que 
         lo sea, si transcurrido el tiempo no logra validar el file entonces el metodo
         devuelve 0 caso contrario devuelve 1
@@ -1109,14 +847,12 @@ class JRODataReader(DataReader):
             1    :    file valido para ser leido
         """
         m_BasicHeader = BasicHeader()
-    
-        file = os.path.join( path, dirfilename, filename )
         
-        for nTries in range( self.__nTries+1 ):
+        for nTries in range( self.nTries+1 ):
             try:
-                fp = open( file,'rb' ) #lectura binaria
+                fp = open( filename,'rb' ) #lectura binaria
             except:
-                raise IOError, "The file %s can't be opened" % (file)
+                raise IOError, "The file %s can't be opened" % (filename)
             
             try:
                 m_BasicHeader.read(fp)
@@ -1128,11 +864,11 @@ class JRODataReader(DataReader):
             if m_BasicHeader.size > 24:
                 break
             
-            if nTries >= self.__nTries: #si ya espero la cantidad de veces necesarias entonces ya no vuelve a esperar
+            if nTries >= self.nTries: #si ya espero la cantidad de veces necesarias entonces ya no vuelve a esperar
                 break
 
-            print '\twaiting for new block of file %s: try %02d' % ( file, nTries )
-            time.sleep( self.__delay )
+            print '\twaiting for new block of file %s: try %02d' % ( filename, nTries )
+            time.sleep( self.delay )
 
         if m_BasicHeader.size <= 24:
             return 0
@@ -1146,7 +882,7 @@ class JRODataReader(DataReader):
         
         Si el modo de lectura es offline, primero se realiza una busqueda de todos los archivos
         que coincidan con los parametros especificados; esta lista de archivos son almacenados en
-        self.__filenameList.
+        self.filenameList.
         
         Input:
             path                :    Directorios donde se ubican los datos a leer. Dentro de este
@@ -1179,66 +915,36 @@ class JRODataReader(DataReader):
             self.endYear
             self.startDoy
             self.endDoy
-            self.__pathList
-            self.__filenameList 
+            self.pathList
+            self.filenameList 
             self.online
         """
+        
+        if ext == None:
+            ext = self.ext
+            
         if online:
-            fileOK_flag = False
-            subfolder = "D%04d%03d" % ( startDateTime.timetuple().tm_year, startDateTime.timetuple().tm_yday )
-            file = os.path.join( path, subfolder )
-
-            for nTries in range( self.__nTries+1 ): #espera por el 1er file
-               year, doy, set, filename, dirfilename = self.__searchFilesOnLine( path, startDateTime, ext )
-               
-               if filename != None:
-                   if isFileOK( os.path.join( path,dirfilename,filename ) ): 
-                       fileOK_flag = True
-                       break
-               
-               if nTries >= self.__nTries: #si ya espero la cantidad de veces necesarias entonces ya no vuelve a esperar 
-                   break
-               
-               print "Searching first file in \"%s\", try %03d ..." % ( file, nTries+1 ) 
-               time.sleep( self.__delay )
-
-            if not( fileOK_flag ): #filename == None:
-                print "No files on line or invalid first file"
+            
+            doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
+            
+            if doypath == None:
                 return 0
-
-            if self.__initFilesOnline( path, dirfilename, filename ) == 0:
-                print "The file %s hasn't enough data" % filename
-                return 0            
-
-            self.__year = year
-            self.__doy  = doy
-            self.__set  = set - 1
-            self.__path = path
+        
+            self.year = year
+            self.doy  = doy
+            self.set  = set - 1
+            self.path = path
 
         else:
-            pathList, filenameList = self.__searchFilesOffLine( path, startDateTime, endDateTime, set, expLabel, ext )
-            self.__fileIndex = -1 
-            self.__pathList = pathList
+            pathList, filenameList = self.__searchFilesOffLine(path, startDateTime, endDateTime, set, expLabel, ext)
+            self.fileIndex = -1 
+            self.pathList = pathList
             self.filenameList = filenameList
              
         self.online = online
-        self.__ext = ext
+        self.ext = ext
 
         ext = ext.lower()
-        
-        if ext == '.hdf5':
-            print 'call hdf5 library'
-            return 0
-        
-        elif ext == '.r':
-            self.__format = 'jicamarca'
-
-        elif ext == '.pdata':
-            self.__format = 'pdata'
-        
-        else:
-            print 'unknow format !!!'
-            return 0
 
         if not( self.__setNextFile() ):
             if (startDateTime != None) and (endDateTime != None):
@@ -1264,7 +970,7 @@ class JRODataReader(DataReader):
         self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
         self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
         self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
-        self.m_DataObj.dataType = self.__dataType
+        self.m_DataObj.dataType = self.dataType
             
         return 1 
 
@@ -1275,23 +981,22 @@ class JRODataReader(DataReader):
         mas bloques disponibles en el archivo actual salta al siguiente.
 
         Affected: 
-            self.__lastUTTime
+            self.lastUTTime
 
         Return: None
         """
         if not(self.__setNewBlock()):
             return 0
-             
-        if self.__format == "jicamarca":
-            self.__readBlockVoltage()
-
-        elif self.__format == "pdata":
-            self.__readBlockSpectra()
         
-        self.__lastUTTime = self.m_BasicHeader.utc
+        self.readBlock()
+        
+        self.lastUTTime = self.m_BasicHeader.utc
         
         return 1
 
+    def readBlock(self):
+        
+        raise ValueError, "This method has not been implemented"
     
     def getData( self ):
         """
@@ -1306,73 +1011,17 @@ class JRODataReader(DataReader):
                          buffer. Si no hay mas archivos a leer retorna None.
             
         Variables afectadas:
-            self.m_Voltage
-            self.__datablockIndex
+            self.m_DataObj
+            self.datablockIndex
             
         Affected:
-            self.m_Voltage
-            self.__datablockIndex
+            self.m_DataObj
+            self.datablockIndex
             self.flagNoContinuousBlock
-            self.__flagNewBlock
+            self.flagNewBlock
         """
-        if self.noMoreFiles: return 0
-         
-        self.flagResetProcessing = 0
-        self.flagIsNewBlock = 0
         
-        if self.__hasNotDataInBuffer():            
-
-            if not( self.readNextBlock() ):
-                self.__setNextFile()
-                return 0 
-            
-            self.m_DataObj.m_BasicHeader = self.m_BasicHeader.copy()
-            self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-            self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-            self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
-            self.m_DataObj.heights = self.__heights
-            self.m_DataObj.dataType = self.__dataType
-        
-        if self.noMoreFiles == 1:
-            print 'Process finished'
-            return 0
-        
-        #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
-        
-        if self.__format == "jicamarca":
-            if self.datablock == None:
-                self.m_Voltage.flagNoData = True
-                return 0
-    
-            time = self.m_BasicHeader.utc + self.__datablockIndex * self.__ippSeconds
-            self.__utc = time
-            #self.m_DataObj.m_BasicHeader.utc = time  
-            
-            self.m_DataObj.flagNoData = False
-            self.m_DataObj.flagResetProcessing = self.flagResetProcessing
-            
-            self.m_DataObj.data = self.datablock[self.__datablockIndex,:,:]
-            self.m_DataObj.idProfile = self.idProfile
-            
-            self.__datablockIndex += 1
-            self.idProfile += 1
-    
-        elif self.__format == "pdata":
-            if self.__data_dc == None:
-                self.m_Voltage.flagNoData = True
-                return 0
-    
-            self.m_DataObj.flagNoData = False
-            self.m_DataObj.flagResetProcessing = self.flagResetProcessing
-            
-            self.m_DataObj.data_spc = self.__data_spc
-            self.m_DataObj.data_cspc = self.__data_cspc
-            self.m_DataObj.data_dc = self.__data_dc
-        
-        else:
-            return 0    
-
-        return 1 #self.m_Voltage.data
+        raise ValueError, "This method has not been implemented"
 
 
 class JRODataWriter(DataWriter):
@@ -1386,7 +1035,7 @@ class JRODataWriter(DataWriter):
         Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
          
         Affected: 
-            self.m_Voltage
+            self.m_DataObj
             self.m_BasicHeader
             self.m_SystemHeader
             self.m_RadarControllerHeader
@@ -1397,33 +1046,35 @@ class JRODataWriter(DataWriter):
         if m_Voltage == None:
             m_Voltage = Voltage()    
         
-        self.m_Voltage = m_Voltage
+        self.m_DataObj = m_Voltage
         
-        self.__path = None
+        self.path = None
         
-        self.__fp = None
+        self.fp = None
         
-        self.__format = None
+        self.format = None
     
-        self.__blocksCounter = 0
+        self.blocksCounter = 0
         
-        self.__setFile = None
+        self.setFile = None
         
-        self.__flagIsNewFile = 1
+        self.flagIsNewFile = 1
 
-        self.__dataType = None
+        self.dataType = None
         
         self.datablock = None
         
-        self.__datablockIndex = 0
+        self.datablockIndex = 0
         
-        self.__ext = None
+        self.ext = None
         
-        self.__shapeBuffer = None
+        self.shapeBuffer = None
 
-        self.__shape_spc_Buffer = None
-        self.__shape_cspc_Buffer = None
-        self.__shape_dc_Buffer = None
+        self.shape_spc_Buffer = None
+        
+        self.shape_cspc_Buffer = None
+        
+        self.shape_dc_Buffer = None
 
         self.nWriteBlocks = 0 
         
@@ -1441,9 +1092,11 @@ class JRODataWriter(DataWriter):
     
         self.m_ProcessingHeader = ProcessingHeader()
 
-        self.__data_spc = None
-        self.__data_cspc = None
-        self.__data_dc = None
+        self.data_spc = None
+        
+        self.data_cspc = None
+        
+        self.data_dc = None
 
 
     def __writeFirstHeader(self):
@@ -1460,7 +1113,7 @@ class JRODataWriter(DataWriter):
         self.__wrSystemHeader()
         self.__wrRadarControllerHeader()
         self.__wrProcessingHeader()
-        self.__dataType = self.m_DataObj.dataType
+        self.dataType = self.m_DataObj.dataType
             
             
     def __writeBasicHeader(self, fp=None):
@@ -1471,7 +1124,7 @@ class JRODataWriter(DataWriter):
             None
         """
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
             
         self.m_BasicHeader.write(fp)
 
@@ -1484,7 +1137,7 @@ class JRODataWriter(DataWriter):
             None
         """
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
             
         self.m_SystemHeader.write(fp)
 
@@ -1497,7 +1150,7 @@ class JRODataWriter(DataWriter):
             None
         """
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
         
         self.m_RadarControllerHeader.write(fp)
 
@@ -1510,7 +1163,7 @@ class JRODataWriter(DataWriter):
             None
         """
         if fp == None:
-            fp = self.__fp
+            fp = self.fp
             
         self.m_ProcessingHeader.write(fp)
     
@@ -1521,20 +1174,20 @@ class JRODataWriter(DataWriter):
 
         Affected: 
             self.filename
-            self.__subfolder
-            self.__fp
-            self.__setFile
-            self.__flagIsNewFile
+            self.subfolder
+            self.fp
+            self.setFile
+            self.flagIsNewFile
 
         Return:
             0    :    Si el archivo no puede ser escrito
             1    :    Si el archivo esta listo para ser escrito
         """
-        ext = self.__ext
-        path = self.__path
+        ext = self.ext
+        path = self.path
         
-        if self.__fp != None:
-            self.__fp.close()
+        if self.fp != None:
+            self.fp.close()
         
         timeTuple = time.localtime( self.m_DataObj.m_BasicHeader.utc ) # utc from m_Voltage
         subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
@@ -1542,7 +1195,7 @@ class JRODataWriter(DataWriter):
         tmp = os.path.join( path, subfolder )
         if not( os.path.exists(tmp) ):
             os.mkdir(tmp)
-            self.__setFile = -1 #inicializo mi contador de seteo
+            self.setFile = -1 #inicializo mi contador de seteo
         else:
             filesList = os.listdir( tmp )
             if len( filesList ) > 0:
@@ -1552,34 +1205,33 @@ class JRODataWriter(DataWriter):
                 # 0 1234 567 89A BCDE (hex)
                 # D YYYY DDD SSS .ext
                 if isNumber( filen[8:11] ):
-                    self.__setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
+                    self.setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
                 else:    
-                    self.__setFile = -1
+                    self.setFile = -1
             else:
-                self.__setFile = -1 #inicializo mi contador de seteo
+                self.setFile = -1 #inicializo mi contador de seteo
                 
-        setFile = self.__setFile
+        setFile = self.setFile
         setFile += 1
-
-        if self.__format == "jicamarca":
-            shead = "D"
-        elif self.__format == "pdata":
-            shead = "P"
                 
-        file = '%s%4.4d%3.3d%3.3d%s' % ( shead, timeTuple.tm_year, timeTuple.tm_yday, setFile, ext )
+        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
+                                        timeTuple.tm_year,
+                                        timeTuple.tm_yday,
+                                        setFile,
+                                        ext )
 
         filename = os.path.join( path, subfolder, file )
 
         fp = open( filename,'wb' )
         
-        self.__blocksCounter = 0
+        self.blocksCounter = 0
         
         #guardando atributos 
         self.filename = filename
-        self.__subfolder = subfolder
-        self.__fp = fp
-        self.__setFile = setFile
-        self.__flagIsNewFile = 1
+        self.subfolder = subfolder
+        self.fp = fp
+        self.setFile = setFile
+        self.flagIsNewFile = 1
         
         print 'Writing the file: %s'%self.filename
         
@@ -1596,13 +1248,13 @@ class JRODataWriter(DataWriter):
             0    :    si no pudo escribir nada
             1    :    Si escribio el Basic el First Header
         """        
-        if self.__fp == None:
+        if self.fp == None:
             self.__setNextFile()
         
-        if self.__flagIsNewFile:
+        if self.flagIsNewFile:
             return 1
         
-        if self.__blocksCounter < self.m_ProcessingHeader.dataBlocksPerFile:
+        if self.blocksCounter < self.m_ProcessingHeader.dataBlocksPerFile:
             self.__writeBasicHeader()
             return 1
         
@@ -1610,83 +1262,6 @@ class JRODataWriter(DataWriter):
             return 0
         
         return 1
-
-
-    def __writeVoltageBlock(self):
-        """
-        Escribe el buffer en el file designado
-            
-        Affected:
-            self.__datablockIndex 
-            self.__flagIsNewFile
-            self.flagIsNewBlock
-            self.nWriteBlocks
-            self.__blocksCounter    
-            
-        Return: None
-        """
-        data = numpy.zeros( self.__shapeBuffer, self.__dataType )
-        
-        data['real'] = self.datablock.real
-        data['imag'] = self.datablock.imag
-        
-        data = data.reshape( (-1) )
-            
-        data.tofile( self.__fp )
-        
-        self.datablock.fill(0)
-        self.__datablockIndex = 0 
-        self.__flagIsNewFile = 0
-        self.flagIsNewBlock = 1
-        self.nWriteBlocks += 1
-        self.__blocksCounter += 1
-
-
-    def __writeSpectraBlock(self):
-        """
-        Escribe el buffer en el file designado
-            
-        Affected:
-            self.__data_spc
-            self.__data_cspc
-            self.__data_dc
-            self.__flagIsNewFile
-            self.flagIsNewBlock
-            self.nWriteBlocks
-            self.__blocksCounter    
-            
-        Return: None
-        """
-        spc = numpy.transpose( self.__data_spc, (0,2,1) )
-        if not( self.m_ProcessingHeader.shif_fft ):
-            spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
-        data = spc.reshape((-1))
-        data.tofile(self.__fp)
-
-        data = numpy.zeros( self.__shape_cspc_Buffer, self.__dataType )
-        cspc = numpy.transpose( self.__data_cspc, (0,2,1) )
-        if not( self.m_ProcessingHeader.shif_fft ):
-            cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
-        data['real'] = cspc.real
-        data['imag'] = cspc.imag
-        data = data.reshape((-1))
-        data.tofile(self.__fp)
-
-        data = numpy.zeros( self.__shape_dc_Buffer, self.__dataType )
-        dc = self.__data_dc
-        data['real'] = dc.real
-        data['imag'] = dc.imag
-        data = data.reshape((-1))
-        data.tofile(self.__fp)
-
-        self.__data_spc.fill(0)
-        self.__data_cspc.fill(0)
-        self.__data_dc.fill(0)
-        
-        self.__flagIsNewFile = 0
-        self.flagIsNewBlock = 1
-        self.nWriteBlocks += 1
-        self.__blocksCounter += 1
 
 
     def writeNextBlock(self):
@@ -1700,75 +1275,11 @@ class JRODataWriter(DataWriter):
         if not( self.__setNewBlock() ):
             return 0
         
-        if self.__format == "jicamarca":
-            self.__writeVoltageBlock()
-
-        if self.__format == "pdata":
-            self.__writeSpectraBlock()
+        self.writeBlock()
 
         return 1
 
-
-    def __hasAllDataInBuffer(self):
-        if self.__format == "jicamarca":
-            if self.__datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
-                return 1
-            else: return 0
-
-        return 1    
-
-
-    def putData(self):
-        """
-        Setea un bloque de datos y luego los escribe en un file 
-            
-        Affected:
-            self.flagIsNewBlock
-            self.__datablockIndex
-
-        Return: 
-            0    :    Si no hay data o no hay mas files que puedan escribirse 
-            1    :    Si se escribio la data de un bloque en un file
-        """
-        self.flagIsNewBlock = 0
-        
-        if self.m_DataObj.flagNoData:
-            return 0
-        
-        if self.m_DataObj.flagResetProcessing:
-            if self.__format == "jicamarca":
-                self.datablock.fill(0)
-                self.__datablockIndex = 0
-
-            elif self.__format == "pdata":
-                self.__data_spc.fill(0)
-                self.__data_cspc.fill(0)
-                self.__data_dc.fill(0)
-                
-            self.__setNextFile()
-
-        if self.__format == "jicamarca":
-            self.datablock[self.__datablockIndex,:,:] = self.m_Voltage.data
-
-        elif self.__format == "pdata":
-            self.__data_spc = self.m_Spectra.data_spc
-            self.__data_cspc = self.m_Spectra.data_cspc
-            self.__data_dc = self.m_Spectra.data_dc
-
-        self.__datablockIndex += 1
-        
-        if self.__hasAllDataInBuffer():
-            self.__getHeader()
-            self.writeNextBlock()
-        
-        if self.noMoreFiles:
-            #print 'Process finished'
-            return 0
-        
-        return 1
-
-
-    def __getHeader(self):
+    def getHeader(self):
         """
         Obtiene una copia del First Header
          
@@ -1777,7 +1288,7 @@ class JRODataWriter(DataWriter):
             self.m_SystemHeader
             self.m_RadarControllerHeader
             self.m_ProcessingHeader
-            self.__dataType
+            self.dataType
 
         Return: 
             None
@@ -1786,10 +1297,9 @@ class JRODataWriter(DataWriter):
         self.m_SystemHeader = self.m_DataObj.m_SystemHeader.copy()
         self.m_RadarControllerHeader = self.m_DataObj.m_RadarControllerHeader.copy()
         self.m_ProcessingHeader = self.m_DataObj.m_ProcessingHeader.copy()
-        self.__dataType = self.m_DataObj.dataType
-
-
-    def setup(self, path, set=0, ext='.pdata'):
+        self.dataType = self.m_DataObj.dataType
+    
+    def setup(self, path, set=0, ext=None):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
@@ -1802,53 +1312,49 @@ class JRODataWriter(DataWriter):
             0    :    Si no realizo un buen seteo
             1    :    Si realizo un buen seteo 
         """
-
+        
+        if ext == None:
+            ext = self.ext
+        
         ext = ext.lower()
+
+        self.path = path
+        self.setFile = set - 1
+        self.ext = ext
+        self.format = format
+        self.getHeader()
+
+        self.setBlockDimension()
         
-        if ext == '.hdf5':
-            print 'call hdf5 library'
-            return 0
-        
-        elif ext == '.r':
-            format = 'jicamarca'
-
-        elif ext == '.pdata':
-            format = 'pdata'
-        
-        else:
-            print 'unknow format !!!'
-            return 0
-
-        self.__path = path
-        self.__setFile = set - 1
-        self.__ext = ext
-        self.__format = format
-        self.__getHeader()
-
-        if self.__format == "jicamarca":
-            self.__shapeBuffer =  (self.m_ProcessingHeader.profilesPerBlock,
-                                   self.m_ProcessingHeader.numHeights,
-                                   self.m_SystemHeader.numChannels )
-                
-            self.datablock = numpy.zeros(self.__shapeBuffer, numpy.dtype('complex'))
-
-        elif self.__format == "pdata":
-            self.__shape_spc_Buffer = ( self.m_Spectra.nChannels,
-                                        self.m_ProcessingHeader.numHeights,
-                                        self.m_ProcessingHeader.profilesPerBlock
-                                      )
-    
-            self.__shape_cspc_Buffer = ( self.m_Spectra.nPairs,
-                                         self.m_ProcessingHeader.numHeights,
-                                         self.m_ProcessingHeader.profilesPerBlock
-                                       )
-            
-            self.__shape_dc_Buffer = ( self.m_SystemHeader.numChannels,
-                                       self.m_ProcessingHeader.numHeights
-                                     )
-
         if not( self.__setNextFile() ):
             print "There isn't a next file"
             return 0
 
         return 1
+
+    def hasAllDataInBuffer(self):
+        
+        raise ValueError, "Not implemented"
+
+    def setBlockDimension(self):
+        
+        raise ValueError, "Not implemented"
+    
+    def writeBlock(self):
+        
+        raise ValueError, "No implemented"
+    
+    def putData(self):
+        """
+        Setea un bloque de datos y luego los escribe en un file 
+            
+        Affected:
+            self.flagIsNewBlock
+            self.datablockIndex
+
+        Return: 
+            0    :    Si no hay data o no hay mas files que puedan escribirse 
+            1    :    Si se escribio la data de un bloque en un file
+        """
+        
+        raise ValueError, "No implemented"
