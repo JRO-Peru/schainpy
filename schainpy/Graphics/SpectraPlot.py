@@ -91,12 +91,13 @@ class Spectrum():
         self.nGraphs = nChan
         self.__isPlotConfig = True
 
-    def iniPlot(self):
+    def iniPlot(self, winTitle=""):
         
         nx = int(numpy.sqrt(self.nGraphs)+1)
         #ny = int(self.nGraphs/nx)
         
         plplot.plsstrm(self.indexPlot)
+        plplot.plparseopts([winTitle], plplot.PL_PARSE_FULL)
         plplot.plsetopt("geometry", "%dx%d" %(300*nx, 240*nx))
         plplot.plsdev("xwin")
         plplot.plscolbg(255,255,255)
@@ -111,7 +112,7 @@ class Spectrum():
         self.__isPlotIni = True
          
     
-    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, titleList=None, xlabelList=None, ylabelList=None, showColorbar=False, showPowerProfile=True, XAxisAsTime=False):
+    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, titleList=None, xlabelList=None, ylabelList=None, showColorbar=False, showPowerProfile=True, XAxisAsTime=False, winTitle="Spectra"):
         
         if not(self.__isPlotConfig):
             self.setup(titleList,

@@ -81,9 +81,10 @@ class Osciloscope():
         self.nGraphs = nChan
         self.__isPlotConfig = True
 
-    def iniPlot(self):
+    def iniPlot(self, winTitle=""):
         
         plplot.plsstrm(self.indexPlot)
+        plplot.plparseopts([winTitle], plplot.PL_PARSE_FULL)
         plplot.plsetopt("geometry", "%dx%d" %(700, 115*self.nGraphs))
         plplot.plsdev("xwin")
         plplot.plscolbg(255,255,255)
@@ -94,7 +95,7 @@ class Osciloscope():
         
         self.__isPlotIni = True     
     
-    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, idProfile=None, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False, type='iq'):
+    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, idProfile=None, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False, type='iq', winTitle="Voltage"):
         
         if idProfile != None and idProfile != self.m_Voltage.idProfile:
             return
