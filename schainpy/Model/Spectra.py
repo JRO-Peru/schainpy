@@ -13,6 +13,7 @@ class Spectra(JROData):
     classdocs
     '''
     
+    type = "Spectra"
     data_spc = None
     data_cspc = None
     data_dc = None
@@ -32,11 +33,13 @@ class Spectra(JROData):
     
         self.m_BasicHeader = BasicHeader()
         
-        self.noise = Noise()
+        m_NoiseObj = Noise()
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         self.data_spc = None
+        
         self.data_cspc = None
+        
         self.data_dc = None
           
         self.heights  = None

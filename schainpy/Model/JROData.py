@@ -11,7 +11,7 @@ class Data:
     '''
     classdocs
     '''
-    __type = None
+    type = None
     
     def __init__(self):
         '''
@@ -50,7 +50,7 @@ class JROData(Data):
     m_ProcessingHeader = ProcessingHeader()
     m_SystemHeader = SystemHeader()
     m_BasicHeader = BasicHeader()
-    m_Noise = Noise()
+    m_NoiseObj = Noise()
     
     data = None
     dataType = None

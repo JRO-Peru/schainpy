@@ -13,6 +13,7 @@ class Voltage(JROData):
     classdocs
     '''
     
+    type = "Voltage"
     data = None
     profileIndex = None
     
@@ -29,7 +30,7 @@ class Voltage(JROData):
     
         self.m_BasicHeader= BasicHeader()
         
-        self.noise = Noise()
+        m_NoiseObj = Noise()
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         self.data = None

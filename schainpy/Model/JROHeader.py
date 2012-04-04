@@ -56,16 +56,18 @@ class BasicHeader(Header):
         pass
     
     def read(self, fp):
-        
-        header = numpy.fromfile(fp, self.struct,1)
-        self.size = header['nSize'][0]
-        self.version = header['nVersion'][0]
-        self.dataBlock = header['nDataBlockId'][0]
-        self.utc = header['nUtime'][0]
-        self.miliSecond = header['nMilsec'][0]
-        self.timeZone = header['nTimezone'][0]
-        self.dstFlag = header['nDstflag'][0]
-        self.errorCount = header['nErrorCount'][0]
+        try:
+            header = numpy.fromfile(fp, self.struct,1)
+            self.size = header['nSize'][0]
+            self.version = header['nVersion'][0]
+            self.dataBlock = header['nDataBlockId'][0]
+            self.utc = header['nUtime'][0]
+            self.miliSecond = header['nMilsec'][0]
+            self.timeZone = header['nTimezone'][0]
+            self.dstFlag = header['nDstflag'][0]
+            self.errorCount = header['nErrorCount'][0]
+        except:
+            return 0
         
         return 1
     
@@ -104,14 +106,16 @@ class SystemHeader(Header):
     
 
     def read(self, fp):
-        header = numpy.fromfile(fp,self.struct,1)
-        self.size = header['nSize'][0]
-        self.numSamples = header['nNumSamples'][0]
-        self.numProfiles = header['nNumProfiles'][0]
-        self.numChannels = header['nNumChannels'][0]
-        self.adcResolution = header['nADCResolution'][0]
-        self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
-        
+        try:
+            header = numpy.fromfile(fp,self.struct,1)
+            self.size = header['nSize'][0]
+            self.numSamples = header['nNumSamples'][0]
+            self.numProfiles = header['nNumProfiles'][0]
+            self.numChannels = header['nNumChannels'][0]
+            self.adcResolution = header['nADCResolution'][0]
+            self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
+        except:
+            return 0
         
         return 1
     
@@ -184,27 +188,30 @@ class RadarControllerHeader(Header):
         
 
     def read(self, fp):
-        header = numpy.fromfile(fp,self.struct,1)
-        self.size = header['nSize'][0]
-        self.expType = header['nExpType'][0]
-        self.nTx = header['nNTx'][0]
-        self.ipp = header['fIpp'][0]
-        self.txA = header['fTxA'][0]
-        self.txB = header['fTxB'][0]
-        self.numWindows = header['nNumWindows'][0]
-        self.numTaus = header['nNumTaus'][0]
-        self.codeType = header['nCodeType'][0]
-        self.line6Function = header['nLine6Function'][0]
-        self.line5Function = header['nLine5Function'][0]
-        self.fClock = header['fClock'][0]
-        self.prePulseBefore = header['nPrePulseBefore'][0]
-        self.prePulserAfter = header['nPrePulseAfter'][0]
-        self.rangeIpp = header['sRangeIPP'][0]
-        self.rangeTxA = header['sRangeTxA'][0]
-        self.rangeTxB = header['sRangeTxB'][0]
-        # jump Dynamic Radar Controller Header
-        jumpHeader = self.size - 116
-        self.dynamic = numpy.fromfile(fp,numpy.dtype('byte'),jumpHeader)
+        try:
+            header = numpy.fromfile(fp,self.struct,1)
+            self.size = header['nSize'][0]
+            self.expType = header['nExpType'][0]
+            self.nTx = header['nNTx'][0]
+            self.ipp = header['fIpp'][0]
+            self.txA = header['fTxA'][0]
+            self.txB = header['fTxB'][0]
+            self.numWindows = header['nNumWindows'][0]
+            self.numTaus = header['nNumTaus'][0]
+            self.codeType = header['nCodeType'][0]
+            self.line6Function = header['nLine6Function'][0]
+            self.line5Function = header['nLine5Function'][0]
+            self.fClock = header['fClock'][0]
+            self.prePulseBefore = header['nPrePulseBefore'][0]
+            self.prePulserAfter = header['nPrePulseAfter'][0]
+            self.rangeIpp = header['sRangeIPP'][0]
+            self.rangeTxA = header['sRangeTxA'][0]
+            self.rangeTxB = header['sRangeTxB'][0]
+            # jump Dynamic Radar Controller Header
+            jumpHeader = self.size - 116
+            self.dynamic = numpy.fromfile(fp,numpy.dtype('byte'),jumpHeader)
+        except:
+            return 0
         
         return 1
     
@@ -287,34 +294,36 @@ class ProcessingHeader(Header):
         self.shif_fft = False
     
     def read(self, fp):
-        header = numpy.fromfile(fp,self.struct,1)
-        self.size = header['nSize'][0]
-        self.dataType = header['nDataType'][0]
-        self.blockSize = header['nSizeOfDataBlock'][0]
-        self.profilesPerBlock = header['nProfilesperBlock'][0]
-        self.dataBlocksPerFile = header['nDataBlocksperFile'][0]
-        self.numWindows = header['nNumWindows'][0]
-        self.processFlags = header['nProcessFlags']
-        self.coherentInt = header['nCoherentIntegrations'][0]
-        self.incoherentInt = header['nIncoherentIntegrations'][0]
-        self.totalSpectra = header['nTotalSpectra'][0]
-        self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.numWindows)
-        self.numHeights = numpy.sum(self.samplingWindow['nsa'])
-        self.firstHeight = self.samplingWindow['h0']
-        self.deltaHeight = self.samplingWindow['dh']
-        self.samplesWin = self.samplingWindow['nsa']
-        self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
-        
-        if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
-            self.numCode = numpy.fromfile(fp,'<u4',1)
-            self.numBaud = numpy.fromfile(fp,'<u4',1)
-            self.codes = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
-        
-        if self.processFlags & PROCFLAG.SHIFT_FFT_DATA == PROCFLAG.SHIFT_FFT_DATA:
-            self.shif_fft = True
-        else:
-            self.shif_fft = False
+        try:
+            header = numpy.fromfile(fp,self.struct,1)
+            self.size = header['nSize'][0]
+            self.dataType = header['nDataType'][0]
+            self.blockSize = header['nSizeOfDataBlock'][0]
+            self.profilesPerBlock = header['nProfilesperBlock'][0]
+            self.dataBlocksPerFile = header['nDataBlocksperFile'][0]
+            self.numWindows = header['nNumWindows'][0]
+            self.processFlags = header['nProcessFlags']
+            self.coherentInt = header['nCoherentIntegrations'][0]
+            self.incoherentInt = header['nIncoherentIntegrations'][0]
+            self.totalSpectra = header['nTotalSpectra'][0]
+            self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.numWindows)
+            self.numHeights = numpy.sum(self.samplingWindow['nsa'])
+            self.firstHeight = self.samplingWindow['h0']
+            self.deltaHeight = self.samplingWindow['dh']
+            self.samplesWin = self.samplingWindow['nsa']
+            self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
             
+            if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
+                self.numCode = numpy.fromfile(fp,'<u4',1)
+                self.numBaud = numpy.fromfile(fp,'<u4',1)
+                self.codes = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
+            
+            if self.processFlags & PROCFLAG.SHIFT_FFT_DATA == PROCFLAG.SHIFT_FFT_DATA:
+                self.shif_fft = True
+            else:
+                self.shif_fft = False
+        except:
+            return 0
         
         return 1
     
