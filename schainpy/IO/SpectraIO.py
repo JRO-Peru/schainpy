@@ -29,6 +29,10 @@ class SpectraReader( JRODataReader ):
     de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones) 
     son almacenados en tres buffer's para el Self Spectra, el Cross Spectra y el DC Channel.
 
+                                        pares   * alturas * perfiles  (Self Spectra)
+                                        canales * alturas * perfiles  (Cross Spectra)
+                                        canales * alturas             (DC Channels)
+
     Esta clase contiene instancias (objetos) de las clases BasicHeader, SystemHeader, 
     RadarControllerHeader y Spectra. Los tres primeros se usan para almacenar informacion de la
     cabecera de datos (metadata), y el cuarto (Spectra) para obtener y almacenar un bloque de
@@ -51,13 +55,28 @@ class SpectraReader( JRODataReader ):
             
             print readerObj.m_Spectra.data
             
-            if readerObj.noMoreFiles:
+            if readerObj.flagNoMoreFiles:
                 break
             
     """
+    m_DataObj = None
+    
+    data_spc = None
+    data_cspc = None
+    data_dc = None
+
+    nChannels = 0
+    
+    nPairs = 0
+    
+    pts2read_SelfSpectra = 0
+    pts2read_CrossSpectra = 0
+    pts2read_DCchannels = 0
+    
+    ext = ".pdata"
     
     
-    def __init__(self,m_Spectra=None):
+    def __init__(self, m_Spectra=None):
         """ 
         Inicializador de la clase SpectraReader para la lectura de datos de espectros.
 
@@ -71,10 +90,6 @@ class SpectraReader( JRODataReader ):
          
         Affected: 
             self.m_DataObj
-            self.m_BasicHeader
-            self.m_SystemHeader
-            self.m_RadarControllerHeader
-            self.m_ProcessingHeader
 
         Return      : None
         """
@@ -83,95 +98,31 @@ class SpectraReader( JRODataReader ):
         
         if not( isinstance(m_Spectra, Spectra) ):
             raise ValueError, "in SpectraReader, m_Spectra must be an Spectra class object"
-        
+
         self.m_DataObj = m_Spectra
-        
-        self.m_BasicHeader = BasicHeader()
-        
-        self.m_SystemHeader = SystemHeader()
-        
-        self.m_RadarControllerHeader = RadarControllerHeader()
-        
-        self.m_ProcessingHeader = ProcessingHeader()
-    
-        self.fp = None
-        
-        self.idFile = None
-        
-        self.startDateTime = None
-        
-        self.endDateTime = None
-        
-        self.dataType = None
-        
-        self.fileSizeByHeader = 0
-        
-        self.pathList = []
-        
-        self.filenameList = []
-        
-        self.lastUTTime = 0
-        
-        self.maxTimeStep = 30
-        
-        self.flagIsNewFile = 0
-        
-        self.flagResetProcessing = 0    
-        
-        self.flagIsNewBlock = 0
-        
-        self.noMoreFiles = 0
-        
-        self.nReadBlocks = 0
-        
-        self.online = 0
-        
-        self.firstHeaderSize = 0
-        
-        self.basicHeaderSize = 24
-        
-        self.filename = None
-        
-        self.fileSize = None
-        
-        self.data_spc = None
-        self.data_cspc = None
-        self.data_dc = None
 
-        self.nChannels = 0
-        self.nPairs = 0
-        
-        self.pts2read_SelfSpectra = 0
-        self.pts2read_CrossSpectra = 0
-        self.pts2read_DCchannels = 0
-        self.blocksize = 0
-        
-        self.datablockIndex = 0
-        
-        self.ippSeconds = 0
-        
-        self.nSelfChannels = 0
-        
-        self.nCrossPairs = 0
-        
-        self.datablock_id = 9999
 
-        self.delay  = 2   #seconds
-        self.nTries  = 3  #quantity tries
-        self.nFiles = 3   #number of files for searching
-        self.year = 0 
-        self.doy = 0 
-        self.set = 0 
-        self.ext = ".pdata"
-        self.path = None
-        self.optchar = "P"
-        self.nBlocks = 0
-
-    def hasNotDataInBuffer(self):
+    def __hasNotDataInBuffer(self):
         return 1
 
+
     def getBlockDimension(self):
+        """
+        Obtiene la cantidad de puntos a leer por cada bloque de datos
         
+        Affected:
+            self.nChannels
+            self.nPairs
+            self.pts2read_SelfSpectra
+            self.pts2read_CrossSpectra
+            self.pts2read_DCchannels
+            self.blocksize
+            self.m_DataObj.nChannels
+            self.m_DataObj.nPairs
+
+        Return:
+            None
+        """
         self.nChannels = 0
         self.nPairs = 0
         
@@ -190,6 +141,7 @@ class SpectraReader( JRODataReader ):
         
         self.m_DataObj.nChannels = self.nChannels
         self.m_DataObj.nPairs = self.nPairs
+
             
     def readBlock(self):
         """
@@ -212,10 +164,6 @@ class SpectraReader( JRODataReader ):
         Exceptions: 
             Si un bloque leido no es un bloque valido
         """
-        #self.datablock_id = 0
-        #self.flagIsNewFile = 0
-        #self.flagIsNewBlock = 1
-
         blockOk_flag = False
         fpointer = self.fp.tell()
 
@@ -226,10 +174,7 @@ class SpectraReader( JRODataReader ):
         if self.online:
             if (spc.size + cspc.size + dc.size) != self.blocksize:
                 for nTries in range( self.nTries ):
-                    #nTries = 0
-                    #while( nTries < self.nTries ):
-                    #nTries += 1 
-                    print "\tWaiting for the next block, try %03d ..." % (nTries+1)
+                    print "\tWaiting %0.2f sec for the next block, try %03d ..." % (self.delay, nTries+1)
                     time.sleep( self.delay )
                     self.fp.seek( fpointer )
                     fpointer = self.fp.tell() 
@@ -240,13 +185,8 @@ class SpectraReader( JRODataReader ):
                     if (spc.size + cspc.size + dc.size) == self.blocksize:
                         blockOk_flag = True
                         break
-                    #if (spc.size + cspc.size + dc.size) == self.blocksize:
-                    #    nTries = 0
-                    #    break
                 if not( blockOk_flag ):
                     return 0
-                #if nTries > 0:
-                #    return 0
         
         try:
             spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
@@ -268,7 +208,7 @@ class SpectraReader( JRODataReader ):
         self.data_cspc = cspc['real'] + cspc['imag']*1j
         self.data_dc = dc['real'] + dc['imag']*1j
 
-        self.datablock_id = 0
+        self.datablockIndex = 0
         self.flagIsNewFile = 0
         self.flagIsNewBlock = 1
 
@@ -277,6 +217,7 @@ class SpectraReader( JRODataReader ):
 
         return 1
     
+
     def getData(self):
         """
         Copia el buffer de lectura a la clase "Spectra",
@@ -294,10 +235,12 @@ class SpectraReader( JRODataReader ):
             self.flagIsNewBlock
         """
 
+        if self.flagNoMoreFiles: return 0
+         
         self.flagResetProcessing = 0
         self.flagIsNewBlock = 0
         
-        if self.hasNotDataInBuffer():            
+        if self.__hasNotDataInBuffer():            
 
             if not( self.readNextBlock() ):
                 self.setNextFile()
@@ -310,14 +253,14 @@ class SpectraReader( JRODataReader ):
             self.m_DataObj.heights = self.heights
             self.m_DataObj.dataType = self.dataType
         
-        if self.noMoreFiles == 1:
+        if self.flagNoMoreFiles == 1:
             print 'Process finished'
             return 0
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
 
         if self.data_dc == None:
-            self.m_Voltage.flagNoData = True
+            self.m_DataObj.flagNoData = True
             return 0
 
         self.m_DataObj.flagNoData = False
@@ -328,18 +271,31 @@ class SpectraReader( JRODataReader ):
         self.m_DataObj.data_dc = self.data_dc
         
         #call setData - to Data Object
-        #self.datablock_id += 1
+        #self.datablockIndex += 1
         #self.idProfile += 1
 
         return 1
 
-class SpectraWriter( JRODataWriter ):
+
+class SpectraWriter(JRODataWriter):
+    
     """ 
     Esta clase permite escribir datos de espectros a archivos procesados (.pdata). La escritura
     de los datos siempre se realiza por bloques. 
     """
     
-    def __init__(self,m_Spectra=None):
+    m_DataObj = None
+    
+    ext = ".pdata"
+    
+    optchar = "P"
+    
+    shape_spc_Buffer = None
+    shape_cspc_Buffer = None
+    shape_dc_Buffer = None
+    
+    
+    def __init__(self, m_Spectra=None):
         """ 
         Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
          
@@ -352,59 +308,30 @@ class SpectraWriter( JRODataWriter ):
 
         Return: None
         """
-        
         if m_Spectra == None:
             m_Spectra = Spectra()    
         
-        self.m_DataObj = m_Spectra
-        
-        self.fp = None
-        
-        self.format = None
-    
-        self.blocksCounter = 0
-        
-        self.setFile = None
-        
-        self.flagIsNewFile = 1
-        
-        self.dataType = None
-        
-        self.ext = ".pdata"
-        
-        self.path = None
-        
-        self.optchar = "P"
-        
-        self.shape_spc_Buffer = None
-        self.shape_cspc_Buffer = None
-        self.shape_dc_Buffer = None
-        
-        self.nWriteBlocks = 0 
-        
-        self.flagIsNewBlock = 0
-        
-        self.noMoreFiles = 0
-        
-        self.filename = None
-        
-        self.m_BasicHeader= BasicHeader()
-    
-        self.m_SystemHeader = SystemHeader()
-    
-        self.m_RadarControllerHeader = RadarControllerHeader()
-    
-        self.m_ProcessingHeader = ProcessingHeader()
-        
-        self.data_spc = None
-        self.data_cspc = None
-        self.data_dc = None
+        if not( isinstance(m_Spectra, Spectra) ):
+            raise ValueError, "in SpectraReader, m_Spectra must be an Spectra class object"
 
+        self.m_DataObj = m_Spectra
+
+        
     def hasAllDataInBuffer(self):
         return 1
+
     
     def setBlockDimension(self):
+        """
+        Obtiene las formas dimensionales del los subbloques de datos que componen un bloque
 
+        Affected:
+            self.shape_spc_Buffer
+            self.shape_cspc_Buffer
+            self.shape_dc_Buffer
+
+        Return: None
+        """
         self.shape_spc_Buffer = (self.m_DataObj.nChannels,
                                  self.m_ProcessingHeader.numHeights,
                                  self.m_ProcessingHeader.profilesPerBlock)
@@ -463,6 +390,7 @@ class SpectraWriter( JRODataWriter ):
         self.nWriteBlocks += 1
         self.blocksCounter += 1
         
+        
     def putData(self):
         """
         Setea un bloque de datos y luego los escribe en un file 
@@ -491,11 +419,12 @@ class SpectraWriter( JRODataWriter ):
         self.data_cspc = self.m_DataObj.data_cspc
         self.data_dc = self.m_DataObj.data_dc
         
+        # #self.m_ProcessingHeader.dataBlocksPerFile)
         if True:
             self.getHeader()
             self.writeNextBlock()
         
-        if self.noMoreFiles:
+        if self.flagNoMoreFiles:
             #print 'Process finished'
             return 0
         

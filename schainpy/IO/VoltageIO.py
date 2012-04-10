@@ -20,12 +20,15 @@ from Model.Voltage import Voltage
 from IO.DataIO import JRODataReader
 from IO.DataIO import JRODataWriter
 
+
 class VoltageReader(JRODataReader):
     """
     Esta clase permite leer datos de voltage desde archivos en formato rawdata (.r). La lectura
     de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones: 
     perfiles*alturas*canales) son almacenados en la variable "buffer".
      
+                             Voltajes  -  perfiles * alturas * canales  
+
     Esta clase contiene instancias (objetos) de las clases BasicHeader, SystemHeader, 
     RadarControllerHeader y Voltage. Los tres primeros se usan para almacenar informacion de la
     cabecera de datos (metadata), y el cuarto (Voltage) para obtener y almacenar un perfil de
@@ -54,13 +57,24 @@ class VoltageReader(JRODataReader):
             #If you want to see all datablock
             print readerObj.datablock
             
-            if readerObj.noMoreFiles:
+            if readerObj.flagNoMoreFiles:
                 break
             
     """
+    m_DataObj = None
+    
+    idProfile = 0
+    
+    datablock = None
+    
+    ext = ".r"
+    
+    pts2read = 0
+    
+    utc = 0
 
     
-    def __init__(self,m_Voltage=None):
+    def __init__(self, m_Voltage=None):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
         
@@ -74,15 +88,9 @@ class VoltageReader(JRODataReader):
         
         Variables afectadas:
             self.m_DataObj
-            self.m_BasicHeader
-            self.m_SystemHeader
-            self.m_RadarControllerHeader
-            self.m_ProcessingHeader
-            
         
         Return:
-            Void
-        
+            None
         """
         if m_Voltage == None:
             m_Voltage = Voltage()
@@ -91,98 +99,28 @@ class VoltageReader(JRODataReader):
             raise ValueError, "in VoltageReader, m_Voltage must be an Voltage class object"
         
         self.m_DataObj = m_Voltage
-        
-        self.m_BasicHeader = BasicHeader()
-        
-        self.m_SystemHeader = SystemHeader()
-        
-        self.m_RadarControllerHeader = RadarControllerHeader()
-        
-        self.m_ProcessingHeader = ProcessingHeader()
-    
-        self.fp = None
-        
-        self.idFile = None
-        
-        self.startDateTime = None
-        
-        self.endDateTime = None
-        
-        self.dataType = None
-        
-        self.fileSizeByHeader = 0
-        
-        self.pathList = []
-        
-        self.filenameList = []
-        
-        self.lastUTTime = 0
-        
-        self.maxTimeStep = 30
-        
-        self.flagIsNewFile = 0
-        
-        self.ippSeconds = 0
-        
-        self.flagResetProcessing = 0    
-        
-        self.flagIsNewBlock = 0
-        
-        self.noMoreFiles = 0
-        
-        self.nReadBlocks = 0
-        
-        self.online = 0
-        
-        self.filename = None
-        
-        self.fileSize = None
-        
-        self.firstHeaderSize = 0
-        
-        self.basicHeaderSize = 24
-        
-        self.idProfile = 0
-        
-        self.datablock = None
-        
-        self.datablockIndex = 9999
 
-        self.delay  = 7   #seconds
-        
-        self.nTries  = 3  #quantity tries
-        
-        self.nFiles = 3   #number of files for searching
-        
-        self.year = 0
-        
-        self.doy = 0
-        
-        self.set = 0
-        
-        self.ext = ".r"
-        
-        self.path = None
-        
-        self.optchar = "D"
-        
-        self.pts2read = 0
-        
-        self.blocksize = 0
-        
-        self.utc = 0
-        
-        self.nBlocks = 0
     
-    def hasNotDataInBuffer(self):
+    def __hasNotDataInBuffer(self):
         if self.datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         return 0
 
+
     def getBlockDimension(self):
+        """
+        Obtiene la cantidad de puntos a leer por cada bloque de datos
         
+        Affected:
+            self.pts2read
+            self.blocksize
+
+        Return:
+            None
+        """
         self.pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels
         self.blocksize = self.pts2read
+
             
     def readBlock(self):
         """
@@ -216,7 +154,7 @@ class VoltageReader(JRODataReader):
         if self.online:
             if junk.size != self.blocksize:
                 for nTries in range( self.nTries ):
-                    print "\tWaiting for the next block, try %03d ..." % (nTries+1)
+                    print "\tWaiting %0.2f sec for the next block, try %03d ..." % (self.delay, nTries+1)
                     time.sleep( self.delay )
                     self.fp.seek( fpointer )
                     fpointer = self.fp.tell() 
@@ -246,6 +184,7 @@ class VoltageReader(JRODataReader):
         self.nBlocks += 1
           
         return 1
+
     
     def getData(self):
         """
@@ -271,12 +210,12 @@ class VoltageReader(JRODataReader):
             self.flagIsNewBlock
             self.idProfile
         """
-        if self.noMoreFiles: return 0
+        if self.flagNoMoreFiles: return 0
          
         self.flagResetProcessing = 0
         self.flagIsNewBlock = 0
         
-        if self.hasNotDataInBuffer():
+        if self.__hasNotDataInBuffer():
 
             if not( self.readNextBlock() ):
                 self.setNextFile()
@@ -289,7 +228,7 @@ class VoltageReader(JRODataReader):
             self.m_DataObj.heights = self.heights
             self.m_DataObj.dataType = self.dataType
             
-        if self.noMoreFiles == 1:
+        if self.flagNoMoreFiles == 1:
             print 'Process finished'
             return 0
         
@@ -316,6 +255,7 @@ class VoltageReader(JRODataReader):
     
         return 1 #self.m_DataObj.data
 
+
 class VoltageWriter( JRODataWriter ):
     """ 
     Esta clase permite escribir datos de voltajes a archivos procesados (.r). La escritura
@@ -323,76 +263,60 @@ class VoltageWriter( JRODataWriter ):
     """
     __configHeaderFile = 'wrSetHeadet.txt'
     
-    def __init__(self,m_Voltage=None):
+    m_DataObj = None
+    
+    datablock = None
+    
+    datablockIndex = 0
+    
+    ext = ".r"
+    
+    optchar = "D"
+    
+    shapeBuffer = None
+    
+
+    def __init__(self, m_Voltage=None):
         """ 
         Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
          
         Affected: 
             self.m_DataObj
-            self.m_BasicHeader
-            self.m_SystemHeader
-            self.m_RadarControllerHeader
-            self.m_ProcessingHeader
 
         Return: None
         """
         if m_Voltage == None:
             m_Voltage = Voltage()    
         
+        if not( isinstance(m_Voltage, Voltage) ):
+            raise ValueError, "in VoltageReader, m_Spectra must be an Spectra class object"
+
         self.m_DataObj = m_Voltage
-        
-        self.fp = None
-        
-        self.format = None
-    
-        self.blocksCounter = 0
-        
-        self.setFile = None
-        
-        self.flagIsNewFile = 1
-        
-        self.datablock = None
-        
-        self.datablockIndex = 0
-        
-        self.dataType = None
-        
-        self.ext = ".r"
-        
-        self.path = None
-        
-        self.optchar = "D"
-        
-        self.shapeBuffer = None
-        
-        self.nWriteBlocks = 0 
-        
-        self.flagIsNewBlock = 0
-        
-        self.noMoreFiles = 0
-        
-        self.filename = None
-        
-        self.m_BasicHeader= BasicHeader()
-    
-        self.m_SystemHeader = SystemHeader()
-    
-        self.m_RadarControllerHeader = RadarControllerHeader()
-    
-        self.m_ProcessingHeader = ProcessingHeader()
+
 
     def hasAllDataInBuffer(self):
         if self.datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         return 0
 
+
     def setBlockDimension(self):
-        
-        self.shapeBuffer =  (self.m_ProcessingHeader.profilesPerBlock,
-                               self.m_ProcessingHeader.numHeights,
-                               self.m_SystemHeader.numChannels )
+        """
+        Obtiene las formas dimensionales del los subbloques de datos que componen un bloque
+
+        Affected:
+            self.shape_spc_Buffer
+            self.shape_cspc_Buffer
+            self.shape_dc_Buffer
+
+        Return: None
+        """
+        self.shapeBuffer = (self.m_ProcessingHeader.profilesPerBlock,
+                            self.m_ProcessingHeader.numHeights,
+                            self.m_SystemHeader.numChannels )
             
         self.datablock = numpy.zeros(self.shapeBuffer, numpy.dtype('complex'))
+
         
     def writeBlock(self):
         """
@@ -423,6 +347,7 @@ class VoltageWriter( JRODataWriter ):
         self.nWriteBlocks += 1
         self.blocksCounter += 1
         
+        
     def putData(self):
         """
         Setea un bloque de datos y luego los escribe en un file 
@@ -451,14 +376,13 @@ class VoltageWriter( JRODataWriter ):
         self.datablockIndex += 1
         
         if self.hasAllDataInBuffer():
+            #if self.flagIsNewFile: 
             self.getHeader()
             self.writeNextBlock()
         
-        if self.noMoreFiles:
+        if self.flagNoMoreFiles:
             #print 'Process finished'
             return 0
         
         return 1
-        
-        
     
