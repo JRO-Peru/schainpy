@@ -65,9 +65,9 @@ class SpectraReader( JRODataReader ):
     data_cspc = None
     data_dc = None
 
-    nChannels = 0
+    nPairsEqualChannels = 0
     
-    nPairs = 0
+    nPairsUnequalChannels = 0
     
     pts2read_SelfSpectra = 0
     pts2read_CrossSpectra = 0
@@ -111,36 +111,37 @@ class SpectraReader( JRODataReader ):
         Obtiene la cantidad de puntos a leer por cada bloque de datos
         
         Affected:
-            self.nChannels
-            self.nPairs
+            self.nPairsEqualChannels
+            self.nPairsUnequalChannels
             self.pts2read_SelfSpectra
             self.pts2read_CrossSpectra
             self.pts2read_DCchannels
             self.blocksize
-            self.m_DataObj.nChannels
-            self.m_DataObj.nPairs
+            self.m_DataObj.nPairsEqualChannels
+            self.m_DataObj.nPairsUnequalChannels
 
         Return:
             None
         """
-        self.nChannels = 0
-        self.nPairs = 0
+        self.nPairsEqualChannels = 0
+        self.nPairsUnequalChannels = 0
         
         for i in range( 0, self.m_ProcessingHeader.totalSpectra*2, 2 ):
             if self.m_ProcessingHeader.spectraComb[i] == self.m_ProcessingHeader.spectraComb[i+1]:
-                self.nChannels = self.nChannels + 1 
+                self.nPairsEqualChannels = self.nPairsEqualChannels + 1   #par de canales iguales 
             else:
-                self.nPairs = self.nPairs + 1
+                self.nPairsUnequalChannels = self.nPairsUnequalChannels + 1 #par de canales diferentes
         
-        pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights
-        self.pts2read_SelfSpectra = int( pts2read * self.nChannels )
-        self.pts2read_CrossSpectra = int( pts2read * self.nPairs )
-        self.pts2read_DCchannels = int( self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels )
+        pts2read = self.m_ProcessingHeader.numHeights * self.m_ProcessingHeader.profilesPerBlock
+
+        self.pts2read_SelfSpectra = int( self.nPairsEqualChannels * pts2read )
+        self.pts2read_CrossSpectra = int( self.nPairsUnequalChannels * pts2read )
+        self.pts2read_DCchannels = int( self.m_SystemHeader.numChannels * self.m_ProcessingHeader.numHeights )
         
         self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels   
         
-        self.m_DataObj.nChannels = self.nChannels
-        self.m_DataObj.nPairs = self.nPairs
+        self.m_DataObj.nPairsEqualChannels = self.nPairsEqualChannels
+        self.m_DataObj.nPairsUnequalChannels = self.nPairsUnequalChannels
 
             
     def readBlock(self):
@@ -189,8 +190,8 @@ class SpectraReader( JRODataReader ):
                     return 0
         
         try:
-            spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
-            cspc = cspc.reshape( (self.nPairs, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
+            spc = spc.reshape( (self.nPairsEqualChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
+            cspc = cspc.reshape( (self.nPairsUnequalChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
             dc = dc.reshape( (self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights) ) #transforma a un arreglo 2D
         except:
             print "Data file %s is invalid" % self.filename
@@ -332,11 +333,11 @@ class SpectraWriter(JRODataWriter):
 
         Return: None
         """
-        self.shape_spc_Buffer = (self.m_DataObj.nChannels,
+        self.shape_spc_Buffer = (self.m_DataObj.nPairsEqualChannels,
                                  self.m_ProcessingHeader.numHeights,
                                  self.m_ProcessingHeader.profilesPerBlock)
 
-        self.shape_cspc_Buffer = (self.m_DataObj.nPairs,
+        self.shape_cspc_Buffer = (self.m_DataObj.nPairsUnequalChannels,
                                   self.m_ProcessingHeader.numHeights,
                                   self.m_ProcessingHeader.profilesPerBlock)
         
