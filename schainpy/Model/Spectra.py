@@ -17,7 +17,6 @@ class Spectra(JROData):
     data_spc = None
     data_cspc = None
     data_dc = None
-    nPairs = 0
     
 
     def __init__(self):
@@ -52,6 +51,6 @@ class Spectra(JROData):
         
         self.flagResetProcessing = False
         
-        self.nPairs = 0
+        self.nPairsUnequalChannels = 0
 
-        self.nChannels = 0
+        self.nPairsEqualChannels = 0
