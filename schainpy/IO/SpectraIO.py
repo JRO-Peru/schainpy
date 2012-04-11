@@ -200,8 +200,8 @@ class SpectraReader( JRODataReader ):
             spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         
-        spc = numpy.transpose( spc, (0,2,1) )
-        cspc = numpy.transpose( cspc, (0,2,1) )
+#        spc = numpy.transpose( spc, (0,2,1) )
+#        cspc = numpy.transpose( cspc, (0,2,1) )
         #dc = numpy.transpose(dc, (0,2,1))
 
         self.data_spc = spc
@@ -359,14 +359,16 @@ class SpectraWriter(JRODataWriter):
             
         Return: None
         """
-        spc = numpy.transpose( self.data_spc, (0,2,1) )
+        spc = self.data_spc
+#        spc = numpy.transpose( self.data_spc, (0,2,1) )
         if not( self.m_ProcessingHeader.shif_fft ):
             spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data = spc.reshape((-1))
         data.tofile(self.fp)
 
         data = numpy.zeros( self.shape_cspc_Buffer, self.dataType )
-        cspc = numpy.transpose( self.data_cspc, (0,2,1) )
+        cspc = self.data_cspc
+#        cspc = numpy.transpose( self.data_cspc, (0,2,1) )
         if not( self.m_ProcessingHeader.shif_fft ):
             cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data['real'] = cspc.real
