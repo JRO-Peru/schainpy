@@ -190,8 +190,8 @@ class JRODataReader(DataReader):
                       Para Voltajes  -  perfiles * alturas * canales  
                                         
                       Para Spectra   -  paresCanalesIguales    * alturas * perfiles  (Self Spectra)
-                                         paresCanalesDiferentes * alturas * perfiles  (Cross Spectra)
-                                         canales * alturas                            (DC Channels)
+                                        paresCanalesDiferentes * alturas * perfiles  (Cross Spectra)
+                                        canales * alturas                            (DC Channels)
         
     y son almacenados en su buffer respectivo.
      
