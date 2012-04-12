@@ -129,7 +129,11 @@ class Spectrum():
         
         data = 10.*numpy.log10(self.m_Spectra.data_spc)
         
-        nX, nY, nChan = numpy.shape(data)
+        #data.shape = Channels x Heights x Profiles
+        data = numpy.transpose( data, (0,2,1) )
+        #data.shape = Channels x Profiles x Heights
+
+        nChan, nX, nY = numpy.shape(data)
         
         x = numpy.arange(nX)        
         y = self.m_Spectra.heights
