@@ -29,9 +29,9 @@ class SpectraReader( JRODataReader ):
     de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones) 
     son almacenados en tres buffer's para el Self Spectra, el Cross Spectra y el DC Channel.
 
-                                        pares   * alturas * perfiles  (Self Spectra)
-                                        canales * alturas * perfiles  (Cross Spectra)
-                                        canales * alturas             (DC Channels)
+                        paresCanalesIguales    * alturas * perfiles  (Self Spectra)
+                        paresCanalesDiferentes * alturas * perfiles  (Cross Spectra)
+                        canales * alturas                            (DC Channels)
 
     Esta clase contiene instancias (objetos) de las clases BasicHeader, SystemHeader, 
     RadarControllerHeader y Spectra. Los tres primeros se usan para almacenar informacion de la
@@ -65,16 +65,18 @@ class SpectraReader( JRODataReader ):
     data_cspc = None
     data_dc = None
 
-    nPairsEqualChannels = 0
-    
-    nPairsUnequalChannels = 0
-    
     pts2read_SelfSpectra = 0
     pts2read_CrossSpectra = 0
     pts2read_DCchannels = 0
     
+    nPairsEqualChannels = 0
+    
+    nPairsUnequalChannels = 0
+    
     ext = ".pdata"
     
+    optchar = "P"
+
     
     def __init__(self, m_Spectra=None):
         """ 
@@ -179,6 +181,7 @@ class SpectraReader( JRODataReader ):
                     time.sleep( self.delay )
                     self.fp.seek( fpointer )
                     fpointer = self.fp.tell() 
+                    
                     spc = numpy.fromfile( self.fp, self.dataType[0], self.pts2read_SelfSpectra )
                     cspc = numpy.fromfile( self.fp, self.dataType, self.pts2read_CrossSpectra )
                     dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
@@ -186,6 +189,7 @@ class SpectraReader( JRODataReader ):
                     if (spc.size + cspc.size + dc.size) == self.blocksize:
                         blockOk_flag = True
                         break
+                    
                 if not( blockOk_flag ):
                     return 0
         
@@ -270,10 +274,6 @@ class SpectraReader( JRODataReader ):
         self.m_DataObj.data_spc = self.data_spc
         self.m_DataObj.data_cspc = self.data_cspc
         self.m_DataObj.data_dc = self.data_dc
-        
-        #call setData - to Data Object
-        #self.datablockIndex += 1
-        #self.idProfile += 1
 
         return 1
 
@@ -372,7 +372,6 @@ class SpectraWriter(JRODataWriter):
 #        cspc = numpy.transpose( self.data_cspc, (0,2,1) )
         if not( self.m_ProcessingHeader.shif_fft ):
             cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
-        data['real'] = cspc.real
         data['imag'] = cspc.imag
         data = data.reshape((-1))
         data.tofile(self.fp)
