@@ -143,7 +143,6 @@ def getlastFileFromPath(path, ext):
     Return:
         El ultimo file de una determinada carpeta, no se considera el path.
     """
-    
     validFilelist = []
     fileList = os.listdir(path)
     
@@ -188,11 +187,11 @@ class JRODataReader(DataReader):
     jicamarca o pdata (.r o .pdata). La lectura de los datos siempre se realiza por bloques. Los datos
     leidos son array de 3 dimensiones:
 
-                             Voltajes  -  perfiles * alturas * canales  
+                      Para Voltajes  -  perfiles * alturas * canales  
                                         
-                             Spectra   -  pares   * alturas * perfiles  (Self Spectra)
-                                          canales * alturas * perfiles  (Cross Spectra)
-                                          canales * alturas             (DC Channels)
+                      Para Spectra   -  paresCanalesIguales    * alturas * perfiles  (Self Spectra)
+                                         paresCanalesDiferentes * alturas * perfiles  (Cross Spectra)
+                                         canales * alturas                            (DC Channels)
         
     y son almacenados en su buffer respectivo.
      
@@ -238,7 +237,7 @@ class JRODataReader(DataReader):
     
     path = None
     
-    delay  = 7   #seconds
+    delay  = 3   #seconds
     
     nTries  = 3  #quantity tries
     
@@ -373,61 +372,52 @@ class JRODataReader(DataReader):
         Excepciones: 
             Si un determinado file no puede ser abierto
         """
-        countFiles = 0
-        countTries = 0
-        
-        notFirstTime_flag = False
+        nFiles = 0
         fileOk_flag = False        
-        self.flagIsNewFile = 0
-        
-        while( True ):  #este loop permite llevar la cuenta de intentos, de files y carpetas, 
-                        #si no encuentra alguno sale del bucle   
-            countFiles += 1
-            
-            if countFiles > (self.nFiles + 1):
-                break
-            
-            self.set += 1
-                
-            if countFiles > self.nFiles: #si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
-                self.set = 0
-                self.doy += 1
-           
-            file = None
-            filename = None
-            fileOk_flag = False
-            
-            #busca el 1er file disponible
-            file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
-            if file:
-                if self.__verifyFile(file, False):
-                    fileOk_flag = True
+        firstTime_flag = True
 
-            if not(fileOk_flag):
-                if notFirstTime_flag: #si no es la primera vez que busca el file entonces no espera y busca for el siguiente file
-                    print "\tSearching next \"%s\" file ..." % ( filename )
-                    continue 
-                else: #si es la primera vez que busca el file entonces espera self.nTries veces hasta encontrarlo o no 
-                    for nTries in range( self.nTries ): 
+        self.set += 1
+        
+        #busca el 1er file disponible
+        file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
+        if file:
+            if self.__verifyFile(file, False):
+                fileOk_flag = True
+
+        #si no encuentra un file entonces espera y vuelve a buscar
+        if not(fileOk_flag): 
+            for nFiles in range(self.nFiles+1): #busco en los siguientes self.nFiles+1 files posibles
+
+                if firstTime_flag: #si es la 1era vez entonces hace el for self.nTries veces  
+                    tries = self.nTries
+                else:
+                    tries = 1 #si no es la 1era vez entonces solo lo hace una vez
+                    
+                for nTries in range( tries ): 
+                    if firstTime_flag:
                         print "\tWaiting %0.2f sec for new \"%s\" file, try %03d ..." % ( self.delay, filename, nTries+1 ) 
                         time.sleep( self.delay )
-    
-                        file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
-                        if file:
-                            if self.__verifyFile(file):
-                                fileOk_flag = True
-                                break
-                        
-                    if not( fileOk_flag ): #no encontro ningun file valido a leer despues de haber esperado alguno
-                        notFirstTime_flag = True
-                        continue
+                    else:
+                        print "\tSearching next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext)
+                    
+                    file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
+                    if file:
+                        if self.__verifyFile(file):
+                            fileOk_flag = True
+                            break
+                    
+                if fileOk_flag:
+                    break
 
-            if fileOk_flag:
-                break
+                firstTime_flag = False
 
-            print "Skipping the file \"%s\" due to this files is empty" % filename
-            countFiles = 0
-        
+                print "\tSkipping the file \"%s\" due to this file doesn't exist yet" % filename
+                self.set += 1
+                    
+                if nFiles == (self.nFiles-1): #si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
+                    self.set = 0
+                    self.doy += 1
+
         if fileOk_flag:
             self.fileSize = os.path.getsize( file )
             self.filename = file
@@ -439,6 +429,7 @@ class JRODataReader(DataReader):
         else:
             self.fileSize = 0
             self.filename = None
+            self.flagIsNewFile = 0
             self.fp = None
             self.flagNoMoreFiles = 1
             print 'No more Files'
@@ -616,13 +607,10 @@ class JRODataReader(DataReader):
             filename    :    el ultimo file de una determinada carpeta
             directory   :    eL directorio donde esta el file encontrado
         """
-
-        pathList = os.listdir(path)
-
-        if not(pathList):
-            return None, None, None, None, None
-
         dirList = []
+        pathList = []
+        directory = None
+        
         for thisPath in os.listdir(path):
             if os.path.isdir(os.path.join(path,thisPath)):
                 dirList.append(thisPath)
@@ -630,10 +618,9 @@ class JRODataReader(DataReader):
         if not(dirList):
             return None, None, None, None, None
 
-        pathList = dirList
-        
-        if startDateTime != None:
-            pathList = []
+        dirList = sorted( dirList, key=str.lower )
+
+        if startDateTime:
             thisDateTime = startDateTime
             if endDateTime == None: endDateTime = startDateTime
             
@@ -648,11 +635,16 @@ class JRODataReader(DataReader):
                 
                 pathList.append(os.path.join(path,match[0], expLabel))
                 thisDateTime += datetime.timedelta(1)
-        
-        if not(pathList):
-            return None, None, None, None, None
 
-        directory = pathList[-1]
+            if not(pathList):
+                print "\tNo files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
+                return None, None, None, None, None
+
+            directory = pathList[0]
+            
+        else:
+            directory = dirList[-1]
+            directory = os.path.join(path,directory)
 
         filename = getlastFileFromPath(directory, ext)
 
@@ -784,16 +776,16 @@ class JRODataReader(DataReader):
                 print "The file %s can't be opened" % (filename)
         
         try:
-            m_BasicHeader.read(fp)
-            m_SystemHeader.read(fp)
-            m_RadarControllerHeader.read(fp)
-            m_ProcessingHeader.read(fp)
+            if not( m_BasicHeader.read(fp) ): raise ValueError 
+            if not( m_SystemHeader.read(fp) ): raise ValueError
+            if not( m_RadarControllerHeader.read(fp) ): raise ValueError
+            if not( m_ProcessingHeader.read(fp) ): raise ValueError
             data_type = int(numpy.log2((m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
             if m_BasicHeader.size > self.basicHeaderSize:
                 flagFileOK = True
         except:
             if msgFlag:
-                print "The file %s is empty or it hasn't enough data" % filename
+                print "\tThe file %s is empty or it hasn't enough data" % filename
         
         fp.close()
         
@@ -803,7 +795,7 @@ class JRODataReader(DataReader):
         return 1
 
     
-    def setup(self, path, startDateTime, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
+    def setup(self, path, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
         """
         setup configura los parametros de lectura de la clase DataReader.
         
@@ -856,7 +848,7 @@ class JRODataReader(DataReader):
 
             if not(doypath):
                 for nTries in range( self.nTries ):
-                    print '\twaiting %0.2f sec for valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
+                    print '\tWaiting %0.2f sec for valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
                     time.sleep( self.delay )
                     doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
                     if doypath:
