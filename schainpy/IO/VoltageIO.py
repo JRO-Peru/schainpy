@@ -27,7 +27,7 @@ class VoltageReader(JRODataReader):
     de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones: 
     perfiles*alturas*canales) son almacenados en la variable "buffer".
      
-                             Voltajes  -  perfiles * alturas * canales  
+                             perfiles * alturas * canales  
 
     Esta clase contiene instancias (objetos) de las clases BasicHeader, SystemHeader, 
     RadarControllerHeader y Voltage. Los tres primeros se usan para almacenar informacion de la
@@ -67,12 +67,14 @@ class VoltageReader(JRODataReader):
     
     datablock = None
     
-    ext = ".r"
-    
     pts2read = 0
     
     utc = 0
 
+    ext = ".r"
+    
+    optchar = "D"
+    
     
     def __init__(self, m_Voltage=None):
         """
@@ -158,7 +160,9 @@ class VoltageReader(JRODataReader):
                     time.sleep( self.delay )
                     self.fp.seek( fpointer )
                     fpointer = self.fp.tell() 
+                    
                     junk = numpy.fromfile( self.fp, self.dataType, self.pts2read )
+                    
                     if junk.size == self.blocksize:
                         blockOk_flag = True
                         break
@@ -172,7 +176,6 @@ class VoltageReader(JRODataReader):
             print "Data file %s is invalid" % self.filename
             return 0
         
-        #data = junk['real'] + junk['imag']*1j
         self.datablock = junk['real'] + junk['imag']*1j
         
         self.datablockIndex = 0
@@ -265,13 +268,13 @@ class VoltageWriter( JRODataWriter ):
     
     m_DataObj = None
     
-    datablock = None
-    
-    datablockIndex = 0
-    
     ext = ".r"
     
     optchar = "D"
+    
+    datablock = None
+    
+    datablockIndex = 0
     
     shapeBuffer = None
     
