@@ -122,6 +122,7 @@ class VoltageReader(JRODataReader):
         """
         self.pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels
         self.blocksize = self.pts2read
+        self.m_DataObj.nProfiles = self.m_ProcessingHeader.profilesPerBlock
 
             
     def readBlock(self):

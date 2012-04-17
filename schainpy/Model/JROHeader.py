@@ -53,7 +53,7 @@ class BasicHeader(Header):
                               ('nDstflag','<i2'),
                               ('nErrorCount','<u4')
                               ])   
-        pass
+        
     
     def read(self, fp):
         try:
@@ -184,11 +184,27 @@ class RadarControllerHeader(Header):
                              ('sRangeTxA','<a20'),
                              ('sRangeTxB','<a20'),
                              ])
+        
+        self.samplingWindowStruct = numpy.dtype([('h0','<f4'),('dh','<f4'),('nsa','<u4')])
+        
+        self.samplingWindow = None
+        self.numHeights = None
+        self.firstHeight = None
+        self.deltaHeight = None
+        self.samplesWin = None
+        
+        self.numCode = None
+        self.numBaud = None
+        self.code = None
+        self.flip1 = None
+        self.flip2 = None
+        
         self.dynamic = numpy.array([],numpy.dtype('byte'))
         
 
     def read(self, fp):
         try:
+            startFp = fp.tell()
             header = numpy.fromfile(fp,self.struct,1)
             self.size = header['nSize'][0]
             self.expType = header['nExpType'][0]
@@ -208,8 +224,42 @@ class RadarControllerHeader(Header):
             self.rangeTxA = header['sRangeTxA'][0]
             self.rangeTxB = header['sRangeTxB'][0]
             # jump Dynamic Radar Controller Header
-            jumpHeader = self.size - 116
-            self.dynamic = numpy.fromfile(fp,numpy.dtype('byte'),jumpHeader)
+            jumpFp =  self.size - 116
+            self.dynamic = numpy.fromfile(fp,numpy.dtype('byte'),jumpFp)
+            #pointer backward to dynamic header and read
+            backFp = fp.tell() - jumpFp
+            fp.seek(backFp)
+            
+            self.samplingWindow = numpy.fromfile(fp,self.samplingWindowStruct,self.numWindows)
+            self.numHeights = numpy.sum(self.samplingWindow['nsa'])
+            self.firstHeight = self.samplingWindow['h0']
+            self.deltaHeight = self.samplingWindow['dh']
+            self.samplesWin = self.samplingWindow['nsa']
+            
+            self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
+    
+            if self.codeType != 0:
+                self.numCode = numpy.fromfile(fp,'<u4',1)
+                self.numBaud = numpy.fromfile(fp,'<u4',1)
+                self.code = numpy.empty([self.numCode,self.numBaud],dtype='u1')
+                tempList = []
+                for ic in range(self.numCode):
+                    temp = numpy.fromfile(fp,'u1',4*numpy.ceil(self.numBaud/32.))
+                    tempList.append(temp)
+                    self.code[ic] = numpy.unpackbits(temp[::-1])[-1*self.numBaud:]
+                self.code = 2.0*self.code - 1.0
+            
+            if self.line5Function == RCfunction.FLIP:
+                self.flip1 = numpy.fromfile(fp,'<u4',1)
+
+            if self.line6Function == RCfunction.FLIP:
+                self.flip2 = numpy.fromfile(fp,'<u4',1)
+                
+            endFp = self.size + startFp
+            jumpFp =  endFp - fp.tell()
+            if jumpFp > 0:
+                fp.seek(jumpFp)
+
         except:
             return 0
         
@@ -289,7 +339,7 @@ class ProcessingHeader(Header):
         self.samplesWin = 0
         self.spectraComb = 0
         self.numCode = 0
-        self.codes = 0
+        self.code = 0
         self.numBaud = 0
         self.shif_fft = False
     
@@ -316,7 +366,7 @@ class ProcessingHeader(Header):
             if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
                 self.numCode = numpy.fromfile(fp,'<u4',1)
                 self.numBaud = numpy.fromfile(fp,'<u4',1)
-                self.codes = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
+                self.code = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
             
             if self.processFlags & PROCFLAG.SHIFT_FFT_DATA == PROCFLAG.SHIFT_FFT_DATA:
                 self.shif_fft = True
@@ -361,11 +411,38 @@ class ProcessingHeader(Header):
             numBaud = self.numBaud
             numBaud.tofile(fp)
 
-            codes = self.codes.reshape(numCode*numBaud)
-            codes.tofile(fp)
+            code = self.code.reshape(numCode*numBaud)
+            code.tofile(fp)
             
         return 1
 
+class RCfunction:
+    NONE=0
+    FLIP=1
+    CODE=2
+    SAMPLING=3
+    LIN6DIV256=4
+    SYNCHRO=5
+
+class nCodeType:
+    NONE=0
+    USERDEFINE=1
+    BARKER2=2
+    BARKER3=3
+    BARKER4=4
+    BARKER5=5
+    BARKER7=6
+    BARKER11=7
+    BARKER13=8
+    AC128=9
+    COMPLEMENTARYCODE2=10
+    COMPLEMENTARYCODE4=11
+    COMPLEMENTARYCODE8=12
+    COMPLEMENTARYCODE16=13
+    COMPLEMENTARYCODE32=14
+    COMPLEMENTARYCODE64=15
+    COMPLEMENTARYCODE128=16
+    CODE_BINARY28=17
 
 class PROCFLAG:    
     COHERENT_INTEGRATION = numpy.uint32(0x00000001)

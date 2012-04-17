@@ -47,6 +47,8 @@ class Spectra(JROData):
         
         self.nProfiles = None
         
+        self.nPoints = None
+        
         self.dataType = None
         
         self.flagResetProcessing = False

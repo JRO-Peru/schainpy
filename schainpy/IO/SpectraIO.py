@@ -142,6 +142,7 @@ class SpectraReader( JRODataReader ):
         
         self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels   
         
+        self.m_DataObj.nPoints = self.m_ProcessingHeader.profilesPerBlock
         self.m_DataObj.nPairsEqualChannels = self.nPairsEqualChannels
         self.m_DataObj.nPairsUnequalChannels = self.nPairsUnequalChannels
 
