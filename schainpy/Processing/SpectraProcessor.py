@@ -75,6 +75,7 @@ class SpectraProcessor:
         self.spectraOutObj.flagNoData = True
         if self.ptsId >= self.spectraOutObj.nPoints:
             data_spc = numpy.fft.fft(self.buffer,axis=1)
+            data_spc = numpy.fft.fftshift(data_spc,axes=1)
             self.ptsId = 0  
             self.buffer = None
         
@@ -167,7 +168,6 @@ class IncoherentIntegration:
         self.nIncohInt = N
             
     def exe(self,data):
-        print 'intg:', self.profCounter
 
         if self.buffer == None:
             self.buffer = data
