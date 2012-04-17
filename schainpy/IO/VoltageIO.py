@@ -244,8 +244,7 @@ class VoltageReader(JRODataReader):
             return 0
 
         time = self.m_BasicHeader.utc + self.datablockIndex * self.ippSeconds
-        self.utc = time
-        #self.m_DataObj.m_BasicHeader.utc = time  
+        self.m_DataObj.m_BasicHeader.utc = time  
         
         self.m_DataObj.flagNoData = False
         self.m_DataObj.flagResetProcessing = self.flagResetProcessing
