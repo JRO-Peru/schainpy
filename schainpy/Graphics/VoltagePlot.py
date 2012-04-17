@@ -70,13 +70,13 @@ class Osciloscope():
         myXlabel = ""
         myYlabel = ""
         
-        for i in range(nChan):
+        for chan in range(nChan):
             if titleList != None:
-                myTitle = titleList[i]
-                myXlabel = xlabelList[i]
-                myYlabel = ylabelList[i]
+                myTitle = titleList[chan]
+                myXlabel = xlabelList[chan]
+                myYlabel = ylabelList[chan]
                 
-            self.__addGraph(i+1, title=myTitle, xlabel=myXlabel, ylabel=myYlabel, XAxisAsTime=XAxisAsTime)
+            self.__addGraph(chan+1, title=myTitle, xlabel=myXlabel, ylabel=myYlabel, XAxisAsTime=XAxisAsTime)
         
         self.nGraphs = nChan
         self.__isPlotConfig = True
@@ -118,11 +118,11 @@ class Osciloscope():
         if ymax == None: ymax = numpy.nanmax(abs(data))
         
         plplot.plbop()
-        for i in range(self.nGraphs):
-            y = data[:,i]
+        for chan in range(self.nGraphs):
+            y = data[chan,:]
             
-            self.graphObjList[i].iniSubpage()
-            self.graphObjList[i].plotComplexData(x, y, xmin, xmax, ymin, ymax, 8, type)
+            self.graphObjList[chan].iniSubpage()
+            self.graphObjList[chan].plotComplexData(x, y, xmin, xmax, ymin, ymax, 8, type)
         
         plplot.plflush()
         plplot.pleop()

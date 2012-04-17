@@ -177,6 +177,7 @@ class VoltageReader(JRODataReader):
             print "Data file %s is invalid" % self.filename
             return 0
         
+        junk = numpy.transpose(junk, (2,0,1))
         self.datablock = junk['real'] + junk['imag']*1j
         
         self.datablockIndex = 0
@@ -249,7 +250,7 @@ class VoltageReader(JRODataReader):
         self.m_DataObj.flagNoData = False
         self.m_DataObj.flagResetProcessing = self.flagResetProcessing
         
-        self.m_DataObj.data = self.datablock[self.datablockIndex,:,:]
+        self.m_DataObj.data = self.datablock[:,self.datablockIndex,:]
         self.m_DataObj.idProfile = self.idProfile
         
         self.datablockIndex += 1
@@ -319,7 +320,10 @@ class VoltageWriter( JRODataWriter ):
                             self.m_ProcessingHeader.numHeights,
                             self.m_SystemHeader.numChannels )
             
-        self.datablock = numpy.zeros(self.shapeBuffer, numpy.dtype('complex'))
+        self.datablock = numpy.zeros(self.m_SystemHeader.numChannels,
+                                     self.m_ProcessingHeader.profilesPerBlock,
+                                     self.m_ProcessingHeader.numHeights,
+                                     numpy.dtype('complex'))
 
         
     def writeBlock(self):
@@ -337,8 +341,10 @@ class VoltageWriter( JRODataWriter ):
         """
         data = numpy.zeros( self.shapeBuffer, self.dataType )
         
-        data['real'] = self.datablock.real
-        data['imag'] = self.datablock.imag
+        junk = numpy.transpose(self.datablock, (1,2,0))
+        
+        data['real'] = junk.real
+        data['imag'] = junk.imag
         
         data = data.reshape( (-1) )
             
@@ -375,7 +381,7 @@ class VoltageWriter( JRODataWriter ):
             self.datablockIndex = 0
             self.setNextFile()
         
-        self.datablock[self.datablockIndex,:,:] = self.m_DataObj.data
+        self.datablock[:,self.datablockIndex,:] = self.m_DataObj.data
         
         self.datablockIndex += 1
         

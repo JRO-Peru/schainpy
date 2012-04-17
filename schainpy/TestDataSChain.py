@@ -28,9 +28,11 @@ class TestSChain():
     
     def setValues(self):
         
-        self.path = "/home/valentin/Tmp/RAWDATA"
-        self.startDateTime = datetime.datetime(2009,11,2,00,00,0)
-        self.endDateTime = datetime.datetime(2009,11,30,18,10,0)
+        #self.path = "/home/valentin/Tmp/RAWDATA"
+        self.path = "/home/dsuarez/Projects"
+        #self.wrpath = "/home/dsuarez/Projects/testWR"
+        self.startDateTime = datetime.datetime(2007,5,1,15,49,0)
+        self.endDateTime = datetime.datetime(2007,5,1,16,0,0)
     
     def createObjects(self):        
         

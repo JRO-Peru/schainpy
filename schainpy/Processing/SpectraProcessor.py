@@ -65,35 +65,35 @@ class SpectraProcessor:
     def getFft(self):
         
         if self.buffer == None:
-            nheis = self.spectraInObj.data.shape[0]
-            nchannel = self.spectraInObj.data.shape[1]
+            nheis = self.spectraInObj.data.shape[1]
+            nchannel = self.spectraInObj.data.shape[0]
             npoints = self.spectraOutObj.nPoints
-            self.buffer = numpy.zeros((nchannel,nheis,npoints),dtype='complex') 
-            
-        data = numpy.transpose(self.spectraInObj.data)
-        self.buffer[:,:,self.ptsId] = data 
+            self.buffer = numpy.zeros((nchannel,npoints,nheis),dtype='complex') 
+        
+        self.buffer[:,self.ptsId,:] = self.spectraInObj.data 
         self.ptsId += 1
         self.spectraOutObj.flagNoData = True
         if self.ptsId >= self.spectraOutObj.nPoints:
-            data_spc = numpy.fft.fft(self.buffer,axis=2)
+            data_spc = numpy.fft.fft(self.buffer,axis=1)
             self.ptsId = 0  
             self.buffer = None
         
             #calculo de self-spectra
             self.spectraOutObj.data_spc = numpy.abs(data_spc * numpy.conjugate(data_spc))
             
-            
-            
             #calculo de cross-spectra
             #self.m_Spectra.data_cspc = self.__data_cspc
-            
             
             #escribiendo dc
             #self.m_Spectra.data_dc = self.__data_dc
             
-            
             self.spectraOutObj.flagNoData = False
-            
+        
+        self.spectraOutObj.heights = self.spectraInObj.heights
+        self.spectraOutObj.m_BasicHeader = self.spectraInObj.m_BasicHeader.copy()
+        self.spectraOutObj.m_ProcessingHeader = self.spectraInObj.m_ProcessingHeader.copy()
+        self.spectraOutObj.m_RadarControllerHeader = self.spectraInObj.m_RadarControllerHeader.copy()
+        self.spectraOutObj.m_SystemHeader = self.spectraInObj.m_SystemHeader.copy()
     
     def addWriter(self,wrpath):
         objWriter = SpectraWriter(self.spectraOutObj)
@@ -101,9 +101,12 @@ class SpectraProcessor:
         self.writerList.append(objWriter)
         
     
-    def addPlotter(self):
+    def addPlotter(self, index=None):
         
-        plotObj = Spectrum(self.spectraOutObj,self.plotterIndex)
+        if index==None:
+            index = self.plotterIndex
+        
+        plotObj = Spectrum(self.spectraOutObj, index)
         self.plotterList.append(plotObj)
 
     
@@ -124,12 +127,12 @@ class SpectraProcessor:
         
         self.writerIndex += 1
         
-    def plotData(self,xmin=None, xmax=None, ymin=None, ymax=None, winTitle=''):
+    def plotData(self,xmin=None, xmax=None, ymin=None, ymax=None, winTitle='', index=None):
         if self.spectraOutObj.flagNoData:
             return 0
         
         if len(self.plotterList) <= self.plotterIndex:
-            self.addPlotter()
+            self.addPlotter(index)
         
         self.plotterList[self.plotterIndex].plotData(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,winTitle=winTitle)
         

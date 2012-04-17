@@ -164,7 +164,7 @@ class Decoder:
         self.setCodeFft = False
             
     def exe(self, data, ndata=None, type = 0):
-        if ndata == None: ndata = data.shape[0] 
+        if ndata == None: ndata = data.shape[1] 
         
         if type == 0:
             self.convolutionInFreq(data,ndata)
@@ -179,9 +179,9 @@ class Decoder:
         
         self.codeIndex += 1
         
-        fft_data = numpy.fft.fft(data, axis=0)
+        fft_data = numpy.fft.fft(data, axis=1)
         fft_code = numpy.conj(numpy.fft.fft(newcode))
-        fft_code = fft_code.reshape(len(fft_code),1)
+        fft_code = fft_code.reshape(1,len(fft_code))
         
         conv = fft_data.copy()
         conv.fill(0)
@@ -190,7 +190,7 @@ class Decoder:
                                                     #            for i in range(ndata):
                                                     #                conv[i,:] = fft_data[i,:]*fft_code[i]
             
-        self.data = numpy.fft.ifft(conv,axis=0)
+        self.data = numpy.fft.ifft(conv,axis=1)
         self.flag = True
         
         if self.profCounter == self.nCode:
@@ -206,7 +206,7 @@ class Decoder:
         self.codeIndex += 1
         conv = data.copy()
         for i in range(nchannel):
-            conv[:,i] = numpy.correlate(data[:,i], newcode, 'same')
+            conv[i,:] = numpy.correlate(data[i,:], newcode, 'same')
             
         self.data = conv
         self.flag = True
