@@ -366,7 +366,7 @@ class JRODataReader(DataReader):
         step = self.m_ProcessingHeader.deltaHeight
         xf = xi + self.m_ProcessingHeader.numHeights*step
         
-        self.heightList = numpy.arange(xi, xf, step)
+        self.heightList = numpy.arange(xi, xf, step)        
         self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
         self.dataType = tmp
         self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
