@@ -37,7 +37,7 @@ class Voltage(JROData):
         
         self.dataType = None
         
-        self.heights = None
+        self.heightList = None
         
         self.profileIndex = None
         
