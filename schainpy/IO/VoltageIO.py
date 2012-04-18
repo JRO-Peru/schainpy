@@ -102,6 +102,85 @@ class VoltageReader(JRODataReader):
         
         self.m_DataObj = m_Voltage
 
+        self.idProfile = 0
+        
+        self.datablock = None
+        
+        self.pts2read = 0
+        
+        self.utc = 0
+    
+        self.ext = ".r"
+        
+        self.optchar = "D"
+
+        self.m_BasicHeader = BasicHeader()
+        
+        self.m_SystemHeader = SystemHeader()
+        
+        self.m_RadarControllerHeader = RadarControllerHeader()
+        
+        self.m_ProcessingHeader = ProcessingHeader()
+        
+        self.online = 0
+        
+        self.fp = None
+        
+        self.idFile = None
+        
+        self.startDateTime = None
+        
+        self.endDateTime = None
+        
+        self.dataType = None
+        
+        self.fileSizeByHeader = None
+        
+        self.filenameList = []
+        
+        self.filename = None
+        
+        self.fileSize = None
+        
+        self.firstHeaderSize = 0
+        
+        self.basicHeaderSize = 24
+        
+        self.pathList = []
+        
+        self.filenameList = []
+        
+        self.lastUTTime = 0
+        
+        self.maxTimeStep = 30
+            
+        self.flagNoMoreFiles = 0
+        
+        self.set = 0
+        
+        self.path = None
+        
+        self.datablockIndex = 9999
+
+        self.delay  = 3   #seconds
+        
+        self.nTries  = 3  #quantity tries
+        
+        self.nFiles = 3   #number of files for searching
+        
+        self.nBlocks = 0
+        
+        self.flagIsNewFile = 1
+    
+        self.ippSeconds = 0
+    
+        self.flagResetProcessing = 0    
+    
+        self.flagIsNewBlock = 0
+        
+        self.nReadBlocks = 0
+    
+        self.blocksize = 0
     
     def __hasNotDataInBuffer(self):
         if self.datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
@@ -230,7 +309,7 @@ class VoltageReader(JRODataReader):
             self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
             self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
             self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
-            self.m_DataObj.heights = self.heights
+            self.m_DataObj.heightList = self.heightList
             self.m_DataObj.dataType = self.dataType
             
         if self.flagNoMoreFiles == 1:
@@ -293,7 +372,7 @@ class VoltageWriter( JRODataWriter ):
             m_Voltage = Voltage()    
         
         if not( isinstance(m_Voltage, Voltage) ):
-            raise ValueError, "in VoltageReader, m_Spectra must be an Spectra class object"
+            raise ValueError, "in VoltageReader, m_Voltage must be an Spectra class object"
 
         self.m_DataObj = m_Voltage
 
@@ -319,10 +398,10 @@ class VoltageWriter( JRODataWriter ):
                             self.m_ProcessingHeader.numHeights,
                             self.m_SystemHeader.numChannels )
             
-        self.datablock = numpy.zeros(self.m_SystemHeader.numChannels,
+        self.datablock = numpy.zeros((self.m_SystemHeader.numChannels,
                                      self.m_ProcessingHeader.profilesPerBlock,
-                                     self.m_ProcessingHeader.numHeights,
-                                     numpy.dtype('complex'))
+                                     self.m_ProcessingHeader.numHeights),
+                                     dtype=numpy.dtype('complex'))
 
         
     def writeBlock(self):
