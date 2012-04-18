@@ -69,14 +69,12 @@ class SpectraReader( JRODataReader ):
     pts2read_CrossSpectra = 0
     pts2read_DCchannels = 0
     
-    nPairsEqualChannels = 0
+    nChannels = 0
     
-    nPairsUnequalChannels = 0
+    nPairs = 0
     
-    ext = ".pdata"
+    pairList = None
     
-    optchar = "P"
-
     
     def __init__(self, m_Spectra=None):
         """ 
@@ -103,6 +101,80 @@ class SpectraReader( JRODataReader ):
 
         self.m_DataObj = m_Spectra
 
+        self.data_spc = None
+        self.data_cspc = None
+        self.data_dc = None
+    
+        self.pts2read_SelfSpectra = 0
+        self.pts2read_CrossSpectra = 0
+        self.pts2read_DCchannels = 0
+        
+        self.nChannels = 0
+        
+        self.nPairs = 0
+        
+        self.ext = ".pdata"
+        
+        self.optchar = "P"
+
+        ######################
+
+        self.m_BasicHeader = BasicHeader()
+        
+        self.m_SystemHeader = SystemHeader()
+        
+        self.m_RadarControllerHeader = RadarControllerHeader()
+        
+        self.m_ProcessingHeader = ProcessingHeader()
+        
+        self.online = 0
+        
+        self.fp = None
+        
+        self.fileSizeByHeader = None
+        
+        self.filenameList = []
+        
+        self.filename = None
+        
+        self.fileSize = None
+        
+        self.firstHeaderSize = 0
+        
+        self.basicHeaderSize = 24
+        
+        self.dataType = None
+        
+        self.maxTimeStep = 30
+            
+        self.flagNoMoreFiles = 0
+        
+        self.set = 0
+        
+        self.path = None
+        
+        self.delay  = 3  #seconds
+        
+        self.nTries = 3  #quantity tries
+        
+        self.nFiles = 3  #number of files for searching
+        
+        self.nBlocks = 0
+        
+        self.flagIsNewFile = 1
+    
+        self.ippSeconds = 0
+    
+        self.flagResetProcessing = 0    
+    
+        self.flagIsNewBlock = 0
+        
+        self.nReadBlocks = 0
+    
+        self.blocksize = 0
+
+        pairList = None
+
 
     def __hasNotDataInBuffer(self):
         return 1
@@ -113,38 +185,40 @@ class SpectraReader( JRODataReader ):
         Obtiene la cantidad de puntos a leer por cada bloque de datos
         
         Affected:
-            self.nPairsEqualChannels
-            self.nPairsUnequalChannels
+            self.nChannels
+            self.nPairs
             self.pts2read_SelfSpectra
             self.pts2read_CrossSpectra
             self.pts2read_DCchannels
             self.blocksize
-            self.m_DataObj.nPairsEqualChannels
-            self.m_DataObj.nPairsUnequalChannels
+            self.m_DataObj.nChannels
+            self.m_DataObj.nPairs
 
         Return:
             None
         """
-        self.nPairsEqualChannels = 0
-        self.nPairsUnequalChannels = 0
+        self.nChannels = 0
+        self.nPairs = 0
         
         for i in range( 0, self.m_ProcessingHeader.totalSpectra*2, 2 ):
             if self.m_ProcessingHeader.spectraComb[i] == self.m_ProcessingHeader.spectraComb[i+1]:
-                self.nPairsEqualChannels = self.nPairsEqualChannels + 1   #par de canales iguales 
+                self.nChannels = self.nChannels + 1   #par de canales iguales 
             else:
-                self.nPairsUnequalChannels = self.nPairsUnequalChannels + 1 #par de canales diferentes
+                self.nPairs = self.nPairs + 1 #par de canales diferentes
         
         pts2read = self.m_ProcessingHeader.numHeights * self.m_ProcessingHeader.profilesPerBlock
 
-        self.pts2read_SelfSpectra = int( self.nPairsEqualChannels * pts2read )
-        self.pts2read_CrossSpectra = int( self.nPairsUnequalChannels * pts2read )
+        self.pts2read_SelfSpectra = int( self.nChannels * pts2read )
+        self.pts2read_CrossSpectra = int( self.nPairs * pts2read )
         self.pts2read_DCchannels = int( self.m_SystemHeader.numChannels * self.m_ProcessingHeader.numHeights )
         
         self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels   
         
         self.m_DataObj.nPoints = self.m_ProcessingHeader.profilesPerBlock
-        self.m_DataObj.nPairsEqualChannels = self.nPairsEqualChannels
-        self.m_DataObj.nPairsUnequalChannels = self.nPairsUnequalChannels
+        self.m_DataObj.nChannels = self.nChannels
+        self.m_DataObj.nPairs = self.nPairs
+        
+        self.pairList = numpy.arange(self.nPairs)
 
             
     def readBlock(self):
@@ -195,8 +269,11 @@ class SpectraReader( JRODataReader ):
                     return 0
         
         try:
-            spc = spc.reshape( (self.nPairsEqualChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
-            cspc = cspc.reshape( (self.nPairsUnequalChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
+            spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
+            if self.nPairs != 0:
+                cspc = cspc.reshape( (self.nPairs, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
+            else:
+                cspc = None    
             dc = dc.reshape( (self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights) ) #transforma a un arreglo 2D
         except:
             print "Data file %s is invalid" % self.filename
@@ -204,14 +281,17 @@ class SpectraReader( JRODataReader ):
         
         if not( self.m_ProcessingHeader.shif_fft ):
             spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
-            cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+            if cspc != None:
+                cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         
-#        spc = numpy.transpose( spc, (0,2,1) )
-#        cspc = numpy.transpose( cspc, (0,2,1) )
-        #dc = numpy.transpose(dc, (0,2,1))
+        spc = numpy.transpose( spc, (0,2,1) )
+        if cspc != None: cspc = numpy.transpose( cspc, (0,2,1) )
 
         self.data_spc = spc
-        self.data_cspc = cspc['real'] + cspc['imag']*1j
+        if cspc != None: 
+            self.data_cspc = cspc['real'] + cspc['imag']*1j
+        else:
+            self.data_cspc = None
         self.data_dc = dc['real'] + dc['imag']*1j
 
         self.datablockIndex = 0
@@ -256,7 +336,7 @@ class SpectraReader( JRODataReader ):
             self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
             self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
             self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
-            self.m_DataObj.heights = self.heights
+            self.m_DataObj.heightList = self.heightList
             self.m_DataObj.dataType = self.dataType
         
         if self.flagNoMoreFiles == 1:
@@ -288,14 +368,14 @@ class SpectraWriter(JRODataWriter):
     
     m_DataObj = None
     
-    ext = ".pdata"
-    
-    optchar = "P"
-    
     shape_spc_Buffer = None
     shape_cspc_Buffer = None
     shape_dc_Buffer = None
     
+    data_spc = None
+    data_cspc = None
+    data_dc = None
+
     
     def __init__(self, m_Spectra=None):
         """ 
@@ -318,6 +398,50 @@ class SpectraWriter(JRODataWriter):
 
         self.m_DataObj = m_Spectra
 
+        self.ext = ".pdata"
+        
+        self.optchar = "P"
+        
+        self.shape_spc_Buffer = None
+        self.shape_cspc_Buffer = None
+        self.shape_dc_Buffer = None
+
+        self.data_spc = None
+        self.data_cspc = None
+        self.data_dc = None
+
+        ####################################
+
+        self.fp = None
+        
+        self.blocksCounter = 0
+        
+        self.flagIsNewFile = 1
+        
+        self.nWriteBlocks = 0 
+        
+        self.flagIsNewBlock = 0
+        
+        self.flagNoMoreFiles = 0
+
+        self.setFile = None
+        
+        self.dataType = None
+        
+        self.path = None
+        
+        self.noMoreFiles = 0
+        
+        self.filename = None
+        
+        self.m_BasicHeader= BasicHeader()
+    
+        self.m_SystemHeader = SystemHeader()
+    
+        self.m_RadarControllerHeader = RadarControllerHeader()
+    
+        self.m_ProcessingHeader = ProcessingHeader()
+
         
     def hasAllDataInBuffer(self):
         return 1
@@ -334,11 +458,11 @@ class SpectraWriter(JRODataWriter):
 
         Return: None
         """
-        self.shape_spc_Buffer = (self.m_DataObj.nPairsEqualChannels,
+        self.shape_spc_Buffer = (self.m_DataObj.nChannels,
                                  self.m_ProcessingHeader.numHeights,
                                  self.m_ProcessingHeader.profilesPerBlock)
 
-        self.shape_cspc_Buffer = (self.m_DataObj.nPairsUnequalChannels,
+        self.shape_cspc_Buffer = (self.m_DataObj.nPairs,
                                   self.m_ProcessingHeader.numHeights,
                                   self.m_ProcessingHeader.profilesPerBlock)
         
@@ -361,21 +485,22 @@ class SpectraWriter(JRODataWriter):
             
         Return: None
         """
-        spc = self.data_spc
-#        spc = numpy.transpose( self.data_spc, (0,2,1) )
+        
+        spc = numpy.transpose( self.data_spc, (0,2,1) )
         if not( self.m_ProcessingHeader.shif_fft ):
             spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data = spc.reshape((-1))
         data.tofile(self.fp)
 
-        data = numpy.zeros( self.shape_cspc_Buffer, self.dataType )
-        cspc = self.data_cspc
-#        cspc = numpy.transpose( self.data_cspc, (0,2,1) )
-        if not( self.m_ProcessingHeader.shif_fft ):
-            cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
-        data['imag'] = cspc.imag
-        data = data.reshape((-1))
-        data.tofile(self.fp)
+        if self.data_cspc != None:
+            data = numpy.zeros( self.shape_cspc_Buffer, self.dataType )
+            cspc = numpy.transpose( self.data_cspc, (0,2,1) )
+            if not( self.m_ProcessingHeader.shif_fft ):
+                cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+            data['real'] = cspc.real
+            data['imag'] = cspc.imag
+            data = data.reshape((-1))
+            data.tofile(self.fp)
 
         data = numpy.zeros( self.shape_dc_Buffer, self.dataType )
         dc = self.data_dc
@@ -423,7 +548,7 @@ class SpectraWriter(JRODataWriter):
         self.data_dc = self.m_DataObj.data_dc
         
         # #self.m_ProcessingHeader.dataBlocksPerFile)
-        if True:
+        if self.hasAllDataInBuffer():
             self.getHeader()
             self.writeNextBlock()
         
