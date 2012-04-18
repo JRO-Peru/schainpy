@@ -41,7 +41,7 @@ class Spectra(JROData):
         
         self.data_dc = None
           
-        self.heights  = None
+        self.heightList  = None
         
         self.flagNoData = True
         
@@ -53,6 +53,6 @@ class Spectra(JROData):
         
         self.flagResetProcessing = False
         
-        self.nPairsUnequalChannels = 0
+        self.nPairs = 0
 
-        self.nPairsEqualChannels = 0
+        self.nChannels = 0
