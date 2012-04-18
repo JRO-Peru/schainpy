@@ -209,6 +209,10 @@ class JRODataReader(DataReader):
     
     m_ProcessingHeader = ProcessingHeader()
     
+    m_DataObj = None
+    
+    heightList = None
+    
     online = 0
     
     fp = None
@@ -258,10 +262,27 @@ class JRODataReader(DataReader):
     blocksize = 0
 
     datablockIndex = 9999
-
+    
+    
     #speed of light
     c = 3E8
     
+    def __init__(self, m_DataObj=None):
+        raise ValueError, "This class can't be instanced"
+
+
+
+
+    
+    def hasNotDataInBuffer(self):
+        raise ValueError, "Not implemented"
+
+
+    def readBlock(self):
+        raise ValueError, "This method has not been implemented"
+
+    def getData( self ):
+        raise ValueError, "This method has not been implemented"
     
     def __rdSystemHeader(self, fp=None):
         
@@ -292,7 +313,9 @@ class JRODataReader(DataReader):
             
         self.m_BasicHeader.read(fp)
     
-    
+    def getBlockDimension(self):
+        raise ValueError, "No implemented"
+       
     def __readFirstHeader(self):
         """ 
         Lectura del First Header, es decir el Basic Header y el Long Header
@@ -303,7 +326,7 @@ class JRODataReader(DataReader):
             self.m_RadarControllerHeader
             self.m_ProcessingHeader
             self.firstHeaderSize
-            self.heights
+            self.heightList
             self.dataType
             self.fileSizeByHeader
             self.ippSeconds
@@ -343,7 +366,8 @@ class JRODataReader(DataReader):
         step = self.m_ProcessingHeader.deltaHeight
         xf = xi + self.m_ProcessingHeader.numHeights*step
         
-        self.heights = numpy.arange(xi, xf, step)
+        self.heightList = numpy.arange(xi, xf, step)
+        self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
         self.dataType = tmp
         self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
         self.ippSeconds = 2 * 1000 * self.m_RadarControllerHeader.ipp / self.c
@@ -934,7 +958,15 @@ class JRODataWriter(DataWriter):
     Esta clase permite escribir datos a archivos procesados (.r o ,pdata). La escritura
     de los datos siempre se realiza por bloques. 
     """
-
+    
+    m_BasicHeader = BasicHeader()
+    
+    m_SystemHeader = SystemHeader()
+    
+    m_RadarControllerHeader = RadarControllerHeader()
+    
+    m_ProcessingHeader = ProcessingHeader()
+    
     fp = None
     
     blocksCounter = 0
@@ -946,6 +978,58 @@ class JRODataWriter(DataWriter):
     flagIsNewBlock = 0
     
     flagNoMoreFiles = 0
+
+    m_DataObj = None
+
+    fp = None
+        
+    blocksCounter = 0
+        
+    flagIsNewFile = 1
+        
+    nWriteBlocks = 0 
+        
+    flagIsNewBlock = 0
+        
+    flagNoMoreFiles = 0
+
+    setFile = None
+        
+    dataType = None
+        
+    path = None
+        
+    noMoreFiles = 0
+        
+    filename = None
+        
+    m_BasicHeader = None
+    
+    m_SystemHeader = None
+    
+    m_RadarControllerHeader = None
+    
+    m_ProcessingHeader = None
+
+    
+    def __init__(self, m_DataObj=None):
+        raise ValueError, "Not implemented"
+
+
+    def hasAllDataInBuffer(self):
+        raise ValueError, "Not implemented"
+
+
+    def setBlockDimension(self):
+        raise ValueError, "Not implemented"
+
+    
+    def writeBlock(self):
+        raise ValueError, "No implemented"
+
+
+    def putData(self):
+        raise ValueError, "No implemented"
 
     
     def __writeFirstHeader(self):
