@@ -59,7 +59,8 @@ class JROData(Data):
     nHeights = None
     nChannels = None    
     
-    heights = None
+    heightList = None
+    channelList = None
     
     flagNoData = False
     flagResetProcessing = False
