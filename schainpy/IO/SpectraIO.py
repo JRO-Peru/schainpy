@@ -73,8 +73,9 @@ class SpectraReader( JRODataReader ):
     
     nPairs = 0
     
-    pairList = None
+    #pairList = None
     
+    channelList = None
     
     def __init__(self, m_Spectra=None):
         """ 
@@ -107,7 +108,7 @@ class SpectraReader( JRODataReader ):
     
         self.pts2read_SelfSpectra = 0
         self.pts2read_CrossSpectra = 0
-        self.pts2read_DCchannels = 0
+        self.pts2read_DCs = 0
         
         self.nChannels = 0
         
@@ -173,7 +174,9 @@ class SpectraReader( JRODataReader ):
     
         self.blocksize = 0
 
-        pairList = None
+        #pairList = None
+
+        channelList = None
 
 
     def __hasNotDataInBuffer(self):
@@ -199,13 +202,15 @@ class SpectraReader( JRODataReader ):
         """
         self.nChannels = 0
         self.nPairs = 0
+        #self.pairList = []
         
         for i in range( 0, self.m_ProcessingHeader.totalSpectra*2, 2 ):
             if self.m_ProcessingHeader.spectraComb[i] == self.m_ProcessingHeader.spectraComb[i+1]:
                 self.nChannels = self.nChannels + 1   #par de canales iguales 
             else:
                 self.nPairs = self.nPairs + 1 #par de canales diferentes
-        
+                #self.pairList.append( (self.m_ProcessingHeader.spectraComb[i], self.m_ProcessingHeader.spectraComb[i+1]) )
+
         pts2read = self.m_ProcessingHeader.numHeights * self.m_ProcessingHeader.profilesPerBlock
 
         self.pts2read_SelfSpectra = int( self.nChannels * pts2read )
@@ -218,7 +223,8 @@ class SpectraReader( JRODataReader ):
         self.m_DataObj.nChannels = self.nChannels
         self.m_DataObj.nPairs = self.nPairs
         
-        self.pairList = numpy.arange(self.nPairs)
+        #self.pairList = tuple( self.pairList )
+        self.channelList = numpy.arange( self.nChannels )
 
             
     def readBlock(self):
@@ -510,8 +516,9 @@ class SpectraWriter(JRODataWriter):
         data.tofile(self.fp)
 
         self.data_spc.fill(0)
-        self.data_cspc.fill(0)
         self.data_dc.fill(0)
+        if self.data_cspc != None:
+            self.data_cspc.fill(0)
         
         self.flagIsNewFile = 0
         self.flagIsNewBlock = 1
