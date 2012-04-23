@@ -43,6 +43,8 @@ class Spectra(JROData):
           
         self.heightList  = None
         
+        self.channelList = None
+        
         self.flagNoData = True
         
         self.nProfiles = None
