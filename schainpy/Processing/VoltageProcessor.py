@@ -134,20 +134,169 @@ class VoltageProcessor:
             self.voltageOutObj.flagNoData = True
         
         self.decoderIndex += 1
+
     
-    def removeDC(self):
+    def filterByHei(self, window):
         pass
+
     
-    def removeSignalInt(self):
-        pass
+    def selectChannels(self, channelList):
+        """
+        Selecciona un bloque de datos en base a canales y pares segun el channelList y el pairList
+        
+        Input:
+            channelList    :    lista sencilla de canales a seleccionar por ej. (2,3,7) 
+            pairList       :    tupla de pares que se desea selecionar por ej. ( (0,1), (0,2) )
+            
+        Affected:
+            self.dataOutObj.datablock
+            self.dataOutObj.nChannels
+            self.dataOutObj.m_SystemHeader.numChannels
+            self.voltageOutObj.m_ProcessingHeader.blockSize
+            
+        Return:
+            None
+        """
+        if not(channelList):
+            return
+        
+        channels = 0
+        profiles = self.voltageOutObj.nProfiles
+        heights  = self.voltageOutObj.m_ProcessingHeader.numHeights
+
+        #self spectra
+        channels = len(channelList)
+        data = numpy.zeros( (channels,profiles,heights), dtype='complex' )
+        for index,channel in enumerate(channelList):
+            data[index,:,:] = self.voltageOutObj.data_spc[channel,:,:]
     
-    def selChannel(self):
-        pass
+        self.voltageOutObj.datablock = data
+        
+        #fill the m_ProcessingHeader.spectraComb up            
+        channels = len(channelList)
+
+        self.voltageOutObj.channelList = channelList
+        self.voltageOutObj.nChannels = nchannels
+        self.voltageOutObj.m_ProcessingHeader.totalSpectra = nchannels
+        self.voltageOutObj.m_SystemHeader.numChannels = nchannels
+        self.voltageOutObj.m_ProcessingHeader.blockSize = data.size
+        
     
-    def selRange(self):
-        pass
+    def selectHeightsByValue(self, minHei, maxHei):
+        """
+        Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
+        minHei <= height <= maxHei
+        
+        Input:
+            minHei    :    valor minimo de altura a considerar 
+            maxHei    :    valor maximo de altura a considerar
+            
+        Affected:
+            Indirectamente son cambiados varios valores a travez del metodo selectHeightsByIndex
+            
+        Return:
+            None
+        """
+        minIndex = 0
+        maxIndex = 0
+        data = self.dataOutObj.heightList
+        
+        for i,val in enumerate(data): 
+            if val < minHei:
+                continue
+            else:
+                minIndex = i;
+                break
+        
+        for i,val in enumerate(data): 
+            if val <= maxHei:
+                maxIndex = i;
+            else:
+                break
+
+        self.selectHeightsByIndex(minIndex, maxIndex)
+
     
-    def selProfiles(self):
+    def selectHeightsByIndex(self, minIndex, maxIndex):
+        """
+        Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
+        minIndex <= index <= maxIndex
+        
+        Input:
+            minIndex    :    valor minimo de altura a considerar 
+            maxIndex    :    valor maximo de altura a considerar
+            
+        Affected:
+            self.voltageOutObj.datablock
+            self.voltageOutObj.m_ProcessingHeader.numHeights
+            self.voltageOutObj.m_ProcessingHeader.blockSize
+            self.voltageOutObj.heightList
+            self.voltageOutObj.nHeights
+            self.voltageOutObj.m_RadarControllerHeader.numHeights
+            
+        Return:
+            None
+        """
+        channels = self.voltageOutObj.nChannels
+        profiles = self.voltageOutObj.nProfiles
+        newheis = maxIndex - minIndex + 1
+        firstHeight = 0
+
+        #voltage
+        data = numpy.zeros( (channels,profiles,newheis), dtype='complex' )
+        for i in range(channels):
+            data[i] = self.voltageOutObj.data_spc[i,:,minIndex:maxIndex+1]
+
+        self.voltageOutObj.datablock = data
+
+        firstHeight = self.dataOutObj.heightList[minIndex]
+
+        self.voltageOutObj.nHeights = newheis
+        self.voltageOutObj.m_ProcessingHeader.blockSize = data.size
+        self.voltageOutObj.m_ProcessingHeader.numHeights = newheis
+        self.voltageOutObj.m_ProcessingHeader.firstHeight = firstHeight
+        self.voltageOutObj.m_RadarControllerHeader = newheis
+
+        xi = firstHeight
+        step = self.voltageOutObj.m_ProcessingHeader.deltaHeight
+        xf = xi + newheis * step
+        self.voltageOutObj.heightList = numpy.arange(xi, xf, step) 
+    
+    
+    def selectProfiles(self, minIndex, maxIndex):
+        """
+        Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
+        minIndex <= index <= maxIndex
+        
+        Input:
+            minIndex    :    valor minimo de altura a considerar 
+            maxIndex    :    valor maximo de altura a considerar
+            
+        Affected:
+            self.voltageOutObj.datablock
+            self.voltageOutObj.m_ProcessingHeader.numHeights
+            self.voltageOutObj.heightList
+            
+        Return:
+            None
+        """
+        channels = self.voltageOutObj.nChannels
+        heights = self.voltageOutObj.m_ProcessingHeader.numHeights
+        newprofiles = maxIndex - minIndex + 1
+
+        #voltage
+        data = numpy.zeros( (channels,newprofiles,heights), dtype='complex' )
+        for i in range(channels):
+            data[i,:,:] = self.voltageOutObj.data_spc[i,minIndex:maxIndex+1,:]
+
+        self.voltageOutObj.datablock = data
+
+        self.voltageOutObj.m_ProcessingHeader.blockSize = data.size
+        self.voltageOutObj.nProfiles = newprofiles
+        self.voltageOutObj.m_SystemHeader.numProfiles = newprofiles
+
+    
+    def selectNtxs(self, ntx):
         pass
 
 
