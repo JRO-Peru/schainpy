@@ -213,6 +213,8 @@ class JRODataReader(DataReader):
     
     heightList = None
     
+    channelList = None
+    
     online = 0
     
     fp = None
@@ -262,7 +264,6 @@ class JRODataReader(DataReader):
     blocksize = 0
 
     datablockIndex = 9999
-    
     
     #speed of light
     c = 3E8
@@ -1003,14 +1004,8 @@ class JRODataWriter(DataWriter):
         
     filename = None
         
-    m_BasicHeader = None
+    channelList = None
     
-    m_SystemHeader = None
-    
-    m_RadarControllerHeader = None
-    
-    m_ProcessingHeader = None
-
     
     def __init__(self, m_DataObj=None):
         raise ValueError, "Not implemented"
