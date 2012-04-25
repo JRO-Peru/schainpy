@@ -18,9 +18,9 @@ sys.path.append(path)
 from Model.JROHeader import *
 from Model.Spectra import Spectra
 
-from DataIO import JRODataReader
-from DataIO import JRODataWriter
-from DataIO import isNumber
+from JRODataIO import JRODataReader
+from JRODataIO import JRODataWriter
+from JRODataIO import isNumber
 
 
 class SpectraReader( JRODataReader ):
@@ -160,7 +160,7 @@ class SpectraReader( JRODataReader ):
         
         self.nFiles = 3  #number of files for searching
         
-        self.nBlocks = 0
+        self.nReadBlocks = 0
         
         self.flagIsNewFile = 1
     
@@ -170,7 +170,7 @@ class SpectraReader( JRODataReader ):
     
         self.flagIsNewBlock = 0
         
-        self.nReadBlocks = 0
+        self.nTotalBlocks = 0
     
         self.blocksize = 0
 
@@ -202,14 +202,14 @@ class SpectraReader( JRODataReader ):
         """
         self.nChannels = 0
         self.nPairs = 0
-        #self.pairList = []
+        self.pairList = []
         
         for i in range( 0, self.m_ProcessingHeader.totalSpectra*2, 2 ):
             if self.m_ProcessingHeader.spectraComb[i] == self.m_ProcessingHeader.spectraComb[i+1]:
                 self.nChannels = self.nChannels + 1   #par de canales iguales 
             else:
                 self.nPairs = self.nPairs + 1 #par de canales diferentes
-                #self.pairList.append( (self.m_ProcessingHeader.spectraComb[i], self.m_ProcessingHeader.spectraComb[i+1]) )
+                self.pairList.append( (self.m_ProcessingHeader.spectraComb[i], self.m_ProcessingHeader.spectraComb[i+1]) )
 
         pts2read = self.m_ProcessingHeader.numHeights * self.m_ProcessingHeader.profilesPerBlock
 
@@ -217,13 +217,8 @@ class SpectraReader( JRODataReader ):
         self.pts2read_CrossSpectra = int( self.nPairs * pts2read )
         self.pts2read_DCchannels = int( self.m_SystemHeader.numChannels * self.m_ProcessingHeader.numHeights )
         
-        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels   
+        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
         
-        self.m_DataObj.nPoints = self.m_ProcessingHeader.profilesPerBlock
-        self.m_DataObj.nChannels = self.nChannels
-        self.m_DataObj.nPairs = self.nPairs
-        
-        #self.pairList = tuple( self.pairList )
         self.channelList = numpy.arange( self.nChannels )
 
             
@@ -240,7 +235,7 @@ class SpectraReader( JRODataReader ):
             self.datablockIndex
             self.flagIsNewFile
             self.flagIsNewBlock
-            self.nReadBlocks
+            self.nTotalBlocks
             self.data_spc
             self.data_cspc
             self.data_dc
@@ -254,25 +249,6 @@ class SpectraReader( JRODataReader ):
         spc = numpy.fromfile( self.fp, self.dataType[0], self.pts2read_SelfSpectra )
         cspc = numpy.fromfile( self.fp, self.dataType, self.pts2read_CrossSpectra )
         dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
-
-        if self.online:
-            if (spc.size + cspc.size + dc.size) != self.blocksize:
-                for nTries in range( self.nTries ):
-                    print "\tWaiting %0.2f sec for the next block, try %03d ..." % (self.delay, nTries+1)
-                    time.sleep( self.delay )
-                    self.fp.seek( fpointer )
-                    fpointer = self.fp.tell() 
-                    
-                    spc = numpy.fromfile( self.fp, self.dataType[0], self.pts2read_SelfSpectra )
-                    cspc = numpy.fromfile( self.fp, self.dataType, self.pts2read_CrossSpectra )
-                    dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
-                    
-                    if (spc.size + cspc.size + dc.size) == self.blocksize:
-                        blockOk_flag = True
-                        break
-                    
-                if not( blockOk_flag ):
-                    return 0
         
         try:
             spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
@@ -304,8 +280,8 @@ class SpectraReader( JRODataReader ):
         self.flagIsNewFile = 0
         self.flagIsNewBlock = 1
 
+        self.nTotalBlocks += 1
         self.nReadBlocks += 1
-        self.nBlocks += 1
 
         return 1
     
@@ -335,15 +311,9 @@ class SpectraReader( JRODataReader ):
         if self.__hasNotDataInBuffer():            
 
             if not( self.readNextBlock() ):
-                self.setNextFile()
                 return 0 
             
-            self.m_DataObj.m_BasicHeader = self.m_BasicHeader.copy()
-            self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-            self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-            self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
-            self.m_DataObj.heightList = self.heightList
-            self.m_DataObj.dataType = self.dataType
+            self.updateDataHeader()
         
         if self.flagNoMoreFiles == 1:
             print 'Process finished'
@@ -420,11 +390,11 @@ class SpectraWriter(JRODataWriter):
 
         self.fp = None
         
-        self.blocksCounter = 0
+        self.nWriteBlocks = 0
         
         self.flagIsNewFile = 1
         
-        self.nWriteBlocks = 0 
+        self.nTotalBlocks = 0 
         
         self.flagIsNewBlock = 0
         
@@ -486,8 +456,8 @@ class SpectraWriter(JRODataWriter):
             self.data_dc
             self.flagIsNewFile
             self.flagIsNewBlock
-            self.nWriteBlocks
-            self.blocksCounter    
+            self.nTotalBlocks
+            self.nWriteBlocks    
             
         Return: None
         """
@@ -522,8 +492,8 @@ class SpectraWriter(JRODataWriter):
         
         self.flagIsNewFile = 0
         self.flagIsNewBlock = 1
+        self.nTotalBlocks += 1
         self.nWriteBlocks += 1
-        self.blocksCounter += 1
         
         
     def putData(self):
@@ -556,7 +526,7 @@ class SpectraWriter(JRODataWriter):
         
         # #self.m_ProcessingHeader.dataBlocksPerFile)
         if self.hasAllDataInBuffer():
-            self.getHeader()
+            self.getDataHeader()
             self.writeNextBlock()
         
         if self.flagNoMoreFiles:

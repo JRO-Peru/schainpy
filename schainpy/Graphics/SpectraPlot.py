@@ -136,7 +136,7 @@ class Spectrum():
         nChan, nX, nY = numpy.shape(data)
         
         x = numpy.arange(nX)        
-        y = self.m_Spectra.heights
+        y = self.m_Spectra.heightList
         
         thisDatetime = datetime.datetime.fromtimestamp(self.m_Spectra.m_BasicHeader.utc)
         txtDate = "Self Spectra - Date: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))

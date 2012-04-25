@@ -52,7 +52,7 @@ class SpectraProcessor:
         self.plotterIndex = 0
         
         if nFFTPoints == None:
-            nFFTPoints = self.dataOutObj.nPoints
+            nFFTPoints = self.dataOutObj.nFFTPoints
         
         self.nFFTPoints = nFFTPoints
         self.pairList = pairList
@@ -91,16 +91,16 @@ class SpectraProcessor:
             self.dataOutObj.m_ProcessingHeader.shif_fft
         """
         blocksize = 0
-        npoints = self.nFFTPoints
-        nchannels, nheis = self.dataInObj.data.shape
+        nFFTPoints = self.nFFTPoints
+        nChannels, nheis = self.dataInObj.data.shape
         
         if self.buffer == None:
-            self.buffer = numpy.zeros((nchannels, npoints, nheis), dtype='complex') 
+            self.buffer = numpy.zeros((nChannels, nFFTPoints, nheis), dtype='complex') 
         
         self.buffer[:,self.ptsId,:] = self.dataInObj.data 
         self.ptsId += 1
         
-        if self.ptsId < self.dataOutObj.nPoints:
+        if self.ptsId < self.dataOutObj.nFFTPoints:
             self.dataOutObj.flagNoData = True
             return
             
@@ -115,14 +115,14 @@ class SpectraProcessor:
         blocksize += spc.size
         
         cspc = None
-        npair = 0
+        nPair = 0
         if self.pairList != None:
             #calculo de cross-spectra
-            npairs = len(self.pairList)
-            cspc = numpy.zeros((npairs, npoints, nheis), dtype='complex')
+            nPairs = len(self.pairList)
+            cspc = numpy.zeros((nPairs, nFFTPoints, nheis), dtype='complex')
             for pair in self.pairList:
-                cspc[npair,:,:] = numpy.abs(fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:]))
-                npair += 1
+                cspc[nPair,:,:] = numpy.abs(fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:]))
+                nPair += 1
             blocksize += cspc.size
         
         self.dataOutObj.data_spc = spc
@@ -141,25 +141,25 @@ class SpectraProcessor:
         self.dataOutObj.m_SystemHeader = self.dataInObj.m_SystemHeader.copy()
         
         self.dataOutObj.dataType = self.dataInObj.dataType
-        self.dataOutObj.nPairs = npair
-        self.dataOutObj.nChannels = nchannels
-        self.dataOutObj.nProfiles = npoints
+        self.dataOutObj.nPairs = nPair
+        self.dataOutObj.nChannels = nChannels
+        self.dataOutObj.nProfiles = nFFTPoints
         self.dataOutObj.nHeights = nheis
-        self.dataOutObj.nPoints = npoints
+        self.dataOutObj.nFFTPoints = nFFTPoints
         #self.dataOutObj.data = None
         
-        self.dataOutObj.m_SystemHeader.numChannels = nchannels
-        self.dataOutObj.m_SystemHeader.nProfiles = npoints
+        self.dataOutObj.m_SystemHeader.numChannels = nChannels
+        self.dataOutObj.m_SystemHeader.nProfiles = nFFTPoints
 
         self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
-        self.dataOutObj.m_ProcessingHeader.totalSpectra = nchannels + npair 
-        self.dataOutObj.m_ProcessingHeader.profilesPerBlock = npoints
+        self.dataOutObj.m_ProcessingHeader.totalSpectra = nChannels + nPair 
+        self.dataOutObj.m_ProcessingHeader.profilesPerBlock = nFFTPoints
         self.dataOutObj.m_ProcessingHeader.numHeights = nheis
         self.dataOutObj.m_ProcessingHeader.shif_fft = True
         
-        spectraComb = numpy.zeros( (nchannels+npair)*2,numpy.dtype('u1'))
+        spectraComb = numpy.zeros( (nChannels+nPair)*2,numpy.dtype('u1'))
         k = 0
-        for i in range( 0,nchannels*2,2 ):
+        for i in range( 0,nChannels*2,2 ):
             spectraComb[i]   = k 
             spectraComb[i+1] = k
             k += 1
@@ -285,29 +285,27 @@ class SpectraProcessor:
         if self.dataOutObj.flagNoData:
             return 0
         
-        nchannels = 0
-        npairs = 0
-        profiles = self.dataOutObj.nProfiles
+        nProfiles = self.dataOutObj.nProfiles
         dataType = self.dataOutObj.dataType
-        heights  = self.dataOutObj.m_ProcessingHeader.numHeights
+        nHeights  = self.dataOutObj.m_ProcessingHeader.numHeights
         blocksize = 0
 
         #self spectra
-        nchannels = len(channelList)
-        spc = numpy.zeros( (nchannels,profiles,heights), dataType[0] )
+        nChannels = len(channelList)
+        spc = numpy.zeros( (nChannels,nProfiles,nHeights), dataType[0] )
         
         for index, channel in enumerate(channelList):
             spc[index,:,:] = self.dataOutObj.data_spc[channel,:,:]
         
         #DC channel
-        dc = numpy.zeros( (nchannels,heights), dtype='complex' )
+        dc = numpy.zeros( (nChannels,nHeights), dtype='complex' )
         for index, channel in enumerate(channelList):
             dc[index,:] = self.dataOutObj.data_dc[channel,:]        
             
         blocksize += dc.size
         blocksize += spc.size
             
-        npairs = 0
+        nPairs = 0
         cspc = None
         
         if pairList == None:
@@ -315,8 +313,8 @@ class SpectraProcessor:
 
         if pairList != None:
             #cross spectra
-            npairs = len(pairList)
-            cspc = numpy.zeros( (npairs,profiles,heights), dtype='complex' )
+            nPairs = len(pairList)
+            cspc = numpy.zeros( (nPairs,nProfiles,nHeights), dtype='complex' )
 
             spectraComb = self.dataOutObj.m_ProcessingHeader.spectraComb
             totalSpectra = len(spectraComb)
@@ -338,7 +336,7 @@ class SpectraProcessor:
             if cspc != None:
                 blocksize += cspc.size
             
-        spectraComb = numpy.zeros( (nchannels+npairs)*2,numpy.dtype('u1'))
+        spectraComb = numpy.zeros( (nChannels+nPairs)*2,numpy.dtype('u1'))
         i = 0
         for val in channelList:
             spectraComb[i]   = val 
@@ -354,15 +352,15 @@ class SpectraProcessor:
         self.dataOutObj.data_spc = spc
         self.dataOutObj.data_cspc = cspc
         self.dataOutObj.data_dc = dc
-        self.dataOutObj.nChannels = nchannels 
-        self.dataOutObj.nPairs = npairs    
+        self.dataOutObj.nChannels = nChannels 
+        self.dataOutObj.nPairs = nPairs    
 
         self.dataOutObj.channelList = channelList
 
         self.dataOutObj.m_ProcessingHeader.spectraComb = spectraComb
-        self.dataOutObj.m_ProcessingHeader.totalSpectra = nchannels + npairs
-        self.dataOutObj.m_SystemHeader.numChannels = nchannels
-        self.dataOutObj.nChannels = nchannels
+        self.dataOutObj.m_ProcessingHeader.totalSpectra = nChannels + nPairs
+        self.dataOutObj.m_SystemHeader.numChannels = nChannels
+        self.dataOutObj.nChannels = nChannels
         self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
 
 
@@ -432,26 +430,26 @@ class SpectraProcessor:
         if self.dataOutObj.flagNoData:
             return 0
         
-        nchannels = self.dataOutObj.nChannels
-        npairs = self.dataOutObj.nPairs
-        profiles = self.dataOutObj.nProfiles
+        nChannels = self.dataOutObj.nChannels
+        nPairs = self.dataOutObj.nPairs
+        nProfiles = self.dataOutObj.nProfiles
         dataType = self.dataOutObj.dataType
         newheis = maxIndex - minIndex + 1
         blockSize = 0
 
         #self spectra
-        spc = numpy.zeros( (nchannels,profiles,newheis), dataType[0] )
-        for i in range(nchannels):
+        spc = numpy.zeros( (nChannels,nProfiles,newheis), dataType[0] )
+        for i in range(nChannels):
             spc[i,:,:] = self.dataOutObj.data_spc[i,:,minIndex:maxIndex+1]
 
         #cross spectra
-        cspc = numpy.zeros( (npairs,profiles,newheis), dtype='complex')
-        for i in range(npairs):
+        cspc = numpy.zeros( (nPairs,nProfiles,newheis), dtype='complex')
+        for i in range(nPairs):
             cspc[i,:,:] = self.dataOutObj.data_cspc[i,:,minIndex:maxIndex+1]
 
         #DC channel
-        dc = numpy.zeros( (nchannels,newheis), dtype='complex')
-        for i in range(nchannels):
+        dc = numpy.zeros( (nChannels,newheis), dtype='complex')
+        for i in range(nChannels):
             dc[i] = self.dataOutObj.data_dc[i,minIndex:maxIndex+1]
 
         self.dataOutObj.data_spc = spc

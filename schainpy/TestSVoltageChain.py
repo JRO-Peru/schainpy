@@ -28,27 +28,27 @@ class TestSChain():
     def setValues( self ):
         
         self.path = "/home/dsuarez/Projects"  #1
-        #self.path = "/home/valentin/Tmp/VOLTAGE2" #2
+        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
 #        self.startDateTime = datetime.datetime(2007,5,1,15,49,0)
 #        self.endDateTime = datetime.datetime(2007,5,1,23,0,0)
         
         self.startDateTime = datetime.datetime(2011,10,4,0,0,0)
         self.endDateTime = datetime.datetime(2011,10,4,0,20,0)
-        self.N = 2
-        self.npts = 4
+        self.N = 10
+        self.npts = 1024
     
     def createObjects( self ):        
         
-        self.Obj = Voltage()
-        self.OutObj = Voltage()
-        self.readerObj = VoltageReader(self.Obj)
-        self.procObj = VoltageProcessor(self.Obj, self.OutObj)
+        self.voltObj1 = Voltage()
+        self.voltObj2 = Voltage()
+        self.specObj1 = Spectra()
         
-        self.spectraObj = Spectra()
-        self.specProcObj = SpectraProcessor(self.OutObj, self.spectraObj,self.npts)
+        self.readerObj = VoltageReader(self.voltObj1)
+        self.voltProcObj = VoltageProcessor(self.voltObj1, self.voltObj2)
+        self.specProcObj = SpectraProcessor(self.voltObj2, self.specObj1)
         
         
-        #self.plotObj = Osciloscope(self.Obj)
+        #self.plotObj = Osciloscope(self.voltObj1)
         
         if not(self.readerObj.setup( self.path, self.startDateTime, self.endDateTime, expLabel='', online =0) ): 
             sys.exit(0)
@@ -62,33 +62,33 @@ class TestSChain():
         while(True):
             self.readerObj.getData()
             
-            self.procObj.init()
+            self.voltProcObj.init()
             
-            self.procObj.plotData(idProfile = 1, type='power',winTitle='figura 1')
+#            self.voltProcObj.plotData(idProfile = 1, type='iq', ymin=-25000, ymax=25000, winTitle='sin decodificar')
             
-            self.procObj.decoder(type=0)
+            self.voltProcObj.decoder(type=0)
             
-#            self.procObj.plotData(idProfile = 1, type='iq', xmin=0, xmax=100,winTitle='figura 2')
+#            self.voltProcObj.plotData(idProfile = 1, type='iq', ymin=-70000, ymax=70000,winTitle='Decodificado')
 #            
-#            self.procObj.integrator(self.N)
+            self.voltProcObj.integrator(self.N)
             
-            self.procObj.plotData(idProfile = 1, type='power',winTitle='figura 3')
+#            self.voltProcObj.plotData(idProfile = 1, type='iq', ymin=-700000, ymax=700000,winTitle='figura 3')
             
-            self.specProcObj.init()
+            self.specProcObj.init(self.npts)
         
             self.specProcObj.integrator(2)
         
-            self.specProcObj.plotData(winTitle='Spectra 1', index=2)
+            self.specProcObj.plotData(winTitle='Spectra 1', index=0)
             
 #            if self.readerObj.getData():
 #                self.plotObj.plotData(idProfile=0, type='power' )
 #
 #            
-#            if self.readerObj.flagNoMoreFiles:
-#                break
+            if self.readerObj.flagNoMoreFiles:
+                break
 #            
             if self.readerObj.flagIsNewBlock:
-                print 'Block No %04d, Time: %s' %(self.readerObj.nReadBlocks,
+                print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks,
                                                   datetime.datetime.fromtimestamp(self.readerObj.m_BasicHeader.utc),)
 
 #                fin = time.time()

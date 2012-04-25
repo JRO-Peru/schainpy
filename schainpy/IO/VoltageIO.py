@@ -17,8 +17,8 @@ sys.path.append(path)
 from Model.JROHeader import *
 from Model.Voltage import Voltage
 
-from IO.DataIO import JRODataReader
-from IO.DataIO import JRODataWriter
+from IO.JRODataIO import JRODataReader
+from IO.JRODataIO import JRODataWriter
 
 
 class VoltageReader(JRODataReader):
@@ -50,7 +50,7 @@ class VoltageReader(JRODataReader):
             
             #to get one profile 
             profile =  readerObj.getData()
-            
+             
             #print the profile
             print profile
             
@@ -63,13 +63,7 @@ class VoltageReader(JRODataReader):
     """
     m_DataObj = None
     
-    idProfile = 0
-    
     datablock = None
-    
-    pts2read = 0
-    
-    utc = 0
 
     ext = ".r"
     
@@ -101,12 +95,8 @@ class VoltageReader(JRODataReader):
             raise ValueError, "in VoltageReader, m_Voltage must be an Voltage class object"
         
         self.m_DataObj = m_Voltage
-
-        self.idProfile = 0
         
         self.datablock = None
-        
-        self.pts2read = 0
         
         self.utc = 0
     
@@ -160,7 +150,7 @@ class VoltageReader(JRODataReader):
         
         self.path = None
         
-        self.datablockIndex = 9999
+        self.profileIndex = 9999
 
         self.delay  = 3   #seconds
         
@@ -168,7 +158,7 @@ class VoltageReader(JRODataReader):
         
         self.nFiles = 3   #number of files for searching
         
-        self.nBlocks = 0
+        self.nReadBlocks = 0
         
         self.flagIsNewFile = 1
     
@@ -178,12 +168,12 @@ class VoltageReader(JRODataReader):
     
         self.flagIsNewBlock = 0
         
-        self.nReadBlocks = 0
+        self.nTotalBlocks = 0
     
         self.blocksize = 0
     
     def __hasNotDataInBuffer(self):
-        if self.datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
+        if self.profileIndex >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         return 0
 
@@ -193,15 +183,13 @@ class VoltageReader(JRODataReader):
         Obtiene la cantidad de puntos a leer por cada bloque de datos
         
         Affected:
-            self.pts2read
             self.blocksize
 
         Return:
             None
         """
-        self.pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels
-        self.blocksize = self.pts2read
-        self.m_DataObj.nProfiles = self.m_ProcessingHeader.profilesPerBlock
+        pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels
+        self.blocksize = pts2read
 
             
     def readBlock(self):
@@ -218,54 +206,34 @@ class VoltageReader(JRODataReader):
             None
         
         Affected:
-            self.datablockIndex
+            self.profileIndex
             self.datablock
             self.flagIsNewFile
-            self.idProfile
             self.flagIsNewBlock
-            self.nReadBlocks
+            self.nTotalBlocks
             
         Exceptions: 
             Si un bloque leido no es un bloque valido
         """
-        blockOk_flag = False
-        fpointer = self.fp.tell()
         
-        junk = numpy.fromfile( self.fp, self.dataType, self.pts2read )
-        
-        if self.online:
-            if junk.size != self.blocksize:
-                for nTries in range( self.nTries ):
-                    print "\tWaiting %0.2f sec for the next block, try %03d ..." % (self.delay, nTries+1)
-                    time.sleep( self.delay )
-                    self.fp.seek( fpointer )
-                    fpointer = self.fp.tell() 
-                    
-                    junk = numpy.fromfile( self.fp, self.dataType, self.pts2read )
-                    
-                    if junk.size == self.blocksize:
-                        blockOk_flag = True
-                        break
-                
-                if not( blockOk_flag ):
-                    return 0
+        junk = numpy.fromfile( self.fp, self.dataType, self.blocksize )
         
         try:
             junk = junk.reshape( (self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels) )
         except:
-            print "Data file %s is invalid" % self.filename
+            print "The read block (%3d) has not enough data" %self.nReadBlocks
             return 0
         
         junk = numpy.transpose(junk, (2,0,1))
         self.datablock = junk['real'] + junk['imag']*1j
         
-        self.datablockIndex = 0
+        self.profileIndex = 0
+        
         self.flagIsNewFile = 0
-        self.idProfile = 0
         self.flagIsNewBlock = 1
 
+        self.nTotalBlocks += 1
         self.nReadBlocks += 1
-        self.nBlocks += 1
           
         return 1
 
@@ -284,15 +252,13 @@ class VoltageReader(JRODataReader):
             
         Variables afectadas:
             self.m_DataObj
-            self.datablockIndex
-            self.idProfile
+            self.profileIndex
             
         Affected:
             self.m_DataObj
-            self.datablockIndex
+            self.profileIndex
             self.flagResetProcessing
             self.flagIsNewBlock
-            self.idProfile
         """
         if self.flagNoMoreFiles: return 0
          
@@ -302,15 +268,9 @@ class VoltageReader(JRODataReader):
         if self.__hasNotDataInBuffer():
 
             if not( self.readNextBlock() ):
-                self.setNextFile()
                 return 0
             
-            self.m_DataObj.m_BasicHeader = self.m_BasicHeader.copy()
-            self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-            self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-            self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
-            self.m_DataObj.heightList = self.heightList
-            self.m_DataObj.dataType = self.dataType
+            self.updateDataHeader()
             
         if self.flagNoMoreFiles == 1:
             print 'Process finished'
@@ -322,17 +282,15 @@ class VoltageReader(JRODataReader):
             self.m_DataObj.flagNoData = True
             return 0
 
-        time = self.m_BasicHeader.utc + self.datablockIndex * self.ippSeconds
+        time = self.m_BasicHeader.utc + self.profileIndex * self.ippSeconds
         self.m_DataObj.m_BasicHeader.utc = time  
         
         self.m_DataObj.flagNoData = False
         self.m_DataObj.flagResetProcessing = self.flagResetProcessing
         
-        self.m_DataObj.data = self.datablock[:,self.datablockIndex,:]
-        self.m_DataObj.idProfile = self.idProfile
+        self.m_DataObj.data = self.datablock[:,self.profileIndex,:]
         
-        self.datablockIndex += 1
-        self.idProfile += 1
+        self.profileIndex += 1
         
         #call setData - to Data Object
     
@@ -354,7 +312,7 @@ class VoltageWriter( JRODataWriter ):
     
     datablock = None
     
-    datablockIndex = 0
+    profileIndex = 0
     
     shapeBuffer = None
     
@@ -378,7 +336,7 @@ class VoltageWriter( JRODataWriter ):
 
 
     def hasAllDataInBuffer(self):
-        if self.datablockIndex >= self.m_ProcessingHeader.profilesPerBlock:
+        if self.profileIndex >= self.m_ProcessingHeader.profilesPerBlock:
             return 1
         return 0
 
@@ -409,11 +367,11 @@ class VoltageWriter( JRODataWriter ):
         Escribe el buffer en el file designado
             
         Affected:
-            self.datablockIndex 
+            self.profileIndex 
             self.flagIsNewFile
             self.flagIsNewBlock
-            self.nWriteBlocks
-            self.blocksCounter    
+            self.nTotalBlocks
+            self.nWriteBlocks    
             
         Return: None
         """
@@ -429,11 +387,11 @@ class VoltageWriter( JRODataWriter ):
         data.tofile( self.fp )
         
         self.datablock.fill(0)
-        self.datablockIndex = 0 
+        self.profileIndex = 0 
         self.flagIsNewFile = 0
         self.flagIsNewBlock = 1
+        self.nTotalBlocks += 1
         self.nWriteBlocks += 1
-        self.blocksCounter += 1
         
         
     def putData(self):
@@ -442,7 +400,7 @@ class VoltageWriter( JRODataWriter ):
             
         Affected:
             self.flagIsNewBlock
-            self.datablockIndex
+            self.profileIndex
 
         Return: 
             0    :    Si no hay data o no hay mas files que puedan escribirse 
@@ -456,16 +414,16 @@ class VoltageWriter( JRODataWriter ):
         if self.m_DataObj.flagResetProcessing:
             
             self.datablock.fill(0)
-            self.datablockIndex = 0
+            self.profileIndex = 0
             self.setNextFile()
         
-        self.datablock[:,self.datablockIndex,:] = self.m_DataObj.data
+        self.datablock[:,self.profileIndex,:] = self.m_DataObj.data
         
-        self.datablockIndex += 1
+        self.profileIndex += 1
         
         if self.hasAllDataInBuffer():
             #if self.flagIsNewFile: 
-            self.getHeader()
+            self.getDataHeader()
             self.writeNextBlock()
         
         if self.flagNoMoreFiles:

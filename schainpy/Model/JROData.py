@@ -11,7 +11,6 @@ class Data:
     '''
     classdocs
     '''
-    type = None
     
     def __init__(self):
         '''
@@ -46,23 +45,31 @@ class JROData(Data):
     '''
     classdocs
     '''
+    
     m_RadarControllerHeader = RadarControllerHeader()
+    
     m_ProcessingHeader = ProcessingHeader()
+    
     m_SystemHeader = SystemHeader()
+    
     m_BasicHeader = BasicHeader()
+    
     m_NoiseObj = Noise()
     
-    data = None
+    type = None
+    
     dataType = None
-
-    nProfiles = None
+    
     nHeights = None
+    
     nChannels = None    
     
     heightList = None
+    
     channelList = None
     
     flagNoData = False
+    
     flagResetProcessing = False
             
     def __init__(self):
@@ -70,3 +77,27 @@ class JROData(Data):
         Constructor
         '''
         raise ValueError, "This class has not been implemented"
+    
+    def updateHeaderFromObj(self):
+        
+        xi = self.heightList[0]
+        step = self.heightList[1] - self.heightList[0]
+        
+        self.m_ProcessingHeader.firstHeight = xi
+        self.m_ProcessingHeader.deltaHeight = step
+        
+        self.m_ProcessingHeader.numHeights = self.nHeights
+        self.m_SystemHeader.numChannels = self.nChannels
+   
+    def updateObjFromHeader(self):
+        
+        xi = self.m_ProcessingHeader.firstHeight
+        step = self.m_ProcessingHeader.deltaHeight
+        xf = xi + self.m_ProcessingHeader.numHeights*step
+        
+        self.heightList = numpy.arange(xi, xf, step)        
+        self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
+        
+        self.nHeights = len(self.heightList)
+        self.nChannels = len(self.channelList)
+        

@@ -56,8 +56,8 @@ class TestSChain():
             if self.readerObj.flagNoMoreFiles:
                 break
             
-            if self.readerObj.flagIsNewBlock and self.readerObj.nReadBlocks:
-                print 'Block No %04d, Time: %s' %(self.readerObj.nReadBlocks,
+            if self.readerObj.flagIsNewBlock and self.readerObj.nTotalBlocks:
+                print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks,
                                                   datetime.datetime.fromtimestamp(self.readerObj.m_BasicHeader.utc),)
                 #===============================================================
                 # fin = time.time()

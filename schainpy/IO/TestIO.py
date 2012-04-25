@@ -48,7 +48,7 @@ class TestIO():
                 print 'jump'
                 
             if self.voltageReaderObj.flagIsNewBlock:
-                print 'Block No %04d, Time: %s'%(self.voltageReaderObj.nReadBlocks,
+                print 'Block No %04d, Time: %s'%(self.voltageReaderObj.nTotalBlocks,
                                                  datetime.datetime.fromtimestamp(self.voltageReaderObj.m_BasicHeader.utc))
             
 #            self.voltageWriterObj.putData()

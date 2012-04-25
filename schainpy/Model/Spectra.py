@@ -13,10 +13,17 @@ class Spectra(JROData):
     classdocs
     '''
     
-    type = "Spectra"
     data_spc = None
+    
     data_cspc = None
+    
     data_dc = None
+    
+    nFFTPoints = None
+    
+    nPairs = None
+    
+    pairsList = None
     
 
     def __init__(self):
@@ -32,7 +39,24 @@ class Spectra(JROData):
     
         self.m_BasicHeader = BasicHeader()
         
-        m_NoiseObj = Noise()
+        self.m_NoiseObj = Noise()
+        
+        self.type = "Spectra"
+        
+        self.dataType = None
+        
+        self.nHeights = 0
+        
+        self.nChannels = 0
+        
+        self.channelList = None
+        
+        self.heightList = None
+        
+        self.flagNoData = True
+        
+        self.flagResetProcessing = False
+        
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         self.data_spc = None
@@ -40,21 +64,13 @@ class Spectra(JROData):
         self.data_cspc = None
         
         self.data_dc = None
-          
-        self.heightList  = None
         
-        self.channelList = None
-        
-        self.flagNoData = True
-        
-        self.nProfiles = None
-        
-        self.nPoints = None
-        
-        self.dataType = None
-        
-        self.flagResetProcessing = False
+        self.nFFTPoints = None
         
         self.nPairs = 0
-
-        self.nChannels = 0
+        
+        self.pairsList = None
+        
+        
+        
+        

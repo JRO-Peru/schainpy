@@ -9,9 +9,22 @@ from DataIO import DataReader
 from DataIO import DataWriter
 
 class CorrelationReader(DataReader):
+    
     def __init__(self):
+        
         pass
     
 class CorrelationWriter(DataWriter):
+    
     def __init__(self):
+        
         pass
+    
+    def puData(self):
+        pass
+    
+    def writeBlock(self):
+        pass
+    
+    
+        

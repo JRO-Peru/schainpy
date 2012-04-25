@@ -166,24 +166,77 @@ def getlastFileFromPath(path, ext):
 
     return None
 
+class JRODataIO():
+    
+    #speed of light
+    c = 3E8
+    
+    m_BasicHeader = BasicHeader()
+    
+    m_SystemHeader = SystemHeader()
+    
+    m_RadarControllerHeader = RadarControllerHeader()
+    
+    m_ProcessingHeader = ProcessingHeader()
+    
+    m_DataObj = None
+    
+    online = 0
+    
+    fp = None
+    
+    dataType = None
+    
+    fileSizeByHeader = None
+    
+    filenameList = []
+    
+    filename = None
+    
+    fileSize = None
+    
+    firstHeaderSize = 0
+    
+    basicHeaderSize = 24
+    
+    nTotalBlocks = 0
 
-class DataReader():
+    ippSeconds = 0
+    
+    blocksize = 0
+    
+    set = 0
+    
+    ext = None
+    
+    path = None
+    
+    maxTimeStep = 30
+    
+    
+    delay  = 3   #seconds
+    
+    nTries  = 3  #quantity tries
+    
+    nFiles = 3   #number of files for searching    
+    
+    
+    flagNoMoreFiles = 0
+    
+    flagIsNewFile = 1
+    
+    flagResetProcessing = 0    
+
+    flagIsNewBlock = 0
     
     def __init__(self):
         pass
-
-
-class DataWriter():
     
-    def __init__(self):
-        pass
-    
-    
-class JRODataReader(DataReader):
+class JRODataReader(JRODataIO):
     
     """
-    Esta clase es usada como la clase padre de las clases DataReader,
-    contiene todos lo metodos necesarios para leer datos desde archivos en formato
+    Esta clase es usada como la clase padre de las clases VoltageReader y SpectraReader.
+    Contiene todos lo metodos necesarios para leer datos desde archivos en formato
     jicamarca o pdata (.r o .pdata). La lectura de los datos siempre se realiza por bloques. Los datos
     leidos son array de 3 dimensiones:
 
@@ -198,92 +251,35 @@ class JRODataReader(DataReader):
     Esta clase contiene instancias (objetos) de las clases BasicHeader, SystemHeader, 
     RadarControllerHeader y DataObj. Los tres primeros se usan para almacenar informacion de la
     cabecera de datos (metadata), y el cuarto (DataObj) para obtener y almacenar los datos desde
-    el buffer cada vez que se ejecute el metodo "getData".
+    el buffer de datos cada vez que se ejecute el metodo "getData".
     """
     
-    m_BasicHeader = BasicHeader()
-    
-    m_SystemHeader = SystemHeader()
-    
-    m_RadarControllerHeader = RadarControllerHeader()
-    
-    m_ProcessingHeader = ProcessingHeader()
-    
-    m_DataObj = None
-    
-    heightList = None
-    
-    channelList = None
-    
-    online = 0
-    
-    fp = None
-    
-    fileSizeByHeader = None
-    
-    filenameList = []
-    
-    filename = None
-    
-    fileSize = None
-    
-    firstHeaderSize = 0
-    
-    basicHeaderSize = 24
-    
-    dataType = None
-    
-    maxTimeStep = 30
-        
-    flagNoMoreFiles = 0
-    
-    set = 0
-    
-    ext = None
-    
-    path = None
-    
-    delay  = 3   #seconds
-    
-    nTries  = 3  #quantity tries
-    
-    nFiles = 3   #number of files for searching
-    
-    nBlocks = 0
-    
-    flagIsNewFile = 1
-
-    ippSeconds = 0
-
-    flagResetProcessing = 0    
-
-    flagIsNewBlock = 0
-    
     nReadBlocks = 0
-
-    blocksize = 0
-
-    datablockIndex = 9999
-    
-    #speed of light
-    c = 3E8
     
     def __init__(self, m_DataObj=None):
+        
         raise ValueError, "This class can't be instanced"
 
 
-
-
-    
     def hasNotDataInBuffer(self):
+        
         raise ValueError, "Not implemented"
-
-
+    
+    def getBlockDimension(self):
+        
+        raise ValueError, "No implemented"
+    
     def readBlock(self):
+        
+        self.nTotalBlocks += 1
+        self.nReadBlocks += 1
+        
+        raise ValueError, "This method has not been implemented"
+    
+    def getData( self ):
+        
         raise ValueError, "This method has not been implemented"
 
-    def getData( self ):
-        raise ValueError, "This method has not been implemented"
     
     def __rdSystemHeader(self, fp=None):
         
@@ -313,9 +309,6 @@ class JRODataReader(DataReader):
             fp = self.fp
             
         self.m_BasicHeader.read(fp)
-    
-    def getBlockDimension(self):
-        raise ValueError, "No implemented"
        
     def __readFirstHeader(self):
         """ 
@@ -327,7 +320,6 @@ class JRODataReader(DataReader):
             self.m_RadarControllerHeader
             self.m_ProcessingHeader
             self.firstHeaderSize
-            self.heightList
             self.dataType
             self.fileSizeByHeader
             self.ippSeconds
@@ -341,40 +333,116 @@ class JRODataReader(DataReader):
         self.__rdProcessingHeader()
         self.firstHeaderSize = self.m_BasicHeader.size
         
-        data_type=int(numpy.log2((self.m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
-        if data_type == 0:
-            tmp = numpy.dtype([('real','<i1'),('imag','<i1')])
+        datatype = int(numpy.log2((self.m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
+        if datatype == 0:
+            datatype_str = numpy.dtype([('real','<i1'),('imag','<i1')])
             
-        elif data_type == 1:
-            tmp = numpy.dtype([('real','<i2'),('imag','<i2')])
+        elif datatype == 1:
+            datatype_str = numpy.dtype([('real','<i2'),('imag','<i2')])
             
-        elif data_type == 2:
-            tmp = numpy.dtype([('real','<i4'),('imag','<i4')])
+        elif datatype == 2:
+            datatype_str = numpy.dtype([('real','<i4'),('imag','<i4')])
             
-        elif data_type == 3:
-            tmp = numpy.dtype([('real','<i8'),('imag','<i8')])
+        elif datatype == 3:
+            datatype_str = numpy.dtype([('real','<i8'),('imag','<i8')])
             
-        elif data_type == 4:
-            tmp = numpy.dtype([('real','<f4'),('imag','<f4')])
+        elif datatype == 4:
+            datatype_str = numpy.dtype([('real','<f4'),('imag','<f4')])
             
-        elif data_type == 5:
-            tmp = numpy.dtype([('real','<f8'),('imag','<f8')])
+        elif datatype == 5:
+            datatype_str = numpy.dtype([('real','<f8'),('imag','<f8')])
             
         else:
             raise ValueError, 'Data type was not defined'
         
-        xi = self.m_ProcessingHeader.firstHeight
-        step = self.m_ProcessingHeader.deltaHeight
-        xf = xi + self.m_ProcessingHeader.numHeights*step
-        
-        self.heightList = numpy.arange(xi, xf, step)        
-        self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
-        self.dataType = tmp
-        self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
+        self.dataType = datatype_str
         self.ippSeconds = 2 * 1000 * self.m_RadarControllerHeader.ipp / self.c
         
-        self.getBlockDimension()
+        self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
 
+        self.getBlockDimension()
+        
+    def __setNewBlock(self):
+        """ 
+        Lee el Basic Header y posiciona le file pointer en la posicion inicial del bloque a leer
+
+        Affected: 
+            self.m_BasicHeader
+            self.flagNoContinuousBlock
+            self.ns
+
+        Return: 
+            0    :    Si el file no tiene un Basic Header que pueda ser leido
+            1    :    Si se pudo leer el Basic Header
+        """
+        if self.fp == None:
+            return 0
+        
+        if self.flagIsNewFile:
+            return 1
+        
+        self.lastUTTime = self.m_BasicHeader.utc
+        
+        currentSize = self.fileSize - self.fp.tell()
+        neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
+        
+        #If there is enough data setting new data block
+        if ( currentSize >= neededSize ):
+            self.__rdBasicHeader()
+            return 1
+        
+        #si es OnLine y ademas aun no se han leido un bloque completo entonces se espera por uno valido
+        if self.online and (self.nReadBlocks < self.m_ProcessingHeader.dataBlocksPerFile):
+            
+            fpointer = self.fp.tell()
+            
+            for nTries in range( self.nTries ):
+                #self.fp.close()
+
+                print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+                time.sleep( self.delay )
+
+                #self.fp = open( self.filename, 'rb' )
+                #self.fp.seek( fpointer )
+
+                self.fileSize = os.path.getsize( self.filename )
+                currentSize = self.fileSize - fpointer
+
+                if ( currentSize >= neededSize ):
+                    self.__rdBasicHeader()
+                    return 1
+                
+        #Setting new file 
+        if not( self.setNextFile() ):
+            return 0
+        
+        deltaTime = self.m_BasicHeader.utc - self.lastUTTime # check this
+        
+        self.flagResetProcessing = 0
+        
+        if deltaTime > self.maxTimeStep:
+            self.flagResetProcessing = 1
+            
+        return 1
+    
+    def readNextBlock(self):
+        """ 
+        Establece un nuevo bloque de datos a leer y los lee, si es que no existiese
+        mas bloques disponibles en el archivo actual salta al siguiente.
+
+        Affected: 
+            self.lastUTTime
+
+        Return: None
+        """
+        
+        if not(self.__setNewBlock()):
+            return 0
+        
+        if not(self.readBlock()):
+            return 0
+        
+        return 1
 
     def __setNextFileOnline(self):
         """
@@ -540,81 +608,14 @@ class JRODataReader(DataReader):
             newFile = self.__setNextFileOnline()
         else:
             newFile = self.__setNextFileOffline()
-        
-        if self.flagNoMoreFiles:
-            sys.exit(0)
 
         if not(newFile):
             return 0
         
         self.__readFirstHeader()
-        self.nBlocks = 0
-        return 1
-        
-    
-    def __setNewBlock(self):
-        """ 
-        Lee el Basic Header y posiciona le file pointer en la posicion inicial del bloque a leer
-
-        Affected: 
-            self.m_BasicHeader
-            self.flagNoContinuousBlock
-            self.ns
-
-        Return: 
-            0    :    Si el file no tiene un Basic Header que pueda ser leido
-            1    :    Si se pudo leer el Basic Header
-        """
-        if self.fp == None:
-            return 0
-        
-        if self.flagIsNewFile:
-            return 1
-        
-        currentSize = self.fileSize - self.fp.tell()
-        neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
-        
-        #If there is enough data setting new data block
-        if ( currentSize >= neededSize ):
-            self.__rdBasicHeader()
-            return 1
-        
-        #si es OnLine y ademas aun no se han leido un bloque completo entonces se espera por uno valido
-        elif (self.nBlocks != self.m_ProcessingHeader.dataBlocksPerFile) and self.online:
-            for nTries in range( self.nTries ):
-
-                fpointer = self.fp.tell()
-                self.fp.close()
-
-                print "\tWaiting %0.2f sec for the next block, try %03d ..." % (self.delay, nTries+1)
-                time.sleep( self.delay )
-
-                self.fp = open( self.filename, 'rb' )
-                self.fp.seek( fpointer )
-
-                self.fileSize = os.path.getsize( self.filename )
-                currentSize = self.fileSize - self.fp.tell()
-                neededSize = self.m_ProcessingHeader.blockSize + self.basicHeaderSize
-
-                if ( currentSize >= neededSize ):
-                    self.__rdBasicHeader()
-                    return 1
-                
-        #Setting new file 
-        if not( self.setNextFile() ):
-            return 0
-        
-        deltaTime = self.m_BasicHeader.utc - self.lastUTTime # check this
-        
-        self.flagResetProcessing = 0
-        
-        if deltaTime > self.maxTimeStep:
-            self.flagResetProcessing = 1
-            #self.nReadBlocks = 0
-            
+        self.nReadBlocks = 0
         return 1
 
-    
     def __searchFilesOnLine(self, path, startDateTime=None, endDateTime=None, expLabel = "", ext = None):
         """
         Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
@@ -818,8 +819,16 @@ class JRODataReader(DataReader):
             return 0
         
         return 1
-
     
+    def updateDataHeader(self):
+        
+        self.m_DataObj.m_BasicHeader = self.m_BasicHeader.copy()
+        self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+        self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+        self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
+        
+        self.m_DataObj.updateObjFromHeader()
+        
     def setup(self, path, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
         """
         setup configura los parametros de lectura de la clase DataReader.
@@ -923,88 +932,20 @@ class JRODataReader(DataReader):
             self.endDoy = endDateTime.timetuple().tm_yday
         #call fillHeaderValues() - to Data Object
         
-        self.m_DataObj.m_BasicHeader = self.m_BasicHeader.copy()
-        self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-        self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-        self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
-        self.m_DataObj.dataType = self.dataType
+        self.updateDataHeader()
             
-        return 1 
-
-    
-    def readNextBlock(self):
-        """ 
-        Establece un nuevo bloque de datos a leer y los lee, si es que no existiese
-        mas bloques disponibles en el archivo actual salta al siguiente.
-
-        Affected: 
-            self.lastUTTime
-
-        Return: None
-        """
-        if not(self.__setNewBlock()):
-            return 0
-        
-        if not(self.readBlock()):
-            return 0
-        
-        self.lastUTTime = self.m_BasicHeader.utc
-        
         return 1
-
-
-class JRODataWriter(DataWriter):
+        
+class JRODataWriter(JRODataIO):
 
     """ 
     Esta clase permite escribir datos a archivos procesados (.r o ,pdata). La escritura
     de los datos siempre se realiza por bloques. 
     """
     
-    m_BasicHeader = BasicHeader()
-    
-    m_SystemHeader = SystemHeader()
-    
-    m_RadarControllerHeader = RadarControllerHeader()
-    
-    m_ProcessingHeader = ProcessingHeader()
-    
-    fp = None
-    
-    blocksCounter = 0
-    
-    flagIsNewFile = 1
-    
     nWriteBlocks = 0 
-    
-    flagIsNewBlock = 0
-    
-    flagNoMoreFiles = 0
-
-    m_DataObj = None
-
-    fp = None
-        
-    blocksCounter = 0
-        
-    flagIsNewFile = 1
-        
-    nWriteBlocks = 0 
-        
-    flagIsNewBlock = 0
-        
-    flagNoMoreFiles = 0
 
     setFile = None
-        
-    dataType = None
-        
-    path = None
-        
-    noMoreFiles = 0
-        
-    filename = None
-        
-    channelList = None
     
     
     def __init__(self, m_DataObj=None):
@@ -1120,12 +1061,12 @@ class JRODataWriter(DataWriter):
         timeTuple = time.localtime( self.m_DataObj.m_BasicHeader.utc )
         subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
 
-        tmp = os.path.join( path, subfolder )
-        if not( os.path.exists(tmp) ):
-            os.mkdir(tmp)
+        doypath = os.path.join( path, subfolder )
+        if not( os.path.exists(doypath) ):
+            os.mkdir(doypath)
             self.setFile = -1 #inicializo mi contador de seteo
         else:
-            filesList = os.listdir( tmp )
+            filesList = os.listdir( doypath )
             if len( filesList ) > 0:
                 filesList = sorted( filesList, key=str.lower )
                 filen = filesList[-1]
@@ -1152,7 +1093,7 @@ class JRODataWriter(DataWriter):
 
         fp = open( filename,'wb' )
         
-        self.blocksCounter = 0
+        self.nWriteBlocks = 0
         
         #guardando atributos 
         self.filename = filename
@@ -1182,7 +1123,7 @@ class JRODataWriter(DataWriter):
         if self.flagIsNewFile:
             return 1
         
-        if self.blocksCounter < self.m_ProcessingHeader.dataBlocksPerFile:
+        if self.nWriteBlocks < self.m_ProcessingHeader.dataBlocksPerFile:
             self.__writeBasicHeader()
             return 1
         
@@ -1208,7 +1149,7 @@ class JRODataWriter(DataWriter):
         return 1
     
 
-    def getHeader(self):
+    def getDataHeader(self):
         """
         Obtiene una copia del First Header
          
@@ -1222,12 +1163,15 @@ class JRODataWriter(DataWriter):
         Return: 
             None
         """
+        self.m_DataObj.updateHeaderFromObj()
+        
         self.m_BasicHeader = self.m_DataObj.m_BasicHeader.copy()
         self.m_SystemHeader = self.m_DataObj.m_SystemHeader.copy()
         self.m_RadarControllerHeader = self.m_DataObj.m_RadarControllerHeader.copy()
         self.m_ProcessingHeader = self.m_DataObj.m_ProcessingHeader.copy()
+        
         self.dataType = self.m_DataObj.dataType
-    
+        
     
     def setup(self, path, set=0, ext=None):
         """
@@ -1252,7 +1196,7 @@ class JRODataWriter(DataWriter):
         self.setFile = set - 1
         self.ext = ext
         #self.format = format
-        self.getHeader()
+        self.getDataHeader()
 
         self.setBlockDimension()
         

@@ -85,7 +85,7 @@ class TestSChain():
                 break
             
             if self.readerObj.flagIsNewBlock:
-                print 'Block No %04d, Time: %s' %(self.readerObj.nReadBlocks,
+                print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks,
                                                   datetime.datetime.fromtimestamp(self.readerObj.m_BasicHeader.utc),)
                 fin = time.time()
                 print 'Tiempo de un bloque leido y escrito: [%6.5f]' %(fin - ini)
