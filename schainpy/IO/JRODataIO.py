@@ -549,6 +549,7 @@ class JRODataReader(JRODataIO):
             Si un determinado file no puede ser abierto
         """
         idFile = self.fileIndex
+        
         while(True):
             
             idFile += 1
@@ -559,22 +560,14 @@ class JRODataReader(JRODataIO):
                 return 0
             
             filename = self.filenameList[idFile]
-            fileSize = os.path.getsize(filename)
-            
-            try:
-                fp = open(filename,'rb')
-            except:
-                raise IOError, "The file %s can't be opened" %filename
-            
-            currentSize = fileSize - fp.tell()
-            neededSize = self.m_ProcessingHeader.blockSize + self.firstHeaderSize
-            
-            if (currentSize < neededSize):
-                print "Skipping the file %s due to it hasn't enough data" %filename
+
+            if not(self.__verifyFile(filename)):
                 continue
-            
+
+            fileSize = os.path.getsize(filename)
+            fp = open(filename,'rb')
             break
-        
+
         self.flagIsNewFile = 1
         self.fileIndex = idFile
         self.filename = filename
@@ -780,7 +773,6 @@ class JRODataReader(JRODataIO):
         
         return pathList, filenameList
 
-
     def __verifyFile(self, filename, msgFlag=True):
         """
         Verifica que el filename tenga data valida, para ello leo el FirstHeader del file 
@@ -789,37 +781,55 @@ class JRODataReader(JRODataIO):
             0    :    file no valido para ser leido
             1    :    file valido para ser leido
         """
-        m_BasicHeader = BasicHeader()
-        m_SystemHeader = SystemHeader()
-        m_RadarControllerHeader = RadarControllerHeader()
-        m_ProcessingHeader = ProcessingHeader()
-        flagFileOK = False
-        
+        msg = None
+
         try:
             fp = open( filename,'rb' ) #lectura binaria
+            currentPosition = fp.tell()
         except:
             if msgFlag:
                 print "The file %s can't be opened" % (filename)
+            return False
+
+        neededSize = self.m_ProcessingHeader.blockSize + self.firstHeaderSize
         
-        try:
-            if not( m_BasicHeader.read(fp) ): raise ValueError 
-            if not( m_SystemHeader.read(fp) ): raise ValueError
-            if not( m_RadarControllerHeader.read(fp) ): raise ValueError
-            if not( m_ProcessingHeader.read(fp) ): raise ValueError
-            data_type = int(numpy.log2((m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
-            if m_BasicHeader.size > self.basicHeaderSize:
-                flagFileOK = True
-        except:
-            if msgFlag:
-                print "\tThe file %s is empty or it hasn't enough data" % filename
+        if neededSize == 0:
+
+            m_BasicHeader = BasicHeader()
+            m_SystemHeader = SystemHeader()
+            m_RadarControllerHeader = RadarControllerHeader()
+            m_ProcessingHeader = ProcessingHeader()
+            
+            try:
+                if not( m_BasicHeader.read(fp) ): raise ValueError 
+                if not( m_SystemHeader.read(fp) ): raise ValueError
+                if not( m_RadarControllerHeader.read(fp) ): raise ValueError
+                if not( m_ProcessingHeader.read(fp) ): raise ValueError
+                data_type = int(numpy.log2((m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
+                
+                neededSize = m_ProcessingHeader.blockSize + m_BasicHeader.size
+
+            except:
+                if msgFlag:
+                    print "\tThe file %s is empty or it hasn't enough data" % filename
+                
+                fp.close()
+                return False
         
+        else:
+            msg = "\tSkipping the file %s due to it hasn't enough data" %filename
+                
         fp.close()
+        fileSize = os.path.getsize(filename)
+        currentSize = fileSize - currentPosition
         
-        if not(flagFileOK):
-            return 0
-        
-        return 1
-    
+        if currentSize < neededSize:
+            if msgFlag and (msg != None):
+                print msg #print"\tSkipping the file %s due to it hasn't enough data" %filename
+            return False
+
+        return True
+
     def updateDataHeader(self):
         
         self.m_DataObj.m_BasicHeader = self.m_BasicHeader.copy()
