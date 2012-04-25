@@ -5,6 +5,8 @@ Created on Feb 7, 2012
 @version $Id$
 '''
 import copy
+import numpy
+
 from JROHeader import RadarControllerHeader, ProcessingHeader, SystemHeader, BasicHeader
 
 class Data:
