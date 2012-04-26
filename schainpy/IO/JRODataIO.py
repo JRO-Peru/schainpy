@@ -362,6 +362,7 @@ class JRODataReader(JRODataIO):
 
         self.getBlockDimension()
         
+        
     def __setNewBlock(self):
         """ 
         Lee el Basic Header y posiciona le file pointer en la posicion inicial del bloque a leer
@@ -837,6 +838,7 @@ class JRODataReader(JRODataIO):
         self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
         self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
         
+        self.m_DataObj.dataType = self.dataType
         self.m_DataObj.updateObjFromHeader()
         
     def setup(self, path, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
