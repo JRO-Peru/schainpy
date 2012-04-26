@@ -1,9 +1,7 @@
 import numpy
+from Model.Spectra import Spectra
 
-from Model.JROHeader import *
-from Model.Voltage import Voltage
-
-def hildebrand_sekhon(Data, navg=1 ):
+def hildebrand_sekhon(Data, navg=1):
     """
     This method is for the objective determination of de noise level in Doppler spectra. This 
     implementation technique is based on the fact that the standard deviation of the spectral 
@@ -73,7 +71,7 @@ class Noise():
     m_DataObj = None
 
 
-    def __init__(self, m_Voltage=None):
+    def __init__(self, m_Spectra=None):
         """
         Inicializador de la clase Noise para la la determinacion del nivel de ruido en un Spectro Doppler.
 
@@ -83,13 +81,13 @@ class Noise():
         Return:
             None
         """
-#        if m_Voltage == None:
-#            m_Voltage = Voltage()
-#        
-#        if not(isinstance(m_Voltage, Voltage)):
-#            raise ValueError, "in Noise class, m_Voltage must be an Voltage class object"
+        if m_Spectra == None:
+            m_Spectra = Spectra()
         
-        self.m_DataObj = m_Voltage
+        if not(isinstance(m_Spectra, Spectra)):
+            raise ValueError, "in Noise class, m_Spectra must be an Spectra class object"
+        
+        self.m_DataObj = m_Spectra
         
         
     def getNoiseLevelByHildebrandSekhon(self):
@@ -99,10 +97,16 @@ class Noise():
         Return:
             noise level
         """
-        data = self.m_DataObj.data # heights x perfiles
-        #heights = numpy.transpose( Data, (2,0,1) ) # channel x profile x height
-        #data = Data[0,0,:]
+        data = self.m_DataObj.data_spc
+        daux = None
 
-        noiselevel = hildebrand_sekhon(data)
+        for channel in range(self.m_DataObj.nChannels):
+            daux = data[channel,:,:]
+            noiselevel = hildebrand_sekhon(daux)
+            print noiselevel
         
-        print noiselevel
+
+        for pair in range(self.m_DataObj.nPairs):
+            daux = data[pair,:,:]
+            noiselevel = hildebrand_sekhon(daux)
+            print noiselevel
