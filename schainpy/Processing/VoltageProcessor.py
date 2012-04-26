@@ -34,22 +34,26 @@ class VoltageProcessor:
             
         self.integratorIndex = None
         self.decoderIndex = None
+        self.profSelectorIndex = None
         self.writerIndex = None
         self.plotterIndex = None
         
         self.integratorList = []
         self.decoderList = []
+        self.profileSelectorList = []
         self.writerList = []
         self.plotterList = []
     
     def init(self):
+        
         self.integratorIndex = 0
         self.decoderIndex = 0
+        self.profSelectorIndex = 0
         self.writerIndex = 0
         self.plotterIndex = 0
         self.voltageOutObj.copy(self.voltageInObj)
                 
-    def addWriter(self,wrpath):
+    def addWriter(self, wrpath):
         objWriter = VoltageWriter(self.voltageOutObj)
         objWriter.setup(wrpath)
         self.writerList.append(objWriter)
@@ -59,19 +63,25 @@ class VoltageProcessor:
         plotObj = Osciloscope(self.voltageOutObj,self.plotterIndex)
         self.plotterList.append(plotObj)
 
-    def addIntegrator(self,N):
+    def addIntegrator(self, nCohInt):
         
-        objCohInt = CoherentIntegrator(N)
+        objCohInt = CoherentIntegrator(nCohInt)
         self.integratorList.append(objCohInt)
     
-    def addDecoder(self,code,ncode,nbaud):
+    def addDecoder(self, code, ncode, nbaud):
         
         objDecoder = Decoder(code,ncode,nbaud)
         self.decoderList.append(objDecoder)
     
+    def addProfileSelector(self, nProfiles):
+        
+        objProfSelector = ProfileSelector(nProfiles)
+        self.profileSelectorList.append(objProfSelector)
+        
     def writeData(self,wrpath):
+        
         if self.voltageOutObj.flagNoData:
-                return 0
+            return 0
             
         if len(self.writerList) <= self.writerIndex:
             self.addWriter(wrpath)
@@ -85,7 +95,7 @@ class VoltageProcessor:
 
     def plotData(self,idProfile, type, xmin=None, xmax=None, ymin=None, ymax=None, winTitle=''):
         if self.voltageOutObj.flagNoData:
-                return 0
+            return 0
             
         if len(self.plotterList) <= self.plotterIndex:
             self.addPlotter()
@@ -95,8 +105,9 @@ class VoltageProcessor:
         self.plotterIndex += 1
     
     def integrator(self, N):
+        
         if self.voltageOutObj.flagNoData:
-                return 0
+            return 0
         
         if len(self.integratorList) <= self.integratorIndex:
             self.addIntegrator(N)
@@ -115,8 +126,10 @@ class VoltageProcessor:
         self.integratorIndex += 1
     
     def decoder(self,code=None,type = 0):
+        
         if self.voltageOutObj.flagNoData:
-                return 0
+            return 0
+        
         if code == None:
             code = self.voltageOutObj.m_RadarControllerHeader.code
         ncode, nbaud = code.shape
@@ -263,7 +276,7 @@ class VoltageProcessor:
         self.voltageOutObj.heightList = numpy.arange(xi, xf, step) 
     
     
-    def selectProfiles(self, minIndex, maxIndex):
+    def selectProfiles(self, minIndex, maxIndex, nProfiles):
         """
         Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
         minIndex <= index <= maxIndex
@@ -280,28 +293,33 @@ class VoltageProcessor:
         Return:
             None
         """
-        channels = self.voltageOutObj.nChannels
-        heights = self.voltageOutObj.m_ProcessingHeader.numHeights
-        newprofiles = maxIndex - minIndex + 1
-
-        #voltage
-        data = numpy.zeros( (channels,newprofiles,heights), dtype='complex' )
-        for i in range(channels):
-            data[i,:,:] = self.voltageOutObj.data_spc[i,minIndex:maxIndex+1,:]
-
-        self.voltageOutObj.datablock = data
-
-        self.voltageOutObj.m_ProcessingHeader.blockSize = data.size
-        self.voltageOutObj.nProfiles = newprofiles
-        self.voltageOutObj.m_SystemHeader.numProfiles = newprofiles
-
+        
+        if self.voltageOutObj.flagNoData:
+            return 0
+        
+        if self.profSelectorIndex >= len(self.profileSelectorList):
+            self.addProfileSelector(nProfiles)
+        
+        profileSelectorObj = self.profileSelectorList[self.profSelectorIndex]
+        
+        if profileSelectorObj.isProfileInRange(minIndex, maxIndex):
+            self.voltageOutObj.flagNoData = False
+            self.profSelectorIndex += 1
+            return 1
+        
+        self.voltageOutObj.flagNoData = True
+        self.profSelectorIndex += 1
+        
+        return 0
     
     def selectNtxs(self, ntx):
         pass
 
 
 class Decoder:
+    
     def __init__(self,code, ncode, nbaud):
+        
         self.buffer = None
         self.profCounter = 1
         self.nCode = ncode 
@@ -313,6 +331,7 @@ class Decoder:
         self.setCodeFft = False
             
     def exe(self, data, ndata=None, type = 0):
+        
         if ndata == None: ndata = data.shape[1] 
         
         if type == 0:
@@ -321,7 +340,7 @@ class Decoder:
         if type == 1:
             self.convolutionInTime(data, ndata)
             
-    def convolutionInFreq(self,data,ndata):
+    def convolutionInFreq(self,data, ndata):
         
         newcode = numpy.zeros(ndata)    
         newcode[0:self.nBaud] = self.code[self.codeIndex]
@@ -368,14 +387,16 @@ class Decoder:
 
             
 class CoherentIntegrator:
+    
     def __init__(self, N):
+        
         self.profCounter = 1
         self.data = None
         self.buffer = None
         self.flag = False
         self.nCohInt = N
         
-    def exe(self,data):
+    def exe(self, data):
         
         if self.buffer == None:
             self.buffer = data
@@ -392,5 +413,40 @@ class CoherentIntegrator:
             
         self.profCounter += 1
 
-
+class ProfileSelector():
+    
+    indexProfile = None
+    # Tamaño total de los perfiles
+    nProfiles = None
+    
+    def __init__(self, nProfiles):
+        
+        self.indexProfile = 0
+        self.nProfiles = nProfiles
+    
+    def isProfileInRange(self, minIndex, maxIndex):
+        
+        if minIndex < self.indexProfile:
+            self.indexProfile += 1
+            return False
+        
+        if maxIndex > self.indexProfile:
+            self.indexProfile += 1
+            return False
+        
+        self.indexProfile += 1
+        
+        return True
+    
+    def isProfileInList(self, profileList):
+        
+        if self.indexProfile not in profileList:
+            self.indexProfile += 1
+            return False
+        
+        self.indexProfile += 1
+        
+        return True
+        
+    
         
