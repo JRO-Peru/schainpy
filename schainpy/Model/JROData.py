@@ -64,6 +64,8 @@ class JROData(Data):
     
     nHeights = None
     
+    nProfiles = None
+
     nChannels = None    
     
     heightList = None
@@ -90,6 +92,7 @@ class JROData(Data):
         
         self.m_ProcessingHeader.numHeights = self.nHeights
         self.m_SystemHeader.numChannels = self.nChannels
+        self.m_SystemHeader.numProfiles = self.nProfiles 
    
     def updateObjFromHeader(self):
         
@@ -101,5 +104,6 @@ class JROData(Data):
         self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
         
         self.nHeights = len(self.heightList)
+        self.nProfiles = self.m_SystemHeader.numProfiles
         self.nChannels = len(self.channelList)
         
