@@ -158,42 +158,42 @@ class VoltageProcessor:
         Selecciona un bloque de datos en base a canales y pares segun el channelList y el pairList
         
         Input:
-            channelList    :    lista sencilla de canales a seleccionar por ej. (2,3,7) 
-            pairList       :    tupla de pares que se desea selecionar por ej. ( (0,1), (0,2) )
+            channelList    :    lista sencilla de canales a seleccionar por ej. [2,3,7] 
             
         Affected:
-            self.dataOutObj.datablock
+            self.dataOutObj.data
+            self.voltageOutObj.channelList
             self.dataOutObj.nChannels
+            self.voltageOutObj.m_ProcessingHeader.totalSpectra
             self.dataOutObj.m_SystemHeader.numChannels
             self.voltageOutObj.m_ProcessingHeader.blockSize
             
         Return:
             None
         """
-        if not(channelList):
-            return
+        if self.voltageOutObj.flagNoData:
+            return 0
+
+        for channel in channelList:
+            if channel not in self.voltageOutObj.channelList:
+                raise ValueError, "The value %d in channelList is not valid" %channel
         
-        channels = 0
+        nchannels = len(channelList)
         profiles = self.voltageOutObj.nProfiles
-        heights  = self.voltageOutObj.m_ProcessingHeader.numHeights
+        heights  = self.voltageOutObj.nHeights #m_ProcessingHeader.numHeights
 
-        #self spectra
-        channels = len(channelList)
-        data = numpy.zeros( (channels,profiles,heights), dtype='complex' )
+        data = numpy.zeros( (nchannels,heights), dtype='complex' )
         for index,channel in enumerate(channelList):
-            data[index,:,:] = self.voltageOutObj.data_spc[channel,:,:]
+            data[index,:] = self.voltageOutObj.data[channel,:]
     
-        self.voltageOutObj.datablock = data
-        
-        #fill the m_ProcessingHeader.spectraComb up            
-        channels = len(channelList)
-
+        self.voltageOutObj.data = data
         self.voltageOutObj.channelList = channelList
         self.voltageOutObj.nChannels = nchannels
         self.voltageOutObj.m_ProcessingHeader.totalSpectra = nchannels
         self.voltageOutObj.m_SystemHeader.numChannels = nchannels
         self.voltageOutObj.m_ProcessingHeader.blockSize = data.size
-        
+        return 1
+
     
     def selectHeightsByValue(self, minHei, maxHei):
         """
@@ -208,11 +208,20 @@ class VoltageProcessor:
             Indirectamente son cambiados varios valores a travez del metodo selectHeightsByIndex
             
         Return:
-            None
+            1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
+        if self.voltageOutObj.flagNoData:
+            return 0
+        
+        if (minHei < self.voltageOutObj.heightList[0]) or (minHei > maxHei):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+        
+        if (maxHei > self.voltageOutObj.heightList[-1]):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+
         minIndex = 0
         maxIndex = 0
-        data = self.dataOutObj.heightList
+        data = self.voltageOutObj.heightList
         
         for i,val in enumerate(data): 
             if val < minHei:
@@ -228,6 +237,7 @@ class VoltageProcessor:
                 break
 
         self.selectHeightsByIndex(minIndex, maxIndex)
+        return 1
 
     
     def selectHeightsByIndex(self, minIndex, maxIndex):
@@ -236,62 +246,64 @@ class VoltageProcessor:
         minIndex <= index <= maxIndex
         
         Input:
-            minIndex    :    valor minimo de altura a considerar 
-            maxIndex    :    valor maximo de altura a considerar
+            minIndex    :    valor de indice minimo de altura a considerar 
+            maxIndex    :    valor de indice maximo de altura a considerar
             
         Affected:
-            self.voltageOutObj.datablock
-            self.voltageOutObj.m_ProcessingHeader.numHeights
-            self.voltageOutObj.m_ProcessingHeader.blockSize
-            self.voltageOutObj.heightList
+            self.voltageOutObj.data
+            self.voltageOutObj.heightList 
             self.voltageOutObj.nHeights
-            self.voltageOutObj.m_RadarControllerHeader.numHeights
+            self.voltageOutObj.m_ProcessingHeader.blockSize
+            self.voltageOutObj.m_ProcessingHeader.numHeights
+            self.voltageOutObj.m_ProcessingHeader.firstHeight
+            self.voltageOutObj.m_RadarControllerHeader
             
         Return:
-            None
+            1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
-        channels = self.voltageOutObj.nChannels
-        profiles = self.voltageOutObj.nProfiles
-        newheis = maxIndex - minIndex + 1
+        if self.voltageOutObj.flagNoData:
+            return 0
+        
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        if (maxIndex >= self.voltageOutObj.nHeights):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        nHeights = maxIndex - minIndex + 1
         firstHeight = 0
 
         #voltage
-        data = numpy.zeros( (channels,profiles,newheis), dtype='complex' )
-        for i in range(channels):
-            data[i] = self.voltageOutObj.data_spc[i,:,minIndex:maxIndex+1]
+        data = self.voltageOutObj.data[:,minIndex:maxIndex+1]
 
-        self.voltageOutObj.datablock = data
+        firstHeight = self.voltageOutObj.heightList[minIndex]
 
-        firstHeight = self.dataOutObj.heightList[minIndex]
-
-        self.voltageOutObj.nHeights = newheis
+        self.voltageOutObj.data = data
+        self.voltageOutObj.heightList = self.voltageOutObj.heightList[minIndex:maxIndex+1] 
+        self.voltageOutObj.nHeights = nHeights
         self.voltageOutObj.m_ProcessingHeader.blockSize = data.size
-        self.voltageOutObj.m_ProcessingHeader.numHeights = newheis
+        self.voltageOutObj.m_ProcessingHeader.numHeights = nHeights
         self.voltageOutObj.m_ProcessingHeader.firstHeight = firstHeight
-        self.voltageOutObj.m_RadarControllerHeader = newheis
-
-        xi = firstHeight
-        step = self.voltageOutObj.m_ProcessingHeader.deltaHeight
-        xf = xi + newheis * step
-        self.voltageOutObj.heightList = numpy.arange(xi, xf, step) 
+        self.voltageOutObj.m_RadarControllerHeader.numHeights = nHeights
+        return 1
     
     
     def selectProfiles(self, minIndex, maxIndex, nProfiles):
         """
-        Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
+        Selecciona un bloque de datos en base a un grupo indices de perfiles segun el rango
         minIndex <= index <= maxIndex
         
         Input:
-            minIndex    :    valor minimo de altura a considerar 
-            maxIndex    :    valor maximo de altura a considerar
+            minIndex    :    valor de indice minimo de perfil a considerar 
+            maxIndex    :    valor de indice maximo de perfil a considerar
+            nProfiles   :    numero de profiles
             
         Affected:
-            self.voltageOutObj.datablock
-            self.voltageOutObj.m_ProcessingHeader.numHeights
-            self.voltageOutObj.heightList
+            self.voltageOutObj.flagNoData
+            self.profSelectorIndex
             
         Return:
-            None
+            1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
         
         if self.voltageOutObj.flagNoData:
@@ -416,7 +428,7 @@ class CoherentIntegrator:
 class ProfileSelector():
     
     indexProfile = None
-    # Tamaño total de los perfiles
+    # Tamanho total de los perfiles
     nProfiles = None
     
     def __init__(self, nProfiles):
@@ -426,11 +438,11 @@ class ProfileSelector():
     
     def isProfileInRange(self, minIndex, maxIndex):
         
-        if minIndex < self.indexProfile:
+        if self.indexProfile < minIndex:
             self.indexProfile += 1
             return False
         
-        if maxIndex > self.indexProfile:
+        if self.indexProfile > maxIndex:
             self.indexProfile += 1
             return False
         
