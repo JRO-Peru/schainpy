@@ -174,10 +174,6 @@ class SpectraProcessor:
                 k += 2    
             
         self.dataOutObj.m_ProcessingHeader.spectraComb = spectraComb
-        
-        #self.selectHeightsByIndex( 0,10)
-        #self.selectHeightsByValue( 120,200 )
-        #self.selectChannels((2,4,5), self.pairList)
 
         
     def addWriter(self,wrpath):
@@ -285,21 +281,30 @@ class SpectraProcessor:
         if self.dataOutObj.flagNoData:
             return 0
         
+        channelIndexList = []
+        for channel in channelList:
+            if channel in self.dataOutObj.channelList:
+                index = self.dataOutObj.channelList.index(channel)
+                channelIndexList.append(index)
+                continue
+            
+            raise ValueError, "The value %d in channelList is not valid" %channel
+
         nProfiles = self.dataOutObj.nProfiles
-        dataType = self.dataOutObj.dataType
-        nHeights  = self.dataOutObj.m_ProcessingHeader.numHeights
+        #dataType = self.dataOutObj.dataType
+        nHeights  = self.dataOutObj.nHeights #m_ProcessingHeader.numHeights
         blocksize = 0
 
         #self spectra
-        nChannels = len(channelList)
-        spc = numpy.zeros( (nChannels,nProfiles,nHeights), dataType[0] )
+        nChannels = len(channelIndexList)
+        spc = numpy.zeros( (nChannels,nProfiles,nHeights), dtype='float' ) #dataType[0] )
         
-        for index, channel in enumerate(channelList):
-            spc[index,:,:] = self.dataOutObj.data_spc[channel,:,:]
+        for index, channel in enumerate(channelIndexList):
+            spc[index,:,:] = self.dataOutObj.data_spc[index,:,:]
         
         #DC channel
         dc = numpy.zeros( (nChannels,nHeights), dtype='complex' )
-        for index, channel in enumerate(channelList):
+        for index, channel in enumerate(channelIndexList):
             dc[index,:] = self.dataOutObj.data_dc[channel,:]        
             
         blocksize += dc.size
@@ -311,7 +316,7 @@ class SpectraProcessor:
         if pairList == None:
             pairList = self.pairList
 
-        if pairList != None:
+        if (pairList != None) and (self.dataOutObj.data_cspc != None):
             #cross spectra
             nPairs = len(pairList)
             cspc = numpy.zeros( (nPairs,nProfiles,nHeights), dtype='complex' )
@@ -319,14 +324,14 @@ class SpectraProcessor:
             spectraComb = self.dataOutObj.m_ProcessingHeader.spectraComb
             totalSpectra = len(spectraComb)
             nchan = self.dataOutObj.nChannels 
-            indexList = []
+            pairIndexList = []
 
             for pair in pairList: #busco el par en la lista de pares del Spectra Combinations
                 for index in range(0,totalSpectra,2):
                     if pair[0] == spectraComb[index] and pair[1] == spectraComb[index+1]:
-                        indexList.append( index/2 - nchan )
+                        pairIndexList.append( index/2 - nchan )
 
-            for index, pair in enumerate(indexList):
+            for index, pair in enumerate(pairIndexList):
                 cspc[index,:,:] = self.dataOutObj.data_cspc[pair,:,:]
             blocksize += cspc.size
                 
@@ -383,6 +388,12 @@ class SpectraProcessor:
         if self.dataOutObj.flagNoData:
             return 0
         
+        if (minHei < self.dataOutObj.heightList[0]) or (minHei > maxHei):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+        
+        if (maxHei > self.dataOutObj.heightList[-1]):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+
         minIndex = 0
         maxIndex = 0
         data = self.dataOutObj.heightList
@@ -430,44 +441,47 @@ class SpectraProcessor:
         if self.dataOutObj.flagNoData:
             return 0
         
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        if (maxIndex >= self.dataOutObj.nHeights):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
         nChannels = self.dataOutObj.nChannels
         nPairs = self.dataOutObj.nPairs
         nProfiles = self.dataOutObj.nProfiles
         dataType = self.dataOutObj.dataType
-        newheis = maxIndex - minIndex + 1
+        nHeights = maxIndex - minIndex + 1
         blockSize = 0
 
         #self spectra
-        spc = numpy.zeros( (nChannels,nProfiles,newheis), dataType[0] )
-        for i in range(nChannels):
-            spc[i,:,:] = self.dataOutObj.data_spc[i,:,minIndex:maxIndex+1]
+        spc = self.dataOutObj.data_spc[:,:,minIndex:maxIndex+1]
+        blockSize += spc.size
 
         #cross spectra
-        cspc = numpy.zeros( (nPairs,nProfiles,newheis), dtype='complex')
-        for i in range(nPairs):
-            cspc[i,:,:] = self.dataOutObj.data_cspc[i,:,minIndex:maxIndex+1]
+        cspc = None
+        if self.dataOutObj.data_cspc != None:
+            cspc = self.dataOutObj.data_cspc[:,:,minIndex:maxIndex+1]
+            blockSize += cspc.size
 
         #DC channel
-        dc = numpy.zeros( (nChannels,newheis), dtype='complex')
-        for i in range(nChannels):
-            dc[i] = self.dataOutObj.data_dc[i,minIndex:maxIndex+1]
+        dc = self.dataOutObj.data_dc[:,minIndex:maxIndex+1]
+        blockSize += dc.size
 
         self.dataOutObj.data_spc = spc
-        self.dataOutObj.data_cspc = cspc
+        if cspc != None: 
+            self.dataOutObj.data_cspc = cspc
         self.dataOutObj.data_dc = dc
 
         firstHeight = self.dataOutObj.heightList[minIndex]
         
-        self.dataOutObj.nHeights = newheis
-        self.dataOutObj.m_ProcessingHeader.blockSize = spc.size + cspc.size + dc.size
-        self.dataOutObj.m_ProcessingHeader.numHeights = newheis
+        self.dataOutObj.nHeights = nHeights
+        self.dataOutObj.m_ProcessingHeader.blockSize = blockSize
+        self.dataOutObj.m_ProcessingHeader.numHeights = nHeights
         self.dataOutObj.m_ProcessingHeader.firstHeight = firstHeight
-        self.dataOutObj.m_RadarControllerHeader.numHeights = newheis
+        self.dataOutObj.m_RadarControllerHeader.numHeights = nHeights
         
-        xi = firstHeight
-        step = self.dataOutObj.m_ProcessingHeader.deltaHeight
-        xf = xi + newheis * step
-        self.dataOutObj.heightList = numpy.arange(xi, xf, step) 
+        self.dataOutObj.heightList = self.dataOutObj.heightList[minIndex:maxIndex+1] 
 
 
 class IncoherentIntegration:
