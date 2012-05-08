@@ -5,26 +5,21 @@ Created on 23/01/2012
 @version $Id$
 '''
 
-from DataIO import DataReader
-from DataIO import DataWriter
+from JRODataIO import JRODataIO
 
-class CorrelationReader(DataReader):
+class CorrelationReader(JRODataIO):
     
     def __init__(self):
         
         pass
     
-class CorrelationWriter(DataWriter):
+class CorrelationWriter(JRODataIO):
     
     def __init__(self):
-        
         pass
     
-    def puData(self):
+    def putData(self):
         pass
     
     def writeBlock(self):
         pass
-    
-    
-        

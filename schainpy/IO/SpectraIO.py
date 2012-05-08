@@ -23,7 +23,7 @@ from JRODataIO import JRODataWriter
 from JRODataIO import isNumber
 
 
-class SpectraReader( JRODataReader ):
+class SpectraReader(JRODataReader):
     """ 
     Esta clase permite leer datos de espectros desde archivos procesados (.pdata). La lectura
     de los datos siempre se realiza por bloques. Los datos leidos (array de 3 dimensiones) 
@@ -263,17 +263,22 @@ class SpectraReader( JRODataReader ):
         
         if not( self.m_ProcessingHeader.shif_fft ):
             spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+            
             if cspc != None:
                 cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         
         spc = numpy.transpose( spc, (0,2,1) )
-        if cspc != None: cspc = numpy.transpose( cspc, (0,2,1) )
+        
+        if cspc != None:
+            cspc = numpy.transpose( cspc, (0,2,1) )
 
-        self.data_spc = spc
+        
         if cspc != None: 
             self.data_cspc = cspc['real'] + cspc['imag']*1j
         else:
             self.data_cspc = None
+        
+        self.data_spc = spc
         self.data_dc = dc['real'] + dc['imag']*1j
 
         self.datablockIndex = 0

@@ -9,7 +9,7 @@ import sys
 import datetime
 import time
 
-class TestIO():
+class TestIO:
     
     def __init__(self):
         self.setValues()

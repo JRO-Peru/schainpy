@@ -166,7 +166,7 @@ def getlastFileFromPath(path, ext):
 
     return None
 
-class JRODataIO():
+class JRODataIO:
     
     #speed of light
     c = 3E8

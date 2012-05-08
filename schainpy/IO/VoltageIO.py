@@ -297,7 +297,7 @@ class VoltageReader(JRODataReader):
         return 1 #self.m_DataObj.data
 
 
-class VoltageWriter( JRODataWriter ):
+class VoltageWriter(JRODataWriter):
     """ 
     Esta clase permite escribir datos de voltajes a archivos procesados (.r). La escritura
     de los datos siempre se realiza por bloques. 
