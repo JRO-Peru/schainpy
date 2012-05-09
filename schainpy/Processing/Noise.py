@@ -64,7 +64,7 @@ def hildebrand_sekhon(Data, navg=1):
     return anoise;
 
 
-class Noise():
+class Noise:
     """
     Clase que implementa los metodos necesarios para deternimar el nivel de ruido en un Spectro Doppler
     """

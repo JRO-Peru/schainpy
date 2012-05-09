@@ -20,6 +20,40 @@ class SpectraProcessor:
     classdocs
     '''
     
+    dataInObj = None        
+    
+    dataOutObj = None
+        
+    integratorObjIndex = None
+    
+    decoderObjIndex = None
+    
+    writerObjIndex = None
+    
+    plotterObjIndex = None
+    
+    integratorObjList = []
+    
+    decoderObjList = []
+    
+    writerObjList = []
+    
+    plotterObjList = []
+    
+    buffer = None
+    
+    ptsId = 0
+    
+    nFFTPoints = None
+    
+    pairList = None
+    m_Spectra= Spectra()
+
+    m_Voltage= Voltage()
+
+    m_IncoherentIntegration= IncoherentIntegration()
+
+    
     def __init__(self, dataInObj, dataOutObj=None):
         '''
         Constructor
@@ -31,25 +65,25 @@ class SpectraProcessor:
         else:
             self.dataOutObj = dataOutObj
             
-        self.integratorIndex = None
-        self.decoderIndex = None
-        self.writerIndex = None
-        self.plotterIndex = None
+        self.integratorObjIndex = None
+        self.decoderObjIndex = None
+        self.writerObjIndex = None
+        self.plotterObjIndex = None
         
-        self.integratorList = []
-        self.decoderList = []
-        self.writerList = []
-        self.plotterList = []
+        self.integratorObjList = []
+        self.decoderObjList = []
+        self.writerObjList = []
+        self.plotterObjList = []
         
         self.buffer = None
         self.ptsId = 0
     
     def init(self, nFFTPoints, pairList=None):
         
-        self.integratorIndex = 0
-        self.decoderIndex = 0
-        self.writerIndex = 0
-        self.plotterIndex = 0
+        self.integratorObjIndex = 0
+        self.decoderObjIndex = 0
+        self.writerObjIndex = 0
+        self.plotterObjIndex = 0
         
         if nFFTPoints == None:
             nFFTPoints = self.dataOutObj.nFFTPoints
@@ -179,54 +213,54 @@ class SpectraProcessor:
     def addWriter(self,wrpath):
         objWriter = SpectraWriter(self.dataOutObj)
         objWriter.setup(wrpath)
-        self.writerList.append(objWriter)
+        self.writerObjList.append(objWriter)
         
     
     def addPlotter(self, index=None):
         
         if index==None:
-            index = self.plotterIndex
+            index = self.plotterObjIndex
         
         plotObj = Spectrum(self.dataOutObj, index)
-        self.plotterList.append(plotObj)
+        self.plotterObjList.append(plotObj)
 
     
     def addIntegrator(self,N):
         
         objIncohInt = IncoherentIntegration(N)
-        self.integratorList.append(objIncohInt)
+        self.integratorObjList.append(objIncohInt)
     
     
     def writeData(self, wrpath):
         if self.dataOutObj.flagNoData:
                 return 0
             
-        if len(self.writerList) <= self.writerIndex:
+        if len(self.writerObjList) <= self.writerObjIndex:
             self.addWriter(wrpath)
         
-        self.writerList[self.writerIndex].putData()
+        self.writerObjList[self.writerObjIndex].putData()
         
-        self.writerIndex += 1
+        self.writerObjIndex += 1
         
     def plotData(self,xmin=None, xmax=None, ymin=None, ymax=None, winTitle='', index=None):
         if self.dataOutObj.flagNoData:
             return 0
         
-        if len(self.plotterList) <= self.plotterIndex:
+        if len(self.plotterObjList) <= self.plotterObjIndex:
             self.addPlotter(index)
         
-        self.plotterList[self.plotterIndex].plotData(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,winTitle=winTitle)
+        self.plotterObjList[self.plotterObjIndex].plotData(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,winTitle=winTitle)
         
-        self.plotterIndex += 1
+        self.plotterObjIndex += 1
         
     def integrator(self, N):
         if self.dataOutObj.flagNoData:
                 return 0
         
-        if len(self.integratorList) <= self.integratorIndex:
+        if len(self.integratorObjList) <= self.integratorObjIndex:
             self.addIntegrator(N)
         
-        myCohIntObj = self.integratorList[self.integratorIndex]
+        myCohIntObj = self.integratorObjList[self.integratorObjIndex]
         myCohIntObj.exe(self.dataOutObj.data_spc)
         
         if myCohIntObj.flag:
@@ -237,7 +271,7 @@ class SpectraProcessor:
         else:
             self.dataOutObj.flagNoData = True
         
-        self.integratorIndex += 1
+        self.integratorObjIndex += 1
     
     def removeDC(self, type):
         
@@ -485,7 +519,15 @@ class SpectraProcessor:
 
 
 class IncoherentIntegration:
+
+    profCounter = 1
+    data = None
+    buffer = None
+    flag = False
+    nIncohInt = None
+    
     def __init__(self, N):
+        
         self.profCounter = 1
         self.data = None
         self.buffer = None

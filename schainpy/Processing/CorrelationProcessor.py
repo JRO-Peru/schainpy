@@ -16,3 +16,7 @@ class CorrelationProcessor:
         Constructor
         '''
         pass
+    m_Correlation= Correlation()
+
+    m_Voltage= Voltage()
+

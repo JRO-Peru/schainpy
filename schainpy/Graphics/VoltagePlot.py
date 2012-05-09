@@ -14,8 +14,34 @@ sys.path.append(path)
 from Graphics.BaseGraph import *
 from Model.Voltage import Voltage
 
-class Osciloscope():
+class Osciloscope:
     
+    voltageObj = Voltage()
+    
+    linearGraphObj = LinearPlot()
+    
+    __isPlotConfig = False
+        
+    __isPlotIni = False
+    
+    __xrange = None
+    
+    __yrange = None
+    
+    voltageObj = Voltage()
+    
+    nGraphs = 0
+    
+    indexPlot = None
+    
+    graphObjList = []
+    m_LinearPlot= LinearPlot()
+
+
+    m_Voltage= Voltage()
+
+
+        
     def __init__(self, Voltage, index=0):
         
         """
@@ -34,7 +60,7 @@ class Osciloscope():
         
         self.__yrange = None
         
-        self.m_Voltage = None
+        self.voltageObj = None
         
         self.nGraphs = 0
         
@@ -42,7 +68,7 @@ class Osciloscope():
         
         self.graphObjList = [] 
         
-        self.m_Voltage = Voltage
+        self.voltageObj = Voltage
         
     
     def __addGraph(self, subpage, title="", xlabel="", ylabel="", XAxisAsTime=False):
@@ -64,7 +90,7 @@ class Osciloscope():
     
     def setup(self, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False):
         
-        nChan = int(self.m_Voltage.m_SystemHeader.numChannels)
+        nChan = int(self.voltageObj.m_SystemHeader.numChannels)
         
         myTitle = ""
         myXlabel = ""
@@ -97,7 +123,7 @@ class Osciloscope():
     
     def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, idProfile=None, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False, type='iq', winTitle="Voltage"):
         
-        if idProfile != None and idProfile != self.m_Voltage.idProfile:
+        if idProfile != None and idProfile != self.voltageObj.idProfile:
             return
         
         if not(self.__isPlotConfig):
@@ -108,9 +134,9 @@ class Osciloscope():
         
         plplot.plsstrm(self.indexPlot)
         
-        data = self.m_Voltage.data
+        data = self.voltageObj.data
               
-        x = self.m_Voltage.heights
+        x = self.voltageObj.heights
         
         if xmin == None: xmin = x[0]
         if xmax == None: xmax = x[-1]
@@ -121,7 +147,6 @@ class Osciloscope():
         for chan in range(self.nGraphs):
             y = data[chan,:]
             
-            self.graphObjList[chan].iniSubpage()
             self.graphObjList[chan].plotComplexData(x, y, xmin, xmax, ymin, ymax, 8, type)
         
         plplot.plflush()
@@ -137,11 +162,11 @@ class VoltagePlot(object):
 
     __m_Voltage = None
     
-    def __init__(self, m_Voltage):
+    def __init__(self, voltageObj):
         '''
         Constructor
         '''
-        self.__m_Voltage = m_Voltage
+        self.__m_Voltage = voltageObj
     
     def setup(self):
         pass

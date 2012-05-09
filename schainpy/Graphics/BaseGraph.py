@@ -11,6 +11,9 @@ import plplot
 
 def cmap1_init(colormap="gray"):
     
+    if colormap == None:
+        return
+        
     ncolor = None
     rgb_lvl = None
     
@@ -144,12 +147,45 @@ def cmap1_init(colormap="gray"):
     
     return rgb_lvl
 
+def setColormap(colormap="br_green"):
+        cmap1_init(colormap)
+        
 class BaseGraph:
     """
     
     """
+    hasNotRange = True
+        
+    xrange = None
+    yrange = None
+    zrange = None
     
-
+    xlabel = None
+    ylabel = None
+    title = None
+    
+    legends = None
+    
+    __name = None
+    
+    __colormap = None
+    __colbox  = None
+    __colleg = None    
+     
+    __xpos = None
+    __ypos = None
+    
+    __xopt = None #"bcnst"
+    __yopt = None #"bcnstv"
+      
+    __xlpos = None
+    __ylpos = None
+    
+    __xrangeIsTime = False
+    
+    #Advanced
+    __xg = None
+    __yg = None
     
     def __init__(self):
         """
@@ -323,31 +359,31 @@ class BaseGraph:
         plplot.plimagefr(data, x[0], x[-1], y[0], y[-1], 0., 0., zmin, zmax, plplot.pltr2, self.__xg, self.__yg)
 
 
-class LinearPlot():
+class LinearPlot:
+    
+    linearGraphObj = BaseGraph()
     
     __szchar = 1.0
+    
     __xrange = None
+    
     __yrange = None
     
-    m_BaseGraph = None
+    __subpage = 0
+    m_BaseGraph= BaseGraph()
+
+
     
     def __init__(self):
         
         
         key = "linearplot"
-        self.m_BaseGraph = BaseGraph()
-        self.m_BaseGraph.setName(key)
+        self.linearGraphObj = BaseGraph()
+        self.linearGraphObj.setName(key)
         
         self.__subpage = 0
         
-    def setColormap(self, colormap="br_green"):
-        
-        if colormap == None:
-            colormap = self.__colormap
-            
-        cmap1_init(colormap)
-        
-    def iniSubpage(self):
+    def __iniSubpage(self):
         
         if plplot.plgdev() == '':
             raise ValueError, "Plot device has not been initialize"
@@ -355,7 +391,7 @@ class LinearPlot():
         plplot.pladv(self.__subpage)
         plplot.plschr(0.0, self.__szchar)
         
-        self.setColormap()
+        setColormap()
         
     def setScreenPos(self, width='small'):
         
@@ -368,14 +404,14 @@ class LinearPlot():
         xf = xi + xw
         yf = yi + yw
         
-        self.m_BaseGraph.setScreenPos([xi, xf], [yi, yf])    
+        self.linearGraphObj.setScreenPos([xi, xf], [yi, yf])    
 
     def setup(self, subpage, title="", xlabel="", ylabel="", XAxisAsTime=False):
         """
         """
         
-        self.m_BaseGraph.setOpt("bcnts","bcntsv")
-        self.m_BaseGraph.setup(title,
+        self.linearGraphObj.setOpt("bcnts","bcntsv")
+        self.linearGraphObj.setup(title,
                                xlabel,
                                ylabel
                                )
@@ -383,12 +419,12 @@ class LinearPlot():
         self.setScreenPos(width='medium')
         
         if XAxisAsTime:
-            self.m_BaseGraph.setXAxisAsTime()
+            self.linearGraphObj.setXAxisAsTime()
         
         self.__subpage = subpage
 #    def setRanges(self, xrange, yrange, zrange):
 #        
-#        self.m_BaseGraph.setRanges(xrange, yrange, zrange)
+#        self.linearGraphObj.setRanges(xrange, yrange, zrange)
     
     def plotData(self, x, y=None, xmin=None, xmax=None, ymin=None, ymax=None, colline=1):
         """
@@ -411,8 +447,9 @@ class LinearPlot():
         if ymin == None: ymin = y[0]
         if ymax == None: ymax = y[-1]
         
-        self.m_BaseGraph.plotBox(xmin, xmax, ymin, ymax)
-        self.m_BaseGraph.basicLineTimePlot(x, y, xmin, xmax, ymin, ymax, colline)
+        self.__iniSubpage()
+        self.linearGraphObj.plotBox(xmin, xmax, ymin, ymax)
+        self.linearGraphObj.basicLineTimePlot(x, y, xmin, xmax, ymin, ymax, colline)
 
     def plotComplexData(self, x, y, xmin=None, xmax=None, ymin=None, ymax=None, colline=1, type='power'):
         """
@@ -438,18 +475,40 @@ class LinearPlot():
         if ymin == None: ymin = y[0]
         if ymax == None: ymax = y[-1]
         
-        self.m_BaseGraph.plotBox(xmin, xmax, ymin, ymax)
+        self.__iniSubpage()
+        self.linearGraphObj.plotBox(xmin, xmax, ymin, ymax)
         
         if type.lower() == 'power':
-            self.m_BaseGraph.basicLineTimePlot(x, abs(y), xmin, xmax, ymin, ymax, colline)
+            self.linearGraphObj.basicLineTimePlot(x, abs(y), xmin, xmax, ymin, ymax, colline)
         
         if type.lower() == 'iq':
             
-            self.m_BaseGraph.basicLineTimePlot(x, y.real, xmin, xmax, ymin, ymax, colline)
-            self.m_BaseGraph.basicLineTimePlot(x, y.imag, xmin, xmax, ymin, ymax, colline+1)
+            self.linearGraphObj.basicLineTimePlot(x, y.real, xmin, xmax, ymin, ymax, colline)
+            self.linearGraphObj.basicLineTimePlot(x, y.imag, xmin, xmax, ymin, ymax, colline+1)
 
-class ColorPlot():
+class ColorPlot:
+    
+    colorGraphObj = BaseGraph()
+    
+    graphObjDict = {}
         
+    __subpage = 0
+    
+    __showColorbar = False
+    
+    __showPowerProfile = True
+    
+    __szchar = 0.65
+    
+    __xrange = None
+    
+    __yrange = None
+    
+    __zrange = None
+    m_BaseGraph= BaseGraph()
+
+
+    
     def __init__(self):
         
         self.graphObjDict = {}
@@ -464,15 +523,15 @@ class ColorPlot():
         self.__zrange = None
         
         key = "colorplot"
-        self.m_BaseGraph = BaseGraph()
-        self.m_BaseGraph.setName(key)
+        self.colorGraphObj = BaseGraph()
+        self.colorGraphObj.setName(key)
 
-    def setup(self, subpage, title="", xlabel="Frequency", ylabel="Range", colormap="jet", showColorbar=False, showPowerProfile=False, XAxisAsTime=False):
+    def setup(self, subpage, title="", xlabel="Frequency", ylabel="Range", colormap="br_green", showColorbar=False, showPowerProfile=False, XAxisAsTime=False):
         """
         """
         
-        self.m_BaseGraph.setOpt("bcnts","bcntsv")
-        self.m_BaseGraph.setup(title,
+        self.colorGraphObj.setOpt("bcnts","bcntsv")
+        self.colorGraphObj.setup(title,
                                xlabel,
                                ylabel
                                )
@@ -511,18 +570,9 @@ class ColorPlot():
         self.setScreenPos(width='small')
         
         if XAxisAsTime:
-            self.m_BaseGraph.setXAxisAsTime()
+            self.colorGraphObj.setXAxisAsTime()
         
-
-           
-    def setColormap(self, colormap="br_green"):
-        
-        if colormap == None:
-            colormap = self.__colormap
-            
-        cmap1_init(colormap)
-        
-    def iniSubpage(self):
+    def __iniSubpage(self):
         
         if plplot.plgdev() == '':
             raise ValueError, "Plot device has not been initialize"
@@ -530,7 +580,7 @@ class ColorPlot():
         plplot.pladv(self.__subpage)
         plplot.plschr(0.0, self.__szchar)
         
-        self.setColormap()
+        setColormap(self.__colormap)
             
     def setScreenPos(self, width='small'):
         
@@ -550,7 +600,7 @@ class ColorPlot():
         yf = yi + yw
         xcmapf = xf
         
-        self.m_BaseGraph.setScreenPos([xi, xf], [yi, yf])
+        self.colorGraphObj.setScreenPos([xi, xf], [yi, yf])
 
         if self.__showColorbar:
             xcmapi = xf + deltaxcmap
@@ -596,9 +646,9 @@ class ColorPlot():
         if zmax == None: zmax = numpy.nanmax(data)
         
         plplot.plschr(0.0, self.__szchar)
-        
-        self.m_BaseGraph.plotBox(xmin, xmax, ymin, ymax)
-        self.m_BaseGraph.basicPcolorPlot(data, x, y, xmin, xmax, ymin, ymax, zmin, zmax)
+        self.__iniSubpage()
+        self.colorGraphObj.plotBox(xmin, xmax, ymin, ymax)
+        self.colorGraphObj.basicPcolorPlot(data, x, y, xmin, xmax, ymin, ymax, zmin, zmax)
         
         if self.__showColorbar:
             
@@ -632,7 +682,7 @@ class ColorPlot():
             plplot.plcol0(1)
     
 
-class ColorPlotX():
+class ColorPlotX:
 
     
     graphObjDict = {}
@@ -644,25 +694,18 @@ class ColorPlotX():
     __yrange = None
     __zrange = None
     
-    m_BaseGraph = BaseGraph()
+    colorGraphObj = BaseGraph()
     
     def __init__(self):
         
         key = "colorplot"
-        self.m_BaseGraph.setName(key)
+        self.colorGraphObj.setName(key)
         
         self.__subpage = 0
         
-        self.graphObjDict[key] = self.m_BaseGraph
+        self.graphObjDict[key] = self.colorGraphObj
         
-    def setColormap(self, colormap="br_green"):
-        
-        if colormap == None:
-            colormap = self.__colormap
-            
-        cmap1_init(colormap)
-        
-    def iniSubpage(self):
+    def __iniSubpage(self):
         
         if plplot.plgdev() == '':
             raise ValueError, "Plot device has not been initialize"
@@ -670,16 +713,63 @@ class ColorPlotX():
         plplot.pladv(self.__subpage)
         plplot.plschr(0.0, self.__szchar)
         
-        self.setColormap()
+        setColormap(self.__colormap)
+    
+    def setScreenPos(self, xi = 0.12, yi = 0.14, xw = 0.78, yw = 0.80, xcmapw = 0.05, xpoww = 0.24, deltaxcmap = 0.02, deltaxpow = 0.06):
         
+        if self.showColorbar:
+            xw -= xcmapw + deltaxcmap
+        
+        if self.showPowerProfile:
+            xw -= xpoww + deltaxpow
+        
+        xf = xi + xw
+        yf = yi + yw
+        xcmapf = xf
+        
+        self.colorGraphObj.setScreenPos([xi, xf], [yi, yf])
+        
+        if self.showColorbar:
+            xcmapi = xf + deltaxcmap
+            xcmapf = xcmapi + xcmapw
+            
+            key = "colorbar"
+            cmapObj = self.graphObjDict[key]
+            cmapObj.setScreenPos([xcmapi, xcmapf], [yi, yf])
+        
+        if self.showPowerProfile:
+            
+            xpowi = xcmapf + deltaxpow
+            xpowf = xpowi + xpoww
+            
+            key = "powerprof"
+            powObj = self.graphObjDict[key]
+            powObj.setScreenPos([xpowi, xpowf], [yi, yf])
+    
+    def setRanges(self, xrange, yrange, zrange):
+        
+        self.colorGraphObj.setRanges(xrange, yrange, zrange)
+        
+        keyList = self.graphObjDict.keys()
+        
+        key = "colorbar"
+        if key in keyList:
+            cmapObj = self.graphObjDict[key]
+            cmapObj.setRanges([0., 1.], zrange)
+        
+        key = "powerprof"
+        if key in keyList:
+            powObj = self.graphObjDict[key]
+            powObj.setRanges(zrange, yrange)
+
     def setup(self, subpage, title="", xlabel="", ylabel="", colormap="jet", showColorbar=False, showPowerProfile=False, XAxisAsTime=False):
         """
         """
         
-        self.m_BaseGraph.setSubpage(subpage)
-        self.m_BaseGraph.setSzchar(self.__szchar)
-        self.m_BaseGraph.setOpt("bcnts","bcntsv")
-        self.m_BaseGraph.setup(title,
+        self.colorGraphObj.setSubpage(subpage)
+        self.colorGraphObj.setSzchar(self.__szchar)
+        self.colorGraphObj.setOpt("bcnts","bcntsv")
+        self.colorGraphObj.setup(title,
                       xlabel,
                       ylabel,
                       colormap)
@@ -721,57 +811,10 @@ class ColorPlotX():
         self.setScreenPos()
         
         if XAxisAsTime:
-            self.m_BaseGraph.setXAxisAsTime()
+            self.colorGraphObj.setXAxisAsTime()
         #self.setScreenPos(xi = 0.05, yi = 0.18, xw = 0.92, yw = 0.74, xcmapw = 0.015, xpoww = 0.14, deltaxcmap = 0.01, deltaxpow = 0.02)
         
-    
-    def setScreenPos(self, xi = 0.12, yi = 0.14, xw = 0.78, yw = 0.80, xcmapw = 0.05, xpoww = 0.24, deltaxcmap = 0.02, deltaxpow = 0.06):
         
-        if self.showColorbar:
-            xw -= xcmapw + deltaxcmap
-        
-        if self.showPowerProfile:
-            xw -= xpoww + deltaxpow
-        
-        xf = xi + xw
-        yf = yi + yw
-        xcmapf = xf
-        
-        self.m_BaseGraph.setScreenPos([xi, xf], [yi, yf])
-        
-        if self.showColorbar:
-            xcmapi = xf + deltaxcmap
-            xcmapf = xcmapi + xcmapw
-            
-            key = "colorbar"
-            cmapObj = self.graphObjDict[key]
-            cmapObj.setScreenPos([xcmapi, xcmapf], [yi, yf])
-        
-        if self.showPowerProfile:
-            
-            xpowi = xcmapf + deltaxpow
-            xpowf = xpowi + xpoww
-            
-            key = "powerprof"
-            powObj = self.graphObjDict[key]
-            powObj.setScreenPos([xpowi, xpowf], [yi, yf])
-    
-    def setRanges(self, xrange, yrange, zrange):
-        
-        self.m_BaseGraph.setRanges(xrange, yrange, zrange)
-        
-        keyList = self.graphObjDict.keys()
-        
-        key = "colorbar"
-        if key in keyList:
-            cmapObj = self.graphObjDict[key]
-            cmapObj.setRanges([0., 1.], zrange)
-        
-        key = "powerprof"
-        if key in keyList:
-            powObj = self.graphObjDict[key]
-            powObj.setRanges(zrange, yrange)
-    
     def plotData(self, data, x=None, y=None, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
         """
         """
@@ -791,11 +834,11 @@ class ColorPlotX():
         if zmin == None: zmin = numpy.nanmin(data)
         if zmax == None: zmax = numpy.nanmax(data)
            
-        if self.m_BaseGraph.hasNotRange:
+        if self.colorGraphObj.hasNotRange:
             self.setRanges([xmin, xmax], [ymin,ymax], [zmin,zmax])
         
-        self.m_BaseGraph.initSubpage()
-        self.m_BaseGraph.basicPcolorPlot(data, x, y, xmin, xmax, ymin, ymax, self.m_BaseGraph.zrange[0], self.m_BaseGraph.zrange[1])
+        self.colorGraphObj.initSubpage()
+        self.colorGraphObj.basicPcolorPlot(data, x, y, xmin, xmax, ymin, ymax, self.colorGraphObj.zrange[0], self.colorGraphObj.zrange[1])
         
         if self.showColorbar:
             key = "colorbar"
@@ -842,16 +885,12 @@ if __name__ == '__main__':
     data = numpy.random.uniform(-50,50,(nx,ny))
     
     plplot.plbop()
-    baseObj.iniSubpage()
     baseObj.plotData(data)
     
-    specObj.iniSubpage()
     specObj.plotData(data)
     
-    baseObj1.iniSubpage()
     baseObj1.plotData(data)
     
-    specObj1.iniSubpage()
     specObj1.plotData(data)
     
     plplot.plflush()      

@@ -16,8 +16,34 @@ sys.path.append(path)
 from Graphics.BaseGraph import *
 from Model.Spectra import Spectra
 
-class Spectrum():
+class Spectrum:
+
+    __isPlotConfig = False
     
+    __isPlotIni = False
+    
+    __xrange = None
+    
+    __yrange = None
+    
+    nGraphs = 0
+    
+    indexPlot = None
+    
+    graphObjList = [] 
+       
+    spectraObj = Spectra
+    
+    colorGraphObj = ColorPlot()
+    m_Spectra= Spectra()
+
+
+    m_ColorPlot= ColorPlot()
+
+
+
+
+         
     def __init__(self, Spectra, index=0):
         
         """
@@ -42,7 +68,7 @@ class Spectrum():
         
         self.graphObjList = [] 
            
-        self.m_Spectra = Spectra
+        self.spectraObj = Spectra
         
     
     def __addGraph(self, subpage, title="", xlabel="", ylabel="", showColorbar=False, showPowerProfile=True, XAxisAsTime=False):
@@ -61,7 +87,7 @@ class Spectrum():
     
     def setup(self, titleList=None, xlabelList=None, ylabelList=None, showColorbar=False, showPowerProfile=True, XAxisAsTime=False):
         
-        nChan = int(self.m_Spectra.m_SystemHeader.numChannels)
+        nChan = int(self.spectraObj.m_SystemHeader.numChannels)
         channels = range(nChan)
         
         myXlabel = "Radial Velocity (m/s)"
@@ -73,8 +99,8 @@ class Spectrum():
                 myXlabel = xlabelList[i]
                 myYlabel = ylabelList[i]
             
-#            if self.m_Spectra.m_NoiseObj != None:
-#                noise = '%4.2fdB' %(self.m_Spectra.m_NoiseObj[i])
+#            if self.spectraObj.m_NoiseObj != None:
+#                noise = '%4.2fdB' %(self.spectraObj.m_NoiseObj[i])
 #            else:
             noise = '--'
             
@@ -127,7 +153,7 @@ class Spectrum():
         
         plplot.plsstrm(self.indexPlot)
         
-        data = 10.*numpy.log10(self.m_Spectra.data_spc)
+        data = 10.*numpy.log10(self.spectraObj.data_spc)
         
         #data.shape = Channels x Heights x Profiles
 #        data = numpy.transpose( data, (0,2,1) )
@@ -136,9 +162,9 @@ class Spectrum():
         nChan, nX, nY = numpy.shape(data)
         
         x = numpy.arange(nX)        
-        y = self.m_Spectra.heightList
+        y = self.spectraObj.heightList
         
-        thisDatetime = datetime.datetime.fromtimestamp(self.m_Spectra.m_BasicHeader.utc)
+        thisDatetime = datetime.datetime.fromtimestamp(self.spectraObj.m_BasicHeader.utc)
         txtDate = "Self Spectra - Date: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         
         if xmin == None: xmin = x[0]
@@ -152,7 +178,6 @@ class Spectrum():
         
         plplot.plssub(self.__nx, self.__ny)
         for i in range(self.nGraphs):
-            self.graphObjList[i].iniSubpage()
             self.graphObjList[i].plotData(data[i,:,:],
                                           x,
                                           y,
@@ -172,7 +197,7 @@ class Spectrum():
     
     def end(self):
         plplot.plend()
- 
+    
 
 if __name__ == '__main__':
     pass
