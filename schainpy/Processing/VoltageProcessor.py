@@ -37,13 +37,12 @@ class VoltageProcessor:
     plotterObjList = []
     m_Voltage= Voltage()
 
-    m_ProfileSelector= ProfileSelector()
+    m_ProfileSelector = ProfileSelector()
 
-    m_Decoder= Decoder()
+    m_Decoder = Decoder()
 
-    m_CoherentIntegrator= CoherentIntegrator()
-
-        
+    m_CoherentIntegrator = CoherentIntegrator()
+    
     def __init__(self, dataInObj, dataOutObj=None):
         '''
         Constructor
@@ -205,7 +204,7 @@ class VoltageProcessor:
     
     def selectChannels(self, channelList):
         """
-        Selecciona un bloque de datos en base a canales y pares segun el channelList y el pairList
+        Selecciona un bloque de datos en base a canales segun el channelList 
         
         Input:
             channelList    :    lista sencilla de canales a seleccionar por ej. [2,3,7] 
@@ -228,19 +227,16 @@ class VoltageProcessor:
             if channel not in self.dataOutObj.channelList:
                 raise ValueError, "The value %d in channelList is not valid" %channel
         
-        nchannels = len(channelList)
-        profiles = self.dataOutObj.nProfiles
-        heights  = self.dataOutObj.nHeights #m_ProcessingHeader.numHeights
-
-        data = numpy.zeros( (nchannels,heights), dtype='complex' )
-        for index,channel in enumerate(channelList):
-            data[index,:] = self.dataOutObj.data[channel,:]
-    
+        nChannels = len(channelList)
+            
+        data = self.dataOutObj.data[channelList,:]
+        
         self.dataOutObj.data = data
         self.dataOutObj.channelList = channelList
-        self.dataOutObj.nChannels = nchannels
-        self.dataOutObj.m_ProcessingHeader.totalSpectra = nchannels
-        self.dataOutObj.m_SystemHeader.numChannels = nchannels
+        self.dataOutObj.nChannels = nChannels
+        
+        self.dataOutObj.m_ProcessingHeader.totalSpectra = nChannels
+        self.dataOutObj.m_SystemHeader.numChannels = nChannels
         self.dataOutObj.m_ProcessingHeader.blockSize = data.size
         return 1
 
@@ -321,7 +317,6 @@ class VoltageProcessor:
             raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
         
         nHeights = maxIndex - minIndex + 1
-        firstHeight = 0
 
         #voltage
         data = self.dataOutObj.data[:,minIndex:maxIndex+1]
@@ -401,13 +396,11 @@ class Decoder:
 
     data = None
     profCounter = 1
-    nCode = ncode 
-    nBaud = nbaud
+    nCode = None 
+    nBaud = None
     codeIndex = 0
-    code = code #this is a List
-    fft_code = None 
+    code = None
     flag = False
-    setCodeFft = False
     
     def __init__(self,code, ncode, nbaud):
         
@@ -417,9 +410,7 @@ class Decoder:
         self.nBaud = nbaud
         self.codeIndex = 0
         self.code = code #this is a List
-        self.fft_code = None 
         self.flag = False
-        self.setCodeFft = False
             
     def exe(self, data, ndata=None, type = 0):
         
@@ -445,9 +436,7 @@ class Decoder:
         conv = fft_data.copy()
         conv.fill(0)
         
-        conv = fft_data*fft_code    #            This other way to calculate multiplication between bidimensional arrays
-                                                    #            for i in range(ndata):
-                                                    #                conv[i,:] = fft_data[i,:]*fft_code[i]
+        conv = fft_data*fft_code
             
         self.data = numpy.fft.ifft(conv,axis=1)
         self.flag = True
@@ -483,7 +472,7 @@ class CoherentIntegrator:
     data = None
     buffer = None
     flag = False
-    nCohInt = N
+    nCohInt = None
     
     def __init__(self, N):
         
