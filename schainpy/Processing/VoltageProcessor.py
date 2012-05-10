@@ -36,12 +36,6 @@ class VoltageProcessor:
     writerObjList = []
     plotterObjList = []
     m_Voltage= Voltage()
-
-    m_ProfileSelector = ProfileSelector()
-
-    m_Decoder = Decoder()
-
-    m_CoherentIntegrator = CoherentIntegrator()
     
     def __init__(self, dataInObj, dataOutObj=None):
         '''

@@ -47,11 +47,6 @@ class SpectraProcessor:
     nFFTPoints = None
     
     pairList = None
-    m_Spectra= Spectra()
-
-    m_Voltage= Voltage()
-
-    m_IncoherentIntegration= IncoherentIntegration()
 
     
     def __init__(self, dataInObj, dataOutObj=None):
