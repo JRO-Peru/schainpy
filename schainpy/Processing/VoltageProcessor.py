@@ -28,6 +28,7 @@ class VoltageProcessor:
     profSelectorObjIndex = None
     writerObjIndex = None
     plotterObjIndex = None
+    flipIndex = None
     
     integratorObjList = []
     decoderObjList = []
@@ -60,7 +61,7 @@ class VoltageProcessor:
         self.profSelectorObjIndex = None
         self.writerObjIndex = None
         self.plotterObjIndex = None
-        
+        self.flipIndex = 1
         self.integratorObjList = []
         self.decoderObjList = []
         self.profileSelectorObjList = []
@@ -75,6 +76,10 @@ class VoltageProcessor:
         self.writerObjIndex = 0
         self.plotterObjIndex = 0
         self.dataOutObj.copy(self.dataInObj)
+        
+        if self.profSelectorObjIndex != None:
+            for profSelObj in self.profileSelectorObjList:
+                profSelObj.incIndex()
                 
     def addWriter(self, wrpath):
         objWriter = VoltageWriter(self.dataOutObj)
@@ -173,8 +178,30 @@ class VoltageProcessor:
 
     
     def filterByHei(self, window):
-        pass
-
+        if window == None:
+            window = self.dataOutObj.m_RadarControllerHeader.txA / self.dataOutObj.m_ProcessingHeader.deltaHeight[0]
+        
+        newdelta = self.dataOutObj.m_ProcessingHeader.deltaHeight[0] * window
+        dim1 = self.dataOutObj.data.shape[0]
+        dim2 = self.dataOutObj.data.shape[1]
+        r = dim2 % window
+        
+        buffer = self.dataOutObj.data[:,0:dim2-r] 
+        buffer = buffer.reshape(dim1,dim2/window,window)
+        buffer = numpy.sum(buffer,2)
+        self.dataOutObj.data = buffer
+        
+        self.dataOutObj.m_ProcessingHeader.deltaHeight = newdelta
+        self.dataOutObj.m_ProcessingHeader.numHeights = buffer.shape[1]
+        
+        self.dataOutObj.nHeights = self.dataOutObj.m_ProcessingHeader.numHeights
+        
+        #self.dataOutObj.heightList es un numpy.array
+        self.dataOutObj.heightList = numpy.arange(self.dataOutObj.m_ProcessingHeader.firstHeight[0],newdelta*self.dataOutObj.nHeights,newdelta)
+        
+    def deFlip(self):
+        self.dataOutObj.data *= self.flipIndex
+        self.flipIndex *= -1.
     
     def selectChannels(self, channelList):
         """
@@ -310,8 +337,27 @@ class VoltageProcessor:
         self.dataOutObj.m_RadarControllerHeader.numHeights = nHeights
         return 1
     
+    def selectProfilesByValue(self,indexList, nProfiles):
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        if self.profSelectorObjIndex >= len(self.profileSelectorObjList):
+            self.addProfileSelector(nProfiles)
+        
+        profileSelectorObj = self.profileSelectorObjList[self.profSelectorObjIndex]
+        
+        if not(profileSelectorObj.isProfileInList(indexList)):
+            self.dataOutObj.flagNoData = True
+            self.profSelectorObjIndex += 1
+            return 0
+        
+        self.dataOutObj.flagNoData = False
+        self.profSelectorObjIndex += 1
+        
+        return 1
     
-    def selectProfiles(self, minIndex, maxIndex, nProfiles):
+    
+    def selectProfilesByIndex(self, minIndex, maxIndex, nProfiles):
         """
         Selecciona un bloque de datos en base a un grupo indices de perfiles segun el rango
         minIndex <= index <= maxIndex
@@ -337,15 +383,15 @@ class VoltageProcessor:
         
         profileSelectorObj = self.profileSelectorObjList[self.profSelectorObjIndex]
         
-        if profileSelectorObj.isProfileInRange(minIndex, maxIndex):
-            self.dataOutObj.flagNoData = False
+        if not(profileSelectorObj.isProfileInRange(minIndex, maxIndex)):
+            self.dataOutObj.flagNoData = True
             self.profSelectorObjIndex += 1
-            return 1
+            return 0
         
-        self.dataOutObj.flagNoData = True
+        self.dataOutObj.flagNoData = False
         self.profSelectorObjIndex += 1
         
-        return 0
+        return 1
     
     def selectNtxs(self, ntx):
         pass
@@ -466,36 +512,35 @@ class CoherentIntegrator:
 
 class ProfileSelector:
     
-    indexProfile = None
+    profileIndex = None
     # Tamanho total de los perfiles
     nProfiles = None
     
     def __init__(self, nProfiles):
         
-        self.indexProfile = 0
+        self.profileIndex = 0
         self.nProfiles = nProfiles
+    
+    def incIndex(self):
+        self.profileIndex += 1
+        
+        if self.profileIndex >= self.nProfiles:
+            self.profileIndex = 0
     
     def isProfileInRange(self, minIndex, maxIndex):
         
-        if self.indexProfile < minIndex:
-            self.indexProfile += 1
+        if self.profileIndex < minIndex:
             return False
         
-        if self.indexProfile > maxIndex:
-            self.indexProfile += 1
+        if self.profileIndex > maxIndex:
             return False
-        
-        self.indexProfile += 1
         
         return True
     
     def isProfileInList(self, profileList):
         
-        if self.indexProfile not in profileList:
-            self.indexProfile += 1
+        if self.profileIndex not in profileList:
             return False
-        
-        self.indexProfile += 1
         
         return True
         

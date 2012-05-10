@@ -33,7 +33,7 @@ class Correlation(JROData):
         
         self.m_NoiseObj = Noise()
         
-        self.type = "Spectra"
+        self.type = "Correlation"
         
         self.dataType = None
         
@@ -54,5 +54,7 @@ class Correlation(JROData):
         
         self.nLags = 0
         
-        self.lagsList = None
+        self.tauList = None
+        
+        self.pairList = None
         
