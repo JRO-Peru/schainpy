@@ -37,7 +37,7 @@ class VoltageProcessor:
     plotterObjList = []
     m_Voltage= Voltage()
     
-    def __init__(self, dataInObj, dataOutObj=None):
+    def __init__(self, dataInObj=None, dataOutObj=None):
         '''
         Constructor
         '''
@@ -61,6 +61,22 @@ class VoltageProcessor:
         self.writerObjList = []
         self.plotterObjList = []
     
+    def setIO(self,inputObject, outputObject):
+        
+        if not( isinstance(inputObject, Voltage) ):
+            print 'InputObject must be an instance from Voltage()'
+            sys.exit(0)
+        
+        if not( isinstance(outputObject, Voltage) ):
+            print 'OutputObject must be an instance from Voltage()'
+            sys.exit(0)
+        
+        self.dataInObj = inputObject
+        self.dataOutObj = outputObject
+        
+    def setup(self):
+        pass
+    
     def init(self):
         
         self.integratorObjIndex = 0
@@ -79,11 +95,13 @@ class VoltageProcessor:
         objWriter.setup(wrpath)
         self.writerObjList.append(objWriter)
            
-    def addPlotter(self):
+    def addPlotter(self, index=None):
+        if index==None:
+            index = self.plotterObjIndex
         
-        plotObj = Osciloscope(self.dataOutObj,self.plotterObjIndex)
+        plotObj = Osciloscope(self.dataOutObj, index)
         self.plotterObjList.append(plotObj)
-
+        
     def addIntegrator(self, nCohInt):
         
         objCohInt = CoherentIntegrator(nCohInt)
@@ -114,14 +132,14 @@ class VoltageProcessor:
         
         self.writerObjIndex += 1
 
-    def plotData(self,idProfile, type, xmin=None, xmax=None, ymin=None, ymax=None, winTitle=''):
+    def plotData(self,xmin=None, xmax=None, ymin=None, ymax=None, type='iq', winTitle='', index=None):
         if self.dataOutObj.flagNoData:
             return 0
-            
-        if len(self.plotterObjList) <= self.plotterObjIndex:
-            self.addPlotter()
         
-        self.plotterObjList[self.plotterObjIndex].plotData(type=type, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,winTitle=winTitle)
+        if len(self.plotterObjList) <= self.plotterObjIndex:
+            self.addPlotter(index)
+        
+        self.plotterObjList[self.plotterObjIndex].plotData(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,type=type, winTitle=winTitle)
         
         self.plotterObjIndex += 1
     

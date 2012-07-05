@@ -49,7 +49,7 @@ class SpectraProcessor:
     pairList = None
 
     
-    def __init__(self, dataInObj, dataOutObj=None):
+    def __init__(self, dataInObj=None, dataOutObj=None):
         '''
         Constructor
         '''
@@ -73,19 +73,40 @@ class SpectraProcessor:
         self.buffer = None
         self.ptsId = 0
     
-    def init(self, nFFTPoints, pairList=None):
+    def setIO(self,inputObject, outputObject):
+        
+#        if not( isinstance(inputObject, Voltage) ):
+#            print 'InputObject must be an instance from Voltage()'
+#            sys.exit(0)
+        
+        if not( isinstance(outputObject, Spectra) ):
+            print 'OutputObject must be an instance from Spectra()'
+            sys.exit(0)
+        
+        self.dataInObj = inputObject
+        self.dataOutObj = outputObject
+        
+    def setup(self,nFFTPoints=None, pairList=None):
+        if nFFTPoints == None:
+            nFFTPoints = self.dataOutObj.nFFTPoints
+        
+        self.nFFTPoints = nFFTPoints
+        self.pairList = pairList
+    
+#    def init(self, nFFTPoints, pairList=None):
+    def init(self):
         
         self.integratorObjIndex = 0
         self.decoderObjIndex = 0
         self.writerObjIndex = 0
         self.plotterObjIndex = 0
         
-        if nFFTPoints == None:
-            nFFTPoints = self.dataOutObj.nFFTPoints
-        
-        self.nFFTPoints = nFFTPoints
-        self.pairList = pairList
-            
+#        if nFFTPoints == None:
+#            nFFTPoints = self.dataOutObj.nFFTPoints
+#        
+#        self.nFFTPoints = nFFTPoints
+#        self.pairList = pairList
+#            
         if not( isinstance(self.dataInObj, Spectra) ):
             self.__getFft()
         else:

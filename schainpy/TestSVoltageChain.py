@@ -28,12 +28,12 @@ class TestSChain():
     def setValues( self ):
         
         self.path = "/home/dsuarez/Projects"  #1
-        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
+        self.path = "/Users/jro/Documents/RadarData/EW_Drifts"
 #        self.startDateTime = datetime.datetime(2007,5,1,15,49,0)
 #        self.endDateTime = datetime.datetime(2007,5,1,23,0,0)
         
-        self.startDateTime = datetime.datetime(2011,10,4,0,0,0)
-        self.endDateTime = datetime.datetime(2011,10,4,0,20,0)
+        self.startDateTime = datetime.datetime(2011,11,20,0,0,0)
+        self.endDateTime = datetime.datetime(2011,12,31,0,20,0)
         self.N = 10
         self.npts = 1024
     
@@ -66,7 +66,7 @@ class TestSChain():
             
 #            self.voltProcObj.plotData(idProfile = 1, type='iq', ymin=-25000, ymax=25000, winTitle='sin decodificar')
             
-            self.voltProcObj.decoder(type=0)
+#            self.voltProcObj.decoder(type=0)
             
 #            self.voltProcObj.plotData(idProfile = 1, type='iq', ymin=-70000, ymax=70000,winTitle='Decodificado')
 #            
