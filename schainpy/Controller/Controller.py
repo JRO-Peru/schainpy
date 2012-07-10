@@ -131,7 +131,8 @@ class ExecUnit:
         def integrator(*args):
             inputs = args[0]
             N = inputs[0]
-            self.execProcObj.integrator(N)
+            timeInterval = inputs[1]
+            self.execProcObj.integrator(N, timeInterval)
                     
         pfuncDict = {   "setup":    setup, 
                         "getdata":  getData, 

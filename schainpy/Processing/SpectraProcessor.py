@@ -140,6 +140,9 @@ class SpectraProcessor:
             self.dataOutObj.m_ProcessingHeader.spectraComb
             self.dataOutObj.m_ProcessingHeader.shif_fft
         """
+        if self.dataInObj.flagNoData:
+            return 0
+        
         blocksize = 0
         nFFTPoints = self.nFFTPoints
         nChannels, nheis = self.dataInObj.data.shape
@@ -150,7 +153,7 @@ class SpectraProcessor:
         self.buffer[:,self.ptsId,:] = self.dataInObj.data 
         self.ptsId += 1
         
-        if self.ptsId < self.dataOutObj.nFFTPoints:
+        if self.ptsId < self.nFFTPoints: 
             self.dataOutObj.flagNoData = True
             return
             
@@ -241,11 +244,10 @@ class SpectraProcessor:
         self.plotterObjList.append(plotObj)
 
     
-    def addIntegrator(self,N):
+    def addIntegrator(self,N,timeInterval):
         
-        objIncohInt = IncoherentIntegration(N)
+        objIncohInt = IncoherentIntegration(N,timeInterval)
         self.integratorObjList.append(objIncohInt)
-    
     
     def writeData(self, wrpath):
         if self.dataOutObj.flagNoData:
@@ -269,21 +271,24 @@ class SpectraProcessor:
         
         self.plotterObjIndex += 1
         
-    def integrator(self, N):
+    def integrator(self, N=None, timeInterval=None):
+        
         if self.dataOutObj.flagNoData:
                 return 0
         
         if len(self.integratorObjList) <= self.integratorObjIndex:
-            self.addIntegrator(N)
+            self.addIntegrator(N,timeInterval)
         
-        myCohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myCohIntObj.exe(self.dataOutObj.data_spc)
+        myIncohIntObj = self.integratorObjList[self.integratorObjIndex]
+        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.m_BasicHeader.utc)
         
-        if myCohIntObj.flag:
-            self.dataOutObj.data_spc = myCohIntObj.data
-            self.dataOutObj.m_ProcessingHeader.incoherentInt *= N
+        if myIncohIntObj.isReady:
+            self.dataOutObj.data_spc = myIncohIntObj.data
+            self.dataOutObj.nAvg = myIncohIntObj.navg
+            self.dataOutObj.m_ProcessingHeader.incoherentInt *= myIncohIntObj.navg
+            #print "myIncohIntObj.navg: ",myIncohIntObj.navg
             self.dataOutObj.flagNoData = False
-
+            
         else:
             self.dataOutObj.flagNoData = True
         
@@ -418,7 +423,6 @@ class SpectraProcessor:
         self.dataOutObj.nChannels = nChannels
         self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
 
-
     def selectHeightsByValue(self, minHei, maxHei):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
@@ -462,8 +466,7 @@ class SpectraProcessor:
                 break
 
         self.selectHeightsByIndex(minIndex, maxIndex)        
-    
-    
+        
     def selectHeightsByIndex(self, minIndex, maxIndex):
         """
         Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
@@ -536,34 +539,82 @@ class SpectraProcessor:
 
 class IncoherentIntegration:
 
-    profCounter = 1
+    integ_counter = None
     data = None
+    navg = None
     buffer = None
-    flag = False
     nIncohInt = None
     
-    def __init__(self, N):
+    def __init__(self, N = None, timeInterval = None):
+        """
+        N 
+        timeInterval - interval time [min], integer value
+        """
         
-        self.profCounter = 1
         self.data = None
+        self.navg = None
         self.buffer = None
-        self.flag = False
+        self.timeOut = None
+        self.exitCondition = False
+        self.isReady = False
         self.nIncohInt = N
-            
-    def exe(self,data):
-
-        if self.buffer == None:
-            self.buffer = data
-        else:
-            self.buffer = self.buffer + data
+        self.integ_counter = 0
+        if timeInterval!=None:
+            self.timeIntervalInSeconds = timeInterval * 60. #if (type(timeInterval)!=integer) -> change this line
         
-        if self.profCounter == self.nIncohInt:
-            self.data = self.buffer
-            self.buffer = None
-            self.profCounter = 0
-            self.flag = True
+        if ((timeInterval==None) and (N==None)):
+             print 'N = None ; timeInterval = None'
+             sys.exit(0)
+        elif timeInterval == None:
+            self.timeFlag = False
         else:
-            self.flag = False
+            self.timeFlag = True
             
-        self.profCounter += 1
+            
+    def exe(self,data,timeOfData):
+        """
+        data
+        
+        timeOfData [seconds]
+        """
 
+        if self.timeFlag:
+            if self.timeOut == None:
+                self.timeOut = timeOfData + self.timeIntervalInSeconds
+            
+            if timeOfData < self.timeOut:
+                if self.buffer == None:
+                    self.buffer = data
+                else:
+                    self.buffer = self.buffer + data
+                self.integ_counter += 1
+            else:
+                self.exitCondition = True
+                
+        else:
+            if self.integ_counter < self.nIncohInt:
+                if self.buffer == None:
+                    self.buffer = data
+                else:
+                    self.buffer = self.buffer + data
+            
+                self.integ_counter += 1
+
+            if self.integ_counter == self.nIncohInt:
+                self.exitCondition = True
+                
+        if self.exitCondition:
+            self.data = self.buffer
+            self.navg = self.integ_counter
+            self.isReady = True
+            self.buffer = None
+            self.timeOut = None
+            self.integ_counter = 0
+            self.exitCondition = False
+            
+            if self.timeFlag:
+                self.buffer = data
+                self.timeOut = timeOfData + self.timeIntervalInSeconds
+        else:
+            self.isReady = False
+            

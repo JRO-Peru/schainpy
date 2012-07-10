@@ -102,9 +102,9 @@ class VoltageProcessor:
         plotObj = Osciloscope(self.dataOutObj, index)
         self.plotterObjList.append(plotObj)
         
-    def addIntegrator(self, nCohInt):
+    def addIntegrator(self, N,timeInterval):
         
-        objCohInt = CoherentIntegrator(nCohInt)
+        objCohInt = CoherentIntegrator(N,timeInterval)
         self.integratorObjList.append(objCohInt)
     
     def addDecoder(self, code, ncode, nbaud):
@@ -143,20 +143,22 @@ class VoltageProcessor:
         
         self.plotterObjIndex += 1
     
-    def integrator(self, N):
+    def integrator(self, N=None, timeInterval=None):
         
         if self.dataOutObj.flagNoData:
             return 0
         
         if len(self.integratorObjList) <= self.integratorObjIndex:
-            self.addIntegrator(N)
+            self.addIntegrator(N,timeInterval)
         
         myCohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myCohIntObj.exe(self.dataOutObj.data)
+        myCohIntObj.exe(data=self.dataOutObj.data,timeOfData=self.dataOutObj.m_BasicHeader.utc)
         
-        if myCohIntObj.flag:
+        if myCohIntObj.isReady:
             self.dataOutObj.data = myCohIntObj.data
-            self.dataOutObj.m_ProcessingHeader.coherentInt *= N
+            self.dataOutObj.nAvg = myCohIntObj.navg
+            self.dataOutObj.m_ProcessingHeader.coherentInt *= myCohIntObj.navg
+            #print "myCohIntObj.navg: ",myCohIntObj.navg
             self.dataOutObj.flagNoData = False
 
         else:
@@ -480,36 +482,76 @@ class Decoder:
             
 class CoherentIntegrator:
     
-    profCounter = 1
+    integ_counter = None
     data = None
+    navg = None
     buffer = None
-    flag = False
     nCohInt = None
     
-    def __init__(self, N):
+    def __init__(self, N=None,timeInterval=None):
         
-        self.profCounter = 1
         self.data = None
+        self.navg = None
         self.buffer = None
-        self.flag = False
+        self.timeOut = None
+        self.exitCondition = False
+        self.isReady = False
         self.nCohInt = N
+        self.integ_counter = 0
+        if timeInterval!=None:
+            self.timeIntervalInSeconds = timeInterval * 60. #if (type(timeInterval)!=integer) -> change this line
         
-    def exe(self, data):
-        
-        if self.buffer == None:
-            self.buffer = data
+        if ((timeInterval==None) and (N==None)):
+             print 'N = None ; timeInterval = None'
+             sys.exit(0)
+        elif timeInterval == None:
+            self.timeFlag = False
         else:
-            self.buffer = self.buffer + data
+            self.timeFlag = True
         
-        if self.profCounter == self.nCohInt:
-            self.data = self.buffer
-            self.buffer = None
-            self.profCounter = 0
-            self.flag = True
-        else:
-            self.flag = False
+    def exe(self, data, timeOfData):
+        
+        if self.timeFlag:
+            if self.timeOut == None:
+                self.timeOut = timeOfData + self.timeIntervalInSeconds
             
-        self.profCounter += 1
+            if timeOfData < self.timeOut:
+                if self.buffer == None:
+                    self.buffer = data
+                else:
+                    self.buffer = self.buffer + data
+                self.integ_counter += 1
+            else:
+                self.exitCondition = True
+                
+        else:
+            if self.integ_counter < self.nCohInt:
+                if self.buffer == None:
+                    self.buffer = data
+                else:
+                    self.buffer = self.buffer + data
+            
+                self.integ_counter += 1
+
+            if self.integ_counter == self.nCohInt:
+                self.exitCondition = True
+                
+        if self.exitCondition:
+            self.data = self.buffer
+            self.navg = self.integ_counter
+            self.isReady = True
+            self.buffer = None
+            self.timeOut = None
+            self.integ_counter = 0
+            self.exitCondition = False
+            
+            if self.timeFlag:
+                self.buffer = data
+                self.timeOut = timeOfData + self.timeIntervalInSeconds
+        else:
+            self.isReady = False
+            
+        
 
 class ProfileSelector:
     

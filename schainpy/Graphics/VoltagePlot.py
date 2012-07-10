@@ -121,10 +121,7 @@ class Osciloscope:
         
         self.__isPlotIni = True     
     
-    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, idProfile=None, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False, type='iq', winTitle="Voltage"):
-        
-        if idProfile != None and idProfile != self.voltageObj.idProfile:
-            return
+    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False, type='iq', winTitle="Voltage"):
         
         if not(self.__isPlotConfig):
             self.setup(titleList, xlabelList, ylabelList, XAxisAsTime)
@@ -136,7 +133,7 @@ class Osciloscope:
         
         data = self.voltageObj.data
               
-        x = self.voltageObj.heights
+        x = self.voltageObj.heightList
         
         if xmin == None: xmin = x[0]
         if xmax == None: xmax = x[-1]

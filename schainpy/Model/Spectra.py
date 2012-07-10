@@ -67,6 +67,8 @@ class Spectra(JROData):
         
         self.nFFTPoints = None
         
+        self.nAvg = None
+        
         self.nPairs = 0
         
         self.pairsList = None

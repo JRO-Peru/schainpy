@@ -53,7 +53,7 @@ class Voltage(JROData):
         
         self.flagResetProcessing = False
         
-        
+        self.nAvg = None
         
         self.profileIndex = None
         
