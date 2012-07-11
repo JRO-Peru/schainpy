@@ -342,6 +342,7 @@ class ProcessingHeader(Header):
         self.code = 0
         self.numBaud = 0
         self.shif_fft = False
+        self.flag_dc = False
     
     def read(self, fp):
         try:
@@ -363,15 +364,18 @@ class ProcessingHeader(Header):
             self.samplesWin = self.samplingWindow['nsa']
             self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
             
-            if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
+            if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
                 self.numCode = numpy.fromfile(fp,'<u4',1)
                 self.numBaud = numpy.fromfile(fp,'<u4',1)
                 self.code = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
             
-            if self.processFlags & PROCFLAG.SHIFT_FFT_DATA == PROCFLAG.SHIFT_FFT_DATA:
+            if ((self.processFlags & PROCFLAG.SHIFT_FFT_DATA) == PROCFLAG.SHIFT_FFT_DATA):
                 self.shif_fft = True
             else:
                 self.shif_fft = False
+                
+            if ((self.processFlags & PROCFLAG.SAVE_CHANNELS_DC) == PROCFLAG.SAVE_CHANNELS_DC):
+                self.flag_dc = True
         except:
             return 0
         

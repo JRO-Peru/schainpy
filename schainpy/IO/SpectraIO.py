@@ -177,6 +177,8 @@ class SpectraReader(JRODataReader):
         #pairList = None
 
         channelList = None
+        
+        self.flag_cspc = False
 
 
     def __hasNotDataInBuffer(self):
@@ -210,16 +212,26 @@ class SpectraReader(JRODataReader):
             else:
                 self.nPairs = self.nPairs + 1 #par de canales diferentes
                 self.pairList.append( (self.m_ProcessingHeader.spectraComb[i], self.m_ProcessingHeader.spectraComb[i+1]) )
+        
+        if self.nPairs > 0:
+            self.flag_cspc = True
 
         pts2read = self.m_ProcessingHeader.numHeights * self.m_ProcessingHeader.profilesPerBlock
 
-        self.pts2read_SelfSpectra = int( self.nChannels * pts2read )
-        self.pts2read_CrossSpectra = int( self.nPairs * pts2read )
-        self.pts2read_DCchannels = int( self.m_SystemHeader.numChannels * self.m_ProcessingHeader.numHeights )
+        self.pts2read_SelfSpectra = int(self.nChannels * pts2read)
+        self.blocksize = self.pts2read_SelfSpectra
         
-        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
+        if self.flag_cspc:
+            self.pts2read_CrossSpectra = int(self.nPairs * pts2read)
+            self.blocksize += self.pts2read_CrossSpectra
+            
+        if self.m_ProcessingHeader.flag_dc:
+            self.pts2read_DCchannels = int(self.m_SystemHeader.numChannels * self.m_ProcessingHeader.numHeights)
+            self.blocksize += self.pts2read_DCchannels
+            
+#        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
         
-        self.channelList = numpy.arange( self.nChannels )
+        self.channelList = numpy.arange(self.nChannels)
 
             
     def readBlock(self):
@@ -247,39 +259,37 @@ class SpectraReader(JRODataReader):
         fpointer = self.fp.tell()
 
         spc = numpy.fromfile( self.fp, self.dataType[0], self.pts2read_SelfSpectra )
-        cspc = numpy.fromfile( self.fp, self.dataType, self.pts2read_CrossSpectra )
-        dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
+        spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
         
-        try:
-            spc = spc.reshape( (self.nChannels, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D 
-            if self.nPairs != 0:
-                cspc = cspc.reshape( (self.nPairs, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
-            else:
-                cspc = None    
+        if self.flag_cspc:
+            cspc = numpy.fromfile( self.fp, self.dataType, self.pts2read_CrossSpectra )
+            cspc = cspc.reshape( (self.nPairs, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
+        
+        if self.m_ProcessingHeader.flag_dc:
+            dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
             dc = dc.reshape( (self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights) ) #transforma a un arreglo 2D
-        except:
-            print "Data file %s is invalid" % self.filename
-            return 0
+            
         
-        if not( self.m_ProcessingHeader.shif_fft ):
+        if not(self.m_ProcessingHeader.shif_fft):
             spc = numpy.roll( spc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             
-            if cspc != None:
+            if self.flag_cspc:
                 cspc = numpy.roll( cspc, self.m_ProcessingHeader.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         
-        spc = numpy.transpose( spc, (0,2,1) )
-        
-        if cspc != None:
-            cspc = numpy.transpose( cspc, (0,2,1) )
 
+        spc = numpy.transpose( spc, (0,2,1) )
+        self.data_spc = spc
         
-        if cspc != None: 
+        if self.flag_cspc: 
+            cspc = numpy.transpose( cspc, (0,2,1) )
             self.data_cspc = cspc['real'] + cspc['imag']*1j
         else:
             self.data_cspc = None
         
-        self.data_spc = spc
-        self.data_dc = dc['real'] + dc['imag']*1j
+        if self.m_ProcessingHeader.flag_dc:
+            self.data_dc = dc['real'] + dc['imag']*1j
+        else:
+            self.data_dc = None
 
         self.datablockIndex = 0
         self.flagIsNewFile = 0
