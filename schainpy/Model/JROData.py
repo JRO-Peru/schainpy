@@ -32,16 +32,7 @@ class Data:
         
         return copy.deepcopy(self)
     
-class Noise(Data):
-    '''
-    classdocs
-    '''
 
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        pass
 
 class JROData(Data):
     '''
@@ -56,7 +47,7 @@ class JROData(Data):
     
     m_BasicHeader = BasicHeader()
     
-    m_NoiseObj = Noise()
+    noise = None
     
     type = None
     
@@ -71,6 +62,10 @@ class JROData(Data):
     heightList = None
     
     channelList = None
+    
+    channelIndexList = None
+    
+    pairList = None
     
     flagNoData = False
     
@@ -101,6 +96,7 @@ class JROData(Data):
         xf = xi + self.m_ProcessingHeader.numHeights*step
         
         self.heightList = numpy.arange(xi, xf, step)        
+        self.channelIndexList = numpy.arange(self.m_SystemHeader.numChannels)
         self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
         
         self.nHeights = len(self.heightList)

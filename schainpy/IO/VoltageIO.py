@@ -61,7 +61,7 @@ class VoltageReader(JRODataReader):
                 break
             
     """
-    m_DataObj = None
+    dataOutObj = None
     
     datablock = None
 
@@ -70,12 +70,12 @@ class VoltageReader(JRODataReader):
     optchar = "D"
     
     
-    def __init__(self, m_Voltage=None):
+    def __init__(self, dataOutObj=None):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
         
         Input:
-            m_Voltage    :    Objeto de la clase Voltage. Este objeto sera utilizado para
+            dataOutObj    :    Objeto de la clase Voltage. Este objeto sera utilizado para
                               almacenar un perfil de datos cada vez que se haga un requerimiento
                               (getData). El perfil sera obtenido a partir del buffer de datos,
                               si el buffer esta vacio se hara un nuevo proceso de lectura de un
@@ -83,18 +83,11 @@ class VoltageReader(JRODataReader):
                               Si este parametro no es pasado se creara uno internamente.
         
         Variables afectadas:
-            self.m_DataObj
+            self.dataOutObj
         
         Return:
             None
         """
-        if m_Voltage == None:
-            m_Voltage = Voltage()
-        
-        if not(isinstance(m_Voltage, Voltage)):
-            raise ValueError, "in VoltageReader, m_Voltage must be an Voltage class object"
-        
-        self.m_DataObj = m_Voltage
         
         self.datablock = None
         
@@ -171,6 +164,12 @@ class VoltageReader(JRODataReader):
         self.nTotalBlocks = 0
     
         self.blocksize = 0
+    
+    def createObjByDefault(self):
+        
+        dataObj = Voltage()
+        
+        return dataObj
     
     def __hasNotDataInBuffer(self):
         if self.profileIndex >= self.m_ProcessingHeader.profilesPerBlock:
@@ -251,11 +250,11 @@ class VoltageReader(JRODataReader):
                          buffer. Si no hay mas archivos a leer retorna None.
             
         Variables afectadas:
-            self.m_DataObj
+            self.dataOutObj
             self.profileIndex
             
         Affected:
-            self.m_DataObj
+            self.dataOutObj
             self.profileIndex
             self.flagResetProcessing
             self.flagIsNewBlock
@@ -279,22 +278,22 @@ class VoltageReader(JRODataReader):
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         
         if self.datablock == None:
-            self.m_DataObj.flagNoData = True
+            self.dataOutObj.flagNoData = True
             return 0
 
         time = self.m_BasicHeader.utc + self.profileIndex * self.ippSeconds
-        self.m_DataObj.m_BasicHeader.utc = time  
+        self.dataOutObj.m_BasicHeader.utc = time  
         
-        self.m_DataObj.flagNoData = False
-        self.m_DataObj.flagResetProcessing = self.flagResetProcessing
+        self.dataOutObj.flagNoData = False
+        self.dataOutObj.flagResetProcessing = self.flagResetProcessing
         
-        self.m_DataObj.data = self.datablock[:,self.profileIndex,:]
+        self.dataOutObj.data = self.datablock[:,self.profileIndex,:]
         
         self.profileIndex += 1
         
         #call setData - to Data Object
     
-        return 1 #self.m_DataObj.data
+        return 1 #self.dataOutObj.data
 
 
 class VoltageWriter(JRODataWriter):
@@ -304,7 +303,7 @@ class VoltageWriter(JRODataWriter):
     """
     __configHeaderFile = 'wrSetHeadet.txt'
     
-    m_DataObj = None
+    dataOutObj = None
     
     ext = ".r"
     
@@ -317,22 +316,22 @@ class VoltageWriter(JRODataWriter):
     shapeBuffer = None
     
 
-    def __init__(self, m_Voltage=None):
+    def __init__(self, dataOutObj=None):
         """ 
         Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
          
         Affected: 
-            self.m_DataObj
+            self.dataOutObj
 
         Return: None
         """
-        if m_Voltage == None:
-            m_Voltage = Voltage()    
+        if dataOutObj == None:
+            dataOutObj = Voltage()    
         
-        if not( isinstance(m_Voltage, Voltage) ):
-            raise ValueError, "in VoltageReader, m_Voltage must be an Spectra class object"
+        if not( isinstance(dataOutObj, Voltage) ):
+            raise ValueError, "in VoltageReader, dataOutObj must be an Spectra class object"
 
-        self.m_DataObj = m_Voltage
+        self.dataOutObj = dataOutObj
 
 
     def hasAllDataInBuffer(self):
@@ -408,16 +407,16 @@ class VoltageWriter(JRODataWriter):
         """
         self.flagIsNewBlock = 0
         
-        if self.m_DataObj.flagNoData:
+        if self.dataOutObj.flagNoData:
             return 0
         
-        if self.m_DataObj.flagResetProcessing:
+        if self.dataOutObj.flagResetProcessing:
             
             self.datablock.fill(0)
             self.profileIndex = 0
             self.setNextFile()
         
-        self.datablock[:,self.profileIndex,:] = self.m_DataObj.data
+        self.datablock[:,self.profileIndex,:] = self.dataOutObj.data
         
         self.profileIndex += 1
         

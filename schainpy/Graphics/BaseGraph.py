@@ -621,7 +621,7 @@ class ColorPlot:
 
 
     
-    def plotData(self, data, x=None, y=None, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
+    def plotData(self, data, x=None, y=None, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, title = ''):
         """
         Inputs:
             
@@ -647,6 +647,7 @@ class ColorPlot:
         
         plplot.plschr(0.0, self.__szchar)
         self.__iniSubpage()
+        self.colorGraphObj.title =  title
         self.colorGraphObj.plotBox(xmin, xmax, ymin, ymax)
         self.colorGraphObj.basicPcolorPlot(data, x, y, xmin, xmax, ymin, ymax, zmin, zmax)
         
@@ -661,7 +662,7 @@ class ColorPlot:
             cmapObj.colorbarPlot(0., 1., zmin, zmax)
         
         if self.__showPowerProfile:
-            power = numpy.max(data, axis=0)
+            power = numpy.average(data, axis=0)
             
             step = (ymax - ymin)/(nY-1)
             heis = numpy.arange(ymin, ymax + step, step)

@@ -5,7 +5,7 @@ Created on Feb 7, 2012
 @version $Id$
 '''
 
-from JROData import JROData, Noise
+from JROData import JROData
 from JROHeader import RadarControllerHeader, ProcessingHeader, SystemHeader, BasicHeader
 
 class Spectra(JROData):
@@ -38,8 +38,6 @@ class Spectra(JROData):
         self.m_SystemHeader = SystemHeader()
     
         self.m_BasicHeader = BasicHeader()
-        
-        self.m_NoiseObj = Noise()
         
         self.type = "Spectra"
         

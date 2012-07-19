@@ -22,7 +22,7 @@ class VoltageProcessor:
     
     dataInObj = None
     dataOutObj = None
-        
+    
     integratorObjIndex = None
     decoderObjIndex = None
     profSelectorObjIndex = None
@@ -37,17 +37,10 @@ class VoltageProcessor:
     plotterObjList = []
     m_Voltage= Voltage()
     
-    def __init__(self, dataInObj=None, dataOutObj=None):
+    def __init__(self):
         '''
         Constructor
         '''
-        
-        self.dataInObj = dataInObj
-        
-        if dataOutObj == None:
-            self.dataOutObj = Voltage()
-        else:
-            self.dataOutObj = dataOutObj
             
         self.integratorObjIndex = None
         self.decoderObjIndex = None
@@ -60,22 +53,20 @@ class VoltageProcessor:
         self.profileSelectorObjList = []
         self.writerObjList = []
         self.plotterObjList = []
-    
-    def setIO(self,inputObject, outputObject):
         
-        if not( isinstance(inputObject, Voltage) ):
-            print 'InputObject must be an instance from Voltage()'
-            sys.exit(0)
+    def setup(self, dataInObj=None, dataOutObj=None):
         
-        if not( isinstance(outputObject, Voltage) ):
-            print 'OutputObject must be an instance from Voltage()'
-            sys.exit(0)
+        self.dataInObj = dataInObj
         
-        self.dataInObj = inputObject
-        self.dataOutObj = outputObject
+        if dataOutObj == None:
+            dataOutObj = Voltage()
         
-    def setup(self):
-        pass
+        dataOutObj.copy(dataInObj)
+        
+        self.dataOutObj = dataOutObj
+        
+        return self.dataOutObj
+        
     
     def init(self):
         
@@ -217,15 +208,18 @@ class VoltageProcessor:
         self.flipIndex *= -1.
     
     def selectChannels(self, channelList):
+        pass
+        
+    def selectChannelsByIndex(self, channelIndexList):
         """
-        Selecciona un bloque de datos en base a canales segun el channelList 
+        Selecciona un bloque de datos en base a canales segun el channelIndexList 
         
         Input:
-            channelList    :    lista sencilla de canales a seleccionar por ej. [2,3,7] 
+            channelIndexList    :    lista sencilla de canales a seleccionar por ej. [2,3,7] 
             
         Affected:
             self.dataOutObj.data
-            self.dataOutObj.channelList
+            self.dataOutObj.channelIndexList
             self.dataOutObj.nChannels
             self.dataOutObj.m_ProcessingHeader.totalSpectra
             self.dataOutObj.m_SystemHeader.numChannels
@@ -237,19 +231,19 @@ class VoltageProcessor:
         if self.dataOutObj.flagNoData:
             return 0
 
-        for channel in channelList:
-            if channel not in self.dataOutObj.channelList:
-                raise ValueError, "The value %d in channelList is not valid" %channel
+        for channel in channelIndexList:
+            if channel not in self.dataOutObj.channelIndexList:
+                raise ValueError, "The value %d in channelIndexList is not valid" %channel
         
-        nChannels = len(channelList)
+        nChannels = len(channelIndexList)
             
-        data = self.dataOutObj.data[channelList,:]
+        data = self.dataOutObj.data[channelIndexList,:]
         
         self.dataOutObj.data = data
-        self.dataOutObj.channelList = channelList
+        self.dataOutObj.channelIndexList = channelIndexList
         self.dataOutObj.nChannels = nChannels
         
-        self.dataOutObj.m_ProcessingHeader.totalSpectra = nChannels
+        self.dataOutObj.m_ProcessingHeader.totalSpectra = 0
         self.dataOutObj.m_SystemHeader.numChannels = nChannels
         self.dataOutObj.m_ProcessingHeader.blockSize = data.size
         return 1

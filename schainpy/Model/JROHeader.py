@@ -307,6 +307,8 @@ class ProcessingHeader(Header):
     incoherentInt = None
     totalSpectra = None
     struct = None
+    flag_dc = None
+    flag_cspc = None
         
     def __init__(self):
         self.size = 0
@@ -343,6 +345,7 @@ class ProcessingHeader(Header):
         self.numBaud = 0
         self.shif_fft = False
         self.flag_dc = False
+        self.flag_cspc = False
     
     def read(self, fp):
         try:
@@ -376,6 +379,22 @@ class ProcessingHeader(Header):
                 
             if ((self.processFlags & PROCFLAG.SAVE_CHANNELS_DC) == PROCFLAG.SAVE_CHANNELS_DC):
                 self.flag_dc = True
+            
+            nChannels = 0
+            nPairs = 0
+            pairList = []
+            
+            for i in range( 0, self.totalSpectra*2, 2 ):
+                if self.spectraComb[i] == self.spectraComb[i+1]:
+                    nChannels = nChannels + 1   #par de canales iguales 
+                else:
+                    nPairs = nPairs + 1 #par de canales diferentes
+                    pairList.append( (self.spectraComb[i], self.spectraComb[i+1]) )
+            
+            self.flag_cspc = False
+            if nPairs > 0:
+                self.flag_cspc = True
+                
         except:
             return 0
         

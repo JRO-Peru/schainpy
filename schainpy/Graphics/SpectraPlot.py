@@ -154,7 +154,7 @@ class Spectrum:
         plplot.plsstrm(self.indexPlot)
         
         data = 10.*numpy.log10(self.spectraObj.data_spc)
-        
+        noise = 10.*numpy.log10(self.spectraObj.noise)
         #data.shape = Channels x Heights x Profiles
 #        data = numpy.transpose( data, (0,2,1) )
         #data.shape = Channels x Profiles x Heights
@@ -186,7 +186,8 @@ class Spectrum:
                                           ymin=ymin,
                                           ymax=ymax,
                                           zmin=zmin,
-                                          zmax=zmax)
+                                          zmax=zmax,
+                                          title = "Channel: %d - Noise: %.2f" %(i, noise[i]))
         
         plplot.plssub(1,0)
         plplot.pladv(0)

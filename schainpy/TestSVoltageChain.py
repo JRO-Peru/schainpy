@@ -30,29 +30,47 @@ class TestSChain():
         
         self.path = "/home/dsuarez/Projects"  #1
         self.path = "/Users/jro/Documents/RadarData/EW_Drifts"
-#        self.path = "/Users/jro/Documents/RadarData/JULIA"
+        self.path = "/Users/jro/Documents/RadarData/MST_ISR/MST"
 #        self.startDateTime = datetime.datetime(2007,5,1,15,49,0)
 #        self.endDateTime = datetime.datetime(2007,5,1,23,0,0)
         
-        self.startDateTime = datetime.datetime(2011,10,1,0,0,0)
-        self.endDateTime = datetime.datetime(2011,12,31,0,20,0)
+        self.startDateTime = datetime.datetime(2009,01,1,0,0,0)
+        self.endDateTime = datetime.datetime(2009,01,31,0,20,0)
+        
+#        self.startDateTime = datetime.datetime(2011,11,1,0,0,0)
+#        self.endDateTime = datetime.datetime(2011,12,31,0,20,0)
+        
+        
         self.N = 4
         self.npts = 8
     
-    def createObjects( self ):        
+    def createObjects( self ):
         
-        self.voltObj1 = Voltage()
-        self.voltObj2 = Voltage()
-        self.specObj1 = Spectra()
-        
-        self.readerObj = VoltageReader(self.voltObj1)
-        self.voltProcObj = VoltageProcessor(self.voltObj1, self.voltObj2)
-        self.specProcObj = SpectraProcessor(self.voltObj2, self.specObj1)
+        self.readerObj = VoltageReader()
+        self.voltProcObj = VoltageProcessor()
+        self.specProcObj = SpectraProcessor()
 
-        if not(self.readerObj.setup( self.path, self.startDateTime, self.endDateTime, expLabel='', online =0) ): 
+        voltObj1 = self.readerObj.setup(
+                                   path = self.path,
+                                   startDateTime = self.startDateTime,
+                                   endDateTime = self.endDateTime,
+                                   expLabel = '',
+                                   online = 0) 
+        
+        if not(voltObj1):
             sys.exit(0)
         
-        self.specProcObj.setup(nFFTPoints=8)
+        voltObj2 = self.voltProcObj.setup(dataInObj = voltObj1)
+        
+        specObj1 = self.specProcObj.setup(dataInObj = voltObj2,
+                                          nFFTPoints = 16)
+        
+#        voltObj2 = self.voltProcObj.setup(dataInObj = voltObj1,
+#                                          dataOutObj = voltObj2)
+#        
+#        specObj1 = self.specProcObj.setup(dataInObj = voltObj2,
+#                                          dataOutObj =specObj1,
+#                                          nFFTPoints=16)
         
 
     def testSChain( self ):
@@ -63,18 +81,18 @@ class TestSChain():
             
             self.voltProcObj.init()
             
-            self.voltProcObj.plotData(winTitle='VOLTAGE INPUT', index=1)
+#            self.voltProcObj.plotData(winTitle='VOLTAGE INPUT', index=1)
+#            
+#            self.voltProcObj.integrator(4)
+#            
+#            self.voltProcObj.plotData(winTitle='VOLTAGE AVG', index=2)
+#            
             
-            self.voltProcObj.integrator(4)
-            
-            self.voltProcObj.plotData(winTitle='VOLTAGE AVG', index=2)
-            
-                        
             self.specProcObj.init()
         
-            self.specProcObj.integrator(N=2)
+            self.specProcObj.integrator(N=1)
         
-            self.specProcObj.plotData(winTitle='Spectra 1', index=3)
+            self.specProcObj.plotData(winTitle='Spectra 1', index=1)
              
     
             if self.readerObj.flagNoMoreFiles:

@@ -179,7 +179,7 @@ class JRODataIO:
     
     m_ProcessingHeader = ProcessingHeader()
     
-    m_DataObj = None
+    dataOutObj = None
     
     online = 0
     
@@ -256,7 +256,7 @@ class JRODataReader(JRODataIO):
     
     nReadBlocks = 0
     
-    def __init__(self, m_DataObj=None):
+    def __init__(self, dataOutObj=None):
         
         raise ValueError, "This class can't be instanced"
 
@@ -280,6 +280,126 @@ class JRODataReader(JRODataIO):
         
         raise ValueError, "This method has not been implemented"
 
+    def createObjByDefault(self):
+        """
+        Los objetos creados por defecto por cada clase (Voltaje o Espectro) difieren en el tipo
+        raise ValueError, "This method has not been implemented
+        """
+        raise ValueError, "This method has not been implemented"
+        
+    def setup(self, dataOutObj=None, path=None, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
+        """
+        setup configura los parametros de lectura de la clase DataReader.
+        
+        Si el modo de lectura es offline, primero se realiza una busqueda de todos los archivos
+        que coincidan con los parametros especificados; esta lista de archivos son almacenados en
+        self.filenameList.
+        
+        Input:
+            path                :    Directorios donde se ubican los datos a leer. Dentro de este
+                                     directorio deberia de estar subdirectorios de la forma:
+                                     
+                                     path/D[yyyy][ddd]/expLabel/P[yyyy][ddd][sss][ext]
+            
+            startDateTime       :    Fecha inicial. Rechaza todos los archivos donde
+                                     file end time < startDatetime (obejto datetime.datetime)
+            
+            endDateTime         :    Fecha final. Si no es None, rechaza todos los archivos donde
+                                     file end time < startDatetime (obejto datetime.datetime)
+            
+            set                 :    Set del primer archivo a leer. Por defecto None
+            
+            expLabel            :    Nombre del subdirectorio de datos.  Por defecto ""
+            
+            ext                 :    Extension de los archivos a leer. Por defecto .r
+            
+            online              :    Si es == a 0 entonces busca files que cumplan con las condiciones dadas
+            
+        Return:
+            0    :    Si no encuentra files que cumplan con las condiciones dadas
+            1    :    Si encuentra files que cumplan con las condiciones dadas
+        
+        Affected:
+            self.startUTCSeconds
+            self.endUTCSeconds
+            self.startYear 
+            self.endYear
+            self.startDoy
+            self.endDoy
+            self.pathList
+            self.filenameList 
+            self.online
+        """
+        if path == None:
+            raise ValueError, "The path is not valid"
+        
+        if ext == None:
+            ext = self.ext
+        
+        if dataOutObj == None:
+            dataOutObj = self.createObjByDefault()
+        
+        self.dataOutObj = dataOutObj
+            
+        if online:
+            print "Searching files ..."  
+            doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
+
+            if not(doypath):
+                for nTries in range( self.nTries ):
+                    print '\tWaiting %0.2f sec for valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
+                    time.sleep( self.delay )
+                    doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
+                    if doypath:
+                        break
+            
+            if not(doypath):
+                print "There 'isn't valied files in %s" % path
+                return None
+        
+            self.year = year
+            self.doy  = doy
+            self.set  = set - 1
+            self.path = path
+
+        else: # offline
+            pathList, filenameList = self.__searchFilesOffLine(path, startDateTime, endDateTime, set, expLabel, ext)
+            if not(pathList):
+                print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
+                return None
+
+            self.fileIndex = -1 
+            self.pathList = pathList
+            self.filenameList = filenameList
+             
+        self.online = online
+        self.ext = ext
+
+        ext = ext.lower()
+
+        if not( self.setNextFile() ):
+            if (startDateTime != None) and (endDateTime != None):
+                print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
+            elif startDateTime != None:
+                print "No files in : %s" % startDateTime.ctime()
+            else:
+                print "No files"
+            return None
+        
+        if startDateTime != None:
+            self.startUTCSeconds = time.mktime(startDateTime.timetuple())
+            self.startYear = startDateTime.timetuple().tm_year 
+            self.startDoy = startDateTime.timetuple().tm_yday
+        
+        if endDateTime != None:
+            self.endUTCSeconds = time.mktime(endDateTime.timetuple())
+            self.endYear = endDateTime.timetuple().tm_year
+            self.endDoy = endDateTime.timetuple().tm_yday
+        #call fillHeaderValues() - to Data Object
+        
+        self.updateDataHeader()
+            
+        return self.dataOutObj
     
     def __rdSystemHeader(self, fp=None):
         
@@ -359,7 +479,9 @@ class JRODataReader(JRODataIO):
         self.ippSeconds = 2 * 1000 * self.m_RadarControllerHeader.ipp / self.c
         
         self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
-
+        self.dataOutObj.channelList = numpy.arange(self.m_SystemHeader.numChannels)
+        self.dataOutObj.channelIndexList = numpy.arange(self.m_SystemHeader.numChannels)
+        
         self.getBlockDimension()
         
         
@@ -833,120 +955,14 @@ class JRODataReader(JRODataIO):
 
     def updateDataHeader(self):
         
-        self.m_DataObj.m_BasicHeader = self.m_BasicHeader.copy()
-        self.m_DataObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-        self.m_DataObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-        self.m_DataObj.m_SystemHeader = self.m_SystemHeader.copy()
+        self.dataOutObj.m_BasicHeader = self.m_BasicHeader.copy()
+        self.dataOutObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
+        self.dataOutObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
+        self.dataOutObj.m_SystemHeader = self.m_SystemHeader.copy()
         
-        self.m_DataObj.dataType = self.dataType
-        self.m_DataObj.updateObjFromHeader()
-        
-    def setup(self, path, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
-        """
-        setup configura los parametros de lectura de la clase DataReader.
-        
-        Si el modo de lectura es offline, primero se realiza una busqueda de todos los archivos
-        que coincidan con los parametros especificados; esta lista de archivos son almacenados en
-        self.filenameList.
-        
-        Input:
-            path                :    Directorios donde se ubican los datos a leer. Dentro de este
-                                     directorio deberia de estar subdirectorios de la forma:
-                                     
-                                     path/D[yyyy][ddd]/expLabel/P[yyyy][ddd][sss][ext]
-            
-            startDateTime       :    Fecha inicial. Rechaza todos los archivos donde
-                                     file end time < startDatetime (obejto datetime.datetime)
-            
-            endDateTime         :    Fecha final. Si no es None, rechaza todos los archivos donde
-                                     file end time < startDatetime (obejto datetime.datetime)
-            
-            set                 :    Set del primer archivo a leer. Por defecto None
-            
-            expLabel            :    Nombre del subdirectorio de datos.  Por defecto ""
-            
-            ext                 :    Extension de los archivos a leer. Por defecto .r
-            
-            online              :    Si es == a 0 entonces busca files que cumplan con las condiciones dadas
-            
-        Return:
-            0    :    Si no encuentra files que cumplan con las condiciones dadas
-            1    :    Si encuentra files que cumplan con las condiciones dadas
-        
-        Affected:
-            self.startUTCSeconds
-            self.endUTCSeconds
-            self.startYear 
-            self.endYear
-            self.startDoy
-            self.endDoy
-            self.pathList
-            self.filenameList 
-            self.online
-        """
-        
-        if ext == None:
-            ext = self.ext
-            
-        if online:
-            print "Searching files ..."  
-            doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
+        self.dataOutObj.dataType = self.dataType
+        self.dataOutObj.updateObjFromHeader()
 
-            if not(doypath):
-                for nTries in range( self.nTries ):
-                    print '\tWaiting %0.2f sec for valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
-                    time.sleep( self.delay )
-                    doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
-                    if doypath:
-                        break
-            
-            if not(doypath):
-                print "There 'isn't valied files in %s" % path
-                return 0
-        
-            self.year = year
-            self.doy  = doy
-            self.set  = set - 1
-            self.path = path
-
-        else: # offline
-            pathList, filenameList = self.__searchFilesOffLine(path, startDateTime, endDateTime, set, expLabel, ext)
-            if not(pathList):
-                print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
-                return 0
-
-            self.fileIndex = -1 
-            self.pathList = pathList
-            self.filenameList = filenameList
-             
-        self.online = online
-        self.ext = ext
-
-        ext = ext.lower()
-
-        if not( self.setNextFile() ):
-            if (startDateTime != None) and (endDateTime != None):
-                print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
-            elif startDateTime != None:
-                print "No files in : %s" % startDateTime.ctime()
-            else:
-                print "No files"
-            return 0
-        
-        if startDateTime != None:
-            self.startUTCSeconds = time.mktime(startDateTime.timetuple())
-            self.startYear = startDateTime.timetuple().tm_year 
-            self.startDoy = startDateTime.timetuple().tm_yday
-        
-        if endDateTime != None:
-            self.endUTCSeconds = time.mktime(endDateTime.timetuple())
-            self.endYear = endDateTime.timetuple().tm_year
-            self.endDoy = endDateTime.timetuple().tm_yday
-        #call fillHeaderValues() - to Data Object
-        
-        self.updateDataHeader()
-            
-        return 1
         
 class JRODataWriter(JRODataIO):
 
@@ -960,7 +976,7 @@ class JRODataWriter(JRODataIO):
     setFile = None
     
     
-    def __init__(self, m_DataObj=None):
+    def __init__(self, dataOutObj=None):
         raise ValueError, "Not implemented"
 
 
@@ -994,7 +1010,7 @@ class JRODataWriter(JRODataIO):
         self.__wrSystemHeader()
         self.__wrRadarControllerHeader()
         self.__wrProcessingHeader()
-        self.dataType = self.m_DataObj.dataType
+        self.dataType = self.dataOutObj.dataType
             
             
     def __writeBasicHeader(self, fp=None):
@@ -1007,7 +1023,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.m_DataObj.m_BasicHeader.write(fp)
+        self.dataOutObj.m_BasicHeader.write(fp)
 
     
     def __wrSystemHeader(self, fp=None):
@@ -1020,7 +1036,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.m_DataObj.m_SystemHeader.write(fp)
+        self.dataOutObj.m_SystemHeader.write(fp)
 
     
     def __wrRadarControllerHeader(self, fp=None):
@@ -1033,7 +1049,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
         
-        self.m_DataObj.m_RadarControllerHeader.write(fp)
+        self.dataOutObj.m_RadarControllerHeader.write(fp)
 
         
     def __wrProcessingHeader(self, fp=None):
@@ -1046,7 +1062,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.m_DataObj.m_ProcessingHeader.write(fp)
+        self.dataOutObj.m_ProcessingHeader.write(fp)
     
     
     def setNextFile(self):
@@ -1070,7 +1086,7 @@ class JRODataWriter(JRODataIO):
         if self.fp != None:
             self.fp.close()
         
-        timeTuple = time.localtime( self.m_DataObj.m_BasicHeader.utc )
+        timeTuple = time.localtime( self.dataOutObj.m_BasicHeader.utc )
         subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
 
         doypath = os.path.join( path, subfolder )
@@ -1175,14 +1191,14 @@ class JRODataWriter(JRODataIO):
         Return: 
             None
         """
-        self.m_DataObj.updateHeaderFromObj()
+        self.dataOutObj.updateHeaderFromObj()
         
-        self.m_BasicHeader = self.m_DataObj.m_BasicHeader.copy()
-        self.m_SystemHeader = self.m_DataObj.m_SystemHeader.copy()
-        self.m_RadarControllerHeader = self.m_DataObj.m_RadarControllerHeader.copy()
-        self.m_ProcessingHeader = self.m_DataObj.m_ProcessingHeader.copy()
+        self.m_BasicHeader = self.dataOutObj.m_BasicHeader.copy()
+        self.m_SystemHeader = self.dataOutObj.m_SystemHeader.copy()
+        self.m_RadarControllerHeader = self.dataOutObj.m_RadarControllerHeader.copy()
+        self.m_ProcessingHeader = self.dataOutObj.m_ProcessingHeader.copy()
         
-        self.dataType = self.m_DataObj.dataType
+        self.dataType = self.dataOutObj.dataType
         
     
     def setup(self, path, set=0, ext=None):
