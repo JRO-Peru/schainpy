@@ -712,6 +712,9 @@ class SpectraPlot:
             
             if powObj.setXYData() != None:
                 clearData(powObj)
+                powObj.setLineStyle(2)
+                powObj.plotBox(powObj.xrange[0], powObj.xrange[1], powObj.yrange[0], powObj.yrange[1], "bcntg", "bc")
+                powObj.setLineStyle(1)
             else:
                 powObj.setXYData(power,y)
             
