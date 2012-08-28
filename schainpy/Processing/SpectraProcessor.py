@@ -284,6 +284,7 @@ class SpectraProcessor:
                  showColorbar=False,
                  showPowerProfile=False,
                  XAxisAsTime=False,
+                 save=False,
                  index=None):
         
         if self.dataOutObj.flagNoData:
@@ -305,7 +306,8 @@ class SpectraProcessor:
                                                            colormap,
                                                            showColorbar,
                                                            showPowerProfile,
-                                                           XAxisAsTime)
+                                                           XAxisAsTime,
+                                                           save)
         
         self.plotterObjIndex += 1
         

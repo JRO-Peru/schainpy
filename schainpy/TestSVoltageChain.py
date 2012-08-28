@@ -79,7 +79,7 @@ class TestSChain():
             self.specProcObj.integrator(N=4)
             
 #            self.specProcObj.plotSpec(winTitle='Spectra Test', showColorbar=True,showPowerProfile=True,index=3)
-            self.specProcObj.plotData(winTitle='Spectra Test', showColorbar=True,showPowerProfile=True,index=3)
+            self.specProcObj.plotData(winTitle='Spectra Test', showColorbar=True,showPowerProfile=True,save=False,index=3)
             
             if self.readerObj.flagNoMoreFiles:
                 break

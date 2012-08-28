@@ -57,7 +57,8 @@ class Spectrum:
                  colormap = "br_green",
                  showColorbar = True,
                  showPowerProfile = True,
-                 XAxisAsTime = False):
+                 XAxisAsTime = False,
+                 save = False):
         
         databuffer = 10.*numpy.log10(self.spectraObj.data_spc)
         noise = 10.*numpy.log10(self.spectraObj.noise)
@@ -115,5 +116,11 @@ class Spectrum:
         
         
         self.colorplotObj.refresh()
+        
+        if save:
+            self.colorplotObj.setFigure(indexPlot)
+            path4plot = "/Users/jro/Pictures"
+            self.colorplotObj.savePlot(indexPlot,path4plot)
+            
 
 

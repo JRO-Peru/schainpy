@@ -5,7 +5,7 @@ Created on Feb 7, 2012
 @version $Id$
 
 """
-
+import os
 import numpy
 import sys
 import time 
@@ -190,6 +190,19 @@ def cmap1_init(colormap="gray"):
 
 def setColormap(colormap="jet"):
     cmap1_init(colormap)
+
+def savePlplot(indexPlot,filename,ncol,nrow,width,height):
+    curr_strm = plplot.plgstrm()
+    save_strm = plplot.plmkstrm()
+    plplot.plsetopt("geometry", "%dx%d"%(width*ncol,height*nrow))
+    plplot.plsdev("pngcairo")
+    plplot.plsfnam(filename)
+    plplot.plcpstrm(curr_strm,0)
+    plplot.plreplot()
+    plplot.plend1()
+    plplot.plsstrm(indexPlot)
+    print ''
+    
 
 def initPlplot(indexPlot,ncol,nrow,winTitle,width,height):
     plplot.plsstrm(indexPlot)
@@ -547,7 +560,7 @@ class SpectraPlot:
     showColorbar = None
     showPowerProfile = None
     XAxisAsTime = None
-    widht = None
+    width = None
     height = None
     __spcxpos = None
     __spcypos = None
@@ -721,6 +734,15 @@ class SpectraPlot:
             powObj.plotBox(powObj.xrange[0], powObj.xrange[1], powObj.yrange[0], powObj.yrange[1], "bc", "bc")
             powObj.basicXYPlot(power,y)
             powObj.setXYData(power,y)
+    
+    def savePlot(self,indexPlot,path):
+        
+        now = datetime.datetime.now().timetuple()
+        file = "spc_img%02d_%03d_%02d%02d%02d"%(indexPlot,now[7],now[3],now[4],now[5])
+        filename = os.path.join(path,file+".png")
+        savePlplot(indexPlot,filename,self.ncol,self.nrow,self.width,self.height)
+        
+            
     
     def refresh(self):
         plFlush()
