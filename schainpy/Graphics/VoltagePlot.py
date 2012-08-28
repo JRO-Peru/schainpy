@@ -4,9 +4,9 @@ Created on Feb 7, 2012
 @author $Author$
 @version $Id$
 '''
-import os, sys
 import numpy
-import plplot
+import os
+import sys
 
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
@@ -15,190 +15,183 @@ from Graphics.BaseGraph import *
 from Model.Voltage import Voltage
 
 class Osciloscope:
+    linearplotObj = None
     
-    voltageObj = Voltage()
-    
-    linearGraphObj = LinearPlot()
-    
-    __isPlotConfig = False
-        
-    __isPlotIni = False
-    
-    __xrange = None
-    
-    __yrange = None
-    
-    voltageObj = Voltage()
-    
-    nGraphs = 0
-    
-    indexPlot = None
-    
-    graphObjList = []
-    m_LinearPlot= LinearPlot()
-
-
-    m_Voltage= Voltage()
-
-
-        
-    def __init__(self, Voltage, index=0):
-        
-        """
-        
-        Inputs:
-            
-            type:   "power" ->> Potencia
-                    "iq"    ->> Real + Imaginario
-        """
-        
+    def __init__(self, Voltage, index):
         self.__isPlotConfig = False
-        
         self.__isPlotIni = False
-        
         self.__xrange = None
-        
         self.__yrange = None
-        
-        self.voltageObj = None
-        
-        self.nGraphs = 0
-        
         self.indexPlot = index
-        
-        self.graphObjList = [] 
-        
         self.voltageObj = Voltage
-        
     
-    def __addGraph(self, subpage, title="", xlabel="", ylabel="", XAxisAsTime=False):
-        
-        graphObj = LinearPlot()
-        graphObj.setup(subpage, title="", xlabel="", ylabel="", XAxisAsTime=False)
-        #graphObj.setScreenPos()
-                
-        self.graphObjList.append(graphObj)
-        
-        del graphObj
+    def setup(self,indexPlot,nsubplot,winTitle=''):
+        self.linearplotObj = LinearPlot(indexPlot,nsubplot,winTitle)
     
-#    def setXRange(self, xmin, xmax):
-#        self.__xrange = (xmin, xmax)
-#    
-#    def setYRange(self, ymin, ymax):
-#        self.__yrange = (ymin, ymax)    
-
+    def initPlot(self,xmin,xmax,ymin,ymax,titleList,xlabelList,ylabelList):
+        nsubplot = self.voltageObj.nChannels
+        
+        for index in range(nsubplot):
+            title = titleList[index]
+            xlabel = xlabelList[index]
+            ylabel = ylabelList[index]
+            subplot = index
+            self.linearplotObj.setup(subplot+1,xmin,xmax,ymin,ymax,title,xlabel,ylabel)
     
-    def setup(self, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False):
+    def plotData(self,
+                 xmin=None,
+                 xmax=None,
+                 ymin=None,
+                 ymax=None,
+                 titleList=None,
+                 xlabelList=None,
+                 ylabelList=None,
+                 winTitle='',
+                 type="power"):
         
-        nChan = int(self.voltageObj.m_SystemHeader.numChannels)
+        databuffer = self.voltageObj.data
         
-        myTitle = ""
-        myXlabel = ""
-        myYlabel = ""
+        height = self.voltageObj.heightList
+        nsubplot = self.voltageObj.nChannels
+        indexPlot = self.indexPlot
         
-        for chan in range(nChan):
-            if titleList != None:
-                myTitle = titleList[chan]
-                myXlabel = xlabelList[chan]
-                myYlabel = ylabelList[chan]
-                
-            self.__addGraph(chan+1, title=myTitle, xlabel=myXlabel, ylabel=myYlabel, XAxisAsTime=XAxisAsTime)
-        
-        self.nGraphs = nChan
-        self.__isPlotConfig = True
-
-    def iniPlot(self, winTitle=""):
-        
-        plplot.plsstrm(self.indexPlot)
-        plplot.plparseopts([winTitle], plplot.PL_PARSE_FULL)
-        plplot.plsetopt("geometry", "%dx%d" %(700, 115*self.nGraphs))
-        plplot.plsdev("xwin")
-        plplot.plscolbg(255,255,255)
-        plplot.plscol0(1,0,0,0)
-        plplot.plinit()
-        plplot.plspause(False)
-        plplot.plssub(1, self.nGraphs)
-        
-        self.__isPlotIni = True     
-    
-    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, titleList=None, xlabelList=None, ylabelList=None, XAxisAsTime=False, type='iq', winTitle="Voltage"):
         
         if not(self.__isPlotConfig):
-            self.setup(titleList, xlabelList, ylabelList, XAxisAsTime)
+            self.setup(indexPlot,nsubplot,winTitle)
+            self.__isPlotConfig = True
         
         if not(self.__isPlotIni):
-            self.iniPlot(winTitle)
-        
-        plplot.plsstrm(self.indexPlot)
-        
-        data = self.voltageObj.data
-              
-        x = self.voltageObj.heightList
-        
-        if xmin == None: xmin = x[0]
-        if xmax == None: xmax = x[-1]
-        if ymin == None: ymin = numpy.nanmin(abs(data))
-        if ymax == None: ymax = numpy.nanmax(abs(data))
-        
-        plplot.plbop()
-        for chan in range(self.nGraphs):
-            y = data[chan,:]
+            if titleList == None:
+                titleList = []
+                thisDatetime = datetime.datetime.fromtimestamp(self.voltageObj.m_BasicHeader.utc)
+                txtdate = "Date: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+                for i in range(nsubplot):
+                    titleList.append("Channel: %d %s" %(i, txtdate))
+
+            if xlabelList == None:
+                xlabelList = []
+                for i in range(nsubplot):
+                    xlabelList.append("")
+
+            if ylabelList == None:
+                ylabelList = []
+                for i in range(nsubplot):
+                    ylabelList.append("")
+
+            if xmin == None: xmin = height[0]
+            if xmax == None: xmax = height[-1]
+            if ymin == None: ymin = numpy.nanmin(abs(databuffer))
+            if ymax == None: ymax = numpy.nanmax(abs(databuffer))                
             
-            self.graphObjList[chan].plotComplexData(x, y, xmin, xmax, ymin, ymax, 8, type)
+            self.initPlot(xmin,xmax,ymin,ymax,titleList,xlabelList,ylabelList)
+            self.__isPlotIni = True
         
-        plplot.plflush()
-        plplot.pleop()
-    
-    def end(self):
-        plplot.plend()
+        self.linearplotObj.setFigure(indexPlot)
         
-class VoltagePlot(object):
-    '''
-    classdocs
-    '''
+        for index in range(nsubplot):
+            data = databuffer[index,:]
+            self.linearplotObj.plot(subplot=index+1,x=height,y=data,type=type)
+        
+        self.linearplotObj.refresh()
+        
+        
+        
 
-    __m_Voltage = None
-    
-    def __init__(self, voltageObj):
-        '''
-        Constructor
-        '''
-        self.__m_Voltage = voltageObj
-    
-    def setup(self):
-        pass
-    
-    def addGraph(self, type, xrange=None, yrange=None, zrange=None):
-        pass
-    
-    def plotData(self):
-        pass
+        
 
-if __name__ == '__main__':
+        
+
+class RTI:
+    colorplotObj = None
     
-    import numpy
-    
-    plplot.plsetopt("geometry", "%dx%d" %(450*2, 200*2))
-    plplot.plsdev("xcairo")
-    plplot.plscolbg(255,255,255)
-    plplot.plscol0(1,0,0,0)
-    plplot.plinit()
-    plplot.plssub(1, 2)
-    
-    nx = 64
-    ny = 100
-    
-    data = numpy.random.uniform(-50,50,(nx,ny))
-    
-    baseObj = RTI()
-    baseObj.setup(1, "Spectrum", "Frequency", "Range", "br_green", False, False)
-    baseObj.plotData(data)
-    
-    data = numpy.random.uniform(-50,50,(nx,ny))
-    
-    base2Obj = RTI()
-    base2Obj.setup(2, "Spectrum", "Frequency", "Range", "br_green", True, True)
-    base2Obj.plotData(data)
-    
-    plplot.plend()
-    exit(0)
+    def __init__(self, Voltage, index):
+        self.__isPlotConfig = False
+        self.__isPlotIni = False
+        self.__xrange = None
+        self.__yrange = None
+        self.indexPlot = index
+        self.voltageObj = Voltage
+
+    def setup(self,indexPlot,nsubplot,winTitle='',colormap="br_green",showColorbar=False,showPowerProfile=False,XAxisAsTime=False):
+        self.colorplotObj = RtiPlot(indexPlot,nsubplot,winTitle,colormap,showColorbar,showPowerProfile,XAxisAsTime)
+
+    def initPlot(self,xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList,timezone,npoints):
+
+        nsubplot = self.voltageObj.nChannels
+        timedata = self.voltageObj.m_BasicHeader.utc
+
+        for index in range(nsubplot):
+            title = titleList[index]
+            xlabel = xlabelList[index]
+            ylabel = ylabelList[index]
+            subplot = index
+            self.colorplotObj.setup(subplot+1,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel,timedata,timezone,npoints)
+            
+    def plotData(self,
+                 xmin=None,
+                 xmax=None,
+                 ymin=None,
+                 ymax=None,
+                 zmin=None,
+                 zmax=None,
+                 titleList=None,
+                 xlabelList=None,
+                 ylabelList=None,
+                 winTitle='',
+                 timezone='lt',
+                 npoints=1000.0,
+                 colormap="br_green",
+                 showColorbar=True,
+                 showPowerProfile=True,
+                 XAxisAsTime=True):
+        
+        databuffer = self.voltageObj.data
+        timedata = self.voltageObj.m_BasicHeader.utc
+        height = self.voltageObj.heightList
+        nsubplot = self.voltageObj.nChannels
+        indexPlot = self.indexPlot
+
+        if not(self.__isPlotConfig):
+            self.setup(indexPlot,nsubplot,winTitle,colormap,showColorbar,showPowerProfile,XAxisAsTime)
+            self.__isPlotConfig = True
+
+        if not(self.__isPlotIni):
+            if titleList == None:
+                titleList = []
+                thisDatetime = datetime.datetime.fromtimestamp(timedata)
+                txtdate = "Date: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+                for i in range(nsubplot):
+                    titleList.append("Channel: %d %s" %(i, txtdate))
+
+            if xlabelList == None:
+                xlabelList = []
+                for i in range(nsubplot):
+                    xlabelList.append("")
+
+            if ylabelList == None:
+                ylabelList = []
+                for i in range(nsubplot):
+                    ylabelList.append("")
+
+            if xmin == None: xmin = 0
+            if xmax == None: xmax = 23
+            if ymin == None: ymin = min(self.voltageObj.heightList)
+            if ymax == None: ymax = max(self.voltageObj.heightList)                
+            if zmin == None: zmin = 0
+            if zmax == None: zmax = 50
+
+
+            self.initPlot(xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList,timezone,npoints)
+            self.__isPlotIni = True
+        
+
+        self.colorplotObj.setFigure(indexPlot)
+        
+        if timezone == 'lt':
+            timedata = timedata - time.timezone
+        
+        for index in range(nsubplot):
+            data = databuffer[index,:]
+            self.colorplotObj.plot(subplot=index+1,x=timedata,y=height,z=data)
+        
+        self.colorplotObj.refresh()

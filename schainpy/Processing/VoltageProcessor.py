@@ -14,6 +14,7 @@ sys.path.append(path)
 from Model.Voltage import Voltage
 from IO.VoltageIO import VoltageWriter
 from Graphics.VoltagePlot import Osciloscope
+from Graphics.VoltagePlot import RTI
 
 class VoltageProcessor:
     '''
@@ -85,7 +86,14 @@ class VoltageProcessor:
         objWriter = VoltageWriter(self.dataOutObj)
         objWriter.setup(wrpath)
         self.writerObjList.append(objWriter)
-           
+    
+    def addRti(self,index=None):
+        if index==None:
+            index = self.plotterObjIndex
+        
+        plotObj = RTI(self.dataOutObj, index)
+        self.plotterObjList.append(plotObj)
+    
     def addPlotter(self, index=None):
         if index==None:
             index = self.plotterObjIndex
@@ -118,10 +126,89 @@ class VoltageProcessor:
         
         self.writerObjList[self.writerObjIndex].putData()
         
-#        myWrObj = self.writerObjList[self.writerObjIndex]
-#        myWrObj.putData()
-        
         self.writerObjIndex += 1
+        
+    def addScope(self,index=None):
+        if index==None:
+            index = self.plotterObjIndex
+        
+        plotObj = Osciloscope(self.dataOutObj, index)
+        self.plotterObjList.append(plotObj)
+        
+    def plotScope(self,
+                xmin=None,
+                xmax=None,
+                ymin=None,
+                ymax=None,
+                titleList=None,
+                xlabelList=None,
+                ylabelList=None,
+                winTitle='',
+                type="power",
+                index=None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        if len(self.plotterObjList) <= self.plotterObjIndex:
+            self.addScope(index)
+        
+        self.plotterObjList[self.plotterObjIndex].plotData(xmin,
+                                                           xmax,
+                                                           ymin,
+                                                           ymax,
+                                                           titleList,
+                                                           xlabelList,
+                                                           ylabelList,
+                                                           winTitle,
+                                                           type)
+        
+        self.plotterObjIndex += 1
+
+    def plotRti(self,
+                xmin=None,
+                xmax=None,
+                ymin=None,
+                ymax=None,
+                zmin=None,
+                zmax=None,
+                titleList=None,
+                xlabelList=None,
+                ylabelList=None,
+                winTitle='',
+                timezone='lt',
+                npoints=1000.0,
+                colormap="br_green",
+                showColorbar=True,
+                showPowerProfile=False,
+                XAxisAsTime=True,
+                index=None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        if len(self.plotterObjList) <= self.plotterObjIndex:
+            self.addRti(index)
+        
+        self.plotterObjList[self.plotterObjIndex].plotData(xmin,
+                                                           xmax,
+                                                           ymin,
+                                                           ymax,
+                                                           zmin,
+                                                           zmax,
+                                                           titleList,
+                                                           xlabelList,
+                                                           ylabelList,
+                                                           winTitle,
+                                                           timezone,
+                                                           npoints,
+                                                           colormap,
+                                                           showColorbar,
+                                                           showPowerProfile,
+                                                           XAxisAsTime)
+        
+        self.plotterObjIndex += 1
+
 
     def plotData(self,xmin=None, xmax=None, ymin=None, ymax=None, type='iq', winTitle='', index=None):
         if self.dataOutObj.flagNoData:

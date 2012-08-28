@@ -5,10 +5,11 @@ Created on Feb 7, 2012
 @version $Id$
 '''
 
-import os, sys
 import numpy
-import datetime
+import os
+import sys
 import plplot
+import datetime
 
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
@@ -17,188 +18,102 @@ from Graphics.BaseGraph import *
 from Model.Spectra import Spectra
 
 class Spectrum:
-
-    __isPlotConfig = False
+    colorplotObj = None
     
-    __isPlotIni = False
-    
-    __xrange = None
-    
-    __yrange = None
-    
-    nGraphs = 0
-    
-    indexPlot = None
-    
-    graphObjList = [] 
-       
-    spectraObj = Spectra
-    
-    colorGraphObj = ColorPlot()
-    m_Spectra= Spectra()
-
-
-    m_ColorPlot= ColorPlot()
-
-
-
-
-         
-    def __init__(self, Spectra, index=0):
-        
-        """
-        
-        Inputs:
-            
-            type:   "power" ->> Potencia
-                    "iq"    ->> Real + Imaginario
-        """
-        
+    def __init__(self,Spectra, index):
         self.__isPlotConfig = False
-        
         self.__isPlotIni = False
-        
         self.__xrange = None
-        
         self.__yrange = None
-        
         self.nGraphs = 0
-        
         self.indexPlot = index
-        
-        self.graphObjList = [] 
-           
         self.spectraObj = Spectra
-        
     
-    def __addGraph(self, subpage, title="", xlabel="", ylabel="", showColorbar=False, showPowerProfile=True, XAxisAsTime=False):
+    def setup(self,indexPlot,nsubplot,winTitle='',colormap="br_green",showColorbar=False,showPowerProfile=False,XAxisAsTime=False):
+        self.colorplotObj = SpectraPlot(indexPlot,nsubplot,winTitle,colormap,showColorbar,showPowerProfile,XAxisAsTime)
+    
+    def initPlot(self,xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList):
+        nsubplot = self.spectraObj.nChannels
         
-        graphObj = ColorPlot()
-        graphObj.setup(subpage,
-                       title,
-                       xlabel,
-                       ylabel,
-                       showColorbar=showColorbar,
-                       showPowerProfile=showPowerProfile,
-                       XAxisAsTime=XAxisAsTime)
-                
-        self.graphObjList.append(graphObj)
+        for index in range(nsubplot):
+            title = titleList[index]
+            xlabel = xlabelList[index]
+            ylabel = ylabelList[index]
+            subplot = index
+            self.colorplotObj.setup(subplot+1,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel)
 
     
-    def setup(self, titleList=None, xlabelList=None, ylabelList=None, showColorbar=False, showPowerProfile=True, XAxisAsTime=False):
+    def plotData(self,
+                 xmin=None,
+                 xmax=None,
+                 ymin=None,
+                 ymax=None,
+                 zmin=None,
+                 zmax=None,
+                 titleList=None,
+                 xlabelList=None,
+                 ylabelList=None,
+                 winTitle='',
+                 colormap = "br_green",
+                 showColorbar = True,
+                 showPowerProfile = True,
+                 XAxisAsTime = False):
         
-        nChan = int(self.spectraObj.m_SystemHeader.numChannels)
-        channels = range(nChan)
-        
-        myXlabel = "Radial Velocity (m/s)"
-        myYlabel = "Range (km)"
-        
-        for i in channels:
-            if titleList != None:
-                myTitle = titleList[i]
-                myXlabel = xlabelList[i]
-                myYlabel = ylabelList[i]
-            
-#            if self.spectraObj.m_NoiseObj != None:
-#                noise = '%4.2fdB' %(self.spectraObj.m_NoiseObj[i])
-#            else:
-            noise = '--'
-            
-            myTitle = "Channel: %d - Noise: %s" %(i, noise)
-                
-            self.__addGraph(i+1,
-                            title=myTitle,
-                            xlabel=myXlabel,
-                            ylabel=myYlabel,
-                            showColorbar=showColorbar,
-                            showPowerProfile=showPowerProfile,
-                            XAxisAsTime=XAxisAsTime)
-        
-        self.nGraphs = nChan
-        self.__isPlotConfig = True
-
-    def iniPlot(self, winTitle=""):
-        
-        nx = int(numpy.sqrt(self.nGraphs)+1)
-        #ny = int(self.nGraphs/nx)
-        
-        plplot.plsstrm(self.indexPlot)
-        plplot.plparseopts([winTitle], plplot.PL_PARSE_FULL)
-        plplot.plsetopt("geometry", "%dx%d" %(300*nx, 240*nx))
-        plplot.plsdev("xwin")
-        plplot.plscolbg(255,255,255)
-        plplot.plscol0(1,0,0,0)
-        plplot.plinit()
-        plplot.plspause(False)
-        plplot.pladv(0)
-        plplot.plssub(nx, nx)
-        
-        self.__nx = nx
-        self.__ny = nx
-        self.__isPlotIni = True
-         
-    
-    def plotData(self, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, titleList=None, xlabelList=None, ylabelList=None, showColorbar=False, showPowerProfile=True, XAxisAsTime=False, winTitle="Spectra"):
-        
-        if not(self.__isPlotConfig):
-            self.setup(titleList,
-                       xlabelList,
-                       ylabelList,
-                       showColorbar,
-                       showPowerProfile,
-                       XAxisAsTime)
-        
-        if not(self.__isPlotIni):
-            self.iniPlot(winTitle)
-        
-        plplot.plsstrm(self.indexPlot)
-        
-        data = 10.*numpy.log10(self.spectraObj.data_spc)
+        databuffer = 10.*numpy.log10(self.spectraObj.data_spc)
         noise = 10.*numpy.log10(self.spectraObj.noise)
-        #data.shape = Channels x Heights x Profiles
-#        data = numpy.transpose( data, (0,2,1) )
-        #data.shape = Channels x Profiles x Heights
-
-        nChan, nX, nY = numpy.shape(data)
+        
+        nsubplot = self.spectraObj.nChannels
+        nsubplot, nX, nY = numpy.shape(databuffer)
         
         x = numpy.arange(nX)        
         y = self.spectraObj.heightList
         
-        thisDatetime = datetime.datetime.fromtimestamp(self.spectraObj.m_BasicHeader.utc)
-        txtDate = "Self Spectra - Date: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        indexPlot = self.indexPlot
         
-        if xmin == None: xmin = x[0]
-        if xmax == None: xmax = x[-1]
-        if ymin == None: ymin = y[0]
-        if ymax == None: ymax = y[-1]
-        if zmin == None: zmin = numpy.nanmin(abs(data))
-        if zmax == None: zmax = numpy.nanmax(abs(data))
+        if not(self.__isPlotConfig):
+            self.setup(indexPlot,nsubplot,winTitle,colormap,showColorbar,showPowerProfile,XAxisAsTime)
+            self.__isPlotConfig = True
         
-        plplot.plbop()
-        
-        plplot.plssub(self.__nx, self.__ny)
-        for i in range(self.nGraphs):
-            self.graphObjList[i].plotData(data[i,:,:],
-                                          x,
-                                          y,
-                                          xmin=xmin,
-                                          xmax=xmax,
-                                          ymin=ymin,
-                                          ymax=ymax,
-                                          zmin=zmin,
-                                          zmax=zmax,
-                                          title = "Channel: %d - Noise: %.2f" %(i, noise[i]))
-        
-        plplot.plssub(1,0)
-        plplot.pladv(0)
-        plplot.plvpor(0., 1., 0., 1.)
-        plplot.plmtex("t",-1., 0.5, 0.5, txtDate)
-        plplot.plflush()
-        plplot.pleop()
-    
-    def end(self):
-        plplot.plend()
-    
+        if not(self.__isPlotIni):
+            if titleList == None:
+                titleList = []
+                for i in range(nsubplot):
+                    titleList.append("Channel: %d - Noise: %.2f" %(i, noise[i]))
 
-if __name__ == '__main__':
-    pass
+            if xlabelList == None:
+                xlabelList = []
+                for i in range(nsubplot):
+                    xlabelList.append("")
+
+            if ylabelList == None:
+                ylabelList = []
+                for i in range(nsubplot):
+                    ylabelList.append("Range (Km)")
+
+            if xmin == None: xmin = x[0]
+            if xmax == None: xmax = x[-1] 
+            if ymin == None: ymin = y[0]
+            if ymax == None: ymax = y[-1]                
+            if zmin == None: zmin = 0
+            if zmax == None: zmax = 120
+            
+            self.initPlot(xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList)
+            self.__isPlotIni = True
+        
+        self.colorplotObj.setFigure(indexPlot)
+        
+        thisDatetime = datetime.datetime.fromtimestamp(self.spectraObj.m_BasicHeader.utc)
+        pltitle = "Self Spectra - Date: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        
+        self.colorplotObj.printTitle(pltitle) #setPlTitle(pltitle)
+        
+        for index in range(nsubplot):
+            data = databuffer[index,:,:]
+            subtitle = "Channel: %d - Noise: %.2f" %(index, noise[index])
+            self.colorplotObj.plot(index+1,x,y,data,subtitle)
+        
+        
+        
+        self.colorplotObj.refresh()
+
+

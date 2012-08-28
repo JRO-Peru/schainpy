@@ -238,6 +238,7 @@ class SpectraProcessor:
         self.dataOutObj.data_cspc = cspc
         self.dataOutObj.data_dc = dc
         self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
+        self.dataOutObj.m_BasicHeader.utc = self.dataInObj.m_BasicHeader.utc
 
         
     def addWriter(self,wrpath):
@@ -245,15 +246,12 @@ class SpectraProcessor:
         objWriter.setup(wrpath)
         self.writerObjList.append(objWriter)
         
-    
-    def addPlotter(self, index=None):
-        
+    def addPlotter(self,index=None):
         if index==None:
             index = self.plotterObjIndex
         
         plotObj = Spectrum(self.dataOutObj, index)
         self.plotterObjList.append(plotObj)
-
     
     def addIntegrator(self,N,timeInterval):
         
@@ -271,14 +269,43 @@ class SpectraProcessor:
         
         self.writerObjIndex += 1
         
-    def plotData(self,xmin=None, xmax=None, ymin=None, ymax=None, winTitle='', index=None):
+    def plotData(self,
+                 xmin=None,
+                 xmax=None,
+                 ymin=None,
+                 ymax=None,
+                 zmin=None,
+                 zmax=None,
+                 titleList=None,
+                 xlabelList=None,
+                 ylabelList=None,
+                 winTitle='',
+                 colormap="br_green",
+                 showColorbar=False,
+                 showPowerProfile=False,
+                 XAxisAsTime=False,
+                 index=None):
+        
         if self.dataOutObj.flagNoData:
             return 0
         
         if len(self.plotterObjList) <= self.plotterObjIndex:
             self.addPlotter(index)
         
-        self.plotterObjList[self.plotterObjIndex].plotData(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,winTitle=winTitle)
+        self.plotterObjList[self.plotterObjIndex].plotData(xmin,
+                                                           xmax,
+                                                           ymin,
+                                                           ymax,
+                                                           zmin,
+                                                           zmax,
+                                                           titleList,
+                                                           xlabelList,
+                                                           ylabelList,
+                                                           winTitle,
+                                                           colormap,
+                                                           showColorbar,
+                                                           showPowerProfile,
+                                                           XAxisAsTime)
         
         self.plotterObjIndex += 1
         
@@ -340,7 +367,7 @@ class SpectraProcessor:
             noise = self.noiseObj.bySort(parm)
             
         self.dataOutObj.noise = noise
-        print 10*numpy.log10(noise)
+#        print 10*numpy.log10(noise)
     
     def selectChannels(self, channelList, pairList=[]):
         
