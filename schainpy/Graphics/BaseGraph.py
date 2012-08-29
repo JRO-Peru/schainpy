@@ -199,7 +199,6 @@ def savePlplot(filename,width,height):
     plplot.plsfnam(filename)
     plplot.plcpstrm(curr_strm,0)
     plplot.plreplot()
-    plplot.plclear()
     plplot.plend1()
     plplot.plsstrm(curr_strm)
     
@@ -215,6 +214,13 @@ def initPlplot(indexPlot,ncol,nrow,winTitle,width,height):
     plplot.plspause(False)
     plplot.plssub(ncol,nrow)
 
+def setNewPage():
+    plplot.plbop()
+    plplot.pladv(0)
+
+def closePage():
+    plplot.pleop()
+    
 def clearData(objGraph):
     objGraph.plotBox(objGraph.xrange[0], objGraph.xrange[1], objGraph.yrange[0], objGraph.yrange[1], "bc", "bc")
     
@@ -238,7 +244,7 @@ def setStrm(indexPlot):
 def plFlush():
     plplot.plflush()
     
-def setPlTitle(pltitle,color):
+def setPlTitle(pltitle,color, szchar=0.7):
     setSubpages(1, 0)
     plplot.pladv(0)
     plplot.plvpor(0., 1., 0., 1.)
@@ -248,12 +254,14 @@ def setPlTitle(pltitle,color):
     if color == "white":
         plplot.plcol0(15)
     
+    plplot.plschr(0.0,szchar)
     plplot.plmtex("t",-1., 0.5, 0.5, pltitle)
     
 def setSubpages(ncol,nrow):
     plplot.plssub(ncol,nrow)
 
 class BaseGraph:
+    
     __name = None
     __xpos = None
     __ypos = None
@@ -267,7 +275,9 @@ class BaseGraph:
     deltax = None
     xmin = None
     xmax = None
+    
     def __init__(self,name,subplot,xpos,ypos,xlabel,ylabel,title,szchar,xrange,yrange,zrange=None,deltax=1.0):
+        
         self.setName(name)
         self.setScreenPos(xpos, ypos)
         self.setLabels(xlabel,ylabel,title)
@@ -553,7 +563,7 @@ class LinearPlot:
         
     
 
-class SpectraPlot:
+class PcolorPlot:
     pcolorObjDic = {}
     colorbarObjDic = {}
     pwprofileObjDic = {}
@@ -577,11 +587,9 @@ class SpectraPlot:
         self.showPowerProfile = showPowerProfile
         self.XAxisAsTime = XAxisAsTime
         
-        nrow = 2
-        if (nsubplot%2)==0:
-            ncol = nsubplot/nrow
-        else:
-            ncol = int(nsubplot)/nrow + 1
+        
+        ncol = int(numpy.sqrt(nsubplot)+0.9)
+        nrow = int(nsubplot*1./ncol + 0.9)
         
         initPlplot(indexPlot,ncol,nrow,winTitle,self.width,self.height)
         setColormap(colormap)
@@ -630,8 +638,13 @@ class SpectraPlot:
 
         return xpos,ypos
     
-    def setup(self,subplot,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel):
+    def createObjects(self,subplot,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel):
+        """
+        Crea los objetos necesarios para un subplot
+        """
+        
         # Config Spectra plot
+        
         szchar = 0.7
         name = "spc"
         key = name + "%d"%subplot
@@ -641,7 +654,6 @@ class SpectraPlot:
         
         xpos,ypos = self.setSpectraPos()
         pcolorObj = BaseGraph(name,subplot,xpos,ypos,xlabel,ylabel,title,szchar,xrange,yrange,zrange)
-        pcolorObj.plotBox(pcolorObj.xrange[0], pcolorObj.xrange[1], pcolorObj.yrange[0], pcolorObj.yrange[1], "bcnst", "bcnstv")
         self.pcolorObjDic[key] = pcolorObj
         
         # Config Colorbar
@@ -654,9 +666,6 @@ class SpectraPlot:
             xrange = [0.,1.]
             yrange = [zmin,zmax]
             cmapObj = BaseGraph(name,subplot,xpos,ypos,"","","dB",szchar,xrange,yrange)
-            cmapObj.plotBox(cmapObj.xrange[0], cmapObj.xrange[1], cmapObj.yrange[0], cmapObj.yrange[1], "bc", "bcm")
-            cmapObj.colorbarPlot(cmapObj.xrange[0], cmapObj.xrange[1], cmapObj.yrange[0], cmapObj.yrange[1])
-            cmapObj.plotBox(cmapObj.xrange[0], cmapObj.xrange[1], cmapObj.yrange[0], cmapObj.yrange[1], "bc", "bcmtsv")
             self.colorbarObjDic[key] = cmapObj
         
         # Config Power profile
@@ -669,21 +678,59 @@ class SpectraPlot:
             xrange = [zmin,zmax]
             yrange = [ymin,ymax]
             powObj = BaseGraph(name,subplot,xpos,ypos,"dB","","Power Profile",szchar,xrange,yrange)
+            self.pwprofileObjDic[key] = powObj
+    
+    def setNewPage(self, pltitle='No title'):
+        szchar = 0.7
+        setNewPage()
+        setPlTitle(pltitle,"black", szchar=szchar)
+        setSubpages(self.ncol, self.nrow)
+        
+    def closePage(self):
+        closePage()
+        
+    def iniPlot(self,subplot):
+        """
+        Inicializa los subplots con su frame, titulo, etc
+        """
+        
+        # Config Spectra plot
+        name = "spc"
+        key = name + "%d"%subplot
+        
+        pcolorObj = self.pcolorObjDic[key]
+        pcolorObj.plotBox(pcolorObj.xrange[0], pcolorObj.xrange[1], pcolorObj.yrange[0], pcolorObj.yrange[1], "bcnst", "bcnstv")
+        
+        # Config Colorbar
+        if self.showColorbar:
+            name = "colorbar"
+            key = name + "%d"%subplot
+            
+            cmapObj = self.colorbarObjDic[key]
+            cmapObj.plotBox(cmapObj.xrange[0], cmapObj.xrange[1], cmapObj.yrange[0], cmapObj.yrange[1], "bc", "bcmtsv")
+            cmapObj.colorbarPlot(cmapObj.xrange[0], cmapObj.xrange[1], cmapObj.yrange[0], cmapObj.yrange[1])
+#            cmapObj.plotBox(cmapObj.xrange[0], cmapObj.xrange[1], cmapObj.yrange[0], cmapObj.yrange[1], "bc", "bcmtsv")
+            
+        # Config Power profile
+        if self.showPowerProfile:
+            name = "pwprofile"
+            key = name + "%d"%subplot
+            
+            powObj = self.pwprofileObjDic[key]
             powObj.setLineStyle(2)
             powObj.plotBox(powObj.xrange[0], powObj.xrange[1], powObj.yrange[0], powObj.yrange[1], "bcntg", "bc")
             powObj.setLineStyle(1)
             powObj.plotBox(powObj.xrange[0], powObj.xrange[1], powObj.yrange[0], powObj.yrange[1], "bc", "bc")
-            self.pwprofileObjDic[key] = powObj
     
     def printTitle(self,pltitle):
-        if self.__lastTitle != None:
-            setPlTitle(self.__lastTitle,"white")
-            
-        self.__lastTitle = pltitle
+#        if self.__lastTitle != None:
+#            setPlTitle(self.__lastTitle,"white")
+#            
+#        self.__lastTitle = pltitle
         
         setPlTitle(pltitle,"black")
         
-        setSubpages(self.ncol,self.nrow)
+#        setSubpages(self.ncol,self.nrow)
         
     def plot(self,subplot,x,y,z,subtitle):
         # Spectra plot
@@ -693,8 +740,10 @@ class SpectraPlot:
         
 #        newx = [x[0],x[-1]]
         pcolorObj = self.pcolorObjDic[key]
+        
         pcolorObj.plotBox(pcolorObj.xrange[0], pcolorObj.xrange[1], pcolorObj.yrange[0], pcolorObj.yrange[1], "bcst", "bcst")
-        pcolorObj.delLabels()
+        
+        #pcolorObj.delLabels()
         pcolorObj.setLabels(title=subtitle)
 
         deltax = None; deltay = None
@@ -712,9 +761,10 @@ class SpectraPlot:
                                 deltay=deltay, 
                                 getGrid=pcolorObj.getGrid)
         
+        #Solo se calcula la primera vez que se ingresa a la funcion
         pcolorObj.getGrid = False
         
-        pcolorObj.plotBox(pcolorObj.xrange[0], pcolorObj.xrange[1], pcolorObj.yrange[0], pcolorObj.yrange[1], "bcst", "bcst")
+        pcolorObj.plotBox(pcolorObj.xrange[0], pcolorObj.xrange[1], pcolorObj.yrange[0], pcolorObj.yrange[1], "bcst", "bcst", nolabels=True)
         
         # Power Profile
         if self.showPowerProfile:
@@ -724,7 +774,7 @@ class SpectraPlot:
             powObj = self.pwprofileObjDic[key]
             
             if powObj.setXYData() != None:
-                clearData(powObj)
+                #clearData(powObj)
                 powObj.setLineStyle(2)
                 powObj.plotBox(powObj.xrange[0], powObj.xrange[1], powObj.yrange[0], powObj.yrange[1], "bcntg", "bc")
                 powObj.setLineStyle(1)
@@ -735,16 +785,11 @@ class SpectraPlot:
             powObj.basicXYPlot(power,y)
             powObj.setXYData(power,y)
     
-    def savePlot(self,indexPlot,path):
+    def savePlot(self,indexPlot,filename):
         
-        now = datetime.datetime.now().timetuple()
-        file = "spc_img%02d_%03d_%02d%02d%02d"%(indexPlot,now[7],now[3],now[4],now[5])
-        filename = os.path.join(path,file+".png")
         width = self.width*self.ncol
         hei = self.height*self.nrow
         savePlplot(filename,width,hei)
-        
-            
     
     def refresh(self):
         plFlush()

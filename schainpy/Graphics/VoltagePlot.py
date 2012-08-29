@@ -94,13 +94,6 @@ class Osciloscope:
         
         self.linearplotObj.refresh()
         
-        
-        
-
-        
-
-        
-
 class RTI:
     colorplotObj = None
     

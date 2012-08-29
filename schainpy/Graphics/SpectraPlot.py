@@ -25,22 +25,45 @@ class Spectrum:
         self.__isPlotIni = False
         self.__xrange = None
         self.__yrange = None
-        self.nGraphs = 0
+        self.nsubplots = 0
         self.indexPlot = index
         self.spectraObj = Spectra
     
-    def setup(self,indexPlot,nsubplot,winTitle='',colormap="br_green",showColorbar=False,showPowerProfile=False,XAxisAsTime=False):
-        self.colorplotObj = SpectraPlot(indexPlot,nsubplot,winTitle,colormap,showColorbar,showPowerProfile,XAxisAsTime)
-    
-    def initPlot(self,xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList):
-        nsubplot = self.spectraObj.nChannels
+    def setup(self,indexPlot, nsubplots, winTitle='', colormap="br_green", showColorbar=False, showPowerProfile=False, XAxisAsTime=False):
+        """
+        Crea un objeto colorPlot con las opciones seleccinoadas
+        """
         
-        for index in range(nsubplot):
+        self.nsubplots = nsubplots
+        self.colorplotObj = PcolorPlot(indexPlot,
+                                        nsubplots,
+                                        winTitle,
+                                        colormap,
+                                        showColorbar,
+                                        showPowerProfile,
+                                        XAxisAsTime)
+        
+    def createObjects(self,xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList):
+        """
+        Configura cada subplot con los valores maximos y minimos incluyendo los subtitulos
+        """
+        
+        for index in range(self.nsubplots):
             title = titleList[index]
             xlabel = xlabelList[index]
             ylabel = ylabelList[index]
             subplot = index
-            self.colorplotObj.setup(subplot+1,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel)
+            self.colorplotObj.createObjects(subplot+1,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel)
+    
+    def initPlot(self):
+        """
+        Configura cada subplot con los valores maximos y minimos incluyendo los subtitulos
+        """
+        
+        
+        for index in range(self.nsubplots):
+            subplot = index
+            self.colorplotObj.iniPlot(subplot+1)
 
     
     def plotData(self,
@@ -58,13 +81,24 @@ class Spectrum:
                  showColorbar = True,
                  showPowerProfile = True,
                  XAxisAsTime = False,
-                 save = False):
+                 save = False,
+                 channelList=[]):
         
-        databuffer = 10.*numpy.log10(self.spectraObj.data_spc)
-        noise = 10.*numpy.log10(self.spectraObj.noise)
+        if channelList == []:
+            channelList = numpy.arange(self.spectraObj.nChannels)
         
-        nsubplot = self.spectraObj.nChannels
-        nsubplot, nX, nY = numpy.shape(databuffer)
+        
+        nsubplots = len(channelList)
+        nX = self.spectraObj.nFFTPoints
+        nY = self.spectraObj.nHeights
+        
+        if self.spectraObj.noise == None:
+            noise = numpy.ones(nsubplots)
+        else:
+            noise = 10.*numpy.log10(self.spectraObj.noise[channelList])
+        
+        datadB = 10.*numpy.log10(self.spectraObj.data_spc[channelList,:,:])    
+        noisedB = 10.*numpy.log10(noise)
         
         x = numpy.arange(nX)        
         y = self.spectraObj.heightList
@@ -72,23 +106,31 @@ class Spectrum:
         indexPlot = self.indexPlot
         
         if not(self.__isPlotConfig):
-            self.setup(indexPlot,nsubplot,winTitle,colormap,showColorbar,showPowerProfile,XAxisAsTime)
+            self.setup(indexPlot,
+                       nsubplots,
+                       winTitle,
+                       colormap,
+                       showColorbar,
+                       showPowerProfile,
+                       XAxisAsTime)
+            
+            
             self.__isPlotConfig = True
-        
+            
         if not(self.__isPlotIni):
             if titleList == None:
                 titleList = []
-                for i in range(nsubplot):
+                for i in range(nsubplots):
                     titleList.append("Channel: %d - Noise: %.2f" %(i, noise[i]))
 
             if xlabelList == None:
                 xlabelList = []
-                for i in range(nsubplot):
+                for i in range(nsubplots):
                     xlabelList.append("")
 
             if ylabelList == None:
                 ylabelList = []
-                for i in range(nsubplot):
+                for i in range(nsubplots):
                     ylabelList.append("Range (Km)")
 
             if xmin == None: xmin = x[0]
@@ -98,29 +140,31 @@ class Spectrum:
             if zmin == None: zmin = 0
             if zmax == None: zmax = 120
             
-            self.initPlot(xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList)
+            self.createObjects(xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList)
             self.__isPlotIni = True
-        
-        self.colorplotObj.setFigure(indexPlot)
         
         thisDatetime = datetime.datetime.fromtimestamp(self.spectraObj.m_BasicHeader.utc)
         pltitle = "Self Spectra - Date: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         
-        self.colorplotObj.printTitle(pltitle) #setPlTitle(pltitle)
+        self.colorplotObj.setFigure(indexPlot)
+        self.colorplotObj.setNewPage(pltitle)
+        self.initPlot()
         
-        for index in range(nsubplot):
-            data = databuffer[index,:,:]
-            subtitle = "Channel: %d - Noise: %.2f" %(index, noise[index])
-            self.colorplotObj.plot(index+1,x,y,data,subtitle)
-        
-        
+        for channel in range(nsubplots):
+            data = datadB[channel,:,:]
+            subtitle = "Channel: %d - Noise: %.2f" %(channel, noise[channel])
+            self.colorplotObj.plot(channel+1, x, y, data, subtitle)
         
         self.colorplotObj.refresh()
         
         if save:
             self.colorplotObj.setFigure(indexPlot)
-            path4plot = "/Users/jro/Pictures"
-            self.colorplotObj.savePlot(indexPlot,path4plot)
-            
+            path = "/home/roj-idl71/tmp/"
+            now = datetime.datetime.now().timetuple()
+            file = "spc_img%02d_%03d_%02d%02d%02d.png"%(indexPlot,now[7],now[3],now[4],now[5])
+            filename = os.path.join(path,file)
+            self.colorplotObj.savePlot(indexPlot, filename)
+        
+        self.colorplotObj.closePage()
 
 

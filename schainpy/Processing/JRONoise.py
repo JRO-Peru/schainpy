@@ -1,7 +1,6 @@
 import numpy
-from Model.Spectra import Spectra
 
-def hildebrand_sekhon(Data, navg):
+def hildebrand_sekhon(data, navg):
     """
     This method is for the objective determination of de noise level in Doppler spectra. This 
     implementation technique is based on the fact that the standard deviation of the spectral 
@@ -16,51 +15,39 @@ def hildebrand_sekhon(Data, navg):
         anoise    :    noise's level
     """
     
-    divisor = 8
-    ratio = 7 / divisor
-    data = Data.reshape(-1)
-    npts = data.size #numbers of points of the data
+    dataflat = data.reshape(-1)
+    dataflat.sort()
+    npts = dataflat.size #numbers of points of the data
     
     if npts < 32:
         print "error in noise - requires at least 32 points"
         return -1.0
     
-    # data sorted in ascending order
-    nmin = int(npts/divisor + ratio);
-    s = 0.0
-    s2 = 0.0
-    data2 = data[:npts] 
-    data2.sort()
+    dataflat2 = numpy.power(dataflat,2)
     
-    for i in range(nmin):
-        s  += data2[i]
-        s2 += data2[i]**2;
-          
-    icount = nmin
-    iflag = 0 
+    cs = numpy.cumsum(dataflat)
+    cs2 = numpy.cumsum(dataflat2)
+    
+    # data sorted in ascending order
+    nmin = int((npts + 7.)/8)
     
     for i in range(nmin, npts):
-        s  += data2[i];
-        s2 += data2[i]**2
-        icount=icount+1;
-        p  = s / float(icount);
+        s = cs[i]
+        s2 = cs2[i]
+        p  = s / float(i);
         p2 = p**2;
-        q  = s2 / float(icount) - p2;
+        q  = s2 / float(i) - p2;
         leftc = p2;
         rightc = q * float(navg);
-
-        if leftc > rightc: 
-            iflag = 1; #No weather signal
+        R2 = leftc/rightc
+        
         # Signal detect: R2 < 1 (R2 = leftc/rightc)
-        if(leftc < rightc):
-            if iflag:
-                break
-
-    anoise = 0.0;
-    for j in range(i):
-        anoise += data2[j];
-
-    anoise = anoise / float(i);
+        if R2 < 1: 
+            npts_noise = i
+            break
+        
+            
+    anoise = numpy.average(dataflat[0:npts_noise])
 
     return anoise;
 

@@ -6,6 +6,7 @@ Created on Feb 7, 2012
 '''
 import os, sys
 import numpy
+import time
 
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
@@ -163,7 +164,7 @@ class SpectraProcessor:
             self.buffer[:,self.profIndex,:] = self.dataInObj.data
             self.profIndex += 1
             
-            if self.profIndex == self.nFFTPoints: 
+            if self.profIndex == self.nFFTPoints:
                 self.__getFft()
                 self.dataOutObj.flagNoData = False
                 
@@ -210,6 +211,7 @@ class SpectraProcessor:
             self.dataOutObj.m_ProcessingHeader.spectraComb
             self.dataOutObj.m_ProcessingHeader.shif_fft
         """
+        
         if self.dataInObj.flagNoData:
             return 0
             
@@ -218,7 +220,8 @@ class SpectraProcessor:
         
         #calculo de self-spectra
         fft_volt = numpy.fft.fftshift(fft_volt,axes=(1,))
-        spc = numpy.abs(fft_volt * numpy.conjugate(fft_volt))
+        spc = fft_volt * numpy.conjugate(fft_volt)
+        spc = spc.real
         
         blocksize = 0
         blocksize += dc.size
@@ -240,7 +243,7 @@ class SpectraProcessor:
         self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
         self.dataOutObj.m_BasicHeader.utc = self.dataInObj.m_BasicHeader.utc
         
-        self.getNoise()
+#        self.getNoise()
         
     def addWriter(self,wrpath):
         objWriter = SpectraWriter(self.dataOutObj)
@@ -286,7 +289,8 @@ class SpectraProcessor:
                  showPowerProfile=False,
                  XAxisAsTime=False,
                  save=False,
-                 index=None):
+                 index=None,
+                 channelList=[]):
         
         if self.dataOutObj.flagNoData:
             return 0
@@ -308,7 +312,8 @@ class SpectraProcessor:
                                                            showColorbar,
                                                            showPowerProfile,
                                                            XAxisAsTime,
-                                                           save)
+                                                           save,
+                                                           channelList)
         
         self.plotterObjIndex += 1
         
@@ -330,16 +335,14 @@ class SpectraProcessor:
             #print "myIncohIntObj.navg: ",myIncohIntObj.navg
             self.dataOutObj.flagNoData = False
             
-            self.getNoise(type="hildebrand")
-#            self.getNoise(type="sort", parm=16)
-            
+            """Calcular el ruido"""
+            self.getNoise()
         else:
             self.dataOutObj.flagNoData = True
         
         self.integratorObjIndex += 1
         
-        """Calcular el ruido"""
-#        self.getNoise(type="hildebrand", parm=1)
+        
         
     def removeDC(self, type):
         
