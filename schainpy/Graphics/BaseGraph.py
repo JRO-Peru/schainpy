@@ -191,17 +191,17 @@ def cmap1_init(colormap="gray"):
 def setColormap(colormap="jet"):
     cmap1_init(colormap)
 
-def savePlplot(indexPlot,filename,ncol,nrow,width,height):
+def savePlplot(filename,width,height):
     curr_strm = plplot.plgstrm()
     save_strm = plplot.plmkstrm()
-    plplot.plsetopt("geometry", "%dx%d"%(width*ncol,height*nrow))
-    plplot.plsdev("pngcairo")
+    plplot.plsetopt("geometry", "%dx%d"%(width,height))
+    plplot.plsdev("png")
     plplot.plsfnam(filename)
     plplot.plcpstrm(curr_strm,0)
     plplot.plreplot()
+    plplot.plclear()
     plplot.plend1()
-    plplot.plsstrm(indexPlot)
-    print ''
+    plplot.plsstrm(curr_strm)
     
 
 def initPlplot(indexPlot,ncol,nrow,winTitle,width,height):
@@ -740,7 +740,9 @@ class SpectraPlot:
         now = datetime.datetime.now().timetuple()
         file = "spc_img%02d_%03d_%02d%02d%02d"%(indexPlot,now[7],now[3],now[4],now[5])
         filename = os.path.join(path,file+".png")
-        savePlplot(indexPlot,filename,self.ncol,self.nrow,self.width,self.height)
+        width = self.width*self.ncol
+        hei = self.height*self.nrow
+        savePlplot(filename,width,hei)
         
             
     

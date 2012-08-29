@@ -239,7 +239,8 @@ class SpectraProcessor:
         self.dataOutObj.data_dc = dc
         self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
         self.dataOutObj.m_BasicHeader.utc = self.dataInObj.m_BasicHeader.utc
-
+        
+        self.getNoise()
         
     def addWriter(self,wrpath):
         objWriter = SpectraWriter(self.dataOutObj)
@@ -329,7 +330,7 @@ class SpectraProcessor:
             #print "myIncohIntObj.navg: ",myIncohIntObj.navg
             self.dataOutObj.flagNoData = False
             
-            self.getNoise(type="hildebrand",parm=myIncohIntObj.navg)
+            self.getNoise(type="hildebrand")
 #            self.getNoise(type="sort", parm=16)
             
         else:
@@ -357,6 +358,9 @@ class SpectraProcessor:
     
     def getNoise(self, type="hildebrand", parm=None):
         
+        if parm == None:
+            parm =self.dataOutObj.m_ProcessingHeader.incoherentInt
+            
         self.noiseObj.setNoise(self.dataOutObj.data_spc)
         
         if type == "hildebrand":

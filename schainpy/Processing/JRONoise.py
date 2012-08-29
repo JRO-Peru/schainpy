@@ -148,7 +148,7 @@ class Noise:
         """
         
         if data == None:
-            return 0
+            raise ValueError, "The data value is not defined"
         
         shape = data.shape
         self.dim = len(shape)
