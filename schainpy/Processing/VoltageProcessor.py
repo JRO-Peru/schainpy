@@ -182,6 +182,7 @@ class VoltageProcessor:
                 showColorbar=True,
                 showPowerProfile=False,
                 XAxisAsTime=True,
+                save=False,
                 index=None):
         
         if self.dataOutObj.flagNoData:
@@ -205,7 +206,8 @@ class VoltageProcessor:
                                                            colormap,
                                                            showColorbar,
                                                            showPowerProfile,
-                                                           XAxisAsTime)
+                                                           XAxisAsTime,
+                                                           save)
         
         self.plotterObjIndex += 1
 

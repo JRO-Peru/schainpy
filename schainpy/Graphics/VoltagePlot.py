@@ -136,7 +136,8 @@ class RTI:
                  colormap="br_green",
                  showColorbar=True,
                  showPowerProfile=True,
-                 XAxisAsTime=True):
+                 XAxisAsTime=True,
+                 save = False):
         
         databuffer = self.voltageObj.data
         timedata = self.voltageObj.m_BasicHeader.utc
@@ -188,3 +189,11 @@ class RTI:
             self.colorplotObj.plot(subplot=index+1,x=timedata,y=height,z=data)
         
         self.colorplotObj.refresh()
+        
+        if save:
+            self.colorplotObj.setFigure(indexPlot)
+            path = "/Users/jro/Pictures"
+            now = datetime.datetime.now().timetuple()
+            file = "rti_img%02d_%03d_%02d%02d%02d.png"%(indexPlot,now[7],now[3],now[4],now[5])
+            filename = os.path.join(path,file)
+            self.colorplotObj.savePlot(indexPlot, filename)

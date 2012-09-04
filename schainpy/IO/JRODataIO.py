@@ -287,6 +287,7 @@ class JRODataReader(JRODataIO):
         """
         raise ValueError, "This method has not been implemented"
         
+#    def setup(self, dataOutObj=None, path=None, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
     def setup(self, dataOutObj=None, path=None, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
         """
         setup configura los parametros de lectura de la clase DataReader.

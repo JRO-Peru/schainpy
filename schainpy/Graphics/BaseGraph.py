@@ -822,6 +822,8 @@ class RtiPlot:
         nrow = nsubplot
         initPlplot(indexPlot,ncol,nrow,winTitle,self.width,self.height)
         setColormap(colormap)
+        self.ncol = ncol
+        self.nrow = nrow
     
     def setFigure(self,indexPlot):
         setStrm(indexPlot)
@@ -1005,6 +1007,12 @@ class RtiPlot:
             powObj.plotBox(powObj.xrange[0], powObj.xrange[1], powObj.yrange[0], powObj.yrange[1], "bc", "bc")
             powObj.basicXYPlot(data,y)
             powObj.setXYData(data,y)
-    
+            
+    def savePlot(self,indexPlot,filename):
+        
+        width = self.width*self.ncol
+        hei = self.height*self.nrow
+        savePlplot(filename,width,hei)
+        
     def refresh(self):
         plFlush()
