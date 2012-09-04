@@ -243,6 +243,10 @@ def setStrm(indexPlot):
 
 def plFlush():
     plplot.plflush()
+
+def plShow():
+    plplot.plspause(True)
+    plplot.plend()
     
 def setPlTitle(pltitle,color, szchar=0.7):
     setSubpages(1, 0)
@@ -510,6 +514,9 @@ class LinearPlot:
         
         return xpos,ypos
     
+    def show(self):
+        plShow()
+        
     def refresh(self):
         plFlush()
         
@@ -536,10 +543,17 @@ class LinearPlot:
                 clearData(linearObj)
                 
         else:
+            if type.lower() == 'simple':
+                linearObj.setXYData(x,y,"real")
             if type.lower() == 'power':
                 linearObj.setXYData(x,abs(y),"real")
             if type.lower() == 'iq':
                 linearObj.setXYData(x,y,"complex")
+        
+        if type.lower() == 'simple':
+            colline = 9
+            linearObj.basicLineTimePlot(x, y, xmin, xmax, ymin, ymax, colline)
+            linearObj.setXYData(x,y,"real")
         
         if type.lower() == 'power':
             colline = 9
@@ -1016,3 +1030,49 @@ class RtiPlot:
         
     def refresh(self):
         plFlush()
+
+if __name__ == '__main__':
+    
+    #Setting the signal
+    fs = 8000
+    f0 = 200
+    f1 = 400
+    T = 1./fs
+    x = numpy.arange(160)
+    y1 = numpy.sin(2*numpy.pi*f0*x*T)
+    y2 = numpy.sin(2*numpy.pi*f1*x*T)
+    signalList = [y1,y2]
+    
+    xmin = numpy.min(x)
+    xmax = numpy.max(x)
+    ymin = numpy.min(y1)
+    ymax = numpy.max(y1)
+    
+    # Creating Object
+    indexPlot = 1
+    nsubplot = 2
+    winTitle = "mi grafico v1"
+    
+    subplotTitle = "subplot - No."
+    xlabel = ""
+    ylabel = ""
+    
+    linearObj = LinearPlot(indexPlot,nsubplot,winTitle)
+    
+    #Config SubPlots
+    for subplot in range(nsubplot):
+        indexplot = subplot + 1
+        title = subplotTitle + '%d'%indexplot
+        linearObj.setup(indexplot, xmin, xmax, ymin, ymax, title, xlabel, ylabel)
+    
+    #Plotting
+    type = "simple"
+    for subplot in range(nsubplot):
+        indexplot = subplot + 1
+        y = signalList[subplot]
+        linearObj.plot(indexplot, x, y, type)
+        
+    linearObj.refresh()
+    linearObj.show()
+
+    print "end"
