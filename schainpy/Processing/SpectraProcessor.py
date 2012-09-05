@@ -73,7 +73,7 @@ class SpectraProcessor:
         self.writerObjList = []
         self.plotterObjList = []
         
-        self.noiseObj = Noise()
+        self.noiseObj = None
         self.buffer = None
         self.profIndex = 0
         
@@ -331,7 +331,7 @@ class SpectraProcessor:
         if myIncohIntObj.isReady:
             self.dataOutObj.data_spc = myIncohIntObj.data
             self.dataOutObj.nAvg = myIncohIntObj.navg
-            self.dataOutObj.m_ProcessingHeader.incoherentInt *= myIncohIntObj.navg
+            self.dataOutObj.m_ProcessingHeader.incoherentInt = self.dataInObj.m_ProcessingHeader.incoherentInt*myIncohIntObj.navg
             #print "myIncohIntObj.navg: ",myIncohIntObj.navg
             self.dataOutObj.flagNoData = False
             
