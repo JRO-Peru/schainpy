@@ -246,7 +246,7 @@ class VoltageProcessor:
         
         self.integratorObjIndex += 1
     
-    def decoder(self,code=None,type = 0):
+    def decoder(self,code=None, mode = 0):
         
         if self.dataOutObj.flagNoData:
             return 0
@@ -259,13 +259,12 @@ class VoltageProcessor:
             self.addDecoder(code,ncode,nbaud)
         
         myDecodObj = self.decoderObjList[self.decoderObjIndex]
-        myDecodObj.exe(data=self.dataOutObj.data,type=type)
+        data, ndata = myDecodObj.exe(data=self.dataOutObj.data,mode=mode)
         
-        if myDecodObj.flag:
-            self.dataOutObj.data = myDecodObj.data
-            self.dataOutObj.flagNoData = False
-        else:
-            self.dataOutObj.flagNoData = True
+        self.dataOutObj.data = data
+        self.dataOutObj.nHeights = ndata
+        self.dataOutObj.heightList = self.dataInObj.heightList[:ndata]
+        self.dataOutObj.flagNoData = False
         
         self.decoderObjIndex += 1
 
@@ -502,6 +501,7 @@ class Decoder:
     def __init__(self,code, ncode, nbaud):
         
         self.data = None
+        self.ndata = None
         self.profCounter = 1
         self.nCode = ncode 
         self.nBaud = nbaud
@@ -509,16 +509,20 @@ class Decoder:
         self.code = code #this is a List
         self.flag = False
             
-    def exe(self, data, ndata=None, type = 0):
+    def exe(self, data, ndata=None, mode = 0):
         
         if ndata == None: ndata = data.shape[1] 
         
-        if type == 0:
+        if mode == 0:
             self.convolutionInFreq(data,ndata)
             
-        if type == 1:
+        if mode == 1:
             self.convolutionInTime(data, ndata)
-            
+        
+        self.ndata = ndata - self.nBaud + 1
+        
+        return self.data, self.ndata
+        
     def convolutionInFreq(self,data, ndata):
         
         newcode = numpy.zeros(ndata)    
@@ -535,7 +539,8 @@ class Decoder:
         
         conv = fft_data*fft_code
             
-        self.data = numpy.fft.ifft(conv,axis=1)
+        data = numpy.fft.ifft(conv,axis=1)
+        self.data = data[:,:-self.nBaud+1]
         self.flag = True
         
         if self.profCounter == self.nCode:
@@ -551,7 +556,7 @@ class Decoder:
         self.codeIndex += 1
         conv = data.copy()
         for i in range(nchannel):
-            conv[i,:] = numpy.correlate(data[i,:], newcode, 'same')
+            conv[i,:] = numpy.correlate(data[i,:], newcode)
             
         self.data = conv
         self.flag = True
@@ -585,9 +590,9 @@ class CoherentIntegrator:
             self.timeIntervalInSeconds = timeInterval * 60. #if (type(timeInterval)!=integer) -> change this line
         
         if ((timeInterval==None) and (N==None)):
-             print 'N = None ; timeInterval = None'
-             sys.exit(0)
-        elif timeInterval == None:
+            raise ValueError, "N = None ; timeInterval = None"
+        
+        if timeInterval == None:
             self.timeFlag = False
         else:
             self.timeFlag = True

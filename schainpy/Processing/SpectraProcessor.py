@@ -148,6 +148,10 @@ class SpectraProcessor:
     
     def init(self):
         
+        self.nHeights = self.dataInObj.nHeights
+        self.dataOutObj.nHeights = self.nHeights
+        self.dataOutObj.heightList = self.dataInObj.heightList
+        
         self.integratorObjIndex = 0
         self.decoderObjIndex = 0
         self.writerObjIndex = 0
@@ -158,7 +162,7 @@ class SpectraProcessor:
             if self.buffer == None:
                 self.buffer = numpy.zeros((self.nChannels,
                                            self.nFFTPoints,
-                                           self.nHeights), 
+                                           self.dataInObj.nHeights), 
                                           dtype='complex')
             
             self.buffer[:,self.profIndex,:] = self.dataInObj.data

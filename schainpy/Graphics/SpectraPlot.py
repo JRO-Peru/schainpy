@@ -20,14 +20,14 @@ from Model.Spectra import Spectra
 class Spectrum:
     colorplotObj = None
     
-    def __init__(self,Spectra, index):
+    def __init__(self, spectraObj, index):
         self.__isPlotConfig = False
         self.__isPlotIni = False
         self.__xrange = None
         self.__yrange = None
         self.nsubplots = 0
         self.indexPlot = index
-        self.spectraObj = Spectra
+        self.spectraObj = spectraObj
     
     def setup(self,indexPlot, nsubplots, winTitle='', colormap="br_green", showColorbar=False, showPowerProfile=False, XAxisAsTime=False):
         """
@@ -137,8 +137,8 @@ class Spectrum:
             if xmax == None: xmax = x[-1] 
             if ymin == None: ymin = y[0]
             if ymax == None: ymax = y[-1]                
-            if zmin == None: zmin = 0
-            if zmax == None: zmax = 120
+            if zmin == None: zmin = datadB.min()
+            if zmax == None: zmax = datadB.max()
             
             self.createObjects(xmin,xmax,ymin,ymax,zmin,zmax,titleList,xlabelList,ylabelList)
             self.__isPlotIni = True
