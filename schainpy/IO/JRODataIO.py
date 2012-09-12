@@ -288,7 +288,205 @@ class JRODataReader(JRODataIO):
         raise ValueError, "This method has not been implemented"
         
 #    def setup(self, dataOutObj=None, path=None, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
-    def setup(self, dataOutObj=None, path=None, startDateTime=None, endDateTime=None, set=0, expLabel = "", ext = None, online = 0):
+    
+    def __searchFilesOnLine(self, path, expLabel = "", ext = None, startDate=None, endDate=None, startTime=None, endTime=None):
+        """
+        Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
+        devuelve el archivo encontrado ademas de otros datos.
+        
+        Input: 
+            path           :    carpeta donde estan contenidos los files que contiene data
+            
+            startDate      :    Fecha inicial. Rechaza todos los directorios donde 
+                                file end time < startDate (obejto datetime.date)
+                                                         
+            endDate        :    Fecha final. Rechaza todos los directorios donde 
+                                file start time > endDate (obejto datetime.date)
+            
+            startTime      :    Tiempo inicial. Rechaza todos los archivos donde 
+                                file end time < startTime (obejto datetime.time)
+                                                         
+            endTime        :    Tiempo final. Rechaza todos los archivos donde 
+                                file start time > endTime (obejto datetime.time)
+                                
+            ext              :    extension de los files  
+
+        Return:
+            directory   :    eL directorio donde esta el file encontrado
+            filename    :    el ultimo file de una determinada carpeta
+            year        :    el anho
+            doy         :    el numero de dia del anho
+            set         :    el set del archivo
+            
+            
+        """
+        dirList = []
+        pathList = []
+        directory = None
+        
+        #Filtra solo los directorios
+        for thisPath in os.listdir(path):
+            if os.path.isdir(os.path.join(path, thisPath)):
+                dirList.append(thisPath)
+
+        if not(dirList):
+            return None, None, None, None, None
+
+        dirList = sorted( dirList, key=str.lower )
+
+        if startDate:
+            startDateTime = datetime.datetime.combine(startDate, startTime)
+            thisDateTime = startDateTime
+            if endDate == None: endDateTime = startDateTime
+            else: endDateTime = datetime.datetime.combine(endDate, endTime)
+            
+            while(thisDateTime <= endDateTime):
+                year = thisDateTime.timetuple().tm_year
+                doy = thisDateTime.timetuple().tm_yday
+                
+                match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
+                if len(match) == 0:
+                    thisDateTime += datetime.timedelta(1)
+                    continue
+                
+                pathList.append(os.path.join(path,match[0], expLabel))
+                thisDateTime += datetime.timedelta(1)
+
+            if not(pathList):
+                print "\tNo files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
+                return None, None, None, None, None
+
+            directory = pathList[0]
+            
+        else:
+            directory = dirList[-1]
+            directory = os.path.join(path,directory)
+
+        filename = getlastFileFromPath(directory, ext)
+
+        if not(filename):
+            return None, None, None, None, None
+
+        if not(self.__verifyFile(os.path.join(directory, filename))):
+            return None, None, None, None, None
+
+        year = int( filename[1:5] )
+        doy  = int( filename[5:8] )
+        set  = int( filename[8:11] )        
+        
+        return directory, filename, year, doy, set
+
+
+    def __searchFilesOffLine(self, path, startDate, endDate, startTime=datetime.time(0,0,0), endTime=datetime.time(23,59,59),set=None, expLabel = "", ext = ".r"):
+        """
+        Realiza una busqueda de los archivos que coincidan con los parametros
+        especificados y se encuentren ubicados en el path indicado. Para realizar una busqueda
+        correcta la estructura de directorios debe ser la siguiente:
+        
+        ...path/D[yyyy][ddd]/expLabel/D[yyyy][ddd][sss].ext
+        
+        [yyyy]: anio
+        [ddd] : dia del anio
+        [sss] : set del archivo        
+        
+        Inputs:
+            path           :    Directorio de datos donde se realizara la busqueda. Todos los
+                                ficheros que concidan con el criterio de busqueda seran
+                                almacenados en una lista y luego retornados.
+            startDate      :    Fecha inicial. Rechaza todos los directorios donde 
+                                file end time < startDate (obejto datetime.date)
+                                                         
+            endDate        :    Fecha final. Rechaza todos los directorios donde 
+                                file start time > endDate (obejto datetime.date)
+            
+            startTime      :    Tiempo inicial. Rechaza todos los archivos donde 
+                                file end time < startTime (obejto datetime.time)
+                                                         
+            endTime        :    Tiempo final. Rechaza todos los archivos donde 
+                                file start time > endTime (obejto datetime.time)
+                                
+            set            :    Set del primer archivo a leer. Por defecto None
+            
+            expLabel       :    Nombre del subdirectorio de datos.  Por defecto ""
+            
+            ext            :    Extension de los archivos a leer. Por defecto .r
+            
+        Return:
+            
+            (pathList, filenameList)
+            
+            pathList        :    Lista de directorios donde se encontraron archivos dentro 
+                                 de los parametros especificados
+            filenameList    :    Lista de archivos (ruta completa) que coincidieron con los
+                                 parametros especificados.
+        
+        Variables afectadas:
+        
+            self.filenameList:    Lista de archivos (ruta completa) que la clase utiliza
+                                  como fuente para leer los bloque de datos, si se termina
+                                  de leer todos los bloques de datos de un determinado 
+                                  archivo se pasa al siguiente archivo de la lista.
+             
+        Excepciones:
+        
+        """
+        
+        dirList = []
+        for thisPath in os.listdir(path):
+            if os.path.isdir(os.path.join(path,thisPath)):
+                dirList.append(thisPath)
+
+        if not(dirList):
+            return None, None
+
+        pathList = []
+        dateList = []
+        
+        thisDate = startDate
+        
+        while(thisDate <= endDate):
+            year = thisDate.timetuple().tm_year
+            doy = thisDate.timetuple().tm_yday
+            
+            match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
+            if len(match) == 0:
+                thisDate += datetime.timedelta(1)
+                continue
+            
+            pathList.append(os.path.join(path,match[0],expLabel))
+            dateList.append(thisDate)
+            thisDate += datetime.timedelta(1)
+        
+        filenameList = []
+        for index in range(len(pathList)):
+            
+            thisPath = pathList[index]
+            fileList = glob.glob1(thisPath, "*%s" %ext)
+            fileList.sort()
+            
+            #Busqueda de datos en el rango de horas indicados
+            thisDate = dateList[index]
+            startDT = datetime.datetime.combine(thisDate, startTime)
+            endDT = datetime.datetime.combine(thisDate, endTime)
+            
+            startUtSeconds = time.mktime(startDT.timetuple())
+            endUtSeconds = time.mktime(endDT.timetuple())
+            
+            for file in fileList:
+                
+                filename = os.path.join(thisPath,file)
+                
+                if isThisFileinRange(filename, startUtSeconds, endUtSeconds):
+                    filenameList.append(filename)
+                    
+        if not(filenameList):
+            return None, None
+
+        self.filenameList = filenameList
+        
+        return pathList, filenameList
+        
+    def setup(self, dataOutObj=None, path=None, startDate=None, endDate=None, startTime=datetime.time(0,0,0), endTime=datetime.time(23,59,59), set=0, expLabel = "", ext = None, online = 0):
         """
         setup configura los parametros de lectura de la clase DataReader.
         
@@ -302,11 +500,17 @@ class JRODataReader(JRODataIO):
                                      
                                      path/D[yyyy][ddd]/expLabel/P[yyyy][ddd][sss][ext]
             
-            startDateTime       :    Fecha inicial. Rechaza todos los archivos donde
-                                     file end time < startDatetime (obejto datetime.datetime)
+            startDate      :    Fecha inicial. Rechaza todos los directorios donde 
+                                file end time < startDate (obejto datetime.date)
+                                                         
+            endDate        :    Fecha final. Rechaza todos los directorios donde 
+                                file start time > endDate (obejto datetime.date)
             
-            endDateTime         :    Fecha final. Si no es None, rechaza todos los archivos donde
-                                     file end time < startDatetime (obejto datetime.datetime)
+            startTime      :    Tiempo inicial. Rechaza todos los archivos donde 
+                                file end time < startTime (obejto datetime.time)
+                                                         
+            endTime        :    Tiempo final. Rechaza todos los archivos donde 
+                                file start time > endTime (obejto datetime.time)
             
             set                 :    Set del primer archivo a leer. Por defecto None
             
@@ -321,8 +525,6 @@ class JRODataReader(JRODataIO):
             1    :    Si encuentra files que cumplan con las condiciones dadas
         
         Affected:
-            self.startUTCSeconds
-            self.endUTCSeconds
             self.startYear 
             self.endYear
             self.startDoy
@@ -343,14 +545,14 @@ class JRODataReader(JRODataIO):
         self.dataOutObj = dataOutObj
             
         if online:
-            print "Searching files ..."  
-            doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
+            print "Searching files in online mode..."  
+            doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=exp)        
 
             if not(doypath):
                 for nTries in range( self.nTries ):
                     print '\tWaiting %0.2f sec for valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
                     time.sleep( self.delay )
-                    doypath, file, year, doy, set = self.__searchFilesOnLine(path, startDateTime, endDateTime, expLabel, ext)        
+                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=exp)        
                     if doypath:
                         break
             
@@ -364,7 +566,8 @@ class JRODataReader(JRODataIO):
             self.path = path
 
         else: # offline
-            pathList, filenameList = self.__searchFilesOffLine(path, startDateTime, endDateTime, set, expLabel, ext)
+            print "Searching files in offline mode..."
+            pathList, filenameList = self.__searchFilesOffLine(path, startDate, endDate, startTime, endTime, set, expLabel, ext)
             if not(pathList):
                 print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
                 return None
@@ -379,23 +582,14 @@ class JRODataReader(JRODataIO):
         ext = ext.lower()
 
         if not( self.setNextFile() ):
-            if (startDateTime != None) and (endDateTime != None):
-                print "No files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
-            elif startDateTime != None:
-                print "No files in : %s" % startDateTime.ctime()
+            if (startDate != None) and (endDate != None):
+                print "No files in range: %s - %s" %(startDate.ctime(), endDate.ctime())
+            elif startDate != None:
+                print "No files in : %s" % startDate.ctime()
             else:
                 print "No files"
             return None
         
-        if startDateTime != None:
-            self.startUTCSeconds = time.mktime(startDateTime.timetuple())
-            self.startYear = startDateTime.timetuple().tm_year 
-            self.startDoy = startDateTime.timetuple().tm_yday
-        
-        if endDateTime != None:
-            self.endUTCSeconds = time.mktime(endDateTime.timetuple())
-            self.endYear = endDateTime.timetuple().tm_year
-            self.endDoy = endDateTime.timetuple().tm_yday
         #call fillHeaderValues() - to Data Object
         
         self.updateDataHeader()
@@ -732,170 +926,6 @@ class JRODataReader(JRODataIO):
         self.__readFirstHeader()
         self.nReadBlocks = 0
         return 1
-
-    def __searchFilesOnLine(self, path, startDateTime=None, endDateTime=None, expLabel = "", ext = None):
-        """
-        Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
-        devuelve el archivo encontrado ademas de otros datos.
-        
-        Input: 
-            path             :    carpeta donde estan contenidos los files que contiene data  
-            startDateTime    :    punto especifico en el tiempo del cual se requiere la data
-            ext              :    extension de los files  
-
-        Return:
-            year        :    el anho
-            doy         :    el numero de dia del anho
-            set         :    el set del archivo
-            filename    :    el ultimo file de una determinada carpeta
-            directory   :    eL directorio donde esta el file encontrado
-        """
-        dirList = []
-        pathList = []
-        directory = None
-        
-        for thisPath in os.listdir(path):
-            if os.path.isdir(os.path.join(path,thisPath)):
-                dirList.append(thisPath)
-
-        if not(dirList):
-            return None, None, None, None, None
-
-        dirList = sorted( dirList, key=str.lower )
-
-        if startDateTime:
-            thisDateTime = startDateTime
-            if endDateTime == None: endDateTime = startDateTime
-            
-            while(thisDateTime <= endDateTime):
-                year = thisDateTime.timetuple().tm_year
-                doy = thisDateTime.timetuple().tm_yday
-                
-                match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
-                if len(match) == 0:
-                    thisDateTime += datetime.timedelta(1)
-                    continue
-                
-                pathList.append(os.path.join(path,match[0], expLabel))
-                thisDateTime += datetime.timedelta(1)
-
-            if not(pathList):
-                print "\tNo files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
-                return None, None, None, None, None
-
-            directory = pathList[0]
-            
-        else:
-            directory = dirList[-1]
-            directory = os.path.join(path,directory)
-
-        filename = getlastFileFromPath(directory, ext)
-
-        if not(filename):
-            return None, None, None, None, None
-
-        if not(self.__verifyFile(os.path.join(directory, filename))):
-            return None, None, None, None, None
-
-        year = int( filename[1:5] )
-        doy  = int( filename[5:8] )
-        set  = int( filename[8:11] )        
-        
-        return directory, filename, year, doy, set
-
-
-    def __searchFilesOffLine(self, path, startDateTime, endDateTime, set=None, expLabel = "", ext = ".r"):
-        """
-        Realiza una busqueda de los archivos que coincidan con los parametros
-        especificados y se encuentren ubicados en el path indicado. Para realizar una busqueda
-        correcta la estructura de directorios debe ser la siguiente:
-        
-        ...path/D[yyyy][ddd]/expLabel/D[yyyy][ddd][sss].ext
-        
-        [yyyy]: anio
-        [ddd] : dia del anio
-        [sss] : set del archivo        
-        
-        Inputs:
-            path           :    Directorio de datos donde se realizara la busqueda. Todos los
-                                ficheros que concidan con el criterio de busqueda seran
-                                almacenados en una lista y luego retornados.
-            startDateTime  :    Fecha inicial. Rechaza todos los archivos donde 
-                                file end time < startDateTime (obejto datetime.datetime)
-                                                         
-            endDateTime    :    Fecha final. Rechaza todos los archivos donde 
-                                file start time > endDateTime (obejto datetime.datetime)
-            
-            set            :    Set del primer archivo a leer. Por defecto None
-            
-            expLabel       :    Nombre del subdirectorio de datos.  Por defecto ""
-            
-            ext            :    Extension de los archivos a leer. Por defecto .r
-            
-        Return:
-            
-            (pathList, filenameList)
-            
-            pathList        :    Lista de directorios donde se encontraron archivos dentro 
-                                 de los parametros especificados
-            filenameList    :    Lista de archivos (ruta completa) que coincidieron con los
-                                 parametros especificados.
-        
-        Variables afectadas:
-        
-            self.filenameList:    Lista de archivos (ruta completa) que la clase utiliza
-                                  como fuente para leer los bloque de datos, si se termina
-                                  de leer todos los bloques de datos de un determinado 
-                                  archivo se pasa al siguiente archivo de la lista.
-             
-        Excepciones:
-        
-        """
-        
-        print "Searching files ..."
-        
-        dirList = []
-        for thisPath in os.listdir(path):
-            if os.path.isdir(os.path.join(path,thisPath)):
-                dirList.append(thisPath)
-
-        if not(dirList):
-            return None, None
-
-        pathList = []
-        
-        thisDateTime = startDateTime
-        
-        while(thisDateTime <= endDateTime):
-            year = thisDateTime.timetuple().tm_year
-            doy = thisDateTime.timetuple().tm_yday
-            
-            match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
-            if len(match) == 0:
-                thisDateTime += datetime.timedelta(1)
-                continue
-            
-            pathList.append(os.path.join(path,match[0],expLabel))
-            thisDateTime += datetime.timedelta(1)
-        
-        startUtSeconds = time.mktime(startDateTime.timetuple())
-        endUtSeconds = time.mktime(endDateTime.timetuple())
-        
-        filenameList = []
-        for thisPath in pathList:
-            fileList = glob.glob1(thisPath, "*%s" %ext)
-            fileList.sort()
-            for file in fileList:
-                filename = os.path.join(thisPath,file)
-                if isThisFileinRange(filename, startUtSeconds, endUtSeconds):
-                    filenameList.append(filename)
-                    
-        if not(filenameList):
-            return None, None
-
-        self.filenameList = filenameList
-        
-        return pathList, filenameList
 
     def __verifyFile(self, filename, msgFlag=True):
         """
