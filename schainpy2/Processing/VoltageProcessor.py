@@ -5,7 +5,7 @@ import numpy
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Model.Voltage import Voltage
+from Data.Voltage import Voltage
 
 
 class VoltageProcessor:

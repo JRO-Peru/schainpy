@@ -35,6 +35,7 @@ class BasicHeader(Header):
     struct = None
         
     def __init__(self):
+        
         self.size = 0
         self.version = 0
         self.dataBlock = 0
@@ -81,18 +82,18 @@ class BasicHeader(Header):
 class SystemHeader(Header):
     
     size = None
-    numSamples = None
-    numProfiles = None
-    numChannels = None
+    nSamples = None
+    nProfiles = None
+    nChannels = None
     adcResolution = None
     pciDioBusWidth = None
     struct = None
         
     def __init__(self):
         self.size = 0 
-        self.numSamples = 0
-        self.numProfiles = 0
-        self.numChannels = 0
+        self.nSamples = 0
+        self.nProfiles = 0
+        self.nChannels = 0
         self.adcResolution = 0
         self.pciDioBusWidth = 0
         self.struct = numpy.dtype([
@@ -109,9 +110,9 @@ class SystemHeader(Header):
         try:
             header = numpy.fromfile(fp,self.struct,1)
             self.size = header['nSize'][0]
-            self.numSamples = header['nNumSamples'][0]
-            self.numProfiles = header['nNumProfiles'][0]
-            self.numChannels = header['nNumChannels'][0]
+            self.nSamples = header['nNumSamples'][0]
+            self.nProfiles = header['nNumProfiles'][0]
+            self.nChannels = header['nNumChannels'][0]
             self.adcResolution = header['nADCResolution'][0]
             self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
         except:
@@ -120,7 +121,7 @@ class SystemHeader(Header):
         return 1
     
     def write(self, fp):
-        headerTuple = (self.size,self.numSamples,self.numProfiles,self.numChannels,self.adcResolution,self.pciDioBusWidth)
+        headerTuple = (self.size,self.nSamples,self.nProfiles,self.nChannels,self.adcResolution,self.pciDioBusWidth)
         header = numpy.array(headerTuple,self.struct)
         header.tofile(fp)
         
@@ -134,7 +135,7 @@ class RadarControllerHeader(Header):
     ipp = None
     txA = None
     txB = None
-    numWindows = None
+    nWindows = None
     numTaus = None
     codeType = None
     line6Function = None
@@ -154,7 +155,7 @@ class RadarControllerHeader(Header):
         self.ipp = 0
         self.txA = 0
         self.txB = 0
-        self.numWindows = 0
+        self.nWindows = 0
         self.numTaus = 0
         self.codeType = 0
         self.line6Function = 0
@@ -212,7 +213,7 @@ class RadarControllerHeader(Header):
             self.ipp = header['fIpp'][0]
             self.txA = header['fTxA'][0]
             self.txB = header['fTxB'][0]
-            self.numWindows = header['nNumWindows'][0]
+            self.nWindows = header['nNumWindows'][0]
             self.numTaus = header['nNumTaus'][0]
             self.codeType = header['nCodeType'][0]
             self.line6Function = header['nLine6Function'][0]
@@ -230,7 +231,7 @@ class RadarControllerHeader(Header):
             backFp = fp.tell() - jumpFp
             fp.seek(backFp)
             
-            self.samplingWindow = numpy.fromfile(fp,self.samplingWindowStruct,self.numWindows)
+            self.samplingWindow = numpy.fromfile(fp,self.samplingWindowStruct,self.nWindows)
             self.numHeights = numpy.sum(self.samplingWindow['nsa'])
             self.firstHeight = self.samplingWindow['h0']
             self.deltaHeight = self.samplingWindow['dh']
@@ -272,7 +273,7 @@ class RadarControllerHeader(Header):
                        self.ipp,
                        self.txA,
                        self.txB,
-                       self.numWindows,
+                       self.nWindows,
                        self.numTaus,
                        self.codeType,
                        self.line6Function,
@@ -297,14 +298,14 @@ class RadarControllerHeader(Header):
 class ProcessingHeader(Header):
     
     size = None
-    dataType = None
+    dtype = None
     blockSize = None
     profilesPerBlock = None
     dataBlocksPerFile = None
-    numWindows = None
+    nWindows = None
     processFlags = None
-    coherentInt = None
-    incoherentInt = None
+    nCohInt = None
+    nIncohInt = None
     totalSpectra = None
     struct = None
     flag_dc = None
@@ -316,10 +317,10 @@ class ProcessingHeader(Header):
         self.blockSize = 0
         self.profilesPerBlock = 0
         self.dataBlocksPerFile = 0
-        self.numWindows = 0
+        self.nWindows = 0
         self.processFlags = 0
-        self.coherentInt = 0
-        self.incoherentInt = 0
+        self.nCohInt = 0
+        self.nIncohInt = 0
         self.totalSpectra = 0
         self.struct = numpy.dtype([
                                ('nSize','<u4'),
@@ -355,12 +356,12 @@ class ProcessingHeader(Header):
             self.blockSize = header['nSizeOfDataBlock'][0]
             self.profilesPerBlock = header['nProfilesperBlock'][0]
             self.dataBlocksPerFile = header['nDataBlocksperFile'][0]
-            self.numWindows = header['nNumWindows'][0]
+            self.nWindows = header['nNumWindows'][0]
             self.processFlags = header['nProcessFlags']
-            self.coherentInt = header['nCoherentIntegrations'][0]
-            self.incoherentInt = header['nIncoherentIntegrations'][0]
+            self.nCohInt = header['nCoherentIntegrations'][0]
+            self.nIncohInt = header['nIncoherentIntegrations'][0]
             self.totalSpectra = header['nTotalSpectra'][0]
-            self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.numWindows)
+            self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.nWindows)
             self.numHeights = numpy.sum(self.samplingWindow['nsa'])
             self.firstHeight = self.samplingWindow['h0']
             self.deltaHeight = self.samplingWindow['dh']
@@ -406,16 +407,16 @@ class ProcessingHeader(Header):
                        self.blockSize,
                        self.profilesPerBlock,
                        self.dataBlocksPerFile,
-                       self.numWindows,
+                       self.nWindows,
                        self.processFlags,
-                       self.coherentInt,
-                       self.incoherentInt,
+                       self.nCohInt,
+                       self.nIncohInt,
                        self.totalSpectra)
         
         header = numpy.array(headerTuple,self.struct)  
         header.tofile(fp)
         
-        if self.numWindows != 0:
+        if self.nWindows != 0:
             sampleWindowTuple = (self.firstHeight,self.deltaHeight,self.samplesWin)
             samplingWindow = numpy.array(sampleWindowTuple,self.structSamplingWindow)
             samplingWindow.tofile(fp)

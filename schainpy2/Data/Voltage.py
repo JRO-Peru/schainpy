@@ -1,27 +1,52 @@
+import os, sys
 import numpy
+
+path = os.path.split(os.getcwd())[0]
+sys.path.append(path)
+
 from JROData import JROData
-# No deberia importar los Headers
+from IO.JROHeader import SystemHeader, RadarControllerHeader
+
 class Voltage(JROData):
-    data = None
+    
     nCohInt = None
     
     def __init__(self):
-        self.type = "Voltage"
-
-    def updateObjFromHeader(self):
-        xi = self.m_ProcessingHeader.firstHeight
-        step = self.m_ProcessingHeader.deltaHeight
-        xf = xi + self.m_ProcessingHeader.numHeights*step
-
-        self.heightList = numpy.arange(xi, xf, step)
-        self.channelIndexList = numpy.arange(self.m_SystemHeader.numChannels)
-        self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
-
-        self.nHeights = len(self.heightList)
-        self.nChannels = len(self.channelList)
-        self.nProfiles = self.m_ProcessingHeader.profilesPerBlock
-        self.nBlocksPerFile = self.m_ProcessingHeader.dataBlocksPerFile
-        self.nCohInt = self.m_ProcessingHeader.coherentInt
+        '''
+        Constructor
+        '''
+        
+        self.m_RadarControllerHeader = RadarControllerHeader()
     
-    def updateHeaderFromObj(self):
-        pass
+        self.m_SystemHeader = SystemHeader()
+        
+        self.type = "Voltage"
+        
+        #data es un numpy array de 2 dmensiones ( canales, alturas)
+        self.data = None
+        
+        self.dtype = None
+        
+        self.nChannels = 0
+        
+        self.nHeights = 0
+        
+        self.nProfiles = None
+        
+        self.heightList = None
+        
+        self.channelList = None
+        
+        self.channelIndexList = None
+        
+        self.flagNoData = True
+        
+        self.flagTimeBlock = False
+        
+        self.dataUtcTime = None
+        
+        self.nCohInt = None
+        
+        
+        
+        

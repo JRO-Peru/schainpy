@@ -1,13 +1,51 @@
-
+import os, sys
 import copy
 import numpy
-from JROHeader import BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 
-class Data:
+path = os.path.split(os.getcwd())[0]
+sys.path.append(path)
+
+from IO.JROHeader import SystemHeader, RadarControllerHeader
+
+class JROData():
+    
+#    m_BasicHeader = BasicHeader()
+#    m_ProcessingHeader = ProcessingHeader()
+
+    systemHeaderObj = SystemHeader()
+    
+    radarControllerHeaderObj = RadarControllerHeader()
+
+    data = None
+    
+    type = None
+    
+    dtype = None
+    
+    nChannels = None
+    
+    nHeights = None
+    
+    nProfiles = None
+    
+    heightList = None
+    
+    channelList = None
+    
+    channelIndexList = None
+    
+    flagNoData = False
+    
+    flagTimeBlock = False
+    
+    dataUtcTime = None
+
     def __init__(self):
-        pass
-
+        
+        raise ValueError, "This class has not been implemented"
+        
     def copy(self, inputObj=None):
+        
         if inputObj == None:
             return copy.deepcopy(self)
 
@@ -15,34 +53,5 @@ class Data:
             self.__dict__[key] = inputObj.__dict__[key]
 
     def deepcopy(self):
+        
         return copy.deepcopy(self)
-
-class JROData(Data):
-    data = None
-#    m_BasicHeader = BasicHeader()
-#    m_SystemHeader = SystemHeader()
-#    m_RadarControllerHeader = RadarControllerHeader()
-#    m_ProcessingHeader = ProcessingHeader()
-    type = None
-    dataType = None
-    heightList = None
-    channelIndexList = None
-    channelList = None
-    nHeights = None
-    nProfiles = None
-    nBlocksPerFile = None
-    nChannels = None
-    flagNoData = False
-    flagResetProcessing = False
-
-    def __init__(self):
-        raise ValueError, "This class has not been implemented"
-
-#    def updateHeaderFromObj(self):
-#        pass
-#        
-#
-#    def updateObjFromHeader(self):
-#        pass
-        
-        

@@ -8,8 +8,8 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Model.JROHeader import *
-from Model.JROData import JROData
+from JROHeader import *
+from Data.JROData import JROData
 
 def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     """
@@ -32,21 +32,21 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
         Si la cabecera no puede ser leida.
         
     """
-    m_BasicHeader = BasicHeader()
+    basicHeaderObj = BasicHeader()
     
     try:
         fp = open(filename,'rb')
     except:
         raise IOError, "The file %s can't be opened" %(filename)
     
-    sts = m_BasicHeader.read(fp)
+    sts = basicHeaderObj.read(fp)
     fp.close()
     
     if not(sts):
         print "Skipping the file %s because it has not a valid header" %(filename)
         return 0
     
-    if not ((startUTSeconds <= m_BasicHeader.utc) and (endUTSeconds > m_BasicHeader.utc)):
+    if not ((startUTSeconds <= basicHeaderObj.utc) and (endUTSeconds > basicHeaderObj.utc)):
         return 0
     
     return 1
@@ -55,28 +55,59 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
 
 
 class JRODataIO:
+    
     c = 3E8
-    m_BasicHeader = BasicHeader()
-    m_SystemHeader = SystemHeader()
-    m_RadarControllerHeader = RadarControllerHeader()
-    m_ProcessingHeader = ProcessingHeader()
+    
+    basicHeaderObj = BasicHeader()
+    
+    systemHeaderObj = SystemHeader()
+    
+    radarControllerHeaderObj = RadarControllerHeader()
+    
+    processingHeaderObj = ProcessingHeader()
+    
     online = 0
-    dataType = None
+    
+    dtype = None
+    
     pathList = []
+    
     filenameList = []
+    
     filename = None
+    
     ext = None
-    fileIndex = None
+    
     flagNoMoreFiles = 0
+    
     flagIsNewFile = 1
-    flagResetProcessing = 0
+    
+    flagTimeBlock = 0
+    
     flagIsNewBlock = 0
+    
     fp = None
+    
     firstHeaderSize = 0
+    
     basicHeaderSize = 24
+    
+    versionFile = 1103
+    
     fileSize = None
+    
     ippSeconds = None
+    
     fileSizeByHeader = None
+    
+    fileIndex = None
+    
+    profileIndex = None
+    
+    blockIndex = None
+    
+    nTotalBlocks = None
+    
     def __init__(self):
         pass
 
@@ -261,25 +292,25 @@ class JRODataReader(JRODataIO):
         if fp == None:
             fp = self.fp
 
-        self.m_ProcessingHeader.read(fp)
+        self.processingHeaderObj.read(fp)
 
     def __rdRadarControllerHeader(self, fp=None):
         if fp == None:
             fp = self.fp
 
-        self.m_RadarControllerHeader.read(fp)
+        self.radarControllerHeaderObj.read(fp)
 
     def __rdSystemHeader(self, fp=None):
         if fp == None:
             fp = self.fp
 
-        self.m_SystemHeader.read(fp)
+        self.systemHeaderObj.read(fp)
 
     def __rdBasicHeader(self, fp=None):
         if fp == None:
             fp = self.fp
 
-        self.m_BasicHeader.read(fp)
+        self.basicHeaderObj.read(fp)
         
 
     def __readFirstHeader(self):
@@ -288,9 +319,9 @@ class JRODataReader(JRODataIO):
         self.__rdRadarControllerHeader()
         self.__rdProcessingHeader()
 
-        self.firstHeaderSize = self.m_BasicHeader.size
+        self.firstHeaderSize = self.basicHeaderObj.size
 
-        datatype = int(numpy.log2((self.m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
+        datatype = int(numpy.log2((self.processingHeaderObj.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
         if datatype == 0:
             datatype_str = numpy.dtype([('real','<i1'),('imag','<i1')])
         elif datatype == 1:
@@ -306,11 +337,11 @@ class JRODataReader(JRODataIO):
         else:
             raise ValueError, 'Data type was not defined'
 
-        self.dataType = datatype_str
-        self.ippSeconds = 2 * 1000 * self.m_RadarControllerHeader.ipp / self.c
-        self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
-#        self.dataOutObj.channelList = numpy.arange(self.m_SystemHeader.numChannels)
-#        self.dataOutObj.channelIndexList = numpy.arange(self.m_SystemHeader.numChannels)
+        self.dtype = datatype_str
+        self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
+        self.fileSizeByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.processingHeaderObj.dataBlocksPerFile - 1)
+#        self.dataOutObj.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+#        self.dataOutObj.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
 
 
@@ -324,22 +355,22 @@ class JRODataReader(JRODataIO):
                 print "The file %s can't be opened" % (filename)
             return False
 
-        neededSize = self.m_ProcessingHeader.blockSize + self.firstHeaderSize
+        neededSize = self.processingHeaderObj.blockSize + self.firstHeaderSize
 
         if neededSize == 0:
-            m_BasicHeader = BasicHeader()
-            m_SystemHeader = SystemHeader()
-            m_RadarControllerHeader = RadarControllerHeader()
-            m_ProcessingHeader = ProcessingHeader()
+            basicHeaderObj = BasicHeader()
+            systemHeaderObj = SystemHeader()
+            radarControllerHeaderObj = RadarControllerHeader()
+            processingHeaderObj = ProcessingHeader()
 
             try:
-                if not( m_BasicHeader.read(fp) ): raise ValueError
-                if not( m_SystemHeader.read(fp) ): raise ValueError
-                if not( m_RadarControllerHeader.read(fp) ): raise ValueError
-                if not( m_ProcessingHeader.read(fp) ): raise ValueError
-                data_type = int(numpy.log2((m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
+                if not( basicHeaderObj.read(fp) ): raise ValueError
+                if not( systemHeaderObj.read(fp) ): raise ValueError
+                if not( radarControllerHeaderObj.read(fp) ): raise ValueError
+                if not( processingHeaderObj.read(fp) ): raise ValueError
+                data_type = int(numpy.log2((processingHeaderObj.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
 
-                neededSize = m_ProcessingHeader.blockSize + m_BasicHeader.size
+                neededSize = processingHeaderObj.blockSize + basicHeaderObj.size
 
             except:
                 if msgFlag:
@@ -360,16 +391,274 @@ class JRODataReader(JRODataIO):
 
         return True
 
+class JRODataWriter(JRODataIO):
+
+    """ 
+    Esta clase permite escribir datos a archivos procesados (.r o ,pdata). La escritura
+    de los datos siempre se realiza por bloques. 
+    """
+    
+    blockIndex = 0 
+
+    setFile = None
+    
+    
+    def __init__(self, dataOutObj=None):
+        raise ValueError, "Not implemented"
 
 
-    def updateDataHeader(self):
-        self.dataOutObj.m_BasicHeader = self.m_BasicHeader.copy()
-        self.dataOutObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-        self.dataOutObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-        self.dataOutObj.m_SystemHeader = self.m_SystemHeader.copy()
-        self.dataOutObj.dataType = self.dataType
-        self.dataOutObj.updateObjFromHeader() # actualiza los atributos del objeto de salida de la clase JROData
+    def hasAllDataInBuffer(self):
+        raise ValueError, "Not implemented"
 
+
+    def setBlockDimension(self):
+        raise ValueError, "Not implemented"
+
+    
+    def writeBlock(self):
+        raise ValueError, "No implemented"
+
+
+    def putData(self):
+        raise ValueError, "No implemented"
+
+    
+    def __writeFirstHeader(self):
+        """
+        Escribe el primer header del file es decir el Basic header y el Long header (SystemHeader, RadarControllerHeader, ProcessingHeader)
+        
+        Affected:
+            __dataType
+            
+        Return:
+            None
+        """
+        
+#        CALCULAR PARAMETROS
+        
+        sizeLongHeader = 0#XXXX
+        self.basicHeaderObj.size = 24 + sizeLongHeader
+        
+        self.__writeBasicHeader()
+        self.__wrSystemHeader()
+        self.__wrRadarControllerHeader()
+        self.__wrProcessingHeader()
+        self.dtype = self.dataOutObj.dtype
+            
+            
+    def __writeBasicHeader(self, fp=None):
+        """
+        Escribe solo el Basic header en el file creado
+
+        Return:
+            None
+        """
+        if fp == None:
+            fp = self.fp
+            
+        self.dataOutObj.basicHeaderObj.write(fp)
+
+    
+    def __wrSystemHeader(self, fp=None):
+        """
+        Escribe solo el System header en el file creado
+
+        Return:
+            None
+        """
+        if fp == None:
+            fp = self.fp
+            
+        self.dataOutObj.systemHeaderObj.write(fp)
+
+    
+    def __wrRadarControllerHeader(self, fp=None):
+        """
+        Escribe solo el RadarController header en el file creado
+
+        Return:
+            None
+        """
+        if fp == None:
+            fp = self.fp
+        
+        self.dataOutObj.radarControllerHeaderObj.write(fp)
+
+        
+    def __wrProcessingHeader(self, fp=None):
+        """
+        Escribe solo el Processing header en el file creado
+
+        Return:
+            None
+        """
+        if fp == None:
+            fp = self.fp
+            
+        self.dataOutObj.processingHeaderObj.write(fp)
+    
+    
+    def setNextFile(self):
+        """ 
+        Determina el siguiente file que sera escrito
+
+        Affected: 
+            self.filename
+            self.subfolder
+            self.fp
+            self.setFile
+            self.flagIsNewFile
+
+        Return:
+            0    :    Si el archivo no puede ser escrito
+            1    :    Si el archivo esta listo para ser escrito
+        """
+        ext = self.ext
+        path = self.path
+        
+        if self.fp != None:
+            self.fp.close()
+        
+        timeTuple = time.localtime( self.dataOutObj.dataUtcTime)
+        subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
+
+        doypath = os.path.join( path, subfolder )
+        if not( os.path.exists(doypath) ):
+            os.mkdir(doypath)
+            self.setFile = -1 #inicializo mi contador de seteo
+        else:
+            filesList = os.listdir( doypath )
+            if len( filesList ) > 0:
+                filesList = sorted( filesList, key=str.lower )
+                filen = filesList[-1]
+                # el filename debera tener el siguiente formato
+                # 0 1234 567 89A BCDE (hex)
+                # x YYYY DDD SSS .ext
+                if isNumber( filen[8:11] ):
+                    self.setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
+                else:    
+                    self.setFile = -1
+            else:
+                self.setFile = -1 #inicializo mi contador de seteo
+                
+        setFile = self.setFile
+        setFile += 1
+                
+        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
+                                        timeTuple.tm_year,
+                                        timeTuple.tm_yday,
+                                        setFile,
+                                        ext )
+
+        filename = os.path.join( path, subfolder, file )
+
+        fp = open( filename,'wb' )
+        
+        self.blockIndex = 0
+        
+        #guardando atributos 
+        self.filename = filename
+        self.subfolder = subfolder
+        self.fp = fp
+        self.setFile = setFile
+        self.flagIsNewFile = 1
+        
+        print 'Writing the file: %s'%self.filename
+        
+        self.__writeFirstHeader()
+        
+        return 1
+
+
+    def __setNewBlock(self):
+        """
+        Si es un nuevo file escribe el First Header caso contrario escribe solo el Basic Header
+        
+        Return:
+            0    :    si no pudo escribir nada
+            1    :    Si escribio el Basic el First Header
+        """        
+        if self.fp == None:
+            self.setNextFile()
+        
+        if self.flagIsNewFile:
+            return 1
+        
+        if self.blockIndex < self.processingHeaderObj.dataBlocksPerFile:
+            self.__writeBasicHeader()
+            return 1
+        
+        if not( self.setNextFile() ):
+            return 0
+        
+        return 1
+
+
+    def writeNextBlock(self):
+        """
+        Selecciona el bloque siguiente de datos y los escribe en un file
+            
+        Return: 
+            0    :    Si no hizo pudo escribir el bloque de datos 
+            1    :    Si no pudo escribir el bloque de datos
+        """
+        if not( self.__setNewBlock() ):
+            return 0
+        
+        self.writeBlock()
+
+        return 1
+    
+
+    def getDataHeader(self):
+        """
+        Obtiene una copia del First Header
+         
+        Affected:
+            self.basicHeaderObj
+            self.systemHeaderObj
+            self.radarControllerHeaderObj
+            self.processingHeaderObj
+            self.dtype
+
+        Return: 
+            None
+        """
+        
+        raise ValueError, "No implemented"        
+    
+    def setup(self, path, set=0, ext=None):
+        """
+        Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
+            
+        Inputs:
+            path      :    el path destino en el cual se escribiran los files a crear
+            format    :    formato en el cual sera salvado un file
+            set       :    el setebo del file
+            
+        Return:
+            0    :    Si no realizo un buen seteo
+            1    :    Si realizo un buen seteo 
+        """
+        
+        if ext == None:
+            ext = self.ext
+        
+        ext = ext.lower()
+
+        self.path = path
+        self.setFile = set - 1
+        self.ext = ext
+        #self.format = format
+        self.getDataHeader()
+
+        self.setBlockDimension()
+        
+        if not( self.setNextFile() ):
+            print "There isn't a next file"
+            return 0
+
+        return 1
 
 
 

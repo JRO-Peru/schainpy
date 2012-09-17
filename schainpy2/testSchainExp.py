@@ -21,6 +21,7 @@ class TestSChain():
 
     def setValues(self):
         self.path = "/Users/jro/Documents/RadarData/MST_ISR/MST"
+        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
         
         self.wrpath = "/Users/jro/Documents/RadarData/wr_data"
         
@@ -31,8 +32,8 @@ class TestSChain():
         self.endTime = datetime.time(14,1,1)
     
     def createObjects(self):        
+        
         self.readerObj = VoltageReader()
-        self.voltProcObj = VoltageProcessor()
 
         self.voltObj1 = self.readerObj.setup(
                                    path = self.path,
