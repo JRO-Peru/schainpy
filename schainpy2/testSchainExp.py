@@ -20,16 +20,17 @@ class TestSChain():
         self.testSChain()
 
     def setValues(self):
-        self.path = "/Users/jro/Documents/RadarData/MST_ISR/MST"
-#        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
+        self.path = "/Users/danielangelsuarezmunoz/Data/EW_Drifts"
         
-        self.wrpath = "/Users/jro/Documents/RadarData/wr_data"
-        
-        self.startDate = datetime.date(2009,1,17)
-        self.endDate = datetime.date(2009,1,17)
+        self.startDate = datetime.date(2011,11,28)
+        self.endDate = datetime.date(2011,11,30)
         
         self.startTime = datetime.time(0,0,0)
-        self.endTime = datetime.time(14,1,1)
+        self.endTime = datetime.time(23,59,59)
+        
+        self.wrpath = "/Users/jro/Documents/RadarData/wr_data"
+        self.profilesPerBlock = 40
+        self.blocksPerFile = 50 
     
     def createObjects(self):        
         
@@ -44,7 +45,9 @@ class TestSChain():
                                    expLabel = '',
                                    online = 0) 
         
+        self.voltObjProc = VoltageProcessor()
         
+        self.voltObj2 = self.voltObjProc.setup(dataInObj = self.voltObj1)
 
     def testSChain(self):
         
@@ -52,6 +55,10 @@ class TestSChain():
 
         while(True):
             self.readerObj.getData()
+            
+            self.voltObjProc.init()
+            
+            self.voltObjProc.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
                    
             if self.readerObj.flagNoMoreFiles:
                 break

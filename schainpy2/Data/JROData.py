@@ -39,6 +39,12 @@ class JROData:
     flagTimeBlock = False
     
     dataUtcTime = None
+    
+    nCode = None
+    
+    nBaud = None
+    
+    code = None
 
     def __init__(self):
         

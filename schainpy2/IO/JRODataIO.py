@@ -478,10 +478,15 @@ class JRODataWriter(JRODataIO):
     de los datos siempre se realiza por bloques. 
     """
     
-    blockIndex = 0 
-
+    blockIndex = 0
+    
+    path = None
+        
     setFile = None
     
+    profilesPerBlock = None
+    
+    blocksPerFile = None
     
     def __init__(self, dataOutObj=None):
         raise ValueError, "Not implemented"
@@ -698,7 +703,7 @@ class JRODataWriter(JRODataIO):
         
         raise ValueError, "No implemented"        
     
-    def setup(self, path, set=0, ext=None):
+    def setup(self, path, profilesPerBlock, blocksPerFile, set=0, ext=None):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
@@ -716,11 +721,21 @@ class JRODataWriter(JRODataIO):
             ext = self.ext
         
         ext = ext.lower()
-
-        self.path = path
-        self.setFile = set - 1
+        
         self.ext = ext
-        #self.format = format
+        
+        self.path = path
+        
+        self.setFile = set - 1
+        
+        self.profilesPerBlock = profilesPerBlock
+        
+        self.blocksPerFile = blocksPerFile
+        
+        
+        
+        
+        
         self.getDataHeader()
 
         self.setBlockDimension()

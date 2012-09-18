@@ -194,8 +194,8 @@ class RadarControllerHeader(Header):
         self.deltaHeight = None
         self.samplesWin = None
         
-        self.numCode = None
-        self.numBaud = None
+        self.nCode = None
+        self.nBaud = None
         self.code = None
         self.flip1 = None
         self.flip2 = None
@@ -240,14 +240,14 @@ class RadarControllerHeader(Header):
             self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
     
             if self.codeType != 0:
-                self.numCode = numpy.fromfile(fp,'<u4',1)
-                self.numBaud = numpy.fromfile(fp,'<u4',1)
-                self.code = numpy.empty([self.numCode,self.numBaud],dtype='u1')
+                self.nCode = numpy.fromfile(fp,'<u4',1)
+                self.nBaud = numpy.fromfile(fp,'<u4',1)
+                self.code = numpy.empty([self.nCode,self.nBaud],dtype='u1')
                 tempList = []
-                for ic in range(self.numCode):
-                    temp = numpy.fromfile(fp,'u1',4*numpy.ceil(self.numBaud/32.))
+                for ic in range(self.nCode):
+                    temp = numpy.fromfile(fp,'u1',4*numpy.ceil(self.nBaud/32.))
                     tempList.append(temp)
-                    self.code[ic] = numpy.unpackbits(temp[::-1])[-1*self.numBaud:]
+                    self.code[ic] = numpy.unpackbits(temp[::-1])[-1*self.nBaud:]
                 self.code = 2.0*self.code - 1.0
             
             if self.line5Function == RCfunction.FLIP:
@@ -341,9 +341,9 @@ class ProcessingHeader(Header):
         self.deltaHeight = 0
         self.samplesWin = 0
         self.spectraComb = 0
-        self.numCode = 0
+        self.nCode = 0
         self.code = 0
-        self.numBaud = 0
+        self.nBaud = 0
         self.shif_fft = False
         self.flag_dc = False
         self.flag_cspc = False
@@ -369,9 +369,9 @@ class ProcessingHeader(Header):
             self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
             
             if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
-                self.numCode = numpy.fromfile(fp,'<u4',1)
-                self.numBaud = numpy.fromfile(fp,'<u4',1)
-                self.code = numpy.fromfile(fp,'<f4',self.numCode*self.numBaud).reshape(self.numBaud,self.numCode)
+                self.nCode = numpy.fromfile(fp,'<u4',1)
+                self.nBaud = numpy.fromfile(fp,'<u4',1)
+                self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nBaud,self.nCode)
             
             if ((self.processFlags & PROCFLAG.SHIFT_FFT_DATA) == PROCFLAG.SHIFT_FFT_DATA):
                 self.shif_fft = True
@@ -429,13 +429,13 @@ class ProcessingHeader(Header):
 
             
         if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
-            numCode = self.numCode
-            numCode.tofile(fp)
+            nCode = self.nCode
+            nCode.tofile(fp)
 
-            numBaud = self.numBaud
-            numBaud.tofile(fp)
+            nBaud = self.nBaud
+            nBaud.tofile(fp)
 
-            code = self.code.reshape(numCode*numBaud)
+            code = self.code.reshape(nCode*nBaud)
             code.tofile(fp)
             
         return 1

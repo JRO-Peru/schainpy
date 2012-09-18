@@ -359,7 +359,7 @@ class VoltageWriter(JRODataWriter):
         """
         self.shapeBuffer = (self.processingHeaderObj.profilesPerBlock,
                             self.processingHeaderObj.nHeights,
-                            self.systemHeaderObj.nChannels )
+                            self.systemHeaderObj.nChannels)
             
         self.datablock = numpy.zeros((self.systemHeaderObj.nChannels,
                                      self.processingHeaderObj.profilesPerBlock,
@@ -438,6 +438,67 @@ class VoltageWriter(JRODataWriter):
         
         return 1
     
+    def __getProcessFlag(self):
+        
+        processFlags = 0
+        
+        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
+        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
+        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
+        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
+        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
+        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
+        
+        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
+        
+        
+        
+        datatypeValueList =  [PROCFLAG.DATATYPE_CHAR, 
+                           PROCFLAG.DATATYPE_SHORT, 
+                           PROCFLAG.DATATYPE_LONG, 
+                           PROCFLAG.DATATYPE_INT64, 
+                           PROCFLAG.DATATYPE_FLOAT, 
+                           PROCFLAG.DATATYPE_DOUBLE]
+        
+        
+        for index in range(len(dtypeList)):
+            if dtypeList == self.dataOutObj.dtype:
+                dtypeValue = datatypeValueList[index]
+                break
+        
+        processFlags += dtypeValue
+        
+        if self.dataOutObj.flagDecodeData:
+            processFlags += PROCFLAG.DECODE_DATA
+        
+        if self.dataOutObj.flagDeflipData:
+            processFlags += PROCFLAG.DEFLIP_DATA
+        
+        if self.dataOutObj.nCohInt > 1:
+            processFlags += PROCFLAG.COHERENT_INTEGRATION
+    
+    
+    def __getBlockSize(self):
+        
+        
+        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
+        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
+        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
+        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
+        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
+        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
+        
+        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
+        datatypeValueList
+        for index in range(len(dtypeList)):
+            if dtypeList == self.dataOutObj.dtype:
+                datatypeValue = index
+                break
+        
+        self.dataOutObj.nHeights * self.dataOutObj.nChannels * self.dataOutObj.nProfiles * datatypeValue * 2
+        
+        
+    
     def getDataHeader(self):
         
         """
@@ -457,7 +518,7 @@ class VoltageWriter(JRODataWriter):
         self.systemHeaderObj = self.dataOutObj.systemHeaderObj.copy()
         self.radarControllerHeaderObj = self.dataOutObj.radarControllerHeaderObj.copy()
         
-        self.basicHeaderObj.size = self.basicHeaderSize
+        self.basicHeaderObj.size = self.basicHeaderSize #bytes
         self.basicHeaderObj.version = self.versionFile
         self.basicHeaderObj.dataBlock = self.nTotalBlocks
         self.basicHeaderObj.utc = self.dataOutObj.dataUtcTime
@@ -466,15 +527,20 @@ class VoltageWriter(JRODataWriter):
         self.basicHeaderObj.dstFlag = 0
         self.basicHeaderObj.errorCount = 0
         
-        self.processingHeaderObj.size = 0
-        self.processingHeaderObj.dtype = self.dataOutObj.dtype
-        self.processingHeaderObj.blockSize = 0
-        self.processingHeaderObj.profilesPerBlock = 0
-        self.processingHeaderObj.dataBlocksPerFile = 0
-        self.processingHeaderObj.numWindows = 0
-        self.processingHeaderObj.processFlags = 0
-        self.processingHeaderObj.coherentInt = 0
-        self.processingHeaderObj.incoherentInt = 0
+        staticProcessingHeaderSize = 40 # bytes
+        dynProcessingHeaderSize = 0 # bytes
+        
+        self.processingHeaderObj.size = staticProcessingHeaderSize + dynProcessingHeaderSize
+        self.processingHeaderObj.dtype = 0 # Voltage
+#        self.processingHeaderObj.dtype = self.dataOutObj.dtype
+        self.processingHeaderObj.blockSize = 0 # debe calcular el size en bytes del bloque de datos:
+        # usar funcion getBlockSize
+        self.processingHeaderObj.profilesPerBlock = self.dataOutObj.nProfiles
+        self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
+        self.processingHeaderObj.numWindows = 1
+        self.processingHeaderObj.processFlags = self.__getProcessFlags()
+        self.processingHeaderObj.coherentInt = self.dataOutObj.nCohInt
+        self.processingHeaderObj.incoherentInt = 1 # Cuando la data de origen sea de tipo Voltage
         self.processingHeaderObj.totalSpectra = 0
         
         self.dtype = self.dataOutObj.dtype

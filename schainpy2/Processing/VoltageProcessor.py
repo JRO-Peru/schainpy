@@ -6,6 +6,7 @@ path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
 from Data.Voltage import Voltage
+from IO.VoltageIO import VoltageWriter
 
 
 class VoltageProcessor:
@@ -35,6 +36,9 @@ class VoltageProcessor:
     def init(self):
         self.integratorObjIndex = 0
         self.writerObjIndex = 0
+        
+        if not(self.dataInObj.flagNoData):
+            self.dataOutObj.copy(self.dataInObj)
         # No necesita copiar en cada init() los atributos de dataInObj
         # la copia deberia hacerse por cada nuevo bloque de datos
 
@@ -42,9 +46,23 @@ class VoltageProcessor:
         objCohInt = CoherentIntegrator(N,timeInterval)
         self.integratorObjList.append(objCohInt)
 
-    def addWriter(self):
-        pass
-
+    def addWriter(self, wrpath, profilesPerBlock, blocksPerFile):
+        objWriter = VoltageWriter(self.dataOutObj)
+        objWriter.setup(wrpath,profilesPerBlock,blocksPerFile)
+        self.writerObjList.append(objWriter)
+        
+    def writeData(self, wrpath, profilesPerBlock, blocksPerFile):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+            
+        if len(self.writerObjList) <= self.writerObjIndex:
+            self.addWriter(wrpath, profilesPerBlock, blocksPerFile)
+        
+        self.writerObjList[self.writerObjIndex].putData()
+        
+        self.writerObjIndex += 1
+        
     def integrator(self, N=None, timeInterval=None):
         if self.dataOutObj.flagNoData:
             return 0
@@ -53,11 +71,7 @@ class VoltageProcessor:
 
         myCohIntObj = self.integratorObjList[self.integratorObjIndex]
         myCohIntObj.exe(data=self.dataOutObj.data,timeOfData=None)
-        
-        pass
 
-    def writeData(self):
-        pass
 
 class CoherentIntegrator:
     
