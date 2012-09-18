@@ -110,10 +110,6 @@ class VoltageReader(JRODataReader):
         
         self.idFile = None
         
-        self.startDateTime = None
-        
-        self.endDateTime = None
-        
         self.dtype = None
         
         self.fileSizeByHeader = None
@@ -186,7 +182,7 @@ class VoltageReader(JRODataReader):
         Return:
             None
         """
-        pts2read = self.processingHeaderObj.profilesPerBlock * self.processingHeaderObj.numHeights * self.systemHeaderObj.numChannels
+        pts2read = self.processingHeaderObj.profilesPerBlock * self.processingHeaderObj.nHeights * self.systemHeaderObj.nChannels
         self.blocksize = pts2read
 
             
@@ -217,7 +213,7 @@ class VoltageReader(JRODataReader):
         junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
         
         try:
-            junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.numHeights, self.systemHeaderObj.numChannels) )
+            junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
         except:
             print "The read block (%3d) has not enough data" %self.nReadBlocks
             return 0
@@ -268,7 +264,7 @@ class VoltageReader(JRODataReader):
             if not( self.readNextBlock() ):
                 return 0
             
-            self.updateDataHeader()
+#            self.updateDataHeader()
             
         if self.flagNoMoreFiles == 1:
             print 'Process finished'
@@ -284,19 +280,19 @@ class VoltageReader(JRODataReader):
         
         self.dataOutObj.dtype = self.dtype
         
-        self.dataOutObj.nChannels = self.systemHeaderObj.numChannels
+        self.dataOutObj.nChannels = self.systemHeaderObj.nChannels
         
-        self.dataOutObj.nHeights = self.processingHeaderObj.numHeights
+        self.dataOutObj.nHeights = self.processingHeaderObj.nHeights
         
         self.dataOutObj.nProfiles = self.processingHeaderObj.profilesPerBlock
         
-        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.numHeights*self.processingHeaderObj.deltaHeight
+        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
 
-        self.dataOutObj.heightList = range(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+        self.dataOutObj.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
         
-        self.dataOutObj.channelList = range(self.systemHeaderObj.numChannels)
+        self.dataOutObj.channelList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOutObj.channelIndexList = range(self.systemHeaderObj.numChannels)
+        self.dataOutObj.channelIndexList = range(self.systemHeaderObj.nChannels)
         
         self.dataOutObj.flagNoData = True
         
@@ -371,12 +367,12 @@ class VoltageWriter(JRODataWriter):
         Return: None
         """
         self.shapeBuffer = (self.processingHeaderObj.profilesPerBlock,
-                            self.processingHeaderObj.numHeights,
-                            self.systemHeaderObj.numChannels )
+                            self.processingHeaderObj.nHeights,
+                            self.systemHeaderObj.nChannels )
             
-        self.datablock = numpy.zeros((self.systemHeaderObj.numChannels,
+        self.datablock = numpy.zeros((self.systemHeaderObj.nChannels,
                                      self.processingHeaderObj.profilesPerBlock,
-                                     self.processingHeaderObj.numHeights),
+                                     self.processingHeaderObj.nHeights),
                                      dtype=numpy.dtype('complex'))
 
         

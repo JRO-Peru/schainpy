@@ -7,9 +7,20 @@ sys.path.append(path)
 from JROData import JROData
 from IO.JROHeader import SystemHeader, RadarControllerHeader
 
-class Voltage(JROData):
+class Spectra(JROData):
+    data_spc = None
     
-    nCohInt = None
+    data_cspc = None
+    
+    data_dc = None
+    
+    nFFTPoints = None
+    
+    nPairs = None
+    
+    pairsList = None
+    
+    nIncohInt = None
     
     def __init__(self):
         '''
@@ -20,10 +31,10 @@ class Voltage(JROData):
     
         self.m_SystemHeader = SystemHeader()
         
-        self.type = "Voltage"
+        self.type = "Spectra"
         
         #data es un numpy array de 2 dmensiones ( canales, alturas)
-        self.data = None
+#        self.data = None
         
         self.dtype = None
         
@@ -45,4 +56,5 @@ class Voltage(JROData):
         
         self.dataUtcTime = None
         
-        self.nCohInt = None
+        self.nIncohInt = None
+        

@@ -21,7 +21,7 @@ class TestSChain():
 
     def setValues(self):
         self.path = "/Users/jro/Documents/RadarData/MST_ISR/MST"
-        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
+#        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
         
         self.wrpath = "/Users/jro/Documents/RadarData/wr_data"
         
@@ -58,7 +58,7 @@ class TestSChain():
             
             if self.readerObj.flagIsNewBlock:
                 print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks,
-                                                  datetime.datetime.fromtimestamp(self.readerObj.m_BasicHeader.utc),)
+                                                  datetime.datetime.fromtimestamp(self.readerObj.basicHeaderObj.utc),)
 
     
 if __name__ == '__main__':

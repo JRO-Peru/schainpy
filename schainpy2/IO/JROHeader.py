@@ -189,7 +189,7 @@ class RadarControllerHeader(Header):
         self.samplingWindowStruct = numpy.dtype([('h0','<f4'),('dh','<f4'),('nsa','<u4')])
         
         self.samplingWindow = None
-        self.numHeights = None
+        self.nHeights = None
         self.firstHeight = None
         self.deltaHeight = None
         self.samplesWin = None
@@ -232,7 +232,7 @@ class RadarControllerHeader(Header):
             fp.seek(backFp)
             
             self.samplingWindow = numpy.fromfile(fp,self.samplingWindowStruct,self.nWindows)
-            self.numHeights = numpy.sum(self.samplingWindow['nsa'])
+            self.nHeights = numpy.sum(self.samplingWindow['nsa'])
             self.firstHeight = self.samplingWindow['h0']
             self.deltaHeight = self.samplingWindow['dh']
             self.samplesWin = self.samplingWindow['nsa']
@@ -336,7 +336,7 @@ class ProcessingHeader(Header):
                                ])
         self.samplingWindow = 0
         self.structSamplingWindow = numpy.dtype([('h0','<f4'),('dh','<f4'),('nsa','<u4')])
-        self.numHeights = 0
+        self.nHeights = 0
         self.firstHeight = 0
         self.deltaHeight = 0
         self.samplesWin = 0
@@ -362,9 +362,9 @@ class ProcessingHeader(Header):
             self.nIncohInt = header['nIncoherentIntegrations'][0]
             self.totalSpectra = header['nTotalSpectra'][0]
             self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.nWindows)
-            self.numHeights = numpy.sum(self.samplingWindow['nsa'])
-            self.firstHeight = self.samplingWindow['h0']
-            self.deltaHeight = self.samplingWindow['dh']
+            self.nHeights = numpy.sum(self.samplingWindow['nsa'])
+            self.firstHeight = self.samplingWindow['h0'][0]
+            self.deltaHeight = self.samplingWindow['dh'][0]
             self.samplesWin = self.samplingWindow['nsa']
             self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
             

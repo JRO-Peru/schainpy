@@ -11,6 +11,25 @@ sys.path.append(path)
 from JROHeader import *
 from Data.JROData import JROData
 
+def isNumber(str):
+    """
+    Chequea si el conjunto de caracteres que componen un string puede ser convertidos a un numero.
+
+    Excepciones: 
+        Si un determinado string no puede ser convertido a numero
+    Input:
+        str, string al cual se le analiza para determinar si convertible a un numero o no
+        
+    Return:
+        True    :    si el string es uno numerico
+        False   :    no es un string numerico
+    """
+    try:
+        float( str )
+        return True
+    except:
+        return False
+
 def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     """
     Esta funcion determina si un archivo de datos se encuentra o no dentro del rango de fecha especificado.
@@ -107,6 +126,10 @@ class JRODataIO:
     blockIndex = None
     
     nTotalBlocks = None
+    
+    maxTimeStep = 30
+    
+    lastUTTime = None
     
     def __init__(self):
         pass
@@ -237,7 +260,7 @@ class JRODataReader(JRODataIO):
 
             return None
 
-        self.updateDataHeader()
+#        self.updateDataHeader()
 
         return self.dataOutObj
 
@@ -286,6 +309,43 @@ class JRODataReader(JRODataIO):
 
         self.__readFirstHeader()
         self.nReadBlocks = 0
+        return 1
+
+    def __setNewBlock(self):
+        if self.fp == None:
+            return 0
+
+        if self.flagIsNewFile:
+            return 1
+        
+        self.lastUTTime = self.basicHeaderObj.utc
+        currentSize = self.fileSize - self.fp.tell()
+        neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        
+        if (currentSize >= neededSize):
+            self.__rdBasicHeader()
+            return 1
+
+        if not(self.setNextFile()):
+            return 0
+
+        deltaTime = self.basicHeaderObj.utc - self.lastUTTime #
+
+        self.flagTimeBlock = 0
+
+        if deltaTime > self.maxTimeStep:
+            self.flagTimeBlock = 1
+
+        return 1
+
+
+    def readNextBlock(self):
+        if not(self.__setNewBlock()):
+            return 0
+
+        if not(self.readBlock()):
+            return 0
+
         return 1
 
     def __rdProcessingHeader(self, fp=None):
