@@ -15,8 +15,8 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Model.JROHeader import *
-from Model.Spectra import Spectra
+from IO.JROHeader import *
+from Data.Spectra import Spectra
 
 from JRODataIO import JRODataReader
 from JRODataIO import JRODataWriter
@@ -59,9 +59,6 @@ class SpectraReader(JRODataReader):
                 break
             
     """
-    dataOutObj = None
-    
-    datablock = None
 
     pts2read_SelfSpectra = 0
     
@@ -73,7 +70,14 @@ class SpectraReader(JRODataReader):
         
     optchar = "P"
     
-    flag_cspc = False
+    dataOutObj = None
+    
+    nRdChannels = None
+    
+    nRdPairs = None
+    
+    rdPairList = []
+
     
     def __init__(self, dataOutObj=None):
         """ 
@@ -97,7 +101,7 @@ class SpectraReader(JRODataReader):
         
         self.pts2read_CrossSpectra = 0
         
-        self.pts2read_DCs = 0
+        self.pts2read_DCchannels = 0
         
         self.datablock = None
         
@@ -183,8 +187,8 @@ class SpectraReader(JRODataReader):
         Obtiene la cantidad de puntos a leer por cada bloque de datos
         
         Affected:
-            self.nChannels
-            self.nPairs
+            self.nRdChannels
+            self.nRdPairs
             self.pts2read_SelfSpectra
             self.pts2read_CrossSpectra
             self.pts2read_DCchannels
@@ -195,28 +199,28 @@ class SpectraReader(JRODataReader):
         Return:
             None
         """
-        self.nChannels = 0
-        self.nPairs = 0
-        self.pairList = []
+        self.nRdChannels = 0
+        self.nRdPairs = 0
+        self.rdPairList = []
         
         for i in range( 0, self.processingHeaderObj.totalSpectra*2, 2 ):
             if self.processingHeaderObj.spectraComb[i] == self.processingHeaderObj.spectraComb[i+1]:
-                self.nChannels = self.nChannels + 1   #par de canales iguales 
+                self.nRdChannels = self.nRdChannels + 1   #par de canales iguales 
             else:
-                self.nPairs = self.nPairs + 1 #par de canales diferentes
-                self.pairList.append( (self.processingHeaderObj.spectraComb[i], self.processingHeaderObj.spectraComb[i+1]) )
+                self.nRdPairs = self.nRdPairs + 1 #par de canales diferentes
+                self.rdPairList.append( (self.processingHeaderObj.spectraComb[i], self.processingHeaderObj.spectraComb[i+1]) )
 
-        pts2read = self.processingHeaderObj.numHeights * self.processingHeaderObj.profilesPerBlock
+        pts2read = self.processingHeaderObj.nHeights * self.processingHeaderObj.profilesPerBlock
 
-        self.pts2read_SelfSpectra = int(self.nChannels * pts2read)
+        self.pts2read_SelfSpectra = int(self.nRdChannels * pts2read)
         self.blocksize = self.pts2read_SelfSpectra
         
         if self.processingHeaderObj.flag_cspc:
-            self.pts2read_CrossSpectra = int(self.nPairs * pts2read)
+            self.pts2read_CrossSpectra = int(self.nRdPairs * pts2read)
             self.blocksize += self.pts2read_CrossSpectra
             
         if self.processingHeaderObj.flag_dc:
-            self.pts2read_DCchannels = int(self.systemHeaderObj.numChannels * self.processingHeaderObj.numHeights)
+            self.pts2read_DCchannels = int(self.systemHeaderObj.nChannels * self.processingHeaderObj.nHeights)
             self.blocksize += self.pts2read_DCchannels
             
 #        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
@@ -232,7 +236,7 @@ class SpectraReader(JRODataReader):
         Return: None
         
         Variables afectadas:
-            self.datablockIndex
+            
             self.flagIsNewFile
             self.flagIsNewBlock
             self.nTotalBlocks
@@ -246,29 +250,29 @@ class SpectraReader(JRODataReader):
         blockOk_flag = False
         fpointer = self.fp.tell()
 
-        spc = numpy.fromfile( self.fp, self.dataType[0], self.pts2read_SelfSpectra )
-        spc = spc.reshape( (self.nChannels, self.processingHeaderObj.numHeights, self.processingHeaderObj.profilesPerBlock) ) #transforma a un arreglo 3D
+        spc = numpy.fromfile( self.fp, self.dtype[0], self.pts2read_SelfSpectra )
+        spc = spc.reshape( (self.nRdChannels, self.processingHeaderObj.nHeights, self.processingHeaderObj.profilesPerBlock) ) #transforma a un arreglo 3D
         
-        if self.flag_cspc:
-            cspc = numpy.fromfile( self.fp, self.dataType, self.pts2read_CrossSpectra )
-            cspc = cspc.reshape( (self.nPairs, self.processingHeaderObj.numHeights, self.processingHeaderObj.profilesPerBlock) ) #transforma a un arreglo 3D
+        if self.processingHeaderObj.flag_cspc:
+            cspc = numpy.fromfile( self.fp, self.dtype, self.pts2read_CrossSpectra )
+            cspc = cspc.reshape( (self.nRdPairs, self.processingHeaderObj.nHeights, self.processingHeaderObj.profilesPerBlock) ) #transforma a un arreglo 3D
         
         if self.processingHeaderObj.flag_dc:
-            dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.processingHeaderObj.numHeights*self.systemHeaderObj.numChannels) )
-            dc = dc.reshape( (self.systemHeaderObj.numChannels, self.processingHeaderObj.numHeights) ) #transforma a un arreglo 2D
+            dc = numpy.fromfile( self.fp, self.dtype, self.pts2read_DCchannels ) #int(self.processingHeaderObj.nHeights*self.systemHeaderObj.nChannels) )
+            dc = dc.reshape( (self.systemHeaderObj.nChannels, self.processingHeaderObj.nHeights) ) #transforma a un arreglo 2D
             
         
         if not(self.processingHeaderObj.shif_fft):
             spc = numpy.roll( spc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             
-            if self.flag_cspc:
+            if self.processingHeaderObj.flag_cspc:
                 cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         
 
         spc = numpy.transpose( spc, (0,2,1) )
         self.data_spc = spc
         
-        if self.flag_cspc: 
+        if self.processingHeaderObj.flag_cspc: 
             cspc = numpy.transpose( cspc, (0,2,1) )
             self.data_cspc = cspc['real'] + cspc['imag']*1j
         else:
@@ -279,7 +283,6 @@ class SpectraReader(JRODataReader):
         else:
             self.data_dc = None
 
-        self.datablockIndex = 0
         self.flagIsNewFile = 0
         self.flagIsNewBlock = 1
 
@@ -301,7 +304,7 @@ class SpectraReader(JRODataReader):
             
         Affected:
             self.dataOutObj
-            self.datablockIndex
+            
             self.flagTimeBlock
             self.flagIsNewBlock
         """
@@ -316,7 +319,7 @@ class SpectraReader(JRODataReader):
             if not( self.readNextBlock() ):
                 return 0 
             
-            self.updateDataHeader()
+#            self.updateDataHeader()
         
         if self.flagNoMoreFiles == 1:
             print 'Process finished'
@@ -328,12 +331,49 @@ class SpectraReader(JRODataReader):
             self.dataOutObj.flagNoData = True
             return 0
 
-        self.dataOutObj.flagNoData = False
-        self.dataOutObj.flagTimeBlock = self.flagTimeBlock
-        
+
         self.dataOutObj.data_spc = self.data_spc
+        
         self.dataOutObj.data_cspc = self.data_cspc
+        
         self.dataOutObj.data_dc = self.data_dc
+                
+        self.dataOutObj.flagTimeBlock = self.flagTimeBlock
+    
+        self.dataOutObj.flagNoData = False
+
+        self.dataOutObj.dtype = self.dtype
+
+        self.dataOutObj.nChannels = self.nRdChannels
+        
+        self.dataOutObj.nPairs = self.nRdPairs
+        
+        self.dataOutObj.pairsList = self.rdPairList
+        
+        self.dataOutObj.nHeights = self.processingHeaderObj.nHeights
+        
+        self.dataOutObj.nProfiles = self.processingHeaderObj.profilesPerBlock
+        
+        self.dataOutObj.nFFTPoints = self.processingHeaderObj.profilesPerBlock
+        
+        self.dataOutObj.nIncohInt = self.processingHeaderObj.nIncohInt
+        
+        
+        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
+
+        self.dataOutObj.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+        
+        self.dataOutObj.channelList = range(self.systemHeaderObj.nChannels)
+        
+        self.dataOutObj.channelIndexList = range(self.systemHeaderObj.nChannels)
+        
+        self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc #+ self.profileIndex * self.ippSeconds
+        
+#        self.profileIndex += 1
+        
+        self.dataOutObj.systemHeaderObj = self.systemHeaderObj.copy()
+        
+        self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
 
         return 1
 
@@ -345,16 +385,11 @@ class SpectraWriter(JRODataWriter):
     de los datos siempre se realiza por bloques. 
     """
     
-    dataOutObj = None
     
     shape_spc_Buffer = None
     shape_cspc_Buffer = None
     shape_dc_Buffer = None
-    
-    data_spc = None
-    data_cspc = None
-    data_dc = None
-
+    dataOutObj = None
     
     def __init__(self, dataOutObj=None):
         """ 
@@ -405,7 +440,7 @@ class SpectraWriter(JRODataWriter):
 
         self.setFile = None
         
-        self.dataType = None
+        self.dtype = None
         
         self.path = None
         
@@ -438,15 +473,15 @@ class SpectraWriter(JRODataWriter):
         Return: None
         """
         self.shape_spc_Buffer = (self.dataOutObj.nChannels,
-                                 self.processingHeaderObj.numHeights,
+                                 self.processingHeaderObj.nHeights,
                                  self.processingHeaderObj.profilesPerBlock)
 
         self.shape_cspc_Buffer = (self.dataOutObj.nPairs,
-                                  self.processingHeaderObj.numHeights,
+                                  self.processingHeaderObj.nHeights,
                                   self.processingHeaderObj.profilesPerBlock)
         
-        self.shape_dc_Buffer = (self.systemHeaderObj.numChannels,
-                                self.processingHeaderObj.numHeights)
+        self.shape_dc_Buffer = (self.systemHeaderObj.nChannels,
+                                self.processingHeaderObj.nHeights)
 
     
     def writeBlock(self):
@@ -472,7 +507,7 @@ class SpectraWriter(JRODataWriter):
         data.tofile(self.fp)
 
         if self.data_cspc != None:
-            data = numpy.zeros( self.shape_cspc_Buffer, self.dataType )
+            data = numpy.zeros( self.shape_cspc_Buffer, self.dtype )
             cspc = numpy.transpose( self.data_cspc, (0,2,1) )
             if not( self.processingHeaderObj.shif_fft ):
                 cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
@@ -481,7 +516,7 @@ class SpectraWriter(JRODataWriter):
             data = data.reshape((-1))
             data.tofile(self.fp)
 
-        data = numpy.zeros( self.shape_dc_Buffer, self.dataType )
+        data = numpy.zeros( self.shape_dc_Buffer, self.dtype )
         dc = self.data_dc
         data['real'] = dc.real
         data['imag'] = dc.imag

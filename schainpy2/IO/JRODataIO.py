@@ -131,11 +131,21 @@ class JRODataIO:
     
     lastUTTime = None
     
+    datablock = None
+    
+    dataOutObj = None
+    
+    blocksize = None
+    
     def __init__(self):
         pass
 
 class JRODataReader(JRODataIO):
+    
+    nReadBlocks = 0
+    
     def __init__(self):
+        
         pass
 
     def createObjByDefault(self):
@@ -213,7 +223,8 @@ class JRODataReader(JRODataIO):
         return pathList, filenameList
 
     def setup(self,dataOutObj=None, 
-                path=None,startDate=None, 
+                path=None,
+                startDate=None, 
                 endDate=None, 
                 startTime=datetime.time(0,0,0), 
                 endTime=datetime.time(23,59,59), 
@@ -451,6 +462,15 @@ class JRODataReader(JRODataIO):
 
         return True
 
+    def getData():
+        pass
+
+    def hasNotDataInBuffer():
+        pass
+
+    def readBlock():
+        pass
+
 class JRODataWriter(JRODataIO):
 
     """ 
@@ -671,18 +691,9 @@ class JRODataWriter(JRODataIO):
     
 
     def getDataHeader(self):
-        """
-        Obtiene una copia del First Header
-         
-        Affected:
-            self.basicHeaderObj
-            self.systemHeaderObj
-            self.radarControllerHeaderObj
-            self.processingHeaderObj
-            self.dtype
-
-        Return: 
-            None
+        """Obtiene una copia del First Header  Affected: self.basicHeaderObj     self.
+        systemHeaderObj self.radarControllerHeaderObj     self.processingHeaderObj self.
+        dtype  Return:     None
         """
         
         raise ValueError, "No implemented"        

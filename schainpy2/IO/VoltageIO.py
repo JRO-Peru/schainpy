@@ -60,13 +60,11 @@ class VoltageReader(JRODataReader):
                 break
             
     """
-    dataOutObj = None
-    
-    datablock = None
 
     ext = ".r"
     
     optchar = "D"
+    dataOutObj = None
     
     
     def __init__(self, dataOutObj=None):
@@ -294,8 +292,6 @@ class VoltageReader(JRODataReader):
         
         self.dataOutObj.channelIndexList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOutObj.flagNoData = True
-        
         self.dataOutObj.flagTimeBlock = self.flagTimeBlock
         
         self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc + self.profileIndex * self.ippSeconds
@@ -307,6 +303,8 @@ class VoltageReader(JRODataReader):
         self.dataOutObj.systemHeaderObj = self.systemHeaderObj.copy()
         
         self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        
+        self.dataOutObj.flagNoData = False
     
         return 1
 
@@ -316,17 +314,10 @@ class VoltageWriter(JRODataWriter):
     Esta clase permite escribir datos de voltajes a archivos procesados (.r). La escritura
     de los datos siempre se realiza por bloques. 
     """
-    __configHeaderFile = 'wrSetHeadet.txt'
-    
-    dataOutObj = None
     
     ext = ".r"
     
     optchar = "D"
-    
-    datablock = None
-    
-    profileIndex = 0
     
     shapeBuffer = None
     

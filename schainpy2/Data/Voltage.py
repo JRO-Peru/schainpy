@@ -11,6 +11,8 @@ class Voltage(JROData):
     
     nCohInt = None
     
+    data = None
+    
     def __init__(self):
         '''
         Constructor

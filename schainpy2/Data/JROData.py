@@ -7,7 +7,7 @@ sys.path.append(path)
 
 from IO.JROHeader import SystemHeader, RadarControllerHeader
 
-class JROData():
+class JROData:
     
 #    m_BasicHeader = BasicHeader()
 #    m_ProcessingHeader = ProcessingHeader()
@@ -16,7 +16,7 @@ class JROData():
     
     radarControllerHeaderObj = RadarControllerHeader()
 
-    data = None
+#    data = None
     
     type = None
     
