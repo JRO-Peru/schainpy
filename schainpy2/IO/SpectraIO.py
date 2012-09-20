@@ -203,12 +203,12 @@ class SpectraReader(JRODataReader):
         self.nRdPairs = 0
         self.rdPairList = []
         
-        for i in range( 0, self.processingHeaderObj.totalSpectra*2, 2 ):
+        for i in range(0, self.processingHeaderObj.totalSpectra*2, 2):
             if self.processingHeaderObj.spectraComb[i] == self.processingHeaderObj.spectraComb[i+1]:
-                self.nRdChannels = self.nRdChannels + 1   #par de canales iguales 
+                self.nRdChannels = self.nRdChannels + 1 #par de canales iguales 
             else:
                 self.nRdPairs = self.nRdPairs + 1 #par de canales diferentes
-                self.rdPairList.append( (self.processingHeaderObj.spectraComb[i], self.processingHeaderObj.spectraComb[i+1]) )
+                self.rdPairList.append((self.processingHeaderObj.spectraComb[i], self.processingHeaderObj.spectraComb[i+1]))
 
         pts2read = self.processingHeaderObj.nHeights * self.processingHeaderObj.profilesPerBlock
 
@@ -369,6 +369,8 @@ class SpectraReader(JRODataReader):
         
         self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc #+ self.profileIndex * self.ippSeconds
         
+        self.dataOutObj.flagShiftFFT = self.processingHeaderObj.shif_fft
+        
 #        self.profileIndex += 1
         
         self.dataOutObj.systemHeaderObj = self.systemHeaderObj.copy()
@@ -385,11 +387,29 @@ class SpectraWriter(JRODataWriter):
     de los datos siempre se realiza por bloques. 
     """
     
+    ext = ".pdata"
+    
+    optchar = "P"
     
     shape_spc_Buffer = None
+    
     shape_cspc_Buffer = None
+    
     shape_dc_Buffer = None
-    dataOutObj = None
+    
+    data_spc = None
+    
+    data_cspc = None
+    
+    data_dc = None
+        
+    wrPairList = []
+    
+    nWrPairs = 0
+    
+    nWrChannels = 0
+    
+#    dataOutObj = None
     
     def __init__(self, dataOutObj=None):
         """ 
@@ -411,50 +431,55 @@ class SpectraWriter(JRODataWriter):
             raise ValueError, "in SpectraReader, dataOutObj must be an Spectra class object"
 
         self.dataOutObj = dataOutObj
+        
+        self.nTotalBlocks = 0
+        
+        self.nWrChannels = self.dataOutObj.nChannels
+        
+#        if len(pairList) > 0:
+#            self.wrPairList = pairList
+#            
+#            self.nWrPairs = len(pairList)
+        
+        self.wrPairList = self.dataOutObj.pairList
+        
+        self.nWrPairs = self.dataOutObj.nPairs
+        
+        
+        
+        
 
-        self.ext = ".pdata"
-        
-        self.optchar = "P"
-        
-        self.shape_spc_Buffer = None
-        self.shape_cspc_Buffer = None
-        self.shape_dc_Buffer = None
+#        self.data_spc = None
+#        self.data_cspc = None
+#        self.data_dc = None
 
-        self.data_spc = None
-        self.data_cspc = None
-        self.data_dc = None
+#        self.fp = None
 
-        ####################################
-
-        self.fp = None
-        
-        self.nWriteBlocks = 0
-        
-        self.flagIsNewFile = 1
-        
-        self.nTotalBlocks = 0 
-        
-        self.flagIsNewBlock = 0
-        
-        self.flagNoMoreFiles = 0
-
-        self.setFile = None
-        
-        self.dtype = None
-        
-        self.path = None
-        
-        self.noMoreFiles = 0
-        
-        self.filename = None
-        
-        self.basicHeaderObj = BasicHeader()
-    
-        self.systemHeaderObj = SystemHeader()
-    
-        self.radarControllerHeaderObj = RadarControllerHeader()
-    
-        self.processingHeaderObj = ProcessingHeader()
+#        self.flagIsNewFile = 1
+#        
+#        self.nTotalBlocks = 0 
+#        
+#        self.flagIsNewBlock = 0
+#        
+#        self.flagNoMoreFiles = 0
+#
+#        self.setFile = None
+#        
+#        self.dtype = None
+#        
+#        self.path = None
+#        
+#        self.noMoreFiles = 0
+#        
+#        self.filename = None
+#        
+#        self.basicHeaderObj = BasicHeader()
+#    
+#        self.systemHeaderObj = SystemHeader()
+#    
+#        self.radarControllerHeaderObj = RadarControllerHeader()
+#    
+#        self.processingHeaderObj = ProcessingHeader()
 
         
     def hasAllDataInBuffer(self):
@@ -572,3 +597,152 @@ class SpectraWriter(JRODataWriter):
             return 0
         
         return 1
+    
+    
+    def __getProcessFlags(self):
+        
+        processFlags = 0
+        
+        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
+        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
+        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
+        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
+        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
+        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
+        
+        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
+        
+        
+        
+        datatypeValueList =  [PROCFLAG.DATATYPE_CHAR, 
+                           PROCFLAG.DATATYPE_SHORT, 
+                           PROCFLAG.DATATYPE_LONG, 
+                           PROCFLAG.DATATYPE_INT64, 
+                           PROCFLAG.DATATYPE_FLOAT, 
+                           PROCFLAG.DATATYPE_DOUBLE]
+        
+        
+        for index in range(len(dtypeList)):
+            if self.dataOutObj.dtype == dtypeList[index]:
+                dtypeValue = datatypeValueList[index]
+                break
+        
+        processFlags += dtypeValue
+        
+        if self.dataOutObj.flagDecodeData:
+            processFlags += PROCFLAG.DECODE_DATA
+        
+        if self.dataOutObj.flagDeflipData:
+            processFlags += PROCFLAG.DEFLIP_DATA
+        
+        if self.dataOutObj.code != None:
+            processFlags += PROCFLAG.DEFINE_PROCESS_CODE
+        
+        if self.dataOutObj.nIncohInt > 1:
+            processFlags += PROCFLAG.INCOHERENT_INTEGRATION
+            
+        if self.dataOutObj.data_dc != None:
+            processFlags += PROCFLAG.SAVE_CHANNELS_DC
+        
+        return processFlags
+    
+    
+    def __getBlockSize(self):
+        '''
+        Este metodos determina el cantidad de bytes para un bloque de datos de tipo Spectra
+        '''
+        
+        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
+        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
+        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
+        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
+        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
+        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
+        
+        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
+        datatypeValueList = [1,2,4,8,4,8]
+        for index in range(len(dtypeList)):
+            if self.dataOutObj.dtype == dtypeList[index]:
+                datatypeValue = datatypeValueList[index]
+                break
+        
+        
+        pts2write = self.dataOutObj.nHeights * self.dataOutObj.nFFTPoints
+        
+        pts2write_SelfSpectra = int(self.nWrChannels * pts2write)
+        blocksize = pts2write_SelfSpectra
+        
+        if self.dataOutObj.data_cspc != None:
+            pts2write_CrossSpectra = int(self.nWrPairs * pts2write)
+            blocksize += pts2write_CrossSpectra
+        
+        if self.dataOutObj.data_dc != None:
+            pts2write_DCchannels = int(self.nWrChannels * self.dataOutObj.nHeights)
+            blocksize += pts2write_DCchannels
+        
+        blocksize = blocksize * datatypeValue * 2
+
+        return blocksize
+    
+    
+    def getBasicHeader(self):
+        self.basicHeaderObj.size = self.basicHeaderSize #bytes
+        self.basicHeaderObj.version = self.versionFile
+        self.basicHeaderObj.dataBlock = self.nTotalBlocks
+        
+        utc = numpy.floor(self.dataOutObj.dataUtcTime)
+        milisecond  = (self.dataOutObj.dataUtcTime - utc)* 1000.0
+        
+        self.basicHeaderObj.utc = utc
+        self.basicHeaderObj.miliSecond = milisecond
+        self.basicHeaderObj.timeZone = 0
+        self.basicHeaderObj.dstFlag = 0
+        self.basicHeaderObj.errorCount = 0
+    
+    def getDataHeader(self):
+        
+        """
+        Obtiene una copia del First Header
+         
+        Affected:
+            self.systemHeaderObj
+            self.radarControllerHeaderObj
+            self.dtype
+
+        Return: 
+            None
+        """
+        
+        self.systemHeaderObj = self.dataOutObj.systemHeaderObj.copy()
+        self.radarControllerHeaderObj = self.dataOutObj.radarControllerHeaderObj.copy()
+        
+        self.getBasicHeader()
+        
+        processingHeaderSize = 40 # bytes    
+        self.processingHeaderObj.dtype = 0 # Voltage
+        self.processingHeaderObj.blockSize = self.__getBlockSize()
+        self.processingHeaderObj.profilesPerBlock = self.profilesPerBlock
+        self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
+        self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOutObj.processingHeaderObj.nWindows
+        self.processingHeaderObj.processFlags = self.__getProcessFlags()
+        self.processingHeaderObj.nCohInt = self.dataOutObj.nCohInt
+        self.processingHeaderObj.nIncohInt = 1 # Cuando la data de origen es de tipo Voltage
+        self.processingHeaderObj.totalSpectra = 0 # Cuando la data de origen es de tipo Voltage
+        
+        if self.dataOutObj.code != None:
+            self.processingHeaderObj.code = self.dataOutObj.code
+            self.processingHeaderObj.nCode = self.dataOutObj.nCode
+            self.processingHeaderObj.nBaud = self.dataOutObj.nBaud
+            codesize = int(8 + 4 * self.dataOutObj.nCode * self.dataOutObj.nBaud)
+            processingHeaderSize += codesize
+        
+        if self.processingHeaderObj.nWindows != 0:
+            self.processingHeaderObj.firstHeight = self.dataOutObj.heightList[0]
+            self.processingHeaderObj.deltaHeight = self.dataOutObj.heightList[1] - self.dataOutObj.heightList[0]
+            self.processingHeaderObj.nHeights = self.dataOutObj.nHeights
+            self.processingHeaderObj.samplesWin = self.dataOutObj.nHeights
+            processingHeaderSize += 12
+            
+        self.processingHeaderObj.size = processingHeaderSize    
+            
+    

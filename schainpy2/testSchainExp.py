@@ -21,16 +21,24 @@ class TestSChain():
 
     def setValues(self):
         self.path = "/Users/danielangelsuarezmunoz/Data/EW_Drifts"
+        self.startDate = datetime.date(2011,11,28)
+        self.endDate = datetime.date(2011,11,30)
         
+#        self.path = "/Users/danielangelsuarezmunoz/Data/Imaging_rawdata"
+#        self.startDate = datetime.date(2011,10,4)
+#        self.endDate = datetime.date(2011,10,4)
+
+        # Probando los escritos por Signal Chain
+        self.path = "/Users/danielangelsuarezmunoz/Data/testWR"
         self.startDate = datetime.date(2011,11,28)
         self.endDate = datetime.date(2011,11,30)
         
         self.startTime = datetime.time(0,0,0)
         self.endTime = datetime.time(23,59,59)
         
-        self.wrpath = "/Users/jro/Documents/RadarData/wr_data"
+        self.wrpath = "/Users/danielangelsuarezmunoz/Data/testWR"
         self.profilesPerBlock = 40
-        self.blocksPerFile = 50 
+        self.blocksPerFile = 50
     
     def createObjects(self):        
         
@@ -56,16 +64,17 @@ class TestSChain():
         while(True):
             self.readerObj.getData()
             
-            self.voltObjProc.init()
-            
-            self.voltObjProc.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
+#            self.voltObjProc.init()
+#            
+#            self.voltObjProc.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
                    
             if self.readerObj.flagNoMoreFiles:
                 break
             
             if self.readerObj.flagIsNewBlock:
-                print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks,
-                                                  datetime.datetime.fromtimestamp(self.readerObj.basicHeaderObj.utc),)
+#                print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks, datetime.datetime.fromtimestamp(self.readerObj.basicHeaderObj.utc),)
+                print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks, 
+                                                  datetime.datetime.utcfromtimestamp(self.readerObj.basicHeaderObj.utc + self.readerObj.basicHeaderObj.miliSecond/1000.0),)
 
     
 if __name__ == '__main__':

@@ -341,9 +341,9 @@ class ProcessingHeader(Header):
         self.deltaHeight = 0
         self.samplesWin = 0
         self.spectraComb = 0
-        self.nCode = 0
-        self.code = 0
-        self.nBaud = 0
+        self.nCode = None
+        self.code = None
+        self.nBaud = None
         self.shif_fft = False
         self.flag_dc = False
         self.flag_cspc = False

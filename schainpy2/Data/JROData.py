@@ -45,6 +45,13 @@ class JROData:
     nBaud = None
     
     code = None
+    
+    flagDecodeData = True #asumo q la data esta decodificada
+    
+    flagDeflipData = True #asumo q la data esta sin flip
+    
+    flagShiftFFT = False
+    
 
     def __init__(self):
         

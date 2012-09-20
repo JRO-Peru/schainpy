@@ -488,6 +488,8 @@ class JRODataWriter(JRODataIO):
     
     blocksPerFile = None
     
+    nWriteBlocks = 0
+    
     def __init__(self, dataOutObj=None):
         raise ValueError, "Not implemented"
 
@@ -521,8 +523,8 @@ class JRODataWriter(JRODataIO):
         
 #        CALCULAR PARAMETROS
         
-        sizeLongHeader = 0#XXXX
-        self.basicHeaderObj.size = 24 + sizeLongHeader
+        sizeLongHeader = self.systemHeaderObj.size + self.radarControllerHeaderObj.size + self.processingHeaderObj.size
+        self.basicHeaderObj.size = self.basicHeaderSize + sizeLongHeader
         
         self.__writeBasicHeader()
         self.__wrSystemHeader()
@@ -541,7 +543,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.dataOutObj.basicHeaderObj.write(fp)
+        self.basicHeaderObj.write(fp)
 
     
     def __wrSystemHeader(self, fp=None):
@@ -554,7 +556,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.dataOutObj.systemHeaderObj.write(fp)
+        self.systemHeaderObj.write(fp)
 
     
     def __wrRadarControllerHeader(self, fp=None):
@@ -567,7 +569,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
         
-        self.dataOutObj.radarControllerHeaderObj.write(fp)
+        self.radarControllerHeaderObj.write(fp)
 
         
     def __wrProcessingHeader(self, fp=None):
@@ -580,7 +582,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.dataOutObj.processingHeaderObj.write(fp)
+        self.processingHeaderObj.write(fp)
     
     
     def setNextFile(self):
@@ -647,6 +649,8 @@ class JRODataWriter(JRODataIO):
         self.fp = fp
         self.setFile = setFile
         self.flagIsNewFile = 1
+        
+        self.getDataHeader()
         
         print 'Writing the file: %s'%self.filename
         
@@ -732,18 +736,12 @@ class JRODataWriter(JRODataIO):
         
         self.blocksPerFile = blocksPerFile
         
-        
-        
-        
-        
-        self.getDataHeader()
-
-        self.setBlockDimension()
-        
-        if not( self.setNextFile() ):
+        if not(self.setNextFile()):
             print "There isn't a next file"
             return 0
-
+        
+        self.setBlockDimension()
+        
         return 1
 
 
