@@ -551,6 +551,7 @@ class VoltageWriter(JRODataWriter):
         """
         
         self.systemHeaderObj = self.dataOutObj.systemHeaderObj.copy()
+        self.systemHeaderObj.nChannels = self.dataOutObj.nChannels
         self.radarControllerHeaderObj = self.dataOutObj.radarControllerHeaderObj.copy()
         
         self.getBasicHeader()

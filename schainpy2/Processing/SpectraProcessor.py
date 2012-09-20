@@ -257,7 +257,7 @@ class SpectraProcessor:
 #        self.getNoise()
         
     def addWriter(self, wrpath, profilesPerBlock, blocksPerFile):
-        objWriter = SpectraWriter(self.dataOutObj, pairList)
+        objWriter = SpectraWriter(self.dataOutObj)
         objWriter.setup(wrpath, profilesPerBlock, blocksPerFile)
         self.writerObjList.append(objWriter)
                     

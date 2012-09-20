@@ -441,7 +441,7 @@ class SpectraWriter(JRODataWriter):
 #            
 #            self.nWrPairs = len(pairList)
         
-        self.wrPairList = self.dataOutObj.pairList
+        self.wrPairList = self.dataOutObj.pairsList
         
         self.nWrPairs = self.dataOutObj.nPairs
         
@@ -505,7 +505,7 @@ class SpectraWriter(JRODataWriter):
                                   self.processingHeaderObj.nHeights,
                                   self.processingHeaderObj.profilesPerBlock)
         
-        self.shape_dc_Buffer = (self.systemHeaderObj.nChannels,
+        self.shape_dc_Buffer = (self.dataOutObj.nChannels,
                                 self.processingHeaderObj.nHeights)
 
     
@@ -583,13 +583,16 @@ class SpectraWriter(JRODataWriter):
             self.data_dc.fill(0)
             self.setNextFile()
         
+        if self.flagIsNewFile == 0:
+            self.getBasicHeader()
+        
         self.data_spc = self.dataOutObj.data_spc
         self.data_cspc = self.dataOutObj.data_cspc
         self.data_dc = self.dataOutObj.data_dc
         
         # #self.processingHeaderObj.dataBlocksPerFile)
         if self.hasAllDataInBuffer():
-            self.getDataHeader()
+#            self.getDataHeader()
             self.writeNextBlock()
         
         if self.flagNoMoreFiles:
@@ -714,6 +717,7 @@ class SpectraWriter(JRODataWriter):
         """
         
         self.systemHeaderObj = self.dataOutObj.systemHeaderObj.copy()
+        self.systemHeaderObj.nChannels = self.dataOutObj.nChannels
         self.radarControllerHeaderObj = self.dataOutObj.radarControllerHeaderObj.copy()
         
         self.getBasicHeader()
@@ -721,27 +725,50 @@ class SpectraWriter(JRODataWriter):
         processingHeaderSize = 40 # bytes    
         self.processingHeaderObj.dtype = 0 # Voltage
         self.processingHeaderObj.blockSize = self.__getBlockSize()
-        self.processingHeaderObj.profilesPerBlock = self.profilesPerBlock
+        self.processingHeaderObj.profilesPerBlock = self.dataOutObj.nFFTPoints
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
         self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOutObj.processingHeaderObj.nWindows
         self.processingHeaderObj.processFlags = self.__getProcessFlags()
-        self.processingHeaderObj.nCohInt = self.dataOutObj.nCohInt
-        self.processingHeaderObj.nIncohInt = 1 # Cuando la data de origen es de tipo Voltage
-        self.processingHeaderObj.totalSpectra = 0 # Cuando la data de origen es de tipo Voltage
+        self.processingHeaderObj.nCohInt = 1# Cuando la data de origen es de tipo Spectra
+        self.processingHeaderObj.nIncohInt = self.dataOutObj.nIncohInt 
+        self.processingHeaderObj.totalSpectra = self.dataOutObj.nPairs + self.dataOutObj.nChannels
+        
+        if self.processingHeaderObj.totalSpectra > 0:
+            channelList = []
+            for channel in range(self.dataOutObj.nChannels):
+                channelList.append(channel)
+                channelList.append(channel)
+                
+            pairsList = []
+            for pair in self.dataOutObj.pairsList:
+                pairsList.append(pair[0])
+                pairsList.append(pair[1])
+            spectraComb = channelList + pairsList
+            spectraComb = numpy.array(spectraComb,dtype="u1")
+            self.processingHeaderObj.spectraComb = spectraComb
+            sizeOfSpcComb = len(spectraComb)
+            processingHeaderSize += sizeOfSpcComb
         
         if self.dataOutObj.code != None:
             self.processingHeaderObj.code = self.dataOutObj.code
             self.processingHeaderObj.nCode = self.dataOutObj.nCode
             self.processingHeaderObj.nBaud = self.dataOutObj.nBaud
-            codesize = int(8 + 4 * self.dataOutObj.nCode * self.dataOutObj.nBaud)
-            processingHeaderSize += codesize
+            nCodeSize = 4 # bytes
+            nBaudSize = 4 # bytes
+            codeSize = 4 # bytes
+            sizeOfCode = int(nCodeSize + nBaudSize + codeSize * self.dataOutObj.nCode * self.dataOutObj.nBaud)
+            processingHeaderSize += sizeOfCode
         
         if self.processingHeaderObj.nWindows != 0:
             self.processingHeaderObj.firstHeight = self.dataOutObj.heightList[0]
             self.processingHeaderObj.deltaHeight = self.dataOutObj.heightList[1] - self.dataOutObj.heightList[0]
             self.processingHeaderObj.nHeights = self.dataOutObj.nHeights
             self.processingHeaderObj.samplesWin = self.dataOutObj.nHeights
-            processingHeaderSize += 12
+            sizeOfFirstHeight = 4
+            sizeOfdeltaHeight = 4
+            sizeOfnHeights = 4
+            sizeOfWindows = (sizeOfFirstHeight + sizeOfdeltaHeight + sizeOfnHeights)*self.processingHeaderObj.nWindows
+            processingHeaderSize += sizeOfWindows
             
         self.processingHeaderObj.size = processingHeaderSize    
             

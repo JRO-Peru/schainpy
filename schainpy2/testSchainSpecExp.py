@@ -33,7 +33,7 @@ class TestSChain:
         
         # paramatros para Escritura de Pdata
         self.wrpath = "/Users/danielangelsuarezmunoz/Data/testWR_pdata"
-        self.profilesPerBlock = 16
+        self.profilesPerBlock = 8
         self.blocksPerFile = 5
 #        self.pairList = [(0,1),(0,2)]
         

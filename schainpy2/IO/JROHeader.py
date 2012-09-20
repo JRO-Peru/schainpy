@@ -429,7 +429,7 @@ class ProcessingHeader(Header):
 
             
         if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
-            nCode = self.nCode
+            nCode = self.nCode #Probar con un dato que almacene codigo, hasta el momento no se hizo la prueba
             nCode.tofile(fp)
 
             nBaud = self.nBaud
