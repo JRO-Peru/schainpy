@@ -1,9 +1,9 @@
 '''
-Created on Feb 7, 2012
 
-@author $Author: murco $
-@version $Id: SpectraProcessor.py 119 2012-09-05 17:06:09Z murco $
+$Author$
+$Id$
 '''
+
 import os, sys
 import numpy
 import time
@@ -256,9 +256,9 @@ class SpectraProcessor:
         
 #        self.getNoise()
         
-    def addWriter(self, wrpath, profilesPerBlock, blocksPerFile):
+    def addWriter(self, wrpath, blocksPerFile):
         objWriter = SpectraWriter(self.dataOutObj)
-        objWriter.setup(wrpath, profilesPerBlock, blocksPerFile)
+        objWriter.setup(wrpath, blocksPerFile)
         self.writerObjList.append(objWriter)
                     
     def addIntegrator(self,N,timeInterval):
@@ -266,12 +266,12 @@ class SpectraProcessor:
         objIncohInt = IncoherentIntegration(N,timeInterval)
         self.integratorObjList.append(objIncohInt)
     
-    def writeData(self, wrpath, profilesPerBlock, blocksPerFile):
+    def writeData(self, wrpath, blocksPerFile):
         if self.dataOutObj.flagNoData:
                 return 0
             
         if len(self.writerObjList) <= self.writerObjIndex:
-            self.addWriter(wrpath, profilesPerBlock, blocksPerFile)
+            self.addWriter(wrpath, blocksPerFile)
         
         self.writerObjList[self.writerObjIndex].putData()
         

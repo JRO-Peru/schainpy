@@ -1,3 +1,9 @@
+'''
+
+$Author$
+$Id$
+'''
+
 import os, sys
 import glob
 import time
@@ -707,7 +713,7 @@ class JRODataWriter(JRODataIO):
         
         raise ValueError, "No implemented"        
     
-    def setup(self, path, profilesPerBlock, blocksPerFile, set=0, ext=None):
+    def setup(self, path, blocksPerFile, profilesPerBlock=None, set=0, ext=None):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
@@ -732,9 +738,9 @@ class JRODataWriter(JRODataIO):
         
         self.setFile = set - 1
         
-        self.profilesPerBlock = profilesPerBlock
-        
         self.blocksPerFile = blocksPerFile
+        
+        self.profilesPerBlock = profilesPerBlock
         
         if not(self.setNextFile()):
             print "There isn't a next file"

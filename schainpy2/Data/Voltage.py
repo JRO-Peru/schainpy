@@ -1,3 +1,9 @@
+'''
+
+$Author$
+$Id$
+'''
+
 import os, sys
 import numpy
 

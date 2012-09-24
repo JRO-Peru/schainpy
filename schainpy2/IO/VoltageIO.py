@@ -1,8 +1,7 @@
 '''
-Created on 23/01/2012
 
-@author $Author: dsuarez $
-@version $Id: VoltageIO.py 110 2012-07-19 15:18:18Z dsuarez $
+$Author$
+$Id$
 '''
 
 import os, sys
@@ -294,7 +293,7 @@ class VoltageReader(JRODataReader):
         
         self.dataOutObj.flagTimeBlock = self.flagTimeBlock
         
-        self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc + self.profileIndex * self.ippSeconds
+        self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
         
         self.dataOutObj.nCohInt = self.processingHeaderObj.nCohInt
         

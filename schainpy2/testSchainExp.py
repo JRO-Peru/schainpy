@@ -1,4 +1,8 @@
+'''
 
+$Author$
+$Id$
+'''
 import os, sys
 import time, datetime
 

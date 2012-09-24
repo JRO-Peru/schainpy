@@ -1,3 +1,9 @@
+'''
+
+$Author$
+$Id$
+'''
+
 import os 
 import sys
 import numpy
@@ -46,18 +52,18 @@ class VoltageProcessor:
         objCohInt = CoherentIntegrator(N,timeInterval)
         self.integratorObjList.append(objCohInt)
 
-    def addWriter(self, wrpath, profilesPerBlock, blocksPerFile):
+    def addWriter(self, wrpath, blocksPerFile, profilesPerBlock):
         objWriter = VoltageWriter(self.dataOutObj)
-        objWriter.setup(wrpath,profilesPerBlock,blocksPerFile)
+        objWriter.setup(wrpath,blocksPerFile,profilesPerBlock)
         self.writerObjList.append(objWriter)
         
-    def writeData(self, wrpath, profilesPerBlock, blocksPerFile):
+    def writeData(self, wrpath, blocksPerFile, profilesPerBlock):
         
         if self.dataOutObj.flagNoData:
             return 0
             
         if len(self.writerObjList) <= self.writerObjIndex:
-            self.addWriter(wrpath, profilesPerBlock, blocksPerFile)
+            self.addWriter(wrpath, blocksPerFile, profilesPerBlock)
         
         self.writerObjList[self.writerObjIndex].putData()
         

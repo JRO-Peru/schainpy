@@ -1,9 +1,7 @@
-''' 
-File: SpectraIO.py
-Created on 20/02/2012
+'''
 
-@author $Author: dsuarez $
-@version $Id: SpectraIO.py 110 2012-07-19 15:18:18Z dsuarez $
+$Author$
+$Id$
 '''
 
 import os, sys
@@ -367,7 +365,7 @@ class SpectraReader(JRODataReader):
         
         self.dataOutObj.channelIndexList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc #+ self.profileIndex * self.ippSeconds
+        self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000.#+ self.profileIndex * self.ippSeconds
         
         self.dataOutObj.flagShiftFFT = self.processingHeaderObj.shif_fft
         
@@ -540,13 +538,14 @@ class SpectraWriter(JRODataWriter):
             data['imag'] = cspc.imag
             data = data.reshape((-1))
             data.tofile(self.fp)
-
-        data = numpy.zeros( self.shape_dc_Buffer, self.dtype )
-        dc = self.data_dc
-        data['real'] = dc.real
-        data['imag'] = dc.imag
-        data = data.reshape((-1))
-        data.tofile(self.fp)
+        
+        if self.data_dc != None:
+            data = numpy.zeros( self.shape_dc_Buffer, self.dtype )
+            dc = self.data_dc
+            data['real'] = dc.real
+            data['imag'] = dc.imag
+            data = data.reshape((-1))
+            data.tofile(self.fp)
 
         self.data_spc.fill(0)
         self.data_dc.fill(0)
@@ -557,6 +556,7 @@ class SpectraWriter(JRODataWriter):
         self.flagIsNewBlock = 1
         self.nTotalBlocks += 1
         self.nWriteBlocks += 1
+        self.blockIndex += 1
         
         
     def putData(self):
@@ -673,17 +673,17 @@ class SpectraWriter(JRODataWriter):
         pts2write = self.dataOutObj.nHeights * self.dataOutObj.nFFTPoints
         
         pts2write_SelfSpectra = int(self.nWrChannels * pts2write)
-        blocksize = pts2write_SelfSpectra
+        blocksize = (pts2write_SelfSpectra*datatypeValue)
         
         if self.dataOutObj.data_cspc != None:
             pts2write_CrossSpectra = int(self.nWrPairs * pts2write)
-            blocksize += pts2write_CrossSpectra
+            blocksize += (pts2write_CrossSpectra*datatypeValue*2)
         
         if self.dataOutObj.data_dc != None:
             pts2write_DCchannels = int(self.nWrChannels * self.dataOutObj.nHeights)
-            blocksize += pts2write_DCchannels
+            blocksize += (pts2write_DCchannels*datatypeValue*2)
         
-        blocksize = blocksize * datatypeValue * 2
+        blocksize = blocksize #* datatypeValue * 2 #CORREGIR ESTO
 
         return blocksize
     

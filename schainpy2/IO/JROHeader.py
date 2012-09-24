@@ -1,8 +1,7 @@
 '''
-Created on 23/01/2012
 
-@author $Author: vsarmiento $
-@version $Id: HeaderIO.py 37 2012-03-26 22:55:13Z vsarmiento $
+$Author$
+$Id$
 '''
 
 import numpy

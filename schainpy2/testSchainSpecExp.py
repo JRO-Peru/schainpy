@@ -1,3 +1,8 @@
+'''
+
+$Author$
+$Id$
+'''
 
 import os, sys
 import time, datetime
@@ -20,10 +25,11 @@ class TestSChain:
         self.testSChain()
 
     def setValues(self):
-        self.path = "/Users/jro/Documents/RadarData/MST_ISR/MST"
-#        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
-        self.path = "/Users/danielangelsuarezmunoz/Data/EW_Drifts"
-        self.path = "/Users/danielangelsuarezmunoz/Data/IMAGING"
+#        self.path = "/Users/jro/Documents/RadarData/MST_ISR/MST"
+##        self.path = "/home/roj-idl71/Data/RAWDATA/IMAGING"
+#        self.path = "/Users/danielangelsuarezmunoz/Data/EW_Drifts"
+#        self.path = "/Users/danielangelsuarezmunoz/Data/IMAGING"
+        self.path = "/home/daniel/RadarData/IMAGING"
         
         self.startDate = datetime.date(2012,3,1)
         self.endDate = datetime.date(2012,3,30)
@@ -32,10 +38,9 @@ class TestSChain:
         self.endTime = datetime.time(14,1,1)
         
         # paramatros para Escritura de Pdata
-        self.wrpath = "/Users/danielangelsuarezmunoz/Data/testWR_pdata"
-        self.profilesPerBlock = 8
+        self.wrpath = "/home/daniel/RadarData/test_wr2"
         self.blocksPerFile = 5
-#        self.pairList = [(0,1),(0,2)]
+
         
     
     def createObjects(self):        
@@ -50,7 +55,7 @@ class TestSChain:
                                    endTime = self.endTime,
                                    expLabel = '',
                                    online = 0) 
-        # new lines
+
         self.specObjProc = SpectraProcessor()
         
         self.specObj2 = self.specObjProc.setup(dataInObj = self.specObj1)
@@ -66,8 +71,8 @@ class TestSChain:
             
             self.specObjProc.init()
             
-            self.specObjProc.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
-                   
+            self.specObjProc.writeData(self.wrpath,self.blocksPerFile)
+#                   
             if self.readerObj.flagNoMoreFiles:
                 break
             
