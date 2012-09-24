@@ -30,10 +30,13 @@ class TestSChain():
         self.path = "/home/dsuarez/Projects"
         self.path = "/Users/jro/Documents/RadarData/EW_Drifts"
         self.path = "/Users/jro/Documents/RadarData/MST_ISR/MST"
+        self.path = "/home/daniel/RadarData/MST"
         
-        self.startDateTime = datetime.datetime(2009,01,1,0,0,0)
-        self.endDateTime = datetime.datetime(2009,01,31,0,20,0)
+        self.startDate = datetime.date(2009,01,1)
+        self.endDate = datetime.date(2009,01,31)
         
+        self.startTime = datetime.time(0,0,0)
+        self.endTime = datetime.time(20,0,0)
         self.N = 4
         self.npts = 8
     
@@ -45,8 +48,10 @@ class TestSChain():
 
         self.voltObj1 = self.readerObj.setup(
                                    path = self.path,
-                                   startDateTime = self.startDateTime,
-                                   endDateTime = self.endDateTime,
+                                   startDate = self.startDate,
+                                   endDate = self.endDate,
+                                   startTime = self.startTime,
+                                   endTime = self.endTime,
                                    expLabel = '',
                                    online = 0) 
         
