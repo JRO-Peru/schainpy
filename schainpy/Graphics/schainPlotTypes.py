@@ -39,8 +39,8 @@ class RTIFrame(Frame):
         self.showGraph1 = showColorbar
         self.showGraph2 = showPowerProfile
     
-    def setXYPos
-        
+    def setXYPos(self):
+        pass
 
 class SelfSpcFigure(Figure):
     def __init__(self):

@@ -1,8 +1,7 @@
-
 import numpy
-import schainPlplotLib
+import schainPlot
 
-class Figure:
+class RTIFigure(schainPlot.Figure):
     
     __driverObj = None
     __isDriverOpen = False
@@ -150,114 +149,19 @@ class Figure:
     def getSubplots(self):
         
         raise ValueError, ''
-        
-class Frame:
     
-    """
-        subplots
-    """
+class RTIFrame(schainPlot.Frame):
     
-    plotObjList = []
-    
-    def __init__(self, idframe, showGraph1=False, showGraph2=False):
-        
-        self.idframe = idframe
-        self.showGraph1 = showGraph1
-        self.showGraph2 = showGraph2
-        
-        self.nplots = 1 + showGraph1 + showGraph2
-        self.__createPlots()
-    
-    def __createPlots(self):
-        
-        for nplot in range(self.nplots):
-            xi, yi, xw, yw = self.__getScreenPos(nplot)
-            plotObj = Plot(xi, yi, xw, yw)
-            
-            self.plotObjList.append(plotObj)
-            
-    def __getScreenPosMainPlot(self):
-        
-        """
-        Calcula las coordenadas asociadas al plot principal.
-        """
-        
-        xi = 1.2
-        yi = 2.3
-        xw = 2.0
-        yw = 1.4
-        
-        return xi, yi, xw, yw
-        
-    def __getScreenPosGraph1(self):
-        xi = 1.2
-        yi = 2.3
-        xw = 2.0
-        yw = 1.4
-        
-        return xi, yi, xw, yw
-    
-    def __getScreenPosGraph2(self):
-        xi = 1.2
-        yi = 2.3
-        xw = 2.0
-        yw = 1.4
-        
-        return xi, yi, xw, yw
-            
-    def __getScreenPos(self, nplot):
-        
-        if nplot == 0:
-            xi, yi, xw, yw = self.__getScreenPosMain()
-        if nplot == 1:
-            xi, yi, xw, yw = self.__getScreenPosMain()
-        if nplot == 2:
-            xi, yi, xw, yw = self.__getScreenPosMain()
-        
-        return xi, yi, xw, yw
-
-              
-    def init(self, xmin, xmax, ymin, yamx, minvalue, maxvalue):
-        
-        """
-        """
-        
-        for plotObj in self.plotObjList:
-            plotObj.plotBox(xmin, xmax, ymin, yamx, minvalue, maxvalue)
-    
-    def clearData(self):
-        pass
-
-    def plot(self, data):
-        
-        for plotObj in self.plotObjList:
-            plotObj.plotData(data)
-        
-    def refresh(self):
-        pass    
-    
-
-
-class Plot:
-    
-    def __init__(self, xi, yi, xw, yw):
-        
-        self.xi = xi
-        self.yi = yi
-        self.xw = xw
-        self.yw = yw
-    
-    def __setRange(self, xrange, yrange, zrange):
+    def __init__(self):
         pass
     
-    def __setLabels(self, xlabel, ylabel, zlabel):
+    def setup(self):
         pass
 
+class RTIPlot(schainPlot.Plot):
     
-    def plotBox(self,xmin, xmax, ymin, yamx, minvalue, maxvalue):
+    def __init__(self):
         pass
     
-    def plotData(self):
-        
-        raise ValueError, ""
-    
+    def setup(self):
+        pass
