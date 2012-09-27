@@ -2,25 +2,39 @@ import plplot
 import numpy
 import sys
 
-class Driver:
+class PlplotDriver:
     
     __isDriverOpen = False
-    
-    def __init__(self, driver=plplot):
+
+    def __init__(self, id=None, driver=None, wintitle, overplot, colormap, showGraph1, showGraph2):
         
-        self.idStream = idStream
-        self.nFrames = nFrames
-        self.winTitle = winTitle
-        self.colormap = colormap
+        if id == None:
+            raise ValueError, 'id input must be defined'
+        
+        if driver == None:
+            if sys.platform == "linux":
+                driver = ""
+            elif sys.platform == "darwin":
+                driver = ""
+            else:
+                driver = ""
+        
+        self.id = id
         self.driver = driver
         
+        
+        self.nFrames = nFrames
+        self.wintitle = wintitle
+        self.colormap = colormap
         self.showGraph1 = showGraph1
         self.showGraph2 = showGraph2
         
         self.overplot = overplot
     
     def configDriver(self):
-        
+        if self.driver == "":
+            import plplot
+            
         pass
     
     def openDriver(self):
@@ -83,8 +97,13 @@ class Driver:
         pass
 
 
-def config_driver(idStream, wintitle, width, height):
-    plplot.plsstrm(idStream)
+
+class MplDriver:
+    def __init__(self):
+        pass
+
+def config_driver(id, wintitle, width, height):
+    plplot.plsstrm(id)
     plplot.plparseopts([wintitle],plplot.PL_PARSE_FULL)
     plplot.plsetopt("geometry", "%dx%d"%(width,height))
 

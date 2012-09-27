@@ -1,4 +1,5 @@
 import numpy
+import sys
 import schainPlot
 
 class RTIFigure(schainPlot.Figure):
@@ -15,7 +16,7 @@ class RTIFigure(schainPlot.Figure):
     minvalue = None
     maxvalue = None
     
-    idfigure = None
+    id = None
     nframes = None
     wintitle = wintitle
     colormap = None
@@ -24,9 +25,9 @@ class RTIFigure(schainPlot.Figure):
         
     frameObjList = []
     
-    def __init__(self, idfigure, wintitle, xw=600, yw=800, overplot=0, driver='xwin', colormap='br_green', *showGraphs):
+    def __init__(self, id, wintitle, xw=600, yw=800, overplot=0, driver=None, colormap='br_green', *showGraphs):
         
-        self.idfigure = idfigure
+        self.id = id
         self.wintitle = wintitle
         self.colormap = colormap
         self.driver = driver
@@ -34,11 +35,15 @@ class RTIFigure(schainPlot.Figure):
         
         self.showGraphs = showGraphs
         
-        self.__driverObj = Driver(driver)
+        showColorbar = showGraphs[0]
+        showPowerprofile = showGraphs[1]
+        self.__driverObj = Driver(id, wintitle,xw,yw,overplot,driver,colormap,showColorbar,showPowerprofile)
+        
+    
             
     def __openDriver(self):
         
-        self.__driverObj.openDriver(self.idfigure, self.wintitle, self.xw, self.yw)
+        self.__driverObj.openDriver(self.id, self.wintitle, self.xw, self.yw)
     
     def __openFigure(self):
         
