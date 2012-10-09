@@ -3,35 +3,46 @@ from schainPlot import *
 
 
 class RTIFigure(Figure):
-    def __init__(self, idstream, nframe, wintitle, colormap, driver, showColorbar, showPowerProfile):
-        self.idStream = idStream
-        self.nFrames = nFrames
-        self.winTitle = winTitle
-        self.colormap = colormap
-        self.driver = driver
-        self.showGraph1 = showColorbar
-        self.showGraph2 = showPowerProfile
-        self.overplot = 1 # igual a 1 porque el grafico es RTI, para el caso de Spectra(Spc,CrossSpc) overplot = 0
+    
+    overplot = 1 # igual a 1 porque el grafico es RTI, para el caso de Spectra(Spc,CrossSpc) overplot = 0
+    xw = 700
+    yw = 150
+    nframes = None
+    
+    def __init__(self, idfigure, nframes, wintitle, colormap, driver, showColorbar, showPowerProfile):
         
-        self.width = 700
-        self.height = 150
-        self.ncol = int(numpy.sqrt(self.nFrames)+0.9)
-        self.nrow = int(self.nFrames*1./ncol + 0.9)
+        showGraphs = (showColorbar, showPowerProfile)
         
+        Figure.__init__(self, 
+                        idfigure=idfigure, 
+                        nframes = nframes,
+                        wintitle=wintitle, 
+                        xw=self.xw, 
+                        yw=self.yw, 
+                        overplot=self.overplot, 
+                        driver=driver, 
+                        colormap=colormap, 
+                        *showGraphs)
+        
+        self.nframes = nframes
+        self.showColorbar = showColorbar 
+        self.showPowerProfile = showPowerProfile
+    
+    def getSubplots(self):
+        nrows = self.nframes 
+        ncolumns = 1
+        
+        return nrows, ncolumns
         
     def __createFrames(self):
-        for frame in range(self.nFrames):
+        for frame in range(self.nframes):
             frameObj = RTIFrame(idFrame = frame,
-                             showGraph1 = self.showGraph1,
-                             showGraph2 = self.showGraph2
+                             showGraph1 = self.showColorbar,
+                             showGraph2 = self.showPowerProfile
                              )
             
             self.frameObjList.append(frameObj)
-    
-    
-        
-        
-        
+
     
 class RTIFrame(Frame):
     def __init__(self,idFrame, showColorbar, showPowerProfile):

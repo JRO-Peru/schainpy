@@ -1,60 +1,259 @@
 import plplot
 import numpy
 import sys
+import plplot #condicional
+
+class Driver:
+    def __init__(self,driver, idfigure, xw, yw, wintitle, overplot, colormap, *showGraphs):
+        if driver == "plplot":
+            self.driver = PlplotDriver(idfigure, xw, yw, wintitle, overplot, colormap, *showGraphs)
+        elif driver == "mpl":
+            self.driver = MplDriver(idfigure, xw, yw, wintitle, overplot, colormap, *showGraphs)
+        else:
+            raise ValueError, "The driver: %s is not defined"%driver
 
 class PlplotDriver:
     
     __isDriverOpen = False
-
-    def __init__(self, id=None, driver=None, wintitle, overplot, colormap, showGraph1, showGraph2):
+    pldriver = None
+    
+    def __init__(self, idfigure=None, xw, yw, wintitle, overplot, colormap, *showGraphs):
         
-        if id == None:
-            raise ValueError, 'id input must be defined'
+        if idfigure == None:
+            raise ValueError, 'idfigure input must be defined'
         
-        if driver == None:
-            if sys.platform == "linux":
-                driver = ""
-            elif sys.platform == "darwin":
-                driver = ""
-            else:
-                driver = ""
-        
-        self.id = id
-        self.driver = driver
-        
-        
-        self.nFrames = nFrames
+        self.idfigure = idfigure
+        self.xw = xw
+        self.yw = yw
         self.wintitle = wintitle
-        self.colormap = colormap
-        self.showGraph1 = showGraph1
-        self.showGraph2 = showGraph2
-        
         self.overplot = overplot
+        self.colormap = colormap
+        self.showGraph1 = showGraphs[0]
+        self.showGraph2 = showGraphs[1]  
     
     def configDriver(self):
-        if self.driver == "":
-            import plplot
-            
-        pass
-    
-    def openDriver(self):
-
-        pass
+        """
+        previous configuration to open(init) the plplot driver
+        """
+        plplot.plsstrm(self.idfigure)
+        plplot.plparseopts([self.wintitle],plplot.PL_PARSE_FULL)
+        plplot.plsetopt("geometry", "%dx%d"%(self.xw, self.yw))
+        
+        plplot.plscolbg(255,255,255)
+        plplot.plscol0(1,0,0,0)
+        
+    def openDriver(self, pldriver=None):
+        if pldriver == None:
+            if sys.platform == "linux":
+                pldriver = "xcairo"
+                
+            elif sys.platform == "darwin":
+                pldriver = "xwin"
+                
+            else:
+                pldriver = ""
+                
+        plplot.plsdev(pldriver)
+        plplot.plinit()
+        plplot.plspause(False)
+        
+        self.pldriver = pldriver
 
     def closeDriver(self):
-
         pass
     
     def openPage(self):
-        pass
+        plplot.plbop()
+        plplot.pladv(0)
     
     def closePage(self):
-        
-        pass
+        plplot.pleop()
     
-    def setColorMap(self):
+    def openFigure(self):
+        plplot.plbop()
+        plplot.pladv(0)
+    
+    def closeFigure(self):
+        plplot.pleop()
+    
+    def setSubPlots(self,nrows, ncolumns):
+        plplot.plssub(nrows, ncolumns)
+    
+    def setColorMap(self,colormap):
         
-        pass
+        if colormap == None:
+            return
+            
+        ncolor = None
+        rgb_lvl = None
+        
+        # Routine for defining a specific color map 1 in HLS space.
+        # if gray is true, use basic grayscale variation from half-dark to light.
+        # otherwise use false color variation from blue (240 deg) to red (360 deg).
+    
+        # Independent variable of control points.
+        
+        i = numpy.array((0., 1.))
+        
+        if colormap=="gray":
+            ncolor = 256
+            # Hue for control points.  Doesn't matter since saturation is zero.
+            h = numpy.array((0., 0.))
+            # Lightness ranging from half-dark (for interest) to light.
+            l = numpy.array((0.5, 1.))
+            # Gray scale has zero saturation
+            s = numpy.array((0., 0.))
+            
+            # number of cmap1 colours is 256 in this case.
+            plplot.plscmap1n(ncolor)
+            # Interpolate between control points to set up cmap1.
+            plplot.plscmap1l(0, i, h, l, s)
+            
+            return None
+        
+        if colormap == 'jet':
+            ncolor = 256          
+            pos = numpy.zeros((ncolor))
+            r = numpy.zeros((ncolor))
+            g = numpy.zeros((ncolor))
+            b = numpy.zeros((ncolor))
+            
+            for i in range(ncolor):
+                if(i <= 35.0/100*(ncolor-1)): rf = 0.0
+                elif (i <= 66.0/100*(ncolor-1)): rf = (100.0/31)*i/(ncolor-1) - 35.0/31
+                elif (i <= 89.0/100*(ncolor-1)): rf = 1.0
+                else: rf = (-100.0/22)*i/(ncolor-1) + 111.0/22
+        
+                if(i <= 12.0/100*(ncolor-1)): gf = 0.0
+                elif(i <= 38.0/100*(ncolor-1)): gf = (100.0/26)*i/(ncolor-1) - 12.0/26
+                elif(i <= 64.0/100*(ncolor-1)): gf = 1.0
+                elif(i <= 91.0/100*(ncolor-1)): gf = (-100.0/27)*i/(ncolor-1) + 91.0/27
+                else: gf = 0.0
+        
+                if(i <= 11.0/100*(ncolor-1)): bf = (50.0/11)*i/(ncolor-1) + 0.5
+                elif(i <= 34.0/100*(ncolor-1)): bf = 1.0
+                elif(i <= 65.0/100*(ncolor-1)): bf = (-100.0/31)*i/(ncolor-1) + 65.0/31
+                else: bf = 0           
+                
+                r[i] = rf
+                g[i] = gf
+                b[i] = bf
+            
+                pos[i] = float(i)/float(ncolor-1)
+            
+    
+            plplot.plscmap1n(ncolor)
+            plplot.plscmap1l(1, pos, r, g, b)
+        
+        
+        
+        if colormap=="br_green":
+            ncolor = 256
+            # Hue ranges from blue (240 deg) to red (0 or 360 deg)
+            h = numpy.array((240., 0.))
+            # Lightness and saturation are constant (values taken from C example).
+            l = numpy.array((0.6, 0.6))
+            s = numpy.array((0.8, 0.8))
+    
+            # number of cmap1 colours is 256 in this case.
+            plplot.plscmap1n(ncolor)
+            # Interpolate between control points to set up cmap1.
+            plplot.plscmap1l(0, i, h, l, s)
+            
+            return None
+        
+        if colormap=="tricolor":
+            ncolor = 3
+            # Hue ranges from blue (240 deg) to red (0 or 360 deg)
+            h = numpy.array((240., 0.))
+            # Lightness and saturation are constant (values taken from C example).
+            l = numpy.array((0.6, 0.6))
+            s = numpy.array((0.8, 0.8))
+    
+            # number of cmap1 colours is 256 in this case.
+            plplot.plscmap1n(ncolor)
+            # Interpolate between control points to set up cmap1.
+            plplot.plscmap1l(0, i, h, l, s)
+            
+            return None
+        
+        if colormap == 'rgb' or colormap == 'rgb666':
+            
+            color_sz = 6
+            ncolor = color_sz*color_sz*color_sz
+            pos = numpy.zeros((ncolor))
+            r = numpy.zeros((ncolor))
+            g = numpy.zeros((ncolor))
+            b = numpy.zeros((ncolor))
+            ind = 0
+            for ri in range(color_sz):
+                for gi in range(color_sz):
+                    for bi in range(color_sz):
+                        r[ind] = ri/(color_sz-1.0)
+                        g[ind] = gi/(color_sz-1.0)
+                        b[ind] = bi/(color_sz-1.0)
+                        pos[ind] = ind/(ncolor-1.0)
+                        ind += 1
+            rgb_lvl = [6,6,6]  #Levels for RGB colors
+            
+        if colormap == 'rgb676':
+            ncolor = 6*7*6
+            pos = numpy.zeros((ncolor))
+            r = numpy.zeros((ncolor))
+            g = numpy.zeros((ncolor))
+            b = numpy.zeros((ncolor))
+            ind = 0
+            for ri in range(8):
+                for gi in range(8):
+                    for bi in range(4):
+                        r[ind] = ri/(6-1.0)
+                        g[ind] = gi/(7-1.0)
+                        b[ind] = bi/(6-1.0)
+                        pos[ind] = ind/(ncolor-1.0)
+                        ind += 1
+            rgb_lvl = [6,7,6]  #Levels for RGB colors
+        
+        if colormap == 'rgb685':
+            ncolor = 6*8*5
+            pos = numpy.zeros((ncolor))
+            r = numpy.zeros((ncolor))
+            g = numpy.zeros((ncolor))
+            b = numpy.zeros((ncolor))
+            ind = 0
+            for ri in range(8):
+                for gi in range(8):
+                    for bi in range(4):
+                        r[ind] = ri/(6-1.0)
+                        g[ind] = gi/(8-1.0)
+                        b[ind] = bi/(5-1.0)
+                        pos[ind] = ind/(ncolor-1.0)
+                        ind += 1
+            rgb_lvl = [6,8,5]  #Levels for RGB colors
+                        
+        if colormap == 'rgb884':
+            ncolor = 8*8*4
+            pos = numpy.zeros((ncolor))
+            r = numpy.zeros((ncolor))
+            g = numpy.zeros((ncolor))
+            b = numpy.zeros((ncolor))
+            ind = 0
+            for ri in range(8):
+                for gi in range(8):
+                    for bi in range(4):
+                        r[ind] = ri/(8-1.0)
+                        g[ind] = gi/(8-1.0)
+                        b[ind] = bi/(4-1.0)
+                        pos[ind] = ind/(ncolor-1.0)
+                        ind += 1
+            rgb_lvl = [8,8,4]  #Levels for RGB colors
+        
+        if ncolor == None:
+            raise ValueError, "The colormap selected is not valid"
+        
+        plplot.plscmap1n(ncolor)
+        plplot.plscmap1l(1, pos, r, g, b)
+        
+        return rgb_lvl
     
     def setBox(self):
         
@@ -88,13 +287,7 @@ class PlplotDriver:
         
         pass
     
-    def figure(self):
-        
-        pass
-    
-    def setSubPlots(self):
-        
-        pass
+
 
 
 
@@ -102,8 +295,8 @@ class MplDriver:
     def __init__(self):
         pass
 
-def config_driver(id, wintitle, width, height):
-    plplot.plsstrm(id)
+def config_driver(idfigure, wintitle, width, height):
+    plplot.plsstrm(idfigure)
     plplot.plparseopts([wintitle],plplot.PL_PARSE_FULL)
     plplot.plsetopt("geometry", "%dx%d"%(width,height))
 

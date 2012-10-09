@@ -25,28 +25,35 @@ class Figure:
         
     frameObjList = []
     
-    def __init__(self, idfigure, wintitle, xw=600, yw=800, overplot=0, driver='xwin', colormap='br_green', *showGraphs):
+    def __init__(self, idfigure, nframes, wintitle, xw=600, yw=800, overplot=0, driver='plplot', colormap='br_green', *showGraphs):
         
-        self.idfigure = idfigure
-        self.wintitle = wintitle
-        self.colormap = colormap
         self.driver = driver
+        self.idfigure = idfigure
+        self.nframes = nframes
+        self.wintitle = wintitle
         self.overplot = overplot
+        self.colormap = colormap
+
+        self.showGraph1 = showGraphs[0]
+        self.showGraph2 = showGraphs[1]
+        self.__xw = xw
+        self.__yw = yw
         
-        self.showGraphs = showGraphs
+        self.__driverObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colormap, *showGraphs)
         
-        self.__driverObj = Driver(driver)
+        self.__driverObj.driver.configDriver()
+        
             
     def __openDriver(self):
         
-        self.__driverObj.openDriver(self.idfigure, self.wintitle, self.xw, self.yw)
+        self.__driverObj.driver.openDriver()
     
     def __openFigure(self):
         
         nrows, ncolumns = self.getSubplots()
         
-        self.__driverObj.openFigure()
-        self.__driverObj.setSubPlots(nrows, ncolumns)
+        self.__driverObj.driver.openFigure()
+        self.__driverObj.driver.setSubPlots(nrows, ncolumns)
         
         
     def __isOutOfXRange(self, x):
@@ -148,8 +155,8 @@ class Figure:
     
     
     def getSubplots(self):
-        
-        raise ValueError, ''
+
+        raise ValueError, "No implemented"
         
 class Frame:
     
