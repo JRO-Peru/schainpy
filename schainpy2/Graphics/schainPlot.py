@@ -1,6 +1,6 @@
 
 import numpy
-import schainPlplotLib
+from schainPlotLib import Driver
 
 class Figure:
     
@@ -18,7 +18,7 @@ class Figure:
     
     idfigure = None
     nframes = None
-    wintitle = wintitle
+    wintitle = None
     colormap = None
     driver = None
     overplot = None
@@ -77,13 +77,10 @@ class Figure:
         nx, ny  = data1D.shape
         
         if channelList == None:
-            chanellList = range(nx)
+            channelList = range(nx)
             
         if x == None:
             x = numpy.arange(data1D.size)
-            
-            
-            
             
         if not(self.__isDriverOpen):
             self.__openDriver()
@@ -97,7 +94,6 @@ class Figure:
             
             self.__createFrames()
             self.__isConfig = True
-        
         
         if not(self.__isOutOfXRange(x)):
             self.__changeXRange(x)
@@ -117,8 +113,7 @@ class Figure:
                               maxvalue=maxvalue)
                 
             self.__isFigureOpen = True
-            
-        
+
         for channel in channelList:
             dataCh = data1D[channel]
             frameObj = self.frameObjList[channel]
@@ -142,7 +137,6 @@ class Figure:
         
         if not(self.__isConfig):
             self.setRange(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, minvalue=minvalue, maxvalue=maxvalue)
-            
             self.__isConfig = True
             
         for channel in channelList:

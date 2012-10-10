@@ -15,7 +15,6 @@ from IO.VoltageIO import *
 from Processing.VoltageProcessor import *
 
 
-
 class TestSChain():
     
     def __init__(self):
@@ -24,23 +23,23 @@ class TestSChain():
         self.testSChain()
 
     def setValues(self):
-        self.path = "/Users/danielangelsuarezmunoz/Data/EW_Drifts"
-        self.startDate = datetime.date(2011,11,28)
-        self.endDate = datetime.date(2011,11,30)
+        self.path = "/home/dsuarez/RadarData/EW_DRIFTS"
+        self.startDate = datetime.date(2012,6,1)
+        self.endDate = datetime.date(2012,7,30)
         
 #        self.path = "/Users/danielangelsuarezmunoz/Data/Imaging_rawdata"
 #        self.startDate = datetime.date(2011,10,4)
 #        self.endDate = datetime.date(2011,10,4)
 
         # Probando los escritos por Signal Chain
-        self.path = "/Users/danielangelsuarezmunoz/Data/testWR"
-        self.startDate = datetime.date(2011,11,28)
-        self.endDate = datetime.date(2011,11,30)
+#        self.path = "/home/dsuarez/RadaData"
+#        self.startDate = datetime.date(2011,11,28)
+#        self.endDate = datetime.date(2011,11,30)
         
         self.startTime = datetime.time(0,0,0)
         self.endTime = datetime.time(23,59,59)
         
-        self.wrpath = "/Users/danielangelsuarezmunoz/Data/testWR"
+        self.wrpath = "/home/dsuarez/RadarData"
         self.profilesPerBlock = 40
         self.blocksPerFile = 50
     
@@ -68,10 +67,18 @@ class TestSChain():
         while(True):
             self.readerObj.getData()
             
-#            self.voltObjProc.init()
+            self.voltObjProc.init()
 #            
 #            self.voltObjProc.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
-                   
+            
+            
+            self.voltObjProc.plotScope(idfigure=1,
+                                        wintitle='test plot library',
+                                        driver='plplot',
+                                        save=False,
+                                        gpath=None,
+                                        type="power")
+            
             if self.readerObj.flagNoMoreFiles:
                 break
             

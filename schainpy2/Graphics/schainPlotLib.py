@@ -17,7 +17,7 @@ class PlplotDriver:
     __isDriverOpen = False
     pldriver = None
     
-    def __init__(self, idfigure=None, xw, yw, wintitle, overplot, colormap, *showGraphs):
+    def __init__(self, idfigure, xw, yw, wintitle, overplot, colormap, *showGraphs):
         
         if idfigure == None:
             raise ValueError, 'idfigure input must be defined'
@@ -38,22 +38,25 @@ class PlplotDriver:
         plplot.plsstrm(self.idfigure)
         plplot.plparseopts([self.wintitle],plplot.PL_PARSE_FULL)
         plplot.plsetopt("geometry", "%dx%d"%(self.xw, self.yw))
-        
-        plplot.plscolbg(255,255,255)
-        plplot.plscol0(1,0,0,0)
+
         
     def openDriver(self, pldriver=None):
         if pldriver == None:
             if sys.platform == "linux":
                 pldriver = "xcairo"
-                
+            
+            if sys.platform == "linux2":
+                pldriver = "xcairo"
+             
             elif sys.platform == "darwin":
                 pldriver = "xwin"
                 
             else:
                 pldriver = ""
                 
-        plplot.plsdev(pldriver)
+        plplot.plsdev("xwin") #para pruebas
+        plplot.plscolbg(255,255,255)
+        plplot.plscol0(1,0,0,0)
         plplot.plinit()
         plplot.plspause(False)
         

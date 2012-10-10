@@ -13,7 +13,7 @@ sys.path.append(path)
 
 from Data.Voltage import Voltage
 from IO.VoltageIO import VoltageWriter
-
+from Graphics.schainPlotTypes import ScopeFigure
 
 class VoltageProcessor:
     dataInObj = None
@@ -26,8 +26,10 @@ class VoltageProcessor:
     def __init__(self):
         self.integratorObjIndex = None
         self.writerObjIndex = None
+        self.plotObjIndex = None
         self.integratorObjList = []
         self.writerObjList = []
+        self.plotObjList = []
 
     def setup(self,dataInObj=None,dataOutObj=None):
         self.dataInObj = dataInObj
@@ -42,20 +44,64 @@ class VoltageProcessor:
     def init(self):
         self.integratorObjIndex = 0
         self.writerObjIndex = 0
+        self.plotObjIndex = 0
         
         if not(self.dataInObj.flagNoData):
             self.dataOutObj.copy(self.dataInObj)
         # No necesita copiar en cada init() los atributos de dataInObj
         # la copia deberia hacerse por cada nuevo bloque de datos
+    
+    def addScope(self, idfigure, nframes, wintitle, driver):
+        if idfigure==None:
+            idfigure = self.plotObjIndex
+            
+        scopeObj = ScopeFigure(idfigure, nframes, wintitle, driver)
+        self.plotObjList.append(scopeObj)
+    
+    def plotScope(self,
+                    idfigure=None,
+                    minvalue=None,
+                    maxvalue=None,
+                    xmin=None,
+                    xmax=None,
+                    wintitle='',
+                    driver='plplot',
+                    save=False,
+                    gpath=None,
+                    titleList=None,
+                    xlabelList=None,
+                    ylabelList=None,
+                    type="power"):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        nframes = len(self.dataOutObj.channelList)
+        
+        if len(self.plotObjList) <= self.plotObjIndex:
+            self.addScope(idfigure, nframes, wintitle, driver)
+        
+        self.plotObjList[self.plotObjIndex].plot1DArray(data1D=self.dataOutObj.data, 
+                                             x=self.dataOutObj.heightList, 
+                                             channelList=self.dataOutObj.channelList, 
+                                             xmin=xmin, 
+                                             xmax=xmax, 
+                                             minvalue=minvalue, 
+                                             maxvlaue=maxvalue, 
+                                             save=save, 
+                                             gpath=gpath)
+        
+        self.plotObjIndex += 1
+    
 
     def addIntegrator(self,N,timeInterval):
         objCohInt = CoherentIntegrator(N,timeInterval)
         self.integratorObjList.append(objCohInt)
 
     def addWriter(self, wrpath, blocksPerFile, profilesPerBlock):
-        objWriter = VoltageWriter(self.dataOutObj)
-        objWriter.setup(wrpath,blocksPerFile,profilesPerBlock)
-        self.writerObjList.append(objWriter)
+        writerObj = VoltageWriter(self.dataOutObj)
+        writerObj.setup(wrpath,blocksPerFile,profilesPerBlock)
+        self.writerObjList.append(writerObj)
         
     def writeData(self, wrpath, blocksPerFile, profilesPerBlock):
         
@@ -77,6 +123,7 @@ class VoltageProcessor:
 
         myCohIntObj = self.integratorObjList[self.integratorObjIndex]
         myCohIntObj.exe(data=self.dataOutObj.data,timeOfData=None)
+        
 
 
 class CoherentIntegrator:

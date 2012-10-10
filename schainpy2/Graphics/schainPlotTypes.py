@@ -4,22 +4,13 @@ from schainPlot import *
 class ScopeFigure(Figure):
     overplot = 0
     xw = 700
-    yw = 150
+    yw = 600
     
-    def __init__(self, idfigure, nframes, wintitle, driver):
+    def __init__(self,idfigure,nframes,wintitle,driver):
         
-        showGraphs = (0, 0)
-        
-        Figure.__init__(self, 
-                        idfigure=idfigure, 
-                        nframes = nframes,
-                        wintitle=wintitle, 
-                        xw=self.xw, 
-                        yw=self.yw, 
-                        overplot=self.overplot, 
-                        driver=driver, 
-                        colormap=None, 
-                        *showGraphs)
+        args = (0, 0)
+        colormap = None
+        Figure.__init__(self,idfigure,nframes,wintitle,self.xw,self.yw,self.overplot,driver,colormap,*args)
         
         self.nframes = nframes
         self.showColorbar = 0
@@ -89,7 +80,6 @@ class RTIFigure(Figure):
             
             self.frameObjList.append(frameObj)
 
-    
 class RTIFrame(Frame):
     def __init__(self,idFrame, showColorbar, showPowerProfile):
         self.idFrame = idFrame
@@ -115,11 +105,12 @@ class CrossSpcFrame(Frame):
     def __init__(self):
         pass
 
-class ScopeFigure(Figure):
-    def __init__(self):
-        pass
 
-class ScopeFrame(Frame):
-    def __init__(self):
-        pass
+if __name__ == '__main__':
+    idfigure=0
+    nframes=2
+    wintitle=''
+    driver='plplot'
+    scopeObj = ScopeFigure(idfigure,nframes,wintitle,driver)
+
     
