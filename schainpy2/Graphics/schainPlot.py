@@ -1,78 +1,67 @@
-
 import numpy
 from schainPlotLib import Driver
 
 class Figure:
-    
-    __driverObj = None
     __isDriverOpen = False
     __isFigureOpen = False
     __isConfig = False
-    __xw = None
-    __yw = None
-    
-    xmin = None
-    xmax = None
-    minvalue = None
-    maxvalue = None
-    
+    drvObj = None
     idfigure = None
     nframes = None
     wintitle = None
     colormap = None
     driver = None
     overplot = None
-        
+    xmin = None
+    xmax = None
+    minvalue = None
+    maxvalue = None
     frameObjList = []
+    figtitle = ""
     
-    def __init__(self, idfigure, nframes, wintitle, xw=600, yw=800, overplot=0, driver='plplot', colormap=None, *showGraphs):
-        
-        self.driver = driver
+    def __init__(self,idfigure, nframes, wintitle, xw=600, yw=800, overplot=0, driver='plplot', colorbar= True, colormap=None, *args):
         self.idfigure = idfigure
         self.nframes = nframes
         self.wintitle = wintitle
+        self.xw = xw
+        self.yw = yw
         self.overplot = overplot
+        self.colorbar = colorbar
         self.colormap = colormap
-
-        self.showGraph1 = showGraphs[0]
-        self.showGraph2 = showGraphs[1]
-        self.__xw = xw
-        self.__yw = yw
+        #esta seccion deberia ser dinamica de acuerdo a len(args)
+        self.showGraph1 = args[0]
+        self.showGraph2 = args[1]  
         
-        self.__driverObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colormap, *showGraphs)
+        self.drvObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colorbar, colormap)
         
-        self.__driverObj.driver.configDriver()
+        self.drvObj.driver.setFigure()
         
-            
+    
     def __openDriver(self):
-        
-        self.__driverObj.driver.openDriver()
+        self.drvObj.driver.openDriver()
     
-    def __openFigure(self):
+#    def __openFigure(self):
+#        nrows, ncolumns = self.getSubplots()
+#        self.drvObj.driver.openFigure()
+#        self.drvObj.driver.setTitleFig(title)
+#        self.drvObj.driver.setSubPlots(nrows, ncolumns)
         
+    def __initFigure(self):
         nrows, ncolumns = self.getSubplots()
-        
-        self.__driverObj.driver.openFigure()
-        self.__driverObj.driver.setSubPlots(nrows, ncolumns)
-        
-        
-    def __isOutOfXRange(self, x):
-        pass
+        self.drvObj.driver.openFigure()
+        self.drvObj.driver.setFigTitle(self.figtitle)
+        self.drvObj.driver.setSubPlots(nrows, ncolumns)
     
-    def __changeXRange(self, x):
-        pass
-
-    def __createFrames(self):
-        
-        for frame in range(self.nframes):
-            frameObj = Frame(idframe = frame,
-                             showGraph1 = self.showGraph1,
-                             showGraph2 = self.showGraph2
-                             )
-            
-            self.frameObjList.append(frameObj)
-            
-    def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvlaue=None, save=False, gpath='./'):
+    def __isOutOfXRange(self,x):
+        return 1
+    
+    def __refresh(self):
+        self.drvObj.driver.refresh()
+    
+    def createFrames(self):
+        raise ValueError, "No implemented"
+    
+    def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvalue=None, figtitle=None, save=False, gpath='./'):
         
         nx, ny  = data1D.shape
         
@@ -81,186 +70,163 @@ class Figure:
             
         if x == None:
             x = numpy.arange(data1D.size)
-            
+        
+        if figtitle == None:
+            self.figtitle = ""
+        else:
+            self.figtitle = figtitle 
+
         if not(self.__isDriverOpen):
             self.__openDriver()
             self.__isDriverOpen = True
         
         if not(self.__isConfig):
-            if self.xmin == None: xmin = numpy.min(x)
-            if self.xmax == None: xmax = numpy.max(x)
-            if self.minvalue == None: minvalue = numpy.min(data1D)
-            if self.maxvalue == None: maxvalue = numpy.max(data1D)
+            self.xmin = xmin
+            self.xmax = xmax
+            self.minvalue = minvalue
+            self.maxvalue = maxvalue
             
-            self.__createFrames()
+            if self.xmin == None: self.xmin = numpy.min(x)
+            if self.xmax == None: self.xmax = numpy.max(x)
+            if self.minvalue == None: self.minvalue = numpy.min(data1D)
+            if self.maxvalue == None: self.maxvalue = numpy.max(data1D)
+            
+            self.createFrames()
             self.__isConfig = True
         
         if not(self.__isOutOfXRange(x)):
             self.__changeXRange(x)
             
             if self.__isFigureOpen:
-                self.__driverObj.closePage()
+                self.driverObj.closePage()
                 self.__isFigureOpen = False
         
-        if not(self.__isFigureOpen):
-            self.__openFigure()
-            
-            for channel in channelList:
-                frameObj = self.frameObjList[channel]
-                frameObj.init(xmin=xmin,
-                              xmax=xmax,
-                              minvalue=minvalue,
-                              maxvalue=maxvalue)
-                
-            self.__isFigureOpen = True
+        self.__initFigure()
 
         for channel in channelList:
-            dataCh = data1D[channel]
+#            frametitle = self.plotTitleDict[channel]
             frameObj = self.frameObjList[channel]
-            
-            frameObj.clearData()
-            frameObj.plot(dataCh)
-            
-            frameObj.refresh()
-        
-        if not(self.overplot):
-            self.__driverObj.closeFigure()
-            self.__isFigureOpen = False
-        
-            
-    def plot2DArray(self, x, y, data2D, xmin=None, xmax=None, ymin=None, ymax=None, minvalue=None, maxvalue=None, save=False, gpath='./'):
-        
-        if not(self.__isCOpen):
-            self.__createFrames()
-            self.__openFigure()
-            self.__isOpen = True
-        
-        if not(self.__isConfig):
-            self.setRange(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, minvalue=minvalue, maxvalue=maxvalue)
-            self.__isConfig = True
+            frameObj.init(xmin=self.xmin,
+                          xmax=self.xmax,
+                          ymin=self.minvalue,
+                          ymax=self.maxvalue,
+                          minvalue=self.minvalue,
+                          maxvalue=self.maxvalue)
             
         for channel in channelList:
-            dataCh = dataArray[channel]
-            frameObj = frameObjList[channel]
-            frameObj.plot(dataCh)
+            dataCh = data1D[channel,:]
+            frameObj = self.frameObjList[channel]
+#            frameObj.clearData()
+            frameObj.plot(x, dataCh)
+            
+#            frameObj.refresh()
+        self.__refresh()
     
-    def saveFigure(self, filename):
-        pass
-    
-    
-    def getSubplots(self):
 
-        raise ValueError, "No implemented"
-        
+#        
+#        if save:
+#            self.colorplotObj.setFigure(indexPlot)
+#            path = "/home/roj-idl71/tmp/"
+#            now = datetime.datetime.now().timetuple()
+#            file = "spc_img%02d_%03d_%02d%02d%02d.png"%(indexPlot,now[7],now[3],now[4],now[5])
+#            filename = os.path.join(path,file)
+#            self.colorplotObj.savePlot(indexPlot, filename)
+#        
+#        self.colorplotObj.closePage()
+    
 class Frame:
-    
-    """
-        subplots
-    """
-    
+    nplots = None
     plotObjList = []
     title = ""
-    def __init__(self, idframe, showGraph1=False, showGraph2=False):
-        
+    def __init__(self,drvObj, idframe):
+        self.drvObj = drvObj
         self.idframe = idframe
-        self.showGraph1 = showGraph1
-        self.showGraph2 = showGraph2
-        
-        self.nplots = 1 + showGraph1 + showGraph2#para el caso de RTI showGrap1 deberia indicar colorbar como propiedad, no como plot
-        self.__createPlots()
+        self.createPlots()
     
-    def __createPlots(self):
-        
-        for nplot in range(self.nplots):
-            xi, yi, xw, yw = self.__getScreenPos(nplot)
-            plotObj = Plot(xi, yi, xw, yw)
-            
-            self.plotObjList.append(plotObj)
-            
-    def __getScreenPosMainPlot(self):
-        
-        """
-        Calcula las coordenadas asociadas al plot principal.
-        """
-        
-        xi = 1.2
-        yi = 2.3
-        xw = 2.0
-        yw = 1.4
-        
-        return xi, yi, xw, yw
-        
-    def __getScreenPosGraph1(self):
-        xi = 1.2
-        yi = 2.3
-        xw = 2.0
-        yw = 1.4
-        
-        return xi, yi, xw, yw
+    def createPlots(self):
+        raise ValueError, "No implemented"
     
-    def __getScreenPosGraph2(self):
-        xi = 1.2
-        yi = 2.3
-        xw = 2.0
-        yw = 1.4
-        
-        return xi, yi, xw, yw
-            
-    def __getScreenPos(self, nplot):
+    def getScreenPosMainPlot(self):
+        raise ValueError, "No implemented"
+
+    def getScreenPos(self, nplot):
         
         if nplot == 0:
-            xi, yi, xw, yw = self.__getScreenPosMain()
-        if nplot == 1:
-            xi, yi, xw, yw = self.__getScreenPosMain()
-        if nplot == 2:
-            xi, yi, xw, yw = self.__getScreenPosMain()
-        
+            xi, yi, xw, yw = self.getScreenPosMainPlot()
         return xi, yi, xw, yw
-
-              
-    def init(self, xmin, xmax, ymin, yamx, minvalue, maxvalue):
-        
-        """
-        """
-        
-        for plotObj in self.plotObjList:
-            plotObj.plotBox(xmin, xmax, ymin, yamx, minvalue, maxvalue)
     
-    def clearData(self):
-        pass
-
-    def plot(self, data):
-        
+    
+    def init(self, xmin, xmax, ymin, ymax, minvalue, maxvalue):   
+         
         for plotObj in self.plotObjList:
-            plotObj.plotData(data)
-        
+            plotObj.plotBox(xmin, xmax, ymin, ymax, minvalue, maxvalue)
+#            plotObj.setLabels() # ? evaluar si conviene colocarlo dentro del plotbox
+    
     def refresh(self):
-        pass    
-    
-
+        for plotObj in self.plotObjList:
+            plotObj.refresh()
 
 class Plot:
-    
     title = ""
+    xlabel = ""
+    ylabel = ""
+    xaxisastime = None
+    timefmt = None
+    xopt = ""  
+    yopt = ""
+    xpos = None
+    ypos = None
+    szchar = None
+    idframe = None
+    idplot = None
     
-    def __init__(self, xi, yi, xw, yw):
-        
+    def __init__(self, drvObj, idframe, idplot, xi, yi, xw, yw):
+        self.drvObj = drvObj
+        self.idframe = idframe
+        self.idplot = idplot
         self.xi = xi
         self.yi = yi
         self.xw = xw
         self.yw = yw
-    
-    def __setRange(self, xrange, yrange, zrange):
-        pass
-    
-    def __setLabels(self, xlabel, ylabel, zlabel):
-        pass
 
-    
-    def plotBox(self,xmin, xmax, ymin, yamx, minvalue, maxvalue):
-        pass
-    
-    def plotData(self):
+#    def setLabels(self):
+#        self.drvObj.driver.setPlotLabels(self.xlabel, self.ylabel, self.title)
+
+    def plotBox(self, xmin, xmax, ymin, ymax, minvalue, maxvalue):
+        self.xmin = xmin
+        self.xmax = xmax
+        self.ymin = ymin
+        self.ymax = ymax
+        self.minvalue = minvalue
+        self.maxvalue = maxvalue
         
-        raise ValueError, ""
-    
+        self.drvObj.driver.plotBox(self.idframe, 
+                                   self.xpos, 
+                                   self.ypos, 
+                                   self.xmin, 
+                                   self.xmax, 
+                                   self.ymin, 
+                                   self.ymax, 
+                                   self.minvalue, 
+                                   self.maxvalue, 
+                                   self.xopt, 
+                                   self.yopt, 
+                                   self.szchar, 
+                                   self.xaxisastime, 
+                                   self.timefmt)
+        
+        self.drvObj.driver.setPlotLabels(self.xlabel, self.ylabel, self.title)
+        
+    def plotBasicLine(self,x, y, color):
+        """
+        Inputs:
+            x:
+            
+            y:
+            
+            color: 
+        """
+        self.drvObj.driver.basicLine(x, y, self.xmin, self.xmax, self.ymin, self.ymax, color, self.idframe, self.xpos, self.ypos)
+
+        
+        
