@@ -7,13 +7,14 @@ $Id$
 import os 
 import sys
 import numpy
+import datetime
 
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
 from Data.Voltage import Voltage
 from IO.VoltageIO import VoltageWriter
-from Graphics.schainPlotTypes import ScopeFigure
+from Graphics2.schainPlotTypes import ScopeFigure
 
 class VoltageProcessor:
     dataInObj = None
@@ -80,17 +81,35 @@ class VoltageProcessor:
         
         if len(self.plotObjList) <= self.plotObjIndex:
             self.addScope(idfigure, nframes, wintitle, driver)
+            
         
-        self.plotObjList[self.plotObjIndex].plot1DArray(data1D=self.dataOutObj.data, 
-                                             x=self.dataOutObj.heightList, 
-                                             channelList=self.dataOutObj.channelList, 
-                                             xmin=xmin, 
-                                             xmax=xmax, 
-                                             minvalue=minvalue, 
-                                             maxvlaue=maxvalue, 
-                                             save=save, 
-                                             gpath=gpath)
+        if type=="power":
+            data1D = self.dataOutObj.data * numpy.conjugate(self.dataOutObj.data)
+            data1D = data1D.real
+            
+        if type =="iq":
+            data1D = self.dataOutObj.data
         
+        thisDatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        
+        dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))
+        
+        figureTitle = "Scope Plot Radar Data: " + date
+        
+        plotObj = self.plotObjList[self.plotObjIndex]
+        
+        plotObj.plot1DArray(data1D, 
+                             self.dataOutObj.heightList, 
+                             self.dataOutObj.channelList, 
+                             xmin, 
+                             xmax, 
+                             minvalue, 
+                             maxvalue,
+                             figureTitle,
+                             save, 
+                             gpath)
+                
         self.plotObjIndex += 1
     
 
