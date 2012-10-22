@@ -11,7 +11,7 @@ import time
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Data.Spectra import Spectra
+from Data.JROData import Spectra
 from IO.SpectraIO import SpectraWriter
 #from Graphics.SpectraPlot import Spectrum
 #from JRONoise import Noise

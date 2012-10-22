@@ -14,7 +14,7 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from JROHeader import *
+from JROHeaderIO import *
 from Data.JROData import JROData
 
 def isNumber(str):

@@ -13,13 +13,11 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from IO.JROHeader import *
-from Data.Spectra import Spectra
-
+from JROHeaderIO import *
 from JRODataIO import JRODataReader
 from JRODataIO import JRODataWriter
-from JRODataIO import isNumber
 
+from Data.JROData import Spectra
 
 class SpectraReader(JRODataReader):
     """ 
@@ -51,7 +49,11 @@ class SpectraReader(JRODataReader):
             
             readerObj.getData()
             
-            print readerObj.dataOutObj.data
+            print readerObj.data_spc
+            
+            print readerObj.data_cspc
+            
+            print readerObj.data_dc
             
             if readerObj.flagNoMoreFiles:
                 break
@@ -375,7 +377,7 @@ class SpectraReader(JRODataReader):
         
         self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
 
-        return 1
+        return self.data_spc
 
 
 class SpectraWriter(JRODataWriter):

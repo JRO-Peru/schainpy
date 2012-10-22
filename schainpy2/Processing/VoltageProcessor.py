@@ -12,11 +12,12 @@ import datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Data.Voltage import Voltage
+from Data.JROData import Voltage
 from IO.VoltageIO import VoltageWriter
 from Graphics2.schainPlotTypes import ScopeFigure
 
 class VoltageProcessor:
+    
     dataInObj = None
     dataOutObj = None
     integratorObjIndex = None

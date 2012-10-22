@@ -13,11 +13,11 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from JROHeader import *
+from JROHeaderIO import *
 from JRODataIO import JRODataReader
 from JRODataIO import JRODataWriter
 
-from Data.Voltage import Voltage
+from Data.JROData import Voltage
 
 class VoltageReader(JRODataReader):
     """
@@ -314,7 +314,7 @@ class VoltageReader(JRODataReader):
         
         self.dataOutObj.flagNoData = False
     
-        return 1
+        return self.dataOutObj.data
 
 
 class VoltageWriter(JRODataWriter):
