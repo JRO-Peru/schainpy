@@ -61,7 +61,7 @@ class Figure:
     def createFrames(self):
         raise ValueError, "No implemented"
     
-    def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvalue=None, figtitle=None, save=False, gpath='./'):
+    def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvalue=None, figuretitle=None, save=False, gpath='./'):
         
         nx, ny  = data1D.shape
         
@@ -71,10 +71,10 @@ class Figure:
         if x == None:
             x = numpy.arange(data1D.size)
         
-        if figtitle == None:
-            self.figtitle = ""
+        if figuretitle == None:
+            self.figuretitle = ""
         else:
-            self.figtitle = figtitle 
+            self.figuretitle = figuretitle 
 
         if not(self.__isDriverOpen):
             self.__openDriver()
@@ -104,7 +104,6 @@ class Figure:
         self.__initFigure()
 
         for channel in channelList:
-#            frametitle = self.plotTitleDict[channel]
             frameObj = self.frameObjList[channel]
             frameObj.init(xmin=self.xmin,
                           xmax=self.xmax,
@@ -133,6 +132,69 @@ class Figure:
 #            self.colorplotObj.savePlot(indexPlot, filename)
 #        
 #        self.colorplotObj.closePage()
+
+    
+    def plotPcolor(self,data, 
+                            x=None, 
+                            y=None, 
+                            channelList=None, 
+                            xmin=None, 
+                            xmax=None, 
+                            ymin=None, 
+                            ymax=None,
+                            minvalue=None, 
+                            maxvalue=None, 
+                            figuretitle=None,
+                            deltax=None, 
+                            save=False, 
+                            gpath='./'):
+#                    data,
+#                    currenttime,
+#                    range,
+#                    starttime,
+#                    endtime,
+#                    minrange,
+#                    maxrange,
+#                    minvalue,
+#                    maxvalue,
+#                    figuretitle,
+#                    interval,
+#                    save,
+#                    gpath):
+        
+        if figuretitle == None:
+            self.figuretitle = ""
+        else:
+            self.figuretitle = figuretitle 
+        
+        
+
+        if not(self.__isDriverOpen):
+            self.__openDriver()
+            self.__isDriverOpen = True
+            
+        if not(self.__isConfig):
+            
+            self.setParms(data,x,y,xmin,xmax,ymin,ymax,minvalue,maxvalue,deltax)
+            
+           
+            
+#            if self.xmin == None: self.xmin = numpy.min(x)
+#            if self.xmax == None: self.xmax = numpy.max(x)
+            
+            
+            self.createFrames()
+            self.__isConfig = True
+        
+        if not(self.__isOutOfXRange(x)):
+            self.__changeXRange(x)
+            
+            if self.__isFigureOpen:
+                self.driverObj.closePage()
+                self.__isFigureOpen = False
+        
+            self.__initFigure()
+
     
 class Frame:
     nplots = None

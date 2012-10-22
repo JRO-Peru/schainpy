@@ -4,11 +4,11 @@ import sys
 import plplot #condicional
 
 class Driver:
-    def __init__(self,driver, idfigure, xw, yw, wintitle, overplot, colorbar, colormap):
+    def __init__(self,driver, idfigure, xw, yw, wintitle, overplot, colormap, colorbar):
         if driver == "plplot":
-            self.driver = PlplotDriver(idfigure, xw, yw, wintitle, overplot, colorbar, colormap)
+            self.driver = PlplotDriver(idfigure, xw, yw, wintitle, overplot, colormap, colorbar)
         elif driver == "mpl":
-            self.driver = MplDriver(idfigure, xw, yw, wintitle, overplot, colormap)
+            self.driver = MplDriver(idfigure, xw, yw, wintitle, overplot, colormap, colorbar)
         else:
             raise ValueError, "The driver: %s is not defined"%driver
 
@@ -17,7 +17,7 @@ class PlplotDriver:
     __isDriverOpen = False
     pldriver = None
     
-    def __init__(self, idfigure, xw, yw, wintitle, overplot, colorbar, colormap):
+    def __init__(self, idfigure, xw, yw, wintitle, overplot, colormap, colorbar):
         
         if idfigure == None:
             raise ValueError, 'idfigure input must be defined'
@@ -27,10 +27,8 @@ class PlplotDriver:
         self.yw = yw
         self.wintitle = wintitle
         self.overplot = overplot
-        self.colorbar = colorbar
         self.colormap = colormap
-        
-        
+        self.colorbar = colorbar
     
     def setFigure(self):
         """
@@ -99,6 +97,31 @@ class PlplotDriver:
         plplot.plschr(0.0,szchar)
         plplot.plmtex("t",-1., 0.5, 0.5, title)
     
+    def colorbar(self, minvalue, maxvalue, xpos, ypos):
+#        plplot.pladv(id)
+#        plplot.plschr(0.0,szchar-0.05)
+        xmin = 0; xmax = 1
+        ymin = minvalue; ymax = maxvalue
+        plplot.plvpor(xpos[0], xpos[1], ypos[0], ypos[1])
+        plplot.plwind(float(xmin), float(xmax), float(ymin), float(ymax))
+        plplot.plbox("bc", 0.0, 0, "bcmtsv", 0.0, 0)
+        
+        data = numpy.arange(256)
+        data = numpy.reshape(data, (1,-1))
+        
+        plplot.plimage(data,
+                       float(xmin),
+                       float(xmax),
+                       float(ymin),
+                       float(ymax),
+                       0.,
+                       255.,
+                       float(xmin),
+                       float(xmax),
+                       float(ymin),
+                       float(ymax))
+        
+    
     def plotBox(self, id, xpos, ypos, xmin, xmax, ymin, ymax, minvalue, maxvalue, xopt, yopt, szchar=0.6, xaxisastime = False, timefmt="%H:%M"):
         """
         xopt, yopt: entradas que no se aplican en MPL
@@ -151,3 +174,8 @@ class PlplotDriver:
         plplot.plline(x, y)
         plplot.plcol0(1)
         plplot.plbox("bcst", 0.0, 0, "bcst", 0.0, 0)
+
+
+class MplDriver:
+    def __init__(self):
+        pass
