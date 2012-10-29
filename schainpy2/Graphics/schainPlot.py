@@ -1,4 +1,5 @@
 import numpy
+import datetime
 from schainPlotLib import Driver
 
 class Figure:
@@ -14,10 +15,15 @@ class Figure:
     overplot = None
     xmin = None
     xmax = None
+    ymin = None
+    ymax = None
     minvalue = None
     maxvalue = None
+    deltax = None
+    deltay = None
     frameObjList = []
-    figtitle = ""
+    figuretitle = ""
+    xrangestep = None
     
     def __init__(self,idfigure, nframes, wintitle, xw=600, yw=800, overplot=0, driver='plplot', colorbar= True, colormap=None, *args):
         self.idfigure = idfigure
@@ -35,6 +41,7 @@ class Figure:
         self.drvObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colorbar, colormap)
         
         self.drvObj.driver.setFigure()
+        self.drvObj.driver.setColormap(colormap)
         
     
     def __openDriver(self):
@@ -49,11 +56,19 @@ class Figure:
     def __initFigure(self):
         nrows, ncolumns = self.getSubplots()
         self.drvObj.driver.openFigure()
-        self.drvObj.driver.setFigTitle(self.figtitle)
+        self.drvObj.driver.setFigTitle(self.figuretitle)
         self.drvObj.driver.setSubPlots(nrows, ncolumns)
     
     def __isOutOfXRange(self,x):
+        
+        if ((x>=self.xmin) and (x<self.xmax)):
+            return 0
+
         return 1
+    
+    def changeXRange(self,x):
+        
+        pass
     
     def __refresh(self):
         self.drvObj.driver.refresh()
@@ -101,6 +116,7 @@ class Figure:
                 self.driverObj.closePage()
                 self.__isFigureOpen = False
         
+        
         self.__initFigure()
 
         for channel in channelList:
@@ -135,32 +151,20 @@ class Figure:
 
     
     def plotPcolor(self,data, 
-                            x=None, 
-                            y=None, 
-                            channelList=None, 
-                            xmin=None, 
-                            xmax=None, 
-                            ymin=None, 
-                            ymax=None,
-                            minvalue=None, 
-                            maxvalue=None, 
-                            figuretitle=None,
-                            deltax=None, 
-                            save=False, 
-                            gpath='./'):
-#                    data,
-#                    currenttime,
-#                    range,
-#                    starttime,
-#                    endtime,
-#                    minrange,
-#                    maxrange,
-#                    minvalue,
-#                    maxvalue,
-#                    figuretitle,
-#                    interval,
-#                    save,
-#                    gpath):
+                    x=None, 
+                    y=None, 
+                    channelList=None, 
+                    xmin=None, 
+                    xmax=None, 
+                    ymin=None, 
+                    ymax=None,
+                    minvalue=None, 
+                    maxvalue=None, 
+                    figuretitle=None,
+                    xrangestep=None, 
+                    save=False, 
+                    gpath='./'):
+
         
         if figuretitle == None:
             self.figuretitle = ""
@@ -175,31 +179,55 @@ class Figure:
             
         if not(self.__isConfig):
             
-            self.setParms(data,x,y,xmin,xmax,ymin,ymax,minvalue,maxvalue,deltax)
-            
+            self.setParms(data,x,y,xmin,xmax,ymin,ymax,minvalue,maxvalue,xrangestep)
            
-            
-#            if self.xmin == None: self.xmin = numpy.min(x)
-#            if self.xmax == None: self.xmax = numpy.max(x)
-            
-            
             self.createFrames()
             self.__isConfig = True
         
-        if not(self.__isOutOfXRange(x)):
-            self.__changeXRange(x)
+        if (self.__isOutOfXRange(x)):
             
-            if self.__isFigureOpen:
-                self.driverObj.closePage()
-                self.__isFigureOpen = False
+            if not(self.changeXRange(x)):
+                return 0
+            
+            self.__isFigureOpen = False
+            
+#            if self.__isFigureOpen:
+#                self.driverObj.closePage()
+#                self.__isFigureOpen = False
         
+        if not(self.__isFigureOpen):
+
+            
             self.__initFigure()
+            self.__isFigureOpen = True
+        
+            for channel in channelList:
+                frameObj = self.frameObjList[channel]
+                frameObj.init(xmin=self.xmin,
+                              xmax=self.xmax,
+                              ymin=self.ymin,
+                              ymax=self.ymax,
+                              minvalue=self.minvalue,
+                              maxvalue=self.maxvalue,
+                              deltax=self.deltax,
+                              deltay=self.deltay)
+        
+        for channel in channelList:
+            dataCh = data[channel,:]
+            frameObj = self.frameObjList[channel]
+#            frameObj.clearData()
+            frameObj.plot(x, y, dataCh)
+            
+#            frameObj.refresh()
+        self.__refresh()
+            
 
     
 class Frame:
     nplots = None
     plotObjList = []
     title = ""
+    
     def __init__(self,drvObj, idframe):
         self.drvObj = drvObj
         self.idframe = idframe
@@ -211,22 +239,25 @@ class Frame:
     def getScreenPosMainPlot(self):
         raise ValueError, "No implemented"
 
+    def getScreenPosGraph1(self):
+        raise ValueError, "No implemented"
+    
     def getScreenPos(self, nplot):
         
         if nplot == 0:
             xi, yi, xw, yw = self.getScreenPosMainPlot()
+        
+        if nplot == 1:
+            xi, yi, xw, yw = self.getScreenPosGraph1()
+            
         return xi, yi, xw, yw
     
     
-    def init(self, xmin, xmax, ymin, ymax, minvalue, maxvalue):   
+    def init(self, xmin, xmax, ymin, ymax, minvalue, maxvalue, deltax=None, deltay=None):   
          
         for plotObj in self.plotObjList:
-            plotObj.plotBox(xmin, xmax, ymin, ymax, minvalue, maxvalue)
-#            plotObj.setLabels() # ? evaluar si conviene colocarlo dentro del plotbox
-    
-    def refresh(self):
-        for plotObj in self.plotObjList:
-            plotObj.refresh()
+            plotObj.plotBox(xmin, xmax, ymin, ymax, minvalue, maxvalue, deltax, deltay)
+
 
 class Plot:
     title = ""
@@ -250,9 +281,6 @@ class Plot:
         self.yi = yi
         self.xw = xw
         self.yw = yw
-
-#    def setLabels(self):
-#        self.drvObj.driver.setPlotLabels(self.xlabel, self.ylabel, self.title)
 
     def plotBox(self, xmin, xmax, ymin, ymax, minvalue, maxvalue):
         self.xmin = xmin
@@ -278,6 +306,26 @@ class Plot:
                                    self.timefmt)
         
         self.drvObj.driver.setPlotLabels(self.xlabel, self.ylabel, self.title)
+    
+    def plotPcolor(self, x, y, z, deltax, deltay, getGrid):
+        
+        self.drvObj.driver.pcolor(self.idframe, 
+                                  self.xpos, 
+                                  self.ypos, 
+                                  z, 
+                                  x, 
+                                  y, 
+                                  self.xmin, 
+                                  self.xmax, 
+                                  self.ymin, 
+                                  self.ymax, 
+                                  self.minvalue, 
+                                  self.maxvalue, 
+                                  deltax, 
+                                  deltay, 
+                                  getGrid,
+                                  self.xaxisastime,
+                                  self.timefmt)
         
     def plotBasicLine(self,x, y, color):
         """
@@ -288,7 +336,5 @@ class Plot:
             
             color: 
         """
-        self.drvObj.driver.basicLine(x, y, self.xmin, self.xmax, self.ymin, self.ymax, color, self.idframe, self.xpos, self.ypos)
-
-        
+        self.drvObj.driver.basicLine(self.idframe, self.xpos, self.ypos, x, y, self.xmin, self.xmax, self.ymin, self.ymax, color)
         
