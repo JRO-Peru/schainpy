@@ -8,13 +8,14 @@ import os
 import sys
 import numpy
 import datetime
+import time
 
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
 from Data.JROData import Voltage
 from IO.VoltageIO import VoltageWriter
-from Graphics2.schainPlotTypes import ScopeFigure
+from Graphics.schainPlotTypes import ScopeFigure, RTIFigure
 
 class VoltageProcessor:
     
@@ -52,7 +53,73 @@ class VoltageProcessor:
             self.dataOutObj.copy(self.dataInObj)
         # No necesita copiar en cada init() los atributos de dataInObj
         # la copia deberia hacerse por cada nuevo bloque de datos
-    
+
+    def addRti(self, idfigure, nframes, wintitle, driver, colorbar, colormap, showprofile):
+        rtiObj = RTIFigure(idfigure, nframes, wintitle, driver, colorbar, colormap, showprofile)
+        self.plotObjList.append(rtiObj)
+
+    def plotRti(self, idfigure=None,
+                    starttime=None,
+                    endtime=None,
+                    rangemin=None,
+                    rangemax=None,
+                    minvalue=None,
+                    maxvalue=None,
+                    wintitle='',
+                    driver='plplot',
+                    colormap='br_greeen',
+                    colorbar=True,
+                    showprofile=False,
+                    xrangestep=None,
+                    save=False,
+                    gpath=None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        nframes = len(self.dataOutObj.channelList)
+        
+        if len(self.plotObjList) <= self.plotObjIndex:
+            self.addRti(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+            
+        data = self.dataOutObj.data * numpy.conjugate(self.dataOutObj.data)
+        data = 10*numpy.log10(data.real)
+        
+#        currenttime = self.dataOutObj.dataUtcTime
+#        if timezone == "lt":
+        currenttime = self.dataOutObj.dataUtcTime - time.timezone
+        
+            
+        
+        range = self.dataOutObj.heightList
+        
+        channelList = self.dataOutObj.channelList
+        
+        thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        dateTime = "%s"%(thisdatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        date = "%s"%(thisdatetime.strftime("%d-%b-%Y"))
+        
+        figuretitle = "RTI Plot Radar Data" #+ date
+        
+        plotObj = self.plotObjList[self.plotObjIndex]
+        
+        plotObj.plotPcolor(data, 
+                           currenttime, 
+                           range, 
+                           channelList, 
+                           starttime, 
+                           endtime, 
+                           rangemin, 
+                           rangemax,
+                           minvalue, 
+                           maxvalue, 
+                           figuretitle, 
+                           xrangestep,
+                           save, 
+                           gpath)
+        
+        self.plotObjIndex += 1
+
     def addScope(self, idfigure, nframes, wintitle, driver):
         if idfigure==None:
             idfigure = self.plotObjIndex
