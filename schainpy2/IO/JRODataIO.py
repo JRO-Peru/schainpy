@@ -254,11 +254,17 @@ class JRODataReader(JRODataIO):
             pass
 
         else:
-            print "Searching file in offline mode"
+            print "Searching files in offline mode"
             pathList, filenameList = self.__searchFilesOffLine(path, startDate, endDate, startTime, endTime, set, expLabel, ext)
+            
             if not(pathList):
-                print "No files in range: %s - %s"%(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
-                return None
+                print "No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
+                                                        datetime.datetime.combine(startDate,startTime).ctime(),
+                                                        datetime.datetime.combine(endDate,endTime).ctime())
+                
+                sys.exit(-1)
+                
+            
             self.fileIndex = -1
             self.pathList = pathList
             self.filenameList = filenameList
@@ -275,7 +281,7 @@ class JRODataReader(JRODataIO):
             else:
                 print "No files"
 
-            return None
+            sys.exit(-1)
 
 #        self.updateDataHeader()
 

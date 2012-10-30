@@ -11,7 +11,7 @@ path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
 
-from Data.Spectra import Spectra
+from Data.JROData import Spectra
 from IO.SpectraIO import *
 from Processing.SpectraProcessor import *
 

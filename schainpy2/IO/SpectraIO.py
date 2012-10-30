@@ -377,7 +377,7 @@ class SpectraReader(JRODataReader):
         
         self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
 
-        return self.data_spc
+        return self.dataOutObj.data_spc
 
 
 class SpectraWriter(JRODataWriter):
