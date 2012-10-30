@@ -417,17 +417,8 @@ class ScopeFigure(Figure):
         colormap = None
         colorbar = False
         
-        self.idfigure = idfigure
-        self.nframes = nframes
-        self.wintitle = wintitle
-
-        self.colormap = colormap
-        self.colorbar = colorbar
-        self.driver = driver
-        self.drvObj = Driver(self.driver, self.idfigure, self.xw, self.yw, self.wintitle, self.overplot, self.colormap, self.colorbar)
-        self.drvObj.driver.setFigure()
-    
-#        Figure.__init__(self,idfigure,nframes,wintitle,self.xw,self.yw,self.overplot,driver,colorbar,colormap,*args)
+        Figure.__init__(self,idfigure, nframes, wintitle, self.xw, self.yw, self.overplot, driver, colormap, colorbar)
+        
     
     def getSubplots(self):
         nrows = self.nframes 
