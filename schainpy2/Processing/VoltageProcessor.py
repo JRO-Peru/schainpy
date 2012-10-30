@@ -182,13 +182,13 @@ class VoltageProcessor:
         self.plotObjIndex += 1
     
 
-    def addIntegrator(self,N,timeInterval):
-        objCohInt = CoherentIntegrator(N,timeInterval)
+    def addIntegrator(self, *args):
+        objCohInt = CoherentIntegrator(*args)
         self.integratorObjList.append(objCohInt)
 
-    def addWriter(self, wrpath, blocksPerFile, profilesPerBlock):
+    def addWriter(self, *args):
         writerObj = VoltageWriter(self.dataOutObj)
-        writerObj.setup(wrpath,blocksPerFile,profilesPerBlock)
+        writerObj.setup(*args)
         self.writerObjList.append(writerObj)
         
     def writeData(self, wrpath, blocksPerFile, profilesPerBlock):
@@ -203,86 +203,170 @@ class VoltageProcessor:
         
         self.writerObjIndex += 1
         
-    def integrator(self, N=None, timeInterval=None):
+    def integrator(self, nCohInt=None, timeInterval=None, overlapping=False):
+        
         if self.dataOutObj.flagNoData:
             return 0
+        
         if len(self.integratorObjList) <= self.integratorObjIndex:
-            self.addIntegrator(N,timeInterval)
+            self.addIntegrator(nCohInt, timeInterval, overlapping)
 
         myCohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myCohIntObj.exe(data=self.dataOutObj.data,timeOfData=None)
+        myCohIntObj.exe(data = self.dataOutObj.data, datatime=None)
+        
+        self.dataOutObj.flagNoData = True
+        
+        if myCohIntObj.isReady:
+            self.dataOutObj.flagNoData = False
         
 
 
 class CoherentIntegrator:
     
-    integ_counter = None
-    data = None
-    navg = None
-    buffer = None
+    
+    __profIndex = 0
+    __withOverapping  = False
+    
+    __isByTime = False
+    __initime = None
+    __integrationtime = None
+    
+    __buffer = None
+    
+    isReady = False
     nCohInt = None
     
-    def __init__(self, N=None,timeInterval=None):
+    
+    def __init__(self, nCohInt=None, timeInterval=None, overlapping=False):
         
-        self.data = None
-        self.navg = None
-        self.buffer = None
-        self.timeOut = None
-        self.exitCondition = False
+        """
+        Set the parameters of the integration class.
+        
+        Inputs:
+        
+            nCohInt        :    Number of coherent integrations
+            timeInterval   :    Time of integration. If nCohInt is selected this parameter does not work
+            overlapping    :    
+            
+        """
+        
+        self.__buffer = None
         self.isReady = False
-        self.nCohInt = N
-        self.integ_counter = 0
-        if timeInterval!=None:
-            self.timeIntervalInSeconds = timeInterval * 60. #if (type(timeInterval)!=integer) -> change this line
         
-        if ((timeInterval==None) and (N==None)):
-            raise ValueError, "N = None ; timeInterval = None"
+        if nCohInt == None and timeInterval == None:
+            raise ValueError, "nCohInt or timeInterval should be specified ..." 
         
-        if timeInterval == None:
-            self.timeFlag = False
+        if nCohInt != None:
+            self.nCohInt = nCohInt
+            self.__isByTime = False
         else:
-            self.timeFlag = True
+            self.__integrationtime = timeInterval * 60. #if (type(timeInterval)!=integer) -> change this line
+            self.__isByTime = True
         
-    def exe(self, data, timeOfData):
-        
-        if self.timeFlag:
-            if self.timeOut == None:
-                self.timeOut = timeOfData + self.timeIntervalInSeconds
-            
-            if timeOfData < self.timeOut:
-                if self.buffer == None:
-                    self.buffer = data
-                else:
-                    self.buffer = self.buffer + data
-                self.integ_counter += 1
-            else:
-                self.exitCondition = True
-                
+        if overlapping:
+            self.__withOverapping = True
+            self.__buffer = None
         else:
-            if self.integ_counter < self.nCohInt:
-                if self.buffer == None:
-                    self.buffer = data
-                else:
-                    self.buffer = self.buffer + data
+            self.__withOverapping = False
+            self.__buffer = 0
+        
+        self.__profIndex = 0
+    
+    def putData(self, data):
+        
+        """
+        Add a profile to the __buffer and increase in one the __profileIndex
+        
+        """
+        if not self.__withOverapping:
+            self.__buffer += data
+            self.__profIndex += 1            
+            return
+        
+        #Overlapping data
+        nChannels, nProfiles = data.shape
+        data = numpy.reshape(data, (1, nChannels, nProfiles))
+                             
+        if self.__buffer == None:
+            self.__buffer = data
+            self.__profIndex += 1
+            return
+        
+        if self.__profIndex < self.nCohInt:
+            self.__buffer = numpy.vstack((self.__buffer, data))
+            self.__profIndex += 1
+            return
+        
+        self.__buffer = numpy.roll(self.__buffer, -1, axis=0)
+        self.__buffer[self.nCohInt-1] = data
+        #self.__profIndex = self.nCohInt
+        return
+        
+        
+    def pushData(self):
+        """
+        Return the sum of the last profiles and the profiles used in the sum.
+        
+        Affected:
+        
+        self.__profileIndex
+        
+        """
+        
+        if not self.__withOverapping:
+            data = self.__buffer
+            nCohInt = self.__profIndex
+        
+            self.__buffer = 0
+            self.__profIndex = 0
             
-                self.integ_counter += 1
-
-            if self.integ_counter == self.nCohInt:
-                self.exitCondition = True
-                
-        if self.exitCondition:
-            self.data = self.buffer
-            self.navg = self.integ_counter
+            return data, nCohInt
+        
+        #Overlapping data
+        data = numpy.sum(self.__buffer, axis=0)
+        nCohInt = self.__profIndex
+        
+        return data, nCohInt
+    
+    def byProfiles(self, data):
+        
+        self.isReady = False
+        avg_data = None
+        
+        self.putData(data)
+        
+        if self.__profIndex == self.nCohInt:
+            avg_data, nCohInt = self.pushData()
             self.isReady = True
-            self.buffer = None
-            self.timeOut = None
-            self.integ_counter = 0
-            self.exitCondition = False
-            
-            if self.timeFlag:
-                self.buffer = data
-                self.timeOut = timeOfData + self.timeIntervalInSeconds
+        
+        return avg_data    
+    
+    def byTime(self, data, datatime):
+        
+        self.isReady = False
+        avg_data = None
+        
+        if self.__initime == None:
+            self.__initime = datatime
+        
+        self.putData(data)
+        
+        if (datatime - self.__initime) >= self.__integrationtime:
+            avg_data, nCohInt = self.pushData()
+            self.nCohInt = nCohInt
+            self.isReady = True
+        
+        return avg_data      
+        
+    def exe(self, data, datatime=None):
+        
+        if not self.__isByTime:
+            avg_data = self.byProfiles(data)
         else:
-            self.isReady = False
+            avg_data = self.byTime(data, datatime)
+        
+        self.data = avg_data
+        
+        return avg_data
 
     
