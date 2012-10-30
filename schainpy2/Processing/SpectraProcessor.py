@@ -7,13 +7,13 @@ $Id$
 import os, sys
 import numpy
 import time
-
+import datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
 from Data.JROData import Spectra
 from IO.SpectraIO import SpectraWriter
-#from Graphics.SpectraPlot import Spectrum
+from Graphics.schainPlotTypes import SpcFigure
 #from JRONoise import Noise
 
 class SpectraProcessor:
@@ -36,36 +36,6 @@ class SpectraProcessor:
     writerObjIndex = None
     
     profIndex = 0 # Se emplea cuando el objeto de entrada es un Voltage
-    
-#    integratorObjList = []
-#    
-#    decoderObjList = []
-#    
-#    writerObjList = []
-#    
-#    plotterObjList = []
-#    
-#    integratorObjIndex = None
-#    
-#    decoderObjIndex = None
-#    
-#    writerObjIndex = None
-#    
-#    plotterObjIndex = None
-#    
-#    buffer = None
-#    
-#    profIndex = 0
-#    
-#    nFFTPoints = None
-#    
-#    nChannels = None
-#    
-#    nHeights = None
-#    
-#    nPairs = None
-#    
-#    pairList = None
 
     
     def __init__(self):
@@ -75,8 +45,10 @@ class SpectraProcessor:
         
         self.integratorObjIndex = None
         self.writerObjIndex = None
+        self.plotObjIndex = None
         self.integratorObjList = []
         self.writerObjList = []
+        self.plotObjList = []
         self.noiseObj = None
         self.buffer = None
         self.profIndex = 0
@@ -99,71 +71,13 @@ class SpectraProcessor:
             
         self.dataOutObj = dataOutObj
         
-#        self.noiseObj = Noise() #aun no se incluye el objeto Noise()
-        
-        ##########################################
-#        self.nFFTPoints = nFFTPoints
-#        self.nChannels = self.dataInObj.nChannels
-#        self.nHeights = self.dataInObj.nHeights
-#        self.pairList = pairList
-#        if pairList != None:
-#            self.nPairs = len(pairList)
-#        else:
-#            self.nPairs = 0
-#        
-#        self.dataOutObj.heightList = self.dataInObj.heightList
-#        self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
-#        self.dataOutObj.m_BasicHeader = self.dataInObj.m_BasicHeader.copy()
-#        self.dataOutObj.m_ProcessingHeader = self.dataInObj.m_ProcessingHeader.copy()
-#        self.dataOutObj.m_RadarControllerHeader = self.dataInObj.m_RadarControllerHeader.copy()
-#        self.dataOutObj.m_SystemHeader = self.dataInObj.m_SystemHeader.copy()
-#        
-#        self.dataOutObj.dataType = self.dataInObj.dataType
-#        self.dataOutObj.nPairs = self.nPairs
-#        self.dataOutObj.nChannels = self.nChannels
-#        self.dataOutObj.nProfiles = self.nFFTPoints
-#        self.dataOutObj.nHeights = self.nHeights
-#        self.dataOutObj.nFFTPoints = self.nFFTPoints
-#        #self.dataOutObj.data = None
-#        
-#        self.dataOutObj.m_SystemHeader.numChannels = self.nChannels
-#        self.dataOutObj.m_SystemHeader.nProfiles = self.nFFTPoints
-#        
-#        self.dataOutObj.m_ProcessingHeader.totalSpectra = self.nChannels + self.nPairs 
-#        self.dataOutObj.m_ProcessingHeader.profilesPerBlock = self.nFFTPoints
-#        self.dataOutObj.m_ProcessingHeader.numHeights = self.nHeights
-#        self.dataOutObj.m_ProcessingHeader.shif_fft = True
-#        
-#        spectraComb = numpy.zeros( (self.nChannels+self.nPairs)*2,numpy.dtype('u1'))
-#        k = 0
-#        for i in range( 0,self.nChannels*2,2 ):
-#            spectraComb[i]   = k 
-#            spectraComb[i+1] = k
-#            k += 1
-#        
-#        k *= 2
-#
-#        if self.pairList != None:
-#            
-#            for pair in self.pairList:
-#                spectraComb[k]   = pair[0] 
-#                spectraComb[k+1] = pair[1]
-#                k += 2    
-#            
-#        self.dataOutObj.m_ProcessingHeader.spectraComb = spectraComb
-        
         return self.dataOutObj
     
     def init(self):
-#        
-#        self.nHeights = self.dataInObj.nHeights
-#        self.dataOutObj.nHeights = self.nHeights
-#        self.dataOutObj.heightList = self.dataInObj.heightList
-#        
         
         self.integratorObjIndex = 0
         self.writerObjIndex = 0
-        
+        self.plotObjIndex = 0
         if self.dataInObj.type == "Voltage":
             
             if self.buffer == None:
@@ -266,6 +180,76 @@ class SpectraProcessor:
         objIncohInt = IncoherentIntegration(N,timeInterval)
         self.integratorObjList.append(objIncohInt)
     
+    def addSpc(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
+        spcObj = SpcFigure(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+        self.plotObjList.append(spcObj)
+    
+    def plotSpc(self, idfigure=None,
+                    xmin=None,
+                    xmax=None,
+                    ymin=None,
+                    ymax=None,
+                    minvalue=None,
+                    maxvalue=None,
+                    wintitle='',
+                    driver='plplot',
+                    colormap='br_greeen',
+                    colorbar=True,
+                    showprofile=False,
+                    save=False,
+                    gpath=None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        nframes = len(self.dataOutObj.channelList)
+        
+        if len(self.plotObjList) <= self.plotObjIndex:
+            self.addSpc(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+            
+        x = numpy.arange(self.dataOutObj.nFFTPoints)
+                
+        y = self.dataOutObj.heightList
+        
+        channelList = self.dataOutObj.channelList
+        
+        data = 10.*numpy.log10(self.dataOutObj.data_spc[channelList,:,:])    
+#        noisedB = 10.*numpy.log10(noise)
+        noisedB = numpy.arange(len(channelList)+1)
+        noisedB = noisedB *1.2
+        titleList = []
+        for i in range(len(noisedB)):
+            title = "%.2f"%noisedB[i]
+            titleList.append(title)
+        
+        thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        dateTime = "%s"%(thisdatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        figuretitle = "Spc Radar Data: %s"%dateTime
+        
+        cleardata = True
+        
+        plotObj = self.plotObjList[self.plotObjIndex]
+        
+        plotObj.plotPcolor(data, 
+                           x, 
+                           y, 
+                           channelList, 
+                           xmin, 
+                           xmax, 
+                           ymin, 
+                           ymax,
+                           minvalue, 
+                           maxvalue, 
+                           figuretitle, 
+                           None,
+                           save, 
+                           gpath,
+                           cleardata,
+                           titleList)
+        
+        self.plotObjIndex += 1
+    
+    
     def writeData(self, wrpath, blocksPerFile):
         if self.dataOutObj.flagNoData:
                 return 0
@@ -292,7 +276,6 @@ class SpectraProcessor:
             self.dataOutObj.data_spc = myIncohIntObj.data
             self.dataOutObj.nAvg = myIncohIntObj.navg
             self.dataOutObj.m_ProcessingHeader.incoherentInt = self.dataInObj.m_ProcessingHeader.incoherentInt*myIncohIntObj.navg
-            #print "myIncohIntObj.navg: ",myIncohIntObj.navg
             self.dataOutObj.flagNoData = False
             
             """Calcular el ruido"""

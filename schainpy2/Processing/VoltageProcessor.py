@@ -54,8 +54,8 @@ class VoltageProcessor:
         # No necesita copiar en cada init() los atributos de dataInObj
         # la copia deberia hacerse por cada nuevo bloque de datos
 
-    def addRti(self, idfigure, nframes, wintitle, driver, colorbar, colormap, showprofile):
-        rtiObj = RTIFigure(idfigure, nframes, wintitle, driver, colorbar, colormap, showprofile)
+    def addRti(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
+        rtiObj = RTIFigure(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
         self.plotObjList.append(rtiObj)
 
     def plotRti(self, idfigure=None,
@@ -89,8 +89,6 @@ class VoltageProcessor:
 #        if timezone == "lt":
         currenttime = self.dataOutObj.dataUtcTime - time.timezone
         
-            
-        
         range = self.dataOutObj.heightList
         
         channelList = self.dataOutObj.channelList
@@ -102,6 +100,8 @@ class VoltageProcessor:
         figuretitle = "RTI Plot Radar Data" #+ date
         
         plotObj = self.plotObjList[self.plotObjIndex]
+        
+        cleardata = False
         
         plotObj.plotPcolor(data, 
                            currenttime, 
@@ -116,7 +116,8 @@ class VoltageProcessor:
                            figuretitle, 
                            xrangestep,
                            save, 
-                           gpath)
+                           gpath,
+                           cleardata)
         
         self.plotObjIndex += 1
 

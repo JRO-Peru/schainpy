@@ -152,6 +152,9 @@ class PlplotDriver:
         if getGrid:
             self.__xg, self.__yg = self.__getGrid(x, y, deltax, deltay)
         
+        if deltax == None: deltax = x[-1] - x[0]
+#        if deltay == None: deltay = y[-1] - y[-2]
+        
         xmin = x[0] 
         xmax = xmin + deltax
         

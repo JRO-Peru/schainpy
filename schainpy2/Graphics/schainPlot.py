@@ -25,33 +25,28 @@ class Figure:
     figuretitle = ""
     xrangestep = None
     
-    def __init__(self,idfigure, nframes, wintitle, xw=600, yw=800, overplot=0, driver='plplot', colorbar= True, colormap=None, *args):
+    def __init__(self,idfigure, nframes, wintitle, xw=600, yw=800, overplot=0, driver='plplot', colormap=None, colorbar= True, *args):
+        
+        self.drvObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colormap, colorbar)
+        self.driver = driver
         self.idfigure = idfigure
-        self.nframes = nframes
-        self.wintitle = wintitle
         self.xw = xw
         self.yw = yw
+        self.nframes = nframes
+        self.wintitle = wintitle
+        self.colormap = colormap
         self.overplot = overplot
         self.colorbar = colorbar
-        self.colormap = colormap
-        #esta seccion deberia ser dinamica de acuerdo a len(args)
-        self.showGraph1 = args[0]
-        self.showGraph2 = args[1]  
-        
-        self.drvObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colorbar, colormap)
+#        self.showGraph1 = args[0]
+#        self.showGraph2 = args[1]  
         
         self.drvObj.driver.setFigure()
         self.drvObj.driver.setColormap(colormap)
         
+        
     
     def __openDriver(self):
         self.drvObj.driver.openDriver()
-    
-#    def __openFigure(self):
-#        nrows, ncolumns = self.getSubplots()
-#        self.drvObj.driver.openFigure()
-#        self.drvObj.driver.setTitleFig(title)
-#        self.drvObj.driver.setSubPlots(nrows, ncolumns)
         
     def __initFigure(self):
         nrows, ncolumns = self.getSubplots()
@@ -60,10 +55,12 @@ class Figure:
         self.drvObj.driver.setSubPlots(nrows, ncolumns)
     
     def __isOutOfXRange(self,x):
-        
-        if ((x>=self.xmin) and (x<self.xmax)):
+        try:
+            if ((x>=self.xmin) and (x<self.xmax)):
+                return 0
+        except:
             return 0
-
+        
         return 1
     
     def changeXRange(self,x):
@@ -110,7 +107,7 @@ class Figure:
             self.__isConfig = True
         
         if not(self.__isOutOfXRange(x)):
-            self.__changeXRange(x)
+            self.changeXRange(x)
             
             if self.__isFigureOpen:
                 self.driverObj.closePage()
@@ -163,7 +160,9 @@ class Figure:
                     figuretitle=None,
                     xrangestep=None, 
                     save=False, 
-                    gpath='./'):
+                    gpath='./',
+                    clearData=False,
+                    *args):
 
         
         if figuretitle == None:
@@ -190,10 +189,6 @@ class Figure:
                 return 0
             
             self.__isFigureOpen = False
-            
-#            if self.__isFigureOpen:
-#                self.driverObj.closePage()
-#                self.__isFigureOpen = False
         
         if not(self.__isFigureOpen):
 
@@ -202,24 +197,30 @@ class Figure:
             self.__isFigureOpen = True
         
             for channel in channelList:
+                if len(args) != 0: value = args[0][channel]
+                else: value = args
+                
                 frameObj = self.frameObjList[channel]
-                frameObj.init(xmin=self.xmin,
-                              xmax=self.xmax,
-                              ymin=self.ymin,
-                              ymax=self.ymax,
-                              minvalue=self.minvalue,
-                              maxvalue=self.maxvalue,
-                              deltax=self.deltax,
-                              deltay=self.deltay)
+                frameObj.init(self.xmin,
+                              self.xmax,
+                              self.ymin,
+                              self.ymax,
+                              self.minvalue,
+                              self.maxvalue,
+                              self.deltax,
+                              self.deltay,
+                              self.colorbar,
+                              value)
         
         for channel in channelList:
             dataCh = data[channel,:]
             frameObj = self.frameObjList[channel]
-#            frameObj.clearData()
             frameObj.plot(x, y, dataCh)
             
-#            frameObj.refresh()
+
         self.__refresh()
+        if clearData == True:
+            self.__isFigureOpen = False
             
 
     
@@ -253,10 +254,12 @@ class Frame:
         return xi, yi, xw, yw
     
     
-    def init(self, xmin, xmax, ymin, ymax, minvalue, maxvalue, deltax=None, deltay=None):   
+    def init(self, xmin, xmax, ymin, ymax, minvalue, maxvalue, deltax=None, deltay=None, colorbar=False, *args):   
          
         for plotObj in self.plotObjList:
-            plotObj.plotBox(xmin, xmax, ymin, ymax, minvalue, maxvalue, deltax, deltay)
+            plotObj.setBox(xmin, xmax, ymin, ymax, minvalue, maxvalue, deltax, deltay, colorbar, *args)
+            plotObj.plotBox()
+
 
 
 class Plot:
@@ -272,6 +275,9 @@ class Plot:
     szchar = None
     idframe = None
     idplot = None
+    colorbar = None
+    cbxpos = None
+    cbypos = None
     
     def __init__(self, drvObj, idframe, idplot, xi, yi, xw, yw):
         self.drvObj = drvObj
@@ -282,13 +288,8 @@ class Plot:
         self.xw = xw
         self.yw = yw
 
-    def plotBox(self, xmin, xmax, ymin, ymax, minvalue, maxvalue):
-        self.xmin = xmin
-        self.xmax = xmax
-        self.ymin = ymin
-        self.ymax = ymax
-        self.minvalue = minvalue
-        self.maxvalue = maxvalue
+
+    def plotBox(self):
         
         self.drvObj.driver.plotBox(self.idframe, 
                                    self.xpos, 
@@ -306,6 +307,9 @@ class Plot:
                                    self.timefmt)
         
         self.drvObj.driver.setPlotLabels(self.xlabel, self.ylabel, self.title)
+        
+        if self.colorbar:
+            self.drvObj.driver.plotColorbar(self.minvalue, self.maxvalue, self.cbxpos,self.cbypos)
     
     def plotPcolor(self, x, y, z, deltax, deltay, getGrid):
         
