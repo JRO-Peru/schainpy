@@ -188,6 +188,8 @@ class SpectraHeis(JROData):
     
     pairsList = None
     
+    nIncohInt = None
+    
     def __init__(self):
         
         self.radarControllerHeaderObj = RadarControllerHeader()
@@ -196,32 +198,22 @@ class SpectraHeis(JROData):
         
         self.type = "SpectraHeis"
         
-        self.dataType = None
-        
-        self.nHeights = 0
+        self.dtype = None
         
         self.nChannels = 0
         
-        self.channelList = None
+        self.nHeights = 0
+        
+        self.nProfiles = None
         
         self.heightList = None
         
+        self.channelList = None
+        
+        self.channelIndexList = None
+        
         self.flagNoData = True
         
-        self.flagResetProcessing = False
-        
-        
-        #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
-        self.data_spc = None
-        
-        self.data_cspc = None
-        
-        self.data_dc = None
-        
-        self.nFFTPoints = None
-        
-        self.nAvg = None
-        
+        self.flagTimeBlock = False
+                
         self.nPairs = 0
-        
-        self.pairsList = None
