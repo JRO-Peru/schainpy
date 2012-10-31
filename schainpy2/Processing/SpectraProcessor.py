@@ -11,9 +11,9 @@ import datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Data.JROData import Spectra
+from Data.JROData import SpectraHeis
 from IO.SpectraIO import SpectraWriter
-from Graphics.schainPlotTypes import SpcFigure
+#from Graphics.schainPlotTypes import SpcFigure
 #from JRONoise import Noise
 
 class SpectraProcessor:
@@ -46,10 +46,10 @@ class SpectraProcessor:
         self.integratorObjIndex = None
         self.writerObjIndex = None
         self.plotObjIndex = None
-        self.integratorObjList = []
-        self.writerObjList = []
+        self.integratorOst = []
         self.plotObjList = []
-        self.noiseObj = None
+        self.noiseObj = bjList = []
+        self.writerObjLiNone
         self.buffer = None
         self.profIndex = 0
         
@@ -285,7 +285,152 @@ class SpectraProcessor:
         
         self.integratorObjIndex += 1
         
+ 
+class SpectraHeisProcessor:
+    def __init__(self):
+        self.integratorObjIndex = None
+        self.writerObjIndex = None
+        self.plotterObjIndex = None
+        self.integratorObjList = []
+        self.writerObjList = []
+        self.plotterObjList = []
+        #self.noiseObj = Noise()
+    
+    def setup(self,dataInObj=None, dataOutObj=None, nFFTPoints=None, pairList=None):
+        if dataInObj == None:
+            raise ValueError, ""
         
+        if nFFTPoints == None:
+            raise ValueError, ""
+            
+        self.dataInObj = dataInObj        
+        
+        if dataOutObj == None:
+            dataOutObj = SpectraHeis()
+            
+        self.dataOutObj = dataOutObj
+  #      self.noiseObj = Noise()
+        
+        ##########################################
+        self.nFFTPoints = nFFTPoints
+        self.nChannels = self.dataInObj.nChannels
+        self.nHeights = self.dataInObj.nHeights
+        self.pairList = pairList
+        if pairList != None:
+            self.nPairs = len(pairList)
+        else:
+            self.nPairs = 0
+        
+        self.dataOutObj.heightList = self.dataInObj.heightList
+        self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
+        self.dataOutObj.m_RadarControllerHeader = self.dataInObj.m_RadarControllerHeader.copy()
+        self.dataOutObj.m_SystemHeader = self.dataInObj.m_SystemHeader.copy()
+        
+        self.dataOutObj.dataType = self.dataInObj.dataType
+        self.dataOutObj.nPairs = self.nPairs
+        self.dataOutObj.nChannels = self.nChannels
+        self.dataOutObj.nProfiles = self.nFFTPoints
+        self.dataOutObj.nHeights = self.nHeights
+        self.dataOutObj.nFFTPoints = self.nFFTPoints
+        #self.dataOutObj.data = None
+        
+        self.dataOutObj.m_SystemHeader.numChannels = self.nChannels
+        self.dataOutObj.m_SystemHeader.nProfiles = self.nFFTPoints
+        
+        self.dataOutObj.m_ProcessingHeader.totalSpectra = self.nChannels + self.nPairs 
+        self.dataOutObj.m_ProcessingHeader.profilesPerBlock = self.nFFTPoints
+        self.dataOutObj.m_ProcessingHeader.numHeights = self.nHeights
+        self.dataOutObj.m_ProcessingHeader.shif_fft = True
+        
+        spectraComb = numpy.zeros( (self.nChannels+self.nPairs)*2,numpy.dtype('u1'))
+        k = 0
+        for i in range( 0,self.nChannels*2,2 ):
+            spectraComb[i]   = k 
+            spectraComb[i+1] = k
+            k += 1
+        
+        k *= 2
+
+        if self.pairList != None:
+            
+            for pair in self.pairList:
+                spectraComb[k]   = pair[0] 
+                spectraComb[k+1] = pair[1]
+                k += 2    
+            
+        self.dataOutObj.m_ProcessingHeader.spectraComb = spectraComb
+        
+        return self.dataOutObj
+    
+    def init(self):
+        self.integratorObjIndex = 0
+        self.writerObjIndex = 0
+        self.plotterObjIndex = 0
+        
+        if self.dataInObj.type == "Voltage":
+            self.__getFft()
+            self.dataOutObj.flagNoData = False
+            return
+            
+        #Other kind of data
+        if self.dataInObj.type == "SpectraHeis":
+            self.dataOutObj.copy(self.dataInObj)
+            self.dataOutObj.flagNoData = False
+            return
+        
+        raise ValueError, "The datatype is not valid"
+    
+    def __getFft(self):
+        if self.dataInObj.flagNoData:
+           return 0
+           
+        fft_volt = numpy.fft.fft(self.dataInObj.data, axis=1)        
+        #print fft_volt
+        #calculo de self-spectra
+        fft_volt = numpy.fft.fftshift(fft_volt,axes=(1,))
+        
+        spc = numpy.abs(fft_volt * numpy.conjugate(fft_volt))
+        self.dataOutObj.data_spc = spc
+        #print spc
+    
+    def getSpectra(self):
+        
+        return self.dataOutObj.data_spc
+    
+    def getFrecuencies(self):
+        
+        print self.nFFTPoints
+        return numpy.arange(int(self.nFFTPoints))
+    
+    def addIntegrator(self,N,timeInterval):
+        objIncohInt = IncoherentIntegration(N,timeInterval)
+        self.integratorObjList.append(objIncohInt)
+    
+    def integrator(self, N=None, timeInterval=None):
+        if self.dataOutObj.flagNoData:
+                return 0
+        
+        if len(self.integratorObjList) <= self.integratorObjIndex:
+            self.addIntegrator(N,timeInterval)
+        
+        myIncohIntObj = self.integratorObjList[self.integratorObjIndex]
+        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.m_BasicHeader.utc)
+        
+        if myIncohIntObj.isReady:
+            self.dataOutObj.data_spc = myIncohIntObj.data
+            self.dataOutObj.nAvg = myIncohIntObj.navg
+            self.dataOutObj.m_ProcessingHeader.incoherentInt *= myIncohIntObj.navg
+            #print "myIncohIntObj.navg: ",myIncohIntObj.navg
+            self.dataOutObj.flagNoData = False
+            
+            #self.getNoise(type="hildebrand",parm=myIncohIntObj.navg)
+#            self.getNoise(type="sort", parm=16)
+            
+        else:
+            self.dataOutObj.flagNoData = True
+        
+        self.integratorObjIndex += 1
+
         
 
 class IncoherentIntegration:
