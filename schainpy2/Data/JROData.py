@@ -89,9 +89,9 @@ class Voltage(JROData):
         Constructor
         '''
         
-        self.m_RadarControllerHeader = RadarControllerHeader()
+        self.radarControllerHeaderObj = RadarControllerHeader()
     
-        self.m_SystemHeader = SystemHeader()
+        self.systemHeaderObj = SystemHeader()
         
         self.type = "Voltage"
         
@@ -143,9 +143,9 @@ class Spectra(JROData):
         Constructor
         '''
         
-        self.m_RadarControllerHeader = RadarControllerHeader()
+        self.radarControllerHeaderObj = RadarControllerHeader()
     
-        self.m_SystemHeader = SystemHeader()
+        self.systemHeaderObj = SystemHeader()
         
         self.type = "Spectra"
         
@@ -190,9 +190,9 @@ class SpectraHeis(JROData):
     
     def __init__(self):
         
-        self.m_RadarControllerHeader = RadarControllerHeader()
+        self.radarControllerHeaderObj = RadarControllerHeader()
     
-        self.m_SystemHeader = SystemHeader()
+        self.systemHeaderObj = SystemHeader()
         
         self.type = "SpectraHeis"
         

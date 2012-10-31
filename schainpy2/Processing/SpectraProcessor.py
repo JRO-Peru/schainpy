@@ -107,7 +107,7 @@ class SpectraProcessor:
             self.dataOutObj.flagNoData = False
             return
         
-        raise ValueError, "The datatype is not valid"
+        raise ValueError, "The dtype is not valid"
 
     def __getFft(self):
         """
@@ -120,16 +120,16 @@ class SpectraProcessor:
             self.dataOutObj.heightList
             self.dataOutObj.m_BasicHeader
             self.dataOutObj.m_ProcessingHeader
-            self.dataOutObj.m_RadarControllerHeader
-            self.dataOutObj.m_SystemHeader
+            self.dataOutObj.radarControllerHeaderObj
+            self.dataOutObj.systemHeaderObj
             self.profIndex  
             self.buffer
             self.dataOutObj.flagNoData
-            self.dataOutObj.dataType
+            self.dataOutObj.dtype
             self.dataOutObj.nPairs
             self.dataOutObj.nChannels
             self.dataOutObj.nProfiles
-            self.dataOutObj.m_SystemHeader.numChannels
+            self.dataOutObj.systemHeaderObj.numChannels
             self.dataOutObj.m_ProcessingHeader.totalSpectra 
             self.dataOutObj.m_ProcessingHeader.profilesPerBlock
             self.dataOutObj.m_ProcessingHeader.numHeights
@@ -287,7 +287,9 @@ class SpectraProcessor:
         
  
 class SpectraHeisProcessor:
+    
     def __init__(self):
+        
         self.integratorObjIndex = None
         self.writerObjIndex = None
         self.plotterObjIndex = None
@@ -296,12 +298,10 @@ class SpectraHeisProcessor:
         self.plotterObjList = []
         #self.noiseObj = Noise()
     
-    def setup(self,dataInObj=None, dataOutObj=None, nFFTPoints=None, pairList=None):
-        if dataInObj == None:
-            raise ValueError, ""
+    def setup(self, dataInObj, dataOutObj=None, nFFTPoints=None, pairList=None):
         
         if nFFTPoints == None:
-            raise ValueError, ""
+            nFFTPoints = self.dataInObj.nHeights 
             
         self.dataInObj = dataInObj        
         
@@ -316,49 +316,63 @@ class SpectraHeisProcessor:
         self.nChannels = self.dataInObj.nChannels
         self.nHeights = self.dataInObj.nHeights
         self.pairList = pairList
+        
         if pairList != None:
             self.nPairs = len(pairList)
         else:
             self.nPairs = 0
         
-        self.dataOutObj.heightList = self.dataInObj.heightList
-        self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
-        self.dataOutObj.m_RadarControllerHeader = self.dataInObj.m_RadarControllerHeader.copy()
-        self.dataOutObj.m_SystemHeader = self.dataInObj.m_SystemHeader.copy()
+        self.dataOutObj.radarControllerHeaderObj = self.dataInObj.radarControllerHeaderObj.copy()
+        self.dataOutObj.systemHeaderObj = self.dataInObj.systemHeaderObj.copy()
         
-        self.dataOutObj.dataType = self.dataInObj.dataType
-        self.dataOutObj.nPairs = self.nPairs
+        self.dataOutObj.type = "SpectraHeis"
+    
+        self.dataOutObj.dtype = self.dataInObj.dtype
+        
         self.dataOutObj.nChannels = self.nChannels
-        self.dataOutObj.nProfiles = self.nFFTPoints
+        
         self.dataOutObj.nHeights = self.nHeights
-        self.dataOutObj.nFFTPoints = self.nFFTPoints
-        #self.dataOutObj.data = None
         
-        self.dataOutObj.m_SystemHeader.numChannels = self.nChannels
-        self.dataOutObj.m_SystemHeader.nProfiles = self.nFFTPoints
+        self.dataOutObj.nProfiles = self.nFFTPoints
         
-        self.dataOutObj.m_ProcessingHeader.totalSpectra = self.nChannels + self.nPairs 
-        self.dataOutObj.m_ProcessingHeader.profilesPerBlock = self.nFFTPoints
-        self.dataOutObj.m_ProcessingHeader.numHeights = self.nHeights
-        self.dataOutObj.m_ProcessingHeader.shif_fft = True
+        self.dataOutObj.heightList = None
         
-        spectraComb = numpy.zeros( (self.nChannels+self.nPairs)*2,numpy.dtype('u1'))
-        k = 0
-        for i in range( 0,self.nChannels*2,2 ):
-            spectraComb[i]   = k 
-            spectraComb[i+1] = k
-            k += 1
+        self.dataOutObj.channelList = None
         
-        k *= 2
+        self.dataOutObj.channelIndexList = None
+        
+        self.dataOutObj.flagNoData = False
+        
+        self.dataOutObj.flagTimeBlock = False
+        
+        self.dataOutObj.dataUtcTime = None
+        
+        self.dataOutObj.nCode = None
+        
+        self.dataOutObj.nBaud = None
+        
+        self.dataOutObj.code = None
+        
+        self.dataOutObj.flagDecodeData = True #asumo q la data esta decodificada
+        
+        self.dataOutObj.flagDeflipData = True #asumo q la data esta sin flip
+        
+        self.dataOutObj.flagShiftFFT = False
+        
+        self.dataOutObj.ippSeconds = None
 
-        if self.pairList != None:
-            
-            for pair in self.pairList:
-                spectraComb[k]   = pair[0] 
-                spectraComb[k+1] = pair[1]
-                k += 2    
-            
-        self.dataOutObj.m_ProcessingHeader.spectraComb = spectraComb
+        self.dataOutObjdata_spc = None
+    
+        self.dataOutObjdata_cspc = None
+        
+        self.dataOutObjdata_dc = None
+        
+        self.dataOutObjnFFTPoints = None
+        
+        self.dataOutObjnPairs = None
+        
+        self.dataOutObjpairsList = None
+        
         
         return self.dataOutObj
     
@@ -378,7 +392,7 @@ class SpectraHeisProcessor:
             self.dataOutObj.flagNoData = False
             return
         
-        raise ValueError, "The datatype is not valid"
+        raise ValueError, "The type is not valid"
     
     def __getFft(self):
         if self.dataInObj.flagNoData:

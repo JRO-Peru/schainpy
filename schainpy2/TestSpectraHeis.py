@@ -27,6 +27,7 @@ class TestHeis():
         self.createObjects()
         self.testSChain()
         self.i=0
+        
     def setValues( self ):
         
         self.path="C:\data2"        

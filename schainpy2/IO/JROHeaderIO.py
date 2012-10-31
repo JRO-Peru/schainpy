@@ -312,7 +312,7 @@ class ProcessingHeader(Header):
         
     def __init__(self):
         self.size = 0
-        self.dataType = 0
+        self.dtype = 0
         self.blockSize = 0
         self.profilesPerBlock = 0
         self.dataBlocksPerFile = 0
@@ -351,7 +351,7 @@ class ProcessingHeader(Header):
         try:
             header = numpy.fromfile(fp,self.struct,1)
             self.size = header['nSize'][0]
-            self.dataType = header['nDataType'][0]
+            self.dtype = header['nDataType'][0]
             self.blockSize = header['nSizeOfDataBlock'][0]
             self.profilesPerBlock = header['nProfilesperBlock'][0]
             self.dataBlocksPerFile = header['nDataBlocksperFile'][0]
@@ -402,7 +402,7 @@ class ProcessingHeader(Header):
     
     def write(self, fp):
         headerTuple = (self.size,
-                       self.dataType,
+                       self.dtype,
                        self.blockSize,
                        self.profilesPerBlock,
                        self.dataBlocksPerFile,

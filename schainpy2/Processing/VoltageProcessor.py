@@ -284,8 +284,8 @@ class CoherentIntegrator:
             return
         
         #Overlapping data
-        nChannels, nProfiles = data.shape
-        data = numpy.reshape(data, (1, nChannels, nProfiles))
+        nChannels, nHeis = data.shape
+        data = numpy.reshape(data, (1, nChannels, nHeis))
                              
         if self.__buffer == None:
             self.__buffer = data

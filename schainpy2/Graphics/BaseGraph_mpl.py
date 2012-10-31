@@ -14,10 +14,10 @@ import datetime
 
 #import plplot
 import matplotlib as mpl
-mpl.use('TKAgg')
+ #mpl.use('TKAgg')
 import matplotlib.pyplot as plt
 
-import scitools.numpyutils as sn
+#import scitools.numpyutils as sn
 
 def cmap1_init(colormap='gray'):
 	

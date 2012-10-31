@@ -9,7 +9,7 @@ import time, datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Data.Voltage import Voltage
+from Data.JROData import Voltage
 from IO.VoltageIO import *
 
 from Processing.VoltageProcessor import *
@@ -23,30 +23,24 @@ class TestSChain():
         self.testSChain()
 
     def setValues(self):
-        self.path = "/home/dsuarez/RadarData/EW_DRIFTS"
-        self.startDate = datetime.date(2012,6,1)
-        self.endDate = datetime.date(2012,7,30)
+        self.path = "/home/roj-idl71/Data/RAWDATA/Meteors"
         
-#        self.path = "/Users/danielangelsuarezmunoz/Data/Imaging_rawdata"
-#        self.startDate = datetime.date(2011,10,4)
-#        self.endDate = datetime.date(2011,10,4)
-
-        # Probando los escritos por Signal Chain
-#        self.path = "/home/dsuarez/RadaData"
-#        self.startDate = datetime.date(2011,11,28)
-#        self.endDate = datetime.date(2011,11,30)
+        self.startDate = datetime.date(2005,1,1)
+        self.endDate = datetime.date(2012,7,30)
         
         self.startTime = datetime.time(0,0,0)
         self.endTime = datetime.time(23,59,59)
         
-        self.wrpath = "/home/dsuarez/RadarData"
+        self.wrpath = "/home/roj-idl71/tmp/results"
         self.profilesPerBlock = 40
         self.blocksPerFile = 50
     
     def createObjects(self):        
         
-        self.readerObj = VoltageReader()
-
+        self.readerObj = VoltageReader()        
+        self.voltProcObj = VoltageProcessor()
+        self.specProcObj = SpectraProcessor()
+        
         self.voltObj1 = self.readerObj.setup(
                                    path = self.path,
                                    startDate = self.startDate,
@@ -54,11 +48,9 @@ class TestSChain():
                                    startTime = self.startTime,
                                    endTime = self.endTime,
                                    expLabel = '',
-                                   online = 0) 
+                                   online = 0)         
         
-        self.voltObjProc = VoltageProcessor()
-        
-        self.voltObj2 = self.voltObjProc.setup(dataInObj = self.voltObj1)
+        self.voltObj2 = self.voltProcObj.setup(dataInObj = self.voltObj1)
 
     def testSChain(self):
         
@@ -67,12 +59,14 @@ class TestSChain():
         while(True):
             self.readerObj.getData()
             
-            self.voltObjProc.init()
+            self.voltProcObj.init()
+            
+            self.voltProcObj.integrator(1000, overlapping=True)
 #            
-#            self.voltObjProc.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
+#            self.voltProcObj.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
             
             
-            self.voltObjProc.plotScope(idfigure=1,
+            self.voltProcObj.plotScope(idfigure=1,
                                         wintitle='test plot library',
                                         driver='plplot',
                                         save=False,
