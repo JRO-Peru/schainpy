@@ -58,6 +58,8 @@ class JROData:
     
     flagShiftFFT = False
     
+    ippSeconds = None
+    
 
     def __init__(self):
         
@@ -79,6 +81,7 @@ class Voltage(JROData):
     
     nCohInt = None
     
+    #data es un numpy array de 2 dmensiones (canales, alturas)
     data = None
     
     def __init__(self):
@@ -92,7 +95,6 @@ class Voltage(JROData):
         
         self.type = "Voltage"
         
-        #data es un numpy array de 2 dmensiones ( canales, alturas)
         self.data = None
         
         self.dtype = None
@@ -119,10 +121,13 @@ class Voltage(JROData):
 
 class Spectra(JROData):
     
+    #data es un numpy array de 2 dmensiones (canales, perfiles, alturas)
     data_spc = None
     
+    #data es un numpy array de 2 dmensiones (canales, pares, alturas)
     data_cspc = None
     
+    #data es un numpy array de 2 dmensiones (canales, alturas)
     data_dc = None
     
     nFFTPoints = None
@@ -144,7 +149,6 @@ class Spectra(JROData):
         
         self.type = "Spectra"
         
-        #data es un numpy array de 2 dmensiones ( canales, alturas)
 #        self.data = None
         
         self.dtype = None
@@ -169,3 +173,55 @@ class Spectra(JROData):
         
         self.nIncohInt = None
         
+        
+class SpectraHeis(JROData):
+    
+    data_spc = None
+    
+    data_cspc = None
+    
+    data_dc = None
+    
+    nFFTPoints = None
+    
+    nPairs = None
+    
+    pairsList = None
+    
+    def __init__(self):
+        
+        self.m_RadarControllerHeader = RadarControllerHeader()
+    
+        self.m_SystemHeader = SystemHeader()
+        
+        self.type = "SpectraHeis"
+        
+        self.dataType = None
+        
+        self.nHeights = 0
+        
+        self.nChannels = 0
+        
+        self.channelList = None
+        
+        self.heightList = None
+        
+        self.flagNoData = True
+        
+        self.flagResetProcessing = False
+        
+        
+        #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
+        self.data_spc = None
+        
+        self.data_cspc = None
+        
+        self.data_dc = None
+        
+        self.nFFTPoints = None
+        
+        self.nAvg = None
+        
+        self.nPairs = 0
+        
+        self.pairsList = None
