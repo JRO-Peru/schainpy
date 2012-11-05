@@ -3,6 +3,10 @@ import numpy
 import sys
 import plplot #condicional
 
+import matplotlib as mpl
+#mpl.use('TKAgg')
+import matplotlib.pyplot as plt
+
 class Driver:
     def __init__(self,driver, idfigure, xw, yw, wintitle, overplot, colormap, colorbar):
         if driver == "plplot":
@@ -82,7 +86,7 @@ class PlplotDriver:
     def setSubPlots(self,nrows, ncolumns):
         plplot.plssub(ncolumns,nrows)
     
-    def setPlotLabels(self, xlabel, ylabel, title):
+    def setPlotLabels(self, id, xlabel, ylabel, title):
         plplot.pllab(xlabel, ylabel, title)
     
     def setFigTitle(self, title,color="black", szchar=0.55):
@@ -199,6 +203,10 @@ class PlplotDriver:
             
     def refresh(self):
         plplot.plflush() 
+    
+    def show(self):
+        plplot.plspause(True)
+        plplot.plend()
         
     def basicLine(self, id, xpos, ypos, x, y, xmin, xmax, ymin, ymax, color):
         
@@ -234,6 +242,17 @@ class PlplotDriver:
         plplot.plline(x, y)
         plplot.plcol0(1)
         plplot.plbox("bcst", 0.0, 0, "bcst", 0.0, 0)
+    
+    def save(self, filename):
+        curr_strm = plplot.plgstrm()
+        save_strm = plplot.plmkstrm()
+        plplot.plsetopt("geometry", "%dx%d"%(self.xw,self.yw))
+        plplot.plsdev("png")
+        plplot.plsfnam(filename)
+        plplot.plcpstrm(curr_strm,0)
+        plplot.plreplot()
+        plplot.plend1()
+        plplot.plsstrm(curr_strm)
     
     def setColormap(self, colormap="gray"):
     
@@ -411,5 +430,83 @@ class PlplotDriver:
 
 
 class MplDriver:
-    def __init__(self):
+#    fig = None
+    nrows = None
+    ncolumns = None
+    __axesId = None
+    __setData = None
+
+    def __init__(self, idfigure, xw, yw, wintitle, overplot, colormap, colorbar):
+        
+        if idfigure == None:
+            raise ValueError, 'idfigure input must be defined'
+        self.idfigure = idfigure
+        self.xw = xw
+        self.yw = yw
+        self.wintitle = wintitle
+        self.overplot = overplot
+        self.colormap = colormap
+        self.colorbar = colorbar
+        self.__axesId = {}
+
+    def setFigure(self):
+        plt.ioff()
+        fig = plt.figure(self.idfigure)
+        fig.canvas.manager.set_window_title(self.wintitle)
+        fig.canvas.resize(self.xw,self.yw)
+        plt.ion()
+
+
+    def setColormap(self, colormap):
+        pass
+
+    def openDriver(self):
+        pass
+
+    def openFigure(self):
+        pass        
+
+    def setFigTitle(self,title):
+        fig = plt.figure(self.idfigure)
+        fig.suptitle(title,fontsize=11, fontweight='bold')
+
+    def setSubPlots(self,nrows,ncolumns):
+        fig = plt.figure(self.idfigure)
+        self.nrows = nrows
+        self.ncolumns = ncolumns
+        #self.__axesId = fig.add_subplot(nrows,ncolumns)
+
+    def plotBox(self, id, xpos, ypos, xmin, xmax, ymin, ymax, minvalue, maxvalue, xopt, yopt, szchar, xaxisastime, timefmt):
+        fig = plt.figure(self.idfigure)
+        ax = fig.add_subplot(self.nrows,self.ncolumns,id)
+        ax.set_xlim([xmin,xmax])
+        ax.set_ylim([ymin,ymax])
+        self.__axesId.setdefault(id)
+        self.__axesId[id] = ax
+
+
+    def setPlotLabels(self, id, xlabel, ylabel, title):
+        ax = self.__axesId[id]
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+
+    def basicLine(self, id, xpos, ypos, x, y, xmin, xmax, ymin, ymax, color):
+        ax = self.__axesId[id]
+        
+        if self.__setData == None:
+            ax.plot(x,y,color)
+            self.__setData = True
+        else:
+            ax.lines[0].set_data(x,y)
+
+    def refresh(self):
+        plt.draw()
+
+
+    def plotColorbar(self):
+        pass
+
+
+    def closePage(self):
         pass

@@ -1,5 +1,7 @@
 import numpy
 import datetime
+import time
+import os
 from schainPlotLib import Driver
 
 class Figure:
@@ -73,6 +75,9 @@ class Figure:
     def createFrames(self):
         raise ValueError, "No implemented"
     
+    def save(self,filename):
+        self.drvObj.driver.save(filename)
+    
     def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvalue=None, figuretitle=None, save=False, gpath='./'):
         
         nx, ny  = data1D.shape
@@ -110,7 +115,7 @@ class Figure:
             self.changeXRange(x)
             
             if self.__isFigureOpen:
-                self.driverObj.closePage()
+                self.drvObj.driver.closePage()
                 self.__isFigureOpen = False
         
         
@@ -135,16 +140,17 @@ class Figure:
         self.__refresh()
     
 
-#        
-#        if save:
+        
+        if save:
 #            self.colorplotObj.setFigure(indexPlot)
-#            path = "/home/roj-idl71/tmp/"
-#            now = datetime.datetime.now().timetuple()
-#            file = "spc_img%02d_%03d_%02d%02d%02d.png"%(indexPlot,now[7],now[3],now[4],now[5])
-#            filename = os.path.join(path,file)
-#            self.colorplotObj.savePlot(indexPlot, filename)
-#        
-#        self.colorplotObj.closePage()
+
+            path = gpath
+            now = datetime.datetime.now()
+            file = "scope_img%02d_%d_%d.png"%(self.idfigure, time.mktime(now.timetuple()), now.microsecond)
+            filename = os.path.join(path,file)
+            self.save(filename)
+        
+
 
     
     def plotPcolor(self,data, 
@@ -158,7 +164,8 @@ class Figure:
                     minvalue=None, 
                     maxvalue=None, 
                     figuretitle=None,
-                    xrangestep=None, 
+                    xrangestep=None,
+                    deltax=None, 
                     save=False, 
                     gpath='./',
                     clearData=False,
@@ -178,7 +185,7 @@ class Figure:
             
         if not(self.__isConfig):
             
-            self.setParms(data,x,y,xmin,xmax,ymin,ymax,minvalue,maxvalue,xrangestep)
+            self.setParms(data,x,y,xmin,xmax,ymin,ymax,minvalue,maxvalue,xrangestep,deltax)
            
             self.createFrames()
             self.__isConfig = True
@@ -306,7 +313,7 @@ class Plot:
                                    self.xaxisastime, 
                                    self.timefmt)
         
-        self.drvObj.driver.setPlotLabels(self.xlabel, self.ylabel, self.title)
+        self.drvObj.driver.setPlotLabels(self.idframe, self.xlabel, self.ylabel, self.title)
         
         if self.colorbar:
             self.drvObj.driver.plotColorbar(self.minvalue, self.maxvalue, self.cbxpos,self.cbypos)

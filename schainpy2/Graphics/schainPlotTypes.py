@@ -193,7 +193,7 @@ class RTIFigure(Figure):
         ncolumns = 1
         return nrows, ncolumns
     
-    def setParms(self, data, x, y, xmin, xmax, ymin, ymax, minvalue, maxvalue, xrangestep):
+    def setParms(self, data, x, y, xmin, xmax, ymin, ymax, minvalue, maxvalue, xrangestep, deltax):
         
         self.starttime = xmin
         self.endtime = xmax
@@ -221,7 +221,8 @@ class RTIFigure(Figure):
         xmin = time.mktime(mindatetime.timetuple())
         xmax = time.mktime(maxdatetime.timetuple())
         
-        deltax = (xmax-xmin) / npoints
+        deltax1 = (xmax-xmin) / npoints
+#        deltax = timeInterval
         
         
         if ymin == None: ymin = numpy.min(y)
@@ -395,16 +396,16 @@ class RTIPlot(Plot):
         if self.xmaxpos == None:
             self.xmaxpos = currenttime
             
-        if currenttime >= self.xmaxpos:
+#        if currenttime >= self.xmaxpos:
             
-            self.xminpos = currenttime
-            self.xmaxpos = currenttime + self.deltax           
-            x = [currenttime]
-            y = range
-            z = numpy.reshape(data, (1,-1))
-            getGrid = True
-            
-            self.plotPcolor(x, y, z, self.deltax, self.deltay, getGrid)
+        self.xminpos = currenttime
+        self.xmaxpos = currenttime + self.deltax           
+        x = [currenttime]
+        y = range
+        z = numpy.reshape(data, (1,-1))
+        getGrid = True
+        
+        self.plotPcolor(x, y, z, self.deltax, self.deltay, getGrid)
             
 
 class ScopeFigure(Figure):
@@ -444,7 +445,7 @@ class ScopeFrame(Frame):
 #        Frame.__init__(self, drvObj, idframe)
 
     def getScreenPosMainPlot(self):#cada Frame determina las coordenadas de los plots
-        xi = 0.07; xw = 0.9 
+        xi = 0.08; xw = 0.9 
         yi = 0.20; yw = 0.75
         return xi,yi,xw,yw
 
