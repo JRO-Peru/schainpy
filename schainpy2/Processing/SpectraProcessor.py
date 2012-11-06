@@ -13,7 +13,7 @@ sys.path.append(path)
 
 from Data.JROData import SpectraHeis
 from IO.SpectraIO import SpectraWriter
-#from Graphics.schainPlotTypes import SpcFigure
+from Graphics.schainPlotTypes import ScopeFigure, SpcFigure
 #from JRONoise import Noise
 
 class SpectraProcessor:
@@ -292,10 +292,10 @@ class SpectraHeisProcessor:
         
         self.integratorObjIndex = None
         self.writerObjIndex = None
-        self.plotterObjIndex = None
+        self.plotObjIndex = None
         self.integratorObjList = []
         self.writerObjList = []
-        self.plotterObjList = []
+        self.plotObjList = []
         #self.noiseObj = Noise()
     
     def setup(self, dataInObj, dataOutObj=None, nFFTPoints=None, pairList=None):
@@ -309,80 +309,17 @@ class SpectraHeisProcessor:
             dataOutObj = SpectraHeis()
             
         self.dataOutObj = dataOutObj
-  #      self.noiseObj = Noise()
-        
-        ##########################################
-        self.nFFTPoints = nFFTPoints
-        self.nChannels = self.dataInObj.nChannels
-        self.nHeights = self.dataInObj.nHeights
-        self.pairList = pairList
-        
-        if pairList != None:
-            self.nPairs = len(pairList)
-        else:
-            self.nPairs = 0
-        
-        self.dataOutObj.radarControllerHeaderObj = self.dataInObj.radarControllerHeaderObj.copy()
-        self.dataOutObj.systemHeaderObj = self.dataInObj.systemHeaderObj.copy()
-        
-        self.dataOutObj.type = "SpectraHeis"
-    
-        self.dataOutObj.dtype = self.dataInObj.dtype
-        
-        self.dataOutObj.nChannels = self.nChannels
-        
-        self.dataOutObj.nHeights = self.nHeights
-        
-        self.dataOutObj.nProfiles = self.nFFTPoints
-        
-        self.dataOutObj.heightList = None
-        
-        self.dataOutObj.channelList = None
-        
-        self.dataOutObj.channelIndexList = None
-        
-        self.dataOutObj.flagNoData = False
-        
-        self.dataOutObj.flagTimeBlock = False
-        
-        self.dataOutObj.dataUtcTime = None
-        
-        self.dataOutObj.nCode = None
-        
-        self.dataOutObj.nBaud = None
-        
-        self.dataOutObj.code = None
-        
-        self.dataOutObj.flagDecodeData = True #asumo q la data esta decodificada
-        
-        self.dataOutObj.flagDeflipData = True #asumo q la data esta sin flip
-        
-        self.dataOutObj.flagShiftFFT = False
-        
-        self.dataOutObj.ippSeconds = None
-
-        self.dataOutObjdata_spc = None
-    
-        self.dataOutObjdata_cspc = None
-        
-        self.dataOutObjdata_dc = None
-        
-        self.dataOutObjnFFTPoints = None
-        
-        self.dataOutObjnPairs = None
-        
-        self.dataOutObjpairsList = None
-        
         
         return self.dataOutObj
     
     def init(self):
         self.integratorObjIndex = 0
         self.writerObjIndex = 0
-        self.plotterObjIndex = 0
+        self.plotObjIndex = 0
         
         if self.dataInObj.type == "Voltage":
             self.__getFft()
+            self.__updateFromObj()
             self.dataOutObj.flagNoData = False
             return
             
@@ -393,6 +330,28 @@ class SpectraHeisProcessor:
             return
         
         raise ValueError, "The type is not valid"
+    
+    def __updateFromObj(self):
+        self.dataOutObj.radarControllerHeaderObj = self.dataInObj.radarControllerHeaderObj.copy()
+        self.dataOutObj.systemHeaderObj = self.dataInObj.systemHeaderObj.copy()
+        self.dataOutObj.channelList = self.dataInObj.channelList
+        self.dataOutObj.heightList = self.dataInObj.heightList
+        self.dataOutObj.dtype = self.dataInObj.dtype
+        self.dataOutObj.nHeights = self.dataInObj.nHeights
+        self.dataOutObj.nChannels = self.dataInObj.nChannels
+        self.dataOutObj.nBaud = self.dataInObj.nBaud
+        self.dataOutObj.nCode = self.dataInObj.nCode
+        self.dataOutObj.code = self.dataInObj.code
+        self.dataOutObj.nProfiles = 1
+        self.dataOutObj.nFFTPoints = self.dataInObj.nHeights
+        self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
+        self.dataOutObj.flagNoData = self.dataInObj.flagNoData
+        self.dataOutObj.flagTimeBlock = self.dataInObj.flagTimeBlock
+        self.dataOutObj.dataUtcTime = self.dataInObj.dataUtcTime
+        self.dataOutObj.flagDecodeData = self.dataInObj.flagDecodeData #asumo q la data esta decodificada
+        self.dataOutObj.flagDeflipData = self.dataInObj.flagDeflipData #asumo q la data esta sin flip
+        self.dataOutObj.flagShiftFFT = self.dataInObj.flagShiftFFT
+        self.dataOutObj.nIncohInt = 1
     
     def __getFft(self):
         if self.dataInObj.flagNoData:
@@ -405,7 +364,6 @@ class SpectraHeisProcessor:
         
         spc = numpy.abs(fft_volt * numpy.conjugate(fft_volt))
         self.dataOutObj.data_spc = spc
-        #print spc
     
     def getSpectra(self):
         
@@ -428,13 +386,11 @@ class SpectraHeisProcessor:
             self.addIntegrator(N,timeInterval)
         
         myIncohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.m_BasicHeader.utc)
+        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.dataUtcTime)
         
         if myIncohIntObj.isReady:
             self.dataOutObj.data_spc = myIncohIntObj.data
-            self.dataOutObj.nAvg = myIncohIntObj.navg
-            self.dataOutObj.m_ProcessingHeader.incoherentInt *= myIncohIntObj.navg
-            #print "myIncohIntObj.navg: ",myIncohIntObj.navg
+            self.dataOutObj.nIncohInt = self.dataOutObj.nIncohInt*myIncohIntObj.navg
             self.dataOutObj.flagNoData = False
             
             #self.getNoise(type="hildebrand",parm=myIncohIntObj.navg)
@@ -446,6 +402,61 @@ class SpectraHeisProcessor:
         self.integratorObjIndex += 1
 
         
+    def addScope(self, idfigure, nframes, wintitle, driver):
+        if idfigure==None:
+            idfigure = self.plotObjIndex
+            
+        scopeObj = ScopeFigure(idfigure, nframes, wintitle, driver)
+        self.plotObjList.append(scopeObj)
+    
+    def plotScope(self,
+                    idfigure=None,
+                    minvalue=None,
+                    maxvalue=None,
+                    xmin=None,
+                    xmax=None,
+                    wintitle='',
+                    driver='plplot',
+                    save=False,
+                    gpath=None,
+                    titleList=None,
+                    xlabelList=None,
+                    ylabelList=None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        nframes = len(self.dataOutObj.channelList)
+        
+        if len(self.plotObjList) <= self.plotObjIndex:
+            self.addScope(idfigure, nframes, wintitle, driver)
+            
+            
+        data1D = self.dataOutObj.data_spc
+        
+        x = numpy.arange(self.dataOutObj.nHeights)
+        
+        thisDatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        
+        dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))
+        
+        figureTitle = "Scope Plot Radar Data: " + date
+        
+        plotObj = self.plotObjList[self.plotObjIndex]
+        
+        plotObj.plot1DArray(data1D, 
+                             x, 
+                             self.dataOutObj.channelList, 
+                             xmin, 
+                             xmax, 
+                             minvalue, 
+                             maxvalue,
+                             figureTitle,
+                             save, 
+                             gpath)
+                
+        self.plotObjIndex += 1
 
 class IncoherentIntegration:
 
