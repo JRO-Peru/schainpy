@@ -43,6 +43,9 @@ class SpcFigure(Figure):
         pass
     
     def createFrames(self):
+        
+        self.frameObjList = []
+        
         for frame in range(self.nframes):
             frameObj = SpcFrame(self.drvObj,frame + 1, self.colorbar, self.showprofile)
             self.frameObjList.append(frameObj)
@@ -267,6 +270,9 @@ class RTIFigure(Figure):
         return 0
     
     def createFrames(self):
+        
+        self.frameObjList = []
+        
         for frame in range(self.nframes):
             frameObj = RTIFrame(self.drvObj,frame + 1, self.colorbar, self.showprofile)
             self.frameObjList.append(frameObj)
@@ -427,6 +433,9 @@ class ScopeFigure(Figure):
         return nrows, ncolumns
 
     def createFrames(self):
+        
+        self.frameObjList = []
+        
         for frame in range(self.nframes):
             frameObj = ScopeFrame(self.drvObj,frame + 1)
             self.frameObjList.append(frameObj)

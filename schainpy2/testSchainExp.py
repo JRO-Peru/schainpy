@@ -13,7 +13,7 @@ from Data.JROData import Voltage
 from IO.VoltageIO import *
 
 from Processing.VoltageProcessor import *
-
+from Processing.SpectraProcessor import *
 
 class TestSChain():
     
@@ -24,12 +24,15 @@ class TestSChain():
 
     def setValues(self):
         self.path = "/home/roj-idl71/Data/RAWDATA/Meteors"
+        self.path = "/remote/puma/2012_06/Meteors"
         
-        self.startDate = datetime.date(2005,1,1)
-        self.endDate = datetime.date(2012,7,30)
+        self.startDate = datetime.date(2012,1,1)
+        self.endDate = datetime.date(2012,12,30)
         
         self.startTime = datetime.time(0,0,0)
         self.endTime = datetime.time(23,59,59)
+        
+        self.nFFTPoints = 64
         
         self.wrpath = "/home/roj-idl71/tmp/results"
         self.profilesPerBlock = 40
@@ -51,6 +54,7 @@ class TestSChain():
                                    online = 0)         
         
         self.voltObj2 = self.voltProcObj.setup(dataInObj = self.voltObj1)
+        self.specObj1 = self.specProcObj.setup(dataInObj = self.voltObj2, nFFTPoints = self.nFFTPoints)
 
     def testSChain(self):
         
@@ -61,17 +65,28 @@ class TestSChain():
             
             self.voltProcObj.init()
             
-            self.voltProcObj.integrator(1000, overlapping=True)
+            self.voltProcObj.integrator(10, overlapping=False)
 #            
 #            self.voltProcObj.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
             
             
-            self.voltProcObj.plotScope(idfigure=1,
-                                        wintitle='test plot library',
-                                        driver='plplot',
-                                        save=False,
-                                        gpath=None,
-                                        type="power")
+#            self.voltProcObj.plotScope(idfigure=0,
+#                                        wintitle='test plot library',
+#                                        driver='plplot',
+#                                        save=False,
+#                                        gpath=None,
+#                                        type="power")
+            
+            self.specProcObj.init()
+            
+            self.specProcObj.plotSpc(idfigure=1,
+                                    wintitle='Spectra',
+                                    driver='plplot',
+                                    colormap='br_green',
+                                    colorbar=True,
+                                    showprofile=False,
+                                    save=False,
+                                    gpath=None)
             
             if self.readerObj.flagNoMoreFiles:
                 break
@@ -79,7 +94,7 @@ class TestSChain():
             if self.readerObj.flagIsNewBlock:
 #                print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks, datetime.datetime.fromtimestamp(self.readerObj.basicHeaderObj.utc),)
                 print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks, 
-                                                  datetime.datetime.utcfromtimestamp(self.readerObj.basicHeaderObj.utc + self.readerObj.basicHeaderObj.miliSecond/1000.0),)
+                                                  datetime.datetime.fromtimestamp(self.readerObj.basicHeaderObj.utc + self.readerObj.basicHeaderObj.miliSecond/1000.0),)
 
     
 if __name__ == '__main__':

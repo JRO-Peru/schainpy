@@ -277,21 +277,22 @@ class SpectraProcessor:
         plotObj = self.plotObjList[self.plotObjIndex]
         
         plotObj.plotPcolor(data, 
-                           x, 
-                           y, 
-                           channelList, 
-                           xmin, 
-                           xmax, 
-                           ymin, 
-                           ymax,
-                           minvalue, 
-                           maxvalue, 
-                           figuretitle, 
-                           None,
-                           save, 
-                           gpath,
-                           cleardata,
-                           titleList)
+                            x=x, 
+                            y=y, 
+                            channelList=channelList, 
+                            xmin=xmin, 
+                            xmax=xmax, 
+                            ymin=ymin, 
+                            ymax=ymax,
+                            minvalue=minvalue, 
+                            maxvalue=maxvalue, 
+                            figuretitle=figuretitle,
+                            xrangestep=None,
+                            deltax=None, 
+                            save=False, 
+                            gpath='./',
+                            clearData=True
+                            )
         
         self.plotObjIndex += 1
     

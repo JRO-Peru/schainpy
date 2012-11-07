@@ -68,13 +68,18 @@ class Figure:
         
         self.drvObj.driver.openDriver()
         
-    def __initFigure(self):
+    def __newPage(self):
         
+        
+        self.drvObj.driver.openPage()
         nrows, ncolumns = self.getSubplots()
-        self.drvObj.driver.openFigure()
         self.drvObj.driver.setFigTitle(self.figuretitle)
         self.drvObj.driver.setSubPlots(nrows, ncolumns)
-    
+        
+    def __closePage(self):
+        
+        self.drvObj.driver.closeFigure()
+        
     def selectFigure(self):
         
         self.drvObj.driver.selectFigure()
@@ -96,6 +101,9 @@ class Figure:
         self.drvObj.driver.refresh()
     
     def createFrames(self):
+        
+        self.frameObjList = []
+        
         raise ValueError, "No implemented"
     
     def save(self,filename):
@@ -174,7 +182,7 @@ class Figure:
             filename = os.path.join(path,file)
             self.save(filename)
         
-
+        self.__closeFigure()
 
     
     def plotPcolor(self,data, 
@@ -201,7 +209,6 @@ class Figure:
         else:
             self.figuretitle = figuretitle 
         
-        
 
         if not(self.__isDriverOpen):
             self.__openDriver()
@@ -219,12 +226,12 @@ class Figure:
             if not(self.changeXRange(x)):
                 return 0
             
-            self.__isFigureOpen = False
+            self.__closeFigure()
+        
+        self.selectFigure()
         
         if not(self.__isFigureOpen):
-
-            
-            self.__initFigure()
+            self.__newPage()
             self.__isFigureOpen = True
         
             for channel in channelList:
@@ -242,7 +249,7 @@ class Figure:
                               self.deltay,
                               self.colorbar,
                               value)
-        self.selectFigure()
+        
         
         for channel in channelList:
             dataCh = data[channel,:]
@@ -252,7 +259,9 @@ class Figure:
 
         self.__refresh()
         if clearData == True:
+            self.__closePage()
             self.__isFigureOpen = False
+        
             
 
     
