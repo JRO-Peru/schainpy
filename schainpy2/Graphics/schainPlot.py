@@ -5,57 +5,80 @@ import os
 from schainPlotLib import Driver
 
 class Figure:
+    
     __isDriverOpen = False
     __isFigureOpen = False
     __isConfig = False
+    
     drvObj = None
+    driver = None
     idfigure = None
     nframes = None
     wintitle = None
     colormap = None
-    driver = None
     overplot = None
+    colorbar = None
+    
+    frameObjList = []
+    
+    xw = None
+    yw = None
+    
     xmin = None
     xmax = None
     ymin = None
     ymax = None
+    
     minvalue = None
     maxvalue = None
     deltax = None
     deltay = None
-    frameObjList = []
+    
+    
     figuretitle = ""
     xrangestep = None
     
     def __init__(self,idfigure, nframes, wintitle, xw=600, yw=800, overplot=0, driver='plplot', colormap=None, colorbar= True, *args):
         
+        self.__isDriverOpen = False
+        self.__isFigureOpen = False
+        self.__isConfig = False
+    
         self.drvObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colormap, colorbar)
         self.driver = driver
         self.idfigure = idfigure
-        self.xw = xw
-        self.yw = yw
         self.nframes = nframes
         self.wintitle = wintitle
         self.colormap = colormap
         self.overplot = overplot
         self.colorbar = colorbar
+        
+        self.xw = xw
+        self.yw = yw
+        
+        self.frameObjList = []
+        
 #        self.showGraph1 = args[0]
 #        self.showGraph2 = args[1]  
         
         self.drvObj.driver.setFigure()
         self.drvObj.driver.setColormap(colormap)
-        
-        
     
     def __openDriver(self):
+        
         self.drvObj.driver.openDriver()
         
     def __initFigure(self):
+        
         nrows, ncolumns = self.getSubplots()
         self.drvObj.driver.openFigure()
         self.drvObj.driver.setFigTitle(self.figuretitle)
         self.drvObj.driver.setSubPlots(nrows, ncolumns)
     
+    def selectFigure(self):
+        
+        self.drvObj.driver.selectFigure()
+        
     def __isOutOfXRange(self,x):
         try:
             if ((x>=self.xmin) and (x<self.xmax)):
@@ -76,6 +99,7 @@ class Figure:
         raise ValueError, "No implemented"
     
     def save(self,filename):
+        
         self.drvObj.driver.save(filename)
     
     def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvalue=None, figuretitle=None, save=False, gpath='./'):
@@ -118,9 +142,9 @@ class Figure:
                 self.drvObj.driver.closePage()
                 self.__isFigureOpen = False
         
-        
+        self.selectFigure()
         self.__initFigure()
-
+        
         for channel in channelList:
             frameObj = self.frameObjList[channel]
             frameObj.init(xmin=self.xmin,
@@ -218,6 +242,7 @@ class Figure:
                               self.deltay,
                               self.colorbar,
                               value)
+        self.selectFigure()
         
         for channel in channelList:
             dataCh = data[channel,:]
@@ -232,13 +257,20 @@ class Figure:
 
     
 class Frame:
+    
+    drvObj = None
+    idFrame = None
     nplots = None
     plotObjList = []
     title = ""
     
     def __init__(self,drvObj, idframe):
+        
         self.drvObj = drvObj
         self.idframe = idframe
+        nplots = None
+        self.plotObjList = []
+        
         self.createPlots()
     
     def createPlots(self):
@@ -270,6 +302,15 @@ class Frame:
 
 
 class Plot:
+    
+    drvObj = None
+    idframe = None
+    idplot = None
+    xi = None
+    yi = None
+    xw = None
+    yw = None
+        
     title = ""
     xlabel = ""
     ylabel = ""
@@ -287,6 +328,7 @@ class Plot:
     cbypos = None
     
     def __init__(self, drvObj, idframe, idplot, xi, yi, xw, yw):
+        
         self.drvObj = drvObj
         self.idframe = idframe
         self.idplot = idplot

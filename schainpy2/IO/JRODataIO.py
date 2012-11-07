@@ -254,7 +254,7 @@ class JRODataReader(JRODataIO):
             pass
 
         else:
-            print "Searching files in offline mode"
+            print "Searching files in offline mode ..."
             pathList, filenameList = self.__searchFilesOffLine(path, startDate, endDate, startTime, endTime, set, expLabel, ext)
             
             if not(pathList):

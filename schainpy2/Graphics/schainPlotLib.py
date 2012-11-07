@@ -43,6 +43,9 @@ class PlplotDriver:
         plplot.plparseopts([self.wintitle],plplot.PL_PARSE_FULL)
         plplot.plsetopt("geometry", "%dx%d"%(self.xw, self.yw))
 
+    def selectFigure(self):
+        
+        plplot.plsstrm(self.idfigure)
         
     def openDriver(self, pldriver=None):
         if pldriver == None:
@@ -421,7 +424,7 @@ class PlplotDriver:
             rgb_lvl = [8,8,4]  #Levels for RGB colors
         
         if ncolor == None:
-            raise ValueError, "The colormap selected is not valid"
+            raise ValueError, "The colormap selected (%s) is not valid" %(colormap)
         
         plplot.plscmap1n(ncolor)
         plplot.plscmap1l(1, pos, r, g, b)

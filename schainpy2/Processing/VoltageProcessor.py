@@ -85,15 +85,15 @@ class VoltageProcessor:
         data = self.dataOutObj.data * numpy.conjugate(self.dataOutObj.data)
         data = 10*numpy.log10(data.real)
         
-#        currenttime = self.dataOutObj.dataUtcTime
+#        currenttime = self.dataOutObj.utctime
 #        if timezone == "lt":
-        currenttime = self.dataOutObj.dataUtcTime - time.timezone
+        currenttime = self.dataOutObj.utctime - time.timezone
         
         range = self.dataOutObj.heightList
         
         channelList = self.dataOutObj.channelList
         
-        thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
         dateTime = "%s"%(thisdatetime.strftime("%d-%b-%Y %H:%M:%S"))
         date = "%s"%(thisdatetime.strftime("%d-%b-%Y"))
         
@@ -159,7 +159,7 @@ class VoltageProcessor:
         if type =="iq":
             data1D = self.dataOutObj.data
         
-        thisDatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        thisDatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
         
         dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))

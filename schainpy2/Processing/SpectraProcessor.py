@@ -11,7 +11,7 @@ import datetime
 path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
-from Data.JROData import SpectraHeis
+from Data.JROData import Spectra, SpectraHeis
 from IO.SpectraIO import SpectraWriter
 from Graphics.schainPlotTypes import ScopeFigure, SpcFigure
 #from JRONoise import Noise
@@ -48,8 +48,8 @@ class SpectraProcessor:
         self.plotObjIndex = None
         self.integratorOst = []
         self.plotObjList = []
-        self.noiseObj = bjList = []
-        self.writerObjLiNone
+        self.noiseObj = []
+        self.writerObjList = []
         self.buffer = None
         self.profIndex = 0
         
@@ -59,10 +59,24 @@ class SpectraProcessor:
             raise ValueError, "This SpectraProcessor.setup() function needs dataInObj input variable"
         
         if dataInObj.type == "Voltage":
-            if nFFTPoints == None:
+            if nFFTPoints == None: 
                 raise ValueError, "This SpectraProcessor.setup() function needs nFFTPoints input variable"
-        else:
+            
+            
+        
+        if dataInObj.type == "Spectra":
+            if nFFTPoints != None: 
+                raise ValueError, "The nFFTPoints cannot be selected to this object type"
+            
             nFFTPoints = dataInObj.nFFTPoints
+            
+            if pairList == None:
+                pairList = self.dataInObj.pairList
+        
+        if pairList == None:
+            nPairs = 0
+        else:
+            nPairs = len(pairList)
         
         self.dataInObj = dataInObj        
         
@@ -70,44 +84,55 @@ class SpectraProcessor:
             dataOutObj = Spectra()
             
         self.dataOutObj = dataOutObj
+        self.dataOutObj.nFFTPoints = nFFTPoints
+        self.dataOutObj.pairList = pairList
+        self.dataOutObj.nPairs = nPairs
         
         return self.dataOutObj
     
     def init(self):
         
+        self.dataOutObj.flagNoData = True
+        
+        if self.dataInObj.flagNoData:
+            return 0
+        
         self.integratorObjIndex = 0
         self.writerObjIndex = 0
         self.plotObjIndex = 0
+        
+        
+        if self.dataInObj.type == "Spectra":
+            
+            self.dataOutObj.copy(self.dataInObj)
+            self.dataOutObj.flagNoData = False
+            return
+        
         if self.dataInObj.type == "Voltage":
             
             if self.buffer == None:
-                self.buffer = numpy.zeros((self.nChannels,
-                                           self.nFFTPoints,
+                self.buffer = numpy.zeros((self.dataInObj.nChannels,
+                                           self.dataOutObj.nFFTPoints,
                                            self.dataInObj.nHeights), 
                                           dtype='complex')
             
             self.buffer[:,self.profIndex,:] = self.dataInObj.data
             self.profIndex += 1
             
-            if self.profIndex == self.nFFTPoints:
+            if self.profIndex == self.dataOutObj.nFFTPoints:
+                
+                self.__updateObjFromInput()
                 self.__getFft()
+                
                 self.dataOutObj.flagNoData = False
                 
                 self.buffer = None
                 self.profIndex = 0
-                return
-            
-            self.dataOutObj.flagNoData = True
             
             return
         
-        #Other kind of data
-        if self.dataInObj.type == "Spectra":
-            self.dataOutObj.copy(self.dataInObj)
-            self.dataOutObj.flagNoData = False
-            return
-        
-        raise ValueError, "The dtype is not valid"
+        #Other kind of data        
+        raise ValueError, "The type object %(s) is not valid " %(self.dataOutObj.type)
 
     def __getFft(self):
         """
@@ -136,9 +161,6 @@ class SpectraProcessor:
             self.dataOutObj.m_ProcessingHeader.spectraComb
             self.dataOutObj.m_ProcessingHeader.shif_fft
         """
-        
-        if self.dataInObj.flagNoData:
-            return 0
             
         fft_volt = numpy.fft.fft(self.buffer,axis=1)
         dc = fft_volt[:,0,:]
@@ -154,9 +176,9 @@ class SpectraProcessor:
         
         cspc = None
         pairIndex = 0
-        if self.pairList != None:
+        if self.dataOutObj.pairList != None:
             #calculo de cross-spectra
-            cspc = numpy.zeros((self.nPairs, self.nFFTPoints, self.nHeights), dtype='complex')
+            cspc = numpy.zeros((self.dataOutObj.nPairs, self.dataOutObj.nFFTPoints, self.dataOutObj.nHeights), dtype='complex')
             for pair in self.pairList:
                 cspc[pairIndex,:,:] = numpy.abs(fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:]))
                 pairIndex += 1
@@ -165,12 +187,33 @@ class SpectraProcessor:
         self.dataOutObj.data_spc = spc
         self.dataOutObj.data_cspc = cspc
         self.dataOutObj.data_dc = dc
-        self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
-        self.dataOutObj.m_BasicHeader.utc = self.dataInObj.m_BasicHeader.utc
+        self.dataOutObj.blockSize = blocksize
         
 #        self.getNoise()
+
+    def __updateObjFromInput(self):
+        
+        self.dataOutObj.radarControllerHeaderObj = self.dataInObj.radarControllerHeaderObj.copy()
+        self.dataOutObj.systemHeaderObj = self.dataInObj.systemHeaderObj.copy()
+        self.dataOutObj.channelList = self.dataInObj.channelList
+        self.dataOutObj.heightList = self.dataInObj.heightList
+        self.dataOutObj.dtype = self.dataInObj.dtype
+        self.dataOutObj.nHeights = self.dataInObj.nHeights
+        self.dataOutObj.nChannels = self.dataInObj.nChannels
+        self.dataOutObj.nBaud = self.dataInObj.nBaud
+        self.dataOutObj.nCode = self.dataInObj.nCode
+        self.dataOutObj.code = self.dataInObj.code
+        self.dataOutObj.nProfiles = self.dataOutObj.nFFTPoints
+        self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
+        self.dataOutObj.flagTimeBlock = self.dataInObj.flagTimeBlock
+        self.dataOutObj.utctime = self.dataInObj.utctime
+        self.dataOutObj.flagDecodeData = self.dataInObj.flagDecodeData #asumo q la data esta decodificada
+        self.dataOutObj.flagDeflipData = self.dataInObj.flagDeflipData #asumo q la data esta sin flip
+        self.dataOutObj.flagShiftFFT = self.dataInObj.flagShiftFFT
+        self.dataOutObj.nIncohInt = 1
         
     def addWriter(self, wrpath, blocksPerFile):
+        
         objWriter = SpectraWriter(self.dataOutObj)
         objWriter.setup(wrpath, blocksPerFile)
         self.writerObjList.append(objWriter)
@@ -181,6 +224,7 @@ class SpectraProcessor:
         self.integratorObjList.append(objIncohInt)
     
     def addSpc(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
+        
         spcObj = SpcFigure(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
         self.plotObjList.append(spcObj)
     
@@ -193,16 +237,20 @@ class SpectraProcessor:
                     maxvalue=None,
                     wintitle='',
                     driver='plplot',
-                    colormap='br_greeen',
+                    colormap='br_green',
                     colorbar=True,
                     showprofile=False,
                     save=False,
-                    gpath=None):
+                    gpath=None,
+                    channelList = None):
         
         if self.dataOutObj.flagNoData:
             return 0
         
-        nframes = len(self.dataOutObj.channelList)
+        if channelList == None:
+            channelList = self.dataOutObj.channelList
+        
+        nframes = len(channelList)
         
         if len(self.plotObjList) <= self.plotObjIndex:
             self.addSpc(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
@@ -210,8 +258,6 @@ class SpectraProcessor:
         x = numpy.arange(self.dataOutObj.nFFTPoints)
                 
         y = self.dataOutObj.heightList
-        
-        channelList = self.dataOutObj.channelList
         
         data = 10.*numpy.log10(self.dataOutObj.data_spc[channelList,:,:])    
 #        noisedB = 10.*numpy.log10(noise)
@@ -222,7 +268,7 @@ class SpectraProcessor:
             title = "%.2f"%noisedB[i]
             titleList.append(title)
         
-        thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
         dateTime = "%s"%(thisdatetime.strftime("%d-%b-%Y %H:%M:%S"))
         figuretitle = "Spc Radar Data: %s"%dateTime
         
@@ -251,8 +297,9 @@ class SpectraProcessor:
     
     
     def writeData(self, wrpath, blocksPerFile):
+        
         if self.dataOutObj.flagNoData:
-                return 0
+            return 0
             
         if len(self.writerObjList) <= self.writerObjIndex:
             self.addWriter(wrpath, blocksPerFile)
@@ -313,13 +360,19 @@ class SpectraHeisProcessor:
         return self.dataOutObj
     
     def init(self):
+        
+        self.dataOutObj.flagNoData = True
+        
+        if self.dataInObj.flagNoData:
+            return 0
+        
         self.integratorObjIndex = 0
         self.writerObjIndex = 0
         self.plotObjIndex = 0
         
         if self.dataInObj.type == "Voltage":
+            self.__updateObjFromInput()
             self.__getFft()
-            self.__updateFromObj()
             self.dataOutObj.flagNoData = False
             return
             
@@ -331,7 +384,8 @@ class SpectraHeisProcessor:
         
         raise ValueError, "The type is not valid"
     
-    def __updateFromObj(self):
+    def __updateObjFromInput(self):
+        
         self.dataOutObj.radarControllerHeaderObj = self.dataInObj.radarControllerHeaderObj.copy()
         self.dataOutObj.systemHeaderObj = self.dataInObj.systemHeaderObj.copy()
         self.dataOutObj.channelList = self.dataInObj.channelList
@@ -347,15 +401,13 @@ class SpectraHeisProcessor:
         self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
         self.dataOutObj.flagNoData = self.dataInObj.flagNoData
         self.dataOutObj.flagTimeBlock = self.dataInObj.flagTimeBlock
-        self.dataOutObj.dataUtcTime = self.dataInObj.dataUtcTime
+        self.dataOutObj.utctime = self.dataInObj.utctime
         self.dataOutObj.flagDecodeData = self.dataInObj.flagDecodeData #asumo q la data esta decodificada
         self.dataOutObj.flagDeflipData = self.dataInObj.flagDeflipData #asumo q la data esta sin flip
         self.dataOutObj.flagShiftFFT = self.dataInObj.flagShiftFFT
         self.dataOutObj.nIncohInt = 1
     
     def __getFft(self):
-        if self.dataInObj.flagNoData:
-           return 0
            
         fft_volt = numpy.fft.fft(self.dataInObj.data, axis=1)        
         #print fft_volt
@@ -375,10 +427,12 @@ class SpectraHeisProcessor:
         return numpy.arange(int(self.nFFTPoints))
     
     def addIntegrator(self,N,timeInterval):
+        
         objIncohInt = IncoherentIntegration(N,timeInterval)
         self.integratorObjList.append(objIncohInt)
     
     def integrator(self, N=None, timeInterval=None):
+        
         if self.dataOutObj.flagNoData:
                 return 0
         
@@ -386,7 +440,7 @@ class SpectraHeisProcessor:
             self.addIntegrator(N,timeInterval)
         
         myIncohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.dataUtcTime)
+        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.utctime)
         
         if myIncohIntObj.isReady:
             self.dataOutObj.data_spc = myIncohIntObj.data
@@ -403,6 +457,7 @@ class SpectraHeisProcessor:
 
         
     def addScope(self, idfigure, nframes, wintitle, driver):
+        
         if idfigure==None:
             idfigure = self.plotObjIndex
             
@@ -436,7 +491,7 @@ class SpectraHeisProcessor:
         
         x = numpy.arange(self.dataOutObj.nHeights)
         
-        thisDatetime = datetime.datetime.fromtimestamp(self.dataOutObj.dataUtcTime)
+        thisDatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
         
         dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))

@@ -40,11 +40,13 @@ class JROData:
     
     channelIndexList = None
     
-    flagNoData = False
+    flagNoData = True
     
     flagTimeBlock = False
     
-    dataUtcTime = None
+    utctime = None
+    
+    blocksize = None
     
     nCode = None
     
@@ -115,9 +117,11 @@ class Voltage(JROData):
         
         self.flagTimeBlock = False
         
-        self.dataUtcTime = None
+        self.utctime = None
         
         self.nCohInt = None
+        
+        self.blocksize = None
 
 class Spectra(JROData):
     
@@ -169,9 +173,11 @@ class Spectra(JROData):
         
         self.flagTimeBlock = False
         
-        self.dataUtcTime = None
+        self.utctime = None
         
         self.nIncohInt = None
+        
+        self.blocksize = None
         
         
 class SpectraHeis(JROData):
@@ -217,3 +223,7 @@ class SpectraHeis(JROData):
         self.flagTimeBlock = False
                 
         self.nPairs = 0
+        
+        self.utctime = None
+        
+        self.blocksize = None

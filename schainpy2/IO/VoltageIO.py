@@ -293,7 +293,7 @@ class VoltageReader(JRODataReader):
         
         self.dataOutObj.flagTimeBlock = self.flagTimeBlock
         
-        self.dataOutObj.dataUtcTime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
+        self.dataOutObj.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
         
         self.dataOutObj.nCohInt = self.processingHeaderObj.nCohInt
         
@@ -526,8 +526,8 @@ class VoltageWriter(JRODataWriter):
         self.basicHeaderObj.version = self.versionFile
         self.basicHeaderObj.dataBlock = self.nTotalBlocks
         
-        utc = numpy.floor(self.dataOutObj.dataUtcTime)
-        milisecond  = (self.dataOutObj.dataUtcTime - utc)* 1000.0
+        utc = numpy.floor(self.dataOutObj.utctime)
+        milisecond  = (self.dataOutObj.utctime - utc)* 1000.0
         
         self.basicHeaderObj.utc = utc
         self.basicHeaderObj.miliSecond = milisecond
