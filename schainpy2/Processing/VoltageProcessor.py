@@ -67,7 +67,7 @@ class VoltageProcessor:
                     maxvalue=None,
                     wintitle='',
                     driver='plplot',
-                    colormap='br_greeen',
+                    colormap='br_green',
                     colorbar=True,
                     showprofile=False,
                     xrangestep=None,

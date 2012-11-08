@@ -151,7 +151,7 @@ class Figure:
                 self.__isFigureOpen = False
         
         self.selectFigure()
-        self.__initFigure()
+        self.__newPage()
         
         for channel in channelList:
             frameObj = self.frameObjList[channel]
@@ -170,9 +170,7 @@ class Figure:
             
 #            frameObj.refresh()
         self.__refresh()
-    
 
-        
         if save:
 #            self.colorplotObj.setFigure(indexPlot)
 
@@ -182,7 +180,7 @@ class Figure:
             filename = os.path.join(path,file)
             self.save(filename)
         
-        self.__closeFigure()
+        self.__closePage()
 
     
     def plotPcolor(self,data, 
@@ -226,7 +224,7 @@ class Figure:
             if not(self.changeXRange(x)):
                 return 0
             
-            self.__closeFigure()
+            self.__closePage()
         
         self.selectFigure()
         

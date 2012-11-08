@@ -65,28 +65,45 @@ class TestSChain():
             
             self.voltProcObj.init()
             
-            self.voltProcObj.integrator(10, overlapping=False)
+            self.voltProcObj.integrator(100, overlapping=False)
 #            
 #            self.voltProcObj.writeData(self.wrpath,self.profilesPerBlock,self.blocksPerFile)
             
             
-#            self.voltProcObj.plotScope(idfigure=0,
-#                                        wintitle='test plot library',
-#                                        driver='plplot',
-#                                        save=False,
-#                                        gpath=None,
-#                                        type="power")
-            
-            self.specProcObj.init()
-            
-            self.specProcObj.plotSpc(idfigure=1,
-                                    wintitle='Spectra',
+            self.voltProcObj.plotScope(idfigure=0,
+                                        wintitle='test plot library',
+                                        driver='plplot',
+                                        save=False,
+                                        gpath=None,
+                                        type="power")
+            self.voltProcObj.plotRti(
+                                     idfigure=1,
+                                     starttime=self.startTime,
+                                     endtime=self.endTime,
+                                    rangemin=0,
+                                    rangemax=1000,
+                                    minvalue=None,
+                                    maxvalue=None,
+                                    wintitle='',
                                     driver='plplot',
                                     colormap='br_green',
                                     colorbar=True,
                                     showprofile=False,
+                                    xrangestep=1,
                                     save=False,
                                     gpath=None)
+                    
+            
+#            self.specProcObj.init()
+#            
+#            self.specProcObj.plotSpc(idfigure=1,
+#                                    wintitle='Spectra',
+#                                    driver='plplot',
+#                                    colormap='br_green',
+#                                    colorbar=True,
+#                                    showprofile=False,
+#                                    save=False,
+#                                    gpath=None)
             
             if self.readerObj.flagNoMoreFiles:
                 break
