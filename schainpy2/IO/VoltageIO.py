@@ -295,6 +295,10 @@ class VoltageReader(JRODataReader):
         
         self.dataOutObj.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
         
+        self.dataOutObj.ippSeconds = self.ippSeconds
+        
+        self.dataOutObj.timeInterval = self.ippSeconds
+        
         self.dataOutObj.nCohInt = self.processingHeaderObj.nCohInt
         
         self.dataOutObj.flagShiftFFT = False
@@ -313,6 +317,10 @@ class VoltageReader(JRODataReader):
         self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
         
         self.dataOutObj.flagNoData = False
+        
+#        print self.profileIndex, self.dataOutObj.utctime 
+#        if self.profileIndex == 800:
+#            a=1
     
         return self.dataOutObj.data
 

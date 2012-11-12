@@ -67,7 +67,7 @@ class VoltageProcessor:
                     maxvalue=None,
                     wintitle='',
                     driver='plplot',
-                    colormap='br_green',
+                    colormap='br_greeen',
                     colorbar=True,
                     showprofile=False,
                     xrangestep=None,
@@ -103,21 +103,25 @@ class VoltageProcessor:
         
         cleardata = False
         
-        plotObj.plotPcolor(data, 
-                           currenttime, 
-                           range, 
-                           channelList, 
-                           starttime, 
-                           endtime, 
-                           rangemin, 
-                           rangemax,
-                           minvalue, 
-                           maxvalue, 
-                           figuretitle, 
-                           xrangestep,
-                           save, 
-                           gpath,
-                           cleardata)
+        deltax = self.dataOutObj.timeInterval
+        
+        plotObj.plotPcolor(data=data, 
+                           x=currenttime, 
+                           y=range, 
+                           channelList=channelList, 
+                           xmin=starttime, 
+                           xmax=endtime, 
+                           ymin=rangemin, 
+                           ymax=rangemax,
+                           minvalue=minvalue, 
+                           maxvalue=maxvalue, 
+                           figuretitle=figuretitle, 
+                           xrangestep=xrangestep,
+                           deltax=deltax,
+                           save=save, 
+                           gpath=gpath,
+                           cleardata=cleardata)
+
         
         self.plotObjIndex += 1
 
@@ -168,16 +172,17 @@ class VoltageProcessor:
         
         plotObj = self.plotObjList[self.plotObjIndex]
         
-        plotObj.plot1DArray(data1D, 
-                             self.dataOutObj.heightList, 
-                             self.dataOutObj.channelList, 
-                             xmin, 
-                             xmax, 
-                             minvalue, 
-                             maxvalue,
-                             figureTitle,
-                             save, 
-                             gpath)
+        plotObj.plot1DArray(data1D=data1D, 
+                             x=self.dataOutObj.heightList, 
+                             channelList=self.dataOutObj.channelList, 
+                             xmin=xmin, 
+                             xmax=xmax, 
+                             minvalue=minvalue, 
+                             maxvalue=maxvalue,
+                             figureTitle=figureTitle,
+                             save=save, 
+                             gpath=gpath)
+        
                 
         self.plotObjIndex += 1
     

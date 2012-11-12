@@ -53,7 +53,7 @@ class SpectraProcessor:
         self.buffer = None
         self.profIndex = 0
         
-    def setup(self, dataInObj=None, dataOutObj=None, nFFTPoints=None, pairList=None):
+    def setup(self, dataInObj=None, dataOutObj=None, nFFTPoints=None, pairsList=None):
         
         if dataInObj == None:
             raise ValueError, "This SpectraProcessor.setup() function needs dataInObj input variable"
@@ -70,13 +70,13 @@ class SpectraProcessor:
             
             nFFTPoints = dataInObj.nFFTPoints
             
-            if pairList == None:
-                pairList = self.dataInObj.pairList
+            if pairsList == None:
+                pairsList = dataInObj.pairsList
         
-        if pairList == None:
+        if pairsList == None:
             nPairs = 0
         else:
-            nPairs = len(pairList)
+            nPairs = len(pairsList)
         
         self.dataInObj = dataInObj        
         
@@ -85,7 +85,7 @@ class SpectraProcessor:
             
         self.dataOutObj = dataOutObj
         self.dataOutObj.nFFTPoints = nFFTPoints
-        self.dataOutObj.pairList = pairList
+        self.dataOutObj.pairsList = pairsList
         self.dataOutObj.nPairs = nPairs
         
         return self.dataOutObj
@@ -176,10 +176,10 @@ class SpectraProcessor:
         
         cspc = None
         pairIndex = 0
-        if self.dataOutObj.pairList != None:
+        if self.dataOutObj.pairsList != None:
             #calculo de cross-spectra
             cspc = numpy.zeros((self.dataOutObj.nPairs, self.dataOutObj.nFFTPoints, self.dataOutObj.nHeights), dtype='complex')
-            for pair in self.pairList:
+            for pair in self.dataOutObj.pairsList:
                 cspc[pairIndex,:,:] = numpy.abs(fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:]))
                 pairIndex += 1
             blocksize += cspc.size
@@ -222,6 +222,47 @@ class SpectraProcessor:
         
         objIncohInt = IncoherentIntegration(N,timeInterval)
         self.integratorObjList.append(objIncohInt)
+        
+    def addCrossSpc(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
+        crossSpcObj = CrossSpcFigure(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+        self.plotObjList.append(crossSpcObj)
+        
+    def plotCrossSpc(self, idfigure=None,
+                    xmin=None,
+                    xmax=None,
+                    ymin=None,
+                    ymax=None,
+                    minvalue=None,
+                    maxvalue=None,
+                    wintitle='',
+                    driver='plplot',
+                    colormap='br_green',
+                    colorbar=True,
+                    showprofile=False,
+                    save=False,
+                    gpath=None,
+                    pairsList = None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        if pairsList == None:
+            pairsList = self.dataOutObj.pairsList
+        
+        nframes = len(pairsList)
+        
+        x = numpy.arange(self.dataOutObj.nFFTPoints)
+                
+        y = self.dataOutObj.heightList
+        
+        
+        
+        
+        if len(self.plotObjList) <= self.plotObjIndex:
+            self.addSpc(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+        
+        
+        
     
     def addSpc(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
         
@@ -276,7 +317,7 @@ class SpectraProcessor:
         
         plotObj = self.plotObjList[self.plotObjIndex]
         
-        plotObj.plotPcolor(data, 
+        plotObj.plotPcolor(data=data, 
                             x=x, 
                             y=y, 
                             channelList=channelList, 
@@ -289,9 +330,9 @@ class SpectraProcessor:
                             figuretitle=figuretitle,
                             xrangestep=None,
                             deltax=None, 
-                            save=False, 
-                            gpath='./',
-                            clearData=True
+                            save=save, 
+                            gpath=gpath,
+                            cleardata=cleardata
                             )
         
         self.plotObjIndex += 1

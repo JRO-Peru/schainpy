@@ -58,9 +58,6 @@ class Figure:
         
         self.frameObjList = []
         
-#        self.showGraph1 = args[0]
-#        self.showGraph2 = args[1]  
-        
         self.drvObj.driver.setFigure()
         self.drvObj.driver.setColormap(colormap)
     
@@ -143,15 +140,11 @@ class Figure:
             self.createFrames()
             self.__isConfig = True
         
-        if not(self.__isOutOfXRange(x)):
-            self.changeXRange(x)
-            
-            if self.__isFigureOpen:
-                self.drvObj.driver.closePage()
-                self.__isFigureOpen = False
+
         
         self.selectFigure()
         self.__newPage()
+        
         
         for channel in channelList:
             frameObj = self.frameObjList[channel]
@@ -165,15 +158,12 @@ class Figure:
         for channel in channelList:
             dataCh = data1D[channel,:]
             frameObj = self.frameObjList[channel]
-#            frameObj.clearData()
             frameObj.plot(x, dataCh)
-            
-#            frameObj.refresh()
+
         self.__refresh()
 
+        
         if save:
-#            self.colorplotObj.setFigure(indexPlot)
-
             path = gpath
             now = datetime.datetime.now()
             file = "scope_img%02d_%d_%d.png"%(self.idfigure, time.mktime(now.timetuple()), now.microsecond)
@@ -198,7 +188,7 @@ class Figure:
                     deltax=None, 
                     save=False, 
                     gpath='./',
-                    clearData=False,
+                    cleardata=False,
                     *args):
 
         
@@ -223,8 +213,9 @@ class Figure:
             
             if not(self.changeXRange(x)):
                 return 0
-            
+
             self.__closePage()
+            self.__isFigureOpen = False
         
         self.selectFigure()
         
@@ -256,7 +247,7 @@ class Figure:
             
 
         self.__refresh()
-        if clearData == True:
+        if cleardata == True:
             self.__closePage()
             self.__isFigureOpen = False
         

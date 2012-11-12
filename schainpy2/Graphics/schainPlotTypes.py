@@ -3,9 +3,143 @@ import datetime
 import time
 from schainPlot import *
 
+class CrossSpc(Figure):
+    overplot = 0
+    xw = 900
+    yw = 650
+    showprofile = False
+    signalA = None
+    signalB = None
+    coherence = None
+    phase = None
+    
+    def __init__(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
+        Figure.__init__(self,idfigure, nframes, wintitle, self.xw, self.yw, self.overplot, driver, colormap, colorbar)
+        
+        self.showprofile = showprofile
+        self.signalA = None
+        self.signalB = None
+        self.coherence = None
+        self.phase = None
+    
+    def getSubplots(self):
+        nrows = self.nframes 
+        ncolumns = 1
+        return nrows, ncolumns
+    
+    def setParms(self, data, x, y, xmin, xmax, ymin, ymax, minvalue, maxvalue, *args):
+        
+        if xmin == None: xmin = numpy.min(x)
+        if xmax == None: xmax = numpy.max(x)
+        if ymin == None: ymin = numpy.min(y)
+        if ymax == None: ymax = numpy.max(y)
+        if minvalue == None: minvalue = 20.
+        if maxvalue == None: maxvalue = 90.
+        
+        self.signalA = self.data[0]
+        self.signalB = self.data[1]
+        self.coherence = self.data[2]
+        self.phase = self.data[3]
+        
+        self.xmin = xmin
+        self.xmax = xmax
+        self.minrange = ymin
+        self.maxrange = ymax
+        self.ymin = ymin
+        self.ymax = ymax
+        self.minvalue = minvalue
+        self.maxvalue = maxvalue
+    
+    def changeXRange(self, *args):
+        pass
+    
+    def createFrames(self):
+        self.frameObjList = []
+        
+        for frame in range(self.nframes):
+            frameObj = CrossSpcFrame(self.drvObj,frame + 1, self.colorbar, self.showprofile)
+            self.frameObjList.append(frameObj)
+
+
+class CrossSpcFrame(Frame):
+    def __init__(self):
+        self.drvObj = drvObj
+        self.idframe = idframe
+        self.nplots = 4
+        
+        if showprofile:
+            self.nplots += 4
+        
+        self.colorbar = colorbar
+        self.showprofile = showprofile
+        self.createPlots()
+    
+    def createPlots(self):
+        plotObjList = []
+        idplot = 0 
+        counter_plot = 0
+        for i in range(self.nplots):
+            xi, yi, xw, yw = self.getScreenPos(idplot)
+            plotObj = SpcPlot(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, self.colorbar)
+            plotObjList.append(plotObj)
+            
+            if self.showprofile:
+                xi, yi, xw, yw = self.getScreenPos(idplot)
+                type = "pwbox"
+                title = ""
+                xlabel = "dB"
+                ylabel = ""
+                idplot += 1
+                plotObj = Plot1D(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel)
+                plotObjList.append(plotObj)
+            idplot += 1
+            
+        self.plotObjList = plotObjList
+    
+    def getScreenPos(self,idplot):
+        pass
+    
+    def getScreenPosMainPlot(self):
+        xi = 0.15
+        
+        if self.showprofile:
+            xw = 0.55     
+        
+        else:
+            xw = 0.65 
+        
+        if self.colorbar:
+            xw = xw - 0.06
+        
+        yi = 0.20; yw = 0.75
+            
+        return xi, yi, xw, yw
+    
+    def getScreenPosGraph1(self):
+        if self.colorbar:
+            xi = 0.65 + 0.08
+        else:
+            xi = 0.75 + 0.05
+        
+        xw = xi + 0.2
+        
+        yi = 0.2; yw = 0.75
+        
+        return xi, yi, xw, yw
+    
+    def plot(self,x, y, data):
+        plotObj = self.plotObjList[0]
+        plotObj.plot(x,y,data)
+        
+        if self.showprofile:
+            plotObj = self.plotObjList[1]
+            avg_data = numpy.average(data, axis=0)
+            plotObj.plot(avg_data,y)
+
+
 class SpcFigure(Figure):
     overplot = 0
-    xw = 800
+    xw = 900
     yw = 650
     showprofile = False
     
@@ -86,10 +220,10 @@ class SpcFrame(Frame):
         xi = 0.15
         
         if self.showprofile:
-            xw = 0.65     
+            xw = 0.55     
         
         else:
-            xw = 0.75 
+            xw = 0.65 
         
         if self.colorbar:
             xw = xw - 0.06
@@ -116,7 +250,8 @@ class SpcFrame(Frame):
         
         if self.showprofile:
             plotObj = self.plotObjList[1]
-            plotObj.plot(data,y)
+            avg_data = numpy.average(data, axis=0)
+            plotObj.plot(avg_data,y)
 
 class SpcPlot(Plot):
     
@@ -147,7 +282,7 @@ class SpcPlot(Plot):
         self.xopt = "bcnst"
         self.yopt = "bcnstv"
         
-        self.szchar = 0.8
+        self.szchar = 0.7
         self.strforchannel = "Channel %d"%self.idframe
         self.xlabel = "m/s"
         self.ylabel = "Range (Km)"
@@ -376,7 +511,7 @@ class RTIPlot(Plot):
         self.xpos = [self.xi,self.xw]
         self.ypos = [self.yi,self.yw]
         self.xaxisastime = True
-        self.timefmt = "%H:%M"
+        self.timefmt = "%H:%M:%S"
         self.xopt = "bcnstd"
         self.yopt = "bcnstv"
         
@@ -492,7 +627,7 @@ class Plot1D(Plot):
         self.timefmt = None
         self.xopt = "bcnst"
         self.yopt = "bcnstv"
-        self.szchar = 1.0
+        self.szchar = 0.7
         self.type = type
         self.title = title
         self.xlabel = xlabel
