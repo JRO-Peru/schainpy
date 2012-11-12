@@ -96,7 +96,7 @@ class VoltageProcessor:
         thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
         dateTime = "%s"%(thisdatetime.strftime("%d-%b-%Y %H:%M:%S"))
         date = "%s"%(thisdatetime.strftime("%d-%b-%Y"))
-        
+        print thisdatetime
         figuretitle = "RTI Plot Radar Data" #+ date
         
         plotObj = self.plotObjList[self.plotObjIndex]
@@ -168,7 +168,7 @@ class VoltageProcessor:
         dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))
         
-        figureTitle = "Scope Plot Radar Data: " + date
+        figuretitle = "Scope Plot Radar Data: " + date
         
         plotObj = self.plotObjList[self.plotObjIndex]
         
@@ -179,7 +179,7 @@ class VoltageProcessor:
                              xmax=xmax, 
                              minvalue=minvalue, 
                              maxvalue=maxvalue,
-                             figureTitle=figureTitle,
+                             figuretitle=figuretitle,
                              save=save, 
                              gpath=gpath)
         
@@ -219,12 +219,51 @@ class VoltageProcessor:
         myCohIntObj = self.integratorObjList[self.integratorObjIndex]
         myCohIntObj.exe(data = self.dataOutObj.data, datatime=None)
         
+        self.dataOutObj.timeInterval *= nCohInt
         self.dataOutObj.flagNoData = True
         
         if myCohIntObj.isReady:
             self.dataOutObj.flagNoData = False
+    
+    def selectChannels(self, channelList):
         
+        self.selectChannelsByIndex(channelList)
+        
+    def selectChannelsByIndex(self, channelIndexList):
+        """
+        Selecciona un bloque de datos en base a canales segun el channelIndexList 
+        
+        Input:
+            channelIndexList    :    lista sencilla de canales a seleccionar por ej. [2,3,7] 
+            
+        Affected:
+            self.dataOutObj.data
+            self.dataOutObj.channelIndexList
+            self.dataOutObj.nChannels
+            self.dataOutObj.m_ProcessingHeader.totalSpectra
+            self.dataOutObj.systemHeaderObj.numChannels
+            self.dataOutObj.m_ProcessingHeader.blockSize
+            
+        Return:
+            None
+        """
+        if self.dataOutObj.flagNoData:
+            return 0
 
+        for channel in channelIndexList:
+            if channel not in self.dataOutObj.channelIndexList:
+                raise ValueError, "The value %d in channelIndexList is not valid" %channel
+        
+        nChannels = len(channelIndexList)
+            
+        data = self.dataOutObj.data[channelIndexList,:]
+        
+        self.dataOutObj.data = data
+        self.dataOutObj.channelIndexList = channelIndexList
+        self.dataOutObj.channelList = [self.dataOutObj.channelList[i] for i in channelIndexList]
+        self.dataOutObj.nChannels = nChannels
+        
+        return 1
 
 class CoherentIntegrator:
     
