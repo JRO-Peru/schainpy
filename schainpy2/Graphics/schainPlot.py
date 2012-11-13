@@ -9,7 +9,7 @@ class Figure:
     __isDriverOpen = False
     __isFigureOpen = False
     __isConfig = False
-    
+    __counter = 0
     drvObj = None
     driver = None
     idfigure = None
@@ -43,6 +43,7 @@ class Figure:
         self.__isDriverOpen = False
         self.__isFigureOpen = False
         self.__isConfig = False
+        self.__counter = 0
     
         self.drvObj = Driver(driver, idfigure, xw, yw, wintitle, overplot, colormap, colorbar)
         self.driver = driver
@@ -107,7 +108,7 @@ class Figure:
         
         self.drvObj.driver.save(filename)
     
-    def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvalue=None, figuretitle=None, save=False, gpath='./'):
+    def plot1DArray(self, data1D, x=None, channelList=None, xmin=None, xmax=None, minvalue=None, maxvalue=None, figuretitle=None, save=False, gpath='./', ratio=1):
         
         nx, ny  = data1D.shape
         
@@ -146,7 +147,7 @@ class Figure:
         self.__newPage()
         
         
-        for channel in channelList:
+        for channel in range(len(channelList)):
             frameObj = self.frameObjList[channel]
             frameObj.init(xmin=self.xmin,
                           xmax=self.xmax,
@@ -155,20 +156,25 @@ class Figure:
                           minvalue=self.minvalue,
                           maxvalue=self.maxvalue)
             
-        for channel in channelList:
+        for channel in range(len(channelList)):
             dataCh = data1D[channel,:]
             frameObj = self.frameObjList[channel]
             frameObj.plot(x, dataCh)
 
         self.__refresh()
 
-        
         if save:
-            path = gpath
-            now = datetime.datetime.now()
-            file = "scope_img%02d_%d_%d.png"%(self.idfigure, time.mktime(now.timetuple()), now.microsecond)
-            filename = os.path.join(path,file)
-            self.save(filename)
+            if self.__counter == 0:
+                path = gpath
+                now = datetime.datetime.now()
+                file = "plot_img%02d_%d_%d.png"%(self.idfigure, time.mktime(now.timetuple()), now.microsecond)
+                filename = os.path.join(path,file)
+                self.save(filename)
+            self.__counter += 1
+            
+            if self.__counter == ratio:
+                self.__counter = 0
+
         
         self.__closePage()
 
@@ -188,6 +194,7 @@ class Figure:
                     deltax=None, 
                     save=False, 
                     gpath='./',
+                    ratio=1,
                     cleardata=False,
                     *args):
 
@@ -223,7 +230,7 @@ class Figure:
             self.__newPage()
             self.__isFigureOpen = True
         
-            for channel in channelList:
+            for channel in range(len(channelList)):
                 if len(args) != 0: value = args[0][channel]
                 else: value = args
                 
@@ -240,13 +247,27 @@ class Figure:
                               value)
         
         
-        for channel in channelList:
+        for channel in range(len(channelList)):
             dataCh = data[channel,:]
             frameObj = self.frameObjList[channel]
             frameObj.plot(x, y, dataCh)
             
 
         self.__refresh()
+        
+        if save:
+            if self.__counter == 0:
+                path = gpath
+                now = datetime.datetime.now()
+                file = "pcolor_img%02d_%d_%d.png"%(self.idfigure, time.mktime(now.timetuple()), now.microsecond)
+                filename = os.path.join(path,file)
+                self.save(filename)
+            self.__counter += 1
+            
+            if self.__counter == ratio:
+                self.__counter = 0
+        
+        
         if cleardata == True:
             self.__closePage()
             self.__isFigureOpen = False

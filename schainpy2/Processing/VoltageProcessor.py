@@ -72,26 +72,27 @@ class VoltageProcessor:
                     showprofile=False,
                     xrangestep=None,
                     save=False,
-                    gpath=None):
+                    gpath=None,
+                    ratio=1,
+                    channelList=None):
         
         if self.dataOutObj.flagNoData:
             return 0
         
-        nframes = len(self.dataOutObj.channelList)
+        if channelList == None:
+            channelList = self.dataOutObj.channelList
+            
+        nframes = len(channelList)
         
         if len(self.plotObjList) <= self.plotObjIndex:
             self.addRti(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
-            
-        data = self.dataOutObj.data * numpy.conjugate(self.dataOutObj.data)
+
+        data = self.dataOutObj.data[channelList,:] * numpy.conjugate(self.dataOutObj.data[channelList,:])
         data = 10*numpy.log10(data.real)
         
-#        currenttime = self.dataOutObj.utctime
-#        if timezone == "lt":
         currenttime = self.dataOutObj.utctime - time.timezone
         
         range = self.dataOutObj.heightList
-        
-        channelList = self.dataOutObj.channelList
         
         thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
         dateTime = "%s"%(thisdatetime.strftime("%d-%b-%Y %H:%M:%S"))
@@ -120,7 +121,9 @@ class VoltageProcessor:
                            deltax=deltax,
                            save=save, 
                            gpath=gpath,
-                           cleardata=cleardata)
+                           ratio=ratio,
+                           cleardata=cleardata
+                           )
 
         
         self.plotObjIndex += 1
@@ -142,9 +145,7 @@ class VoltageProcessor:
                     driver='plplot',
                     save=False,
                     gpath=None,
-                    titleList=None,
-                    xlabelList=None,
-                    ylabelList=None,
+                    ratio=1,
                     type="power"):
         
         if self.dataOutObj.flagNoData:
@@ -181,7 +182,8 @@ class VoltageProcessor:
                              maxvalue=maxvalue,
                              figuretitle=figuretitle,
                              save=save, 
-                             gpath=gpath)
+                             gpath=gpath,
+                             ratio=ratio)
         
                 
         self.plotObjIndex += 1
@@ -223,6 +225,7 @@ class VoltageProcessor:
         self.dataOutObj.flagNoData = True
         
         if myCohIntObj.isReady:
+            self.dataOutObj.timeInterval = myCohIntObj.nCohInt * self.dataOutObj.timeInterval
             self.dataOutObj.flagNoData = False
     
     def selectChannels(self, channelList):

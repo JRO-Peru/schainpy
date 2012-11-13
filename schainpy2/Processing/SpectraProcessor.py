@@ -283,7 +283,8 @@ class SpectraProcessor:
                     showprofile=False,
                     save=False,
                     gpath=None,
-                    channelList = None):
+                    ratio=1,
+                    channelList=None):
         
         if self.dataOutObj.flagNoData:
             return 0

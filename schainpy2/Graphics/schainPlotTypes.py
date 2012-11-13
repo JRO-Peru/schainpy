@@ -62,6 +62,11 @@ class CrossSpc(Figure):
 
 
 class CrossSpcFrame(Frame):
+    xi = None
+    xw = None
+    yi = None
+    yw = None
+    alpha = None
     def __init__(self):
         self.drvObj = drvObj
         self.idframe = idframe
@@ -72,6 +77,12 @@ class CrossSpcFrame(Frame):
         
         self.colorbar = colorbar
         self.showprofile = showprofile
+        self.xi = 0.
+        self.xw = 0.
+        self.yi = 0.
+        self.yw = 0.
+        self.alpha = 1.
+        
         self.createPlots()
     
     def createPlots(self):
@@ -84,7 +95,7 @@ class CrossSpcFrame(Frame):
             plotObjList.append(plotObj)
             
             if self.showprofile:
-                xi, yi, xw, yw = self.getScreenPos(idplot)
+                xi, yi, xw, yw = self.getScreenPosGraph1(idplot)
                 type = "pwbox"
                 title = ""
                 xlabel = "dB"
@@ -96,20 +107,36 @@ class CrossSpcFrame(Frame):
             
         self.plotObjList = plotObjList
     
-    def getScreenPos(self,idplot):
-        pass
+#    def getScreenPos(self,idplot):
+#        pass
     
-    def getScreenPosMainPlot(self):
-        xi = 0.15
+    def getScreenPos(self, diplot):
+        
+        xi = self.xi
+        xw = self.xw
         
         if self.showprofile:
-            xw = 0.55     
+            width = 0.55
+            xw += width
+        
+        
+        
+        
+        self.xi = 0.15 + idplot*self.alpha
+        
+        if self.showprofile:
+            width = 0.55
+            self.xw += width     
         
         else:
-            xw = 0.65 
+            width = 0.65
+            self.xw += width 
         
         if self.colorbar:
-            xw = xw - 0.06
+            self.xw = self.xw - 0.06
+        
+        
+        self.alpha = self.xw
         
         yi = 0.20; yw = 0.75
             
@@ -117,9 +144,18 @@ class CrossSpcFrame(Frame):
     
     def getScreenPosGraph1(self):
         if self.colorbar:
-            xi = 0.65 + 0.08
+            xi = self.xw + 0.08
         else:
-            xi = 0.75 + 0.05
+            xi = self.xw + 0.05
+        
+        xw = xi + 0.2
+        
+        self.alpha = xw
+        
+        if self.colorbar:
+            self.xi = 0.65 + 0.08
+        else:
+            self.xi = 0.75 + 0.05
         
         xw = xi + 0.2
         
@@ -211,7 +247,8 @@ class SpcFrame(Frame):
             title = ""
             xlabel = "dB"
             ylabel = ""
-            plotObj = Plot1D(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel)
+            szchar = 0.70
+            plotObj = Plot1D(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel, szchar)
             plotObjList.append(plotObj)
         
         self.plotObjList = plotObjList
@@ -319,7 +356,7 @@ class RTIFigure(Figure):
     minvalue = None
     maxvalue = None
     xrangestepinsecs = None
-    
+    timefmt=None
     
     def __init__(self, idfigure, nframes, wintitle, driver, colormap="br_green", colorbar= True, showprofile=False):        
         Figure.__init__(self,idfigure, nframes, wintitle, self.xw, self.yw, self.overplot, driver, colormap, colorbar)
@@ -339,29 +376,24 @@ class RTIFigure(Figure):
         cdatetime = datetime.datetime.utcfromtimestamp(x) 
         
         mindatetime = datetime.datetime(cdatetime.year,cdatetime.month,cdatetime.day,self.starttime.hour,self.starttime.minute,self.starttime.second)
-        if ((xrangestep == 0) or (xrangestep == None)):
-            maxdatetime = datetime.datetime(cdatetime.year,cdatetime.month,cdatetime.day,self.endtime.hour,self.endtime.minute,self.endtime.second)
-            self.xrangestepinsecs = time.mktime(maxdatetime.timetuple()) - time.mktime(mindatetime.timetuple())
-            npoints = 1000.
-        if xrangestep == 1:
-            maxdatetime = mindatetime + datetime.timedelta(hours=1)
-            self.xrangestepinsecs = 60*60.
-            npoints = 500.
-        if xrangestep == 2:
-            maxdatetime = mindatetime + datetime.timedelta(minutes=1)
-            self.xrangestepinsecs = 60.
-            npoints = 250.
-        if xrangestep == 3:
-            maxdatetime = mindatetime + datetime.timedelta(seconds=1)
-            self.xrangestepinsecs = 1.
-            npoints = 125.
+        
+        maxdatetime = mindatetime + datetime.timedelta(seconds=xrangestep)
+        self.xrangestepinsecs = xrangestep
             
         xmin = time.mktime(mindatetime.timetuple())
         xmax = time.mktime(maxdatetime.timetuple())
         
-        deltax1 = (xmax-xmin) / npoints
-#        deltax = timeInterval
+        if self.xrangestepinsecs<=60.:
+            self.timefmt="%H:%M:%S"
+            
+        if self.xrangestepinsecs>0. and self.xrangestepinsecs<=1200.:
+            self.timefmt="%H:%M:%S"
+            
+        if self.xrangestepinsecs>1200. and self.xrangestepinsecs<=86400.:
+            self.timefmt="%H:%M"
         
+        if self.xrangestepinsecs>86400.:
+            self.timefmt="%y:%m:%d:%H"
         
         if ymin == None: ymin = numpy.min(y)
         if ymax == None: ymax = numpy.max(y)
@@ -385,14 +417,8 @@ class RTIFigure(Figure):
         cdatetime = datetime.datetime.utcfromtimestamp(x) 
         
         if ((cdatetime.time()>=self.starttime) and (cdatetime.time()<self.endtime)):
-            if self.xrangestep == 1:
-                mindatetime = datetime.datetime(cdatetime.year,cdatetime.month,cdatetime.day,cdatetime.hour,self.starttime.minute,self.starttime.second)
-                
-            if self.xrangestep == 2:
-                mindatetime = datetime.datetime(cdatetime.year,cdatetime.month,cdatetime.day,cdatetime.hour,cdatetime.minute,self.starttime.second)
-                
-            if self.xrangestep == 3:
-                mindatetime = datetime.datetime(cdatetime.year,cdatetime.month,cdatetime.day,cdatetime.hour,cdatetime.minute,cdatetime.second)
+            
+            mindatetime = datetime.datetime(cdatetime.year,cdatetime.month,cdatetime.day,cdatetime.hour,cdatetime.minute,cdatetime.second)
 
             self.xmin = time.mktime(mindatetime.timetuple()) - time.timezone
             self.xmax = self.xmin + self.xrangestepinsecs
@@ -409,11 +435,11 @@ class RTIFigure(Figure):
         self.frameObjList = []
         
         for frame in range(self.nframes):
-            frameObj = RTIFrame(self.drvObj,frame + 1, self.colorbar, self.showprofile)
+            frameObj = RTIFrame(self.drvObj,frame + 1, self.colorbar, self.showprofile, self.timefmt)
             self.frameObjList.append(frameObj)
 
 class RTIFrame(Frame):
-    def __init__(self,drvObj,idframe,colorbar,showprofile):
+    def __init__(self,drvObj,idframe,colorbar,showprofile, timefmt):
         self.drvObj = drvObj
         self.idframe = idframe
         self.nplots = 1
@@ -423,6 +449,7 @@ class RTIFrame(Frame):
         
         self.colorbar = colorbar
         self.showprofile = showprofile
+        self.timefmt = timefmt
         self.createPlots()
     
     def createPlots(self):
@@ -431,7 +458,7 @@ class RTIFrame(Frame):
         idplot = 0
         xi, yi, xw, yw = self.getScreenPos(idplot)
         
-        plotObj = RTIPlot(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, self.colorbar)
+        plotObj = RTIPlot(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, self.colorbar, self.timefmt)
         plotObjList.append(plotObj)
         
         if self.showprofile:
@@ -441,7 +468,8 @@ class RTIFrame(Frame):
             title = ""
             xlabel = "dB"
             ylabel = ""
-            plotObj = Plot1D(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel)
+            szchar = 0.75
+            plotObj = Plot1D(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel, szchar)
             plotObjList.append(plotObj)
         
         self.plotObjList = plotObjList
@@ -490,7 +518,7 @@ class RTIPlot(Plot):
     xg = None
     yg = None
     
-    def __init__(self,drvObj, idframe, idplot, xi, yi, xw, yw, colorbar):
+    def __init__(self,drvObj, idframe, idplot, xi, yi, xw, yw, colorbar, timefmt):
         self.drvObj = drvObj
         self.idframe = idframe
         self.idplot = idplot
@@ -511,7 +539,7 @@ class RTIPlot(Plot):
         self.xpos = [self.xi,self.xw]
         self.ypos = [self.yi,self.yw]
         self.xaxisastime = True
-        self.timefmt = "%H:%M:%S"
+        self.timefmt = timefmt
         self.xopt = "bcnstd"
         self.yopt = "bcnstv"
         
@@ -577,14 +605,15 @@ class ScopeFigure(Figure):
             
     
 class ScopeFrame(Frame):
-#    plotObjList = []
     xlabel = ""
     ylabel = ""
     title = ""
+    szchar = 1.1
+    
     def __init__(self,drvObj,idframe):
         self.drvObj = drvObj
         self.idframe = idframe
-        self.nplots = 1 #nplots/frame
+        self.nplots = 1
         self.createPlots()
 #        Frame.__init__(self, drvObj, idframe)
 
@@ -601,10 +630,11 @@ class ScopeFrame(Frame):
             title = "Channel %d"%self.idframe
             xlabel = "range (Km)"
             ylabel = "intensity"
-            plotObj = Plot1D(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel)
+            plotObj = Plot1D(self.drvObj, self.idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel, self.szchar)
             plotObjList.append(plotObj)
+            
         self.plotObjList = plotObjList
-#            self.plotObjList.append(plotObj)
+
 
     def plot(self, x, y, z=None):
         for plotObj in self.plotObjList:
@@ -613,7 +643,7 @@ class ScopeFrame(Frame):
 
 class Plot1D(Plot):
 #    type, title, xlabel, ylabel
-    def __init__(self, drvObj, idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel):
+    def __init__(self, drvObj, idframe, idplot, xi, yi, xw, yw, type, title, xlabel, ylabel, szchar):
         self.drvObj = drvObj
         self.idframe = idframe
         self.idplot = idplot
@@ -627,7 +657,7 @@ class Plot1D(Plot):
         self.timefmt = None
         self.xopt = "bcnst"
         self.yopt = "bcnstv"
-        self.szchar = 0.7
+        self.szchar = szchar
         self.type = type
         self.title = title
         self.xlabel = xlabel
