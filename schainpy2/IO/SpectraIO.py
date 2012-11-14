@@ -369,6 +369,10 @@ class SpectraReader(JRODataReader):
         
         self.dataOutObj.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000.#+ self.profileIndex * self.ippSeconds
         
+        self.dataOutObj.ippSeconds = self.ippSeconds
+        
+        self.dataOutObj.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.dataOutObj.nFFTPoints
+        
         self.dataOutObj.flagShiftFFT = self.processingHeaderObj.shif_fft
         
 #        self.profileIndex += 1

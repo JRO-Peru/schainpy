@@ -211,6 +211,8 @@ class SpectraProcessor:
         self.dataOutObj.flagDeflipData = self.dataInObj.flagDeflipData #asumo q la data esta sin flip
         self.dataOutObj.flagShiftFFT = self.dataInObj.flagShiftFFT
         self.dataOutObj.nIncohInt = 1
+        self.dataOutObj.ippSeconds = self.dataInObj.ippSeconds
+        self.dataOutObj.timeInterval = self.dataInObj.timeInterval
         
     def addWriter(self, wrpath, blocksPerFile):
         
@@ -260,6 +262,63 @@ class SpectraProcessor:
         
         if len(self.plotObjList) <= self.plotObjIndex:
             self.addSpc(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+        
+    def addRti(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
+        rtiObj = RTIFigure(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+        self.plotObjList.append(rtiObj)
+        
+    def plotRti(self, idfigure=None,
+                    starttime=None,
+                    endtime=None,
+                    rangemin=None,
+                    rangemax=None,
+                    minvalue=None,
+                    maxvalue=None,
+                    wintitle='',
+                    driver='plplot',
+                    colormap='br_greeen',
+                    colorbar=True,
+                    showprofile=False,
+                    xrangestep=None,
+                    save=False,
+                    gpath=None,
+                    ratio=1,
+                    channelList=None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        if channelList == None:
+            channelList = self.dataOutObj.channelList
+            
+        nframes = len(channelList)
+        
+        if len(self.plotObjList) <= self.plotObjIndex:
+            self.addRti(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+        
+        data = 10.*numpy.log10(self.dataOutObj.data_spc[channelList,:,:])
+        
+        currenttime = self.dataOutObj.utctime - time.timezone
+        
+        range = self.dataOutObj.heightList
+        
+        
+        figuretitle = "RTI Plot for Spectra Data" #+ date
+        
+        cleardata = False
+        
+        deltax = self.dataOutObj.timeInterval
+        
+        plotObj = self.plotObjList[self.plotObjIndex]
+        
+        
+        
+        
+        
+        self.plotObjIndex += 1
+        
+        
+        
         
         
         

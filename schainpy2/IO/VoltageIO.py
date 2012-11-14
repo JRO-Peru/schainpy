@@ -297,7 +297,7 @@ class VoltageReader(JRODataReader):
         
         self.dataOutObj.ippSeconds = self.ippSeconds
         
-        self.dataOutObj.timeInterval = self.ippSeconds
+        self.dataOutObj.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
         
         self.dataOutObj.nCohInt = self.processingHeaderObj.nCohInt
         

@@ -97,7 +97,7 @@ class VoltageProcessor:
         thisdatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
         dateTime = "%s"%(thisdatetime.strftime("%d-%b-%Y %H:%M:%S"))
         date = "%s"%(thisdatetime.strftime("%d-%b-%Y"))
-        print thisdatetime
+
         figuretitle = "RTI Plot Radar Data" #+ date
         
         plotObj = self.plotObjList[self.plotObjIndex]
@@ -221,7 +221,7 @@ class VoltageProcessor:
         myCohIntObj = self.integratorObjList[self.integratorObjIndex]
         myCohIntObj.exe(data = self.dataOutObj.data, datatime=None)
         
-        self.dataOutObj.timeInterval *= nCohInt
+#        self.dataOutObj.timeInterval *= nCohInt
         self.dataOutObj.flagNoData = True
         
         if myCohIntObj.isReady:
