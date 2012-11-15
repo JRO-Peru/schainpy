@@ -254,22 +254,24 @@ class SpcFrame(Frame):
         self.plotObjList = plotObjList
     
     def getScreenPosMainPlot(self):
-        xi = 0.15
+        
+        xi = 0.10
         
         if self.showprofile:
-            xw = 0.55     
+            xw = 0.62     
         
         else:
-            xw = 0.65 
+            xw = 0.9 
         
         if self.colorbar:
             xw = xw - 0.06
         
-        yi = 0.20; yw = 0.75
+        yi = 0.1; yw = 0.87
             
         return xi, yi, xw, yw
     
     def getScreenPosGraph1(self):
+        
         if self.colorbar:
             xi = 0.65 + 0.08
         else:
@@ -277,7 +279,7 @@ class SpcFrame(Frame):
         
         xw = xi + 0.2
         
-        yi = 0.2; yw = 0.75
+        yi = 0.1; yw = 0.87
         
         return xi, yi, xw, yw
     
@@ -673,6 +675,8 @@ class Plot1D(Plot):
             self.ymax = ymax
             self.minvalue = minvalue
             self.maxvalue = maxvalue
+            self.xopt = "bcnstg"
+            self.yopt = "bcmstv"
             
         else:
             self.xmin = xmin

@@ -47,6 +47,7 @@ class PlplotDriver:
         
         plplot.plsstrm(self.idfigure)
         
+        
     def openDriver(self, pldriver=None):
         if pldriver == None:
             if sys.platform == "linux":
@@ -74,7 +75,7 @@ class PlplotDriver:
     
     def openPage(self):
         plplot.plbop()
-        plplot.pladv(0)
+        #plplot.pladv(0)
     
     def closePage(self):
         plplot.pleop()
@@ -87,13 +88,13 @@ class PlplotDriver:
         plplot.pleop()
     
     def setSubPlots(self,nrows, ncolumns):
-        plplot.plssub(ncolumns,nrows)
+        plplot.plssub(ncolumns, nrows)
     
     def setPlotLabels(self, id, xlabel, ylabel, title):
         plplot.pllab(xlabel, ylabel, title)
     
     def setFigTitle(self, title,color="black", szchar=0.55):
-        self.setSubPlots(1, 0)
+        self.setSubPlots(1, 1)
         plplot.pladv(0)
         plplot.plvpor(0., 1., 0., 1.)
         
@@ -211,7 +212,7 @@ class PlplotDriver:
         plplot.plspause(True)
         plplot.plend()
         
-    def basicLine(self, id, xpos, ypos, x, y, xmin, xmax, ymin, ymax, color):
+    def basicLine(self, id, xpos, ypos, x, y, xmin, xmax, ymin, ymax, color, xopt="bcst", yopt="bcst"):
         
         """
         Inputs:
@@ -244,7 +245,7 @@ class PlplotDriver:
         plplot.plcol0(colline)
         plplot.plline(x, y)
         plplot.plcol0(1)
-        plplot.plbox("bcst", 0.0, 0, "bcst", 0.0, 0)
+#        plplot.plbox(xopt, 0.0, 0, yopt, 0.0, 0)
     
     def save(self, filename):
         curr_strm = plplot.plgstrm()

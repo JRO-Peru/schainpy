@@ -399,7 +399,7 @@ class Plot:
                                   self.xaxisastime,
                                   self.timefmt)
         
-    def plotBasicLine(self,x, y, color):
+    def plotBasicLine(self,x, y, color, xopt='bcst', yopt='bcst'):
         """
         Inputs:
             x:
@@ -408,5 +408,5 @@ class Plot:
             
             color: 
         """
-        self.drvObj.driver.basicLine(self.idframe, self.xpos, self.ypos, x, y, self.xmin, self.xmax, self.ymin, self.ymax, color)
+        self.drvObj.driver.basicLine(self.idframe, self.xpos, self.ypos, x, y, self.xmin, self.xmax, self.ymin, self.ymax, color, xopt=xopt, yopt=yopt)
         
