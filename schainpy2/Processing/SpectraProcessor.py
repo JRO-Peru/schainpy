@@ -542,7 +542,28 @@ class SpectraHeisProcessor:
         self.dataOutObj.flagDeflipData = self.dataInObj.flagDeflipData #asumo q la data esta sin flip
         self.dataOutObj.flagShiftFFT = self.dataInObj.flagShiftFFT
         self.dataOutObj.nIncohInt = 1
+        self.dataOutObj.ippSeconds= self.dataInObj.ippSeconds
     
+  #  def addWriter(self,wrpath,blocksPerfile):
+    def addWriter(self,wrpath):
+        objWriter=SpectraHeisWriter(self.dataOutObj)
+        objWriter.setup(wrpath)
+        #objWriter.setup(wrpath,blocksPerfile)
+        self.writerObjList.append(objWriter)
+    
+   # def writedata(self,wrpath,blocksPerfile):
+    def writedata(self,wrpath): 
+        if self.dataOutObj.flagNoData:
+            return 0
+            
+        if len(self.writerObjList) <= self.writerObjIndex:
+            #self.addWriter(wrpath, blocksPerFile)
+            self.addWriter(wrpath)
+        
+        self.writerObjList[self.writerObjIndex].putData()
+        
+        self.writerObjIndex += 1 
+                 
     def __getFft(self):
            
         fft_volt = numpy.fft.fft(self.dataInObj.data, axis=1)        
@@ -649,6 +670,18 @@ class SpectraHeisProcessor:
                 
         self.plotObjIndex += 1
 
+    def rti(self):
+        if self.dataOutObj.flagNoData:
+           return 0
+        
+        data=numpy.average(self.dataOutObj.data_spc,axis=1)
+        data[0]
+        print data[0]
+        x = numpy.arange(100000)
+        
+        print "test"
+        #print self.dataOutObj.data_spc.average(axis=1)
+       
 class IncoherentIntegration:
 
     integ_counter = None

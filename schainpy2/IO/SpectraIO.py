@@ -6,6 +6,8 @@ $Id$
 
 import os, sys
 import numpy
+
+import pyfits
 import glob
 import fnmatch
 import time, datetime
@@ -18,6 +20,8 @@ from JRODataIO import JRODataReader
 from JRODataIO import JRODataWriter
 
 from Data.JROData import Spectra
+
+from Data.JROData import SpectraHeis
 
 class SpectraReader(JRODataReader):
     """ 
@@ -448,11 +452,7 @@ class SpectraWriter(JRODataWriter):
         self.wrPairList = self.dataOutObj.pairsList
         
         self.nWrPairs = self.dataOutObj.nPairs
-        
-        
-        
-        
-
+         
 #        self.data_spc = None
 #        self.data_cspc = None
 #        self.data_dc = None
@@ -778,4 +778,128 @@ class SpectraWriter(JRODataWriter):
             
         self.processingHeaderObj.size = processingHeaderSize    
             
+
+
+class FITS: 
+    name=None
+    format=None
+    array =None
+    data =None
+    thdulist=None
     
+    def __init__(self):
+        
+        pass
+    
+    def setColF(self,name,format,array):
+        self.name=name
+        self.format=format
+        self.array=array
+        a1=numpy.array([self.array],dtype=numpy.float32)
+        self.col1 = pyfits.Column(name=self.name, format=self.format, array=a1)
+        return self.col1
+            
+#    def setColP(self,name,format,data):
+#        self.name=name
+#        self.format=format
+#        self.data=data
+#        a2=numpy.array([self.data],dtype=numpy.float32)
+#        self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
+#        return self.col2
+    
+    def writeHeader(self,):
+        pass
+    
+    def writeData(self,name,format,data):
+        self.name=name
+        self.format=format
+        self.data=data
+        a2=numpy.array([self.data],dtype=numpy.float32)
+        self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
+        return self.col2
+    
+    def cFImage(self,n):
+        self.hdu= pyfits.PrimaryHDU(n)
+        return self.hdu
+    
+    def Ctable(self,col1,col2,col3,col4,col5,col6,col7,col8,col9):
+        self.cols=pyfits.ColDefs( [col1,col2,col3,col4,col5,col6,col7,col8,col9])
+        self.tbhdu = pyfits.new_table(self.cols)
+        return self.tbhdu
+    
+    def CFile(self,hdu,tbhdu):
+        self.thdulist=pyfits.HDUList([hdu,tbhdu])
+        
+    def wFile(self,filename):
+        self.thdulist.writeto(filename) 
+        
+class SpectraHeisWriter():
+    i=0
+    def __init__(self, dataOutObj):
+        self.wrObj = FITS()
+        self.dataOutObj = dataOutObj 
+        
+    def isNumber(str):
+        """
+        Chequea si el conjunto de caracteres que componen un string puede ser convertidos a un numero.
+
+        Excepciones: 
+        Si un determinado string no puede ser convertido a numero
+        Input:
+        str, string al cual se le analiza para determinar si convertible a un numero o no
+        
+        Return:
+        True    :    si el string es uno numerico
+        False   :    no es un string numerico
+        """
+        try:
+            float( str )
+            return True
+        except:
+            return False     
+        
+    def setup(self, wrpath,):
+
+        if not(os.path.exists(wrpath)):
+            os.mkdir(wrpath)
+       
+        self.wrpath = wrpath
+        self.setFile = 0
+
+    def putData(self):
+      # self.wrObj.writeHeader(nChannels=self.dataOutObj.nChannels, nFFTPoints=self.dataOutObj.nFFTPoints)
+        #name = self.dataOutObj.utctime
+        name= time.localtime( self.dataOutObj.utctime)
+        ext=".fits"
+        #folder='D%4.4d%3.3d'%(name.tm_year,name.tm_yday)    
+        subfolder = 'D%4.4d%3.3d' % (name.tm_year,name.tm_yday)
+
+        doypath = os.path.join( self.wrpath, subfolder )
+        if not( os.path.exists(doypath) ):
+            os.mkdir(doypath)
+        self.setFile += 1
+        file = 'D%4.4d%3.3d%3.3d%s' % (name.tm_year,name.tm_yday,self.setFile,ext) 
+
+        filename = os.path.join(self.wrpath,subfolder, file) 
+        
+       # print self.dataOutObj.ippSeconds
+        freq=numpy.arange(-1*self.dataOutObj.nHeights/2.,self.dataOutObj.nHeights/2.)/(2*self.dataOutObj.ippSeconds)
+        
+        col1=self.wrObj.setColF(name="freq", format=str(self.dataOutObj.nFFTPoints)+'E', array=freq)
+        col2=self.wrObj.writeData(name="P_Ch1",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[0,:]))
+        col3=self.wrObj.writeData(name="P_Ch2",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[1,:]))
+        col4=self.wrObj.writeData(name="P_Ch3",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[2,:]))
+        col5=self.wrObj.writeData(name="P_Ch4",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[3,:]))
+        col6=self.wrObj.writeData(name="P_Ch5",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[4,:]))
+        col7=self.wrObj.writeData(name="P_Ch6",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[5,:]))
+        col8=self.wrObj.writeData(name="P_Ch7",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[6,:]))
+        col9=self.wrObj.writeData(name="P_Ch8",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[7,:]))
+        #n=numpy.arange((100))
+        n=self.dataOutObj.data_spc[6,:]
+        a=self.wrObj.cFImage(n)
+        b=self.wrObj.Ctable(col1,col2,col3,col4,col5,col6,col7,col8,col9)
+        self.wrObj.CFile(a,b)
+        self.wrObj.wFile(filename)
+        return 1
+    
+        
