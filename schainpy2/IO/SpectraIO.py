@@ -735,7 +735,7 @@ class SpectraWriter(JRODataWriter):
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
         self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOutObj.processingHeaderObj.nWindows
         self.processingHeaderObj.processFlags = self.__getProcessFlags()
-        self.processingHeaderObj.nCohInt = 1# Cuando la data de origen es de tipo Spectra
+        self.processingHeaderObj.nCohInt = self.dataOutObj.nCohInt# Se requiere para determinar el valor de timeInterval
         self.processingHeaderObj.nIncohInt = self.dataOutObj.nIncohInt 
         self.processingHeaderObj.totalSpectra = self.dataOutObj.nPairs + self.dataOutObj.nChannels
         

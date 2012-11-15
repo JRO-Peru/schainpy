@@ -143,6 +143,8 @@ class Spectra(JROData):
     
     nIncohInt = None
     
+    nCohInt = None #se requiere para determinar el valor de timeInterval
+    
     def __init__(self):
         '''
         Constructor

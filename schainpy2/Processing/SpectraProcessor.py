@@ -13,7 +13,7 @@ sys.path.append(path)
 
 from Data.JROData import Spectra, SpectraHeis
 from IO.SpectraIO import SpectraWriter
-from Graphics.schainPlotTypes import ScopeFigure, SpcFigure
+from Graphics.schainPlotTypes import ScopeFigure, SpcFigure, RTIFigure
 #from JRONoise import Noise
 
 class SpectraProcessor:
@@ -37,6 +37,7 @@ class SpectraProcessor:
     
     profIndex = 0 # Se emplea cuando el objeto de entrada es un Voltage
 
+    firstdatatime = None
     
     def __init__(self):
         '''
@@ -51,6 +52,7 @@ class SpectraProcessor:
         self.noiseObj = []
         self.writerObjList = []
         self.buffer = None
+        self.firstdatatime = None
         self.profIndex = 0
         
     def setup(self, dataInObj=None, dataOutObj=None, nFFTPoints=None, pairsList=None):
@@ -119,6 +121,9 @@ class SpectraProcessor:
             self.buffer[:,self.profIndex,:] = self.dataInObj.data
             self.profIndex += 1
             
+            if self.firstdatatime == None:
+                self.firstdatatime = self.dataInObj.utctime
+                
             if self.profIndex == self.dataOutObj.nFFTPoints:
                 
                 self.__updateObjFromInput()
@@ -127,6 +132,7 @@ class SpectraProcessor:
                 self.dataOutObj.flagNoData = False
                 
                 self.buffer = None
+                self.firstdatatime = None
                 self.profIndex = 0
             
             return
@@ -206,13 +212,14 @@ class SpectraProcessor:
         self.dataOutObj.nProfiles = self.dataOutObj.nFFTPoints
         self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
         self.dataOutObj.flagTimeBlock = self.dataInObj.flagTimeBlock
-        self.dataOutObj.utctime = self.dataInObj.utctime
+        self.dataOutObj.utctime = self.firstdatatime
         self.dataOutObj.flagDecodeData = self.dataInObj.flagDecodeData #asumo q la data esta decodificada
         self.dataOutObj.flagDeflipData = self.dataInObj.flagDeflipData #asumo q la data esta sin flip
         self.dataOutObj.flagShiftFFT = self.dataInObj.flagShiftFFT
+        self.dataOutObj.nCohInt = self.dataInObj.nCohInt
         self.dataOutObj.nIncohInt = 1
         self.dataOutObj.ippSeconds = self.dataInObj.ippSeconds
-        self.dataOutObj.timeInterval = self.dataInObj.timeInterval
+        self.dataOutObj.timeInterval = self.dataInObj.timeInterval*self.dataOutObj.nFFTPoints
         
     def addWriter(self, wrpath, blocksPerFile):
         
@@ -257,11 +264,18 @@ class SpectraProcessor:
                 
         y = self.dataOutObj.heightList
         
+        data_spc = self.dataOutObj.data_spc
+        data_cspc = self.dataOutObj.data_cspc
         
+        data = []
         
         
         if len(self.plotObjList) <= self.plotObjIndex:
             self.addSpc(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
+            
+            
+            
+
         
     def addRti(self, idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile):
         rtiObj = RTIFigure(idfigure, nframes, wintitle, driver, colormap, colorbar, showprofile)
@@ -298,6 +312,8 @@ class SpectraProcessor:
         
         data = 10.*numpy.log10(self.dataOutObj.data_spc[channelList,:,:])
         
+        data = numpy.average(data, axis=1)
+        
         currenttime = self.dataOutObj.utctime - time.timezone
         
         range = self.dataOutObj.heightList
@@ -311,7 +327,24 @@ class SpectraProcessor:
         
         plotObj = self.plotObjList[self.plotObjIndex]
         
-        
+        plotObj.plotPcolor(data=data, 
+                           x=currenttime, 
+                           y=range, 
+                           channelList=channelList, 
+                           xmin=starttime, 
+                           xmax=endtime, 
+                           ymin=rangemin, 
+                           ymax=rangemax,
+                           minvalue=minvalue, 
+                           maxvalue=maxvalue, 
+                           figuretitle=figuretitle, 
+                           xrangestep=xrangestep,
+                           deltax=deltax,
+                           save=save, 
+                           gpath=gpath,
+                           ratio=ratio,
+                           cleardata=cleardata
+                           )
         
         
         
@@ -419,12 +452,13 @@ class SpectraProcessor:
             self.addIntegrator(N,timeInterval)
         
         myIncohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.m_BasicHeader.utc)
+        myIncohIntObj.exe(data=self.dataOutObj.data_spc,datatime=self.dataOutObj.utctime)
         
         if myIncohIntObj.isReady:
             self.dataOutObj.data_spc = myIncohIntObj.data
-            self.dataOutObj.nAvg = myIncohIntObj.navg
-            self.dataOutObj.m_ProcessingHeader.incoherentInt = self.dataInObj.m_ProcessingHeader.incoherentInt*myIncohIntObj.navg
+            self.dataOutObj.timeInterval *= myCohIntObj.nIncohInt
+            self.dataOutObj.nIncohInt = myIncohIntObj.navg * self.dataInObj.nIncohInt
+            self.dataOutObj.utctime = myIncohIntObj.firstdatatime
             self.dataOutObj.flagNoData = False
             
             """Calcular el ruido"""
@@ -622,6 +656,7 @@ class IncoherentIntegration:
     navg = None
     buffer = None
     nIncohInt = None
+    firstdatatime = None
     
     def __init__(self, N = None, timeInterval = None):
         """
@@ -637,6 +672,8 @@ class IncoherentIntegration:
         self.isReady = False
         self.nIncohInt = N
         self.integ_counter = 0
+        self.firstdatatime = None
+        
         if timeInterval!=None:
             self.timeIntervalInSeconds = timeInterval * 60. #if (type(timeInterval)!=integer) -> change this line
         
@@ -649,18 +686,20 @@ class IncoherentIntegration:
             self.timeFlag = True
             
             
-    def exe(self,data,timeOfData):
+    def exe(self,data,datatime):
         """
         data
         
-        timeOfData [seconds]
+        datatime [seconds]
         """
+        if self.firstdatatime == None or self.isReady:
+            self.firstdatatime = datatime
 
         if self.timeFlag:
             if self.timeOut == None:
-                self.timeOut = timeOfData + self.timeIntervalInSeconds
+                self.timeOut = datatime + self.timeIntervalInSeconds
             
-            if timeOfData < self.timeOut:
+            if datatime < self.timeOut:
                 if self.buffer == None:
                     self.buffer = data
                 else:
@@ -692,7 +731,7 @@ class IncoherentIntegration:
             
             if self.timeFlag:
                 self.buffer = data
-                self.timeOut = timeOfData + self.timeIntervalInSeconds
+                self.timeOut = datatime + self.timeIntervalInSeconds
         else:
             self.isReady = False
             

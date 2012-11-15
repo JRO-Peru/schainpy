@@ -219,13 +219,16 @@ class VoltageProcessor:
             self.addIntegrator(nCohInt, timeInterval, overlapping)
 
         myCohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myCohIntObj.exe(data = self.dataOutObj.data, datatime=None)
+        myCohIntObj.exe(data = self.dataOutObj.data, datatime=self.dataOutObj.utctime)
         
 #        self.dataOutObj.timeInterval *= nCohInt
         self.dataOutObj.flagNoData = True
         
         if myCohIntObj.isReady:
-            self.dataOutObj.timeInterval = myCohIntObj.nCohInt * self.dataOutObj.timeInterval
+            self.dataOutObj.data = myCohIntObj.data
+            self.dataOutObj.timeInterval *= myCohIntObj.nCohInt
+            self.dataOutObj.nCohInt = myCohIntObj.nCohInt * self.dataInObj.nCohInt
+            self.dataOutObj.utctime = myCohIntObj.firstdatatime
             self.dataOutObj.flagNoData = False
     
     def selectChannels(self, channelList):
@@ -282,7 +285,7 @@ class CoherentIntegrator:
     
     isReady = False
     nCohInt = None
-    
+    firstdatatime = None
     
     def __init__(self, nCohInt=None, timeInterval=None, overlapping=False):
         
@@ -318,6 +321,7 @@ class CoherentIntegrator:
             self.__buffer = 0
         
         self.__profIndex = 0
+        firstdatatime = None
     
     def putData(self, data):
         
@@ -407,12 +411,18 @@ class CoherentIntegrator:
         
     def exe(self, data, datatime=None):
         
+        
+        if self.firstdatatime == None or self.isReady:
+            self.firstdatatime = datatime
+        
         if not self.__isByTime:
             avg_data = self.byProfiles(data)
         else:
             avg_data = self.byTime(data, datatime)
         
         self.data = avg_data
+        
+        
         
         return avg_data
 
