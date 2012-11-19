@@ -99,9 +99,9 @@ class VoltageReader(JRODataReader):
 
         self.m_BasicHeader = BasicHeader()
         
-        self.m_SystemHeader = SystemHeader()
+        self.systemHeaderObj = SystemHeader()
         
-        self.m_RadarControllerHeader = RadarControllerHeader()
+        self.radarControllerHeaderObj = RadarControllerHeader()
         
         self.m_ProcessingHeader = ProcessingHeader()
         
@@ -145,7 +145,7 @@ class VoltageReader(JRODataReader):
         
         self.profileIndex = 9999
 
-        self.delay  = 3   #seconds
+        self.delay  = 60   #seconds
         
         self.nTries  = 3  #quantity tries
         
@@ -187,7 +187,7 @@ class VoltageReader(JRODataReader):
         Return:
             None
         """
-        pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.m_SystemHeader.numChannels
+        pts2read = self.m_ProcessingHeader.profilesPerBlock * self.m_ProcessingHeader.numHeights * self.systemHeaderObj.numChannels
         self.blocksize = pts2read
 
             
@@ -218,7 +218,7 @@ class VoltageReader(JRODataReader):
         junk = numpy.fromfile( self.fp, self.dataType, self.blocksize )
         
         try:
-            junk = junk.reshape( (self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.m_SystemHeader.numChannels) )
+            junk = junk.reshape( (self.m_ProcessingHeader.profilesPerBlock, self.m_ProcessingHeader.numHeights, self.systemHeaderObj.numChannels) )
         except:
             print "The read block (%3d) has not enough data" %self.nReadBlocks
             return 0
@@ -353,9 +353,9 @@ class VoltageWriter(JRODataWriter):
         """
         self.shapeBuffer = (self.m_ProcessingHeader.profilesPerBlock,
                             self.m_ProcessingHeader.numHeights,
-                            self.m_SystemHeader.numChannels )
+                            self.systemHeaderObj.numChannels )
             
-        self.datablock = numpy.zeros((self.m_SystemHeader.numChannels,
+        self.datablock = numpy.zeros((self.systemHeaderObj.numChannels,
                                      self.m_ProcessingHeader.profilesPerBlock,
                                      self.m_ProcessingHeader.numHeights),
                                      dtype=numpy.dtype('complex'))

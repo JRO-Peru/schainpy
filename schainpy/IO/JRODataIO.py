@@ -173,9 +173,9 @@ class JRODataIO:
     
     m_BasicHeader = BasicHeader()
     
-    m_SystemHeader = SystemHeader()
+    systemHeaderObj = SystemHeader()
     
-    m_RadarControllerHeader = RadarControllerHeader()
+    radarControllerHeaderObj = RadarControllerHeader()
     
     m_ProcessingHeader = ProcessingHeader()
     
@@ -602,14 +602,14 @@ class JRODataReader(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.m_SystemHeader.read(fp)
+        self.systemHeaderObj.read(fp)
 
     
     def __rdRadarControllerHeader(self, fp=None):
         if fp == None:
             fp = self.fp
             
-        self.m_RadarControllerHeader.read(fp)
+        self.radarControllerHeaderObj.read(fp)
 
         
     def __rdProcessingHeader(self, fp=None):
@@ -632,8 +632,8 @@ class JRODataReader(JRODataIO):
             
         Affected:
             self.m_BasicHeader
-            self.m_SystemHeader
-            self.m_RadarControllerHeader
+            self.systemHeaderObj
+            self.radarControllerHeaderObj
             self.m_ProcessingHeader
             self.firstHeaderSize
             self.dataType
@@ -672,11 +672,11 @@ class JRODataReader(JRODataIO):
             raise ValueError, 'Data type was not defined'
         
         self.dataType = datatype_str
-        self.ippSeconds = 2 * 1000 * self.m_RadarControllerHeader.ipp / self.c
+        self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
         
         self.fileSizeByHeader = self.m_ProcessingHeader.dataBlocksPerFile * self.m_ProcessingHeader.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.m_ProcessingHeader.dataBlocksPerFile - 1)
-        self.dataOutObj.channelList = numpy.arange(self.m_SystemHeader.numChannels)
-        self.dataOutObj.channelIndexList = numpy.arange(self.m_SystemHeader.numChannels)
+        self.dataOutObj.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+        self.dataOutObj.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         
         self.getBlockDimension()
         
@@ -904,8 +904,8 @@ class JRODataReader(JRODataIO):
             
         Affected: 
             self.m_BasicHeader
-            self.m_SystemHeader
-            self.m_RadarControllerHeader
+            self.systemHeaderObj
+            self.radarControllerHeaderObj
             self.m_ProcessingHeader
             self.firstHeaderSize
 
@@ -951,14 +951,14 @@ class JRODataReader(JRODataIO):
         if neededSize == 0:
 
             m_BasicHeader = BasicHeader()
-            m_SystemHeader = SystemHeader()
-            m_RadarControllerHeader = RadarControllerHeader()
+            systemHeaderObj = SystemHeader()
+            radarControllerHeaderObj = RadarControllerHeader()
             m_ProcessingHeader = ProcessingHeader()
             
             try:
                 if not( m_BasicHeader.read(fp) ): raise ValueError 
-                if not( m_SystemHeader.read(fp) ): raise ValueError
-                if not( m_RadarControllerHeader.read(fp) ): raise ValueError
+                if not( systemHeaderObj.read(fp) ): raise ValueError
+                if not( radarControllerHeaderObj.read(fp) ): raise ValueError
                 if not( m_ProcessingHeader.read(fp) ): raise ValueError
                 data_type = int(numpy.log2((m_ProcessingHeader.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
                 
@@ -989,8 +989,8 @@ class JRODataReader(JRODataIO):
         
         self.dataOutObj.m_BasicHeader = self.m_BasicHeader.copy()
         self.dataOutObj.m_ProcessingHeader = self.m_ProcessingHeader.copy()
-        self.dataOutObj.m_RadarControllerHeader = self.m_RadarControllerHeader.copy()
-        self.dataOutObj.m_SystemHeader = self.m_SystemHeader.copy()
+        self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        self.dataOutObj.systemHeaderObj = self.systemHeaderObj.copy()
         
         self.dataOutObj.dataType = self.dataType
         self.dataOutObj.updateObjFromHeader()
@@ -1068,7 +1068,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
             
-        self.dataOutObj.m_SystemHeader.write(fp)
+        self.dataOutObj.systemHeaderObj.write(fp)
 
     
     def __wrRadarControllerHeader(self, fp=None):
@@ -1081,7 +1081,7 @@ class JRODataWriter(JRODataIO):
         if fp == None:
             fp = self.fp
         
-        self.dataOutObj.m_RadarControllerHeader.write(fp)
+        self.dataOutObj.radarControllerHeaderObj.write(fp)
 
         
     def __wrProcessingHeader(self, fp=None):
@@ -1215,8 +1215,8 @@ class JRODataWriter(JRODataIO):
          
         Affected:
             self.m_BasicHeader
-            self.m_SystemHeader
-            self.m_RadarControllerHeader
+            self.systemHeaderObj
+            self.radarControllerHeaderObj
             self.m_ProcessingHeader
             self.dataType
 
@@ -1226,8 +1226,8 @@ class JRODataWriter(JRODataIO):
         self.dataOutObj.updateHeaderFromObj()
         
         self.m_BasicHeader = self.dataOutObj.m_BasicHeader.copy()
-        self.m_SystemHeader = self.dataOutObj.m_SystemHeader.copy()
-        self.m_RadarControllerHeader = self.dataOutObj.m_RadarControllerHeader.copy()
+        self.systemHeaderObj = self.dataOutObj.systemHeaderObj.copy()
+        self.radarControllerHeaderObj = self.dataOutObj.radarControllerHeaderObj.copy()
         self.m_ProcessingHeader = self.dataOutObj.m_ProcessingHeader.copy()
         
         self.dataType = self.dataOutObj.dataType

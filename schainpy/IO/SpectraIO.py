@@ -112,9 +112,9 @@ class SpectraReader(JRODataReader):
 
         self.m_BasicHeader = BasicHeader()
         
-        self.m_SystemHeader = SystemHeader()
+        self.systemHeaderObj = SystemHeader()
         
-        self.m_RadarControllerHeader = RadarControllerHeader()
+        self.radarControllerHeaderObj = RadarControllerHeader()
         
         self.m_ProcessingHeader = ProcessingHeader()
         
@@ -144,7 +144,7 @@ class SpectraReader(JRODataReader):
         
         self.path = None
         
-        self.delay  = 3  #seconds
+        self.delay  = 60  #seconds
         
         self.nTries = 3  #quantity tries
         
@@ -212,7 +212,7 @@ class SpectraReader(JRODataReader):
             self.blocksize += self.pts2read_CrossSpectra
             
         if self.m_ProcessingHeader.flag_dc:
-            self.pts2read_DCchannels = int(self.m_SystemHeader.numChannels * self.m_ProcessingHeader.numHeights)
+            self.pts2read_DCchannels = int(self.systemHeaderObj.numChannels * self.m_ProcessingHeader.numHeights)
             self.blocksize += self.pts2read_DCchannels
             
 #        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
@@ -250,8 +250,8 @@ class SpectraReader(JRODataReader):
             cspc = cspc.reshape( (self.nPairs, self.m_ProcessingHeader.numHeights, self.m_ProcessingHeader.profilesPerBlock) ) #transforma a un arreglo 3D
         
         if self.m_ProcessingHeader.flag_dc:
-            dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.m_SystemHeader.numChannels) )
-            dc = dc.reshape( (self.m_SystemHeader.numChannels, self.m_ProcessingHeader.numHeights) ) #transforma a un arreglo 2D
+            dc = numpy.fromfile( self.fp, self.dataType, self.pts2read_DCchannels ) #int(self.m_ProcessingHeader.numHeights*self.systemHeaderObj.numChannels) )
+            dc = dc.reshape( (self.systemHeaderObj.numChannels, self.m_ProcessingHeader.numHeights) ) #transforma a un arreglo 2D
             
         
         if not(self.m_ProcessingHeader.shif_fft):
@@ -359,8 +359,8 @@ class SpectraWriter(JRODataWriter):
         Affected: 
             self.dataOutObj
             self.m_BasicHeader
-            self.m_SystemHeader
-            self.m_RadarControllerHeader
+            self.systemHeaderObj
+            self.radarControllerHeaderObj
             self.m_ProcessingHeader
 
         Return: None
@@ -411,9 +411,9 @@ class SpectraWriter(JRODataWriter):
         
         self.m_BasicHeader= BasicHeader()
     
-        self.m_SystemHeader = SystemHeader()
+        self.systemHeaderObj = SystemHeader()
     
-        self.m_RadarControllerHeader = RadarControllerHeader()
+        self.radarControllerHeaderObj = RadarControllerHeader()
     
         self.m_ProcessingHeader = ProcessingHeader()
 
@@ -441,7 +441,7 @@ class SpectraWriter(JRODataWriter):
                                   self.m_ProcessingHeader.numHeights,
                                   self.m_ProcessingHeader.profilesPerBlock)
         
-        self.shape_dc_Buffer = (self.m_SystemHeader.numChannels,
+        self.shape_dc_Buffer = (self.systemHeaderObj.numChannels,
                                 self.m_ProcessingHeader.numHeights)
 
     
