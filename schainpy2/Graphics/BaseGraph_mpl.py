@@ -14,10 +14,10 @@ import datetime
 
 #import plplot
 import matplotlib as mpl
- #mpl.use('TKAgg')
+mpl.use('TKAgg')
 import matplotlib.pyplot as plt
 
-#import scitools.numpyutils as sn
+import scitools.numpyutils as sn
 
 def cmap1_init(colormap='gray'):
 	
@@ -1131,81 +1131,81 @@ if __name__ == '__main__':
 		linearObj.plot(indexplot, x, y, type)
 		
 	linearObj.refresh()
-	linearObj.show()	
+#	linearObj.show()	
 
 
-#	"""
-#	Ejemplo2
-#	"""
-#
-#	# make these smaller to increase the resolution
-#	dx, dy = 0.05, 0.05
-#	x = numpy.arange(-3.0, 3.0001, dx)
-#	y = numpy.arange(-2.0, 2.0001, dy)
-##	X,Y = numpy.meshgrid(x, y)
-#	X,Y = sn.ndgrid(x, y)
-#	Z = (1- X/2 + X**5 + Y**3)*numpy.exp(-X**2-Y**2)
-#	
-#	# Creating Object
-#	indexPlot = 2
-#	nsubplot = 1
-#	winTitle = "mi grafico pcolor"
-#	colormap = "br_green"
-#	showColorbar = True
-#	showPowerProfile = False
-#	XAxisAsTime = False
-#	
-#	subplotTitle = "subplot no. "
-#	xlabel = ""
-#	ylabel = ""
-#	
-#	xmin = -3.0
-#	xmax = 3.0
-#	ymin = -2.0
-#	ymax = 2.0
-#	zmin = -0.3
-#	zmax = 1.0
-#	
-#	isPlotIni = False
-#	isPlotConfig = False
-#	ntimes = 10
-#	
-#	
-#	for i in range(ntimes):		
-#		
-#		# Instancia del objeto
-#		if not(isPlotConfig):
-#			pcolorObj = PcolorPlot(indexPlot, nsubplot, winTitle, colormap, showColorbar, showPowerProfile, XAxisAsTime)
-#			isPlotConfig = True
-#		
-#		# Crea los subplots
-#		if not(isPlotIni):
-#			for index in range(nsubplot):
-#				indexplot = index + 1
-#				title = subplotTitle + '%d'%indexplot
-#				subplot = index
-#				pcolorObj.createObjects(indexplot,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel)
-#			isPlotIni = True
-#		
-#		# Inicializa el grafico en cada iteracion
-#		pcolorObj.setFigure(indexPlot)
-#		pcolorObj.setNewPage("")
-#		
-#		for index in range(nsubplot):
-#			subplot = index
-#			pcolorObj.iniPlot(subplot+1)
-#		
-#		#plotea los datos
-#		for channel in range(nsubplot):
-#			data = Z+0.1*numpy.random.randn(len(x),len(y))
-#			pcolorObj.plot(channel+1, x, y, data)
-#			
-#		pcolorObj.refresh()
-#		
-##		pcolorObj.closePage() #descomentar esta linea para mas iteraciones
-#		
-#		time.sleep(1)
-#	
-#	pcolorObj.show()
-#
-#	print "end"
+	"""
+	Ejemplo2
+	"""
+
+	# make these smaller to increase the resolution
+	dx, dy = 0.05, 0.05
+	x = numpy.arange(-3.0, 3.0001, dx)
+	y = numpy.arange(-2.0, 2.0001, dy)
+#	X,Y = numpy.meshgrid(x, y)
+	X,Y = sn.ndgrid(x, y)
+	Z = (1- X/2 + X**5 + Y**3)*numpy.exp(-X**2-Y**2)
+	
+	# Creating Object
+	indexPlot = 2
+	nsubplot = 1
+	winTitle = "mi grafico pcolor"
+	colormap = "br_green"
+	showColorbar = True
+	showPowerProfile = False
+	XAxisAsTime = False
+	
+	subplotTitle = "subplot no. "
+	xlabel = ""
+	ylabel = ""
+	
+	xmin = -3.0
+	xmax = 3.0
+	ymin = -2.0
+	ymax = 2.0
+	zmin = -0.3
+	zmax = 1.0
+	
+	isPlotIni = False
+	isPlotConfig = False
+	ntimes = 10
+	
+	
+	for i in range(ntimes):		
+		
+		# Instancia del objeto
+		if not(isPlotConfig):
+			pcolorObj = PcolorPlot(indexPlot, nsubplot, winTitle, colormap, showColorbar, showPowerProfile, XAxisAsTime)
+			isPlotConfig = True
+		
+		# Crea los subplots
+		if not(isPlotIni):
+			for index in range(nsubplot):
+				indexplot = index + 1
+				title = subplotTitle + '%d'%indexplot
+				subplot = index
+				pcolorObj.createObjects(indexplot,xmin,xmax,ymin,ymax,zmin,zmax,title,xlabel,ylabel)
+			isPlotIni = True
+		
+		# Inicializa el grafico en cada iteracion
+		pcolorObj.setFigure(indexPlot)
+		pcolorObj.setNewPage("")
+		
+		for index in range(nsubplot):
+			subplot = index
+			pcolorObj.iniPlot(subplot+1)
+		
+		#plotea los datos
+		for channel in range(nsubplot):
+			data = Z+0.1*numpy.random.randn(len(x),len(y))
+			pcolorObj.plot(channel+1, x, y, data)
+			
+		pcolorObj.refresh()
+		
+#		pcolorObj.closePage() #descomentar esta linea para mas iteraciones
+		
+		time.sleep(1)
+	
+	pcolorObj.show()
+
+	print "end"
