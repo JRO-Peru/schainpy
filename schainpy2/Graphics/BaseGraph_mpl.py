@@ -5,14 +5,13 @@ Created on Feb 7, 2012
 @version $Id: BaseGraph.py 117 2012-09-04 21:16:59Z dsuarez $
 
 '''
-#from __future__ import division
-#import os
+
 import numpy
-#import sys
+
 import time
 import datetime
 
-#import plplot
+
 import matplotlib as mpl
 mpl.use('TKAgg')
 import matplotlib.pyplot as plt
@@ -20,194 +19,12 @@ import matplotlib.pyplot as plt
 import scitools.numpyutils as sn
 
 def cmap1_init(colormap='gray'):
-	
-#	if colormap == None:
-#		return
-#		
-#	ncolor = None
-#	rgb_lvl = None
-#	
-#	# Routine for defining a specific color map 1 in HLS space.
-#	# if gray is true, use basic grayscale variation from half-dark to light.
-#	# otherwise use false color variation from blue (240 deg) to red (360 deg).
-#
-#	# Independent variable of control points.
-#	i = numpy.array((0., 1.))
-#	if colormap=='gray':
-#		ncolor = 256
-#		# Hue for control points.  Doesn't matter since saturation is zero.
-#		h = numpy.array((0., 0.))
-#		# Lightness ranging from half-dark (for interest) to light.
-#		l = numpy.array((0.5, 1.))
-#		# Gray scale has zero saturation
-#		s = numpy.array((0., 0.))
-#		
-#		# number of cmap1 colours is 256 in this case.
-#		plplot.plscmap1n(ncolor)
-#		# Interpolate between control points to set up cmap1.
-#		plplot.plscmap1l(0, i, h, l, s)
-#		
-#		return None
-#	
-#	if colormap == 'jet':
-#		ncolor = 256		  
-#		pos = numpy.zeros((ncolor))
-#		r = numpy.zeros((ncolor))
-#		g = numpy.zeros((ncolor))
-#		b = numpy.zeros((ncolor))
-#		
-#		for i in range(ncolor):
-#			if(i <= 35.0/100*(ncolor-1)): rf = 0.0
-#			elif (i <= 66.0/100*(ncolor-1)): rf = (100.0/31)*i/(ncolor-1) - 35.0/31
-#			elif (i <= 89.0/100*(ncolor-1)): rf = 1.0
-#			else: rf = (-100.0/22)*i/(ncolor-1) + 111.0/22
-#	
-#			if(i <= 12.0/100*(ncolor-1)): gf = 0.0
-#			elif(i <= 38.0/100*(ncolor-1)): gf = (100.0/26)*i/(ncolor-1) - 12.0/26
-#			elif(i <= 64.0/100*(ncolor-1)): gf = 1.0
-#			elif(i <= 91.0/100*(ncolor-1)): gf = (-100.0/27)*i/(ncolor-1) + 91.0/27
-#			else: gf = 0.0
-#	
-#			if(i <= 11.0/100*(ncolor-1)): bf = (50.0/11)*i/(ncolor-1) + 0.5
-#			elif(i <= 34.0/100*(ncolor-1)): bf = 1.0
-#			elif(i <= 65.0/100*(ncolor-1)): bf = (-100.0/31)*i/(ncolor-1) + 65.0/31
-#			else: bf = 0		   
-#			
-#			r[i] = rf
-#			g[i] = gf
-#			b[i] = bf
-#		
-#			pos[i] = float(i)/float(ncolor-1)
-#		
-#
-#		plplot.plscmap1n(ncolor)
-#		plplot.plscmap1l(1, pos, r, g, b)
-#	
-#	
-#	
-#	if colormap=='br_green':
-#		ncolor = 256
-#		# Hue ranges from blue (240 deg) to red (0 or 360 deg)
-#		h = numpy.array((240., 0.))
-#		# Lightness and saturation are constant (values taken from C example).
-#		l = numpy.array((0.6, 0.6))
-#		s = numpy.array((0.8, 0.8))
-#
-#		# number of cmap1 colours is 256 in this case.
-#		plplot.plscmap1n(ncolor)
-#		# Interpolate between control points to set up cmap1.
-#		plplot.plscmap1l(0, i, h, l, s)
-#		
-#		return None
-#	
-#	if colormap=='tricolor':
-#		ncolor = 3
-#		# Hue ranges from blue (240 deg) to red (0 or 360 deg)
-#		h = numpy.array((240., 0.))
-#		# Lightness and saturation are constant (values taken from C example).
-#		l = numpy.array((0.6, 0.6))
-#		s = numpy.array((0.8, 0.8))
-#
-#		# number of cmap1 colours is 256 in this case.
-#		plplot.plscmap1n(ncolor)
-#		# Interpolate between control points to set up cmap1.
-#		plplot.plscmap1l(0, i, h, l, s)
-#		
-#		return None
-#	
-#	if colormap == 'rgb' or colormap == 'rgb666':
-#		
-#		color_sz = 6
-#		ncolor = color_sz*color_sz*color_sz
-#		pos = numpy.zeros((ncolor))
-#		r = numpy.zeros((ncolor))
-#		g = numpy.zeros((ncolor))
-#		b = numpy.zeros((ncolor))
-#		ind = 0
-#		for ri in range(color_sz):
-#			for gi in range(color_sz):
-#				for bi in range(color_sz):
-#					r[ind] = ri/(color_sz-1.0)
-#					g[ind] = gi/(color_sz-1.0)
-#					b[ind] = bi/(color_sz-1.0)
-#					pos[ind] = ind/(ncolor-1.0)
-#					ind += 1
-#		rgb_lvl = [6,6,6]  #Levels for RGB colors
-#		
-#	if colormap == 'rgb676':
-#		ncolor = 6*7*6
-#		pos = numpy.zeros((ncolor))
-#		r = numpy.zeros((ncolor))
-#		g = numpy.zeros((ncolor))
-#		b = numpy.zeros((ncolor))
-#		ind = 0
-#		for ri in range(8):
-#			for gi in range(8):
-#				for bi in range(4):
-#					r[ind] = ri/(6-1.0)
-#					g[ind] = gi/(7-1.0)
-#					b[ind] = bi/(6-1.0)
-#					pos[ind] = ind/(ncolor-1.0)
-#					ind += 1
-#		rgb_lvl = [6,7,6]  #Levels for RGB colors
-#	
-#	if colormap == 'rgb685':
-#		ncolor = 6*8*5
-#		pos = numpy.zeros((ncolor))
-#		r = numpy.zeros((ncolor))
-#		g = numpy.zeros((ncolor))
-#		b = numpy.zeros((ncolor))
-#		ind = 0
-#		for ri in range(8):
-#			for gi in range(8):
-#				for bi in range(4):
-#					r[ind] = ri/(6-1.0)
-#					g[ind] = gi/(8-1.0)
-#					b[ind] = bi/(5-1.0)
-#					pos[ind] = ind/(ncolor-1.0)
-#					ind += 1
-#		rgb_lvl = [6,8,5]  #Levels for RGB colors
-#					
-#	if colormap == 'rgb884':
-#		ncolor = 8*8*4
-#		pos = numpy.zeros((ncolor))
-#		r = numpy.zeros((ncolor))
-#		g = numpy.zeros((ncolor))
-#		b = numpy.zeros((ncolor))
-#		ind = 0
-#		for ri in range(8):
-#			for gi in range(8):
-#				for bi in range(4):
-#					r[ind] = ri/(8-1.0)
-#					g[ind] = gi/(8-1.0)
-#					b[ind] = bi/(4-1.0)
-#					pos[ind] = ind/(ncolor-1.0)
-#					ind += 1
-#		rgb_lvl = [8,8,4]  #Levels for RGB colors
-#	
-#	if ncolor == None:
-#		raise ValueError, 'The colormap selected is not valid'
-#	
-#	plplot.plscmap1n(ncolor)
-#	plplot.plscmap1l(1, pos, r, g, b)
-#	
-#	return rgb_lvl
 	pass
 
 def setColormap(colormap='jet'):
-#	cmap1_init(colormap)
 	pass
 
 def savePlplot(filename,width,height):
-#	curr_strm = plplot.plgstrm()
-#	save_strm = plplot.plmkstrm()
-#	plplot.plsetopt('geometry', '%dx%d'%(width,height))
-#	plplot.plsdev('png')
-#	plplot.plsfnam(filename)
-#	plplot.plcpstrm(curr_strm,0)
-#	plplot.plreplot()
-#	plplot.plend1()
-#	plplot.plsstrm(curr_strm)
 	pass
 
 def initMatplotlib(indexFig,ncol,nrow,winTitle,width,height):
@@ -220,12 +37,9 @@ def initMatplotlib(indexFig,ncol,nrow,winTitle,width,height):
 	plt.ion()
 
 def setNewPage():
-#	plplot.plbop()
-#	plplot.pladv(0)
 	plt.clf()
 
 def closePage():
-#	plplot.pleop()
 	pass
 	
 def clearData(objGraph):
@@ -240,42 +54,23 @@ def clearData(objGraph):
 	if objGraph.datatype == 'real':
 		objGraph.basicXYPlot(objGraph.xdata,objGraph.ydata)
 	
-	objGraph.setColor(1) #Setting Line Color to Black
-#	objGraph.setLineStyle(2)
-#	objGraph.plotBox(objGraph.xrange[0], objGraph.xrange[1], objGraph.yrange[0], objGraph.yrange[1], 'bcntg', 'bc')
-#	objGraph.setLineStyle(1)
+	objGraph.setColor(1) 
 
 def setFigure(indexFig):
-#	plplot.plsstrm(indexFig)
 	plt.figure(indexFig)
 
 def refresh():
-#	plplot.refresh()
 	plt.draw()
 
 def show():
-#	plplot.plspause(True)
-#	plplot.plend()
 	plt.ioff()
 	plt.show()
 	plt.ion()
 	
 def setPlTitle(pltitle,color, szchar=0.7):
-#	setSubpages(1, 0)
-#	plplot.pladv(0)
-#	plplot.plvpor(0., 1., 0., 1.)
-#	
-#	if color == 'black':
-#		plplot.plcol0(1)
-#	if color == 'white':
-#		plplot.plcol0(15)
-#	
-#	plplot.plschr(0.0,szchar)
-#	plplot.plmtex('t',-1., 0.5, 0.5, pltitle)
 	pass
 	
 def setSubpages(ncol,nrow):
-#	plplot.plssub(ncol,nrow)
 	pass
 
 class BaseGraph:
@@ -348,28 +143,23 @@ class BaseGraph:
 		return 1
 	
 	def setLineStyle(self, style):
-#		plplot.pllsty(style)
 		pass
 	
 	def setColor(self, color):
-#		plplot.plcol0(color)
 		pass
 	
 	def setXAxisAsTime(self, value=False):
 		self.xaxisIsTime = value
 	
 	def basicLineTimePlot(self, x, y, colline=1):
-#		plplot.plcol0(colline)
-#		plplot.plline(x, y)
-#		plplot.plcol0(1)
 		ax = self.__axesId
 		if self.setXYData() == None:
 			ax.plot(x,y)
+			plt.tight_layout()
 		else:
 			ax.lines[0].set_data(x,y)
 	
 	def basicXYPlot(self, x, y):
-#		plplot.plline(x, y)
 		ax = self.__axesId
 		if self.setXYData() == None:
 			ax.plot(x,y)
@@ -377,89 +167,16 @@ class BaseGraph:
 			ax.lines[0].set_data(x,y)
 	
 	def basicPcolorPlot(self, data, x, y, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
-#
-#		if xmin == None: xmin = x[0]
-#		if xmax == None: xmax = x[-1]
-#		if ymin == None: ymin = y[0]
-#		if ymax == None: ymax = y[-1]
-#		if zmin == None: zmin = numpy.nanmin(data)
-#		if zmax == None: zmax = numpy.nanmax(data)
-#		
-#		plplot.plimage(data,
-#					   float(x[0]),
-#					   float(x[-1]),
-#					   float(y[0]),
-#					   float(y[-1]),
-#					   float(zmin),
-#					   float(zmax),
-#					   float(xmin),
-#					   float(xmax),
-#					   float(ymin),
-#					   float(ymax)
-#					   )
 		pass
 	
 	def __getBoxpltr(self, x, y, deltax=None, deltay=None):		
-		
-#		if not(len(x)>0 and len(y)>0):
-#			raise ValueError, 'x axis and y axis are empty'
-#		
-#		if deltax == None: deltax = x[-1] - x[-2]
-#		if deltay == None: deltay = y[-1] - y[-2]
-#		
-#		x1 = numpy.append(x, x[-1] + deltax)
-#		y1 = numpy.append(y, y[-1] + deltay)
-#		
-#		xg = (numpy.multiply.outer(x1, numpy.ones(len(y1))))
-#		yg = (numpy.multiply.outer(numpy.ones(len(x1)), y1))
-#		
-#		self.__xg = xg
-#		self.__yg = yg
-#		
-#		return xg, yg
 		pass
 	
 	def advPcolorPlot(self, data, x, y, xmin=None, xmax=None, ymin=None, ymax=None, zmin=0., zmax=0., deltax=1.0, deltay=None, getGrid = True):
-	#	if getGrid:
-	#		xg, yg = self.__getBoxpltr(x, y, deltax, deltay)
-	#	else:
-	#		xg = self.__xg
-	#		yg = self.__yg	
-	#	
-	#	plplot.plimagefr(data, 
-	#					 float(xmin), 
-	#					 float(xmax), 
-	#					 float(ymin), 
-	#					 float(ymax), 
-	#					 0., 
-	#					 0., 
-	#					 float(zmin), 
-	#					 float(zmax), 
-	#					 plplot.pltr2, 
-	#					 xg, 
-	#					 yg)
-	
 		ax = self.__axesId
-#		if self.setXYData() == None:
 		ax.pcolormesh(x,y,data.T,vmin=zmin,vmax=zmax)
-#		else:
-#			ax.lines[0].set_data(x,y)
-		
 
 	def colorbarPlot(self, xmin=0., xmax=1., ymin=0., ymax=1.):
-#		data = numpy.arange(256)
-#		data = numpy.reshape(data, (1,-1))
-#		plplot.plimage(data,
-#					   float(xmin),
-#					   float(xmax),
-#					   float(ymin),
-#					   float(ymax),
-#					   0.,
-#					   255.,
-#					   float(xmin),
-#					   float(xmax),
-#					   float(ymin),
-#					   float(ymax))
 		ax = self.__axesId
 		cax, kw = mpl.colorbar.make_axes(ax)
 		norm = mpl.colors.Normalize(vmin=ymin, vmax=ymax)
@@ -468,29 +185,6 @@ class BaseGraph:
 		cb.set_label(self.title)
 		
 	def plotBox(self, xmin, xmax, ymin, ymax, xopt, yopt, nolabels=False):
-		
-#		plplot.plschr(0.0,self.__szchar-0.05)
-#		plplot.pladv(self.__subplot)
-#		plplot.plvpor(self.__xpos[0], self.__xpos[1], self.__ypos[0], self.__ypos[1])
-#		plplot.plwind(float(xmin), # self.xrange[0]
-#					  float(xmax), # self.xrange[1]
-#					  float(ymin), # self.yrange[0]
-#					  float(ymax) # self.yrange[1]
-#					  )
-#		
-#		
-#		
-#		if self.xaxisIsTime:
-#			plplot.pltimefmt('%H:%M')
-#			timedelta = (xmax - xmin + 1)/8.
-#			plplot.plbox(xopt, timedelta, 3, yopt, 0.0, 0)
-#		else:
-#			plplot.plbox(xopt, 0.0, 0, yopt, 0.0, 0)
-#		
-#		
-#		if not(nolabels):
-#			plplot.pllab(self.xlabel, self.ylabel, self.title)
-
 		ax = self.__axesId
 		ax.set_xlim([xmin,xmax])
 		ax.set_ylim([ymin,ymax])
@@ -499,58 +193,42 @@ class BaseGraph:
 			ax.set_xlabel(self.xlabel)
 			ax.set_ylabel(self.ylabel)
 			ax.set_title(self.title)
-
-#		fig = plt.gcf()
-#		nrows = self.
-#		fig.add_subplot
-#		print 
-		pass
-
+			
 	def delLabels(self):
-#		self.setColor(15) #Setting Line Color to White
-#		plplot.pllab(self.xlabel, self.ylabel, self.title)
-#		self.setColor(1) #Setting Line Color to Black
 		pass
 	
 	def plotImage(self,x,y,z,xrange,yrange,zrange):
-#		xi = x[0]
-#		xf = x[-1]
-#		yi = y[0]
-#		yf = y[-1]
-#		
-#		plplot.plimage(z, 
-#					   float(xi), 
-#					   float(xf), 
-#					   float(yi), 
-#					   float(yf), 
-#					   float(zrange[0]), 
-#					   float(zrange[1]), 
-#					   float(xi), 
-#					   float(xf), 
-#					   float(yrange[0]), 
-#					   yrange[1])
 		pass
 
-class LinearPlot:
-	
+
+class LinearPlot():
 	linearObjDic = {}
 	__xpos = None
 	__ypos = None
+	isPlotIni = None
 	
-	def __init__(self,indexFig,nsubplot,winTitle):
+	def __init__(self, indexFig,nsubplot,winTitle):
 		self.width = 700
 		self.height = 150
 		self.indexFig = indexFig
 		self.ncol = 1
 		self.nrow = nsubplot
 		initMatplotlib(indexFig,self.ncol,self.nrow,winTitle,self.width,self.height)
-	
+		
+		self.isPlotIni = False
+		
+		
 	def setFigure(self,indexFig):
 		setFigure(indexFig)
-		
+	
+	def setNewPage(self, pltitle='No title'):
+		szchar = 0.7
+#		setNewPage()
+		setPlTitle(pltitle,'black', szchar=szchar)
+		setSubpages(self.ncol, self.nrow)
+	
 	def setPosition(self): 
-		
-		xi = 0.07; xf = 0.9 #0.8,0.7,0.5 
+		xi = 0.07; xf = 0.9 
 		yi = 0.15; yf = 0.8
 		
 		xpos = [xi,xf]
@@ -561,14 +239,8 @@ class LinearPlot:
 		
 		return xpos,ypos
 	
-	def show(self):
-		show()
-		
-	def refresh(self):
-		refresh()
-		
-	def setup(self,subplot,xmin,xmax,ymin,ymax,title,xlabel,ylabel):
-		szchar = 1.10
+	def createObjects(self,subplot,xmin,xmax,ymin,ymax,title,xlabel,ylabel):
+		szchar = 0.7
 		name = 'linear'
 		key = name + '%d'%subplot
 		xrange = [xmin,xmax]
@@ -576,50 +248,34 @@ class LinearPlot:
 		
 		xpos,ypos = self.setPosition()
 		linearObj = BaseGraph(name,subplot,xpos,ypos,xlabel,ylabel,title,szchar,xrange,yrange)
+		self.linearObjDic[key] = linearObj
+	
+	def iniPlot(self,subplot):
+		name = 'linear'
+		key = name + '%d'%subplot
+		
+		linearObj = self.linearObjDic[key]
 		linearObj.makeAxes(self.indexFig,self.nrow,self.ncol,subplot)
 		linearObj.plotBox(linearObj.xrange[0], linearObj.xrange[1], linearObj.yrange[0], linearObj.yrange[1], 'bcnst', 'bcnstv')
-		self.linearObjDic[key] = linearObj
-
-
+		
+	
 	def plot(self,subplot,x,y,type='abs'):
 		name = 'linear'
 		key = name + '%d'%subplot
 		
 		linearObj = self.linearObjDic[key]
-		#linearObj.plotBox(linearObj.xrange[0], linearObj.xrange[1], linearObj.yrange[0], linearObj.yrange[1], 'bcst', 'bcst')
-		
-#		if linearObj.setXYData() != None:
-#				clearData(linearObj)
-#		else:
-#			if type.lower() == 'simple':
-#				linearObj.setXYData(x,y,'real')
-#			if type.lower() == 'power':
-#				linearObj.setXYData(x,abs(y),'real')
-#			if type.lower() == 'iq':
-#				linearObj.setXYData(x,y,'complex')
 		
 		if type.lower() == 'simple':
 			colline = 9
 			linearObj.basicLineTimePlot(x, y)
 			linearObj.setXYData(x,y,'real')
 		
-		if type.lower() == 'abs':
-			colline = 9
-			linearObj.basicLineTimePlot(x, abs(y), colline)
-			linearObj.setXYData(x,abs(y),'real')
-		
-		if type.lower() == 'iq':
-			colline = 9
-			linearObj.basicLineTimePlot(x=x, y=y.real, colline=colline)
-			colline = 13
-			linearObj.basicLineTimePlot(x=x, y=y.imag, colline=colline)
-			linearObj.setXYData(x,y,'complex')
-
-#		linearObj.plotBox(linearObj.xrange[0], linearObj.xrange[1], linearObj.yrange[0], linearObj.yrange[1], 'bcst', 'bcst')
-
-		pass
+	def refresh(self):
+		refresh()
 	
-
+	def show(self):
+		show()
+		
 class PcolorPlot:
 	
 	pcolorObjDic = {}
@@ -791,14 +447,8 @@ class PcolorPlot:
 			powObj.plotBox(powObj.xrange[0], powObj.xrange[1], powObj.yrange[0], powObj.yrange[1], 'bc', 'bc')
 	
 	def printTitle(self,pltitle):
-#		if self.__lastTitle != None:
-#			setPlTitle(self.__lastTitle,'white')
-#			
-#		self.__lastTitle = pltitle
 		
 		setPlTitle(pltitle,'black')
-		
-#		setSubpages(self.ncol,self.nrow)
 		
 	def plot(self,subplot,x,y,z,subtitle=''):
 		# Spectra plot
@@ -860,7 +510,6 @@ class PcolorPlot:
 	
 	def refresh(self):
 		refresh()
-
 
 class RtiPlot:
 	
@@ -1103,35 +752,58 @@ if __name__ == '__main__':
 	
 	xmin = numpy.min(x)
 	xmax = numpy.max(x)
-	ymin = numpy.min(y1)
-	ymax = numpy.max(y1)
+	ymin = numpy.min(y1) - 10
+	ymax = numpy.max(y1) + 10
 	
-	# Creating Object
-	indexPlot = 1
-	nsubplot = 2
-	winTitle = "mi grafico v1"
-	
-	subplotTitle = "subplot - No."
+	subplotTitle = "subplot no. "
 	xlabel = ""
 	ylabel = ""
 	
-	linearObj = LinearPlot(indexPlot,nsubplot,winTitle)
+	indexFig = 1
+	nsubplot = 2
+	winTitle = "figura"
 	
-	#Config SubPlots
-	for subplot in range(nsubplot):
-		indexplot = subplot + 1
-		title = subplotTitle + '%d'%indexplot
-		linearObj.setup(indexplot, xmin, xmax, ymin, ymax, title, xlabel, ylabel)
+	isPlotIni = False
+	isPlotConfig = False
+	ntimes = 10
 	
-	#Plotting
-	type = "simple"
-	for subplot in range(nsubplot):
-		indexplot = subplot + 1
-		y = signalList[subplot]
-		linearObj.plot(indexplot, x, y, type)
+	
+	# Instancia del objeto
+	linearObj = LinearPlot(indexFig,nsubplot,winTitle)
 		
-	linearObj.refresh()
-#	linearObj.show()	
+	
+	for i in range(ntimes):
+		# Crea los subplots
+		if not(linearObj.isPlotIni):
+			for index in range(nsubplot):
+				indexplot = index + 1
+				title = subplotTitle + '%d'%indexplot
+				linearObj.createObjects(indexplot,xmin,xmax,ymin,ymax,title,xlabel,ylabel)
+			linearObj.isPlotIni = True
+		
+		# Inicializa el grafico en cada iteracion
+		linearObj.setFigure(indexFig)
+		linearObj.setNewPage("")
+		
+		for index in range(nsubplot):
+			subplot = index
+			linearObj.iniPlot(subplot+1)
+
+		#plotea los datos
+		for channel in range(nsubplot):
+			data = y1 + numpy.random.rand(len(y1))
+			linearObj.plot(channel+1, x, data, type='simple')
+			
+		linearObj.refresh()
+		
+#		linearObj.closePage() #descomentar esta linea para mas iteraciones
+		
+		time.sleep(0.05)
+		
+	linearObj.show()
+
+	print "example 1 completed"
+		
 
 
 	"""
@@ -1208,4 +880,4 @@ if __name__ == '__main__':
 	
 	pcolorObj.show()
 
-	print "end"
+	print "example 2 completed"
