@@ -1,8 +1,8 @@
 '''
 Created on Feb 7, 2012
 
-@autor $Author: dsuarez $
-@version $Id: BaseGraph.py 117 2012-09-04 21:16:59Z dsuarez $
+@autor $Author$
+@version $Id$
 
 '''
 
