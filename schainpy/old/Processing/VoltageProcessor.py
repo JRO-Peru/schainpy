@@ -252,7 +252,7 @@ class VoltageProcessor:
             return 0
         
         if code == None:
-            code = self.dataOutObj.m_RadarControllerHeader.code
+            code = self.dataOutObj.radarControllerHeaderObj.code
         ncode, nbaud = code.shape
         
         if len(self.decoderObjList) <= self.decoderObjIndex:
@@ -271,7 +271,7 @@ class VoltageProcessor:
     
     def filterByHei(self, window):
         if window == None:
-            window = self.dataOutObj.m_RadarControllerHeader.txA / self.dataOutObj.m_ProcessingHeader.deltaHeight[0]
+            window = self.dataOutObj.radarControllerHeaderObj.txA / self.dataOutObj.m_ProcessingHeader.deltaHeight[0]
         
         newdelta = self.dataOutObj.m_ProcessingHeader.deltaHeight[0] * window
         dim1 = self.dataOutObj.data.shape[0]
@@ -310,7 +310,7 @@ class VoltageProcessor:
             self.dataOutObj.channelIndexList
             self.dataOutObj.nChannels
             self.dataOutObj.m_ProcessingHeader.totalSpectra
-            self.dataOutObj.m_SystemHeader.numChannels
+            self.dataOutObj.systemHeaderObj.numChannels
             self.dataOutObj.m_ProcessingHeader.blockSize
             
         Return:
@@ -332,7 +332,7 @@ class VoltageProcessor:
         self.dataOutObj.nChannels = nChannels
         
         self.dataOutObj.m_ProcessingHeader.totalSpectra = 0
-        self.dataOutObj.m_SystemHeader.numChannels = nChannels
+        self.dataOutObj.systemHeaderObj.numChannels = nChannels
         self.dataOutObj.m_ProcessingHeader.blockSize = data.size
         return 1
 
@@ -398,7 +398,7 @@ class VoltageProcessor:
             self.dataOutObj.m_ProcessingHeader.blockSize
             self.dataOutObj.m_ProcessingHeader.numHeights
             self.dataOutObj.m_ProcessingHeader.firstHeight
-            self.dataOutObj.m_RadarControllerHeader
+            self.dataOutObj.radarControllerHeaderObj
             
         Return:
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
@@ -425,7 +425,7 @@ class VoltageProcessor:
         self.dataOutObj.m_ProcessingHeader.blockSize = data.size
         self.dataOutObj.m_ProcessingHeader.numHeights = nHeights
         self.dataOutObj.m_ProcessingHeader.firstHeight = firstHeight
-        self.dataOutObj.m_RadarControllerHeader.numHeights = nHeights
+        self.dataOutObj.radarControllerHeaderObj.numHeights = nHeights
         return 1
     
     def selectProfilesByValue(self,indexList, nProfiles):

@@ -107,8 +107,8 @@ class SpectraProcessor:
         self.dataOutObj.channelIndexList = self.dataInObj.channelIndexList
         self.dataOutObj.m_BasicHeader = self.dataInObj.m_BasicHeader.copy()
         self.dataOutObj.m_ProcessingHeader = self.dataInObj.m_ProcessingHeader.copy()
-        self.dataOutObj.m_RadarControllerHeader = self.dataInObj.m_RadarControllerHeader.copy()
-        self.dataOutObj.m_SystemHeader = self.dataInObj.m_SystemHeader.copy()
+        self.dataOutObj.radarControllerHeaderObj = self.dataInObj.radarControllerHeaderObj.copy()
+        self.dataOutObj.systemHeaderObj = self.dataInObj.systemHeaderObj.copy()
         
         self.dataOutObj.dataType = self.dataInObj.dataType
         self.dataOutObj.nPairs = self.nPairs
@@ -118,8 +118,8 @@ class SpectraProcessor:
         self.dataOutObj.nFFTPoints = self.nFFTPoints
         #self.dataOutObj.data = None
         
-        self.dataOutObj.m_SystemHeader.numChannels = self.nChannels
-        self.dataOutObj.m_SystemHeader.nProfiles = self.nFFTPoints
+        self.dataOutObj.systemHeaderObj.numChannels = self.nChannels
+        self.dataOutObj.systemHeaderObj.nProfiles = self.nFFTPoints
         
         self.dataOutObj.m_ProcessingHeader.totalSpectra = self.nChannels + self.nPairs 
         self.dataOutObj.m_ProcessingHeader.profilesPerBlock = self.nFFTPoints
@@ -199,8 +199,8 @@ class SpectraProcessor:
             self.dataOutObj.heightList
             self.dataOutObj.m_BasicHeader
             self.dataOutObj.m_ProcessingHeader
-            self.dataOutObj.m_RadarControllerHeader
-            self.dataOutObj.m_SystemHeader
+            self.dataOutObj.radarControllerHeaderObj
+            self.dataOutObj.systemHeaderObj
             self.profIndex  
             self.buffer
             self.dataOutObj.flagNoData
@@ -208,7 +208,7 @@ class SpectraProcessor:
             self.dataOutObj.nPairs
             self.dataOutObj.nChannels
             self.dataOutObj.nProfiles
-            self.dataOutObj.m_SystemHeader.numChannels
+            self.dataOutObj.systemHeaderObj.numChannels
             self.dataOutObj.m_ProcessingHeader.totalSpectra 
             self.dataOutObj.m_ProcessingHeader.profilesPerBlock
             self.dataOutObj.m_ProcessingHeader.numHeights
@@ -435,7 +435,7 @@ class SpectraProcessor:
             self.dataOutObj.nChannels
             self.dataOutObj.nPairs
             self.dataOutObj.m_ProcessingHeader.spectraComb
-            self.dataOutObj.m_SystemHeader.numChannels
+            self.dataOutObj.systemHeaderObj.numChannels
             
             self.dataOutObj.noise
         Return:
@@ -494,7 +494,7 @@ class SpectraProcessor:
 
         self.dataOutObj.m_ProcessingHeader.spectraComb = spectraComb
         self.dataOutObj.m_ProcessingHeader.totalSpectra = nChannels + nPairs
-        self.dataOutObj.m_SystemHeader.numChannels = nChannels
+        self.dataOutObj.systemHeaderObj.numChannels = nChannels
         self.dataOutObj.nChannels = nChannels
         self.dataOutObj.m_ProcessingHeader.blockSize = blocksize
         
@@ -565,7 +565,7 @@ class SpectraProcessor:
             self.dataOutObj.m_ProcessingHeader.numHeights
             self.dataOutObj.m_ProcessingHeader.blockSize
             self.dataOutObj.m_ProcessingHeader.firstHeight
-            self.dataOutObj.m_RadarControllerHeader.numHeights
+            self.dataOutObj.radarControllerHeaderObj.numHeights
             
         Return:
             None
@@ -612,7 +612,7 @@ class SpectraProcessor:
         self.dataOutObj.m_ProcessingHeader.blockSize = blockSize
         self.dataOutObj.m_ProcessingHeader.numHeights = nHeights
         self.dataOutObj.m_ProcessingHeader.firstHeight = firstHeight
-        self.dataOutObj.m_RadarControllerHeader.numHeights = nHeights
+        self.dataOutObj.radarControllerHeaderObj.numHeights = nHeights
         
         self.dataOutObj.heightList = self.dataOutObj.heightList[minIndex:maxIndex+1] 
 

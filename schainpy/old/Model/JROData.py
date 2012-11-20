@@ -39,11 +39,11 @@ class JROData(Data):
     classdocs
     '''
     
-    m_RadarControllerHeader = RadarControllerHeader()
+    radarControllerHeaderObj = RadarControllerHeader()
     
     m_ProcessingHeader = ProcessingHeader()
     
-    m_SystemHeader = SystemHeader()
+    systemHeaderObj = SystemHeader()
     
     m_BasicHeader = BasicHeader()
     
@@ -86,8 +86,8 @@ class JROData(Data):
         self.m_ProcessingHeader.deltaHeight = step
         
         self.m_ProcessingHeader.numHeights = self.nHeights
-        self.m_SystemHeader.numChannels = self.nChannels
-        self.m_SystemHeader.numProfiles = self.nProfiles 
+        self.systemHeaderObj.numChannels = self.nChannels
+        self.systemHeaderObj.numProfiles = self.nProfiles 
    
     def updateObjFromHeader(self):
         
@@ -96,10 +96,10 @@ class JROData(Data):
         xf = xi + self.m_ProcessingHeader.numHeights*step
         
         self.heightList = numpy.arange(xi, xf, step)        
-        self.channelIndexList = numpy.arange(self.m_SystemHeader.numChannels)
-        self.channelList = numpy.arange(self.m_SystemHeader.numChannels)
+        self.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
+        self.channelList = numpy.arange(self.systemHeaderObj.numChannels)
         
         self.nHeights = len(self.heightList)
-        self.nProfiles = self.m_SystemHeader.numProfiles
+        self.nProfiles = self.systemHeaderObj.numProfiles
         self.nChannels = len(self.channelList)
         
