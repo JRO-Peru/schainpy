@@ -55,7 +55,7 @@ class SpectraProcessor:
         self.firstdatatime = None
         self.profIndex = 0
         
-    def setup(self, dataInObj=None, dataOutObj=None, nFFTPoints=None, pairsList=None):
+    def setup(self, dataInObj=None, dataOutObj=None, nFFTPoints=None, pairsList=None, wavelength=6):
         
         if dataInObj == None:
             raise ValueError, "This SpectraProcessor.setup() function needs dataInObj input variable"
@@ -89,10 +89,18 @@ class SpectraProcessor:
         self.dataOutObj.nFFTPoints = nFFTPoints
         self.dataOutObj.pairsList = pairsList
         self.dataOutObj.nPairs = nPairs
+        self.dataOutObj.wavelength = wavelength
         
         return self.dataOutObj
     
     def init(self):
+        
+        """
+        
+        Este metodo reinicia los contadores de los objetos integrator, writer y plotter
+        y actualiza los parametros del objeto de salida dataOutObj a partir del objeto de entrada.       
+        
+        """
         
         self.dataOutObj.flagNoData = True
         

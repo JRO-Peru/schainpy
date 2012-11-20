@@ -143,6 +143,8 @@ class Spectra(JROData):
     
     nIncohInt = None
     
+    wavelength = None #Necesario para cacular el rango de velocidad desde la frecuencia
+    
     nCohInt = None #se requiere para determinar el valor de timeInterval
     
     def __init__(self):
@@ -181,6 +183,16 @@ class Spectra(JROData):
         self.nIncohInt = None
         
         self.blocksize = None
+        
+        self.nFFTPoints = None
+        
+        self.wavelength = None
+    
+    def getFrequencies(self):
+        
+        xrange = numpy.arange(self.nFFTPoints)
+        xrange = xrange  
+        return None
         
         
 class SpectraHeis(JROData):
