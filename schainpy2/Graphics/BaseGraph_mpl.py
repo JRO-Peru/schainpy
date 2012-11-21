@@ -209,7 +209,7 @@ class LinearPlot():
 	
 	def __init__(self, indexFig,nsubplot,winTitle):
 		self.width = 700
-		self.height = 150
+		self.height = 800
 		self.indexFig = indexFig
 		self.ncol = 1
 		self.nrow = nsubplot
@@ -760,12 +760,12 @@ if __name__ == '__main__':
 	ylabel = ""
 	
 	indexFig = 1
-	nsubplot = 2
+	nsubplot = 6
 	winTitle = "figura"
 	
 	isPlotIni = False
 	isPlotConfig = False
-	ntimes = 10
+	ntimes = 100
 	
 	
 	# Instancia del objeto

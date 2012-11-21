@@ -63,6 +63,10 @@ class JROData:
     ippSeconds = None
     
     timeInterval = None
+    
+    set=None
+    
+    deltaHeight = None
 
     def __init__(self):
         

@@ -12,8 +12,9 @@ path = os.path.split(os.getcwd())[0]
 sys.path.append(path)
 
 from Data.JROData import Spectra, SpectraHeis
-from IO.SpectraIO import SpectraWriter
+from IO.SpectraIO import SpectraWriter,SpectraHeisWriter
 from Graphics.schainPlotTypes import ScopeFigure, SpcFigure, RTIFigure
+from Graphics.BaseGraph_mpl import LinearPlot
 #from JRONoise import Noise
 
 class SpectraProcessor:
@@ -551,7 +552,9 @@ class SpectraHeisProcessor:
         self.dataOutObj.flagShiftFFT = self.dataInObj.flagShiftFFT
         self.dataOutObj.nIncohInt = 1
         self.dataOutObj.ippSeconds= self.dataInObj.ippSeconds
-    
+        self.dataOutObj.set=self.dataInObj.set
+        self.dataOutObj.deltaHeight=self.dataInObj.deltaHeight
+        
   #  def addWriter(self,wrpath,blocksPerfile):
     def addWriter(self,wrpath):
         objWriter=SpectraHeisWriter(self.dataOutObj)
@@ -605,7 +608,7 @@ class SpectraHeisProcessor:
             self.addIntegrator(N,timeInterval)
         
         myIncohIntObj = self.integratorObjList[self.integratorObjIndex]
-        myIncohIntObj.exe(data=self.dataOutObj.data_spc,timeOfData=self.dataOutObj.utctime)
+        myIncohIntObj.exe(data=self.dataOutObj.data_spc,datatime=self.dataOutObj.utctime)
         
         if myIncohIntObj.isReady:
             self.dataOutObj.data_spc = myIncohIntObj.data
@@ -677,6 +680,84 @@ class SpectraHeisProcessor:
                              gpath)
                 
         self.plotObjIndex += 1
+    
+    
+    def addPlotMatScope(self, indexPlot,nsubplot,winTitle):
+        linearObj = LinearPlot(indexPlot,nsubplot,winTitle)
+        self.plotObjList.append(linearObj)
+        
+    def plotMatScope(self, idfigure,
+                            channelList=None,
+                            wintitle="",
+                            save=None,
+                            gpath=None):
+        
+        if self.dataOutObj.flagNoData:
+            return 0
+        
+        if channelList == None:
+            channelList = self.dataOutObj.channelList
+        
+        nchannels = len(channelList)
+        
+        thisDatetime = datetime.datetime.fromtimestamp(self.dataOutObj.utctime)
+        dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        winTitle = "Spectra Profile" #+ dateTime 
+        
+        if len(self.plotObjList) <= self.plotObjIndex:
+            self.addPlotMatScope(idfigure,nchannels,winTitle)
+        c   =  3E8  
+        x=numpy.arange(-1*self.dataOutObj.nHeights/2.,self.dataOutObj.nHeights/2.)*(c/(2*self.dataOutObj.deltaHeight*self.dataOutObj.nHeights*1000))
+        x= x/(10000.0)
+        
+        data = 10*numpy.log10(self.dataOutObj.data_spc)
+             
+        subplotTitle = "Channel No."
+        xlabel = "Frecuencias(hz)*10K"
+        ylabel = "Potencia(dB)"
+        
+        isPlotIni=False
+        isPlotConfig=False
+        
+        ntimes=2     
+        nsubplot= nchannels
+        
+        plotObj = self.plotObjList[self.plotObjIndex]
+        
+#        for i in range(ntimes):
+            #Creacion de Subplots
+        if not(plotObj.isPlotIni):
+           for  index in range(nsubplot):
+                indexplot = index + 1 
+                title = subplotTitle + '%d'%indexplot
+                xmin = numpy.min(x)
+                xmax = numpy.max(x)
+                ymin = numpy.min(data[index,:])
+                ymax = numpy.max(data[index,:])
+                plotObj.createObjects(indexplot,xmin,xmax,ymin,ymax,title,xlabel,ylabel)
+           plotObj.isPlotIni =True
+                
+        # Inicializa el grafico en cada itearcion
+        plotObj.setFigure(idfigure)
+        plotObj.setFigure("")
+        
+        for index in range(nsubplot):
+            subplot = index
+            plotObj.iniPlot(subplot+1)
+        #Ploteo de datos
+            
+        for channel in range(nsubplot):
+            y=data[channel,:]
+            plotObj.plot(channel+1,x,y,type='simple')
+            
+        plotObj.refresh()
+            
+            #time.sleep(0.05)
+            
+#        plotObj.show()
+    
+        self.plotObjIndex += 1    
+        #print "Ploteo Finalizado"           
 
     def rti(self):
         if self.dataOutObj.flagNoData:

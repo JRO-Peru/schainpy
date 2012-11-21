@@ -225,6 +225,8 @@ class JRODataIO:
     
     blocksize = None
     
+    set = None
+    
     def __init__(self):
         pass
 
@@ -588,7 +590,7 @@ class JRODataReader(JRODataIO):
             self.filename = file
             self.flagIsNewFile = 1
             if self.fp != None: self.fp.close() 
-            self.fp = open(file)
+            self.fp = open(file, 'rb')
             self.flagNoMoreFiles = 0
             print 'Setting the file: %s' % file
         else:
@@ -613,11 +615,11 @@ class JRODataReader(JRODataIO):
 
         if not(newFile):
             return 0
-
+        
         self.__readFirstHeader()
         self.nReadBlocks = 0
         return 1
-
+    
     def __setNewBlock(self):
         if self.fp == None:
             return 0

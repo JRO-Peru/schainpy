@@ -21,30 +21,51 @@ from Processing.SpectraProcessor import *
 #from  Graphics.BaseGraph_mpl import LinearPlot
 
 class TestHeis():
-    i=None
+    
     def __init__(self):
         self.setValues()
         self.createObjects()
         self.testSChain()
         self.i=0
+    
+    
+    def VerifyArguments(self):
+        pass
+    
+    
+    
+    def setValues(self):
         
-    def setValues( self ):
         
-        self.path="/home/roj-idl71/data"
+        
+        self.path="D:\\te"
 
         #self.path = ""     
-        self.startDate = datetime.date(2012,4,1)
-        self.endDate = datetime.date(2012,6,30)
+#        self.startDate = datetime.date(2012,10,1)
+#        self.endDate = datetime.date(2012,12,30)
+#        
+#        self.startTime = datetime.time(0,0,0)
+#        self.endTime = datetime.time(23,0,0)
+#        
         
-        self.startTime = datetime.time(0,0,0)
-        self.endTime = datetime.time(23,0,0)
-
-    
+        
+        
+        self.N=1000
+        
+        self.wrpath = "D:\\te\\FITS"
+        
+        self.online
+        
+        self.startDate = None
+        self.endDate = None 
+        self.startTime = None
+        self.endTime = None
+        
+       # self.blocksPerFile = 1
     def createObjects( self ):
         
         self.readerObj = VoltageReader()
         self.specProcObj = SpectraHeisProcessor()
-
         self.voltObj1 = self.readerObj.setup(
                                    path = self.path,
                                    startDate = self.startDate,
@@ -52,41 +73,29 @@ class TestHeis():
                                    startTime = self.startTime,
                                    endTime = self.endTime,
                                    expLabel = '',
-                                   online = 0) 
+                                   online = self.online) 
        
         if not(self.voltObj1):
             sys.exit(0)   
    
         self.specObj1 = self.specProcObj.setup(dataInObj = self.voltObj1,nFFTPoints=self.voltObj1.nHeights)
-        
-       
-#       
-
-#        
-        
+#              
     def testSChain( self ):
      
          ini = time.time()
          counter = 0 
          while(True):
             self.readerObj.getData()
+            
             self.specProcObj.init()
             
-            self.specProcObj.integrator(N=32) ## return self.dataOutObj
+            self.specProcObj.integrator(self.N) ## return self.dataOutObj
             
-
+            self.specProcObj.writedata(self.wrpath)
             
-         
-            self.specProcObj.plotScope(idfigure=1,
-                                        wintitle='test plot library',
-                                        driver='plplot',
-                                        minvalue = 30000.0,
-                                        maxvalue = 5000000.0,
-                                        save=True,
-                                        gpath="/home/roj-idl71/PlotImage")
-     
-            
-            if self.readerObj.flagNoMoreFiles: 
+            self.specProcObj.plotMatScope(idfigure=1)            
+                       
+            if self.readerObj.flagNoMoreFiles:
                break
        
                
@@ -94,7 +103,7 @@ class TestHeis():
             if self.readerObj.flagIsNewBlock:
                 print 'Block No %04d, Time: %s' %(self.readerObj.nTotalBlocks,        
                                                   datetime.datetime.fromtimestamp(self.readerObj.basicHeaderObj.utc),)
- 
+                
          
       
 if __name__ == '__main__':

@@ -228,6 +228,12 @@ class VoltageReader(JRODataReader):
           
         return 1
 
+
+    def __getset(self,filename):
+        name = os.path.basename(filename)
+        basename,ext = os.path.splitext(name)
+        set = int(basename[8:])
+        return set
     
     def getData(self):
         """
@@ -273,6 +279,8 @@ class VoltageReader(JRODataReader):
             self.dataOutObj.flagNoData = True
             return 0
         
+        self.dataOutObj.set = self.__getset(self.filename)
+        
         self.dataOutObj.data = self.datablock[:,self.profileIndex,:]
         
         self.dataOutObj.dtype = self.dtype
@@ -296,6 +304,8 @@ class VoltageReader(JRODataReader):
         self.dataOutObj.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
         
         self.dataOutObj.ippSeconds = self.ippSeconds
+        
+        self.dataOutObj.deltaHeight = self.processingHeaderObj.deltaHeight
         
         self.dataOutObj.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
         

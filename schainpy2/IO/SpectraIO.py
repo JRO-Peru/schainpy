@@ -603,8 +603,7 @@ class SpectraWriter(JRODataWriter):
         
         if self.flagNoMoreFiles:
             #print 'Process finished'
-            return 0
-        
+            return 0        
         return 1
     
     
@@ -786,6 +785,8 @@ class FITS:
     array =None
     data =None
     thdulist=None
+    prihdr=None
+    hdu=None
     
     def __init__(self):
         
@@ -807,9 +808,7 @@ class FITS:
 #        self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
 #        return self.col2
     
-    def writeHeader(self,):
-        pass
-    
+
     def writeData(self,name,format,data):
         self.name=name
         self.format=format
@@ -818,26 +817,47 @@ class FITS:
         self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
         return self.col2
     
-    def cFImage(self,n):
-        self.hdu= pyfits.PrimaryHDU(n)
-        return self.hdu
-    
-    def Ctable(self,col1,col2,col3,col4,col5,col6,col7,col8,col9):
-        self.cols=pyfits.ColDefs( [col1,col2,col3,col4,col5,col6,col7,col8,col9])
+    def cFImage(self,idblock,year,month,day,hour,minute,second):
+        self.hdu= pyfits.PrimaryHDU(idblock)
+        self.hdu.header.set("Year",year)
+        self.hdu.header.set("Month",month)
+        self.hdu.header.set("Day",day)
+        self.hdu.header.set("Hour",hour)
+        self.hdu.header.set("Minute",minute)
+        self.hdu.header.set("Second",second)
+        return self.hdu 
+
+
+    def Ctable(self,colList):
+        self.cols=pyfits.ColDefs(colList)
         self.tbhdu = pyfits.new_table(self.cols)
         return self.tbhdu
     
+  
     def CFile(self,hdu,tbhdu):
         self.thdulist=pyfits.HDUList([hdu,tbhdu])
-        
+               
     def wFile(self,filename):
         self.thdulist.writeto(filename) 
         
-class SpectraHeisWriter():
-    i=0
+class SpectraHeisWriter(JRODataWriter):
+    set = None
+    setFile = None
+    idblock = None
+    doypath = None
+    subfolder = None
+    
     def __init__(self, dataOutObj):
         self.wrObj = FITS()
         self.dataOutObj = dataOutObj 
+        self.nTotalBlocks=0
+        self.set = None
+        self.setFile = 0
+        self.idblock = 0
+        self.wrpath = None
+        self.doypath = None
+        self.subfolder = None
+    
         
     def isNumber(str):
         """
@@ -858,7 +878,7 @@ class SpectraHeisWriter():
         except:
             return False     
         
-    def setup(self, wrpath,):
+    def setup(self, wrpath):
 
         if not(os.path.exists(wrpath)):
             os.mkdir(wrpath)
@@ -867,39 +887,63 @@ class SpectraHeisWriter():
         self.setFile = 0
 
     def putData(self):
-      # self.wrObj.writeHeader(nChannels=self.dataOutObj.nChannels, nFFTPoints=self.dataOutObj.nFFTPoints)
-        #name = self.dataOutObj.utctime
         name= time.localtime( self.dataOutObj.utctime)
-        ext=".fits"
-        #folder='D%4.4d%3.3d'%(name.tm_year,name.tm_yday)    
-        subfolder = 'D%4.4d%3.3d' % (name.tm_year,name.tm_yday)
+        ext=".fits"    
+           
+        if self.doypath == None:
+           self.subfolder = 'F%4.4d%3.3d_%d' % (name.tm_year,name.tm_yday,time.mktime(datetime.datetime.now().timetuple()))
+           self.doypath = os.path.join( self.wrpath, self.subfolder )
+           os.mkdir(self.doypath)
+        
+        if self.set == None:
+           self.set = self.dataOutObj.set
+           self.setFile = 0
+        if self.set != self.dataOutObj.set:
+            self.set = self.dataOutObj.set
+            self.setFile = 0
+        
+        #make the filename
+        file = 'D%4.4d%3.3d%3.3d_%3.3d%s' % (name.tm_year,name.tm_yday,self.set,self.setFile,ext) 
 
-        doypath = os.path.join( self.wrpath, subfolder )
-        if not( os.path.exists(doypath) ):
-            os.mkdir(doypath)
+        filename = os.path.join(self.wrpath,self.subfolder, file) 
+        
+        idblock = numpy.array([self.idblock],dtype="int64")
+        header=self.wrObj.cFImage(idblock=idblock, 
+                                year=time.gmtime(self.dataOutObj.utctime).tm_year,
+                                month=time.gmtime(self.dataOutObj.utctime).tm_mon,
+                                day=time.gmtime(self.dataOutObj.utctime).tm_mday, 
+                                hour=time.gmtime(self.dataOutObj.utctime).tm_hour,
+                                minute=time.gmtime(self.dataOutObj.utctime).tm_min, 
+                                second=time.gmtime(self.dataOutObj.utctime).tm_sec)
+        
+        c=3E8
+        freq=numpy.arange(-1*self.dataOutObj.nHeights/2.,self.dataOutObj.nHeights/2.)*(c/(2*self.dataOutObj.deltaHeight*1000))
+        
+        colList = []
+        
+        colFreq=self.wrObj.setColF(name="freq", format=str(self.dataOutObj.nFFTPoints)+'E', array=freq)
+        
+        colList.append(colFreq)
+
+        nchannel=self.dataOutObj.nChannels
+        
+        for i in range(nchannel):
+            col = self.wrObj.writeData(name="PCh"+str(i+1),
+                                         format=str(self.dataOutObj.nFFTPoints)+'E',
+                                          data=10*numpy.log10(self.dataOutObj.data_spc[i,:]))
+            
+            colList.append(col)
+                
+        data=self.wrObj.Ctable(colList=colList)
+        
+        self.wrObj.CFile(header,data)
+        
+        self.wrObj.wFile(filename)      
+        
+        #update the setFile
         self.setFile += 1
-        file = 'D%4.4d%3.3d%3.3d%s' % (name.tm_year,name.tm_yday,self.setFile,ext) 
-
-        filename = os.path.join(self.wrpath,subfolder, file) 
+        self.idblock += 1
         
-       # print self.dataOutObj.ippSeconds
-        freq=numpy.arange(-1*self.dataOutObj.nHeights/2.,self.dataOutObj.nHeights/2.)/(2*self.dataOutObj.ippSeconds)
-        
-        col1=self.wrObj.setColF(name="freq", format=str(self.dataOutObj.nFFTPoints)+'E', array=freq)
-        col2=self.wrObj.writeData(name="P_Ch1",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[0,:]))
-        col3=self.wrObj.writeData(name="P_Ch2",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[1,:]))
-        col4=self.wrObj.writeData(name="P_Ch3",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[2,:]))
-        col5=self.wrObj.writeData(name="P_Ch4",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[3,:]))
-        col6=self.wrObj.writeData(name="P_Ch5",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[4,:]))
-        col7=self.wrObj.writeData(name="P_Ch6",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[5,:]))
-        col8=self.wrObj.writeData(name="P_Ch7",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[6,:]))
-        col9=self.wrObj.writeData(name="P_Ch8",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[7,:]))
-        #n=numpy.arange((100))
-        n=self.dataOutObj.data_spc[6,:]
-        a=self.wrObj.cFImage(n)
-        b=self.wrObj.Ctable(col1,col2,col3,col4,col5,col6,col7,col8,col9)
-        self.wrObj.CFile(a,b)
-        self.wrObj.wFile(filename)
         return 1
     
         
