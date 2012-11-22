@@ -137,7 +137,7 @@ class VoltageReader(JRODataReader):
         
         self.profileIndex = 9999
 
-        self.delay  = 3   #seconds
+        self.delay  = 60   #seconds
         
         self.nTries  = 3  #quantity tries
         

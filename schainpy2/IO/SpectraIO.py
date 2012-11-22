@@ -7,7 +7,7 @@ $Id$
 import os, sys
 import numpy
 
-#import pyfits
+import pyfits
 import glob
 import fnmatch
 import time, datetime

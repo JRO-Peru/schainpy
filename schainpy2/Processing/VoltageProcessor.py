@@ -15,7 +15,7 @@ sys.path.append(path)
 
 from Data.JROData import Voltage
 from IO.VoltageIO import VoltageWriter
-from Graphics.schainPlotTypes import ScopeFigure, RTIFigure
+#from Graphics.schainPlotTypes import ScopeFigure, RTIFigure
 
 class VoltageProcessor:
     

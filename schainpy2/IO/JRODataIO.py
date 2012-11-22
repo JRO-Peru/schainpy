@@ -234,7 +234,7 @@ class JRODataReader(JRODataIO):
     
     nReadBlocks = 0
     
-    delay  = 60   #number of seconds waiting a new file
+    delay  = 10   #number of seconds waiting a new file
         
     nTries  = 3  #quantity tries
         
@@ -242,7 +242,6 @@ class JRODataReader(JRODataIO):
         
     
     def __init__(self):
-        
         pass
 
     def createObjByDefault(self):
@@ -431,7 +430,10 @@ class JRODataReader(JRODataIO):
             dataOutObj = self.createObjByDefault()
 
         self.dataOutObj = dataOutObj
-
+        self.delay = delay
+        self.online = online
+        self.ext = ext.lower()
+        
         if online:
             print "Searching files in online mode..."  
             doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        
@@ -440,7 +442,7 @@ class JRODataReader(JRODataIO):
                 for nTries in range( self.nTries ):
                     print '\tWaiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
                     time.sleep( self.delay )
-                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=exp)        
+                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        
                     if doypath:
                         break
             
@@ -468,11 +470,6 @@ class JRODataReader(JRODataIO):
             self.fileIndex = -1
             self.pathList = pathList
             self.filenameList = filenameList
-
-        self.online = online
-        self.delay = delay
-        ext = ext.lower()
-        self.ext = ext
 
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):
@@ -623,32 +620,33 @@ class JRODataReader(JRODataIO):
     def __waitNewBlock(self):
         #si es OnLine y ademas aun no se han leido un bloque completo entonces se espera por uno valido
         if not self.online:
-            return
-        
-         
-        if (self.nReadBlocks < self.m_ProcessingHeader.dataBlocksPerFile):
-            
-            currentPointer = self.fp.tell()
-            
-            for nTries in range( self.nTries ):
-                #self.fp.close()
-                
-                print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
-                time.sleep( self.delay )
-
-                #self.fp = open( self.filename, 'rb' )
-                #self.fp.seek( fpointer )
-
-                self.fileSize = os.path.getsize( self.filename )
-                currentSize = self.fileSize - currentPointer
-
-                if ( currentSize >= neededSize ):
-                    self.__rdBasicHeader()
-                    return 1
-            
             return 0
         
-        return 1
+        if (self.nReadBlocks >= self.processingHeaderObj.dataBlocksPerFile):
+            return 0
+        
+        currentPointer = self.fp.tell()
+        
+        neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        
+        for nTries in range( self.nTries ):
+            
+            self.fp.close()
+            self.fp = open( self.filename, 'rb' )
+            self.fp.seek( currentPointer )
+
+            self.fileSize = os.path.getsize( self.filename )
+            currentSize = self.fileSize - currentPointer
+
+            if ( currentSize >= neededSize ):
+                self.__rdBasicHeader()
+                return 1
+            
+            print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+            time.sleep( self.delay )
+            
+        
+        return 0
         
     def __setNewBlock(self):
         if self.fp == None:

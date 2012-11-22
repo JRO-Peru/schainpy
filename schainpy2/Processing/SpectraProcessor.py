@@ -13,7 +13,7 @@ sys.path.append(path)
 
 from Data.JROData import Spectra, SpectraHeis
 from IO.SpectraIO import SpectraWriter,SpectraHeisWriter
-from Graphics.schainPlotTypes import ScopeFigure, SpcFigure, RTIFigure
+#from Graphics.schainPlotTypes import ScopeFigure, SpcFigure, RTIFigure
 from Graphics.BaseGraph_mpl import LinearPlot
 #from JRONoise import Noise
 
@@ -182,7 +182,7 @@ class SpectraProcessor:
         
         #calculo de self-spectra
         fft_volt = numpy.fft.fftshift(fft_volt,axes=(1,))
-        spc = fft_volt * numpy.conjugate(fft_volt)
+        spc = (fft_volt * numpy.conjugate(fft_volt))
         spc = spc.real
         
         blocksize = 0
@@ -582,7 +582,7 @@ class SpectraHeisProcessor:
         #calculo de self-spectra
         fft_volt = numpy.fft.fftshift(fft_volt,axes=(1,))
         
-        spc = numpy.abs(fft_volt * numpy.conjugate(fft_volt))
+        spc = numpy.abs(fft_volt * numpy.conjugate(fft_volt))/(self.dataOutObj.nFFTPoints)
         self.dataOutObj.data_spc = spc
     
     def getSpectra(self):
