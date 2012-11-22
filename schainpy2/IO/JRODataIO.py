@@ -620,6 +620,36 @@ class JRODataReader(JRODataIO):
         self.nReadBlocks = 0
         return 1
     
+    def __waitNewBlock(self):
+        #si es OnLine y ademas aun no se han leido un bloque completo entonces se espera por uno valido
+        if not self.online:
+            return
+        
+         
+        if (self.nReadBlocks < self.m_ProcessingHeader.dataBlocksPerFile):
+            
+            currentPointer = self.fp.tell()
+            
+            for nTries in range( self.nTries ):
+                #self.fp.close()
+                
+                print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+                time.sleep( self.delay )
+
+                #self.fp = open( self.filename, 'rb' )
+                #self.fp.seek( fpointer )
+
+                self.fileSize = os.path.getsize( self.filename )
+                currentSize = self.fileSize - currentPointer
+
+                if ( currentSize >= neededSize ):
+                    self.__rdBasicHeader()
+                    return 1
+            
+            return 0
+        
+        return 1
+        
     def __setNewBlock(self):
         if self.fp == None:
             return 0
@@ -633,6 +663,9 @@ class JRODataReader(JRODataIO):
         
         if (currentSize >= neededSize):
             self.__rdBasicHeader()
+            return 1
+        
+        if self.__waitNewBlock():
             return 1
 
         if not(self.setNextFile()):
