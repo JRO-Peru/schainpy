@@ -100,7 +100,7 @@ class ProcessingUnit:
             None    
         """
         
-        object = self.objectList[objId]
+        object = self.objectDict[objId]
         
         object.run(self.dataOut, **kwargs)
     
@@ -366,7 +366,7 @@ class CohInt(Operation):
     def byProfiles(self, data):
         
         self.__dataReady = False
-        avg_data = None
+        avgdata = None
         nCohInt = None
             
         self.putData(data)
@@ -376,12 +376,12 @@ class CohInt(Operation):
             avgdata, nCohInt = self.pushData()
             self.__dataReady = True
         
-        return avgdata, nCohInt
+        return avgdata
     
     def byTime(self, data, datatime):
         
         self.__dataReady = False
-        avg_data = None
+        avgdata = None
         nCohInt = None
         
         self.putData(data)
@@ -391,7 +391,7 @@ class CohInt(Operation):
             self.nCohInt = nCohInt
             self.__dataReady = True
         
-        return avgdata, nCohInt
+        return avgdata
         
     def integrate(self, data, datatime=None):
         
@@ -407,7 +407,7 @@ class CohInt(Operation):
         self.__lastdatatime = datatime
         
         if avgdata == None:
-            return None
+            return None, None
         
         avgdatatime = self.__initime
         
@@ -428,8 +428,8 @@ class CohInt(Operation):
                     
         avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
         
-#        self.dataOut.timeInterval *= nCohInt
-        self.dataOut.flagNoData = True
+#        dataOut.timeInterval *= nCohInt
+        dataOut.flagNoData = True
         
         if self.__dataReady:
             dataOut.data = avgdata

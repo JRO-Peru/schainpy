@@ -436,9 +436,6 @@ class JRODataReader(JRODataIO):
         if ext == None:
             ext = self.ext
 
-        if dataOut != None:
-            self.dataOut = dataOut
-
         if online:
             print "Searching files in online mode..."  
             doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        

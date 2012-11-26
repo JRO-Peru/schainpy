@@ -79,7 +79,7 @@ class JROData:
     
     def isEmpty(self):
         
-        return flagNoData
+        return self.flagNoData
     
 class Voltage(JROData):
     
