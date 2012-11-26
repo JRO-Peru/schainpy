@@ -418,7 +418,7 @@ class JRODataReader(JRODataIO):
         
         return directory, filename, year, doy, set
     
-    def setup(self,dataOut=None, 
+    def setup(self,
                 path=None,
                 startDate=None, 
                 endDate=None, 
@@ -436,10 +436,8 @@ class JRODataReader(JRODataIO):
         if ext == None:
             ext = self.ext
 
-        if dataOut == None:
-            dataOut = self.createObjByDefault()
-
-        self.dataOut = dataOut
+        if dataOut != None:
+            self.dataOut = dataOut
 
         if online:
             print "Searching files in online mode..."  
@@ -993,7 +991,7 @@ class JRODataWriter(JRODataIO):
         
         return 1
     
-    def setup(self, path, blocksPerFile, profilesPerBlock=None, set=0, ext=None):
+    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=None, set=0, ext=None):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
@@ -1022,6 +1020,8 @@ class JRODataWriter(JRODataIO):
         
         self.profilesPerBlock = profilesPerBlock
         
+        self.dataOut = dataOut
+        
         if not(self.setNextFile()):
             print "There isn't a next file"
             return 0
@@ -1034,8 +1034,7 @@ class JRODataWriter(JRODataIO):
         
         if not(self.isConfig):
             
-            self.dataOut = dataOut
-            self.setup(**kwargs)
+            self.setup(dataOut, **kwargs)
             self.isConfig = True
             
         self.putData()
@@ -1087,7 +1086,7 @@ class VoltageReader(JRODataReader):
     dataOut = None
     
     
-    def __init__(self, dataOut=None):
+    def __init__(self):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
         
@@ -1179,6 +1178,8 @@ class VoltageReader(JRODataReader):
         self.nTotalBlocks = 0
     
         self.blocksize = 0
+        
+        dataOut = self.createObjByDefault()
     
     def createObjByDefault(self):
         
@@ -1361,7 +1362,7 @@ class VoltageWriter(JRODataWriter):
     shapeBuffer = None
     
 
-    def __init__(self, dataOut=None):
+    def __init__(self):
         """ 
         Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
          
@@ -1370,13 +1371,6 @@ class VoltageWriter(JRODataWriter):
 
         Return: None
         """
-        if dataOut == None:
-            dataOut = Voltage()    
-        
-        if not( isinstance(dataOut, Voltage) ):
-            raise ValueError, "in VoltageReader, dataOut must be an Spectra class object"
-
-        self.dataOut = dataOut
         
         self.nTotalBlocks = 0
 
@@ -1688,7 +1682,7 @@ class SpectraReader(JRODataReader):
     rdPairList = []
 
     
-    def __init__(self, dataOut=None):
+    def __init__(self):
         """ 
         Inicializador de la clase SpectraReader para la lectura de datos de espectros.
 
@@ -1781,6 +1775,8 @@ class SpectraReader(JRODataReader):
         self.nTotalBlocks = 0
     
         self.blocksize = 0
+        
+        dataOut = self.createObjByDefault()
 
 
     def createObjByDefault(self):
@@ -2020,7 +2016,7 @@ class SpectraWriter(JRODataWriter):
     
 #    dataOut = None
     
-    def __init__(self, dataOut=None):
+    def __init__(self):
         """ 
         Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
          
@@ -2033,13 +2029,6 @@ class SpectraWriter(JRODataWriter):
 
         Return: None
         """
-        if dataOut == None:
-            dataOut = Spectra()    
-        
-        if not( isinstance(dataOut, Spectra) ):
-            raise ValueError, "in SpectraReader, dataOut must be an Spectra class object"
-
-        self.dataOut = dataOut
         
         self.isConfig = False
         
