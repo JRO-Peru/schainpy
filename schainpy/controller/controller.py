@@ -242,7 +242,7 @@ class UPConf():
         for opObj in self.opObjList:
             opObj.makeXml(upElement)
     
-    def getOperationObjects(self):
+    def getOperationObjList(self):
         
         return self.opObjList
     
@@ -284,7 +284,7 @@ class OperationConf():
         for parmObj in self.parmObjList:
             parmObj.makeXml(opElement)
         
-    def getParameterObjects(self):
+    def getParameterObjList(self):
         
         return self.parmObjList
     
