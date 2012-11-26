@@ -162,7 +162,7 @@ class JRODataIO:
     
     c = 3E8
     
-    __isConfig = False
+    isConfig = False
     
     basicHeaderObj = BasicHeader()
     
@@ -220,7 +220,7 @@ class JRODataIO:
     
     datablock = None
     
-    dataOutObj = None
+    dataOut = None
     
     blocksize = None
     
@@ -418,7 +418,7 @@ class JRODataReader(JRODataIO):
         
         return directory, filename, year, doy, set
     
-    def setup(self,dataOutObj=None, 
+    def setup(self,dataOut=None, 
                 path=None,
                 startDate=None, 
                 endDate=None, 
@@ -436,10 +436,10 @@ class JRODataReader(JRODataIO):
         if ext == None:
             ext = self.ext
 
-        if dataOutObj == None:
-            dataOutObj = self.createObjByDefault()
+        if dataOut == None:
+            dataOut = self.createObjByDefault()
 
-        self.dataOutObj = dataOutObj
+        self.dataOut = dataOut
 
         if online:
             print "Searching files in online mode..."  
@@ -495,7 +495,7 @@ class JRODataReader(JRODataIO):
 
 #        self.updateDataHeader()
 
-        return self.dataOutObj
+        return self.dataOut
 
     def __setNextFileOffline(self):
         
@@ -718,8 +718,8 @@ class JRODataReader(JRODataIO):
         self.dtype = datatype_str
         self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
         self.fileSizeByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.processingHeaderObj.dataBlocksPerFile - 1)
-#        self.dataOutObj.channelList = numpy.arange(self.systemHeaderObj.numChannels)
-#        self.dataOutObj.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
+#        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+#        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
 
 
@@ -780,11 +780,11 @@ class JRODataReader(JRODataIO):
     
     def run(self, **kwargs):
         
-        if not(self.__isConfig):
+        if not(self.isConfig):
             
-            self.dataOutObj = dataOut
+#            self.dataOut = dataOut
             self.setup(**kwargs)
-            self.__isConfig = True
+            self.isConfig = True
             
         self.getData()
 
@@ -807,7 +807,7 @@ class JRODataWriter(JRODataIO):
     
     nWriteBlocks = 0
     
-    def __init__(self, dataOutObj=None):
+    def __init__(self, dataOut=None):
         raise ValueError, "Not implemented"
 
 
@@ -849,8 +849,8 @@ class JRODataWriter(JRODataIO):
         self.basicHeaderObj.version = self.versionFile
         self.basicHeaderObj.dataBlock = self.nTotalBlocks
         
-        utc = numpy.floor(self.dataOutObj.utctime)
-        milisecond  = (self.dataOutObj.utctime - utc)* 1000.0
+        utc = numpy.floor(self.dataOut.utctime)
+        milisecond  = (self.dataOut.utctime - utc)* 1000.0
         
         self.basicHeaderObj.utc = utc
         self.basicHeaderObj.miliSecond = milisecond
@@ -879,7 +879,7 @@ class JRODataWriter(JRODataIO):
         self.radarControllerHeaderObj.write(self.fp)
         self.processingHeaderObj.write(self.fp)
         
-        self.dtype = self.dataOutObj.dtype
+        self.dtype = self.dataOut.dtype
 
     def __setNewBlock(self):
         """
@@ -941,7 +941,7 @@ class JRODataWriter(JRODataIO):
         if self.fp != None:
             self.fp.close()
         
-        timeTuple = time.localtime( self.dataOutObj.dataUtcTime)
+        timeTuple = time.localtime( self.dataOut.dataUtcTime)
         subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
 
         doypath = os.path.join( path, subfolder )
@@ -1032,11 +1032,11 @@ class JRODataWriter(JRODataIO):
     
     def run(self, dataOut, **kwargs):
         
-        if not(self.__isConfig):
+        if not(self.isConfig):
             
-            self.dataOutObj = dataOut
+            self.dataOut = dataOut
             self.setup(**kwargs)
-            self.__isConfig = True
+            self.isConfig = True
             
         self.putData()
 
@@ -1084,15 +1084,15 @@ class VoltageReader(JRODataReader):
     ext = ".r"
     
     optchar = "D"
-    dataOutObj = None
+    dataOut = None
     
     
-    def __init__(self, dataOutObj=None):
+    def __init__(self, dataOut=None):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
         
         Input:
-            dataOutObj    :    Objeto de la clase Voltage. Este objeto sera utilizado para
+            dataOut    :    Objeto de la clase Voltage. Este objeto sera utilizado para
                               almacenar un perfil de datos cada vez que se haga un requerimiento
                               (getData). El perfil sera obtenido a partir del buffer de datos,
                               si el buffer esta vacio se hara un nuevo proceso de lectura de un
@@ -1100,13 +1100,13 @@ class VoltageReader(JRODataReader):
                               Si este parametro no es pasado se creara uno internamente.
         
         Variables afectadas:
-            self.dataOutObj
+            self.dataOut
         
         Return:
             None
         """
         
-        self.__isConfig = False
+        self.isConfig = False
         
         self.datablock = None
         
@@ -1265,11 +1265,11 @@ class VoltageReader(JRODataReader):
                          buffer. Si no hay mas archivos a leer retorna None.
             
         Variables afectadas:
-            self.dataOutObj
+            self.dataOut
             self.profileIndex
             
         Affected:
-            self.dataOutObj
+            self.dataOut
             self.profileIndex
             self.flagTimeBlock
             self.flagIsNewBlock
@@ -1293,59 +1293,59 @@ class VoltageReader(JRODataReader):
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         
         if self.datablock == None:
-            self.dataOutObj.flagNoData = True
+            self.dataOut.flagNoData = True
             return 0
         
-        self.dataOutObj.data = self.datablock[:,self.profileIndex,:]
+        self.dataOut.data = self.datablock[:,self.profileIndex,:]
         
-        self.dataOutObj.dtype = self.dtype
+        self.dataOut.dtype = self.dtype
         
-        self.dataOutObj.nChannels = self.systemHeaderObj.nChannels
+        self.dataOut.nChannels = self.systemHeaderObj.nChannels
         
-        self.dataOutObj.nHeights = self.processingHeaderObj.nHeights
+        self.dataOut.nHeights = self.processingHeaderObj.nHeights
         
-        self.dataOutObj.nProfiles = self.processingHeaderObj.profilesPerBlock
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
         
         xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
 
-        self.dataOutObj.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
         
-        self.dataOutObj.channelList = range(self.systemHeaderObj.nChannels)
+        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOutObj.channelIndexList = range(self.systemHeaderObj.nChannels)
+        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOutObj.flagTimeBlock = self.flagTimeBlock
+        self.dataOut.flagTimeBlock = self.flagTimeBlock
         
-        self.dataOutObj.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
+        self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
         
-        self.dataOutObj.ippSeconds = self.ippSeconds
+        self.dataOut.ippSeconds = self.ippSeconds
         
-        self.dataOutObj.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
+        self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
         
-        self.dataOutObj.nCohInt = self.processingHeaderObj.nCohInt
+        self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
         
-        self.dataOutObj.flagShiftFFT = False
+        self.dataOut.flagShiftFFT = False
         
         if self.processingHeaderObj.code != None:
-            self.dataOutObj.nCode = self.processingHeaderObj.nCode
+            self.dataOut.nCode = self.processingHeaderObj.nCode
             
-            self.dataOutObj.nBaud = self.processingHeaderObj.nBaud
+            self.dataOut.nBaud = self.processingHeaderObj.nBaud
             
-            self.dataOutObj.code = self.processingHeaderObj.code
+            self.dataOut.code = self.processingHeaderObj.code
         
         self.profileIndex += 1
         
-        self.dataOutObj.systemHeaderObj = self.systemHeaderObj.copy()
+        self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
         
-        self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
         
-        self.dataOutObj.flagNoData = False
+        self.dataOut.flagNoData = False
         
-#        print self.profileIndex, self.dataOutObj.utctime 
+#        print self.profileIndex, self.dataOut.utctime 
 #        if self.profileIndex == 800:
 #            a=1
     
-        return self.dataOutObj.data
+        return self.dataOut.data
 
 
 class VoltageWriter(JRODataWriter):
@@ -1361,28 +1361,28 @@ class VoltageWriter(JRODataWriter):
     shapeBuffer = None
     
 
-    def __init__(self, dataOutObj=None):
+    def __init__(self, dataOut=None):
         """ 
         Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
          
         Affected: 
-            self.dataOutObj
+            self.dataOut
 
         Return: None
         """
-        if dataOutObj == None:
-            dataOutObj = Voltage()    
+        if dataOut == None:
+            dataOut = Voltage()    
         
-        if not( isinstance(dataOutObj, Voltage) ):
-            raise ValueError, "in VoltageReader, dataOutObj must be an Spectra class object"
+        if not( isinstance(dataOut, Voltage) ):
+            raise ValueError, "in VoltageReader, dataOut must be an Spectra class object"
 
-        self.dataOutObj = dataOutObj
+        self.dataOut = dataOut
         
         self.nTotalBlocks = 0
 
         self.profileIndex = 0
         
-        self.__isConfig = False
+        self.isConfig = False
         
         self.fp = None
 
@@ -1484,12 +1484,12 @@ class VoltageWriter(JRODataWriter):
             0    :    Si no hay data o no hay mas files que puedan escribirse 
             1    :    Si se escribio la data de un bloque en un file
         """
-        if self.dataOutObj.flagNoData:
+        if self.dataOut.flagNoData:
             return 0
         
         self.flagIsNewBlock = 0
         
-        if self.dataOutObj.flagTimeBlock:
+        if self.dataOut.flagTimeBlock:
             
             self.datablock.fill(0)
             self.profileIndex = 0
@@ -1498,7 +1498,7 @@ class VoltageWriter(JRODataWriter):
         if self.profileIndex == 0:
             self.getBasicHeader()
         
-        self.datablock[:,self.profileIndex,:] = self.dataOutObj.data
+        self.datablock[:,self.profileIndex,:] = self.dataOut.data
         
         self.profileIndex += 1
         
@@ -1537,22 +1537,22 @@ class VoltageWriter(JRODataWriter):
         
         
         for index in range(len(dtypeList)):
-            if self.dataOutObj.dtype == dtypeList[index]:
+            if self.dataOut.dtype == dtypeList[index]:
                 dtypeValue = datatypeValueList[index]
                 break
         
         processFlags += dtypeValue
         
-        if self.dataOutObj.flagDecodeData:
+        if self.dataOut.flagDecodeData:
             processFlags += PROCFLAG.DECODE_DATA
         
-        if self.dataOutObj.flagDeflipData:
+        if self.dataOut.flagDeflipData:
             processFlags += PROCFLAG.DEFLIP_DATA
         
-        if self.dataOutObj.code != None:
+        if self.dataOut.code != None:
             processFlags += PROCFLAG.DEFINE_PROCESS_CODE
         
-        if self.dataOutObj.nCohInt > 1:
+        if self.dataOut.nCohInt > 1:
             processFlags += PROCFLAG.COHERENT_INTEGRATION
         
         return processFlags
@@ -1573,11 +1573,11 @@ class VoltageWriter(JRODataWriter):
         dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
         datatypeValueList = [1,2,4,8,4,8]
         for index in range(len(dtypeList)):
-            if self.dataOutObj.dtype == dtypeList[index]:
+            if self.dataOut.dtype == dtypeList[index]:
                 datatypeValue = datatypeValueList[index]
                 break
         
-        blocksize = int(self.dataOutObj.nHeights * self.dataOutObj.nChannels * self.dataOutObj.nProfiles * datatypeValue * 2)
+        blocksize = int(self.dataOut.nHeights * self.dataOut.nChannels * self.dataOut.nProfiles * datatypeValue * 2)
         
         return blocksize
     
@@ -1595,9 +1595,9 @@ class VoltageWriter(JRODataWriter):
             None
         """
         
-        self.systemHeaderObj = self.dataOutObj.systemHeaderObj.copy()
-        self.systemHeaderObj.nChannels = self.dataOutObj.nChannels
-        self.radarControllerHeaderObj = self.dataOutObj.radarControllerHeaderObj.copy()
+        self.systemHeaderObj = self.dataOut.systemHeaderObj.copy()
+        self.systemHeaderObj.nChannels = self.dataOut.nChannels
+        self.radarControllerHeaderObj = self.dataOut.radarControllerHeaderObj.copy()
         
         self.getBasicHeader()
         
@@ -1606,24 +1606,24 @@ class VoltageWriter(JRODataWriter):
         self.processingHeaderObj.blockSize = self.__getBlockSize()
         self.processingHeaderObj.profilesPerBlock = self.profilesPerBlock
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
-        self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOutObj.processingHeaderObj.nWindows
+        self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOut.processingHeaderObj.nWindows
         self.processingHeaderObj.processFlags = self.__getProcessFlags()
-        self.processingHeaderObj.nCohInt = self.dataOutObj.nCohInt
+        self.processingHeaderObj.nCohInt = self.dataOut.nCohInt
         self.processingHeaderObj.nIncohInt = 1 # Cuando la data de origen es de tipo Voltage
         self.processingHeaderObj.totalSpectra = 0 # Cuando la data de origen es de tipo Voltage
         
-        if self.dataOutObj.code != None:
-            self.processingHeaderObj.code = self.dataOutObj.code
-            self.processingHeaderObj.nCode = self.dataOutObj.nCode
-            self.processingHeaderObj.nBaud = self.dataOutObj.nBaud
-            codesize = int(8 + 4 * self.dataOutObj.nCode * self.dataOutObj.nBaud)
+        if self.dataOut.code != None:
+            self.processingHeaderObj.code = self.dataOut.code
+            self.processingHeaderObj.nCode = self.dataOut.nCode
+            self.processingHeaderObj.nBaud = self.dataOut.nBaud
+            codesize = int(8 + 4 * self.dataOut.nCode * self.dataOut.nBaud)
             processingHeaderSize += codesize
         
         if self.processingHeaderObj.nWindows != 0:
-            self.processingHeaderObj.firstHeight = self.dataOutObj.heightList[0]
-            self.processingHeaderObj.deltaHeight = self.dataOutObj.heightList[1] - self.dataOutObj.heightList[0]
-            self.processingHeaderObj.nHeights = self.dataOutObj.nHeights
-            self.processingHeaderObj.samplesWin = self.dataOutObj.nHeights
+            self.processingHeaderObj.firstHeight = self.dataOut.heightList[0]
+            self.processingHeaderObj.deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+            self.processingHeaderObj.nHeights = self.dataOut.nHeights
+            self.processingHeaderObj.samplesWin = self.dataOut.nHeights
             processingHeaderSize += 12
             
         self.processingHeaderObj.size = processingHeaderSize
@@ -1679,7 +1679,7 @@ class SpectraReader(JRODataReader):
         
     optchar = "P"
     
-    dataOutObj = None
+    dataOut = None
     
     nRdChannels = None
     
@@ -1688,12 +1688,12 @@ class SpectraReader(JRODataReader):
     rdPairList = []
 
     
-    def __init__(self, dataOutObj=None):
+    def __init__(self, dataOut=None):
         """ 
         Inicializador de la clase SpectraReader para la lectura de datos de espectros.
 
         Inputs: 
-            dataOutObj    :    Objeto de la clase Spectra. Este objeto sera utilizado para
+            dataOut    :    Objeto de la clase Spectra. Este objeto sera utilizado para
                               almacenar un perfil de datos cada vez que se haga un requerimiento
                               (getData). El perfil sera obtenido a partir del buffer de datos,
                               si el buffer esta vacio se hara un nuevo proceso de lectura de un
@@ -1701,12 +1701,12 @@ class SpectraReader(JRODataReader):
                               Si este parametro no es pasado se creara uno internamente.
          
         Affected: 
-            self.dataOutObj
+            self.dataOut
 
         Return      : None
         """
         
-        self.__isConfig = False
+        self.isConfig = False
         
         self.pts2read_SelfSpectra = 0
         
@@ -1804,8 +1804,8 @@ class SpectraReader(JRODataReader):
             self.pts2read_CrossSpectra
             self.pts2read_DCchannels
             self.blocksize
-            self.dataOutObj.nChannels
-            self.dataOutObj.nPairs
+            self.dataOut.nChannels
+            self.dataOut.nPairs
 
         Return:
             None
@@ -1914,7 +1914,7 @@ class SpectraReader(JRODataReader):
             1    :    Si hizo una buena copia del buffer
             
         Affected:
-            self.dataOutObj
+            self.dataOut
             
             self.flagTimeBlock
             self.flagIsNewBlock
@@ -1939,60 +1939,60 @@ class SpectraReader(JRODataReader):
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
 
         if self.data_dc == None:
-            self.dataOutObj.flagNoData = True
+            self.dataOut.flagNoData = True
             return 0
 
 
-        self.dataOutObj.data_spc = self.data_spc
+        self.dataOut.data_spc = self.data_spc
         
-        self.dataOutObj.data_cspc = self.data_cspc
+        self.dataOut.data_cspc = self.data_cspc
         
-        self.dataOutObj.data_dc = self.data_dc
+        self.dataOut.data_dc = self.data_dc
                 
-        self.dataOutObj.flagTimeBlock = self.flagTimeBlock
+        self.dataOut.flagTimeBlock = self.flagTimeBlock
     
-        self.dataOutObj.flagNoData = False
+        self.dataOut.flagNoData = False
 
-        self.dataOutObj.dtype = self.dtype
+        self.dataOut.dtype = self.dtype
 
-        self.dataOutObj.nChannels = self.nRdChannels
+        self.dataOut.nChannels = self.nRdChannels
         
-        self.dataOutObj.nPairs = self.nRdPairs
+        self.dataOut.nPairs = self.nRdPairs
         
-        self.dataOutObj.pairsList = self.rdPairList
+        self.dataOut.pairsList = self.rdPairList
         
-        self.dataOutObj.nHeights = self.processingHeaderObj.nHeights
+        self.dataOut.nHeights = self.processingHeaderObj.nHeights
         
-        self.dataOutObj.nProfiles = self.processingHeaderObj.profilesPerBlock
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
         
-        self.dataOutObj.nFFTPoints = self.processingHeaderObj.profilesPerBlock
+        self.dataOut.nFFTPoints = self.processingHeaderObj.profilesPerBlock
         
-        self.dataOutObj.nIncohInt = self.processingHeaderObj.nIncohInt
+        self.dataOut.nIncohInt = self.processingHeaderObj.nIncohInt
         
         
         xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
 
-        self.dataOutObj.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
         
-        self.dataOutObj.channelList = range(self.systemHeaderObj.nChannels)
+        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOutObj.channelIndexList = range(self.systemHeaderObj.nChannels)
+        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOutObj.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000.#+ self.profileIndex * self.ippSeconds
+        self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000.#+ self.profileIndex * self.ippSeconds
         
-        self.dataOutObj.ippSeconds = self.ippSeconds
+        self.dataOut.ippSeconds = self.ippSeconds
         
-        self.dataOutObj.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.dataOutObj.nFFTPoints
+        self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.dataOut.nFFTPoints
         
-        self.dataOutObj.flagShiftFFT = self.processingHeaderObj.shif_fft
+        self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
         
 #        self.profileIndex += 1
         
-        self.dataOutObj.systemHeaderObj = self.systemHeaderObj.copy()
+        self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
         
-        self.dataOutObj.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
 
-        return self.dataOutObj.data_spc
+        return self.dataOut.data_spc
 
 
 class SpectraWriter(JRODataWriter):
@@ -2018,14 +2018,14 @@ class SpectraWriter(JRODataWriter):
     
     data_dc = None
     
-#    dataOutObj = None
+#    dataOut = None
     
-    def __init__(self, dataOutObj=None):
+    def __init__(self, dataOut=None):
         """ 
         Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
          
         Affected: 
-            self.dataOutObj
+            self.dataOut
             self.basicHeaderObj
             self.systemHeaderObj
             self.radarControllerHeaderObj
@@ -2033,15 +2033,15 @@ class SpectraWriter(JRODataWriter):
 
         Return: None
         """
-        if dataOutObj == None:
-            dataOutObj = Spectra()    
+        if dataOut == None:
+            dataOut = Spectra()    
         
-        if not( isinstance(dataOutObj, Spectra) ):
-            raise ValueError, "in SpectraReader, dataOutObj must be an Spectra class object"
+        if not( isinstance(dataOut, Spectra) ):
+            raise ValueError, "in SpectraReader, dataOut must be an Spectra class object"
 
-        self.dataOutObj = dataOutObj
+        self.dataOut = dataOut
         
-        self.__isConfig = False
+        self.isConfig = False
         
         self.nTotalBlocks = 0
          
@@ -2095,15 +2095,15 @@ class SpectraWriter(JRODataWriter):
 
         Return: None
         """
-        self.shape_spc_Buffer = (self.dataOutObj.nChannels,
+        self.shape_spc_Buffer = (self.dataOut.nChannels,
                                  self.processingHeaderObj.nHeights,
                                  self.processingHeaderObj.profilesPerBlock)
 
-        self.shape_cspc_Buffer = (self.dataOutObj.nPairs,
+        self.shape_cspc_Buffer = (self.dataOut.nPairs,
                                   self.processingHeaderObj.nHeights,
                                   self.processingHeaderObj.profilesPerBlock)
         
-        self.shape_dc_Buffer = (self.dataOutObj.nChannels,
+        self.shape_dc_Buffer = (self.dataOut.nChannels,
                                 self.processingHeaderObj.nHeights)
 
     
@@ -2173,12 +2173,12 @@ class SpectraWriter(JRODataWriter):
             1    :    Si se escribio la data de un bloque en un file
         """
         
-        if self.dataOutObj.flagNoData:
+        if self.dataOut.flagNoData:
             return 0
         
         self.flagIsNewBlock = 0
         
-        if self.dataOutObj.flagTimeBlock:
+        if self.dataOut.flagTimeBlock:
             self.data_spc.fill(0)
             self.data_cspc.fill(0)
             self.data_dc.fill(0)
@@ -2187,9 +2187,9 @@ class SpectraWriter(JRODataWriter):
         if self.flagIsNewFile == 0:
             self.getBasicHeader()
         
-        self.data_spc = self.dataOutObj.data_spc
-        self.data_cspc = self.dataOutObj.data_cspc
-        self.data_dc = self.dataOutObj.data_dc
+        self.data_spc = self.dataOut.data_spc
+        self.data_cspc = self.dataOut.data_cspc
+        self.data_dc = self.dataOut.data_dc
         
         # #self.processingHeaderObj.dataBlocksPerFile)
         if self.hasAllDataInBuffer():
@@ -2227,25 +2227,25 @@ class SpectraWriter(JRODataWriter):
         
         
         for index in range(len(dtypeList)):
-            if self.dataOutObj.dtype == dtypeList[index]:
+            if self.dataOut.dtype == dtypeList[index]:
                 dtypeValue = datatypeValueList[index]
                 break
         
         processFlags += dtypeValue
         
-        if self.dataOutObj.flagDecodeData:
+        if self.dataOut.flagDecodeData:
             processFlags += PROCFLAG.DECODE_DATA
         
-        if self.dataOutObj.flagDeflipData:
+        if self.dataOut.flagDeflipData:
             processFlags += PROCFLAG.DEFLIP_DATA
         
-        if self.dataOutObj.code != None:
+        if self.dataOut.code != None:
             processFlags += PROCFLAG.DEFINE_PROCESS_CODE
         
-        if self.dataOutObj.nIncohInt > 1:
+        if self.dataOut.nIncohInt > 1:
             processFlags += PROCFLAG.INCOHERENT_INTEGRATION
             
-        if self.dataOutObj.data_dc != None:
+        if self.dataOut.data_dc != None:
             processFlags += PROCFLAG.SAVE_CHANNELS_DC
         
         return processFlags
@@ -2266,22 +2266,22 @@ class SpectraWriter(JRODataWriter):
         dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
         datatypeValueList = [1,2,4,8,4,8]
         for index in range(len(dtypeList)):
-            if self.dataOutObj.dtype == dtypeList[index]:
+            if self.dataOut.dtype == dtypeList[index]:
                 datatypeValue = datatypeValueList[index]
                 break
         
         
-        pts2write = self.dataOutObj.nHeights * self.dataOutObj.nFFTPoints
+        pts2write = self.dataOut.nHeights * self.dataOut.nFFTPoints
         
-        pts2write_SelfSpectra = int(self.dataOutObj.nChannels * pts2write)
+        pts2write_SelfSpectra = int(self.dataOut.nChannels * pts2write)
         blocksize = (pts2write_SelfSpectra*datatypeValue)
         
-        if self.dataOutObj.data_cspc != None:
-            pts2write_CrossSpectra = int(self.dataOutObj.nPairs * pts2write)
+        if self.dataOut.data_cspc != None:
+            pts2write_CrossSpectra = int(self.dataOut.nPairs * pts2write)
             blocksize += (pts2write_CrossSpectra*datatypeValue*2)
         
-        if self.dataOutObj.data_dc != None:
-            pts2write_DCchannels = int(self.dataOutObj.nChannels * self.dataOutObj.nHeights)
+        if self.dataOut.data_dc != None:
+            pts2write_DCchannels = int(self.dataOut.nChannels * self.dataOut.nHeights)
             blocksize += (pts2write_DCchannels*datatypeValue*2)
         
         blocksize = blocksize #* datatypeValue * 2 #CORREGIR ESTO
@@ -2302,31 +2302,31 @@ class SpectraWriter(JRODataWriter):
             None
         """
         
-        self.systemHeaderObj = self.dataOutObj.systemHeaderObj.copy()
-        self.systemHeaderObj.nChannels = self.dataOutObj.nChannels
-        self.radarControllerHeaderObj = self.dataOutObj.radarControllerHeaderObj.copy()
+        self.systemHeaderObj = self.dataOut.systemHeaderObj.copy()
+        self.systemHeaderObj.nChannels = self.dataOut.nChannels
+        self.radarControllerHeaderObj = self.dataOut.radarControllerHeaderObj.copy()
         
         self.getBasicHeader()
         
         processingHeaderSize = 40 # bytes    
         self.processingHeaderObj.dtype = 0 # Voltage
         self.processingHeaderObj.blockSize = self.__getBlockSize()
-        self.processingHeaderObj.profilesPerBlock = self.dataOutObj.nFFTPoints
+        self.processingHeaderObj.profilesPerBlock = self.dataOut.nFFTPoints
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
-        self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOutObj.processingHeaderObj.nWindows
+        self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOut.processingHeaderObj.nWindows
         self.processingHeaderObj.processFlags = self.__getProcessFlags()
-        self.processingHeaderObj.nCohInt = self.dataOutObj.nCohInt# Se requiere para determinar el valor de timeInterval
-        self.processingHeaderObj.nIncohInt = self.dataOutObj.nIncohInt 
-        self.processingHeaderObj.totalSpectra = self.dataOutObj.nPairs + self.dataOutObj.nChannels
+        self.processingHeaderObj.nCohInt = self.dataOut.nCohInt# Se requiere para determinar el valor de timeInterval
+        self.processingHeaderObj.nIncohInt = self.dataOut.nIncohInt 
+        self.processingHeaderObj.totalSpectra = self.dataOut.nPairs + self.dataOut.nChannels
         
         if self.processingHeaderObj.totalSpectra > 0:
             channelList = []
-            for channel in range(self.dataOutObj.nChannels):
+            for channel in range(self.dataOut.nChannels):
                 channelList.append(channel)
                 channelList.append(channel)
                 
             pairsList = []
-            for pair in self.dataOutObj.pairsList:
+            for pair in self.dataOut.pairsList:
                 pairsList.append(pair[0])
                 pairsList.append(pair[1])
             spectraComb = channelList + pairsList
@@ -2335,21 +2335,21 @@ class SpectraWriter(JRODataWriter):
             sizeOfSpcComb = len(spectraComb)
             processingHeaderSize += sizeOfSpcComb
         
-        if self.dataOutObj.code != None:
-            self.processingHeaderObj.code = self.dataOutObj.code
-            self.processingHeaderObj.nCode = self.dataOutObj.nCode
-            self.processingHeaderObj.nBaud = self.dataOutObj.nBaud
+        if self.dataOut.code != None:
+            self.processingHeaderObj.code = self.dataOut.code
+            self.processingHeaderObj.nCode = self.dataOut.nCode
+            self.processingHeaderObj.nBaud = self.dataOut.nBaud
             nCodeSize = 4 # bytes
             nBaudSize = 4 # bytes
             codeSize = 4 # bytes
-            sizeOfCode = int(nCodeSize + nBaudSize + codeSize * self.dataOutObj.nCode * self.dataOutObj.nBaud)
+            sizeOfCode = int(nCodeSize + nBaudSize + codeSize * self.dataOut.nCode * self.dataOut.nBaud)
             processingHeaderSize += sizeOfCode
         
         if self.processingHeaderObj.nWindows != 0:
-            self.processingHeaderObj.firstHeight = self.dataOutObj.heightList[0]
-            self.processingHeaderObj.deltaHeight = self.dataOutObj.heightList[1] - self.dataOutObj.heightList[0]
-            self.processingHeaderObj.nHeights = self.dataOutObj.nHeights
-            self.processingHeaderObj.samplesWin = self.dataOutObj.nHeights
+            self.processingHeaderObj.firstHeight = self.dataOut.heightList[0]
+            self.processingHeaderObj.deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+            self.processingHeaderObj.nHeights = self.dataOut.nHeights
+            self.processingHeaderObj.samplesWin = self.dataOut.nHeights
             sizeOfFirstHeight = 4
             sizeOfdeltaHeight = 4
             sizeOfnHeights = 4
@@ -2362,10 +2362,10 @@ class SpectraHeisWriter():
     
     i=0
     
-    def __init__(self, dataOutObj):
+    def __init__(self, dataOut):
         
         self.wrObj = FITS()
-        self.dataOutObj = dataOutObj 
+        self.dataOut = dataOut 
         
     def isNumber(str):
         """
@@ -2395,9 +2395,9 @@ class SpectraHeisWriter():
         self.setFile = 0
 
     def putData(self):
-      # self.wrObj.writeHeader(nChannels=self.dataOutObj.nChannels, nFFTPoints=self.dataOutObj.nFFTPoints)
-        #name = self.dataOutObj.utctime
-        name= time.localtime( self.dataOutObj.utctime)
+      # self.wrObj.writeHeader(nChannels=self.dataOut.nChannels, nFFTPoints=self.dataOut.nFFTPoints)
+        #name = self.dataOut.utctime
+        name= time.localtime( self.dataOut.utctime)
         ext=".fits"
         #folder='D%4.4d%3.3d'%(name.tm_year,name.tm_yday)    
         subfolder = 'D%4.4d%3.3d' % (name.tm_year,name.tm_yday)
@@ -2410,20 +2410,20 @@ class SpectraHeisWriter():
 
         filename = os.path.join(self.wrpath,subfolder, file) 
         
-       # print self.dataOutObj.ippSeconds
-        freq=numpy.arange(-1*self.dataOutObj.nHeights/2.,self.dataOutObj.nHeights/2.)/(2*self.dataOutObj.ippSeconds)
+       # print self.dataOut.ippSeconds
+        freq=numpy.arange(-1*self.dataOut.nHeights/2.,self.dataOut.nHeights/2.)/(2*self.dataOut.ippSeconds)
         
-        col1=self.wrObj.setColF(name="freq", format=str(self.dataOutObj.nFFTPoints)+'E', array=freq)
-        col2=self.wrObj.writeData(name="P_Ch1",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[0,:]))
-        col3=self.wrObj.writeData(name="P_Ch2",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[1,:]))
-        col4=self.wrObj.writeData(name="P_Ch3",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[2,:]))
-        col5=self.wrObj.writeData(name="P_Ch4",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[3,:]))
-        col6=self.wrObj.writeData(name="P_Ch5",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[4,:]))
-        col7=self.wrObj.writeData(name="P_Ch6",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[5,:]))
-        col8=self.wrObj.writeData(name="P_Ch7",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[6,:]))
-        col9=self.wrObj.writeData(name="P_Ch8",format=str(self.dataOutObj.nFFTPoints)+'E',data=10*numpy.log10(self.dataOutObj.data_spc[7,:]))
+        col1=self.wrObj.setColF(name="freq", format=str(self.dataOut.nFFTPoints)+'E', array=freq)
+        col2=self.wrObj.writeData(name="P_Ch1",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[0,:]))
+        col3=self.wrObj.writeData(name="P_Ch2",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[1,:]))
+        col4=self.wrObj.writeData(name="P_Ch3",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[2,:]))
+        col5=self.wrObj.writeData(name="P_Ch4",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[3,:]))
+        col6=self.wrObj.writeData(name="P_Ch5",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[4,:]))
+        col7=self.wrObj.writeData(name="P_Ch6",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[5,:]))
+        col8=self.wrObj.writeData(name="P_Ch7",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[6,:]))
+        col9=self.wrObj.writeData(name="P_Ch8",format=str(self.dataOut.nFFTPoints)+'E',data=10*numpy.log10(self.dataOut.data_spc[7,:]))
         #n=numpy.arange((100))
-        n=self.dataOutObj.data_spc[6,:]
+        n=self.dataOut.data_spc[6,:]
         a=self.wrObj.cFImage(n)
         b=self.wrObj.Ctable(col1,col2,col3,col4,col5,col6,col7,col8,col9)
         self.wrObj.CFile(a,b)

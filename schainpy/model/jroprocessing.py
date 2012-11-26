@@ -51,7 +51,7 @@ class ProcessingUnit:
             objId    :    identificador del objeto, necesario para ejecutar la operacion
         """
         
-        self.object[objId] = object
+        self.objectDict[objId] = object
         
         return objId
     
@@ -147,10 +147,10 @@ class Operation():
     
     """
     Clase base para definir las operaciones adicionales que se pueden agregar a la clase ProcessingUnit
-    y necesiten acumular información previa de los datos a procesar. De preferencia usar un buffer de
+    y necesiten acumular informacion previa de los datos a procesar. De preferencia usar un buffer de
     acumulacion dentro de esta clase
     
-    Ejemplo: Integraciones coherentes, necesita la información previa de los n perfiles anteriores (bufffer)
+    Ejemplo: Integraciones coherentes, necesita la informacion previa de los n perfiles anteriores (bufffer)
     
     """
     
@@ -185,32 +185,32 @@ class VoltageProc(ProcessingUnit):
     
     
     def __init__(self):
-        
+        self.objectDict = {}
         pass
 
-    def setup(self, dataInObj=None, dataOutObj=None):
+    def setup(self, dataIn=None, dataOut=None):
         
-        self.dataInObj = dataInObj
+        self.dataIn = dataIn
 
-        if self.dataOutObj == None:
-            dataOutObj = Voltage()
+        if self.dataOut == None:
+            dataOut = Voltage()
 
-        self.dataOutObj = dataOutObj
+        self.dataOut = dataOut
 
-        return self.dataOutObj
+        return self.dataOut
 
     def init(self):
         
-        if self.dataInObj.isEmpty():
+        if self.dataIn.isEmpty():
             return 0
         
-        self.dataOutObj.copy(self.dataInObj)
-        # No necesita copiar en cada init() los atributos de dataInObj
+        self.dataOut.copy(self.dataIn)
+        # No necesita copiar en cada init() los atributos de dataIn
         # la copia deberia hacerse por cada nuevo bloque de datos
         
     def selectChannels(self, channelList):
         
-        if self.dataInObj.isEmpty():
+        if self.dataIn.isEmpty():
             return 0
         
         self.selectChannelsByIndex(channelList)
@@ -223,29 +223,29 @@ class VoltageProc(ProcessingUnit):
             channelIndexList    :    lista sencilla de canales a seleccionar por ej. [2,3,7] 
             
         Affected:
-            self.dataOutObj.data
-            self.dataOutObj.channelIndexList
-            self.dataOutObj.nChannels
-            self.dataOutObj.m_ProcessingHeader.totalSpectra
-            self.dataOutObj.systemHeaderObj.numChannels
-            self.dataOutObj.m_ProcessingHeader.blockSize
+            self.dataOut.data
+            self.dataOut.channelIndexList
+            self.dataOut.nChannels
+            self.dataOut.m_ProcessingHeader.totalSpectra
+            self.dataOut.systemHeaderObj.numChannels
+            self.dataOut.m_ProcessingHeader.blockSize
             
         Return:
             None
         """
 
         for channel in channelIndexList:
-            if channel not in self.dataOutObj.channelIndexList:
+            if channel not in self.dataOut.channelIndexList:
                 raise ValueError, "The value %d in channelIndexList is not valid" %channel
         
         nChannels = len(channelIndexList)
             
-        data = self.dataOutObj.data[channelIndexList,:]
+        data = self.dataOut.data[channelIndexList,:]
         
-        self.dataOutObj.data = data
-        self.dataOutObj.channelIndexList = channelIndexList
-        self.dataOutObj.channelList = [self.dataOutObj.channelList[i] for i in channelIndexList]
-        self.dataOutObj.nChannels = nChannels
+        self.dataOut.data = data
+        self.dataOut.channelIndexList = channelIndexList
+        self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
+        self.dataOut.nChannels = nChannels
         
         return 1
 
@@ -423,7 +423,7 @@ class CohInt(Operation):
         else:
             self.__initime += deltatime
             
-    return avgdata, avgdatatime
+        return avgdata, avgdatatime
         
     def run(self, dataOut, nCohInt=None, timeInterval=None, overlapping=False):
         
@@ -433,12 +433,12 @@ class CohInt(Operation):
                     
         avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
         
-#        self.dataOutObj.timeInterval *= nCohInt
-        self.dataOutObj.flagNoData = True
+#        self.dataOut.timeInterval *= nCohInt
+        self.dataOut.flagNoData = True
         
         if self.__dataReady:
-            dataOutObj.data = avgdata
-            dataOutObj.timeInterval *= self.nCohInt
-            dataOutObj.nCohInt *= self.nCohInt
-            dataOutObj.utctime = avgdatatime
-            dataOutObj.flagNoData = False
+            dataOut.data = avgdata
+            dataOut.timeInterval *= self.nCohInt
+            dataOut.nCohInt *= self.nCohInt
+            dataOut.utctime = avgdatatime
+            dataOut.flagNoData = False
