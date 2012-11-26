@@ -8,9 +8,9 @@ import numpy
 import datetime
 import time
 
-from JROData import *
-from JRODataIO import *
-from JROPlot import *
+from jrodata import *
+from jrodataIO import *
+from jroplot import *
 
 class ProcessingUnit:
     

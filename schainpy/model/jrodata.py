@@ -8,7 +8,7 @@ import os, sys
 import copy
 import numpy
 
-from JROHeaderIO import SystemHeader, RadarControllerHeader
+from jroheaderIO import SystemHeader, RadarControllerHeader
 
 class JROData:
     

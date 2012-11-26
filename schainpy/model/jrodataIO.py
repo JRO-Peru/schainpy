@@ -11,8 +11,8 @@ import numpy
 import fnmatch
 import time, datetime
 
-from Data.JROData import *
-from JROHeaderIO import *
+from jrodata import *
+from jroheaderIO import *
 
 def isNumber(str):
     """
