@@ -225,7 +225,14 @@ class JRODataIO:
     blocksize = None
     
     def __init__(self):
-        pass
+        
+        raise ValueError, "Not implemented"
+    
+    def run(self):
+        
+        raise ValueError, "Not implemented"
+    
+    
 
 class JRODataReader(JRODataIO):
     
@@ -779,7 +786,7 @@ class JRODataReader(JRODataIO):
             self.setup(**kwargs)
             self.__isConfig = True
             
-        self.putData()
+        self.getData()
 
 class JRODataWriter(JRODataIO):
 
