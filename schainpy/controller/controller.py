@@ -222,11 +222,11 @@ class UPConf():
         
         self.opObjList = []
         
-    def addOperation(self, name, priority):
+    def addOperation(self, name, priority, type='self'):
         
         id = len(self.opObjList) + 1
         
-        opObj = OperationConf(id, name, priority)
+        opObj = OperationConf(id, name, priority, type)
         
         self.opObjList.append(opObj)
         
@@ -247,13 +247,16 @@ class OperationConf():
     id = 0
     name = None
     priority = None
+    type = 'self'
+    
     parmObjList = []
     
-    def __init__(self, id, name, priority):
+    def __init__(self, id, name, priority, type):
         
         self.id = id
         self.name = name
         self.priority = priority
+        self.type = type
         
         self.parmObjList = []
         
