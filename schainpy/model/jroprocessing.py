@@ -155,6 +155,7 @@ class Operation():
     """
     
     __buffer = None
+    __isConfig = False
     
     def __init__(self):
         
@@ -255,6 +256,7 @@ class CohInt(Operation):
     
     __byTime = False
     __initime = None
+    __lastdatatime = None
     __integrationtime = None
     
     __buffer = None
@@ -266,7 +268,7 @@ class CohInt(Operation):
     
     def __init__(self):
         
-        pass
+        self.__isConfig = False
     
     def setup(self, nCohInt=None, timeInterval=None, overlapping=False):
         """
@@ -281,6 +283,7 @@ class CohInt(Operation):
         """
         
         self.__initime = None
+        self.__lastdatatime = 0
         self.__buffer = None
         self.__dataReady = False
         
@@ -311,8 +314,6 @@ class CohInt(Operation):
         Add a profile to the __buffer and increase in one the __profileIndex
         
         """
-        if self.__initime == None:
-            self.__initime = datatime
             
         if not self.__withOverapping:
             self.__buffer += data
@@ -352,8 +353,6 @@ class CohInt(Operation):
         
         """
         
-        self.__initime = None
-        
         if not self.__withOverapping:
             data = self.__buffer
             nCohInt = self.__profIndex
@@ -373,6 +372,7 @@ class CohInt(Operation):
         
         self.__dataReady = False
         avg_data = None
+        nCohInt = None
             
         self.putData(data)
         
@@ -387,7 +387,8 @@ class CohInt(Operation):
         
         self.__dataReady = False
         avg_data = None
-            
+        nCohInt = None
+        
         self.putData(data)
         
         if (datatime - self.__initime) >= self.__integrationtime:
@@ -399,25 +400,45 @@ class CohInt(Operation):
         
     def integrate(self, data, datatime=None):
         
-        if not self.__byTime:
-            avg_data = self.byProfiles(data)
+        if self.__initime == None:
+            self.__initime = datatime
+        
+        if self.__byTime:
+            avgdata = self.byTime(data, datatime)
         else:
-            avg_data = self.byTime(data, datatime)
+            avgdata = self.byProfiles(data)
         
-        self.data = avg_data
         
+        self.__lastdatatime = datatime
+        
+        if avgdata == None:
+            return None
+        
+        avgdatatime = self.__initime
+        
+        deltatime = datatime -self.__lastdatatime
+        
+        if not self.__withOverapping:
+            self.__initime = datatime
+        else:
+            self.__initime += deltatime
+            
+    return avgdata, avgdatatime
         
     def run(self, dataOut, nCohInt=None, timeInterval=None, overlapping=False):
         
+        if not self.__isConfig:
+            self.setup(nCohInt, timeInterval, overlapping)
+            self.__isConfig = True
+                    
+        avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
         
 #        self.dataOutObj.timeInterval *= nCohInt
         self.dataOutObj.flagNoData = True
         
-        if myCohIntObj.__dataReady:
-            self.dataOutObj.data = myCohIntObj.data
-            self.dataOutObj.timeInterval *= myCohIntObj.nCohInt
-            self.dataOutObj.nCohInt = myCohIntObj.nCohInt * self.dataInObj.nCohInt
-            self.dataOutObj.utctime = myCohIntObj.firstdatatime
-            self.dataOutObj.flagNoData = False
-        
-        return avg_data
+        if self.__dataReady:
+            dataOutObj.data = avgdata
+            dataOutObj.timeInterval *= self.nCohInt
+            dataOutObj.nCohInt *= self.nCohInt
+            dataOutObj.utctime = avgdatatime
+            dataOutObj.flagNoData = False

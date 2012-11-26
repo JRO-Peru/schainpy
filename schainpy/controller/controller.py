@@ -3,10 +3,17 @@ Created on September , 2012
 @author: 
 '''
 from xml.etree.ElementTree import Element, SubElement, ElementTree
-from element import  prettify 
 from xml.etree import ElementTree as ET
+from xml.dom import minidom
+
 import sys
 
+def prettify(elem):
+    """Return a pretty-printed XML string for the Element.
+    """
+    rough_string = ET.tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ")
 
 #def save(a, b):
 #    
@@ -86,13 +93,24 @@ class Project():
         ElementTree(self.projectElement).write(filename, method='xml')
         print prettify(self.projectElement)
 
-    def readXml(self,workspace):
-        print "Aqui estoy leyendo"
-        tree=ET.parse(workspace)
-        root=tree.getroot()
-        self.project=root.tag
-        self.idProyect= root.attrib.get('id')
-        self.nameProyect= root.attrib.get('name') 
+    def readXml(self, filename):
+        
+        #tree = ET.parse(filename)
+        self.projectElement = None
+        tree = ElementTree(self.projectElement).parse(filename)
+        
+        self.project = self.projectElement.tag
+        
+        self.id = self.projectElement.get('id')
+        self.name = self.projectElement.get('name')
+        
+        readElement = self.projectElement.getiterator('readBranch')
+        
+        root = tree.getroot()
+        self.project = root.tag
+        self.id = root.attrib.get('id')
+        self.name = root.attrib.get('name') 
+        
         for description in root.findall('description'):     
             description = description.get('description') 
         
@@ -107,15 +125,6 @@ class Project():
             name = readBranch.get('name') 
         self.idpb=id
         self.nameBranch=name
-#        
-#        
-        print self.project 
-        print self.idProyect
-        print self.nameProyect
-        print  self.description
-        print self.idrb
-        print self.idpb
-        print self.nameBranch
 #        
 ####ESTO DEL MEDIO ESTABA COMENTADO
 #        print root.tag , root.attrib
@@ -132,7 +141,7 @@ class Project():
 #        description=root.find('description').text
 #        print description
 #   ESTO FUNCIONABA HACIA ABAJO     
-        print "Otra forma "
+        
         root=tree.getroot()
         print root.tag , root.attrib
         for child in root:
@@ -331,7 +340,11 @@ class Parameter():
         parmElement = SubElement(opElement, 'Parameter')
         parmElement.set('name', self.name)
         parmElement.set('value', self.value)
+    
+    def readXml(self, opElement):
         
+        
+        pass
 #        se = SubElement(parmElement, 'value')#ESTO ES LO ULTIMO QUE SE TRABAJO
 #        se.text = self.value
         
@@ -339,8 +352,6 @@ if __name__ == '__main__':
     
     desc = "Este es un test"
     filename = "test.xml"
-    
-    workspace=str("C:\\Users\\alex\\workspace\\GUIV2.0\\test.xml")
     
     projectObj = Project()
     
@@ -364,7 +375,10 @@ if __name__ == '__main__':
     opObj12.addParameter(name='code1', value='001110011')
     opObj12.addParameter(name='code2', value='001110011')
     
+    print "Escribiendo el XML"
+    
     projectObj.writeXml(filename)
     
-    projectObj.readXml(workspace)
+    print "Leyendo el XML"
+    projectObj.readXml(filename)
     
