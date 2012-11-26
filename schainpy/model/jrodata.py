@@ -77,6 +77,10 @@ class JROData:
         
         return copy.deepcopy(self)
     
+    def isEmpty(self):
+        
+        return flagNoData
+    
 class Voltage(JROData):
     
     nCohInt = None
