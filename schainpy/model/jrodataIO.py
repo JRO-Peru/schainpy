@@ -1179,7 +1179,7 @@ class VoltageReader(JRODataReader):
     
         self.blocksize = 0
         
-        dataOut = self.createObjByDefault()
+        self.dataOut = self.createObjByDefault()
     
     def createObjByDefault(self):
         
@@ -1776,7 +1776,7 @@ class SpectraReader(JRODataReader):
     
         self.blocksize = 0
         
-        dataOut = self.createObjByDefault()
+        self.dataOut = self.createObjByDefault()
 
 
     def createObjByDefault(self):
