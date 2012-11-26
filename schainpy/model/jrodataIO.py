@@ -162,6 +162,8 @@ class JRODataIO:
     
     c = 3E8
     
+    __isConfig = False
+    
     basicHeaderObj = BasicHeader()
     
     systemHeaderObj = SystemHeader()
@@ -768,6 +770,16 @@ class JRODataReader(JRODataIO):
 
     def readBlock():
         pass
+    
+    def run(self, **kwargs):
+        
+        if not(self.__isConfig):
+            
+            self.dataOutObj = dataOut
+            self.setup(**kwargs)
+            self.__isConfig = True
+            
+        self.putData()
 
 class JRODataWriter(JRODataIO):
 
@@ -787,8 +799,6 @@ class JRODataWriter(JRODataIO):
     blocksPerFile = None
     
     nWriteBlocks = 0
-    
-    isConfig = False
     
     def __init__(self, dataOutObj=None):
         raise ValueError, "Not implemented"
@@ -1015,10 +1025,11 @@ class JRODataWriter(JRODataIO):
     
     def run(self, dataOut, **kwargs):
         
-        if not(self.isConfig):
+        if not(self.__isConfig):
             
             self.dataOutObj = dataOut
             self.setup(**kwargs)
+            self.__isConfig = True
             
         self.putData()
 
@@ -1087,6 +1098,8 @@ class VoltageReader(JRODataReader):
         Return:
             None
         """
+        
+        self.__isConfig = False
         
         self.datablock = None
         
@@ -1362,7 +1375,7 @@ class VoltageWriter(JRODataWriter):
 
         self.profileIndex = 0
         
-        self.isConfig = False
+        self.__isConfig = False
         
         self.fp = None
 
@@ -1685,7 +1698,9 @@ class SpectraReader(JRODataReader):
 
         Return      : None
         """
-
+        
+        self.__isConfig = False
+        
         self.pts2read_SelfSpectra = 0
         
         self.pts2read_CrossSpectra = 0
@@ -2018,6 +2033,8 @@ class SpectraWriter(JRODataWriter):
             raise ValueError, "in SpectraReader, dataOutObj must be an Spectra class object"
 
         self.dataOutObj = dataOutObj
+        
+        self.__isConfig = False
         
         self.nTotalBlocks = 0
          
