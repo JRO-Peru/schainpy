@@ -66,9 +66,6 @@ class ProcessingUnit:
             **kwargs    :    Diccionario de argumentos de la funcion a ejecutar
         """
         
-        if self.dataIn.isEmpty():
-            return None
-        
         raise ValueError, "ImplementedError"
     
     def callMethod(self, name, **kwargs):
@@ -82,9 +79,6 @@ class ProcessingUnit:
             **kwargs     :    diccionario con los nombres y valores de la funcion a ejecutar.
         
         """
-        
-        if self.dataIn.isEmpty():
-            return None
         
         methodToCall = getattr(self, name)
         
@@ -106,17 +100,14 @@ class ProcessingUnit:
             None    
         """
         
-        if self.dataIn.isEmpty():
-            return None
-        
         object = self.objectList[objId]
         
         object.run(self.dataOut, **kwargs)
     
-    def call(self, operation, **kwargs):
+    def call(self, operationConf, **kwargs):
         
         """
-        Ejecuta la operacion "operation" con los argumentos "**kwargs". La operacion puede
+        Ejecuta la operacion "operationConf.name" con los argumentos "**kwargs". La operacion puede
         ser de dos tipos:
         
             1. Un metodo propio de esta clase:
@@ -131,16 +122,21 @@ class ProcessingUnit:
                
             
         con el id de la operacion.
+        
+        Input:
+        
+            Operation    :    Objeto del tipo operacion con los atributos: name, type y id.
+            
         """
         if self.dataIn.isEmpty():
             return None
         
-        if operation.type == 'self':
-            self.callMethod(operation.name, **kwargs)
+        if operationConf.type == 'self':
+            self.callMethod(operationConf.name, **kwargs)
             return
         
-        if operation.type == 'other':
-            self.callObject(operation.id, **kwargs)
+        if operationConf.type == 'other':
+            self.callObject(operationConf.id, **kwargs)
             return
         
 class Operation():
@@ -185,8 +181,10 @@ class VoltageProc(ProcessingUnit):
     
     
     def __init__(self):
+        
         self.objectDict = {}
-        pass
+        self.dataOut = Voltage()
+        
 
     def setup(self, dataIn=None, dataOut=None):
         
@@ -200,9 +198,6 @@ class VoltageProc(ProcessingUnit):
         return self.dataOut
 
     def init(self):
-        
-        if self.dataIn.isEmpty():
-            return 0
         
         self.dataOut.copy(self.dataIn)
         # No necesita copiar en cada init() los atributos de dataIn
