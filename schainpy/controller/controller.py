@@ -22,11 +22,11 @@ def prettify(elem):
 #    id = 1
 #    x = self.data.projectWindow.cmbbox.value()
 #    
-#    projectObj = Project(id, name, description)
+#    projectObj = Controller(id, name, description)
 #    
 #    projectObj.setup(id, name, description)
 
-class Project():
+class Controller():
     
     id = None
     name = None
@@ -71,7 +71,7 @@ class Project():
     
     def makeXml(self):    
         
-        projectElement = Element('Project')
+        projectElement = Element('Controller')
         projectElement.set('id', str(self.id))
         projectElement.set('name', self.name)
         #projectElement.set('description', self.description)
@@ -125,22 +125,6 @@ class Project():
             name = readBranch.get('name') 
         self.idpb=id
         self.nameBranch=name
-#        
-####ESTO DEL MEDIO ESTABA COMENTADO
-#        print root.tag , root.attrib
-#        
-#        print root.attrib.get('id')
-#        print root.attrib.get('name')
-            
-
-#        for description in root.findall('description'):
-#            description = root.find('description').text
-#            name = root.get('name')
-#            print name, description
-        
-#        description=root.find('description').text
-#        print description
-#   ESTO FUNCIONABA HACIA ABAJO     
         
         root=tree.getroot()
         print root.tag , root.attrib
@@ -180,36 +164,6 @@ class ReadBranch():
         readBranchElement = SubElement(projectElement, 'readBranch')
         readBranchElement.set('id', str(self.id))
         
-#        readBranchElement.set('dpath', self.dpath)
-#        readBranchElement.set('dataformat', self.dataformat)
-#        readBranchElement.set('startDate', self.startDate)
-#        readBranchElement.set('endDate', self.endDate)
-#        readBranchElement.set('startTime', self.startTime)
-#        readBranchElement.set('endTime', self.endTime)
-#        readBranchElement.set('readMode', str(self.readMode))
-        
-#        se = SubElement(readBranchElement, 'dpath')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = self.dpath
-#        
-#        se = SubElement(readBranchElement, 'dataformat')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = self.dataformat
-#        
-#        se = SubElement(readBranchElement, 'startDate')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = self.startDate
-#        
-#        se = SubElement(readBranchElement, 'endDate')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = self.endDate
-#        
-#        se = SubElement(readBranchElement, 'startTime')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = self.startTime
-#        
-#        se = SubElement(readBranchElement, 'endTime')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = self.endTime
-#        
-#        se = SubElement(readBranchElement, 'readMode')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = str(self.readMode)
-            
-        ##########################################################################
         se = SubElement(readBranchElement, 'parameter', name='dpath'     , value=self.dpath)
         se = SubElement(readBranchElement, 'parameter', name='dataformat', value=self.dataformat)
         se = SubElement(readBranchElement, 'parameter', name='startDate' , value=self.startDate)
@@ -237,7 +191,7 @@ class ProcBranch():
         
         id = len(self.upObjList) + 1
         
-        upObj = UP(id, name, type)
+        upObj = UPConf(id, name, type)
         
         self.upObjList.append(upObj)
         
@@ -252,7 +206,7 @@ class ProcBranch():
         for upObj in self.upObjList:
             upObj.makeXml(procBranchElement)
     
-class UP():
+class UPConf():
     
     id = None
     name = None
@@ -272,7 +226,7 @@ class UP():
         
         id = len(self.opObjList) + 1
         
-        opObj = Operation(id, name, priority)
+        opObj = OperationConf(id, name, priority)
         
         self.opObjList.append(opObj)
         
@@ -288,7 +242,7 @@ class UP():
         for opObj in self.opObjList:
             opObj.makeXml(upElement)
     
-class Operation():
+class OperationConf():
     
     id = 0
     name = None
@@ -307,7 +261,7 @@ class Operation():
         
         id = len(self.parmObjList) + 1
         
-        parmObj = Parameter(id, name, value)
+        parmObj = ParameterConf(id, name, value)
         
         self.parmObjList.append(parmObj)
         
@@ -323,7 +277,7 @@ class Operation():
         for parmObj in self.parmObjList:
             parmObj.makeXml(opElement)
     
-class Parameter():
+class ParameterConf():
     
     id = None
     name = None
@@ -353,7 +307,7 @@ if __name__ == '__main__':
     desc = "Este es un test"
     filename = "test.xml"
     
-    projectObj = Project()
+    projectObj = Controller()
     
     projectObj.setParms(id = '11', name='test01', description=desc)
     
