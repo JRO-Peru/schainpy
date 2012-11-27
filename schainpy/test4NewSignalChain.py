@@ -15,20 +15,18 @@ class Test():
         
     def createObjects(self):
         
-        
-        
         self.upConfig = controller.UPConf(id=1, name="voltageproc", type="voltage")
         
         opConf = self.upConfig.addOperation(name="init", priority=0)
         
         opConf1 = self.upConfig.addOperation(name="CohInt", priority=1, type="other")
+        opConf1.addParameter(name="nCohInt", value=100)
         
-        opConf1.addParameter(name="nCohInt", value=10)
+        opConf2 = self.upConfig.addOperation(name="Scope", priority=2, type="other")
+        opConf2.addParameter(name="idfigure", value=1)
         
-        
-        opConf = self.upConfig.addOperation(name="selectChannels", priority=2)
-        
-        opConf.addParameter(name="channelList", value=[0,1])
+#        opConf = self.upConfig.addOperation(name="selectChannels", priority=3)
+#        opConf.addParameter(name="channelList", value=[0,1])
         
         
         #########################################
@@ -36,8 +34,12 @@ class Test():
         self.objP = jroprocessing.VoltageProc()
         
         self.objInt = jroprocessing.CohInt()
-        
+
         self.objP.addOperation(self.objInt, opConf1.id)
+        
+        self.objScope = jroplot.Scope()
+        
+        self.objP.addOperation(self.objScope, opConf2.id)
         
         self.connect(self.objR, self.objP)
         
