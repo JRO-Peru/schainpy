@@ -232,7 +232,9 @@ class JRODataIO:
         
         raise ValueError, "Not implemented"
     
-    
+    def getOuput(self):
+        
+        return self.dataOut
 
 class JRODataReader(JRODataIO):
     

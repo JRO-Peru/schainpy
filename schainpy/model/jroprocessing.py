@@ -138,6 +138,14 @@ class ProcessingUnit:
         if operationConf.type == 'other':
             self.callObject(operationConf.id, **kwargs)
             return
+    
+    def setInput(self, dataIn):
+        
+        self.dataIn = dataIn
+    
+    def getOutput(self):
+        
+        return self.dataOut
         
 class Operation():
     
@@ -184,18 +192,6 @@ class VoltageProc(ProcessingUnit):
         
         self.objectDict = {}
         self.dataOut = Voltage()
-        
-
-    def setup(self, dataIn=None, dataOut=None):
-        
-        self.dataIn = dataIn
-
-        if self.dataOut == None:
-            dataOut = Voltage()
-
-        self.dataOut = dataOut
-
-        return self.dataOut
 
     def init(self):
         
