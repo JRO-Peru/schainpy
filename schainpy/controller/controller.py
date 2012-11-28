@@ -53,7 +53,8 @@ class Controller():
         
         id = len(self.readBranchObjList) + 1
         
-        readBranchObj = ReadBranch(id, dpath, dataformat, readMode, startDate, endDate, startTime, endTime)
+        readBranchObj = ReadBranch()
+        readBranchObj.setup(id, dpath, dataformat, readMode, startDate, endDate, startTime, endTime)
         
         self.readBranchObjList.append(readBranchObj)
         
@@ -63,7 +64,8 @@ class Controller():
         
         id = len(self.procBranchObjList) + 1
         
-        procBranchObj = ProcBranch(id, name)
+        procBranchObj = ProcBranch()
+        procBranchObj.setup(id, name)
         
         self.procBranchObjList.append(procBranchObj)
         
@@ -97,58 +99,52 @@ class Controller():
         
         #tree = ET.parse(filename)
         self.projectElement = None
-        tree = ElementTree(self.projectElement).parse(filename)
+        self.readBranchObjList = None
+        self.procBranchObjList = None
+        
+        self.projectElement = ElementTree().parse(filename)
         
         self.project = self.projectElement.tag
         
         self.id = self.projectElement.get('id')
-        self.name = self.projectElement.get('name')
+        self.name = self.projectElement.get('name')      
         
-        readElement = self.projectElement.getiterator('readBranch')
+        self.readBranchObjList = []
         
-        root = tree.getroot()
-        self.project = root.tag
-        self.id = root.attrib.get('id')
-        self.name = root.attrib.get('name') 
+        readBranchElementList = self.projectElement.getiterator('readBranch')
         
-        for description in root.findall('description'):     
-            description = description.get('description') 
+        for readBranchElement in readBranchElementList:
+            readBrachObj = ReadBranch()
+            readBrachObj.readXml(readBranchElement)
+            self.readBranchObjList.append(readBranchObj)
         
-        self.description= description
+        self.procBranchObjList = []
         
-        for readBranch in root.findall('readBranch'):     
-            id = readBranch.get('id') 
-        self.idrb=id
+        procBranchElementList = self.projectElement.getiterator('procBranch')
         
-        for procBranch in root.findall('procBranch'):     
-            id = readBranch.get('id')     
-            name = readBranch.get('name') 
-        self.idpb=id
-        self.nameBranch=name
-        
-        root=tree.getroot()
-        print root.tag , root.attrib
-        for child in root:
-            print child.tag ,child.attrib 
-            for child in child:
-                print child.tag ,child.attrib
-                for child in child:
-                    print child.tag ,child.attrib
-                    for child in child:
-                        print child.tag ,child.attrib
+        for procBranchElement in procBranchElementList:
+            procBranchObj = ProcBranch()
+            procBranchObj.readXml(procBranchElement)
+            self.procBranchObjList.append(procBranchObj)
 #    
 class ReadBranch():
     
     id = None
-    dpath = None
-    dataformat = None
-    readMode = None
-    startDate = None
-    endDate = None
-    startTime = None
-    endTime = None
+#    dpath = None
+#    dataformat = None
+#    readMode = None
+#    startDate = None
+#    endDate = None
+#    startTime = None
+#    endTime = None
     
-    def __init__(self, id, dpath, dataformat, readMode, startDate, endDate, startTime, endTime):
+    parmObjList = []
+    
+    def __init__(self):
+        
+        self.parmObjList = []
+        
+    def setup(self, id, dpath, dataformat, readMode, startDate, endDate, startTime, endTime):
         
         self.id = id
         self.dpath = dpath
@@ -159,19 +155,46 @@ class ReadBranch():
         self.startTime = startTime
         self.endTime = endTime
     
+    def addParameter(self, name, value):
+        
+        id = len(self.parmObjList) + 1
+        
+        parmObj = ParameterConf()
+        parmObj.setup(id, name, value)
+        
+        self.parmObjList.append(parmObj)
+        
+        return parmObj
+    
     def makeXml(self, projectElement):
         
         readBranchElement = SubElement(projectElement, 'readBranch')
         readBranchElement.set('id', str(self.id))
+            
+        self.addParameter(name='dpath'     , value=self.dpath)
+        self.addParameter(name='dataformat', value=self.dataformat)
+        self.addParameter(name='startDate' , value=self.startDate)
+        self.addParameter(name='endDate'   , value=self.endDate)
+        self.addParameter(name='startTime' , value=self.startTime)
+        self.addParameter(name='endTime'   , value=self.endTime)
+        self.addParameter(name='readMode'  , value=str(self.readMode))
         
-        se = SubElement(readBranchElement, 'parameter', name='dpath'     , value=self.dpath)
-        se = SubElement(readBranchElement, 'parameter', name='dataformat', value=self.dataformat)
-        se = SubElement(readBranchElement, 'parameter', name='startDate' , value=self.startDate)
-        se = SubElement(readBranchElement, 'parameter', name='endDate'   , value=self.endDate)
-        se = SubElement(readBranchElement, 'parameter', name='startTime' , value=self.startTime)
-        se = SubElement(readBranchElement, 'parameter', name='endTime'   , value=self.endTime)
-        se = SubElement(readBranchElement, 'parameter', name='readMode'  , value=str(self.readMode))
-         
+        for parmObj in self.parmObjList:
+            parmObj.makeXml(readBranchElement)
+            
+    def readXml(self, readBranchElement):
+        
+        self.id = readBranchElement.get('id')
+        
+        self.parmObjList = []
+        
+        parmElementList = readBranchElement.getiterator('Parameter')
+        
+        for parmElement in parmElementList:
+            parmObj = Parameter()
+            parmObj.readXml(parmElement)
+            self.parmObjList.append(parmObj)
+        
     
 class ProcBranch():
     
@@ -180,7 +203,10 @@ class ProcBranch():
     
     upObjList = None
     
-    def __init__(self, id, name):
+    def __init__(self):
+        pass
+    
+    def setup(self, id, name):
         
         self.id = id
         self.name = name
@@ -191,7 +217,8 @@ class ProcBranch():
         
         id = len(self.upObjList) + 1
         
-        upObj = UPConf(id, name, type)
+        upObj = UPConf()
+        upObj.setup(id, name, type)
         
         self.upObjList.append(upObj)
         
@@ -206,6 +233,20 @@ class ProcBranch():
         for upObj in self.upObjList:
             upObj.makeXml(procBranchElement)
     
+    def readXml(self, procBranchElement):
+        
+        self.id = procBranchElement.get('id')
+        self.name = procBranchElement.get('name')
+        
+        self.upObjList = []
+        
+        upElementList = procBranchElement.getiterator('UP')
+        
+        for upElement in upElementList:
+            upObj = UPConf()
+            #upObj.readXml(upElement)
+            self.upObjList.append(upObj)
+    
 class UPConf():
     
     id = None
@@ -214,7 +255,10 @@ class UPConf():
     
     opObjList = []
     
-    def __init__(self, id, name, type):
+    def __init__(self):
+        pass
+    
+    def setup(self, id, name, type):
         
         self.id = id
         self.name = name
@@ -226,7 +270,8 @@ class UPConf():
         
         id = len(self.opObjList) + 1
         
-        opObj = OperationConf(id, name, priority, type)
+        opObj = OperationConf()
+        opObj.setup(id, name, priority, type)
         
         self.opObjList.append(opObj)
         
@@ -242,6 +287,17 @@ class UPConf():
         for opObj in self.opObjList:
             opObj.makeXml(upElement)
     
+    def readXml(self, upElement):
+        
+        self.id = upElement.get('id')
+        self.name = upElement.get('name')
+        self.type = upElement.get('type')
+        
+        opElementList = upElement.getiterator('Operation')
+        
+        for opElement in opElementList:
+            pass
+        
     def getOperationObjList(self):
         
         return self.opObjList
@@ -255,7 +311,10 @@ class OperationConf():
     
     parmObjList = []
     
-    def __init__(self, id, name, priority, type):
+    def __init__(self):
+        pass
+    
+    def setup(self, id, name, priority, type):
         
         self.id = id
         self.name = name
@@ -268,7 +327,8 @@ class OperationConf():
         
         id = len(self.parmObjList) + 1
         
-        parmObj = ParameterConf(id, name, value)
+        parmObj = ParameterConf()
+        parmObj.setup(id, name, value)
         
         self.parmObjList.append(parmObj)
         
@@ -283,6 +343,17 @@ class OperationConf():
         
         for parmObj in self.parmObjList:
             parmObj.makeXml(opElement)
+            
+    def readXml(self, opElement):
+        
+        self.id = opElement.get('id')
+        self.name = opElement.get('name')
+        self.type = opElement.get('type')
+        
+        parmElementList = opElement.getiterator('Parameter')
+        
+        for parmElement in parmElementList:
+            pass
         
     def getParameterObjList(self):
         
@@ -294,7 +365,10 @@ class ParameterConf():
     name = None
     value = None
     
-    def __init__(self, id, name, value):
+    def __init__(self):
+        pass
+    
+    def setup(self, id, name, value):
         
         self.id = id
         self.name = name
@@ -306,12 +380,11 @@ class ParameterConf():
         parmElement.set('name', self.name)
         parmElement.set('value', self.value)
     
-    def readXml(self, opElement):
+    def readXml(self, parmElement):
         
-        
-        pass
-#        se = SubElement(parmElement, 'value')#ESTO ES LO ULTIMO QUE SE TRABAJO
-#        se.text = self.value
+        self.id = parmElement.get('id')
+        self.name = parmElement.get('name')
+        self.value = parmElement.get('value')
         
 if __name__ == '__main__':
     
