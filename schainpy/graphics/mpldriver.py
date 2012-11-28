@@ -2,6 +2,7 @@ import matplotlib
 matplotlib.use("TKAgg")
 import matplotlib.pyplot
 import scitools.numpyutils
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def init(idfigure, wintitle, width, height):
     matplotlib.pyplot.ioff()
@@ -42,8 +43,32 @@ def draw(idfigure):
     fig = matplotlib.pyplot.figure(idfigure)
     fig.canvas.draw()
 
-def pcolor():
-    pass
+def pcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, title, firsttime, mesh):
+    if firsttime:
+        divider = make_axes_locatable(ax)
+        ax_cb = divider.new_horizontal(size="5%", pad=0.05)
+        fig1 = ax.get_figure()
+        fig1.add_axes(ax_cb)
+        
+        ax.set_xlim([xmin,xmax])
+        ax.set_ylim([ymin,ymax])
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        
+        imesh=ax.pcolormesh(x,y,z,vmin=zmin,vmax=zmax)
+        matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
+        ax_cb.yaxis.tick_right()
+        for tl in ax_cb.get_yticklabels():
+            tl.set_visible(True)
+        ax_cb.yaxis.tick_right()
+        matplotlib.pyplot.tight_layout()
+        return imesh
+    else:
+        tmp = z[0:-1,0:-1]
+        mesh.set_array(tmp.ravel())
+        
+        return mesh
 
 
 

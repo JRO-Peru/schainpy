@@ -2,6 +2,8 @@ import mpldriver
 
 class Figure:
     axesList = None
+    width = None
+    height = None
     def __init__(self): 
         pass
         
@@ -36,10 +38,12 @@ class Figure:
 class Axes:
     firsttime = None
     ax = None
+    mesh = None
     
     def __init__(self, ax):
         self.firsttime = True
         self.ax = ax
+        self.mesh = None
     
     def pline(self, x, y, xmin, xmax, ymin, ymax, xlabel, ylabel, title):
         
@@ -57,5 +61,21 @@ class Axes:
         
         self.firsttime = False
         
-    def pcolor(self):
-        pass
+    def pcolor(self, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, title):
+        meshfromaxes=mpldriver.pcolor(ax=self.ax,
+                        x=x, 
+                        y=y, 
+                        z=z,
+                        xmin=xmin, 
+                        xmax=xmax, 
+                        ymin=ymin, 
+                        ymax=ymax,
+                        zmin=zmin,
+                        zmax=zmax, 
+                        xlabel=xlabel, 
+                        ylabel=ylabel, 
+                        title=title, 
+                        firsttime=self.firsttime,
+                        mesh=self.mesh)
+        self.mesh = meshfromaxes
+        self.firsttime = False

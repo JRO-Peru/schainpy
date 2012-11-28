@@ -25,6 +25,14 @@ class Test():
         opConf2 = self.upConfig.addOperation(name="Scope", priority=2, type="other")
         opConf2.addParameter(name="idfigure", value=1)
         
+        
+        self.upConfigSpc = controller.UPConf(id=2, name="spectraproc", type="spectra")
+        opConf = self.upConfigSpc.addOperation(name="init", priority=0)
+        opConf.addParameter(name="nFFTPoints", value=8)
+        
+        opConf3 = self.upConfigSpc.addOperation(name="SpectraPlot", priority=1, type="other")
+        opConf3.addParameter(name="idfigure", value=2)
+        
 #        opConf = self.upConfig.addOperation(name="selectChannels", priority=3)
 #        opConf.addParameter(name="channelList", value=[0,1])
         
@@ -32,6 +40,7 @@ class Test():
         #########################################
         self.objR = jrodataIO.VoltageReader()
         self.objP = jroprocessing.VoltageProc()
+        self.objSpc = jroprocessing.SpectraProc()
         
         self.objInt = jroprocessing.CohInt()
 
@@ -41,10 +50,16 @@ class Test():
         
         self.objP.addOperation(self.objScope, opConf2.id)
         
+        self.objSpcPlot = jroplot.SpectraPlot()
+        
+        self.objSpc.addOperation(self.objSpcPlot, opConf3.id)
+        
         self.connect(self.objR, self.objP)
         
+        self.connect(self.objP, self.objSpc)
+        
     def connect(self, obj1, obj2):
-        obj2.dataIn = obj1.dataOut
+        obj2.setInput(obj1.getOutput())
         
     def run(self):
         
@@ -65,6 +80,14 @@ class Test():
                     kwargs[parm.name]=parm.value
                     
                 self.objP.call(opConf,**kwargs)
+                
+            ############################
+            for opConfSpc in self.upConfigSpc.getOperationObjList():
+                kwargs={}
+                for parm in opConfSpc.getParameterObjList():
+                    kwargs[parm.name]=parm.value
+                    
+                self.objSpc.call(opConfSpc,**kwargs)
             
             if self.objR.flagNoMoreFiles:
                 break

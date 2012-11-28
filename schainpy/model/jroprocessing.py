@@ -433,3 +433,143 @@ class CohInt(Operation):
             dataOut.nCohInt *= self.nCohInt
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
+            
+
+class SpectraProc(ProcessingUnit):
+    
+    def __init__(self):
+        self.objectDict = {}
+        self.buffer = None
+        self.firstdatatime = None
+        self.profIndex = 0
+        self.dataOut = Spectra()
+
+    def init(self, nFFTPoints=None, pairsList=None):
+        if self.dataIn.type == "Spectra":
+            self.dataOut.copy(self.dataIn)
+            return
+        
+        if self.dataIn.type == "Voltage":
+            
+            if nFFTPoints == None:
+                raise ValueError, "This SpectraProc.setup() need nFFTPoints input variable"
+            
+            if pairsList == None:
+                nPairs = 0
+            else:
+                nPairs = len(pairsList)
+            
+            self.dataOut.nFFTPoints = nFFTPoints
+            self.dataOut.pairsList = pairsList
+            self.dataOut.nPairs = nPairs
+            
+            if self.buffer == None:
+                self.buffer = numpy.zeros((self.dataIn.nChannels,
+                                           self.dataOut.nFFTPoints,
+                                           self.dataIn.nHeights), 
+                                           dtype='complex')
+
+            
+            self.buffer[:,self.profIndex,:] = self.dataIn.data
+            self.profIndex += 1
+            
+            if self.firstdatatime == None:
+                self.firstdatatime = self.dataIn.utctime
+            
+            if self.profIndex == self.dataOut.nFFTPoints:
+                self.__updateObjFromInput()
+                self.__getFft()
+                
+                self.dataOut.flagNoData = False
+                
+                self.buffer = None
+                self.firstdatatime = None
+                self.profIndex = 0
+            
+            return
+        
+        raise ValuError, "The type object %s is not valid"%(self.dataIn.type)
+    
+    def __updateObjFromInput(self):
+        
+        self.dataOut.radarControllerHeaderObj = self.dataIn.radarControllerHeaderObj.copy()
+        self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()
+        self.dataOut.channelList = self.dataIn.channelList
+        self.dataOut.heightList = self.dataIn.heightList
+        self.dataOut.dtype = self.dataIn.dtype
+        self.dataOut.nHeights = self.dataIn.nHeights
+        self.dataOut.nChannels = self.dataIn.nChannels
+        self.dataOut.nBaud = self.dataIn.nBaud
+        self.dataOut.nCode = self.dataIn.nCode
+        self.dataOut.code = self.dataIn.code
+        self.dataOut.nProfiles = self.dataOut.nFFTPoints
+        self.dataOut.channelIndexList = self.dataIn.channelIndexList
+        self.dataOut.flagTimeBlock = self.dataIn.flagTimeBlock
+        self.dataOut.utctime = self.firstdatatime
+        self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
+        self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
+        self.dataOut.flagShiftFFT = self.dataIn.flagShiftFFT
+        self.dataOut.nCohInt = self.dataIn.nCohInt
+        self.dataOut.nIncohInt = 1
+        self.dataOut.ippSeconds = self.dataIn.ippSeconds
+        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints
+    
+    def __getFft(self):
+        """
+        Convierte valores de Voltaje a Spectra
+        
+        Affected:
+            self.dataOut.data_spc
+            self.dataOut.data_cspc
+            self.dataOut.data_dc
+            self.dataOut.heightList
+            self.dataOut.m_BasicHeader
+            self.dataOut.m_ProcessingHeader
+            self.dataOut.radarControllerHeaderObj
+            self.dataOut.systemHeaderObj
+            self.profIndex  
+            self.buffer
+            self.dataOut.flagNoData
+            self.dataOut.dtype
+            self.dataOut.nPairs
+            self.dataOut.nChannels
+            self.dataOut.nProfiles
+            self.dataOut.systemHeaderObj.numChannels
+            self.dataOut.m_ProcessingHeader.totalSpectra 
+            self.dataOut.m_ProcessingHeader.profilesPerBlock
+            self.dataOut.m_ProcessingHeader.numHeights
+            self.dataOut.m_ProcessingHeader.spectraComb
+            self.dataOut.m_ProcessingHeader.shif_fft
+        """
+        fft_volt = numpy.fft.fft(self.buffer,axis=1)
+        dc = fft_volt[:,0,:]
+        
+        #calculo de self-spectra
+        fft_volt = numpy.fft.fftshift(fft_volt,axes=(1,))
+        spc = fft_volt * numpy.conjugate(fft_volt)
+        spc = spc.real
+        
+        blocksize = 0
+        blocksize += dc.size
+        blocksize += spc.size
+        
+        cspc = None
+        pairIndex = 0
+        if self.dataOut.pairsList != None:
+            #calculo de cross-spectra
+            cspc = numpy.zeros((self.dataOut.nPairs, self.dataOut.nFFTPoints, self.dataOut.nHeights), dtype='complex')
+            for pair in self.dataOut.pairsList:
+                cspc[pairIndex,:,:] = numpy.abs(fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:]))
+                pairIndex += 1
+            blocksize += cspc.size
+        
+        self.dataOut.data_spc = spc
+        self.dataOut.data_cspc = cspc
+        self.dataOut.data_dc = dc
+        self.dataOut.blockSize = blocksize
+
+
+class IncohInt(Operation):
+    
+    def __init__(self):  
+        pass        
