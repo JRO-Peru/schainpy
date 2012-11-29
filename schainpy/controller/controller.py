@@ -40,7 +40,7 @@ class Controller():
     
     def addReadBranch(self, dpath, dataformat, readMode, startDate='', endDate='', startTime='', endTime=''):
         
-        id = len(self.readBranchObjList) + 1
+        id = self.getNewId()
         
         readBranchObj = ReadBranch()
         readBranchObj.setup(id, dpath, dataformat, readMode, startDate, endDate, startTime, endTime)
@@ -51,7 +51,7 @@ class Controller():
     
     def addProcBranch(self, name):
         
-        id = len(self.procBranchObjList) + 1
+        id = self.getNewId()
         
         procBranchObj = ProcBranch()
         procBranchObj.setup(id, name)
@@ -59,6 +59,11 @@ class Controller():
         self.procBranchObjList.append(procBranchObj)
         
         return procBranchObj
+    
+    def getNewId(self):
+        
+        id = int(self.id)*10 + len(self.readBranchObjList) + len(self.procBranchObjList) + 1
+        return id
     
     def makeXml(self):    
         
@@ -156,7 +161,7 @@ class ReadBranch():
     
     def addParameter(self, name, value):
         
-        id = len(self.parmObjList) + 1
+        id = int(self.id)*10 + len(self.parmObjList) + 1
         
         parmObj = ParameterConf()
         parmObj.setup(id, name, value)
@@ -219,12 +224,12 @@ class ProcBranch():
         
         self.upObjList = []
         
-    def addUP(self, name, type):
+    def addUP(self, name, type, inputId):
         
-        id = len(self.upObjList) + 1
+        id = int(self.id)*10 + len(self.upObjList) + 1
         
         upObj = UPConf()
-        upObj.setup(id, name, type)
+        upObj.setup(id, name, type, inputId)
         
         self.upObjList.append(upObj)
         
@@ -273,7 +278,7 @@ class UPConf():
     def __init__(self):
         pass
     
-    def setup(self, id, name, type, inputId=0):
+    def setup(self, id, name, type, inputId):
         
         self.id = id
         self.name = name
@@ -284,7 +289,7 @@ class UPConf():
         
     def addOperation(self, name, priority, type='self'):
         
-        id = len(self.opObjList) + 1
+        id = int(self.id)*10 + len(self.opObjList) + 1
         
         opObj = OperationConf()
         opObj.setup(id, name, priority, type)
@@ -357,7 +362,7 @@ class OperationConf():
         
     def addParameter(self, name, value):
         
-        id = len(self.parmObjList) + 1
+        id = int(self.id)*10 + len(self.parmObjList) + 1
         
         parmObj = ParameterConf()
         parmObj.setup(id, name, value)
@@ -451,12 +456,12 @@ if __name__ == '__main__':
     procBranchObj = projectObj.addProcBranch(name='Branch1')
     
     procBranchObj1 = projectObj.addProcBranch(name='Branch2')
-    upObj1 = procBranchObj.addUP(name='UP1', type='Voltage')
-    upObj2 = procBranchObj.addUP(name='UP2', type='Voltage')
+    
+    upObj1 = procBranchObj.addUP(name='UP1', type='Voltage', inputId=readBranchObj.id)
+    upObj2 = procBranchObj.addUP(name='UP2', type='Voltage', inputId=upObj1.id)
     
     opObj11 = upObj1.addOperation(name='removeDC', priority=1)
     opObj11.addParameter(name='type', value='1')
-    
     
     opObj12 = upObj1.addOperation(name='decoder', priority=2)
     opObj12.addParameter(name='ncode', value='2')
