@@ -15,17 +15,6 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-#def save(a, b):
-#    
-#    nameP = "Alexnder"
-#    descripcion = self.projectWindow.Text()
-#    id = 1
-#    x = self.data.projectWindow.cmbbox.value()
-#    
-#    projectObj = Controller(id, name, description)
-#    
-#    projectObj.setup(id, name, description)
-
 class Controller():
     
     id = None
@@ -76,10 +65,7 @@ class Controller():
         projectElement = Element('Controller')
         projectElement.set('id', str(self.id))
         projectElement.set('name', self.name)
-        #projectElement.set('description', self.description)
-        
-        se = SubElement(projectElement, 'description',description=self.description)#ESTO ES LO ULTIMO QUE SE TRABAJO
-        #se.text = self.description                    #ULTIMA MODIFICACION PARA SACAR UN SUB ELEMENT  
+        projectElement.set('description', self.description)
         
         for readBranchObj in self.readBranchObjList:
             readBranchObj.makeXml(projectElement)
@@ -126,10 +112,23 @@ class Controller():
             procBranchObj = ProcBranch()
             procBranchObj.readXml(procBranchElement)
             self.procBranchObjList.append(procBranchObj)
-#    
+               
+    def printattr(self):
+        
+        print "Controller[%s]: name = %s, description = %s" %(self.id,
+                                                                    self.name,
+                                                                    self.description)
+        
+        for readBranchObj in self.readBranchObjList:
+            readBranchObj.printattr()
+        
+        for procBranchObj in self.procBranchObjList:
+            procBranchObj.printattr()
+            
 class ReadBranch():
     
     id = None
+    name = None
 #    dpath = None
 #    dataformat = None
 #    readMode = None
@@ -191,10 +190,17 @@ class ReadBranch():
         parmElementList = readBranchElement.getiterator('Parameter')
         
         for parmElement in parmElementList:
-            parmObj = Parameter()
+            parmObj = ParameterConf()
             parmObj.readXml(parmElement)
             self.parmObjList.append(parmObj)
+    
+    def printattr(self):
         
+        print "ReadBranch[%s]: name = %s" %(self.id,
+                                            self.name)
+        
+        for parmObj in self.parmObjList:
+            parmObj.printattr()
     
 class ProcBranch():
     
@@ -244,25 +250,35 @@ class ProcBranch():
         
         for upElement in upElementList:
             upObj = UPConf()
-            #upObj.readXml(upElement)
+            upObj.readXml(upElement)
             self.upObjList.append(upObj)
     
+    def printattr(self):
+        
+        print "ProcBranch[%s]: name = %s" %(self.id,
+                                                self.name)
+        
+        for upObj in self.upObjList:
+            upObj.printattr()
+        
 class UPConf():
     
     id = None
     name = None
     type = None
+    inputId = None
     
     opObjList = []
     
     def __init__(self):
         pass
     
-    def setup(self, id, name, type):
+    def setup(self, id, name, type, inputId=0):
         
         self.id = id
         self.name = name
         self.type = type
+        self.inputId = inputId
         
         self.opObjList = []
         
@@ -283,6 +299,7 @@ class UPConf():
         upElement.set('id', str(self.id))
         upElement.set('name', self.name)
         upElement.set('type', self.type)
+        upElement.set('inputId', str(self.inputId))
         
         for opObj in self.opObjList:
             opObj.makeXml(upElement)
@@ -292,15 +309,30 @@ class UPConf():
         self.id = upElement.get('id')
         self.name = upElement.get('name')
         self.type = upElement.get('type')
+        self.inputId = upElement.get('inputId')
+        
+        self.opObjList = []
         
         opElementList = upElement.getiterator('Operation')
         
         for opElement in opElementList:
-            pass
+            opObj = OperationConf()
+            opObj.readXml(opElement)
+            self.opObjList.append(opObj)
         
     def getOperationObjList(self):
         
         return self.opObjList
+    
+    def printattr(self):
+        
+        print "UP[%s]: name = %s, type = %s, inputId = %s" %(self.id,
+                                                             self.name,
+                                                             self.type,
+                                                             self.inputId)
+        
+        for opObj in self.opObjList:
+            opObj.printattr()
     
 class OperationConf():
     
@@ -350,14 +382,28 @@ class OperationConf():
         self.name = opElement.get('name')
         self.type = opElement.get('type')
         
+        self.parmObjList = []
+        
         parmElementList = opElement.getiterator('Parameter')
         
         for parmElement in parmElementList:
-            pass
-        
+            parmObj = ParameterConf()
+            parmObj.readXml(parmElement)
+            self.parmObjList.append(parmObj)
+            
     def getParameterObjList(self):
         
         return self.parmObjList
+    
+    def printattr(self):
+        
+        print "Operation[%s]: name = %s, type = %s, priority = %s" %(self.id,
+                                                                    self.name,
+                                                                    self.type,
+                                                                    self.priority)
+        
+        for parmObj in self.parmObjList:
+            parmObj.printattr()
     
 class ParameterConf():
     
@@ -377,6 +423,7 @@ class ParameterConf():
     def makeXml(self, opElement):
         
         parmElement = SubElement(opElement, 'Parameter')
+        parmElement.set('id', str(self.id))
         parmElement.set('name', self.name)
         parmElement.set('value', self.value)
     
@@ -385,6 +432,10 @@ class ParameterConf():
         self.id = parmElement.get('id')
         self.name = parmElement.get('name')
         self.value = parmElement.get('value')
+    
+    def printattr(self):
+        
+        print "Parameter[%s]: name = %s, value = %s" %(self.id, self.name, self.value)
         
 if __name__ == '__main__':
     
@@ -393,7 +444,7 @@ if __name__ == '__main__':
     
     projectObj = Controller()
     
-    projectObj.setParms(id = '11', name='test01', description=desc)
+    projectObj.setParms(id = '191', name='test01', description=desc)
     
     readBranchObj = projectObj.addReadBranch(dpath='mydata', dataformat='rawdata', readMode=0, startDate='1', endDate='3', startTime='4', endTime='5')
     
@@ -407,16 +458,17 @@ if __name__ == '__main__':
     opObj11.addParameter(name='type', value='1')
     
     
-    opObj12 = upObj1.addOperation(name='decodification', priority=2)
+    opObj12 = upObj1.addOperation(name='decoder', priority=2)
     opObj12.addParameter(name='ncode', value='2')
     opObj12.addParameter(name='nbauds', value='8')
+    opObj12.addParameter(name='code0', value='001110011')
     opObj12.addParameter(name='code1', value='001110011')
-    opObj12.addParameter(name='code2', value='001110011')
     
-    print "Escribiendo el XML"
+    print "Escribiendo el archivo XML"
     
     projectObj.writeXml(filename)
     
-    print "Leyendo el XML"
+    print "Leyendo el archivo XML"
     projectObj.readXml(filename)
+    projectObj.printattr()
     
