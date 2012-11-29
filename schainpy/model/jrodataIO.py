@@ -13,6 +13,7 @@ import time, datetime
 
 from jrodata import *
 from jroheaderIO import *
+from jroprocessing import *
 
 def isNumber(str):
     """
@@ -236,7 +237,7 @@ class JRODataIO:
         
         return self.dataOut
 
-class JRODataReader(JRODataIO):
+class JRODataReader(JRODataIO, ProcessingUnit):
     
     nReadBlocks = 0
     
@@ -420,79 +421,7 @@ class JRODataReader(JRODataIO):
         
         return directory, filename, year, doy, set
     
-    def setup(self,
-                path=None,
-                startDate=None, 
-                endDate=None, 
-                startTime=datetime.time(0,0,0), 
-                endTime=datetime.time(23,59,59), 
-                set=0, 
-                expLabel = "", 
-                ext = None, 
-                online = False,
-                delay = 60):
 
-        if path == None:
-            raise ValueError, "The path is not valid"
-
-        if ext == None:
-            ext = self.ext
-
-        if online:
-            print "Searching files in online mode..."  
-            doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        
-
-            if not(doypath):
-                for nTries in range( self.nTries ):
-                    print '\tWaiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
-                    time.sleep( self.delay )
-                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=exp)        
-                    if doypath:
-                        break
-            
-            if not(doypath):
-                print "There 'isn't valied files in %s" % path
-                return None
-        
-            self.year = year
-            self.doy  = doy
-            self.set  = set - 1
-            self.path = path
-
-        else:
-            print "Searching files in offline mode ..."
-            pathList, filenameList = self.__searchFilesOffLine(path, startDate, endDate, startTime, endTime, set, expLabel, ext)
-            
-            if not(pathList):
-                print "No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
-                                                        datetime.datetime.combine(startDate,startTime).ctime(),
-                                                        datetime.datetime.combine(endDate,endTime).ctime())
-                
-                sys.exit(-1)
-                
-            
-            self.fileIndex = -1
-            self.pathList = pathList
-            self.filenameList = filenameList
-
-        self.online = online
-        self.delay = delay
-        ext = ext.lower()
-        self.ext = ext
-
-        if not(self.setNextFile()):
-            if (startDate!=None) and (endDate!=None):
-                print "No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
-            elif startDate != None:
-                print "No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime())
-            else:
-                print "No files"
-
-            sys.exit(-1)
-
-#        self.updateDataHeader()
-
-        return self.dataOut
 
     def __setNextFileOffline(self):
         
@@ -766,6 +695,80 @@ class JRODataReader(JRODataIO):
 
         return True
 
+    def setup(self,
+                path=None,
+                startDate=None, 
+                endDate=None, 
+                startTime=datetime.time(0,0,0), 
+                endTime=datetime.time(23,59,59), 
+                set=0, 
+                expLabel = "", 
+                ext = None, 
+                online = False,
+                delay = 60):
+
+        if path == None:
+            raise ValueError, "The path is not valid"
+
+        if ext == None:
+            ext = self.ext
+
+        if online:
+            print "Searching files in online mode..."  
+            doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        
+
+            if not(doypath):
+                for nTries in range( self.nTries ):
+                    print '\tWaiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
+                    time.sleep( self.delay )
+                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=exp)        
+                    if doypath:
+                        break
+            
+            if not(doypath):
+                print "There 'isn't valied files in %s" % path
+                return None
+        
+            self.year = year
+            self.doy  = doy
+            self.set  = set - 1
+            self.path = path
+
+        else:
+            print "Searching files in offline mode ..."
+            pathList, filenameList = self.__searchFilesOffLine(path, startDate, endDate, startTime, endTime, set, expLabel, ext)
+            
+            if not(pathList):
+                print "No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
+                                                        datetime.datetime.combine(startDate,startTime).ctime(),
+                                                        datetime.datetime.combine(endDate,endTime).ctime())
+                
+                sys.exit(-1)
+                
+            
+            self.fileIndex = -1
+            self.pathList = pathList
+            self.filenameList = filenameList
+
+        self.online = online
+        self.delay = delay
+        ext = ext.lower()
+        self.ext = ext
+
+        if not(self.setNextFile()):
+            if (startDate!=None) and (endDate!=None):
+                print "No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
+            elif startDate != None:
+                print "No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime())
+            else:
+                print "No files"
+
+            sys.exit(-1)
+
+#        self.updateDataHeader()
+
+        return self.dataOut
+    
     def getData():
         pass
 
@@ -785,7 +788,7 @@ class JRODataReader(JRODataIO):
             
         self.getData()
 
-class JRODataWriter(JRODataIO):
+class JRODataWriter(JRODataIO, Operation):
 
     """ 
     Esta clase permite escribir datos a archivos procesados (.r o ,pdata). La escritura

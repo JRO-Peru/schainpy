@@ -1,7 +1,7 @@
 import matplotlib
-matplotlib.use("TKAgg")
+matplotlib.use("Agg")
 import matplotlib.pyplot
-import scitools.numpyutils
+#import scitools.numpyutils
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def init(idfigure, wintitle, width, height):

@@ -36,6 +36,10 @@ class ProcessingUnit:
         
         self.objectDict = {}
     
+    def init(self):
+        
+        raise ValueError, "Not implemented"
+    
     def addOperation(self, object, objId):
         
         """
@@ -79,6 +83,13 @@ class ProcessingUnit:
             **kwargs     :    diccionario con los nombres y valores de la funcion a ejecutar.
         
         """
+        if name != 'run':
+            
+            if name == 'init' and self.dataIn.isEmpty():
+                return
+                
+            if name != 'init' and self.dataOut.isEmpty():
+                return
         
         methodToCall = getattr(self, name)
         
@@ -99,6 +110,9 @@ class ProcessingUnit:
             
             None    
         """
+        
+        if self.dataOut.isEmpty():
+            return
         
         object = self.objectDict[objId]
         
@@ -128,8 +142,6 @@ class ProcessingUnit:
             Operation    :    Objeto del tipo operacion con los atributos: name, type y id.
             
         """
-        if self.dataIn.isEmpty():
-            return None
         
         if operationConf.type == 'self':
             self.callMethod(operationConf.name, **kwargs)
@@ -227,6 +239,7 @@ class VoltageProc(ProcessingUnit):
 
         for channel in channelIndexList:
             if channel not in self.dataOut.channelIndexList:
+                print channelIndexList
                 raise ValueError, "The value %d in channelIndexList is not valid" %channel
         
         nChannels = len(channelIndexList)
