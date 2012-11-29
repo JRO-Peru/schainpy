@@ -10,7 +10,11 @@ def init(idfigure, wintitle, width, height):
     fig.canvas.manager.set_window_title(wintitle)
     fig.canvas.manager.resize(width,height)
     matplotlib.pyplot.ion()
-    
+    return fig
+
+def setWinTitle(fig, title):
+    fig.canvas.manager.set_window_title(title)
+
 def setTextFromAxes(idfigure, ax, title):
     fig = matplotlib.pyplot.figure(idfigure)
     ax.annotate(title, xy=(.1, .99),
@@ -56,7 +60,7 @@ def pcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, titl
         ax.set_ylabel(ylabel)
         ax.set_title(title)
         
-        imesh=ax.pcolormesh(x,y,z,vmin=zmin,vmax=zmax)
+        imesh=ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
         matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
         ax_cb.yaxis.tick_right()
         for tl in ax_cb.get_yticklabels():
@@ -65,8 +69,9 @@ def pcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, titl
         matplotlib.pyplot.tight_layout()
         return imesh
     else:
-        tmp = z[0:-1,0:-1]
-        mesh.set_array(tmp.ravel())
+        z = z.T
+        z = z[0:-1,0:-1]
+        mesh.set_array(z.ravel())
         
         return mesh
 

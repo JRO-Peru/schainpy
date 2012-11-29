@@ -64,7 +64,7 @@ class Test():
     def run(self):
         
         while(True):
-            self.objR.run(path="/Users/dsuarez/Remote/Meteors",
+            self.objR.run(path="/Users/dsuarez/Remote/EW_DRIFTS2",
                     startDate=datetime.date(2012,1,1), 
                     endDate=datetime.date(2012,12,30), 
                     startTime=datetime.time(0,0,0), 

@@ -13,12 +13,15 @@ class Figure:
         self.width = width
         self.height = height
         self.nplots = nplots
-        mpldriver.init(idfigure, wintitle, width, height)
+        self.fig = mpldriver.init(idfigure, wintitle, width, height)
         
         self.axesList = []
     
     def setTitle(self, title):
         mpldriver.setTitle(self.idfigure, title)
+    
+    def setWinTitle(self,title):
+        mpldriver.setWinTitle(fig=self.fig, title=title)
     
     def setTextFromAxes(self, title):
         mpldriver.setTextFromAxes(self.idfigure, self.axesList[0].ax, title)

@@ -24,7 +24,6 @@ class SpectraPlot(Figure):
         for y in range(nrow):
             for x in range(ncol):
                 if counter < self.nplots:
-#                    plt.subplot2grid((nrow, ncol), (y, x), colspan=colspan, rowspan=rowspan)
                     self.makeAxes(nrow, ncol, y, x, colspan, rowspan)
                 counter += 1
     
@@ -84,6 +83,13 @@ class SpectraPlot(Figure):
                 
             self.__isConfig = True
         
+        thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
+        dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))
+        title = "Spectra: " + dateTime
+        
+        self.setWinTitle(title)
+        
         ylabel = "Range[Km]"
         
         xlabel = "m/s"
@@ -92,7 +98,7 @@ class SpectraPlot(Figure):
             title = "Channel %d"%i
             axes = self.axesList[i]
             z2 = z[i,:,:]
-            axes.pcolor(x, y, z, self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax, xlabel, ylabel, title)
+            axes.pcolor(x, y, z2, self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax, xlabel, ylabel, title)
 
         
         self.draw()
@@ -160,11 +166,9 @@ class Scope(Figure):
         thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
         dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))
-        figuretitle = "Scope: " + dateTime
+        title = "Scope: " + dateTime
         
-        self.setTitle(title=figuretitle)
-        
-#        self.setTextFromAxes(title=figuretitle)
+        self.setWinTitle(title)
         
         ylabel = "Intensity"
         
