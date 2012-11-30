@@ -10,6 +10,7 @@ import sys
 import datetime
 from model.jrodataIO import *
 from model.jroprocessing import *
+from model.jroplot import *
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -23,13 +24,13 @@ class ParameterConf():
     id = None
     name = None
     value = None
-    type = None
+    format = None
     
     ELEMENTNAME = 'Parameter'
     
     def __init__(self):
         
-        self.type = 'str'
+        self.format = 'str'
     
     def getElementName(self):
         
@@ -37,42 +38,42 @@ class ParameterConf():
     
     def getValue(self):
         
-        if self.type == 'list':
+        if self.format == 'list':
             strList = self.value.split(',')
             return strList
         
-        if self.type == 'intlist':
+        if self.format == 'intlist':
             strList = self.value.split(',')
             intList = [int(x) for x in strList]
             return intList
         
-        if self.type == 'floatlist':
+        if self.format == 'floatlist':
             strList = self.value.split(',')
             floatList = [float(x) for x in strList]
             return floatList
         
-        if self.type == 'date':
+        if self.format == 'date':
             strList = self.value.split('/')
             intList = [int(x) for x in strList]
             date = datetime.date(intList[0], intList[1], intList[2])
             return date
         
-        if self.type == 'time':
+        if self.format == 'time':
             strList = self.value.split(':')
             intList = [int(x) for x in strList]
             time = datetime.time(intList[0], intList[1], intList[2])
             return time
                 
-        func = eval(self.type)
+        func = eval(self.format)
             
         return func(self.value)
         
-    def setup(self, id, name, value, type='str'):
+    def setup(self, id, name, value, format='str'):
         
         self.id = id
         self.name = name
         self.value = str(value)
-        self.type = type
+        self.format = format
     
     def makeXml(self, opElement):
         
@@ -80,18 +81,18 @@ class ParameterConf():
         parmElement.set('id', str(self.id))
         parmElement.set('name', self.name)
         parmElement.set('value', self.value)
-        parmElement.set('type', self.type)
+        parmElement.set('format', self.format)
     
     def readXml(self, parmElement):
         
         self.id = parmElement.get('id')
         self.name = parmElement.get('name')
         self.value = parmElement.get('value')
-        self.type = parmElement.get('type')
+        self.format = parmElement.get('format')
     
     def printattr(self):
         
-        print "Parameter[%s]: name = %s, value = %s, type = %s" %(self.id, self.name, self.value, self.type)
+        print "Parameter[%s]: name = %s, value = %s, format = %s" %(self.id, self.name, self.value, self.format)
 
 class OperationConf():
     
@@ -133,12 +134,12 @@ class OperationConf():
         
         self.parmConfObjList = []
         
-    def addParameter(self, name, value, type='str'):
+    def addParameter(self, name, value, format='str'):
         
         id = self.__getNewId()
         
         parmConfObj = ParameterConf()
-        parmConfObj.setup(id, name, value, type)
+        parmConfObj.setup(id, name, value, format)
         
         self.parmConfObjList.append(parmConfObj)
         
@@ -197,7 +198,7 @@ class ProcUnitConf():
     
     id = None
     name = None
-    type = None
+    datatype = None
     inputId = None
     
     opConfObjList = []
@@ -210,7 +211,7 @@ class ProcUnitConf():
     def __init__(self):
         
         self.id = None
-        self.type = None
+        self.datatype = None
         self.name = None
         self.inputId = None
         
@@ -247,11 +248,11 @@ class ProcUnitConf():
         
         return self.procUnitObj
     
-    def setup(self, id, name, type, inputId):
+    def setup(self, id, name, datatype, inputId):
         
         self.id = id
         self.name = name
-        self.type = type
+        self.datatype = datatype
         self.inputId = inputId
         
         self.opConfObjList = []
@@ -275,7 +276,7 @@ class ProcUnitConf():
         upElement = SubElement(procUnitElement, self.ELEMENTNAME)
         upElement.set('id', str(self.id))
         upElement.set('name', self.name)
-        upElement.set('type', self.type)
+        upElement.set('datatype', self.datatype)
         upElement.set('inputId', str(self.inputId))
         
         for opConfObj in self.opConfObjList:
@@ -285,7 +286,7 @@ class ProcUnitConf():
         
         self.id = upElement.get('id')
         self.name = upElement.get('name')
-        self.type = upElement.get('type')
+        self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
         
         self.opConfObjList = []
@@ -299,10 +300,10 @@ class ProcUnitConf():
     
     def printattr(self):
         
-        print "%s[%s]: name = %s, type = %s, inputId = %s" %(self.ELEMENTNAME,
+        print "%s[%s]: name = %s, datatype = %s, inputId = %s" %(self.ELEMENTNAME,
                                                              self.id,
                                                              self.name,
-                                                             self.type,
+                                                             self.datatype,
                                                              self.inputId)
         
         for opConfObj in self.opConfObjList:
@@ -329,17 +330,21 @@ class ProcUnitConf():
     
     def run(self):
         
+        finalSts = False
+        
         for opConfObj in self.opConfObjList:
+            
             kwargs = {}
             for parmConfObj in opConfObj.getParameterObjList():
                 kwargs[parmConfObj.name] = parmConfObj.getValue()
-                    
-            self.procUnitObj.call(opConfObj, **kwargs)
             
-
-    
+            #print "\tRunning the '%s' operation with %s" %(opConfObj.name, opConfObj.id)
+            sts = self.procUnitObj.call(opConfObj, **kwargs)
+            finalSts = finalSts or sts
+        
+        return finalSts
+            
 class ReadUnitConf(ProcUnitConf):
-    
     
     path = None
     startDate = None
@@ -355,7 +360,7 @@ class ReadUnitConf(ProcUnitConf):
     def __init__(self):
         
         self.id = None
-        self.type = None
+        self.datatype = None
         self.name = None
         self.inputId = 0
         
@@ -366,11 +371,11 @@ class ReadUnitConf(ProcUnitConf):
         
         return self.ELEMENTNAME
         
-    def setup(self, id, name, type, path, startDate, endDate, startTime, endTime, online=0, expLabel='', delay=60):
+    def setup(self, id, name, datatype, path, startDate, endDate, startTime, endTime, online=0, expLabel='', delay=60):
         
         self.id = id
         self.name = name
-        self.type = type
+        self.datatype = datatype
         
         self.path = path
         self.startDate = startDate
@@ -387,14 +392,14 @@ class ReadUnitConf(ProcUnitConf):
         
         opObj = self.addOperation(name = 'run', optype = 'self')
         
-        opObj.addParameter(name='path'     , value=self.path, type='str')
-        opObj.addParameter(name='startDate' , value=self.startDate, type='date')
-        opObj.addParameter(name='endDate'   , value=self.endDate, type='date')
-        opObj.addParameter(name='startTime' , value=self.startTime, type='time')
-        opObj.addParameter(name='endTime'   , value=self.endTime, type='time')
-        opObj.addParameter(name='expLabel'  , value=self.expLabel, type='str')
-        opObj.addParameter(name='online'  , value=self.online, type='bool')
-        opObj.addParameter(name='delay'  , value=self.delay, type='float')
+        opObj.addParameter(name='path'     , value=self.path, format='str')
+        opObj.addParameter(name='startDate' , value=self.startDate, format='date')
+        opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
+        opObj.addParameter(name='startTime' , value=self.startTime, format='time')
+        opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
+        opObj.addParameter(name='expLabel'  , value=self.expLabel, format='str')
+        opObj.addParameter(name='online'  , value=self.online, format='int')
+        opObj.addParameter(name='delay'  , value=self.delay, format='float')
                 
         return opObj
     
@@ -434,25 +439,25 @@ class Controller():
         self.name = name
         self.description = description
     
-    def addReadUnit(self, type, path, startDate='', endDate='', startTime='', endTime='', online=0, expLabel='', delay=60):
+    def addReadUnit(self, datatype, path, startDate='', endDate='', startTime='', endTime='', online=0, expLabel='', delay=60):
         
         id = self.__getNewId()
-        name = '%sReader' %(type)
+        name = '%sReader' %(datatype)
         
         readUnitConfObj = ReadUnitConf()
-        readUnitConfObj.setup(id, name, type, path, startDate, endDate, startTime, endTime, online, expLabel, delay)
+        readUnitConfObj.setup(id, name, datatype, path, startDate, endDate, startTime, endTime, online, expLabel, delay)
         
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
         return readUnitConfObj
     
-    def addProcUnit(self, type, inputId):
+    def addProcUnit(self, datatype, inputId):
         
         id = self.__getNewId()
-        name = '%sProc' %(type)
+        name = '%sProc' %(datatype)
         
         procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(id, name, type, inputId)
+        procUnitConfObj.setup(id, name, datatype, inputId)
         
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
         
@@ -556,9 +561,20 @@ class Controller():
         
 #        for readUnitConfObj in self.readUnitConfObjList:
 #            readUnitConfObj.run()
+
         while(True):
+            
+            finalSts = False
+            
             for procUnitConfObj in self.procUnitConfObjDict.values():
-                procUnitConfObj.run()
+                #print "Running the '%s' process with %s" %(procUnitConfObj.name, procUnitConfObj.id)
+                sts = procUnitConfObj.run()
+                finalSts = finalSts or sts
+            
+            #If every process unit finished so end process
+            if not(finalSts):
+                print "Every process unit finished"
+                break
             
 if __name__ == '__main__':
     
@@ -569,29 +585,38 @@ if __name__ == '__main__':
     
     controllerObj.setup(id = '191', name='test01', description=desc)
     
-    readUnitConfObj = controllerObj.addReadUnit(type='Voltage',
-                                                path='/home/roj-idl71/Data/RAWDATA/Meteors',
-                                                startDate='2012/01/01',
+    readUnitConfObj = controllerObj.addReadUnit(datatype='Spectra',
+                                                path='D:\Data\IMAGING',
+                                                startDate='2011/01/01',
                                                 endDate='2012/12/31',
                                                 startTime='00:00:00',
                                                 endTime='23:59:59',
                                                 online=0)
     
-    procUnitConfObj1 = controllerObj.addProcUnit(type='Voltage', inputId=readUnitConfObj.getId())
+    opObj00 = readUnitConfObj.addOperation(name='printTotalBlocks')
     
-    procUnitConfObj2 = controllerObj.addProcUnit(type='Voltage', inputId=procUnitConfObj1.getId())
+    procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
     
-    opObj11 = procUnitConfObj1.addOperation(name='selectChannels')
-    opObj11.addParameter(name='channelList', value='1,2', type='intlist')
+    opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
+    opObj10.addParameter(name='channelList', value='0,1', format='intlist')
     
+    opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+    opObj11.addParameter(name='idfigure', value='1', format='int')
+    opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
+    opObj11.addParameter(name='zmin', value='60', format='int')
+    opObj11.addParameter(name='zmax', value='100', format='int')
+      
 #    opObj12 = procUnitConfObj1.addOperation(name='decoder')
-#    opObj12.addParameter(name='ncode', value='2', type='int')
-#    opObj12.addParameter(name='nbauds', value='8', type='int')
-#    opObj12.addParameter(name='code0', value='001110011', type='int')
-#    opObj12.addParameter(name='code1', value='001110011', type='int')
+#    opObj12.addParameter(name='ncode', value='2', format='int')
+#    opObj12.addParameter(name='nbauds', value='8', format='int')
+#    opObj12.addParameter(name='code0', value='001110011', format='int')
+#    opObj12.addParameter(name='code1', value='001110011', format='int')  
+  
+#    procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj1.getId())
+
     
-    opObj21 = procUnitConfObj2.addOperation(name='CohInt', optype='other')
-    opObj21.addParameter(name='nCohInt', value='10', type='int')
+#    opObj21 = procUnitConfObj2.addOperation(name='IncohInt', optype='other')
+#    opObj21.addParameter(name='nCohInt', value='10', format='int')
     
     
     print "Escribiendo el archivo XML"

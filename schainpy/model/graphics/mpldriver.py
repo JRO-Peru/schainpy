@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use("TKAgg")
 import matplotlib.pyplot
 #import scitools.numpyutils
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -69,6 +69,12 @@ def pcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, titl
         matplotlib.pyplot.tight_layout()
         return imesh
     else:
+        ax.set_xlim([xmin,xmax])
+        ax.set_ylim([ymin,ymax])
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        
         z = z.T
         z = z[0:-1,0:-1]
         mesh.set_array(z.ravel())

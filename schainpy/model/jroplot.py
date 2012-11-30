@@ -3,20 +3,23 @@ import datetime
 from graphics.figure import  * 
 
 class SpectraPlot(Figure):
+    
     __isConfig = None
     
     def __init__(self):
+        
         self.__isConfig = False
         self.width = 850
         self.height = 800
     
     def getSubplots(self):
+        
         ncol = int(numpy.sqrt(self.nplots)+0.9)
         nrow = int(self.nplots*1./ncol + 0.9)
         return nrow, ncol
     
-    
     def setAxesWithOutProfiles(self, nrow, ncol):
+        
         colspan = 1
         rowspan = 1
         counter = 0
@@ -28,6 +31,7 @@ class SpectraPlot(Figure):
                 counter += 1
     
     def setAxesWithProfiles(self, nrow, ncol):
+        
         colspan = 1
         rowspan = 1
         factor = 2
@@ -42,6 +46,7 @@ class SpectraPlot(Figure):
                 counter += 1
     
     def setup(self, idfigure, wintitle, width, height, nplots, profile):
+        
         self.init(idfigure, wintitle, width, height, nplots)
         
         nrow,ncol = self.getSubplots()
@@ -52,8 +57,6 @@ class SpectraPlot(Figure):
             self.setAxesWithOutProfiles(nrow, ncol)
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, profile=False):
-        if dataOut.isEmpty():
-            return None
         
         if channelList == None:
             channelList = dataOut.channelList
@@ -66,6 +69,8 @@ class SpectraPlot(Figure):
         
         x = numpy.arange(dataOut.nFFTPoints)
         
+        noise = dataOut.getNoise()
+        
         if not self.__isConfig:
             self.setup(idfigure=idfigure, 
                        wintitle=wintitle,
@@ -74,13 +79,20 @@ class SpectraPlot(Figure):
                        nplots=nplots,
                        profile=profile)
             
-            if xmin == None: self.xmin = numpy.min(x)
-            if xmax == None: self.xmax = numpy.max(x)
-            if ymin == None: self.ymin = numpy.min(y)
-            if ymax == None: self.ymax = numpy.max(y)
-            if zmin == None: self.zmin = 0
-            if zmax == None: self.zmax = 90
-                
+            if xmin == None: xmin = numpy.min(x)
+            if xmax == None: xmax = numpy.max(x)
+            if ymin == None: ymin = numpy.min(y)
+            if ymax == None: ymax = numpy.max(y)
+            if zmin == None: zmin = numpy.min(z)
+            if zmax == None: zmax = numpy.max(z)
+            
+            self.xmin = xmin
+            self.xmax = xmax
+            self.ymin = ymin
+            self.ymax = ymax
+            self.zmin = zmin
+            self.zmax = zmax
+            
             self.__isConfig = True
         
         thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
@@ -95,17 +107,12 @@ class SpectraPlot(Figure):
         xlabel = "m/s"
         
         for i in range(len(self.axesList)):
-            title = "Channel %d"%i
+            title = "Channel %d: %4.2fdB" %(i, noise[i])
             axes = self.axesList[i]
             z2 = z[i,:,:]
             axes.pcolor(x, y, z2, self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax, xlabel, ylabel, title)
-
-        
+            
         self.draw()
-        
-        
-        
-        
 
 class Scope(Figure):
     __isConfig = None
@@ -175,7 +182,7 @@ class Scope(Figure):
         xlabel = "Range[Km]"
         
         for i in range(len(self.axesList)):
-            title = "Channel %d"%i
+            title = "Channel %d: %4.2fdB" %(i, noise[i])
             axes = self.axesList[i]
             y2 = y[i,:]
             axes.pline(x, y2, self.xmin, self.xmax, self.ymin, self.ymax, xlabel, ylabel, title)

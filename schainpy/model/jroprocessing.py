@@ -86,15 +86,24 @@ class ProcessingUnit:
         if name != 'run':
             
             if name == 'init' and self.dataIn.isEmpty():
-                return
+                self.dataOut.flagNoData = True
+                return False
                 
             if name != 'init' and self.dataOut.isEmpty():
-                return
+                return False
         
         methodToCall = getattr(self, name)
         
         methodToCall(**kwargs)
         
+        if name != 'run':
+            return True
+        
+        if self.dataOut.isEmpty():
+            return False
+        
+        return True
+    
     def callObject(self, objId, **kwargs):
         
         """
@@ -112,17 +121,20 @@ class ProcessingUnit:
         """
         
         if self.dataOut.isEmpty():
-            return
+            return False
         
         object = self.objectDict[objId]
         
         object.run(self.dataOut, **kwargs)
+        
+        return True
     
     def call(self, operationConf, **kwargs):
         
         """
-        Ejecuta la operacion "operationConf.name" con los argumentos "**kwargs". La operacion puede
-        ser de dos tipos:
+        Return True si ejecuta la operacion "operationConf.name" con los
+        argumentos "**kwargs". False si la operacion no se ha ejecutado.
+        La operacion puede ser de dos tipos:
         
             1. Un metodo propio de esta clase:
                 
@@ -144,12 +156,12 @@ class ProcessingUnit:
         """
         
         if operationConf.type == 'self':
-            self.callMethod(operationConf.name, **kwargs)
-            return
+            sts = self.callMethod(operationConf.name, **kwargs)
         
         if operationConf.type == 'other':
-            self.callObject(operationConf.id, **kwargs)
-            return
+            sts = self.callObject(operationConf.id, **kwargs)
+        
+        return sts 
     
     def setInput(self, dataIn):
         
@@ -212,9 +224,6 @@ class VoltageProc(ProcessingUnit):
         # la copia deberia hacerse por cada nuevo bloque de datos
         
     def selectChannels(self, channelList):
-        
-        if self.dataIn.isEmpty():
-            return 0
         
         self.selectChannelsByIndex(channelList)
         
@@ -451,58 +460,13 @@ class CohInt(Operation):
 class SpectraProc(ProcessingUnit):
     
     def __init__(self):
+        
         self.objectDict = {}
         self.buffer = None
         self.firstdatatime = None
         self.profIndex = 0
         self.dataOut = Spectra()
 
-    def init(self, nFFTPoints=None, pairsList=None):
-        if self.dataIn.type == "Spectra":
-            self.dataOut.copy(self.dataIn)
-            return
-        
-        if self.dataIn.type == "Voltage":
-            
-            if nFFTPoints == None:
-                raise ValueError, "This SpectraProc.setup() need nFFTPoints input variable"
-            
-            if pairsList == None:
-                nPairs = 0
-            else:
-                nPairs = len(pairsList)
-            
-            self.dataOut.nFFTPoints = nFFTPoints
-            self.dataOut.pairsList = pairsList
-            self.dataOut.nPairs = nPairs
-            
-            if self.buffer == None:
-                self.buffer = numpy.zeros((self.dataIn.nChannels,
-                                           self.dataOut.nFFTPoints,
-                                           self.dataIn.nHeights), 
-                                           dtype='complex')
-
-            
-            self.buffer[:,self.profIndex,:] = self.dataIn.data
-            self.profIndex += 1
-            
-            if self.firstdatatime == None:
-                self.firstdatatime = self.dataIn.utctime
-            
-            if self.profIndex == self.dataOut.nFFTPoints:
-                self.__updateObjFromInput()
-                self.__getFft()
-                
-                self.dataOut.flagNoData = False
-                
-                self.buffer = None
-                self.firstdatatime = None
-                self.profIndex = 0
-            
-            return
-        
-        raise ValuError, "The type object %s is not valid"%(self.dataIn.type)
-    
     def __updateObjFromInput(self):
         
         self.dataOut.radarControllerHeaderObj = self.dataIn.radarControllerHeaderObj.copy()
@@ -526,7 +490,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints
-    
+
     def __getFft(self):
         """
         Convierte valores de Voltaje a Spectra
@@ -580,6 +544,92 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_cspc = cspc
         self.dataOut.data_dc = dc
         self.dataOut.blockSize = blocksize
+        
+    def init(self, nFFTPoints=None, pairsList=None):
+        
+        if self.dataIn.type == "Spectra":
+            self.dataOut.copy(self.dataIn)
+            return
+        
+        if self.dataIn.type == "Voltage":
+            
+            if nFFTPoints == None:
+                raise ValueError, "This SpectraProc.setup() need nFFTPoints input variable"
+            
+            if pairsList == None:
+                nPairs = 0
+            else:
+                nPairs = len(pairsList)
+            
+            self.dataOut.nFFTPoints = nFFTPoints
+            self.dataOut.pairsList = pairsList
+            self.dataOut.nPairs = nPairs
+            
+            if self.buffer == None:
+                self.buffer = numpy.zeros((self.dataIn.nChannels,
+                                           self.dataOut.nFFTPoints,
+                                           self.dataIn.nHeights), 
+                                           dtype='complex')
+
+            
+            self.buffer[:,self.profIndex,:] = self.dataIn.data
+            self.profIndex += 1
+            
+            if self.firstdatatime == None:
+                self.firstdatatime = self.dataIn.utctime
+            
+            if self.profIndex == self.dataOut.nFFTPoints:
+                self.__updateObjFromInput()
+                self.__getFft()
+                
+                self.dataOut.flagNoData = False
+                
+                self.buffer = None
+                self.firstdatatime = None
+                self.profIndex = 0
+            
+            return
+        
+        raise ValuError, "The type object %s is not valid"%(self.dataIn.type)
+    
+    def selectChannels(self, channelList):
+        
+        self.selectChannelsByIndex(channelList)
+        
+    def selectChannelsByIndex(self, channelIndexList):
+        """
+        Selecciona un bloque de datos en base a canales segun el channelIndexList 
+        
+        Input:
+            channelIndexList    :    lista sencilla de canales a seleccionar por ej. [2,3,7] 
+            
+        Affected:
+            self.dataOut.data
+            self.dataOut.channelIndexList
+            self.dataOut.nChannels
+            self.dataOut.m_ProcessingHeader.totalSpectra
+            self.dataOut.systemHeaderObj.numChannels
+            self.dataOut.m_ProcessingHeader.blockSize
+            
+        Return:
+            None
+        """
+
+        for channel in channelIndexList:
+            if channel not in self.dataOut.channelIndexList:
+                print channelIndexList
+                raise ValueError, "The value %d in channelIndexList is not valid" %channel
+        
+        nChannels = len(channelIndexList)
+            
+        data = self.dataOut.data_spc[channelIndexList,:]
+        
+        self.dataOut.data_spc = data
+        self.dataOut.channelIndexList = channelIndexList
+        self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
+        self.dataOut.nChannels = nChannels
+        
+        return 1
 
 
 class IncohInt(Operation):

@@ -185,8 +185,6 @@ class JRODataIO:
     
     ext = None
     
-    flagNoMoreFiles = 0
-    
     flagIsNewFile = 1
     
     flagTimeBlock = 0
@@ -246,7 +244,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     nTries  = 3  #quantity tries
         
     nFiles = 3   #number of files for searching
-        
+    
+    flagNoMoreFiles = 0
     
     def __init__(self):
         
@@ -721,7 +720,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 for nTries in range( self.nTries ):
                     print '\tWaiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
                     time.sleep( self.delay )
-                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=exp)        
+                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        
                     if doypath:
                         break
             
@@ -770,14 +769,29 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         return self.dataOut
     
     def getData():
-        pass
+        
+        raise ValueError, "This method has not been implemented"
 
     def hasNotDataInBuffer():
-        pass
+        
+        raise ValueError, "This method has not been implemented"
 
     def readBlock():
-        pass
+        
+        raise ValueError, "This method has not been implemented"
     
+    def isEndProcess(self):
+        
+        return self.flagNoMoreFiles
+    
+    def printReadBlocks(self):
+        
+        print "Number of read blocks per file %04d" %self.nReadBlocks
+    
+    def printTotalBlocks(self):
+        
+        print "Number of read blocks %04d" %self.nTotalBlocks
+       
     def run(self, **kwargs):
         
         if not(self.isConfig):
@@ -1277,8 +1291,12 @@ class VoltageReader(JRODataReader):
             self.flagTimeBlock
             self.flagIsNewBlock
         """
-        if self.flagNoMoreFiles: return 0
-         
+        
+        if self.flagNoMoreFiles:
+            self.dataOut.flagNoData = True
+            print 'Process finished'
+            return 0
+        
         self.flagTimeBlock = 0
         self.flagIsNewBlock = 0
         
@@ -1288,10 +1306,6 @@ class VoltageReader(JRODataReader):
                 return 0
             
 #            self.updateDataHeader()
-            
-        if self.flagNoMoreFiles == 1:
-            print 'Process finished'
-            return 0
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
         
@@ -1387,16 +1401,12 @@ class VoltageWriter(JRODataWriter):
         self.nTotalBlocks = 0 
         
         self.flagIsNewBlock = 0
-        
-        self.flagNoMoreFiles = 0
 
         self.setFile = None
         
         self.dtype = None
         
         self.path = None
-        
-        self.noMoreFiles = 0
         
         self.filename = None
         
@@ -1502,10 +1512,6 @@ class VoltageWriter(JRODataWriter):
             #if self.flagIsNewFile: 
             self.writeNextBlock()
 #            self.getDataHeader()
-        
-        if self.flagNoMoreFiles:
-            #print 'Process finished'
-            return 0
         
         return 1
     
@@ -1872,10 +1878,13 @@ class SpectraReader(JRODataReader):
             
         
         if not(self.processingHeaderObj.shif_fft):
-            spc = numpy.roll( spc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+            #desplaza a la derecha en el eje 2 determinadas posiciones
+            shift = int(self.processingHeaderObj.profilesPerBlock/2)
+            spc = numpy.roll( spc, shift , axis=2 )
             
             if self.processingHeaderObj.flag_cspc:
-                cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+                #desplaza a la derecha en el eje 2 determinadas posiciones
+                cspc = numpy.roll( cspc, shift, axis=2 )
         
 
         spc = numpy.transpose( spc, (0,2,1) )
@@ -1918,7 +1927,10 @@ class SpectraReader(JRODataReader):
             self.flagIsNewBlock
         """
 
-        if self.flagNoMoreFiles: return 0
+        if self.flagNoMoreFiles:
+            self.dataOut.flagNoData = True
+            print 'Process finished'
+            return 0
          
         self.flagTimeBlock = 0
         self.flagIsNewBlock = 0
@@ -1926,20 +1938,16 @@ class SpectraReader(JRODataReader):
         if self.__hasNotDataInBuffer():            
 
             if not( self.readNextBlock() ):
+                self.dataOut.flagNoData = True
                 return 0 
             
 #            self.updateDataHeader()
-        
-        if self.flagNoMoreFiles == 1:
-            print 'Process finished'
-            return 0
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
 
         if self.data_dc == None:
             self.dataOut.flagNoData = True
             return 0
-
 
         self.dataOut.data_spc = self.data_spc
         
@@ -2049,8 +2057,6 @@ class SpectraWriter(JRODataWriter):
         self.nTotalBlocks = 0 
         
         self.flagIsNewBlock = 0
-        
-        self.flagNoMoreFiles = 0
 
         self.setFile = None
         
@@ -2186,10 +2192,6 @@ class SpectraWriter(JRODataWriter):
         if self.hasAllDataInBuffer():
 #            self.getDataHeader()
             self.writeNextBlock()
-        
-        if self.flagNoMoreFiles:
-            #print 'Process finished'
-            return 0
         
         return 1
     
