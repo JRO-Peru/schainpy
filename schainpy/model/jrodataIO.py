@@ -1317,7 +1317,7 @@ class VoltageReader(JRODataReader):
         
         self.dataOut.dtype = self.dtype
         
-        self.dataOut.nChannels = self.systemHeaderObj.nChannels
+#        self.dataOut.nChannels = self.systemHeaderObj.nChannels
         
         self.dataOut.nHeights = self.processingHeaderObj.nHeights
         
@@ -1329,7 +1329,7 @@ class VoltageReader(JRODataReader):
         
         self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
+#        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
         
         self.dataOut.flagTimeBlock = self.flagTimeBlock
         
@@ -1961,7 +1961,7 @@ class SpectraReader(JRODataReader):
 
         self.dataOut.dtype = self.dtype
 
-        self.dataOut.nChannels = self.nRdChannels
+#        self.dataOut.nChannels = self.nRdChannels
         
         self.dataOut.nPairs = self.nRdPairs
         
@@ -1982,7 +1982,7 @@ class SpectraReader(JRODataReader):
         
         self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
         
-        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
+#        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
         
         self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000.#+ self.profileIndex * self.ippSeconds
         

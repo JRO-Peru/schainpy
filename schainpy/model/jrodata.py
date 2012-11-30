@@ -118,7 +118,7 @@ class JROData:
     
     dtype = None
     
-    nChannels = None
+#    nChannels = None
     
     nHeights = None
     
@@ -127,8 +127,6 @@ class JROData:
     heightList = None
     
     channelList = None
-    
-    channelIndexList = None
     
     flagNoData = True
     
@@ -178,6 +176,17 @@ class JROData:
         
         return self.flagNoData
     
+    def getNChannels(self):
+        
+        return len(self.channelList)
+        
+    def getChannelIndexList(self):
+        
+        return range(self.nChannels)
+    
+    nChannels = property(getNChannels, "I'm the 'nChannel' property.")
+    channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
+    
 class Voltage(JROData):
     
     #data es un numpy array de 2 dmensiones (canales, alturas)
@@ -198,7 +207,7 @@ class Voltage(JROData):
         
         self.dtype = None
         
-        self.nChannels = 0
+#        self.nChannels = 0
         
         self.nHeights = 0
         
@@ -208,7 +217,7 @@ class Voltage(JROData):
         
         self.channelList = None
         
-        self.channelIndexList = None
+#        self.channelIndexList = None
         
         self.flagNoData = True
         
@@ -281,7 +290,7 @@ class Spectra(JROData):
         
         self.dtype = None
         
-        self.nChannels = 0
+#        self.nChannels = 0
         
         self.nHeights = 0
         
@@ -291,7 +300,7 @@ class Spectra(JROData):
         
         self.channelList = None
         
-        self.channelIndexList = None
+#        self.channelIndexList = None
         
         self.flagNoData = True
         
@@ -398,7 +407,7 @@ class SpectraHeis(JROData):
         
         self.dtype = None
         
-        self.nChannels = 0
+#        self.nChannels = 0
         
         self.nHeights = 0
         
@@ -408,7 +417,7 @@ class SpectraHeis(JROData):
         
         self.channelList = None
         
-        self.channelIndexList = None
+#        self.channelIndexList = None
         
         self.flagNoData = True
         

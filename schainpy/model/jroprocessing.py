@@ -225,7 +225,13 @@ class VoltageProc(ProcessingUnit):
         
     def selectChannels(self, channelList):
         
-        self.selectChannelsByIndex(channelList)
+        channelIndexList = []
+        
+        for channel in channelList:
+            index = self.dataOut.channelList.index(channel)
+            channelIndexList.append(index)
+        
+        self.selectChannelsByIndex(channelIndexList)
         
     def selectChannelsByIndex(self, channelIndexList):
         """
@@ -246,19 +252,18 @@ class VoltageProc(ProcessingUnit):
             None
         """
 
-        for channel in channelIndexList:
-            if channel not in self.dataOut.channelIndexList:
+        for channelIndex in channelIndexList:
+            if channelIndex not in self.dataOut.channelIndexList:
                 print channelIndexList
-                raise ValueError, "The value %d in channelIndexList is not valid" %channel
+                raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
         
         nChannels = len(channelIndexList)
             
         data = self.dataOut.data[channelIndexList,:]
         
         self.dataOut.data = data
-        self.dataOut.channelIndexList = channelIndexList
         self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
-        self.dataOut.nChannels = nChannels
+#        self.dataOut.nChannels = nChannels
         
         return 1
 
@@ -475,12 +480,12 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.dtype = self.dataIn.dtype
         self.dataOut.nHeights = self.dataIn.nHeights
-        self.dataOut.nChannels = self.dataIn.nChannels
+#        self.dataOut.nChannels = self.dataIn.nChannels
         self.dataOut.nBaud = self.dataIn.nBaud
         self.dataOut.nCode = self.dataIn.nCode
         self.dataOut.code = self.dataIn.code
         self.dataOut.nProfiles = self.dataOut.nFFTPoints
-        self.dataOut.channelIndexList = self.dataIn.channelIndexList
+#        self.dataOut.channelIndexList = self.dataIn.channelIndexList
         self.dataOut.flagTimeBlock = self.dataIn.flagTimeBlock
         self.dataOut.utctime = self.firstdatatime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
@@ -594,7 +599,13 @@ class SpectraProc(ProcessingUnit):
     
     def selectChannels(self, channelList):
         
-        self.selectChannelsByIndex(channelList)
+        channelIndexList = []
+        
+        for channel in channelList:
+            index = self.dataOut.channelList.index(channel)
+            channelIndexList.append(index)
+        
+        self.selectChannelsByIndex(channelIndexList)
         
     def selectChannelsByIndex(self, channelIndexList):
         """
@@ -615,19 +626,18 @@ class SpectraProc(ProcessingUnit):
             None
         """
 
-        for channel in channelIndexList:
-            if channel not in self.dataOut.channelIndexList:
+        for channelIndex in channelIndexList:
+            if channelIndex not in self.dataOut.channelIndexList:
                 print channelIndexList
-                raise ValueError, "The value %d in channelIndexList is not valid" %channel
+                raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
         
         nChannels = len(channelIndexList)
             
         data = self.dataOut.data_spc[channelIndexList,:]
         
-        self.dataOut.data_spc = data
-        self.dataOut.channelIndexList = channelIndexList
+        self.dataOut.data = data
         self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
-        self.dataOut.nChannels = nChannels
+#        self.dataOut.nChannels = nChannels
         
         return 1
 

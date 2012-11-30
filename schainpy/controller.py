@@ -573,7 +573,7 @@ class Controller():
             
             #If every process unit finished so end process
             if not(finalSts):
-                print "Every process unit finished"
+                print "Every process units have finished"
                 break
             
 if __name__ == '__main__':
@@ -598,7 +598,7 @@ if __name__ == '__main__':
     procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
     
     opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
-    opObj10.addParameter(name='channelList', value='0,1', format='intlist')
+    opObj10.addParameter(name='channelList', value='0,1,3', format='intlist')
     
     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='1', format='int')

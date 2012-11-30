@@ -107,7 +107,7 @@ class SpectraPlot(Figure):
         xlabel = "m/s"
         
         for i in range(len(self.axesList)):
-            title = "Channel %d: %4.2fdB" %(i, noise[i])
+            title = "Channel %d: %4.2fdB" %(channelList[i], noise[i])
             axes = self.axesList[i]
             z2 = z[i,:,:]
             axes.pcolor(x, y, z2, self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax, xlabel, ylabel, title)
