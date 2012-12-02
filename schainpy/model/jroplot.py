@@ -76,17 +76,23 @@ class SpectraPlot(Figure):
         """
         
         if channelList == None:
-            channelList = dataOut.channelList
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(channel)
         
         x = dataOut.getVelRange(1)
         y = dataOut.heightList
-        z = 10.*numpy.log10(dataOut.data_spc[channelList,:,:])
+        z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
         
         noise = dataOut.getNoise()
         
         if not self.__isConfig:
             
-            nplots = len(channelList)
+            nplots = len(channelIndexList)
             
             self.setup(idfigure=idfigure,
                        nplots=nplots,
@@ -110,7 +116,7 @@ class SpectraPlot(Figure):
         self.setWinTitle(title)
         
         for i in range(self.nplots):
-            title = "Channel %d: %4.2fdB" %(channelList[i], noise[i])
+            title = "Channel %d: %4.2fdB" %(dataOut.channelList[i], noise[i])
             zchannel = z[i,:,:]
             
             axes = self.axesList[i]
