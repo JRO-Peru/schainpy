@@ -9,15 +9,15 @@ class SpectraPlot(Figure):
     def __init__(self):
         
         self.__isConfig = False
-        self.width = 850
-        self.height = 800
-    
+        self.WIDTH = 300
+        self.HEIGHT = 400
+        
     def getSubplots(self):
         
         ncol = int(numpy.sqrt(self.nplots)+0.9)
         nrow = int(self.nplots*1./ncol + 0.9)
         return nrow, ncol
-    
+        
     def setAxesWithOutProfiles(self, nrow, ncol):
         
         colspan = 1
@@ -27,7 +27,7 @@ class SpectraPlot(Figure):
         for y in range(nrow):
             for x in range(ncol):
                 if counter < self.nplots:
-                    self.makeAxes(nrow, ncol, y, x, colspan, rowspan)
+                    self.addAxes(nrow, ncol, y, x, colspan, rowspan)
                 counter += 1
     
     def setAxesWithProfiles(self, nrow, ncol):
@@ -42,150 +42,166 @@ class SpectraPlot(Figure):
             for x in range(ncol):
                 if counter < self.nplots*factor:
 #                    plt.subplot2grid((nrow, ncol), (y, x), colspan=colspan, rowspan=rowspan)
-                    self.makeAxes(nrow, ncol, y, x, colspan, rowspan)
+                    self.addAxes(nrow, ncol, y, x, colspan, rowspan)
                 counter += 1
     
-    def setup(self, idfigure, wintitle, width, height, nplots, profile):
+    def setup(self, idfigure, nplots, wintitle, showprofile=True):
         
-        self.init(idfigure, wintitle, width, height, nplots)
+        self.init(idfigure, nplots, wintitle)
         
-        nrow,ncol = self.getSubplots()
+        nrow, ncol = self.getSubplots()
         
-        if profile:
+        if showprofile:
             self.setAxesWithProfiles(nrow, ncol) 
         else:
             self.setAxesWithOutProfiles(nrow, ncol)
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, profile=False):
+    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile=False,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
+        
+        """
+        
+        Input:
+            dataOut         :
+            idfigure        :
+            wintitle        :
+            channelList     :
+            showProfile     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+            zmin            :    None,
+            zmax            :    None
+        """
         
         if channelList == None:
             channelList = dataOut.channelList
-            
-        nplots = len(channelList)
         
-        z = 10.*numpy.log10(dataOut.data_spc[channelList,:,:])
-        
+        x = dataOut.getVelRange(1)
         y = dataOut.heightList
-        
-        x = numpy.arange(dataOut.nFFTPoints)
+        z = 10.*numpy.log10(dataOut.data_spc[channelList,:,:])
         
         noise = dataOut.getNoise()
         
         if not self.__isConfig:
-            self.setup(idfigure=idfigure, 
-                       wintitle=wintitle,
-                       width=self.width, 
-                       height=self.height, 
+            
+            nplots = len(channelList)
+            
+            self.setup(idfigure=idfigure,
                        nplots=nplots,
-                       profile=profile)
+                       wintitle=wintitle,
+                       showprofile=showprofile)
             
-            if xmin == None: xmin = numpy.min(x)
-            if xmax == None: xmax = numpy.max(x)
-            if ymin == None: ymin = numpy.min(y)
-            if ymax == None: ymax = numpy.max(y)
-            if zmin == None: zmin = numpy.min(z)
-            if zmax == None: zmax = numpy.max(z)
-            
-            self.xmin = xmin
-            self.xmax = xmax
-            self.ymin = ymin
-            self.ymax = ymax
-            self.zmin = zmin
-            self.zmax = zmax
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            if zmin == None: zmin = numpy.nanmin(z)*0.9
+            if zmax == None: zmax = numpy.nanmax(z)*0.9
             
             self.__isConfig = True
-        
+            
         thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
-        dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))
-        title = "Spectra: " + dateTime
+        title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Velocity (m/s)"
+        ylabel = "Range (Km)"
         
         self.setWinTitle(title)
         
-        ylabel = "Range[Km]"
-        
-        xlabel = "m/s"
-        
-        for i in range(len(self.axesList)):
+        for i in range(self.nplots):
             title = "Channel %d: %4.2fdB" %(channelList[i], noise[i])
+            zchannel = z[i,:,:]
+            
             axes = self.axesList[i]
-            z2 = z[i,:,:]
-            axes.pcolor(x, y, z2, self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax, xlabel, ylabel, title)
+            axes.pcolor(x, y, zchannel,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title,
+                        ticksize=9, cblabel='dB')
             
         self.draw()
 
 class Scope(Figure):
+    
     __isConfig = None
     
     def __init__(self):
+        
         self.__isConfig = False
-        self.width = 850
-        self.height = 800
+        self.WIDTH = 600
+        self.HEIGHT = 200
     
     def getSubplots(self):
+        
         nrow = self.nplots
         ncol = 3
         return nrow, ncol
     
-    def setup(self, idfigure, wintitle, width, height, nplots):
-        self.init(idfigure, wintitle, width, height, nplots)
+    def setup(self, idfigure, nplots, wintitle):
+        
+        self.init(idfigure, nplots, wintitle)
         
         nrow,ncol = self.getSubplots()
         colspan = 3
         rowspan = 1
         
         for i in range(nplots):
-            self.makeAxes(nrow, ncol, i, 0, colspan, rowspan)
-        
-        
+            self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None, xmin=None, xmax=None, ymin=None, ymax=None):
+    def run(self, dataOut, idfigure, wintitle="", channelList=None,
+            xmin=None, xmax=None, ymin=None, ymax=None):
         
-        if dataOut.isEmpty():
-            return None
+        """
+        
+        Input:
+            dataOut         :
+            idfigure        :
+            wintitle        :
+            channelList     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+        """
         
         if channelList == None:
-                channelList = dataOut.channelList
-            
-        nplots = len(channelList)
+            channelList = dataOut.channelList
         
+        x = dataOut.heightList
         y = dataOut.data[channelList,:] * numpy.conjugate(dataOut.data[channelList,:])
         y = y.real
         
-        x = dataOut.heightList
+        noise = dataOut.getNoise()
         
         if not self.__isConfig:
-            self.setup(idfigure=idfigure, 
-                       wintitle=wintitle,
-                       width=self.width, 
-                       height=self.height, 
-                       nplots=nplots)
+            nplots = len(channelList)
             
-            if xmin == None: self.xmin = numpy.min(x)
-            if xmax == None: self.xmax = numpy.max(x)
-            if ymin == None: self.ymin = numpy.min(y)
-            if ymax == None: self.ymax = numpy.max(y)
+            self.setup(idfigure=idfigure,
+                       nplots=nplots,
+                       wintitle=wintitle)
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
                 
             self.__isConfig = True
         
         
-        
         thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
-        dateTime = "%s"%(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        date = "%s"%(thisDatetime.strftime("%d-%b-%Y"))
-        title = "Scope: " + dateTime
-        
-        self.setWinTitle(title)
-        
+        title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Range (Km)"
         ylabel = "Intensity"
         
-        xlabel = "Range[Km]"
+        self.setWinTitle(title)
         
         for i in range(len(self.axesList)):
             title = "Channel %d: %4.2fdB" %(i, noise[i])
             axes = self.axesList[i]
-            y2 = y[i,:]
-            axes.pline(x, y2, self.xmin, self.xmax, self.ymin, self.ymax, xlabel, ylabel, title)
+            ychannel = y[i,:]
+            axes.pline(x, ychannel,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        xlabel=xlabel, ylabel=ylabel, title=title)
         
         self.draw()
             

@@ -1,26 +1,23 @@
+import numpy
 import matplotlib
 matplotlib.use("TKAgg")
 import matplotlib.pyplot
 #import scitools.numpyutils
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def init(idfigure, wintitle, width, height):
+def init(idfigure, wintitle, width, height, facecolor="w"):
+    
     matplotlib.pyplot.ioff()
-    fig = matplotlib.pyplot.matplotlib.pyplot.figure(num=idfigure, facecolor="w")
+    fig = matplotlib.pyplot.matplotlib.pyplot.figure(num=idfigure, facecolor=facecolor)
     fig.canvas.manager.set_window_title(wintitle)
-    fig.canvas.manager.resize(width,height)
+    fig.canvas.manager.resize(width, height)
     matplotlib.pyplot.ion()
+    
     return fig
 
 def setWinTitle(fig, title):
+    
     fig.canvas.manager.set_window_title(title)
-
-def setTextFromAxes(idfigure, ax, title):
-    fig = matplotlib.pyplot.figure(idfigure)
-    ax.annotate(title, xy=(.1, .99),
-                xycoords='figure fraction',
-                horizontalalignment='left', verticalalignment='top',
-                fontsize=10)
 
 def setTitle(idfigure, title):
     fig = matplotlib.pyplot.figure(idfigure)
@@ -31,7 +28,15 @@ def makeAxes(idfigure, nrow, ncol, xpos, ypos, colspan, rowspan):
     ax = matplotlib.pyplot.subplot2grid((nrow, ncol), (xpos, ypos), colspan=colspan, rowspan=rowspan)
     return ax
 
+def setTextFromAxes(idfigure, ax, title):
+    fig = matplotlib.pyplot.figure(idfigure)
+    ax.annotate(title, xy=(.1, .99),
+                xycoords='figure fraction',
+                horizontalalignment='left', verticalalignment='top',
+                fontsize=10)
+    
 def pline(ax, x, y, xmin, xmax, ymin, ymax, xlabel, ylabel, title, firsttime):
+    
     if firsttime:
         ax.plot(x, y)
         ax.set_xlim([xmin,xmax])
@@ -44,13 +49,15 @@ def pline(ax, x, y, xmin, xmax, ymin, ymax, xlabel, ylabel, title, firsttime):
         ax.lines[0].set_data(x,y)
 
 def draw(idfigure):
+    
     fig = matplotlib.pyplot.figure(idfigure)
     fig.canvas.draw()
 
 def pcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, title, firsttime, mesh):
+    
     if firsttime:
         divider = make_axes_locatable(ax)
-        ax_cb = divider.new_horizontal(size="5%", pad=0.05)
+        ax_cb = divider.new_horizontal(size="4%", pad=0.05)
         fig1 = ax.get_figure()
         fig1.add_axes(ax_cb)
         
@@ -59,7 +66,7 @@ def pcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, titl
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
-        
+        print x
         imesh=ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
         matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
         ax_cb.yaxis.tick_right()
@@ -69,18 +76,140 @@ def pcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel, ylabel, titl
         matplotlib.pyplot.tight_layout()
         return imesh
     else:
-        ax.set_xlim([xmin,xmax])
-        ax.set_ylim([ymin,ymax])
+#        ax.set_xlim([xmin,xmax])
+#        ax.set_ylim([ymin,ymax])
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
         
         z = z.T
-        z = z[0:-1,0:-1]
+#        z = z[0:-1,0:-1]
         mesh.set_array(z.ravel())
         
         return mesh
 
+###########################################
+#Actualizacion de las funciones del driver
+###########################################
 
-
+def createFigure(idfigure, wintitle, width, height, facecolor="w"):
     
+    matplotlib.pyplot.ioff()
+    fig = matplotlib.pyplot.matplotlib.pyplot.figure(num=idfigure, facecolor=facecolor)
+    fig.canvas.manager.set_window_title(wintitle)
+    fig.canvas.manager.resize(width, height)
+    matplotlib.pyplot.ion()
+    
+    return fig
+
+def setWinTitle(fig, title):
+    
+    fig.canvas.manager.set_window_title(title)
+
+def setTitle(fig, title):
+    
+    fig.suptitle(title)
+
+def createAxes(fig, nrow, ncol, xpos, ypos, colspan, rowspan):
+    
+    matplotlib.pyplot.figure(fig.number)
+    axes = matplotlib.pyplot.subplot2grid((nrow, ncol),
+                                        (xpos, ypos),
+                                        colspan=colspan,
+                                        rowspan=rowspan)
+    return axes
+
+def setAxesText(ax, text):
+    
+    ax.annotate(text,
+                xy = (.1, .99),
+                xycoords = 'figure fraction',
+                horizontalalignment = 'left',
+                verticalalignment = 'top',
+                fontsize = 10)
+
+def printLabels(ax, xlabel, ylabel, title):
+    
+    ax.set_xlabel(xlabel, size=11)
+    ax.set_ylabel(ylabel, size=11)
+    ax.set_title(title, size=12)
+    
+def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', ticksize = 9):
+    
+    ax.plot(x, y)
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([ymin,ymax])
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize)
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize) 
+        
+    matplotlib.pyplot.tight_layout()
+    
+    iplot = ax.lines[-1]
+    
+    return iplot
+
+def pline(iplot, x, y, xlabel='', ylabel='', title=''):
+    
+    ax = iplot.get_axes()
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    iplot.set_data(x, y)
+    
+def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', ylabel='', title='', ticksize = 9, cblabel=''):
+    
+    divider = make_axes_locatable(ax)
+    ax_cb = divider.new_horizontal(size="4%", pad=0.05)
+    fig = ax.get_figure()
+    fig.add_axes(ax_cb)
+    
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([ymin,ymax])
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
+    cb =  matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
+    cb.set_label(cblabel)
+    
+    ax_cb.yaxis.tick_right()
+    
+    for tl in ax_cb.get_yticklabels():
+        tl.set_visible(True)
+    
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize)
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize) 
+    
+    for tick in cb.ax.get_yticklabels():
+        tick.set_fontsize(ticksize)
+                
+    ax_cb.yaxis.tick_right()
+    matplotlib.pyplot.tight_layout()
+    
+    return imesh
+
+def pcolor(imesh, z, xlabel='', ylabel='', title=''):
+    
+    z = z.T
+    
+    ax = imesh.get_axes()
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    imesh.set_array(z.ravel())
+
+def draw(fig):
+    
+    if type(fig) == 'int':
+        raise ValueError, "This parameter should be of tpye matplotlib figure"
+    
+    fig.canvas.draw()

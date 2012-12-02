@@ -598,13 +598,22 @@ if __name__ == '__main__':
     procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
     
     opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
-    opObj10.addParameter(name='channelList', value='0,1,3', format='intlist')
+    opObj10.addParameter(name='channelList', value='0,1', format='intlist')
     
     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='1', format='int')
     opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
-    opObj11.addParameter(name='zmin', value='60', format='int')
-    opObj11.addParameter(name='zmax', value='100', format='int')
+#    opObj11.addParameter(name='zmin', value='60', format='int')
+#    opObj11.addParameter(name='zmax', value='100', format='int')
+    
+    opObj12 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
+    opObj12.addParameter(name='n', value='30', format='int')
+
+    opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+    opObj11.addParameter(name='idfigure', value='2', format='int')
+    opObj11.addParameter(name='wintitle', value='SpectraPlot10', format='str')
+#    opObj11.addParameter(name='zmin', value='60', format='int')
+#    opObj11.addParameter(name='zmax', value='100', format='int')
       
 #    opObj12 = procUnitConfObj1.addOperation(name='decoder')
 #    opObj12.addParameter(name='ncode', value='2', format='int')

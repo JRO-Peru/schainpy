@@ -25,7 +25,7 @@ def hildebrand_sekhon(data, navg):
         anoise    :    noise's level
     """
     
-    dataflat = data.reshape(-1)
+    dataflat = data.copy().reshape(-1)
     dataflat.sort()
     npts = dataflat.size #numbers of points of the data
     
@@ -61,9 +61,12 @@ def hildebrand_sekhon(data, navg):
 
     return anoise;
 
-def sorting_bruce(Data, navg):
-    sortdata = numpy.sort(Data)
-    lenOfData = len(Data)
+def sorting_bruce(data, navg):
+    
+    data = data.copy()
+    
+    sortdata = numpy.sort(data)
+    lenOfData = len(data)
     nums_min = lenOfData/10
     
     if (lenOfData/10) > 0:
@@ -155,6 +158,11 @@ class JROData:
     nCohInt = None
     
     noise = None
+    
+    #Speed of ligth
+    C = 3e8
+    
+    frequency = 49.92e6
 
     def __init__(self):
         
@@ -318,11 +326,35 @@ class Spectra(JROData):
         
         self.wavelength = None
     
-    def getFrequencies(self):
+    def getFmax(self):
         
-        xrange = numpy.arange(self.nFFTPoints)
-        xrange = xrange  
-        return None
+        PRF = 1./(self.ippSeconds * self.nCohInt)
+        
+        fmax = PRF/2.
+        
+        return fmax
+    
+    def getVmax(self):
+        
+        _lambda = self.C/self.frequency
+        
+        vmax = self.getFmax() * _lambda / 2.
+        
+        return vmax
+        
+    def getFreqRange(self, extrapoints=0):
+        
+        delfreq = 2 * self.getFmax() / self.nFFTPoints
+        freqrange = deltafreqs*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
+        
+        return freqrange
+
+    def getVelRange(self, extrapoints=0):
+        
+        deltav = 2 * self.getVmax() / self.nFFTPoints
+        velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltav/2       
+        
+        return velrange
     
     def getNoisebyHildebrand(self):
         """

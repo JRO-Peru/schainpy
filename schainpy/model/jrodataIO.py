@@ -1973,8 +1973,9 @@ class SpectraReader(JRODataReader):
         
         self.dataOut.nFFTPoints = self.processingHeaderObj.profilesPerBlock
         
-        self.dataOut.nIncohInt = self.processingHeaderObj.nIncohInt
+        self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
         
+        self.dataOut.nIncohInt = self.processingHeaderObj.nIncohInt
         
         xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
 
