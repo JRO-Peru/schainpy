@@ -831,6 +831,6 @@ class IncohInt(Operation):
             dataOut.data_spc = avgdata
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
-            dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt
+            dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
             dataOut.flagNoData = False
       
