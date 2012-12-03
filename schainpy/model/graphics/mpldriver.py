@@ -1,9 +1,13 @@
 import numpy
+import datetime
 import matplotlib
 matplotlib.use("TKAgg")
 import matplotlib.pyplot
+import matplotlib.dates
 #import scitools.numpyutils
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from matplotlib.dates import DayLocator, HourLocator, MinuteLocator, SecondLocator, DateFormatter 
 
 def init(idfigure, wintitle, width, height, facecolor="w"):
     
@@ -109,6 +113,9 @@ def closeFigure():
     
     return
 
+def saveFigure(fig, filename):
+    fig.savefig(filename)
+
 def setWinTitle(fig, title):
     
     fig.canvas.manager.set_window_title(title)
@@ -193,7 +200,7 @@ def pline(iplot, x, y, xlabel='', ylabel='', title=''):
     
     iplot.set_data(x, y)
     
-def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', ylabel='', title='', ticksize = 9, cblabel=''):
+def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', ylabel='', title='', ticksize = 9, cblabel='',XAxisAsTime=False):
     
     divider = make_axes_locatable(ax)
     ax_cb = divider.new_horizontal(size="4%", pad=0.05)
@@ -201,6 +208,19 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', yla
     fig.add_axes(ax_cb)
     
     ax.set_xlim([xmin,xmax])
+    
+    if XAxisAsTime:
+        seconds = numpy.array([xmin, xmax])
+        datesList = map(datetime.datetime.fromtimestamp, seconds)
+        ax.set_xlim([datesList[0],datesList[-1]])
+        ax.xaxis.set_major_locator(MinuteLocator(numpy.arange(0,61,10)))
+        ax.xaxis.set_minor_locator(SecondLocator(numpy.arange(0,61,60)))
+        ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))
+        xdateList = map(datetime.datetime.fromtimestamp, x)
+        xdate = matplotlib.dates.date2num(xdateList)
+        x = xdate
+        
+    
     ax.set_ylim([ymin,ymax])
     
     printLabels(ax, xlabel, ylabel, title)
@@ -239,8 +259,10 @@ def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     imesh.set_array(z.ravel())
 
 def addpcolor(ax, x, y, z, zmin, zmax):
+    xdateList = map(datetime.datetime.fromtimestamp, x)
+    xdate = matplotlib.dates.date2num(xdateList)
     
-    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
+    imesh = ax.pcolormesh(xdate,y,z.T,vmin=zmin,vmax=zmax)
     
 def draw(fig):
     

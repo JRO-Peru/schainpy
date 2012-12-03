@@ -61,7 +61,7 @@ class RTIPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, save=False, filename=None):
         
         """
         
@@ -126,7 +126,7 @@ class RTIPlot(Figure):
             z = avg[i].reshape((1,-1))
             axes.pcolor(x, y, z,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
-                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='')
             
             if self.__showprofile:
@@ -138,6 +138,9 @@ class RTIPlot(Figure):
                         grid='x')
             
         self.draw()
+        
+        if save:
+            self.saveFigure(filename)
         
 class SpectraPlot(Figure):
     
@@ -197,7 +200,7 @@ class SpectraPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, save=False, filename=None):
         
         """
         
@@ -273,6 +276,9 @@ class SpectraPlot(Figure):
                         grid='x')
             
         self.draw()
+        
+        if save:
+            self.saveFigure(filename)
 
 class Scope(Figure):
     
@@ -304,7 +310,7 @@ class Scope(Figure):
         self.nplots = nplots
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
-            xmin=None, xmax=None, ymin=None, ymax=None):
+            xmin=None, xmax=None, ymin=None, ymax=None, save=False, filename=None):
         
         """
         
@@ -360,5 +366,6 @@ class Scope(Figure):
         
         self.draw()
             
-        
+        if save:
+            self.saveFigure(filename)
         

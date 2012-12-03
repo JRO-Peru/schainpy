@@ -606,6 +606,8 @@ if __name__ == '__main__':
 #    opObj11.addParameter(name='zmin', value='70', format='int')
 #    opObj11.addParameter(name='zmax', value='90', format='int')
     opObj11.addParameter(name='showprofile', value='0', format='int')
+    opObj11.addParameter(name='save', value='1', format='int')
+    opObj11.addParameter(name='filename', value='/Users/dsuarez/Pictures/SpectraPlot.png', format='str')
 
     opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='10', format='int')

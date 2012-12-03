@@ -104,6 +104,9 @@ class Figure:
         axesObj = Axes(self.fig, *args)
         self.axesObjList.append(axesObj)
     
+    def saveFigure(self, *args):
+        self.__driver.saveFigure(self.fig, *args)
+    
     def draw(self):
         
         self.__driver.draw(self.fig)
@@ -148,6 +151,9 @@ class Axes:
     def setText(self, text):
         
         self.__driver.setAxesText(self.ax, text)
+    
+    def setXAxisAsTime(self):
+        pass
     
     def pline(self, x, y,
                xmin=None, xmax=None,
