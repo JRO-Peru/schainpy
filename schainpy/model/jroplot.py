@@ -90,6 +90,7 @@ class SpectraPlot(Figure):
         x = dataOut.getVelRange(1)
         y = dataOut.heightList
         z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
+        avg = numpy.average(z, axis=1)
         
         noise = dataOut.getNoise()
         
@@ -106,8 +107,8 @@ class SpectraPlot(Figure):
             if xmax == None: xmax = numpy.nanmax(x)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(z)*0.9
-            if zmax == None: zmax = numpy.nanmax(z)*0.9
+            if zmin == None: zmin = numpy.nanmin(avg)*0.9
+            if zmax == None: zmax = numpy.nanmax(avg)*0.9
             
             self.__isConfig = True
             
@@ -117,9 +118,6 @@ class SpectraPlot(Figure):
         ylabel = "Range (Km)"
         
         self.setWinTitle(title)
-        
-        if self.__showprofile:
-            avg = numpy.average(z, axis=1)
             
         for i in range(self.nplots):
             title = "Channel %d: %4.2fdB" %(dataOut.channelList[i], noise[i])
