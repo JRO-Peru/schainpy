@@ -1319,7 +1319,7 @@ class VoltageReader(JRODataReader):
         
 #        self.dataOut.nChannels = self.systemHeaderObj.nChannels
         
-        self.dataOut.nHeights = self.processingHeaderObj.nHeights
+#        self.dataOut.nHeights = self.processingHeaderObj.nHeights
         
         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
         
@@ -1967,7 +1967,7 @@ class SpectraReader(JRODataReader):
         
         self.dataOut.pairsList = self.rdPairList
         
-        self.dataOut.nHeights = self.processingHeaderObj.nHeights
+#        self.dataOut.nHeights = self.processingHeaderObj.nHeights
         
         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
         

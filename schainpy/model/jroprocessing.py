@@ -479,7 +479,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.dtype = self.dataIn.dtype
-        self.dataOut.nHeights = self.dataIn.nHeights
+#        self.dataOut.nHeights = self.dataIn.nHeights
 #        self.dataOut.nChannels = self.dataIn.nChannels
         self.dataOut.nBaud = self.dataIn.nBaud
         self.dataOut.nCode = self.dataIn.nCode

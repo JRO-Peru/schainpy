@@ -123,7 +123,7 @@ class JROData:
     
 #    nChannels = None
     
-    nHeights = None
+#    nHeights = None
     
     nProfiles = None
     
@@ -184,6 +184,10 @@ class JROData:
         
         return self.flagNoData
     
+    def getNoise(self):
+        
+        raise ValueError, "Not implemented"
+        
     def getNChannels(self):
         
         return len(self.channelList)
@@ -192,8 +196,52 @@ class JROData:
         
         return range(self.nChannels)
     
+    def getNHeights(self):
+        
+        return len(self.heightList)
+    
+    def getHeiRange(self, extrapoints=0):
+        
+        heis = self.heightList
+#        deltah = self.heightList[1] - self.heightList[0]
+#        
+#        heis.append(self.heightList[-1])
+        
+        return heis
+    
+    def getDatatime(self):
+        
+        datatime = []
+        
+        datatime.append(self.utctime)
+        datatime.append(self.utctime + 2*self.timeInterval)
+        
+        datatime = numpy.array(datatime)
+        
+        return datatime
+    
+    def getFmax(self):
+        
+        PRF = 1./(self.ippSeconds * self.nCohInt)
+        
+        fmax = PRF/2.
+        
+        return fmax
+    
+    def getVmax(self):
+        
+        _lambda = self.C/self.frequency
+        
+        vmax = self.getFmax() * _lambda / 2.
+        
+        return vmax
+    
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
     channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
+    
+    nHeights = property(getNHeights, "I'm the 'nHeights' property.")
+    
+    noise = property(getNoise, "I'm the 'nHeights' property.")
     
 class Voltage(JROData):
     
@@ -217,7 +265,7 @@ class Voltage(JROData):
         
 #        self.nChannels = 0
         
-        self.nHeights = 0
+#        self.nHeights = 0
         
         self.nProfiles = None
         
@@ -300,7 +348,7 @@ class Spectra(JROData):
         
 #        self.nChannels = 0
         
-        self.nHeights = 0
+#        self.nHeights = 0
         
         self.nProfiles = None
         
@@ -325,22 +373,6 @@ class Spectra(JROData):
         self.nFFTPoints = None
         
         self.wavelength = None
-    
-    def getFmax(self):
-        
-        PRF = 1./(self.ippSeconds * self.nCohInt)
-        
-        fmax = PRF/2.
-        
-        return fmax
-    
-    def getVmax(self):
-        
-        _lambda = self.C/self.frequency
-        
-        vmax = self.getFmax() * _lambda / 2.
-        
-        return vmax
         
     def getFreqRange(self, extrapoints=0):
         
@@ -441,7 +473,7 @@ class SpectraHeis(JROData):
         
 #        self.nChannels = 0
         
-        self.nHeights = 0
+#        self.nHeights = 0
         
         self.nProfiles = None
         

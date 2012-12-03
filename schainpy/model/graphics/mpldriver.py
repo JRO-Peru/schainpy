@@ -107,7 +107,7 @@ def closeFigure():
     matplotlib.pyplot.ioff()
     matplotlib.pyplot.show()
     
-    retur
+    return
 
 def setWinTitle(fig, title):
     
@@ -238,6 +238,10 @@ def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     
     imesh.set_array(z.ravel())
 
+def addpcolor(ax, x, y, z, zmin, zmax):
+    
+    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
+    
 def draw(fig):
     
     if type(fig) == 'int':

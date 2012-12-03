@@ -126,6 +126,9 @@ class Axes:
     
     __showprofile = False
     
+    __zmin = None
+    __zmax = None
+    
     def __init__(self, *args):
         
         """
@@ -198,7 +201,7 @@ class Axes:
                ymin=None, ymax=None,
                zmin=None, zmax=None,
                xlabel='', ylabel='',
-               title='',
+               title='', rti = False,
                **kwargs):
         
         """
@@ -218,6 +221,7 @@ class Axes:
             **kwargs :    Los parametros aceptados son
                           ticksize=9,
                           cblabel=''
+                          rti = True or False
         """
         
         if self.firsttime:
@@ -228,7 +232,8 @@ class Axes:
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = numpy.nanmin(z)
             if zmax == None: zmax = numpy.nanmax(z)
-    
+            
+            
             self.plot = self.__driver.createPcolor(self.ax, x, y, z,
                                                    xmin, xmax,
                                                    ymin, ymax,
@@ -238,8 +243,14 @@ class Axes:
                                                     title=title,
                                                     **kwargs)
             self.firsttime = False
+            if self.__zmin == None: self.__zmin = zmin
+            if self.__zmax == None: self.__zmax = zmax
             return
-            
-        mesh = self.__driver.pcolor(self.plot, z, xlabel=xlabel,
-                                                    ylabel=ylabel,
-                                                    title=title)
+        
+        if rti:
+            self.__driver.addpcolor(self.ax, x, y, z, self.__zmin, self.__zmax)
+            return
+        
+        self.__driver.pcolor(self.plot, z, xlabel=xlabel, ylabel=ylabel, title=title)
+        
+        
