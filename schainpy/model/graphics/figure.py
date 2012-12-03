@@ -5,6 +5,7 @@ import mpldriver
 class Figure:
     
     __driver = mpldriver
+    fig = None
     
     idfigure = None
     wintitle = None
@@ -21,6 +22,10 @@ class Figure:
          
         raise ValueError, "This method is not implemented"
     
+    def __del__(self):
+        
+        self.__driver.closeFigure()
+        
     def getAxesObjList(self):
         
         return self.axesObjList

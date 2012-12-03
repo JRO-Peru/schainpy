@@ -102,6 +102,13 @@ def createFigure(idfigure, wintitle, width, height, facecolor="w"):
     
     return fig
 
+def closeFigure():
+    
+    matplotlib.pyplot.ioff()
+    matplotlib.pyplot.show()
+    
+    retur
+
 def setWinTitle(fig, title):
     
     fig.canvas.manager.set_window_title(title)
