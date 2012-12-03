@@ -5,58 +5,61 @@ from graphics.figure import  *
 class SpectraPlot(Figure):
     
     __isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
     
     def __init__(self):
         
         self.__isConfig = False
+        self.__nsubplots = 1
+        
         self.WIDTH = 300
         self.HEIGHT = 400
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
         
     def getSubplots(self):
         
         ncol = int(numpy.sqrt(self.nplots)+0.9)
         nrow = int(self.nplots*1./ncol + 0.9)
+        
         return nrow, ncol
-        
-    def setAxesWithOutProfiles(self, nrow, ncol):
-        
-        colspan = 1
-        rowspan = 1
-        counter = 0
-        
-        for y in range(nrow):
-            for x in range(ncol):
-                if counter < self.nplots:
-                    self.addAxes(nrow, ncol, y, x, colspan, rowspan)
-                counter += 1
-    
-    def setAxesWithProfiles(self, nrow, ncol):
-        
-        colspan = 1
-        rowspan = 1
-        factor = 2
-        ncol = ncol*factor
-        counter = 0
-        
-        for y in range(nrow):
-            for x in range(ncol):
-                if counter < self.nplots*factor:
-#                    plt.subplot2grid((nrow, ncol), (y, x), colspan=colspan, rowspan=rowspan)
-                    self.addAxes(nrow, ncol, y, x, colspan, rowspan)
-                counter += 1
     
     def setup(self, idfigure, nplots, wintitle, showprofile=True):
+               
+        self.__showprofile = showprofile
+        self.nplots = nplots
         
-        self.init(idfigure, nplots, wintitle)
+        ncolspan = 1
+        colspan = 1
+        if showprofile:
+            ncolspan = 3
+            colspan = 2
+            self.__nsubplots = 2
+            self.WIDTH += self.WIDTHPROF
+            self.HEIGHT += self.HEIGHTPROF
+            
+        self.createFigure(idfigure, wintitle)
         
         nrow, ncol = self.getSubplots()
         
-        if showprofile:
-            self.setAxesWithProfiles(nrow, ncol) 
-        else:
-            self.setAxesWithOutProfiles(nrow, ncol)
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+                
+                if counter >= self.nplots:
+                    break
+                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+                
+                if showprofile:
+                    self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+2, 1, 1)
+                    
+                counter += 1
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile=False,
+    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None):
         
         """
@@ -115,15 +118,24 @@ class SpectraPlot(Figure):
         
         self.setWinTitle(title)
         
+        if self.__showprofile:
+            avg = numpy.average(z, axis=1)
+            
         for i in range(self.nplots):
             title = "Channel %d: %4.2fdB" %(dataOut.channelList[i], noise[i])
-            zchannel = z[i,:,:]
-            
-            axes = self.axesList[i]
-            axes.pcolor(x, y, zchannel,
+            axes = self.axesList[i*self.__nsubplots]
+            axes.pcolor(x, y, z[i,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, cblabel='dB')
+                        ticksize=9, cblabel='')
+            
+            if self.__showprofile:
+                axes = self.axesList[i*self.__nsubplots +1]
+                axes.pline(avg[i], y,
+                        xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
+                        xlabel='dB', ylabel='', title='',
+                        ytick_visible=False,
+                        grid='x')
             
         self.draw()
 
@@ -145,7 +157,7 @@ class Scope(Figure):
     
     def setup(self, idfigure, nplots, wintitle):
         
-        self.init(idfigure, nplots, wintitle)
+        self.createFigure(idfigure, wintitle)
         
         nrow,ncol = self.getSubplots()
         colspan = 3
@@ -153,6 +165,8 @@ class Scope(Figure):
         
         for i in range(nplots):
             self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
+            
+        self.nplots = nplots
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None):

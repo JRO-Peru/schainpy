@@ -134,20 +134,44 @@ def printLabels(ax, xlabel, ylabel, title):
     ax.set_ylabel(ylabel, size=11)
     ax.set_title(title, size=12)
     
-def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', ticksize = 9):
+def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='',
+                ticksize=9, xtick_visible=True, ytick_visible=True,
+                nxticks=4, nyticks=10,
+                grid=None):
     
+    """
+    
+    Input:
+        grid    :    None, 'both', 'x', 'y'
+    """
+        
     ax.plot(x, y)
     ax.set_xlim([xmin,xmax])
     ax.set_ylim([ymin,ymax])
     
     printLabels(ax, xlabel, ylabel, title)
     
-    for tick in ax.yaxis.get_major_ticks():
-        tick.label.set_fontsize(ticksize)
+    ######################################################
+    xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/nxticks) + int(xmin)
+    ax.set_xticks(xtickspos)
+    
+    for tick in ax.get_xticklabels():
+        tick.set_visible(xtick_visible)
         
     for tick in ax.xaxis.get_major_ticks():
         tick.label.set_fontsize(ticksize) 
-        
+    
+    ######################################################
+    for tick in ax.get_yticklabels():
+        tick.set_visible(ytick_visible)
+    
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize)
+    
+    ######################################################
+    if grid != None:
+        ax.grid(b=True, which='major', axis=grid)
+    
     matplotlib.pyplot.tight_layout()
     
     iplot = ax.lines[-1]

@@ -39,17 +39,23 @@ class Figure:
         return width, height
         
     def init(self, idfigure, nplots, wintitle):
+    
+        raise ValueError, "This method has been replaced with createFigure"
+    
+    def createFigure(self, idfigure, wintitle):
         
         """
-        Inicializa la figura de acuerdo al driver seleccionado
+        Crea la figura de acuerdo al driver y parametros seleccionados seleccionados.
+        Las dimensiones de la pantalla es calculada a partir de los atributos self.WIDTH
+        y self.HEIGHT y el numero de subplots (nrow, ncol)
+            
         Input:
-            *args    :    Los parametros necesarios son 
-                        idfigure, wintitle, width, height
+            idfigure    :    Los parametros necesarios son 
+            wintitle    :    
+        
         """
         
         self.idfigure = idfigure
-        
-        self.nplots = nplots
         
         self.wintitle = wintitle
         
@@ -113,6 +119,8 @@ class Axes:
     
     firsttime = None
     
+    __showprofile = False
+    
     def __init__(self, *args):
         
         """
@@ -155,6 +163,7 @@ class Axes:
             **kwargs :    Los parametros aceptados son
                           
                           ticksize
+                          ytick_visible
         """
         
         if self.firsttime:

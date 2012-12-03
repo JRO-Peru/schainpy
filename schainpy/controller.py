@@ -598,36 +598,59 @@ if __name__ == '__main__':
     procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
     
     opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
-    opObj10.addParameter(name='channelList', value='0,1', format='intlist')
+    opObj10.addParameter(name='channelList', value='0,1,2,4,6,7', format='intlist')
     
     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='1', format='int')
     opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
-#    opObj11.addParameter(name='zmin', value='60', format='int')
-#    opObj11.addParameter(name='zmax', value='100', format='int')
+#    opObj11.addParameter(name='zmin', value='70', format='int')
+#    opObj11.addParameter(name='zmax', value='90', format='int')
+    opObj11.addParameter(name='showprofile', value='1', format='int')
+
+    opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
+    opObj10.addParameter(name='channelList', value='0,2,4,6', format='intlist')
     
     opObj12 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
-    opObj12.addParameter(name='n', value='30', format='int')
+    opObj12.addParameter(name='n', value='2', format='int')
 
     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='2', format='int')
     opObj11.addParameter(name='wintitle', value='SpectraPlot10', format='str')
-#    opObj11.addParameter(name='zmin', value='60', format='int')
-#    opObj11.addParameter(name='zmax', value='100', format='int')
-      
+    opObj11.addParameter(name='zmin', value='70', format='int')
+    opObj11.addParameter(name='zmax', value='90', format='int')
+
+    opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
+    opObj10.addParameter(name='channelList', value='2,6', format='intlist')
+    
+    opObj12 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
+    opObj12.addParameter(name='n', value='2', format='int')
+
+    opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+    opObj11.addParameter(name='idfigure', value='3', format='int')
+    opObj11.addParameter(name='wintitle', value='SpectraPlot10', format='str')
+    opObj11.addParameter(name='zmin', value='70', format='int')
+    opObj11.addParameter(name='zmax', value='90', format='int')
+    
+          
 #    opObj12 = procUnitConfObj1.addOperation(name='decoder')
 #    opObj12.addParameter(name='ncode', value='2', format='int')
 #    opObj12.addParameter(name='nbauds', value='8', format='int')
 #    opObj12.addParameter(name='code0', value='001110011', format='int')
 #    opObj12.addParameter(name='code1', value='001110011', format='int')  
   
-#    procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj1.getId())
 
+
+    procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj1.getId())
     
-#    opObj21 = procUnitConfObj2.addOperation(name='IncohInt', optype='other')
-#    opObj21.addParameter(name='nCohInt', value='10', format='int')
+    opObj21 = procUnitConfObj2.addOperation(name='IncohInt', optype='other')
+    opObj21.addParameter(name='n', value='2', format='int')
     
-    
+    opObj11 = procUnitConfObj2.addOperation(name='SpectraPlot', optype='other')
+    opObj11.addParameter(name='idfigure', value='4', format='int')
+    opObj11.addParameter(name='wintitle', value='SpectraPlot OBJ 2', format='str')
+    opObj11.addParameter(name='zmin', value='70', format='int')
+    opObj11.addParameter(name='zmax', value='90', format='int')
+      
     print "Escribiendo el archivo XML"
     
     controllerObj.writeXml(filename)
