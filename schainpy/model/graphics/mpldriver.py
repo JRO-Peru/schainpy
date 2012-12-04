@@ -7,7 +7,9 @@ import matplotlib.dates
 #import scitools.numpyutils
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from matplotlib.dates import DayLocator, HourLocator, MinuteLocator, SecondLocator, DateFormatter 
+from matplotlib.dates import DayLocator, HourLocator, MinuteLocator, SecondLocator, DateFormatter
+from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import *
 
 def init(idfigure, wintitle, width, height, facecolor="w"):
     
@@ -200,7 +202,9 @@ def pline(iplot, x, y, xlabel='', ylabel='', title=''):
     
     iplot.set_data(x, y)
     
-def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', ylabel='', title='', ticksize = 9, cblabel='',XAxisAsTime=False):
+def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
+                 xlabel='', ylabel='', title='', ticksize = 9,
+                 cblabel='',XAxisAsTime=False):
     
     divider = make_axes_locatable(ax)
     ax_cb = divider.new_horizontal(size="4%", pad=0.05)
@@ -208,19 +212,6 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', yla
     fig.add_axes(ax_cb)
     
     ax.set_xlim([xmin,xmax])
-    
-    if XAxisAsTime:
-        seconds = numpy.array([xmin, xmax])
-        datesList = map(datetime.datetime.fromtimestamp, seconds)
-        ax.set_xlim([datesList[0],datesList[-1]])
-        ax.xaxis.set_major_locator(MinuteLocator(numpy.arange(0,61,10)))
-        ax.xaxis.set_minor_locator(SecondLocator(numpy.arange(0,61,60)))
-        ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))
-        xdateList = map(datetime.datetime.fromtimestamp, x)
-        xdate = matplotlib.dates.date2num(xdateList)
-        x = xdate
-        
-    
     ax.set_ylim([ymin,ymax])
     
     printLabels(ax, xlabel, ylabel, title)
@@ -231,8 +222,8 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', yla
     
     ax_cb.yaxis.tick_right()
     
-    for tl in ax_cb.get_yticklabels():
-        tl.set_visible(True)
+#    for tl in ax_cb.get_yticklabels():
+#        tl.set_visible(True)
     
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(ticksize)
@@ -246,6 +237,29 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax, xlabel='', yla
     ax_cb.yaxis.tick_right()
     matplotlib.pyplot.tight_layout()
     
+    if XAxisAsTime:
+        
+        func = lambda x, pos: ('%s') %(datetime.datetime.fromtimestamp(x).strftime("%H:%M:%S"))
+        ax.xaxis.set_major_formatter(FuncFormatter(func))
+        ax.xaxis.set_major_locator(LinearLocator(7))
+        
+#        seconds = numpy.array([xmin, xmax])
+#        datesList = map(datetime.datetime.fromtimestamp, seconds)
+#        ax.set_xlim([datesList[0],datesList[-1]])
+#        ax.xaxis.set_major_locator(MinuteLocator(numpy.arange(0,61,10)))
+#        ax.xaxis.set_minor_locator(SecondLocator(numpy.arange(0,61,60)))
+#        ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))
+#        xdateList = map(datetime.datetime.fromtimestamp, x)
+#        xdate = matplotlib.dates.date2num(xdateList)
+#        x = xdate
+        
+#        labels = []
+#        for item in ax.xaxis.get_ticklabels():
+#            stri = item.get_text()
+#            text = datetime.datetime.fromtimestamp(float(stri))
+#            labels.append(text)
+#            
+#        ax.xaxis.set_ticklabels(labels)
     return imesh
 
 def pcolor(imesh, z, xlabel='', ylabel='', title=''):
@@ -258,11 +272,14 @@ def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     
     imesh.set_array(z.ravel())
 
-def addpcolor(ax, x, y, z, zmin, zmax):
-    xdateList = map(datetime.datetime.fromtimestamp, x)
-    xdate = matplotlib.dates.date2num(xdateList)
+def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title=''):
     
-    imesh = ax.pcolormesh(xdate,y,z.T,vmin=zmin,vmax=zmax)
+#    xdateList = map(datetime.datetime.fromtimestamp, x)
+#    xdate = matplotlib.dates.date2num(xdateList)
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
     
 def draw(fig):
     

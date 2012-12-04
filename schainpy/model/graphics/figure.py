@@ -34,20 +34,20 @@ class Figure:
         
         raise ValueError, "Abstract method: This method should be defined"
         
-    def getScreenDim(self):
+    def getScreenDim(self, widthplot, heightplot):
         
         nrow, ncol = self.getSubplots()
         
-        width = self.WIDTH*ncol
-        height = self.HEIGHT*nrow
+        widthscreen = widthplot*ncol
+        heightscreen = heightplot*nrow
         
-        return width, height
+        return widthscreen, heightscreen
         
     def init(self, idfigure, nplots, wintitle):
     
         raise ValueError, "This method has been replaced with createFigure"
     
-    def createFigure(self, idfigure, wintitle):
+    def createFigure(self, idfigure, wintitle, widthplot=None, heightplot=None):
         
         """
         Crea la figura de acuerdo al driver y parametros seleccionados seleccionados.
@@ -60,16 +60,22 @@ class Figure:
         
         """
         
+        if widthplot == None:
+            widthplot = self.WIDTH
+        
+        if heightplot == None:
+            heightplot = self.HEIGHT
+        
         self.idfigure = idfigure
         
         self.wintitle = wintitle
         
-        self.width, self.height = self.getScreenDim()
+        self.widthscreen, self.heightscreen = self.getScreenDim(widthplot, heightplot)
         
         self.fig = self.__driver.createFigure(self.idfigure,
                                               self.wintitle,
-                                              self.width,
-                                              self.height)
+                                              self.widthscreen,
+                                              self.heightscreen)
         
         self.axesObjList = []
     
@@ -125,12 +131,16 @@ class Axes:
     ax = None
     plot = None
     
-    firsttime = None
+    __firsttime = None
     
     __showprofile = False
     
-    __zmin = None
-    __zmax = None
+    xmin = None
+    xmax = None
+    ymin = None
+    ymax = None
+    zmin = None
+    zmax = None
     
     def __init__(self, *args):
         
@@ -146,7 +156,7 @@ class Axes:
         self.ax = ax
         self.plot = None
         
-        self.firsttime = True
+        self.__firsttime = True
         
     def setText(self, text):
         
@@ -180,7 +190,7 @@ class Axes:
                           ytick_visible
         """
         
-        if self.firsttime:
+        if self.__firsttime:
             
             if xmin == None: xmin = numpy.nanmin(x)
             if xmax == None: xmax = numpy.nanmax(x)
@@ -194,7 +204,7 @@ class Axes:
                                                     ylabel=ylabel,
                                                     title=title,
                                                   **kwargs)
-            self.firsttime = False
+            self.__firsttime = False
             return
                     
         self.__driver.pline(self.plot, x, y, xlabel=xlabel,
@@ -230,7 +240,7 @@ class Axes:
                           rti = True or False
         """
         
-        if self.firsttime:
+        if self.__firsttime:
             
             if xmin == None: xmin = numpy.nanmin(x)
             if xmax == None: xmax = numpy.nanmax(x)
@@ -248,15 +258,27 @@ class Axes:
                                                     ylabel=ylabel,
                                                     title=title,
                                                     **kwargs)
-            self.firsttime = False
-            if self.__zmin == None: self.__zmin = zmin
-            if self.__zmax == None: self.__zmax = zmax
+            
+            if self.xmin == None: self.xmin = xmin
+            if self.xmax == None: self.xmax = xmax
+            if self.ymin == None: self.ymin = ymin
+            if self.ymax == None: self.ymax = ymax
+            if self.zmin == None: self.zmin = zmin
+            if self.zmax == None: self.zmax = zmax
+            
+            self.__firsttime = False
             return
         
         if rti:
-            self.__driver.addpcolor(self.ax, x, y, z, self.__zmin, self.__zmax)
+            self.__driver.addpcolor(self.ax, x, y, z, self.zmin, self.zmax,
+                                    xlabel=xlabel,
+                                    ylabel=ylabel,
+                                    title=title)
             return
         
-        self.__driver.pcolor(self.plot, z, xlabel=xlabel, ylabel=ylabel, title=title)
+        self.__driver.pcolor(self.plot, z,
+                             xlabel=xlabel,
+                             ylabel=ylabel,
+                             title=title)
         
         

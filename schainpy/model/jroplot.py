@@ -1,5 +1,5 @@
 import numpy
-import datetime
+import time, datetime
 from graphics.figure import  * 
 
 class RTIPlot(Figure):
@@ -12,12 +12,12 @@ class RTIPlot(Figure):
     
     def __init__(self):
         
-        self.__timerange = 30*60
+        self.__timerange = 24*60*60
         self.__isConfig = False
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 400
+        self.HEIGHT = 300
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         
@@ -39,10 +39,11 @@ class RTIPlot(Figure):
             ncolspan = 7
             colspan = 6
             self.__nsubplots = 2
-            self.WIDTH += self.WIDTHPROF
-            self.HEIGHT += self.HEIGHTPROF
             
-        self.createFigure(idfigure, wintitle)
+        self.createFigure(idfigure = idfigure,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF)
         
         nrow, ncol = self.getSubplots()
         
@@ -60,8 +61,38 @@ class RTIPlot(Figure):
                     
                 counter += 1
     
+    def __getTimeLim(self, x, xmin, xmax):
+        
+        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
+        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
+        
+        ####################################################
+        #If the x is out of xrange
+        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
+            xmin = None
+            xmax = None
+        
+        if xmin == None:
+            td = thisdatetime - thisdate
+            xmin = td.seconds/(60*60.)
+            
+        if xmax == None:
+            xmax = xmin + self.__timerange/(60*60.)
+        
+        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
+        tmin = time.mktime(mindt.timetuple())
+        
+        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
+        tmax = time.mktime(maxdt.timetuple())
+        
+        self.__timerange = tmax - tmin
+        
+        return tmin, tmax
+    
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, save=False, filename=None):
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            timerange=None,
+            save=False, filename=None):
         
         """
         
@@ -88,13 +119,18 @@ class RTIPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(channel)
         
+        if timerange != None:
+            self.__timerange = timerange
+        
+        tmin = None
+        tmax = None
         x = dataOut.getDatatime()
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
         avg = numpy.average(z, axis=1)
         
         noise = dataOut.getNoise()
-        
+            
         if not self.__isConfig:
             
             nplots = len(channelIndexList)
@@ -104,8 +140,7 @@ class RTIPlot(Figure):
                        wintitle=wintitle,
                        showprofile=showprofile)
             
-            if xmin == None: xmin = numpy.min(x)
-            if xmax == None: xmax = xmin + self.__timerange
+            tmin, tmax = self.__getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = numpy.nanmin(avg)*0.9
@@ -114,18 +149,18 @@ class RTIPlot(Figure):
             self.__isConfig = True
             
         thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
-        title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
         self.setWinTitle(title)
             
         for i in range(self.nplots):
-            title = "Channel %d: %4.2fdB" %(dataOut.channelList[i], noise[i])
+            title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
             z = avg[i].reshape((1,-1))
             axes.pcolor(x, y, z,
-                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='')
             
@@ -141,6 +176,9 @@ class RTIPlot(Figure):
         
         if save:
             self.saveFigure(filename)
+            
+        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+            self.__isConfig = False
         
 class SpectraPlot(Figure):
     
@@ -178,10 +216,11 @@ class SpectraPlot(Figure):
             ncolspan = 3
             colspan = 2
             self.__nsubplots = 2
-            self.WIDTH += self.WIDTHPROF
-            self.HEIGHT += self.HEIGHTPROF
-            
-        self.createFigure(idfigure, wintitle)
+        
+        self.createFigure(idfigure = idfigure,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF)
         
         nrow, ncol = self.getSubplots()
         
