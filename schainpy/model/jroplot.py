@@ -162,7 +162,7 @@ class RTIPlot(Figure):
             axes.pcolor(x, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='')
+                        ticksize=9, cblabel='', cbsize="1%")
             
             if self.__showprofile:
                 axes = self.axesList[i*self.__nsubplots +1]

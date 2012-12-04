@@ -204,10 +204,11 @@ def pline(iplot, x, y, xlabel='', ylabel='', title=''):
     
 def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
                  xlabel='', ylabel='', title='', ticksize = 9,
-                 cblabel='',XAxisAsTime=False):
+                 cblabel='', cbsize="5%",
+                 XAxisAsTime=False):
     
     divider = make_axes_locatable(ax)
-    ax_cb = divider.new_horizontal(size="4%", pad=0.05)
+    ax_cb = divider.new_horizontal(size=cbsize, pad=0.05)
     fig = ax.get_figure()
     fig.add_axes(ax_cb)
     
@@ -219,8 +220,6 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
     imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
     cb =  matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
     cb.set_label(cblabel)
-    
-    ax_cb.yaxis.tick_right()
     
 #    for tl in ax_cb.get_yticklabels():
 #        tl.set_visible(True)
