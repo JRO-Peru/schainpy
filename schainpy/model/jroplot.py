@@ -271,7 +271,7 @@ class SpectraPlot(Figure):
             for channel in channelList:
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
-                channelIndexList.append(channel)
+                channelIndexList.append(channelList.index(channel))
         
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
