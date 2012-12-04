@@ -58,14 +58,14 @@ class BasicHeader(Header):
     def read(self, fp):
         try:
             header = numpy.fromfile(fp, self.struct,1)
-            self.size = header['nSize'][0]
-            self.version = header['nVersion'][0]
-            self.dataBlock = header['nDataBlockId'][0]
-            self.utc = header['nUtime'][0]
-            self.miliSecond = header['nMilsec'][0]
-            self.timeZone = header['nTimezone'][0]
-            self.dstFlag = header['nDstflag'][0]
-            self.errorCount = header['nErrorCount'][0]
+            self.size = int(header['nSize'][0])
+            self.version = int(header['nVersion'][0])
+            self.dataBlock = int(header['nDataBlockId'][0])
+            self.utc = int(header['nUtime'][0])
+            self.miliSecond = int(header['nMilsec'][0])
+            self.timeZone = int(header['nTimezone'][0])
+            self.dstFlag = int(header['nDstflag'][0])
+            self.errorCount = int(header['nErrorCount'][0])
         except:
             return 0
         
@@ -206,20 +206,20 @@ class RadarControllerHeader(Header):
         try:
             startFp = fp.tell()
             header = numpy.fromfile(fp,self.struct,1)
-            self.size = header['nSize'][0]
-            self.expType = header['nExpType'][0]
-            self.nTx = header['nNTx'][0]
-            self.ipp = header['fIpp'][0]
-            self.txA = header['fTxA'][0]
-            self.txB = header['fTxB'][0]
-            self.nWindows = header['nNumWindows'][0]
-            self.numTaus = header['nNumTaus'][0]
-            self.codeType = header['nCodeType'][0]
-            self.line6Function = header['nLine6Function'][0]
-            self.line5Function = header['nLine5Function'][0]
-            self.fClock = header['fClock'][0]
-            self.prePulseBefore = header['nPrePulseBefore'][0]
-            self.prePulserAfter = header['nPrePulseAfter'][0]
+            self.size = int(header['nSize'][0])
+            self.expType = int(header['nExpType'][0])
+            self.nTx = int(header['nNTx'][0])
+            self.ipp = float(header['fIpp'][0])
+            self.txA = float(header['fTxA'][0])
+            self.txB = float(header['fTxB'][0])
+            self.nWindows = int(header['nNumWindows'][0])
+            self.numTaus = int(header['nNumTaus'][0])
+            self.codeType = int(header['nCodeType'][0])
+            self.line6Function = int(header['nLine6Function'][0])
+            self.line5Function = int(header['nLine5Function'][0])
+            self.fClock = float(header['fClock'][0])
+            self.prePulseBefore = int(header['nPrePulseBefore'][0])
+            self.prePulserAfter = int(header['nPrePulseAfter'][0])
             self.rangeIpp = header['sRangeIPP'][0]
             self.rangeTxA = header['sRangeTxA'][0]
             self.rangeTxB = header['sRangeTxB'][0]
@@ -231,7 +231,7 @@ class RadarControllerHeader(Header):
             fp.seek(backFp)
             
             self.samplingWindow = numpy.fromfile(fp,self.samplingWindowStruct,self.nWindows)
-            self.nHeights = numpy.sum(self.samplingWindow['nsa'])
+            self.nHeights = int(numpy.sum(self.samplingWindow['nsa']))
             self.firstHeight = self.samplingWindow['h0']
             self.deltaHeight = self.samplingWindow['dh']
             self.samplesWin = self.samplingWindow['nsa']
@@ -239,8 +239,8 @@ class RadarControllerHeader(Header):
             self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
     
             if self.codeType != 0:
-                self.nCode = numpy.fromfile(fp,'<u4',1)
-                self.nBaud = numpy.fromfile(fp,'<u4',1)
+                self.nCode = int(numpy.fromfile(fp,'<u4',1))
+                self.nBaud = int(numpy.fromfile(fp,'<u4',1))
                 self.code = numpy.empty([self.nCode,self.nBaud],dtype='u1')
                 tempList = []
                 for ic in range(self.nCode):
@@ -350,26 +350,26 @@ class ProcessingHeader(Header):
     def read(self, fp):
         try:
             header = numpy.fromfile(fp,self.struct,1)
-            self.size = header['nSize'][0]
-            self.dtype = header['nDataType'][0]
-            self.blockSize = header['nSizeOfDataBlock'][0]
-            self.profilesPerBlock = header['nProfilesperBlock'][0]
-            self.dataBlocksPerFile = header['nDataBlocksperFile'][0]
-            self.nWindows = header['nNumWindows'][0]
-            self.processFlags = header['nProcessFlags']
-            self.nCohInt = header['nCoherentIntegrations'][0]
-            self.nIncohInt = header['nIncoherentIntegrations'][0]
-            self.totalSpectra = header['nTotalSpectra'][0]
+            self.size = int(header['nSize'][0])
+            self.dtype = int(header['nDataType'][0])
+            self.blockSize = int(header['nSizeOfDataBlock'][0])
+            self.profilesPerBlock = int(header['nProfilesperBlock'][0])
+            self.dataBlocksPerFile = int(header['nDataBlocksperFile'][0])
+            self.nWindows = int(header['nNumWindows'][0])
+            self.processFlags = int(header['nProcessFlags'])
+            self.nCohInt = int(header['nCoherentIntegrations'][0])
+            self.nIncohInt = int(header['nIncoherentIntegrations'][0])
+            self.totalSpectra = int(header['nTotalSpectra'][0])
             self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.nWindows)
-            self.nHeights = numpy.sum(self.samplingWindow['nsa'])
-            self.firstHeight = self.samplingWindow['h0'][0]
-            self.deltaHeight = self.samplingWindow['dh'][0]
+            self.nHeights = int(numpy.sum(self.samplingWindow['nsa']))
+            self.firstHeight = int(self.samplingWindow['h0'][0])
+            self.deltaHeight = int(self.samplingWindow['dh'][0])
             self.samplesWin = self.samplingWindow['nsa']
             self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
             
             if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
-                self.nCode = numpy.fromfile(fp,'<u4',1)
-                self.nBaud = numpy.fromfile(fp,'<u4',1)
+                self.nCode = int(numpy.fromfile(fp,'<u4',1))
+                self.nBaud = int(numpy.fromfile(fp,'<u4',1))
                 self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nBaud,self.nCode)
             
             if ((self.processFlags & PROCFLAG.SHIFT_FFT_DATA) == PROCFLAG.SHIFT_FFT_DATA):

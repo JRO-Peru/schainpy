@@ -494,7 +494,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
-        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints**self.dataOut.nConInt**self.dataOut.nIncohInt
+        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nConInt*self.dataOut.nIncohInt
 
     def __getFft(self):
         """
@@ -559,7 +559,7 @@ class SpectraProc(ProcessingUnit):
         if self.dataIn.type == "Voltage":
             
             if nFFTPoints == None:
-                raise ValueError, "This SpectraProc.setup() need nFFTPoints input variable"
+                raise ValueError, "This SpectraProc.init() need nFFTPoints input variable"
             
             if pairsList == None:
                 nPairs = 0
