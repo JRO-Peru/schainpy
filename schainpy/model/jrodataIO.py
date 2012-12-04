@@ -239,7 +239,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     
     nReadBlocks = 0
     
-    delay  = 60   #number of seconds waiting a new file
+    delay  = 10   #number of seconds waiting a new file
         
     nTries  = 3  #quantity tries
         
@@ -524,7 +524,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             self.filename = file
             self.flagIsNewFile = 1
             if self.fp != None: self.fp.close() 
-            self.fp = open(file)
+            self.fp = open(file, 'rb')
             self.flagNoMoreFiles = 0
             print 'Setting the file: %s' % file
         else:
@@ -554,6 +554,37 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         self.nReadBlocks = 0
         return 1
 
+    def __waitNewBlock(self):
+        #si es OnLine y ademas aun no se han leido un bloque completo entonces se espera por uno valido
+        if not self.online:
+            return 0
+        
+        if (self.nReadBlocks >= self.processingHeaderObj.dataBlocksPerFile):
+            return 0
+        
+        currentPointer = self.fp.tell()
+        
+        neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        
+        for nTries in range( self.nTries ):
+            
+            self.fp.close()
+            self.fp = open( self.filename, 'rb' )
+            self.fp.seek( currentPointer )
+
+            self.fileSize = os.path.getsize( self.filename )
+            currentSize = self.fileSize - currentPointer
+
+            if ( currentSize >= neededSize ):
+                self.__rdBasicHeader()
+                return 1
+            
+            print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+            time.sleep( self.delay )
+            
+        
+        return 0
+
     def __setNewBlock(self):
         if self.fp == None:
             return 0
@@ -567,6 +598,9 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         if (currentSize >= neededSize):
             self.__rdBasicHeader()
+            return 1
+        
+        if self.__waitNewBlock():
             return 1
 
         if not(self.setNextFile()):
