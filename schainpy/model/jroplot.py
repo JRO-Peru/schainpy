@@ -118,7 +118,7 @@ class RTIPlot(Figure):
             for channel in channelList:
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
-                channelIndexList.append(channel)
+                channelIndexList.append(dataOut.channelList.index(chachannel))
         
         if timerange != None:
             self.__timerange = timerange
@@ -271,7 +271,7 @@ class SpectraPlot(Figure):
             for channel in channelList:
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
-                channelIndexList.append(channelList.index(channel))
+                channelIndexList.append(dataOut.channelList.index(channel))
         
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
@@ -376,7 +376,13 @@ class Scope(Figure):
         """
         
         if channelList == None:
-            channelList = dataOut.channelList
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(chachannel))
         
         x = dataOut.heightList
         y = dataOut.data[channelList,:] * numpy.conjugate(dataOut.data[channelList,:])
