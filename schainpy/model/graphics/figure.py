@@ -1,3 +1,4 @@
+import os
 import numpy
 import mpldriver
 
@@ -17,6 +18,7 @@ class Figure:
     
     WIDTH = None
     HEIGHT = None
+    PREFIX = 'fig'
     
     def __init__(self):
          
@@ -25,6 +27,12 @@ class Figure:
     def __del__(self):
         
         self.__driver.closeFigure()
+    
+    def getFilename(self, name, ext='.png'):
+        
+        filename = '%s_%s%s' %(self.PREFIX, name, ext)
+        
+        return filename
         
     def getAxesObjList(self):
         
@@ -110,8 +118,10 @@ class Figure:
         axesObj = Axes(self.fig, *args)
         self.axesObjList.append(axesObj)
     
-    def saveFigure(self, *args):
-        self.__driver.saveFigure(self.fig, *args)
+    def saveFigure(self, figpath, figfile, *args):
+        
+        filename = os.path.join(figpath, figfile)
+        self.__driver.saveFigure(self.fig, filename, *args)
     
     def draw(self):
         

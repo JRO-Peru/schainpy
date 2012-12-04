@@ -9,6 +9,7 @@ class RTIPlot(Figure):
     
     WIDTHPROF = None
     HEIGHTPROF = None
+    PREFIX = 'rti'
     
     def __init__(self):
         
@@ -17,7 +18,7 @@ class RTIPlot(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 300
+        self.HEIGHT = 200
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         
@@ -92,7 +93,7 @@ class RTIPlot(Figure):
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, filename=None):
+            save=False, figpath='./', figfile=None):
         
         """
         
@@ -175,7 +176,11 @@ class RTIPlot(Figure):
         self.draw()
         
         if save:
-            self.saveFigure(filename)
+            date = thisDatetime.strftime("%Y%m%d")
+            if figfile == None:
+                figfile = self.getFilename(name = date)
+            
+            self.saveFigure(figpath, figfile)
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
@@ -187,6 +192,7 @@ class SpectraPlot(Figure):
     
     WIDTHPROF = None
     HEIGHTPROF = None
+    PREFIX = 'spc'
     
     def __init__(self):
         
@@ -239,7 +245,8 @@ class SpectraPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, save=False, filename=None):
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            save=False, figpath='./', figfile=None):
         
         """
         
@@ -317,7 +324,11 @@ class SpectraPlot(Figure):
         self.draw()
         
         if save:
-            self.saveFigure(filename)
+            date = thisDatetime.strftime("%Y%m%d")
+            if figfile == None:
+                figfile = self.getFilename(name = date)
+            
+            self.saveFigure(figpath, figfile)
 
 class Scope(Figure):
     

@@ -183,14 +183,22 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
     
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(ticksize)
+        
+    iplot = ax.lines[-1]
     
     ######################################################
+    if '0.' in matplotlib.__version__[0:2]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
+    if '1.0.' in matplotlib.__version__[0:4]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
     if grid != None:
         ax.grid(b=True, which='major', axis=grid)
     
     matplotlib.pyplot.tight_layout()
-    
-    iplot = ax.lines[-1]
     
     return iplot
 
@@ -234,6 +242,15 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
         tick.set_fontsize(ticksize)
                 
     ax_cb.yaxis.tick_right()
+    
+    if '0.' in matplotlib.__version__[0:2]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return imesh
+    
+    if '1.0.' in matplotlib.__version__[0:4]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return imesh
+    
     matplotlib.pyplot.tight_layout()
     
     if XAxisAsTime:

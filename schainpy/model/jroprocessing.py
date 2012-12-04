@@ -494,7 +494,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
-        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints
+        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints**self.dataOut.nConInt**self.dataOut.nIncohInt
 
     def __getFft(self):
         """
@@ -650,7 +650,9 @@ class IncohInt(Operation):
     __lastdatatime = None
     __integrationtime = None
     
-    __buffer = None
+    __buffer_spc = None
+    __buffer_cspc = None
+    __buffer_dc = None
     
     __dataReady = False
     
@@ -675,7 +677,9 @@ class IncohInt(Operation):
         
         self.__initime = None
         self.__lastdatatime = 0
-        self.__buffer = None
+        self.__buffer_spc = None
+        self.__buffer_cspc = None
+        self.__buffer_dc = None
         self.__dataReady = False
         
         
@@ -692,44 +696,83 @@ class IncohInt(Operation):
         
         if overlapping:
             self.__withOverapping = True
-            self.__buffer = None
         else:
             self.__withOverapping = False
-            self.__buffer = 0
+            self.__buffer_spc = 0
+            self.__buffer_cspc = 0
+            self.__buffer_dc = 0
         
         self.__profIndex = 0
     
-    def putData(self, data):
+    def putData(self, data_spc, data_cspc, data_dc):
         
         """
-        Add a profile to the __buffer and increase in one the __profileIndex
+        Add a profile to the __buffer_spc and increase in one the __profileIndex
         
         """
             
         if not self.__withOverapping:
-            self.__buffer += data.copy()
+            self.__buffer_spc += data_spc
+            
+            if data_cspc == None:
+                self.__buffer_cspc = None
+            else:
+                self.__buffer_cspc += data_cspc
+            
+            if data_dc == None:
+                self.__buffer_dc = None
+            else:
+                self.__buffer_dc += data_dc
+            
             self.__profIndex += 1            
             return
         
         #Overlapping data
-        nChannels, nFFTPoints, nHeis = data.shape
-        data = numpy.reshape(data, (1, nChannels, nFFTPoints, nHeis))
+        nChannels, nFFTPoints, nHeis = data_spc.shape
+        data_spc = numpy.reshape(data_spc, (1, nChannels, nFFTPoints, nHeis))
+        data_cspc = numpy.reshape(data_cspc, (1, -1, nFFTPoints, nHeis))
+        data_dc = numpy.reshape(data_dc, (1, -1, nHeis))
         
         #If the buffer is empty then it takes the data value
-        if self.__buffer == None:
-            self.__buffer = data
+        if self.__buffer_spc == None:
+            self.__buffer_spc = data_spc.copy()
+            
+            if data_cspc == None:
+                self.__buffer_cspc = None
+            else:
+                self.__buffer_cspc += data_cspc.copy()
+            
+            if data_dc == None:
+                self.__buffer_dc = None
+            else:
+                self.__buffer_dc += data_dc.copy()
+                
             self.__profIndex += 1
             return
         
         #If the buffer length is lower than n then stakcing the data value
         if self.__profIndex < self.n:
-            self.__buffer = numpy.vstack((self.__buffer, data))
+            self.__buffer_spc = numpy.vstack((self.__buffer_spc, data_spc))
+            
+            if self.__buffer_cspc != None:
+                self.__buffer_cspc = numpy.vstack((self.__buffer_cspc, data_cspc))
+            
+            if self.__buffer_dc != None:   
+                self.__buffer_dc = numpy.vstack((self.__buffer_dc, data_dc))
+                
             self.__profIndex += 1
             return
         
         #If the buffer length is equal to n then replacing the last buffer value with the data value 
-        self.__buffer = numpy.roll(self.__buffer, -1, axis=0)
-        self.__buffer[self.n-1] = data
+        self.__buffer_spc = numpy.roll(self.__buffer_spc, -1, axis=0)
+        self.__buffer_spc[self.n-1] = data_spc
+        
+        self.__buffer_cspc = numpy.roll(self.__buffer_cspc, -1, axis=0)
+        self.__buffer_cspc[self.n-1] = data_cspc
+        
+        self.__buffer_dc = numpy.roll(self.__buffer_dc, -1, axis=0)
+        self.__buffer_dc[self.n-1] = data_dc
+        
         self.__profIndex = self.n
         return
         
@@ -743,67 +786,85 @@ class IncohInt(Operation):
         self.__profileIndex
         
         """
+        data_spc = None
+        data_cspc  = None
+        data_dc = None
         
         if not self.__withOverapping:
-            data = self.__buffer
+            data_spc = self.__buffer_spc
+            data_cspc = self.__buffer_cspc
+            data_dc = self.__buffer_dc
+            
             n = self.__profIndex
         
-            self.__buffer = 0
+            self.__buffer_spc = 0
+            self.__buffer_cspc = 0
+            self.__buffer_dc = 0
             self.__profIndex = 0
             
-            return data, n
+            return data_spc, data_cspc, data_dc, n
         
         #Integration with Overlapping
-        data = numpy.sum(self.__buffer, axis=0)
+        data_spc = numpy.sum(self.__buffer_spc, axis=0)
+        
+        if self.__buffer_cspc != None:
+            data_cspc = numpy.sum(self.__buffer_cspc, axis=0)
+        
+        if self.__buffer_dc != None:
+            data_dc = numpy.sum(self.__buffer_dc, axis=0)
+        
         n = self.__profIndex
         
-        return data, n
+        return data_spc, data_cspc, data_dc, n
     
-    def byProfiles(self, data):
+    def byProfiles(self, *args):
         
         self.__dataReady = False
-        avgdata = None
+        avgdata_spc = None
+        avgdata_cspc = None
+        avgdata_dc = None
         n = None
             
-        self.putData(data)
+        self.putData(*args)
         
         if self.__profIndex == self.n:
             
-            avgdata, n = self.pushData()
+            avgdata_spc, avgdata_cspc, avgdata_dc, n = self.pushData()
             self.__dataReady = True
         
-        return avgdata
+        return avgdata_spc, avgdata_cspc, avgdata_dc
     
-    def byTime(self, data, datatime):
+    def byTime(self, datatime, *args):
         
         self.__dataReady = False
-        avgdata = None
+        avgdata_spc = None
+        avgdata_cspc = None
+        avgdata_dc = None
         n = None
         
-        self.putData(data)
+        self.putData(*args)
         
         if (datatime - self.__initime) >= self.__integrationtime:
-            avgdata, n = self.pushData()
+            avgdata_spc, avgdata_cspc, avgdata_dc, n = self.pushData()
             self.n = n
             self.__dataReady = True
         
-        return avgdata
+        return avgdata_spc, avgdata_cspc, avgdata_dc
         
-    def integrate(self, data, datatime=None):
+    def integrate(self, datatime, *args):
         
         if self.__initime == None:
             self.__initime = datatime
         
         if self.__byTime:
-            avgdata = self.byTime(data, datatime)
+            avgdata_spc, avgdata_cspc, avgdata_dc = self.byTime(datatime, *args)
         else:
-            avgdata = self.byProfiles(data)
-        
+            avgdata_spc, avgdata_cspc, avgdata_dc = self.byProfiles(*args)
         
         self.__lastdatatime = datatime
         
-        if avgdata == None:
-            return None, None
+        if avgdata_spc == None:
+            return None, None, None, None
         
         avgdatatime = self.__initime
         
@@ -814,7 +875,7 @@ class IncohInt(Operation):
         else:
             self.__initime += deltatime
             
-        return avgdata, avgdatatime
+        return avgdatatime, avgdata_spc, avgdata_cspc, avgdata_dc
         
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
         
@@ -822,13 +883,19 @@ class IncohInt(Operation):
             self.setup(n, timeInterval, overlapping)
             self.__isConfig = True
                     
-        avgdata, avgdatatime = self.integrate(dataOut.data_spc, dataOut.utctime)
+        avgdatatime, avgdata_spc, avgdata_cspc, avgdata_dc = self.integrate(dataOut.utctime,
+                                                                            dataOut.data_spc,
+                                                                            dataOut.data_cspc,
+                                                                            dataOut.data_dc)
         
 #        dataOut.timeInterval *= n
         dataOut.flagNoData = True
         
         if self.__dataReady:
-            dataOut.data_spc = avgdata
+            dataOut.data_spc = avgdata_spc
+            dataOut.data_cspc = avgdata_cspc
+            dataOut.data_dc = avgdata_dc
+            
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
