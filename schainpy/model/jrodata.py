@@ -373,20 +373,6 @@ class Spectra(JROData):
         self.nFFTPoints = None
         
         self.wavelength = None
-        
-    def getFreqRange(self, extrapoints=0):
-        
-        delfreq = 2 * self.getFmax() / self.nFFTPoints
-        freqrange = deltafreqs*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
-        
-        return freqrange
-
-    def getVelRange(self, extrapoints=0):
-        
-        deltav = 2 * self.getVmax() / self.nFFTPoints
-        velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltav/2       
-        
-        return velrange
     
     def getNoisebyHildebrand(self):
         """
@@ -444,6 +430,32 @@ class Spectra(JROData):
             noise = self.getNoisebyWindow()
         
         return 10*numpy.log10(noise)
+
+    
+    def getFreqRange(self, extrapoints=0):
+        
+        delfreq = 2 * self.getFmax() / self.nFFTPoints
+        freqrange = deltafreqs*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
+        
+        return freqrange
+
+    def getVelRange(self, extrapoints=0):
+        
+        deltav = 2 * self.getVmax() / self.nFFTPoints
+        velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltav/2       
+        
+        return velrange
+    
+    def getNPairs(self):
+        
+        return len(self.pairsList)
+        
+    def getPairsIndexList(self):
+        
+        return range(self.nPairs)
+    
+    nPairs = property(getNPairs, "I'm the 'nPairs' property.")
+    pairsIndexList = property(getPairsIndexList, "I'm the 'pairsIndexList' property.")
         
 class SpectraHeis(JROData):
     
