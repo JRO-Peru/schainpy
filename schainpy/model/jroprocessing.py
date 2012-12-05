@@ -798,22 +798,24 @@ class IncohInt(Operation):
         #Overlapping data
         nChannels, nFFTPoints, nHeis = data_spc.shape
         data_spc = numpy.reshape(data_spc, (1, nChannels, nFFTPoints, nHeis))
-        data_cspc = numpy.reshape(data_cspc, (1, -1, nFFTPoints, nHeis))
-        data_dc = numpy.reshape(data_dc, (1, -1, nHeis))
+        if data_cspc != None:
+            data_cspc = numpy.reshape(data_cspc, (1, -1, nFFTPoints, nHeis))
+        if data_dc != None:
+            data_dc = numpy.reshape(data_dc, (1, -1, nHeis))
         
         #If the buffer is empty then it takes the data value
         if self.__buffer_spc == None:
-            self.__buffer_spc = data_spc.copy()
+            self.__buffer_spc = data_spc
             
             if data_cspc == None:
                 self.__buffer_cspc = None
             else:
-                self.__buffer_cspc += data_cspc.copy()
+                self.__buffer_cspc += data_cspc
             
             if data_dc == None:
                 self.__buffer_dc = None
             else:
-                self.__buffer_dc += data_dc.copy()
+                self.__buffer_dc += data_dc
                 
             self.__profIndex += 1
             return
@@ -822,10 +824,10 @@ class IncohInt(Operation):
         if self.__profIndex < self.n:
             self.__buffer_spc = numpy.vstack((self.__buffer_spc, data_spc))
             
-            if self.__buffer_cspc != None:
+            if data_cspc != None:
                 self.__buffer_cspc = numpy.vstack((self.__buffer_cspc, data_cspc))
             
-            if self.__buffer_dc != None:   
+            if data_dc != None: 
                 self.__buffer_dc = numpy.vstack((self.__buffer_dc, data_dc))
                 
             self.__profIndex += 1
@@ -835,11 +837,13 @@ class IncohInt(Operation):
         self.__buffer_spc = numpy.roll(self.__buffer_spc, -1, axis=0)
         self.__buffer_spc[self.n-1] = data_spc
         
-        self.__buffer_cspc = numpy.roll(self.__buffer_cspc, -1, axis=0)
-        self.__buffer_cspc[self.n-1] = data_cspc
+        if data_cspc != None:
+            self.__buffer_cspc = numpy.roll(self.__buffer_cspc, -1, axis=0)
+            self.__buffer_cspc[self.n-1] = data_cspc
         
-        self.__buffer_dc = numpy.roll(self.__buffer_dc, -1, axis=0)
-        self.__buffer_dc[self.n-1] = data_dc
+        if data_dc != None:
+            self.__buffer_dc = numpy.roll(self.__buffer_dc, -1, axis=0)
+            self.__buffer_dc[self.n-1] = data_dc
         
         self.__profIndex = self.n
         return
