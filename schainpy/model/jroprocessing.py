@@ -266,6 +266,87 @@ class VoltageProc(ProcessingUnit):
 #        self.dataOut.nChannels = nChannels
         
         return 1
+    
+    def selectHeights(self, minHei, maxHei):
+        """
+        Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
+        minHei <= height <= maxHei
+        
+        Input:
+            minHei    :    valor minimo de altura a considerar 
+            maxHei    :    valor maximo de altura a considerar
+            
+        Affected:
+            Indirectamente son cambiados varios valores a travez del metodo selectHeightsByIndex
+            
+        Return:
+            1 si el metodo se ejecuto con exito caso contrario devuelve 0
+        """
+        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+        
+        if (maxHei > self.dataOut.heightList[-1]):
+            maxHei = self.dataOut.heightList[-1]
+#            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+
+        minIndex = 0
+        maxIndex = 0
+        data = self.dataOut.heightList
+        
+        for i,val in enumerate(data): 
+            if val < minHei:
+                continue
+            else:
+                minIndex = i;
+                break
+        
+        for i,val in enumerate(data): 
+            if val <= maxHei:
+                maxIndex = i;
+            else:
+                break
+
+        self.selectHeightsByIndex(minIndex, maxIndex)
+        
+        return 1
+
+    
+    def selectHeightsByIndex(self, minIndex, maxIndex):
+        """
+        Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
+        minIndex <= index <= maxIndex
+        
+        Input:
+            minIndex    :    valor de indice minimo de altura a considerar 
+            maxIndex    :    valor de indice maximo de altura a considerar
+            
+        Affected:
+            self.dataOut.data
+            self.dataOut.heightList
+            
+        Return:
+            1 si el metodo se ejecuto con exito caso contrario devuelve 0
+        """
+        
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        if (maxIndex >= self.dataOut.nHeights):
+            maxIndex = self.dataOut.nHeights-1
+#            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        nHeights = maxIndex - minIndex + 1
+
+        #voltage
+        data = self.dataOut.data[:,minIndex:maxIndex+1]
+
+        firstHeight = self.dataOut.heightList[minIndex]
+
+        self.dataOut.data = data
+        self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex+1]
+        
+        return 1
+    
 
 class CohInt(Operation):
     
@@ -494,8 +575,9 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
-        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nConInt*self.dataOut.nIncohInt
-
+        
+        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nCohInt*self.dataOut.nIncohInt
+        
     def __getFft(self):
         """
         Convierte valores de Voltaje a Spectra

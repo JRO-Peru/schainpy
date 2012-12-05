@@ -258,7 +258,15 @@ class ProcUnitConf():
         self.opConfObjList = []
         
         self.addOperation(name='init', optype='self')
+    
+    def addParameter(self, **kwargs):
         
+        opObj = self.opConfObjList[0]
+        
+        opObj.addParameter(**kwargs)
+        
+        return opObj
+    
     def addOperation(self, name, optype='self'):
         
         id = self.__getNewId()
@@ -585,36 +593,47 @@ if __name__ == '__main__':
     
     controllerObj.setup(id = '191', name='test01', description=desc)
     
-    readUnitConfObj = controllerObj.addReadUnit(datatype='Spectra',
-                                                path='/Users/dsuarez/Remote/IMAGING',
-                                                startDate='2011/03/20',
+    readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
+                                                path='data/rawdata/',
+                                                startDate='2011/01/01',
                                                 endDate='2012/12/31',
-                                                startTime='06:10:00',
+                                                startTime='00:00:00',
                                                 endTime='23:59:59',
                                                 online=0)
     
     opObj00 = readUnitConfObj.addOperation(name='printTotalBlocks')
     
-    procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
+    procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
     
-    opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
-    opObj10.addParameter(name='channelList', value='0,1,2,4,6,7', format='intlist')
+    opObj10 = procUnitConfObj0.addOperation(name='selectChannels')
+    opObj10.addParameter(name='channelList', value='3,4,5', format='intlist')
+
+    opObj10 = procUnitConfObj0.addOperation(name='selectHeights')
+    opObj10.addParameter(name='minHei', value='90', format='float')
+    opObj10.addParameter(name='maxHei', value='180', format='float')
+    
+    opObj12 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
+    opObj12.addParameter(name='n', value='10', format='int')
+    
+    procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
+    procUnitConfObj1.addParameter(name='nFFTPoints', value='16', format='int')
     
     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='1', format='int')
     opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
-#    opObj11.addParameter(name='zmin', value='70', format='int')
-#    opObj11.addParameter(name='zmax', value='90', format='int')
-    opObj11.addParameter(name='showprofile', value='0', format='int')
-    opObj11.addParameter(name='save', value='1', format='int')
-    opObj11.addParameter(name='filename', value='/Users/dsuarez/Pictures/SpectraPlot.png', format='str')
+    opObj11.addParameter(name='zmin', value='40', format='int')
+    opObj11.addParameter(name='zmax', value='80', format='int')
+    opObj11.addParameter(name='showprofile', value='1', format='int')
 
     opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='10', format='int')
     opObj11.addParameter(name='wintitle', value='RTI', format='str')
-#    opObj11.addParameter(name='zmin', value='70', format='int')
-#    opObj11.addParameter(name='zmax', value='90', format='int')
-    opObj11.addParameter(name='showprofile', value='0', format='int')
+#    opObj11.addParameter(name='xmin', value='21', format='float')
+#    opObj11.addParameter(name='xmax', value='22', format='float')
+    opObj11.addParameter(name='zmin', value='40', format='int')
+    opObj11.addParameter(name='zmax', value='80', format='int')
+    opObj11.addParameter(name='showprofile', value='1', format='int')
+    opObj11.addParameter(name='timerange', value=str(20), format='int')
     
 #    opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
 #    opObj10.addParameter(name='channelList', value='0,2,4,6', format='intlist')

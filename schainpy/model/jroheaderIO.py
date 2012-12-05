@@ -367,8 +367,8 @@ class ProcessingHeader(Header):
             self.totalSpectra = int(header['nTotalSpectra'][0])
             self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.nWindows)
             self.nHeights = int(numpy.sum(self.samplingWindow['nsa']))
-            self.firstHeight = int(self.samplingWindow['h0'][0])
-            self.deltaHeight = int(self.samplingWindow['dh'][0])
+            self.firstHeight = float(self.samplingWindow['h0'][0])
+            self.deltaHeight = float(self.samplingWindow['dh'][0])
             self.samplesWin = self.samplingWindow['nsa']
             self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
             
