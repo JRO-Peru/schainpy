@@ -701,10 +701,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             processingHeaderObj = ProcessingHeader()
 
             try:
-                if not( basicHeaderObj.read(fp) ): raise ValueError
-                if not( systemHeaderObj.read(fp) ): raise ValueError
-                if not( radarControllerHeaderObj.read(fp) ): raise ValueError
-                if not( processingHeaderObj.read(fp) ): raise ValueError
+                if not( basicHeaderObj.read(fp) ): raise IOError
+                if not( systemHeaderObj.read(fp) ): raise IOError
+                if not( radarControllerHeaderObj.read(fp) ): raise IOError
+                if not( processingHeaderObj.read(fp) ): raise IOError
                 data_type = int(numpy.log2((processingHeaderObj.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
 
                 neededSize = processingHeaderObj.blockSize + basicHeaderObj.size

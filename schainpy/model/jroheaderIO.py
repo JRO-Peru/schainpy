@@ -3,7 +3,7 @@
 $Author: murco $
 $Id: JROHeaderIO.py 151 2012-10-31 19:00:51Z murco $
 '''
-
+import sys
 import numpy
 import copy
 
@@ -66,7 +66,9 @@ class BasicHeader(Header):
             self.timeZone = int(header['nTimezone'][0])
             self.dstFlag = int(header['nDstflag'][0])
             self.errorCount = int(header['nErrorCount'][0])
-        except:
+            
+        except Exception, e:
+            print "BasicHeader: " + e
             return 0
         
         return 1
@@ -114,7 +116,9 @@ class SystemHeader(Header):
             self.nChannels = header['nNumChannels'][0]
             self.adcResolution = header['nADCResolution'][0]
             self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
-        except:
+            
+        except Exception, e:
+            print "SystemHeader: " + e
             return 0
         
         return 1
@@ -244,7 +248,7 @@ class RadarControllerHeader(Header):
                 self.code = numpy.empty([self.nCode,self.nBaud],dtype='u1')
                 tempList = []
                 for ic in range(self.nCode):
-                    temp = numpy.fromfile(fp,'u1',4*numpy.ceil(self.nBaud/32.))
+                    temp = numpy.fromfile(fp,'u1',4*int(numpy.ceil(self.nBaud/32.)))
                     tempList.append(temp)
                     self.code[ic] = numpy.unpackbits(temp[::-1])[-1*self.nBaud:]
                 self.code = 2.0*self.code - 1.0
@@ -259,8 +263,9 @@ class RadarControllerHeader(Header):
             jumpFp =  endFp - fp.tell()
             if jumpFp > 0:
                 fp.seek(jumpFp)
-
-        except:
+        
+        except Exception, e:
+            print "RadarControllerHeader: " + e
             return 0
         
         return 1
@@ -395,7 +400,8 @@ class ProcessingHeader(Header):
             if nPairs > 0:
                 self.flag_cspc = True
                 
-        except:
+        except Exception, e:
+            print "ProcessingHeader: " + e
             return 0
         
         return 1
