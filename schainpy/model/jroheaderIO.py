@@ -20,6 +20,11 @@ class Header:
 
     def write():
         pass
+    
+    def printInfo(self):
+        
+        for key in self.__dict__.keys():
+            print "%s = %s" %(key, self.__dict__[key])
 
 class BasicHeader(Header):
     

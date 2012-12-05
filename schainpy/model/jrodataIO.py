@@ -825,7 +825,15 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     def printTotalBlocks(self):
         
         print "Number of read blocks %04d" %self.nTotalBlocks
-       
+    
+    def printInfo(self):
+        
+        print self.basicHeaderObj.printInfo()
+        print self.systemHeaderObj.printInfo()
+        print self.radarControllerHeaderObj.printInfo()
+        print self.processingHeaderObj.printInfo()
+        
+    
     def run(self, **kwargs):
         
         if not(self.isConfig):
@@ -1338,7 +1346,38 @@ class VoltageReader(JRODataReader):
 
             if not( self.readNextBlock() ):
                 return 0
+        
+            self.dataOut.dtype = self.dtype
             
+            self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
+            
+            xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
+    
+            self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+            
+            self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
+            
+            self.dataOut.flagTimeBlock = self.flagTimeBlock
+            
+            self.dataOut.ippSeconds = self.ippSeconds
+            
+            self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
+            
+            self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
+            
+            self.dataOut.flagShiftFFT = False
+            
+            if self.processingHeaderObj.code != None:
+                self.dataOut.nCode = self.processingHeaderObj.nCode
+                
+                self.dataOut.nBaud = self.processingHeaderObj.nBaud
+                
+                self.dataOut.code = self.processingHeaderObj.code
+            
+            self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
+            
+            self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        
 #            self.updateDataHeader()
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
@@ -1349,53 +1388,17 @@ class VoltageReader(JRODataReader):
         
         self.dataOut.data = self.datablock[:,self.profileIndex,:]
         
-        self.dataOut.dtype = self.dtype
-        
-#        self.dataOut.nChannels = self.systemHeaderObj.nChannels
-        
-#        self.dataOut.nHeights = self.processingHeaderObj.nHeights
-        
-        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
-        
-        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
-
-        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
-        
-        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
-        
-#        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
-        
-        self.dataOut.flagTimeBlock = self.flagTimeBlock
-        
         self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
         
-        self.dataOut.ippSeconds = self.ippSeconds
-        
-        self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
-        
-        self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
-        
-        self.dataOut.flagShiftFFT = False
-        
-        if self.processingHeaderObj.code != None:
-            self.dataOut.nCode = self.processingHeaderObj.nCode
-            
-            self.dataOut.nBaud = self.processingHeaderObj.nBaud
-            
-            self.dataOut.code = self.processingHeaderObj.code
-        
         self.profileIndex += 1
-        
-        self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
-        
-        self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
         
         self.dataOut.flagNoData = False
         
 #        print self.profileIndex, self.dataOut.utctime 
 #        if self.profileIndex == 800:
 #            a=1
-    
+        
+        
         return self.dataOut.data
 
 

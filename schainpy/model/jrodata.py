@@ -214,7 +214,7 @@ class JROData:
         datatime = []
         
         datatime.append(self.utctime)
-        datatime.append(self.utctime + 2*self.timeInterval)
+        datatime.append(self.utctime + self.timeInterval)
         
         datatime = numpy.array(datatime)
         

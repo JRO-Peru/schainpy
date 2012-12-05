@@ -576,7 +576,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
         
-        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nCohInt*self.dataOut.nIncohInt
+        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
         
     def __getFft(self):
         """
@@ -587,23 +587,9 @@ class SpectraProc(ProcessingUnit):
             self.dataOut.data_cspc
             self.dataOut.data_dc
             self.dataOut.heightList
-            self.dataOut.m_BasicHeader
-            self.dataOut.m_ProcessingHeader
-            self.dataOut.radarControllerHeaderObj
-            self.dataOut.systemHeaderObj
             self.profIndex  
             self.buffer
             self.dataOut.flagNoData
-            self.dataOut.dtype
-            self.dataOut.nPairs
-            self.dataOut.nChannels
-            self.dataOut.nProfiles
-            self.dataOut.systemHeaderObj.numChannels
-            self.dataOut.m_ProcessingHeader.totalSpectra 
-            self.dataOut.m_ProcessingHeader.profilesPerBlock
-            self.dataOut.m_ProcessingHeader.numHeights
-            self.dataOut.m_ProcessingHeader.spectraComb
-            self.dataOut.m_ProcessingHeader.shif_fft
         """
         fft_volt = numpy.fft.fft(self.buffer,axis=1)
         dc = fft_volt[:,0,:]
