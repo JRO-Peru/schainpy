@@ -601,7 +601,7 @@ if __name__ == '__main__':
                                                 endTime='23:59:59',
                                                 online=0)
     
-    opObj00 = readUnitConfObj.addOperation(name='printTotalBlocks')
+#    opObj00 = readUnitConfObj.addOperation(name='printInfo')
     
     procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
     
@@ -610,19 +610,23 @@ if __name__ == '__main__':
 
     opObj10 = procUnitConfObj0.addOperation(name='selectHeights')
     opObj10.addParameter(name='minHei', value='90', format='float')
-    opObj10.addParameter(name='maxHei', value='180', format='float')
+    opObj10.addParameter(name='maxHei', value='300', format='float')
     
     opObj12 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
     opObj12.addParameter(name='n', value='10', format='int')
     
+    opObj12 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
+    opObj12.addParameter(name='n', value='2', format='int')
+    opObj12.addParameter(name='overlapping', value='1', format='int')
+    
     procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
-    procUnitConfObj1.addParameter(name='nFFTPoints', value='16', format='int')
+    procUnitConfObj1.addParameter(name='nFFTPoints', value='32', format='int')
     
     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='1', format='int')
     opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
     opObj11.addParameter(name='zmin', value='40', format='int')
-    opObj11.addParameter(name='zmax', value='80', format='int')
+    opObj11.addParameter(name='zmax', value='90', format='int')
     opObj11.addParameter(name='showprofile', value='1', format='int')
 
     opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
@@ -631,9 +635,9 @@ if __name__ == '__main__':
 #    opObj11.addParameter(name='xmin', value='21', format='float')
 #    opObj11.addParameter(name='xmax', value='22', format='float')
     opObj11.addParameter(name='zmin', value='40', format='int')
-    opObj11.addParameter(name='zmax', value='80', format='int')
+    opObj11.addParameter(name='zmax', value='90', format='int')
     opObj11.addParameter(name='showprofile', value='1', format='int')
-    opObj11.addParameter(name='timerange', value=str(20), format='int')
+    opObj11.addParameter(name='timerange', value=str(60), format='int')
     
 #    opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
 #    opObj10.addParameter(name='channelList', value='0,2,4,6', format='intlist')
