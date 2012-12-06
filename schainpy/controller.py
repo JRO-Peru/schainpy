@@ -69,6 +69,23 @@ class ParameterConf():
         if self.format == 'bool':
             value = int(value)
         
+        if self.format == 'pairslist':
+            """
+            Example:
+                value = (0,1),(1,2)
+            """
+
+            value = value.replace('(', '')
+            value = value.replace(')', '')
+            
+            strList = value.split(',')
+            intList = [int(item) for item in strList]
+            pairList = []
+            for i in range(len(intList)/2):
+                pairList.append((intList[i*2], intList[i*2 + 1]))
+            
+            return pairList
+        
         func = eval(self.format)
         
         return func(value)
