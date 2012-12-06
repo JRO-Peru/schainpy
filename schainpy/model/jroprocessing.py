@@ -347,6 +347,21 @@ class VoltageProc(ProcessingUnit):
         
         return 1
     
+    
+    def filterByHeights(self, window):
+        deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+        
+        if window == None:
+            window = self.dataOut.radarControllerHeaderObj.txA / deltaHeight
+        
+        newdelta = deltaHeight * window
+        r = self.dataOut.data.shape[1] % window
+        buffer = self.dataOut.data[:,0:self.dataOut.data.shape[1]-r] 
+        buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
+        buffer = numpy.sum(buffer,2)
+        self.dataOut.data = buffer
+        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window,newdelta)
+
 
 class CohInt(Operation):
     
@@ -972,4 +987,159 @@ class IncohInt(Operation):
             dataOut.utctime = avgdatatime
             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
             dataOut.flagNoData = False
-      
+
+
+class ProfileSelector(Operation):
+    
+    profileIndex = None
+    # Tamanho total de los perfiles
+    nProfiles = None
+    
+    def __init__(self):
+        
+        self.profileIndex = 0
+    
+    def incIndex(self):
+        self.profileIndex += 1
+        
+        if self.profileIndex >= self.nProfiles:
+            self.profileIndex = 0
+    
+    def isProfileInRange(self, minIndex, maxIndex):
+        
+        if self.profileIndex < minIndex:
+            return False
+        
+        if self.profileIndex > maxIndex:
+            return False
+        
+        return True
+    
+    def isProfileInList(self, profileList):
+        
+        if self.profileIndex not in profileList:
+            return False
+        
+        return True
+    
+    def run(self, dataOut, profileList=None, profileRangeList=None):
+        
+        self.nProfiles = dataOut.nProfiles
+
+        if profileList != None:
+            if not(self.isProfileInList(profileList)):
+                dataOut.flagNoData = True
+            else:
+                dataOut.flagNoData = False
+            self.incIndex()
+            return 1
+
+        
+        elif profileRangeList != None:
+            minIndex = profileRangeList[0]
+            maxIndex = profileRangeList[1]
+            if not(self.isProfileInRange(minIndex, maxIndex)):
+                dataOut.flagNoData = True
+            else:
+                dataOut.flagNoData = False
+            self.incIndex()
+            return 1
+        else:
+            raise ValueError, "ProfileSelector needs profileList or profileRangeList"
+        
+        return 0    
+
+class Decoder:
+
+    data = None
+    profCounter = None
+    code = None
+    ncode = None 
+    nbaud = None
+    codeIndex = None
+    flag = False
+    
+    def __init__(self):
+        
+        self.data = None
+        self.ndata = None
+        self.profCounter = 1
+        self.codeIndex = 0 
+        self.flag = False
+        self.code = None
+        self.ncode = None 
+        self.nbaud = None
+        self.__isConfig = False
+        
+    def convolutionInFreq(self, data, ndata):
+        
+        newcode = numpy.zeros(ndata)    
+        newcode[0:self.nbaud] = self.code[self.codeIndex]
+        
+        self.codeIndex += 1
+        
+        fft_data = numpy.fft.fft(data, axis=1)
+        fft_code = numpy.conj(numpy.fft.fft(newcode))
+        fft_code = fft_code.reshape(1,len(fft_code))
+        
+        conv = fft_data.copy()
+        conv.fill(0)
+        
+        conv = fft_data*fft_code
+            
+        data = numpy.fft.ifft(conv,axis=1)
+        self.data = data[:,:-self.nbaud+1]
+        self.flag = True
+        
+        if self.profCounter == self.ncode:
+            self.profCounter = 0
+            self.codeIndex = 0            
+            
+        self.profCounter += 1
+        
+    def convolutionInTime(self, data, ndata):
+
+        nchannel = data.shape[1]
+        newcode = self.code[self.codeIndex]
+        self.codeIndex += 1
+        conv = data.copy()
+        for i in range(nchannel):
+            conv[i,:] = numpy.correlate(data[i,:], newcode)
+            
+        self.data = conv
+        self.flag = True
+        
+        if self.profCounter == self.ncode:
+            self.profCounter = 0
+            self.codeIndex = 0            
+            
+        self.profCounter += 1
+
+    def run(self, dataOut, code=None, mode = 0):
+
+        if not(self.__isConfig):
+            if code == None:
+                code = dataOut.radarControllerHeaderObj.code
+#                code = dataOut.code
+                
+            ncode, nbaud = code.shape
+            self.code = code
+            self.ncode = ncode 
+            self.nbaud = nbaud
+            self.__isConfig = True
+
+        ndata = dataOut.data.shape[1] 
+        
+        if mode == 0:
+            self.convolutionInFreq(dataOut.data, ndata)
+            
+        if mode == 1:
+            self.convolutionInTime(dataOut.data, ndata)
+        
+        self.ndata = ndata - self.nbaud + 1
+        
+        dataOut.data = self.data
+        
+        dataOut.heightList = dataOut.heightList[:self.ndata]
+        
+        dataOut.flagNoData = False
