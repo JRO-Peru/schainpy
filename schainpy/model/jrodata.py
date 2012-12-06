@@ -7,6 +7,7 @@ $Id: JROData.py 173 2012-11-20 15:06:21Z murco $
 import os, sys
 import copy
 import numpy
+import datetime
 
 from jroheaderIO import SystemHeader, RadarControllerHeader
 
@@ -211,6 +212,11 @@ class JROData:
     
     def getDatatime(self):
         
+        datatime = datetime.datetime.utcfromtimestamp(self.utctime)
+        return datatime
+    
+    def getTimeRange(self):
+        
         datatime = []
         
         datatime.append(self.utctime)
@@ -238,10 +244,9 @@ class JROData:
     
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
     channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
-    
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")
-    
     noise = property(getNoise, "I'm the 'nHeights' property.")
+    datatime = property(getDatatime, "I'm the 'datatime' property")
     
 class Voltage(JROData):
     

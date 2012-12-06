@@ -79,6 +79,9 @@ class CrossSpectraPlot(Figure):
                     raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
                 pairsIndexList.append(dataOut.pairsList.index(pair))
         
+        if pairIndexList == []:
+            return
+        
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[:,:,:])
@@ -104,7 +107,7 @@ class CrossSpectraPlot(Figure):
             
             self.__isConfig = True
             
-        thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
+        thisDatetime = dataOut.datatime
         title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
@@ -223,7 +226,7 @@ class RTIPlot(Figure):
     
     def __getTimeLim(self, x, xmin, xmax):
         
-        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
+        thisdatetime = datetime.datetime.utcfromtimestamp(numpy.min(x))
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
         ####################################################
@@ -284,7 +287,7 @@ class RTIPlot(Figure):
         
         tmin = None
         tmax = None
-        x = dataOut.getDatatime()
+        x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
         avg = numpy.average(z, axis=1)
@@ -308,7 +311,7 @@ class RTIPlot(Figure):
             
             self.__isConfig = True
             
-        thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
+        thisDatetime = dataOut.datatime
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
@@ -457,7 +460,7 @@ class SpectraPlot(Figure):
             
             self.__isConfig = True
             
-        thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
+        thisDatetime = dataOut.datatime
         title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
@@ -564,7 +567,7 @@ class Scope(Figure):
             self.__isConfig = True
         
         
-        thisDatetime = datetime.datetime.fromtimestamp(dataOut.utctime)
+        thisDatetime = dataOut.datatime
         title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Range (Km)"
         ylabel = "Intensity"

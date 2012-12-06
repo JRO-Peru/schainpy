@@ -6,6 +6,7 @@ $Id: JROHeaderIO.py 151 2012-10-31 19:00:51Z murco $
 import sys
 import numpy
 import copy
+import datetime
 
 class Header:
     
@@ -37,6 +38,7 @@ class BasicHeader(Header):
     dstFlag = None
     errorCount = None
     struct = None
+    datatime = None
         
     def __init__(self):
         
@@ -72,6 +74,7 @@ class BasicHeader(Header):
             self.dstFlag = int(header['nDstflag'][0])
             self.errorCount = int(header['nErrorCount'][0])
             
+            self.datatime = datetime.datetime.utcfromtimestamp(self.utc)
         except Exception, e:
             print "BasicHeader: " + e
             return 0

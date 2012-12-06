@@ -38,35 +38,40 @@ class ParameterConf():
     
     def getValue(self):
         
+        value = self.value
+        
         if self.format == 'list':
-            strList = self.value.split(',')
+            strList = value.split(',')
             return strList
         
         if self.format == 'intlist':
-            strList = self.value.split(',')
+            strList = value.split(',')
             intList = [int(x) for x in strList]
             return intList
         
         if self.format == 'floatlist':
-            strList = self.value.split(',')
+            strList = value.split(',')
             floatList = [float(x) for x in strList]
             return floatList
         
         if self.format == 'date':
-            strList = self.value.split('/')
+            strList = value.split('/')
             intList = [int(x) for x in strList]
             date = datetime.date(intList[0], intList[1], intList[2])
             return date
         
         if self.format == 'time':
-            strList = self.value.split(':')
+            strList = value.split(':')
             intList = [int(x) for x in strList]
             time = datetime.time(intList[0], intList[1], intList[2])
             return time
-                
+        
+        if self.format == 'bool':
+            value = int(value)
+        
         func = eval(self.format)
-            
-        return func(self.value)
+        
+        return func(value)
         
     def setup(self, id, name, value, format='str'):
         
@@ -359,9 +364,6 @@ class ReadUnitConf(ProcUnitConf):
     endDate = None
     startTime = None
     endTime = None
-    online = None
-    expLabel = None
-    delay = None
     
     ELEMENTNAME = 'ReadUnit'
     
@@ -379,7 +381,7 @@ class ReadUnitConf(ProcUnitConf):
         
         return self.ELEMENTNAME
         
-    def setup(self, id, name, datatype, path, startDate, endDate, startTime, endTime, online=0, expLabel='', delay=60):
+    def setup(self, id, name, datatype, path, startDate, endDate, startTime, endTime, **kwargs):
         
         self.id = id
         self.name = name
@@ -390,13 +392,10 @@ class ReadUnitConf(ProcUnitConf):
         self.endDate = endDate
         self.startTime = startTime
         self.endTime = endTime
-        self.online = online
-        self.expLabel = expLabel
-        self.delay = delay
         
-        self.addRunOperation()
+        self.addRunOperation(**kwargs)
     
-    def addRunOperation(self):
+    def addRunOperation(self, **kwargs):
         
         opObj = self.addOperation(name = 'run', optype = 'self')
         
@@ -405,14 +404,14 @@ class ReadUnitConf(ProcUnitConf):
         opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
         opObj.addParameter(name='startTime' , value=self.startTime, format='time')
         opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
-        opObj.addParameter(name='expLabel'  , value=self.expLabel, format='str')
-        opObj.addParameter(name='online'  , value=self.online, format='int')
-        opObj.addParameter(name='delay'  , value=self.delay, format='float')
-                
+        
+        for key, value in kwargs.items():
+            opObj.addParameter(name=key, value=value, format=type(value).__name__)
+            
         return opObj
     
     
-class Controller():
+class Project():
     
     id = None
     name = None
@@ -420,7 +419,7 @@ class Controller():
 #    readUnitConfObjList = None
     procUnitConfObjDict = None
     
-    ELEMENTNAME = 'Controller'
+    ELEMENTNAME = 'Project'
     
     def __init__(self):
         
@@ -447,13 +446,13 @@ class Controller():
         self.name = name
         self.description = description
     
-    def addReadUnit(self, datatype, path, startDate='', endDate='', startTime='', endTime='', online=0, expLabel='', delay=60):
+    def addReadUnit(self, datatype, path, startDate='', endDate='', startTime='', endTime='', **kwargs):
         
         id = self.__getNewId()
         name = '%sReader' %(datatype)
         
         readUnitConfObj = ReadUnitConf()
-        readUnitConfObj.setup(id, name, datatype, path, startDate, endDate, startTime, endTime, online, expLabel, delay)
+        readUnitConfObj.setup(id, name, datatype, path, startDate, endDate, startTime, endTime, **kwargs)
         
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
@@ -473,7 +472,7 @@ class Controller():
     
     def makeXml(self):    
         
-        projectElement = Element('Controller')
+        projectElement = Element('Project')
         projectElement.set('id', str(self.id))
         projectElement.set('name', self.name)
         projectElement.set('description', self.description)
@@ -527,7 +526,7 @@ class Controller():
                
     def printattr(self):
         
-        print "Controller[%s]: name = %s, description = %s" %(self.id,
+        print "Project[%s]: name = %s, description = %s" %(self.id,
                                                               self.name,
                                                               self.description)
         
@@ -589,7 +588,7 @@ if __name__ == '__main__':
     desc = "Segundo Test"
     filename = "schain.xml"
     
-    controllerObj = Controller()
+    controllerObj = Project()
     
     controllerObj.setup(id = '191', name='test01', description=desc)
     
@@ -599,7 +598,8 @@ if __name__ == '__main__':
                                                 endDate='2012/12/31',
                                                 startTime='00:00:00',
                                                 endTime='23:59:59',
-                                                online=0)
+                                                online=1,
+                                                walk=1)
     
 #    opObj00 = readUnitConfObj.addOperation(name='printInfo')
     
@@ -617,6 +617,8 @@ if __name__ == '__main__':
     
     procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
     procUnitConfObj1.addParameter(name='nFFTPoints', value='32', format='int')
+#    procUnitConfObj1.addParameter(name='pairList', value='(0,1),(0,2),(1,2)', format='')
+    
     
     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='idfigure', value='1', format='int')
@@ -624,21 +626,28 @@ if __name__ == '__main__':
     opObj11.addParameter(name='zmin', value='40', format='int')
     opObj11.addParameter(name='zmax', value='90', format='int')
     opObj11.addParameter(name='showprofile', value='1', format='int')  
-    
-    procUnitConfObj2 = controllerObj.addProcUnit(datatype='Voltage', inputId=procUnitConfObj0.getId())
-  
-    opObj12 = procUnitConfObj2.addOperation(name='CohInt', optype='other')
-    opObj12.addParameter(name='n', value='2', format='int')
-    opObj12.addParameter(name='overlapping', value='1', format='int')
 
-    procUnitConfObj3 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj2.getId())
-    procUnitConfObj3.addParameter(name='nFFTPoints', value='32', format='int')
-    
-    opObj11 = procUnitConfObj3.addOperation(name='SpectraPlot', optype='other')
-    opObj11.addParameter(name='idfigure', value='2', format='int')
-    opObj11.addParameter(name='wintitle', value='SpectraPlot1', format='str')
-    opObj11.addParameter(name='zmin', value='40', format='int')
-    opObj11.addParameter(name='zmax', value='90', format='int')
+#    opObj11 = procUnitConfObj1.addOperation(name='CrossSpectraPlot', optype='other')
+#    opObj11.addParameter(name='idfigure', value='2', format='int')
+#    opObj11.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
+#    opObj11.addParameter(name='zmin', value='40', format='int')
+#    opObj11.addParameter(name='zmax', value='90', format='int') 
+            
+            
+#    procUnitConfObj2 = controllerObj.addProcUnit(datatype='Voltage', inputId=procUnitConfObj0.getId())
+#  
+#    opObj12 = procUnitConfObj2.addOperation(name='CohInt', optype='other')
+#    opObj12.addParameter(name='n', value='2', format='int')
+#    opObj12.addParameter(name='overlapping', value='1', format='int')
+#
+#    procUnitConfObj3 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj2.getId())
+#    procUnitConfObj3.addParameter(name='nFFTPoints', value='32', format='int')
+#    
+#    opObj11 = procUnitConfObj3.addOperation(name='SpectraPlot', optype='other')
+#    opObj11.addParameter(name='idfigure', value='2', format='int')
+#    opObj11.addParameter(name='wintitle', value='SpectraPlot1', format='str')
+#    opObj11.addParameter(name='zmin', value='40', format='int')
+#    opObj11.addParameter(name='zmax', value='90', format='int')
 #    opObj11.addParameter(name='showprofile', value='1', format='int') 
 
 #    opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')

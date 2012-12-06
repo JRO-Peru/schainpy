@@ -255,27 +255,10 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
     
     if XAxisAsTime:
         
-        func = lambda x, pos: ('%s') %(datetime.datetime.fromtimestamp(x).strftime("%H:%M:%S"))
+        func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
         ax.xaxis.set_major_formatter(FuncFormatter(func))
         ax.xaxis.set_major_locator(LinearLocator(7))
         
-#        seconds = numpy.array([xmin, xmax])
-#        datesList = map(datetime.datetime.fromtimestamp, seconds)
-#        ax.set_xlim([datesList[0],datesList[-1]])
-#        ax.xaxis.set_major_locator(MinuteLocator(numpy.arange(0,61,10)))
-#        ax.xaxis.set_minor_locator(SecondLocator(numpy.arange(0,61,60)))
-#        ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))
-#        xdateList = map(datetime.datetime.fromtimestamp, x)
-#        xdate = matplotlib.dates.date2num(xdateList)
-#        x = xdate
-        
-#        labels = []
-#        for item in ax.xaxis.get_ticklabels():
-#            stri = item.get_text()
-#            text = datetime.datetime.fromtimestamp(float(stri))
-#            labels.append(text)
-#            
-#        ax.xaxis.set_ticklabels(labels)
     return imesh
 
 def pcolor(imesh, z, xlabel='', ylabel='', title=''):
@@ -289,9 +272,6 @@ def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     imesh.set_array(z.ravel())
 
 def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title=''):
-    
-#    xdateList = map(datetime.datetime.fromtimestamp, x)
-#    xdate = matplotlib.dates.date2num(xdateList)
     
     printLabels(ax, xlabel, ylabel, title)
     

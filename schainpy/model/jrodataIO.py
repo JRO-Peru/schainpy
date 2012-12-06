@@ -74,6 +74,48 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     
     return 1
 
+def isFileinThisTime(filename, startTime, endTime):
+    """
+    Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
+    
+    Inputs:
+        filename            :    nombre completo del archivo de datos en formato Jicamarca (.r)
+        
+        startTime          :    tiempo inicial del rango seleccionado en formato datetime.time
+        
+        endTime            :    tiempo final del rango seleccionado en formato datetime.time
+    
+    Return:
+        Boolean    :    Retorna True si el archivo de datos contiene datos en el rango de
+                        fecha especificado, de lo contrario retorna False.
+    
+    Excepciones:
+        Si el archivo no existe o no puede ser abierto
+        Si la cabecera no puede ser leida.
+        
+    """
+    
+    
+    try:
+        fp = open(filename,'rb')
+    except:
+        raise IOError, "The file %s can't be opened" %(filename)
+    
+    basicHeaderObj = BasicHeader()
+    sts = basicHeaderObj.read(fp)
+    fp.close()
+    
+    thisTime = basicHeaderObj.datatime.time()
+    
+    if not(sts):
+        print "Skipping the file %s because it has not a valid header" %(filename)
+        return 0
+    
+    if not ((startTime <= thisTime) and (endTime > thisTime)):
+        return 0
+    
+    return 1
+
 def getlastFileFromPath(path, ext):
     """
     Depura el fileList dejando solo los que cumplan el formato de "PYYYYDDDSSS.ext"
@@ -97,10 +139,13 @@ def getlastFileFromPath(path, ext):
             year = int(file[1:5])
             doy  = int(file[5:8])
         
-            if (os.path.splitext(file)[-1].upper() != ext.upper()) : continue
+            
         except:
             continue
-
+        
+        if (os.path.splitext(file)[-1].lower() != ext.lower()):
+            continue
+        
         validFilelist.append(file)
 
     if validFilelist:
@@ -119,6 +164,8 @@ def checkForRealPath(path, year, doy, set, ext):
         nombre correcto del file es  .../.../D2009307/P2009307367.ext
         
         Entonces la funcion prueba con las siguientes combinaciones
+            .../.../y2009307367.ext
+            .../.../Y2009307367.ext
             .../.../x2009307/y2009307367.ext
             .../.../x2009307/Y2009307367.ext
             .../.../X2009307/y2009307367.ext
@@ -130,25 +177,30 @@ def checkForRealPath(path, year, doy, set, ext):
         caso contrario devuelve None como path y el la ultima combinacion de nombre en mayusculas 
         para el filename  
     """
-    filepath = None
+    fullfilename = None
     find_flag = False
     filename = None
-
+    
+    prefixDirList = [None,'d','D']
     if ext.lower() == ".r": #voltage
-        header1 = "dD"
-        header2 = "dD"
+        prefixFileList = ['d','D']
     elif ext.lower() == ".pdata": #spectra
-        header1 = "dD"
-        header2 = "pP"
+        prefixFileList = ['p','P']
     else:
         return None, filename
+    
+    #barrido por las combinaciones posibles        
+    for prefixDir in prefixDirList:
+        thispath = path
+        if prefixDir != None:
+            #formo el nombre del directorio xYYYYDDD (x=d o x=D)
+            thispath = os.path.join(path, "%s%04d%03d" % ( prefixDir, year, doy )) 
             
-    for dir in header1: #barrido por las dos combinaciones posibles de "D"
-        for fil in header2: #barrido por las dos combinaciones posibles de "D"
-            doypath = "%s%04d%03d" % ( dir, year, doy ) #formo el nombre del directorio xYYYYDDD (x=d o x=D)
-            filename = "%s%04d%03d%03d%s" % ( fil, year, doy, set, ext ) #formo el nombre del file xYYYYDDDSSS.ext
-            filepath = os.path.join( path, doypath, filename ) #formo el path completo
-            if os.path.exists( filepath ): #verifico que exista
+        for prefixFile in prefixFileList: #barrido por las dos combinaciones posibles de "D"
+            filename = "%s%04d%03d%03d%s" % ( prefixFile, year, doy, set, ext ) #formo el nombre del file xYYYYDDDSSS.ext
+            fullfilename = os.path.join( thispath, filename ) #formo el path completo
+            
+            if os.path.exists( fullfilename ): #verifico que exista
                 find_flag = True
                 break
         if find_flag:
@@ -157,7 +209,7 @@ def checkForRealPath(path, year, doy, set, ext):
     if not(find_flag):
         return None, filename
 
-    return filepath, filename
+    return fullfilename, filename
 
 class JRODataIO:
     
@@ -273,54 +325,50 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                             startTime=datetime.time(0,0,0),
                             endTime=datetime.time(23,59,59),
                             set=None,
-                            expLabel="",
-                            ext=".r"):
-        dirList = []
-        for thisPath in os.listdir(path):
-            if os.path.isdir(os.path.join(path,thisPath)):
-                dirList.append(thisPath)
-
-        if not(dirList):
-            return None, None
-
+                            expLabel='',
+                            ext='.r',
+                            walk=True):
+        
         pathList = []
-        dateList = []
         
-        thisDate = startDate
-        
-        while(thisDate <= endDate):
-            year = thisDate.timetuple().tm_year
-            doy = thisDate.timetuple().tm_yday
+        if not walk:
+            pathList.append(path)
             
-            match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
-            if len(match) == 0:
+        else:
+            dirList = []
+            for thisPath in os.listdir(path):
+                if os.path.isdir(os.path.join(path,thisPath)):
+                    dirList.append(thisPath)
+    
+            if not(dirList):
+                return None, None
+            
+            thisDate = startDate
+            
+            while(thisDate <= endDate):
+                year = thisDate.timetuple().tm_year
+                doy = thisDate.timetuple().tm_yday
+                
+                match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
+                if len(match) == 0:
+                    thisDate += datetime.timedelta(1)
+                    continue
+                
+                pathList.append(os.path.join(path,match[0],expLabel))
                 thisDate += datetime.timedelta(1)
-                continue
-            
-            pathList.append(os.path.join(path,match[0],expLabel))
-            dateList.append(thisDate)
-            thisDate += datetime.timedelta(1)
+        
         
         filenameList = []
-        for index in range(len(pathList)):
+        for thisPath in pathList:
             
-            thisPath = pathList[index]
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
-            
-            #Busqueda de datos en el rango de horas indicados
-            thisDate = dateList[index]
-            startDT = datetime.datetime.combine(thisDate, startTime)
-            endDT = datetime.datetime.combine(thisDate, endTime)
-            
-            startUtSeconds = time.mktime(startDT.timetuple())
-            endUtSeconds = time.mktime(endDT.timetuple())
             
             for file in fileList:
                 
                 filename = os.path.join(thisPath,file)
                 
-                if isThisFileinRange(filename, startUtSeconds, endUtSeconds):
+                if isFileinThisTime(filename, startTime, endTime):
                     filenameList.append(filename)
                     
         if not(filenameList):
@@ -330,7 +378,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         return pathList, filenameList
     
-    def __searchFilesOnLine(self, path, startDate=None, endDate=None, startTime=None, endTime=None, expLabel = "", ext = None):
+    def __searchFilesOnLine(self, path, expLabel = "", ext = None, walk=True):
         
         """
         Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
@@ -339,21 +387,11 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         Input: 
             path           :    carpeta donde estan contenidos los files que contiene data
             
-            startDate      :    Fecha inicial. Rechaza todos los directorios donde 
-                                file end time < startDate (obejto datetime.date)
-                                                         
-            endDate        :    Fecha final. Rechaza todos los directorios donde 
-                                file start time > endDate (obejto datetime.date)
-            
-            startTime      :    Tiempo inicial. Rechaza todos los archivos donde 
-                                file end time < startTime (obejto datetime.time)
-                                                         
-            endTime        :    Tiempo final. Rechaza todos los archivos donde 
-                                file start time > endTime (obejto datetime.time)
-            
             expLabel        :     Nombre del subexperimento (subfolder)
             
-            ext              :    extension de los files  
+            ext              :    extension de los files
+            
+            walk        :    Si es habilitado no realiza busquedas dentro de los ubdirectorios (doypath)
 
         Return:
             directory   :    eL directorio donde esta el file encontrado
@@ -365,60 +403,38 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             
         """
         dirList = []
-        pathList = []
-        directory = None
         
-        #Filtra solo los directorios
-        for thisPath in os.listdir(path):
-            if os.path.isdir(os.path.join(path, thisPath)):
-                dirList.append(thisPath)
-
-        if not(dirList):
-            return None, None, None, None, None
-
-        dirList = sorted( dirList, key=str.lower )
-
-        if startDate:
-            startDateTime = datetime.datetime.combine(startDate, startTime)
-            thisDateTime = startDateTime
-            if endDate == None: endDateTime = startDateTime
-            else: endDateTime = datetime.datetime.combine(endDate, endTime)
+        if walk:
             
-            while(thisDateTime <= endDateTime):
-                year = thisDateTime.timetuple().tm_year
-                doy = thisDateTime.timetuple().tm_yday
-                
-                match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
-                if len(match) == 0:
-                    thisDateTime += datetime.timedelta(1)
-                    continue
-                
-                pathList.append(os.path.join(path,match[0], expLabel))
-                thisDateTime += datetime.timedelta(1)
-
-            if not(pathList):
-                print "\tNo files in range: %s - %s" %(startDateTime.ctime(), endDateTime.ctime())
+            #Filtra solo los directorios
+            for thisPath in os.listdir(path):
+                if os.path.isdir(os.path.join(path, thisPath)):
+                    dirList.append(thisPath)
+        
+            if not(dirList):
                 return None, None, None, None, None
-
-            directory = pathList[0]
-            
+        
+            dirList = sorted( dirList, key=str.lower )
+                
+            doypath = dirList[-1]
+            fullpath = os.path.join(path, doypath, expLabel)
+        
         else:
-            directory = dirList[-1]
-            directory = os.path.join(path,directory)
+            fullpath = path
 
-        filename = getlastFileFromPath(directory, ext)
+        filename = getlastFileFromPath(fullpath, ext)
 
         if not(filename):
             return None, None, None, None, None
 
-        if not(self.__verifyFile(os.path.join(directory, filename))):
+        if not(self.__verifyFile(os.path.join(fullpath, filename))):
             return None, None, None, None, None
 
         year = int( filename[1:5] )
         doy  = int( filename[5:8] )
         set  = int( filename[8:11] )        
         
-        return directory, filename, year, doy, set
+        return fullpath, filename, year, doy, set
     
 
 
@@ -480,9 +496,9 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         self.set += 1
         
         #busca el 1er file disponible
-        file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
-        if file:
-            if self.__verifyFile(file, False):
+        fullfilename, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
+        if fullfilename:
+            if self.__verifyFile(fullfilename, False):
                 fileOk_flag = True
 
         #si no encuentra un file entonces espera y vuelve a buscar
@@ -501,9 +517,9 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                     else:
                         print "\tSearching next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext)
                     
-                    file, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
-                    if file:
-                        if self.__verifyFile(file):
+                    fullfilename, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
+                    if fullfilename:
+                        if self.__verifyFile(fullfilename):
                             fileOk_flag = True
                             break
                     
@@ -520,13 +536,13 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                     self.doy += 1
 
         if fileOk_flag:
-            self.fileSize = os.path.getsize( file )
-            self.filename = file
+            self.fileSize = os.path.getsize( fullfilename )
+            self.filename = fullfilename
             self.flagIsNewFile = 1
             if self.fp != None: self.fp.close() 
-            self.fp = open(file, 'rb')
+            self.fp = open(fullfilename, 'rb')
             self.flagNoMoreFiles = 0
-            print 'Setting the file: %s' % file
+            print 'Setting the file: %s' % fullfilename
         else:
             self.fileSize = 0
             self.filename = None
@@ -555,7 +571,11 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         return 1
 
     def __waitNewBlock(self):
-        #si es OnLine y ademas aun no se han leido un bloque completo entonces se espera por uno valido
+        """
+        Return 1 si se encontro un nuevo bloque de datos, 0 de otra forma. 
+        
+        Si el modo de lectura es OffLine siempre retorn 0
+        """
         if not self.online:
             return 0
         
@@ -586,6 +606,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         return 0
 
     def __setNewBlock(self):
+        
         if self.fp == None:
             return 0
 
@@ -738,7 +759,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 expLabel = "", 
                 ext = None, 
                 online = False,
-                delay = 60):
+                delay = 60,
+                walk = True):
 
         if path == None:
             raise ValueError, "The path is not valid"
@@ -748,17 +770,17 @@ class JRODataReader(JRODataIO, ProcessingUnit):
 
         if online:
             print "Searching files in online mode..."  
-            doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        
-
-            if not(doypath):
-                for nTries in range( self.nTries ):
-                    print '\tWaiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
-                    time.sleep( self.delay )
-                    doypath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext)        
-                    if doypath:
-                        break
+                   
+            for nTries in range( self.nTries ):
+                fullpath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk)
+                
+                if fullpath:
+                    break
+                
+                print '\tWaiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
+                time.sleep( self.delay )
             
-            if not(doypath):
+            if not(fullpath):
                 print "There 'isn't valied files in %s" % path
                 return None
         
@@ -769,7 +791,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
 
         else:
             print "Searching files in offline mode ..."
-            pathList, filenameList = self.__searchFilesOffLine(path, startDate, endDate, startTime, endTime, set, expLabel, ext)
+            pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
+                                                               startTime=startTime, endTime=endTime,
+                                                               set=set, expLabel=expLabel, ext=ext,
+                                                               walk=walk)
             
             if not(pathList):
                 print "No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
@@ -1000,12 +1025,12 @@ class JRODataWriter(JRODataIO, Operation):
         timeTuple = time.localtime( self.dataOut.dataUtcTime)
         subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
 
-        doypath = os.path.join( path, subfolder )
-        if not( os.path.exists(doypath) ):
-            os.mkdir(doypath)
+        fullpath = os.path.join( path, subfolder )
+        if not( os.path.exists(fullpath) ):
+            os.mkdir(fullpath)
             self.setFile = -1 #inicializo mi contador de seteo
         else:
-            filesList = os.listdir( doypath )
+            filesList = os.listdir( fullpath )
             if len( filesList ) > 0:
                 filesList = sorted( filesList, key=str.lower )
                 filen = filesList[-1]
@@ -2433,9 +2458,9 @@ class SpectraHeisWriter():
         #folder='D%4.4d%3.3d'%(name.tm_year,name.tm_yday)    
         subfolder = 'D%4.4d%3.3d' % (name.tm_year,name.tm_yday)
 
-        doypath = os.path.join( self.wrpath, subfolder )
-        if not( os.path.exists(doypath) ):
-            os.mkdir(doypath)
+        fullpath = os.path.join( self.wrpath, subfolder )
+        if not( os.path.exists(fullpath) ):
+            os.mkdir(fullpath)
         self.setFile += 1
         file = 'D%4.4d%3.3d%3.3d%s' % (name.tm_year,name.tm_yday,self.setFile,ext) 
 
