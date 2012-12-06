@@ -29,6 +29,7 @@ def hildebrand_sekhon(data, navg):
     dataflat = data.copy().reshape(-1)
     dataflat.sort()
     npts = dataflat.size #numbers of points of the data
+    npts_noise = 0.2*npts
     
     if npts < 32:
         print "error in noise - requires at least 32 points"
