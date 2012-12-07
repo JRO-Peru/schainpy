@@ -239,7 +239,7 @@ class JROData:
         
         _lambda = self.C/self.frequency
         
-        vmax = self.getFmax() * _lambda / 2.
+        vmax = self.getFmax() * _lambda
         
         return vmax
     
@@ -440,14 +440,14 @@ class Spectra(JROData):
     
     def getFreqRange(self, extrapoints=0):
         
-        delfreq = 2 * self.getFmax() / self.nFFTPoints
-        freqrange = deltafreqs*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
+        deltafreq = self.getFmax() / self.nFFTPoints
+        freqrange = deltafreq*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
         
         return freqrange
 
     def getVelRange(self, extrapoints=0):
         
-        deltav = 2 * self.getVmax() / self.nFFTPoints
+        deltav = self.getVmax() / self.nFFTPoints
         velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltav/2       
         
         return velrange

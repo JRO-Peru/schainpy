@@ -606,7 +606,7 @@ class SpectraProc(ProcessingUnit):
             self.buffer
             self.dataOut.flagNoData
         """
-        fft_volt = numpy.fft.fft(self.buffer,axis=1)
+        fft_volt = numpy.fft.fft(self.buffer,axis=1)/numpy.sqrt(self.dataOut.nFFTPoints)
         dc = fft_volt[:,0,:]
         
         #calculo de self-spectra
@@ -624,7 +624,7 @@ class SpectraProc(ProcessingUnit):
             #calculo de cross-spectra
             cspc = numpy.zeros((self.dataOut.nPairs, self.dataOut.nFFTPoints, self.dataOut.nHeights), dtype='complex')
             for pair in self.dataOut.pairsList:
-                cspc[pairIndex,:,:] = numpy.abs(fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:]))
+                cspc[pairIndex,:,:] = fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:])
                 pairIndex += 1
             blocksize += cspc.size
         

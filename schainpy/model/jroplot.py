@@ -79,10 +79,10 @@ class CrossSpectraPlot(Figure):
                     raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
                 pairsIndexList.append(dataOut.pairsList.index(pair))
         
-        if pairIndexList == []:
+        if pairsIndexList == []:
             return
         
-        x = dataOut.getVelRange(1)
+        x = dataOut.getFreqRange(1)
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[:,:,:])
         avg = numpy.average(numpy.abs(z), axis=1)
@@ -141,7 +141,7 @@ class CrossSpectraPlot(Figure):
             title = "Coherence %d%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+2]
             axes0.pcolor(x, y, coherence,
-                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=-1, zmax=1,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, cblabel='')
             
@@ -150,7 +150,7 @@ class CrossSpectraPlot(Figure):
             axes0.pcolor(x, y, phase,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, cblabel='')
+                        ticksize=9, cblabel='', colormap='RdBu')
 
 
             
