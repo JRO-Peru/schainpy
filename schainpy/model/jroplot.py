@@ -9,7 +9,7 @@ class CrossSpectraPlot(Figure):
     
     WIDTHPROF = None
     HEIGHTPROF = None
-    PREFIX = 'spc'
+    PREFIX = 'cspc'
     
     def __init__(self):
         
@@ -82,6 +82,9 @@ class CrossSpectraPlot(Figure):
         if pairsIndexList == []:
             return
         
+        if len(pairsIndexList) > 4:
+            pairsIndexList = pairsIndexList[0:4]
+        
         x = dataOut.getFreqRange(1)
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[:,:,:])
@@ -108,7 +111,7 @@ class CrossSpectraPlot(Figure):
             self.__isConfig = True
             
         thisDatetime = dataOut.datatime
-        title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        title = "Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
@@ -226,7 +229,7 @@ class RTIPlot(Figure):
     
     def __getTimeLim(self, x, xmin, xmax):
         
-        thisdatetime = datetime.datetime.utcfromtimestamp(numpy.min(x))
+        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
         ####################################################
