@@ -357,7 +357,12 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 pathList.append(os.path.join(path,match[0],expLabel))
                 thisDate += datetime.timedelta(1)
         
+        if pathList == []:
+            print "Any folder found into date range %s-%s" %(startDate, endDate)
+            return None, None
         
+        print "%d folder(s) found [%s, ...]" %(len(pathList), pathList[0])
+            
         filenameList = []
         for thisPath in pathList:
             
@@ -372,6 +377,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                     filenameList.append(filename)
                     
         if not(filenameList):
+            print "Any file found into time range %s-%s" %(startTime, endTime)
             return None, None
 
         self.filenameList = filenameList

@@ -1,5 +1,6 @@
 import os
 import numpy
+import time, datetime
 import mpldriver
 
 
@@ -13,6 +14,7 @@ class Figure:
     width = None
     height = None
     nplots = None
+    timerange = None
     
     axesObjList = []
     
@@ -67,7 +69,7 @@ class Figure:
             xmin = td.seconds/(60*60.)
             
         if xmax == None:
-            xmax = xmin + self.__timerange/(60*60.)
+            xmax = xmin + self.timerange/(60*60.)
         
         mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
         tmin = time.mktime(mindt.timetuple())
@@ -75,7 +77,7 @@ class Figure:
         maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
         tmax = time.mktime(maxdt.timetuple())
         
-        self.__timerange = tmax - tmin
+        self.timerange = tmax - tmin
         
         return tmin, tmax
     

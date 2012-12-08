@@ -178,7 +178,7 @@ class RTIPlot(Figure):
     
     def __init__(self):
         
-        self.__timerange = 24*60*60
+        self.timerange = 24*60*60
         self.__isConfig = False
         self.__nsubplots = 1
         
@@ -258,7 +258,7 @@ class RTIPlot(Figure):
                 channelIndexList.append(dataOut.channelList.index(channel))
         
         if timerange != None:
-            self.__timerange = timerange
+            self.timerange = timerange
         
         tmin = None
         tmax = None
@@ -673,7 +673,7 @@ class CoherencePlot(Figure):
     PREFIX = 'coherencemap'
 
     def __init__(self):
-        self.__timerange = 24*60*60
+        self.timerange = 24*60*60
         self.__isConfig = False
         self.__nsubplots = 1
         
@@ -729,7 +729,7 @@ class CoherencePlot(Figure):
                 pairsIndexList.append(dataOut.pairsList.index(pair))
         
         if timerange != None:
-            self.__timerange = timerange
+            self.timerange = timerange
         
         tmin = None
         tmax = None
