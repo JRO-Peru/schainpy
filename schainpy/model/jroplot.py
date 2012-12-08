@@ -589,4 +589,286 @@ class Scope(Figure):
             
         if save:
             self.saveFigure(filename)
+
+class ProfilePlot(Figure):
+    __isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'spcprofile'
+    
+    def __init__(self):
+        self.__isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 300
+        self.HEIGHT = 500
+    
+    def getSubplots(self):
+        ncol = 1
+        nrow = 1
+        
+        return nrow, ncol
+    
+    def setup(self, idfigure, nplots, wintitle):
+        
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+        
+        self.createFigure(idfigure = idfigure,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH,
+                          heightplot = self.HEIGHT)
+        
+        nrow, ncol = self.getSubplots()
+        
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+    
+    def run(self, dataOut, idfigure, wintitle="", channelList=None,
+            xmin=None, xmax=None, ymin=None, ymax=None,
+            save=False, figpath='./', figfile=None):
+        
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+            channelList = dataOut.channelList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+                
+
+        y = dataOut.getHeiRange()
+        x = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
+        avg = numpy.average(x, axis=1)
+        
+        
+        if not self.__isConfig:
+            
+            nplots = 1
+            
+            self.setup(idfigure=idfigure,
+                       nplots=nplots,
+                       wintitle=wintitle)
+            
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            if xmin == None: xmin = numpy.nanmin(avg)*0.9
+            if xmax == None: xmax = numpy.nanmax(avg)*0.9
+            
+            self.__isConfig = True
+            
+        thisDatetime = dataOut.datatime
+        title = "Power Profile"
+        xlabel = "dB"
+        ylabel = "Range (Km)"
+        
+        self.setWinTitle(title)
+        
+        
+        title = "Power Profile: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        axes = self.axesList[0]
+        
+        legendlabels = ["channel %d"%x for x in channelList]
+        axes.pmultiline(avg, y,
+                xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels,
+                ytick_visible=True, nxticks=5,
+                grid='x')
+        
+        self.draw()
+        
+        if save:
+            date = thisDatetime.strftime("%Y%m%d")
+            if figfile == None:
+                figfile = self.getFilename(name = date)
+            
+            self.saveFigure(figpath, figfile)
+
+class CoherencePlot(Figure):
+    __isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'coherencemap'
+
+    def __init__(self):
+        self.__timerange = 24*60*60
+        self.__isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 800
+        self.HEIGHT = 200
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+    
+    def getSubplots(self):
+        ncol = 1
+        nrow = self.nplots*2
+        
+        return nrow, ncol
+    
+    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+        if showprofile:
+            ncolspan = 7
+            colspan = 6
+            self.__nsubplots = 2
+            
+        self.createFigure(idfigure = idfigure,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+        
+        nrow, ncol = self.getSubplots()
+        
+        for y in range(nrow):
+            for x in range(ncol):
+                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+                
+                if showprofile:
+                    self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
+                    
+    def __getTimeLim(self, x, xmin, xmax):
+        
+        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
+        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
+        
+        ####################################################
+        #If the x is out of xrange
+        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
+            xmin = None
+            xmax = None
+        
+        if xmin == None:
+            td = thisdatetime - thisdate
+            xmin = td.seconds/(60*60.)
+            
+        if xmax == None:
+            xmax = xmin + self.__timerange/(60*60.)
+        
+        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
+        tmin = time.mktime(mindt.timetuple())
+        
+        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
+        tmax = time.mktime(maxdt.timetuple())
+        
+        self.__timerange = tmax - tmin
+        
+        return tmin, tmax
+    
+    def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            timerange=None,
+            save=False, figpath='./', figfile=None):
+                
+        if pairsList == None:
+            pairsIndexList = dataOut.pairsIndexList
+        else:
+            pairsIndexList = []
+            for pair in pairsList:
+                if pair not in dataOut.pairsList:
+                    raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
+                pairsIndexList.append(dataOut.pairsList.index(pair))
+        
+        if timerange != None:
+            self.__timerange = timerange
+        
+        tmin = None
+        tmax = None
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
+        
+        if not self.__isConfig:    
+            nplots = len(pairsIndexList)
+            self.setup(idfigure=idfigure,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile)
+            
+            tmin, tmax = self.__getTimeLim(x, xmin, xmax)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            
+            self.__isConfig = True
+        
+        thisDatetime = dataOut.datatime
+        title = "CoherenceMap: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = ""
+        ylabel = "Range (Km)"
+        
+        self.setWinTitle(title)
+        
+        for i in range(self.nplots):
+            
+            pair = dataOut.pairsList[pairsIndexList[i]]
+            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
+            coherence = numpy.abs(coherenceComplex)            
+            avg = numpy.average(coherence, axis=0)
+            z = avg.reshape((1,-1))
+
+            counter = 0
+            
+            title = "Coherence %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            axes = self.axesList[i*self.__nsubplots*2]
+            axes.pcolor(x, y, z,
+                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                        ticksize=9, cblabel='', cbsize="1%")
+            
+            if self.__showprofile:
+                counter += 1
+                axes = self.axesList[i*self.__nsubplots*2 + counter]
+                axes.pline(avg, y,
+                        xmin=0, xmax=1, ymin=ymin, ymax=ymax,
+                        xlabel='', ylabel='', title='', ticksize=7,
+                        ytick_visible=False, nxticks=5,
+                        grid='x')
+            
+            counter += 1
+            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
+            avg = numpy.average(phase, axis=0)
+            z = avg.reshape((1,-1))
+            
+            title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            axes = self.axesList[i*self.__nsubplots*2 + counter]
+            axes.pcolor(x, y, z,
+                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                        ticksize=9, cblabel='', colormap='RdBu', cbsize="1%")
+            
+            if self.__showprofile:
+                counter += 1
+                axes = self.axesList[i*self.__nsubplots*2 + counter]
+                axes.pline(avg, y,
+                        xmin=-180, xmax=180, ymin=ymin, ymax=ymax,
+                        xlabel='', ylabel='', title='', ticksize=7,
+                        ytick_visible=False, nxticks=4,
+                        grid='x')
+            
+        self.draw()
+        
+        if save:
+            date = thisDatetime.strftime("%Y%m%d")
+            if figfile == None:
+                figfile = self.getFilename(name = date)
+            
+            self.saveFigure(figpath, figfile)
+            
+        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+            self.__isConfig = False
+
         

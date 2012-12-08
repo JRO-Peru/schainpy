@@ -221,13 +221,40 @@ class Axes:
                                                     ylabel=ylabel,
                                                     title=title)
         
+    def pmultiline(self, x, y,
+                   xmin=None, xmax=None,
+                   ymin=None, ymax=None,
+                   xlabel='', ylabel='',
+                   title='',
+                   **kwargs):
+        
+        if self.__firsttime:
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+    
+            self.plot = self.__driver.createPmultiline(self.ax, x, y,
+                                                  xmin, xmax,
+                                                  ymin, ymax,
+                                                  xlabel=xlabel,
+                                                  ylabel=ylabel,
+                                                  title=title,
+                                                  **kwargs)
+            self.__firsttime = False
+            return
+                    
+        self.__driver.pmultiline(self.plot, x, y, xlabel=xlabel,
+                                                    ylabel=ylabel,
+                                                    title=title)
         
     def pcolor(self, x, y, z,
                xmin=None, xmax=None,
                ymin=None, ymax=None,
                zmin=None, zmax=None,
                xlabel='', ylabel='',
-               title='', rti = False,
+               title='', rti = False, colormap='jet',
                **kwargs):
         
         """
@@ -267,6 +294,7 @@ class Axes:
                                                    xlabel=xlabel,
                                                     ylabel=ylabel,
                                                     title=title,
+                                                    colormap=colormap,
                                                     **kwargs)
             
             if self.xmin == None: self.xmin = xmin
@@ -283,7 +311,8 @@ class Axes:
             self.__driver.addpcolor(self.ax, x, y, z, self.zmin, self.zmax,
                                     xlabel=xlabel,
                                     ylabel=ylabel,
-                                    title=title)
+                                    title=title,
+                                    colormap=colormap)
             return
         
         self.__driver.pcolor(self.plot, z,

@@ -85,8 +85,13 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
     printLabels(ax, xlabel, ylabel, title)
     
     ######################################################
-    xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/nxticks) + int(xmin)
-    ax.set_xticks(xtickspos)
+    if (xmax-xmin)<=1:
+        xtickspos = numpy.linspace(xmin,xmax,nxticks)
+        xtickspos = numpy.array([float("%.1f"%i) for i in xtickspos])
+        ax.set_xticks(xtickspos)
+    else:
+        xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+        ax.set_xticks(xtickspos)
     
     for tick in ax.get_xticklabels():
         tick.set_visible(xtick_visible)
@@ -126,7 +131,68 @@ def pline(iplot, x, y, xlabel='', ylabel='', title=''):
     printLabels(ax, xlabel, ylabel, title)
     
     iplot.set_data(x, y)
+
+def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
+                ticksize=9, xtick_visible=True, ytick_visible=True,
+                nxticks=4, nyticks=10,
+                grid=None):
     
+    """
+    
+    Input:
+        grid    :    None, 'both', 'x', 'y'
+    """
+        
+    lines = ax.plot(x.T, y)
+    leg = ax.legend(lines, legendlabels, loc='upper left')
+    leg.get_frame().set_alpha(0.5)
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([ymin,ymax]) 
+    printLabels(ax, xlabel, ylabel, title)
+    
+    xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+    ax.set_xticks(xtickspos)
+    
+    for tick in ax.get_xticklabels():
+        tick.set_visible(xtick_visible)
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize) 
+    
+    for tick in ax.get_yticklabels():
+        tick.set_visible(ytick_visible)
+    
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize)
+        
+    iplot = ax.lines[-1]
+    
+    if '0.' in matplotlib.__version__[0:2]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
+    if '1.0.' in matplotlib.__version__[0:4]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
+    if grid != None:
+        ax.grid(b=True, which='major', axis=grid)
+    
+    matplotlib.pyplot.tight_layout()
+
+    return iplot
+
+
+def pmultiline(iplot, x, y, xlabel='', ylabel='', title=''):
+    
+    ax = iplot.get_axes()
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    for i in range(len(ax.lines)):
+        line = ax.lines[i]
+        line.set_data(x[i,:],y)
+            
 def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
                  xlabel='', ylabel='', title='', ticksize = 9,
                  colormap='jet',cblabel='', cbsize="5%",
@@ -188,11 +254,11 @@ def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     
     imesh.set_array(z.ravel())
 
-def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title=''):
+def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
     
     printLabels(ax, xlabel, ylabel, title)
     
-    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax)
+    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
     
 def draw(fig):
     
