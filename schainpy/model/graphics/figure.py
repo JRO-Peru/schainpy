@@ -50,7 +50,35 @@ class Figure:
         heightscreen = heightplot*nrow
         
         return widthscreen, heightscreen
+    
+    def getTimeLim(self, x, xmin, xmax):
         
+        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
+        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
+        
+        ####################################################
+        #If the x is out of xrange
+        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
+            xmin = None
+            xmax = None
+        
+        if xmin == None:
+            td = thisdatetime - thisdate
+            xmin = td.seconds/(60*60.)
+            
+        if xmax == None:
+            xmax = xmin + self.__timerange/(60*60.)
+        
+        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
+        tmin = time.mktime(mindt.timetuple())
+        
+        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
+        tmax = time.mktime(maxdt.timetuple())
+        
+        self.__timerange = tmax - tmin
+        
+        return tmin, tmax
+    
     def init(self, idfigure, nplots, wintitle):
     
         raise ValueError, "This method has been replaced with createFigure"

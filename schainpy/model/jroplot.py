@@ -227,34 +227,6 @@ class RTIPlot(Figure):
                     
                 counter += 1
     
-    def __getTimeLim(self, x, xmin, xmax):
-        
-        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
-        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
-        
-        ####################################################
-        #If the x is out of xrange
-        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
-            xmin = None
-            xmax = None
-        
-        if xmin == None:
-            td = thisdatetime - thisdate
-            xmin = td.seconds/(60*60.)
-            
-        if xmax == None:
-            xmax = xmin + self.__timerange/(60*60.)
-        
-        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
-        tmin = time.mktime(mindt.timetuple())
-        
-        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
-        tmax = time.mktime(maxdt.timetuple())
-        
-        self.__timerange = tmax - tmin
-        
-        return tmin, tmax
-    
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
@@ -306,7 +278,7 @@ class RTIPlot(Figure):
                        wintitle=wintitle,
                        showprofile=showprofile)
             
-            tmin, tmax = self.__getTimeLim(x, xmin, xmax)
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = numpy.nanmin(avg)*0.9
@@ -741,34 +713,6 @@ class CoherencePlot(Figure):
                 
                 if showprofile:
                     self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
-                    
-    def __getTimeLim(self, x, xmin, xmax):
-        
-        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
-        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
-        
-        ####################################################
-        #If the x is out of xrange
-        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
-            xmin = None
-            xmax = None
-        
-        if xmin == None:
-            td = thisdatetime - thisdate
-            xmin = td.seconds/(60*60.)
-            
-        if xmax == None:
-            xmax = xmin + self.__timerange/(60*60.)
-        
-        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
-        tmin = time.mktime(mindt.timetuple())
-        
-        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
-        tmax = time.mktime(maxdt.timetuple())
-        
-        self.__timerange = tmax - tmin
-        
-        return tmin, tmax
     
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
@@ -799,7 +743,7 @@ class CoherencePlot(Figure):
                        wintitle=wintitle,
                        showprofile=showprofile)
             
-            tmin, tmax = self.__getTimeLim(x, xmin, xmax)
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
             
