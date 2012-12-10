@@ -39,8 +39,10 @@ class BasicHeader(Header):
     errorCount = None
     struct = None
     datatime = None
+    
+    __LOCALTIME = None
         
-    def __init__(self):
+    def __init__(self, localtime=0):
         
         self.size = 0
         self.version = 0
@@ -61,6 +63,7 @@ class BasicHeader(Header):
                               ('nErrorCount','<u4')
                               ])   
         
+        self.__LOCALTIME = localtime
     
     def read(self, fp):
         try:
@@ -74,9 +77,13 @@ class BasicHeader(Header):
             self.dstFlag = int(header['nDstflag'][0])
             self.errorCount = int(header['nErrorCount'][0])
             
+            self.utc += self.__LOCALTIME
+            
             self.datatime = datetime.datetime.utcfromtimestamp(self.utc)
+            
         except Exception, e:
-            print "BasicHeader: " + e
+            print "BasicHeader: "
+            print e
             return 0
         
         return 1

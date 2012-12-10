@@ -15,6 +15,8 @@ from jrodata import *
 from jroheaderIO import *
 from jroprocessing import *
 
+LOCALTIME = -18000
+
 def isNumber(str):
     """
     Chequea si el conjunto de caracteres que componen un string puede ser convertidos a un numero.
@@ -55,7 +57,7 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
         Si la cabecera no puede ser leida.
         
     """
-    basicHeaderObj = BasicHeader()
+    basicHeaderObj = BasicHeader(LOCALTIME)
     
     try:
         fp = open(filename,'rb')
@@ -101,7 +103,7 @@ def isFileinThisTime(filename, startTime, endTime):
     except:
         raise IOError, "The file %s can't be opened" %(filename)
     
-    basicHeaderObj = BasicHeader()
+    basicHeaderObj = BasicHeader(LOCALTIME)
     sts = basicHeaderObj.read(fp)
     fp.close()
     
@@ -217,7 +219,7 @@ class JRODataIO:
     
     isConfig = False
     
-    basicHeaderObj = BasicHeader()
+    basicHeaderObj = BasicHeader(LOCALTIME)
     
     systemHeaderObj = SystemHeader()
     
@@ -722,7 +724,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         neededSize = self.processingHeaderObj.blockSize + self.firstHeaderSize
 
         if neededSize == 0:
-            basicHeaderObj = BasicHeader()
+            basicHeaderObj = BasicHeader(LOCALTIME)
             systemHeaderObj = SystemHeader()
             radarControllerHeaderObj = RadarControllerHeader()
             processingHeaderObj = ProcessingHeader()
@@ -1204,7 +1206,7 @@ class VoltageReader(JRODataReader):
         
         self.optchar = "D"
 
-        self.basicHeaderObj = BasicHeader()
+        self.basicHeaderObj = BasicHeader(LOCALTIME)
         
         self.systemHeaderObj = SystemHeader()
         
@@ -1486,7 +1488,7 @@ class VoltageWriter(JRODataWriter):
         
         self.filename = None
         
-        self.basicHeaderObj = BasicHeader()
+        self.basicHeaderObj = BasicHeader(LOCALTIME)
     
         self.systemHeaderObj = SystemHeader()
     
@@ -1800,7 +1802,7 @@ class SpectraReader(JRODataReader):
         
         self.optchar = "P"
         
-        self.basicHeaderObj = BasicHeader()
+        self.basicHeaderObj = BasicHeader(LOCALTIME)
         
         self.systemHeaderObj = SystemHeader()
         
@@ -2150,7 +2152,7 @@ class SpectraWriter(JRODataWriter):
         
         self.filename = None
         
-        self.basicHeaderObj = BasicHeader()
+        self.basicHeaderObj = BasicHeader(LOCALTIME)
     
         self.systemHeaderObj = SystemHeader()
     

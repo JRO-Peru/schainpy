@@ -7,6 +7,8 @@ class CrossSpectraPlot(Figure):
     __isConfig = None
     __nsubplots = None
     
+    WIDTH = None
+    HEIGHT = None
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'cspc'
@@ -16,8 +18,8 @@ class CrossSpectraPlot(Figure):
         self.__isConfig = False
         self.__nsubplots = 4
         
-        self.WIDTH = 300
-        self.HEIGHT = 400
+        self.WIDTH = 250
+        self.HEIGHT = 250
         self.WIDTHPROF = 0
         self.HEIGHTPROF = 0
         
@@ -271,6 +273,11 @@ class RTIPlot(Figure):
         
         noise = dataOut.getNoise()
         
+        thisDatetime = dataOut.datatime
+        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = "Velocity (m/s)"
+        ylabel = "Range (Km)"
+        
         if not self.__isConfig:
             
             nplots = len(channelIndexList)
@@ -288,11 +295,7 @@ class RTIPlot(Figure):
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
-            
-        thisDatetime = dataOut.datatime
-        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
-        xlabel = "Velocity (m/s)"
-        ylabel = "Range (Km)"
+        
         
         self.setWinTitle(title)
             
@@ -339,8 +342,8 @@ class SpectraPlot(Figure):
         self.__isConfig = False
         self.__nsubplots = 1
         
-        self.WIDTH = 300
-        self.HEIGHT = 400
+        self.WIDTH = 230
+        self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         
@@ -669,7 +672,7 @@ class ProfilePlot(Figure):
             
             self.saveFigure(figpath, figfile)
 
-class CoherencePlot(Figure):
+class CoherenceMap(Figure):
     __isConfig = None
     __nsubplots = None
     
@@ -736,6 +739,12 @@ class CoherencePlot(Figure):
         if timerange != None:
             self.timerange = timerange
         
+        if pairsIndexList == []:
+            return
+        
+        if len(pairsIndexList) > 4:
+            pairsIndexList = pairsIndexList[0:4]
+            
         tmin = None
         tmax = None
         x = dataOut.getTimeRange()

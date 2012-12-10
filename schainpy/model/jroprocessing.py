@@ -1079,9 +1079,10 @@ class IncohInt(Operation):
         dataOut.flagNoData = True
         
         if self.__dataReady:
-            dataOut.data_spc = avgdata_spc
-            dataOut.data_cspc = avgdata_cspc
-            dataOut.data_dc = avgdata_dc
+            
+            dataOut.data_spc = avgdata_spc / self.n
+            dataOut.data_cspc = avgdata_cspc / self.n
+            dataOut.data_dc = avgdata_dc / self.n
             
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
@@ -1123,13 +1124,13 @@ class ProfileSelector(Operation):
     
     def run(self, dataOut, profileList=None, profileRangeList=None):
         
+        dataOut.flagNoData = True
         self.nProfiles = dataOut.nProfiles
 
         if profileList != None:
-            if not(self.isProfileInList(profileList)):
-                dataOut.flagNoData = True
-            else:
+            if self.isProfileInList(profileList):
                 dataOut.flagNoData = False
+                
             self.incIndex()
             return 1
 
@@ -1137,12 +1138,12 @@ class ProfileSelector(Operation):
         elif profileRangeList != None:
             minIndex = profileRangeList[0]
             maxIndex = profileRangeList[1]
-            if not(self.isProfileInRange(minIndex, maxIndex)):
-                dataOut.flagNoData = True
-            else:
+            if self.isProfileInRange(minIndex, maxIndex):
                 dataOut.flagNoData = False
+                
             self.incIndex()
             return 1
+        
         else:
             raise ValueError, "ProfileSelector needs profileList or profileRangeList"
         
