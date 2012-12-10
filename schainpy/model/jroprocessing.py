@@ -347,6 +347,22 @@ class VoltageProc(ProcessingUnit):
         
         return 1
     
+ 
+    def filterByHeights(self, window):
+        deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+        
+        if window == None:
+            window = self.dataOut.radarControllerHeaderObj.txA / deltaHeight
+        
+        newdelta = deltaHeight * window
+        r = self.dataOut.data.shape[1] % window
+        buffer = self.dataOut.data[:,0:self.dataOut.data.shape[1]-r] 
+        buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
+        buffer = numpy.average(buffer,2)
+        self.dataOut.data = buffer
+        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window,newdelta)
+
+
 
 class CohInt(Operation):
     
@@ -544,6 +560,7 @@ class CohInt(Operation):
             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt
             dataOut.flagNoData = False
 
+
 class Decoder(Operation):
     
     __isConfig = False
@@ -629,7 +646,7 @@ class Decoder(Operation):
             
         if mode == 1:
             ndatadec, datadec = self.convolutionInTime(data)
-        
+                
         dataOut.data = datadec
         
         dataOut.heightList = dataOut.heightList[0:ndatadec+1]
@@ -637,7 +654,6 @@ class Decoder(Operation):
         dataOut.flagDecodeData = True #asumo q la data no esta decodificada
     
 #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
-        
         
 
 class SpectraProc(ProcessingUnit):
@@ -1071,4 +1087,64 @@ class IncohInt(Operation):
             dataOut.utctime = avgdatatime
             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
             dataOut.flagNoData = False
-      
+
+class ProfileSelector(Operation):
+    
+    profileIndex = None
+    # Tamanho total de los perfiles
+    nProfiles = None
+    
+    def __init__(self):
+        
+        self.profileIndex = 0
+    
+    def incIndex(self):
+        self.profileIndex += 1
+        
+        if self.profileIndex >= self.nProfiles:
+            self.profileIndex = 0
+    
+    def isProfileInRange(self, minIndex, maxIndex):
+        
+        if self.profileIndex < minIndex:
+            return False
+        
+        if self.profileIndex > maxIndex:
+            return False
+        
+        return True
+    
+    def isProfileInList(self, profileList):
+        
+        if self.profileIndex not in profileList:
+            return False
+        
+        return True
+    
+    def run(self, dataOut, profileList=None, profileRangeList=None):
+        
+        self.nProfiles = dataOut.nProfiles
+
+        if profileList != None:
+            if not(self.isProfileInList(profileList)):
+                dataOut.flagNoData = True
+            else:
+                dataOut.flagNoData = False
+            self.incIndex()
+            return 1
+
+        
+        elif profileRangeList != None:
+            minIndex = profileRangeList[0]
+            maxIndex = profileRangeList[1]
+            if not(self.isProfileInRange(minIndex, maxIndex)):
+                dataOut.flagNoData = True
+            else:
+                dataOut.flagNoData = False
+            self.incIndex()
+            return 1
+        else:
+            raise ValueError, "ProfileSelector needs profileList or profileRangeList"
+        
+        return 0    
+
