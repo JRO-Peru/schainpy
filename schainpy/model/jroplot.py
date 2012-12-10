@@ -95,6 +95,11 @@ class CrossSpectraPlot(Figure):
         
         noise = dataOut.getNoise()
         
+        thisDatetime = dataOut.datatime
+        title = "Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Velocity (m/s)"
+        ylabel = "Range (Km)"
+        
         if not self.__isConfig:
             
             nplots = len(pairsIndexList)
@@ -112,11 +117,6 @@ class CrossSpectraPlot(Figure):
             if zmax == None: zmax = numpy.nanmax(avg)*0.9
             
             self.__isConfig = True
-            
-        thisDatetime = dataOut.datatime
-        title = "Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Velocity (m/s)"
-        ylabel = "Range (Km)"
         
         self.setWinTitle(title)
             
@@ -163,7 +163,7 @@ class CrossSpectraPlot(Figure):
         self.draw()
         
         if save:
-            date = thisDatetime.strftime("%Y%m%d")
+            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
             if figfile == None:
                 figfile = self.getFilename(name = date)
             
@@ -425,6 +425,11 @@ class SpectraPlot(Figure):
         
         noise = dataOut.getNoise()
         
+        thisDatetime = dataOut.datatime
+        title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Velocity (m/s)"
+        ylabel = "Range (Km)"
+        
         if not self.__isConfig:
             
             nplots = len(channelIndexList)
@@ -442,11 +447,6 @@ class SpectraPlot(Figure):
             if zmax == None: zmax = numpy.nanmax(avg)*0.9
             
             self.__isConfig = True
-            
-        thisDatetime = dataOut.datatime
-        title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Velocity (m/s)"
-        ylabel = "Range (Km)"
         
         self.setWinTitle(title)
             
@@ -469,7 +469,7 @@ class SpectraPlot(Figure):
         self.draw()
         
         if save:
-            date = thisDatetime.strftime("%Y%m%d")
+            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
             if figfile == None:
                 figfile = self.getFilename(name = date)
             
@@ -507,7 +507,8 @@ class Scope(Figure):
         
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
-            xmin=None, xmax=None, ymin=None, ymax=None, save=False, filename=None):
+            xmin=None, xmax=None, ymin=None, ymax=None, save=False,
+            figpath='./', figfile=None):
         
         """
         
@@ -535,6 +536,11 @@ class Scope(Figure):
         y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
         y = y.real
         
+        thisDatetime = dataOut.datatime
+        title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Range (Km)"
+        ylabel = "Intensity"
+        
         if not self.__isConfig:
             nplots = len(channelIndexList)
             
@@ -549,12 +555,6 @@ class Scope(Figure):
                 
             self.__isConfig = True
         
-        
-        thisDatetime = dataOut.datatime
-        title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Range (Km)"
-        ylabel = "Intensity"
-        
         self.setWinTitle(title)
         
         for i in range(len(self.axesList)):
@@ -568,7 +568,11 @@ class Scope(Figure):
         self.draw()
             
         if save:
-            self.saveFigure(filename)
+            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            if figfile == None:
+                figfile = self.getFilename(name = date)
+            
+            self.saveFigure(figpath, figfile)
 
 class ProfilePlot(Figure):
     __isConfig = None
@@ -629,6 +633,10 @@ class ProfilePlot(Figure):
         x = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
         avg = numpy.average(x, axis=1)
         
+        thisDatetime = dataOut.datatime
+        title = "Power Profile"
+        xlabel = "dB"
+        ylabel = "Range (Km)"
         
         if not self.__isConfig:
             
@@ -644,11 +652,6 @@ class ProfilePlot(Figure):
             if xmax == None: xmax = numpy.nanmax(avg)*0.9
             
             self.__isConfig = True
-            
-        thisDatetime = dataOut.datatime
-        title = "Power Profile"
-        xlabel = "dB"
-        ylabel = "Range (Km)"
         
         self.setWinTitle(title)
         
@@ -750,6 +753,11 @@ class CoherenceMap(Figure):
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
+        thisDatetime = dataOut.datatime
+        title = "CoherenceMap: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = ""
+        ylabel = "Range (Km)"
+        
         if not self.__isConfig:    
             nplots = len(pairsIndexList)
             self.setup(idfigure=idfigure,
@@ -761,12 +769,9 @@ class CoherenceMap(Figure):
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
             
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            
             self.__isConfig = True
-        
-        thisDatetime = dataOut.datatime
-        title = "CoherenceMap: %s" %(thisDatetime.strftime("%d-%b-%Y"))
-        xlabel = ""
-        ylabel = "Range (Km)"
         
         self.setWinTitle(title)
         
@@ -820,9 +825,9 @@ class CoherenceMap(Figure):
         self.draw()
         
         if save:
-            date = thisDatetime.strftime("%Y%m%d")
+            
             if figfile == None:
-                figfile = self.getFilename(name = date)
+                figfile = self.getFilename(name = self.name)
             
             self.saveFigure(figpath, figfile)
             
@@ -927,7 +932,13 @@ class RTIfromNoise(Figure):
 #        avg = numpy.average(z, axis=1)
         
         noise = dataOut.getNoise()
-            
+        
+        thisDatetime = dataOut.datatime
+        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = "Velocity (m/s)"
+        ylabel = "Range (Km)"
+        
+        
         if not self.__isConfig:
             
             nplots = len(channelIndexList)
@@ -945,10 +956,6 @@ class RTIfromNoise(Figure):
             
             self.__isConfig = True
             
-        thisDatetime = dataOut.datatime
-        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
-        xlabel = "Velocity (m/s)"
-        ylabel = "Range (Km)"
         
         self.setWinTitle(title)
             

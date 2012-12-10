@@ -32,7 +32,7 @@ class Figure:
     
     def getFilename(self, name, ext='.png'):
         
-        filename = '%s_%s%s' %(self.PREFIX, name, ext)
+        filename = '%s-%s_%s%s' %(self.wintitle[0:10], self.PREFIX, name, ext)
         
         return filename
         
