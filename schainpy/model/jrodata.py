@@ -147,9 +147,9 @@ class JROData:
     
     code = None
     
-    flagDecodeData = True #asumo q la data esta decodificada
+    flagDecodeData = False #asumo q la data no esta decodificada
     
-    flagDeflipData = True #asumo q la data esta sin flip
+    flagDeflipData = False #asumo q la data no esta sin flip
     
     flagShiftFFT = False
     
@@ -290,6 +290,13 @@ class Voltage(JROData):
         self.nCohInt = None
         
         self.blocksize = None
+        
+        self.flagDecodeData = False #asumo q la data no esta decodificada
+    
+        self.flagDeflipData = False #asumo q la data no esta sin flip
+        
+        self.flagShiftFFT = False
+    
     
     def getNoisebyHildebrand(self):
         """
@@ -379,6 +386,12 @@ class Spectra(JROData):
         self.nFFTPoints = None
         
         self.wavelength = None
+        
+        self.flagDecodeData = False #asumo q la data no esta decodificada
+    
+        self.flagDeflipData = False #asumo q la data no esta sin flip
+        
+        self.flagShiftFFT = False
     
     def getNoisebyHildebrand(self):
         """

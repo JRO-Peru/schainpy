@@ -369,7 +369,7 @@ class ProcessingHeader(Header):
             self.profilesPerBlock = int(header['nProfilesperBlock'][0])
             self.dataBlocksPerFile = int(header['nDataBlocksperFile'][0])
             self.nWindows = int(header['nNumWindows'][0])
-            self.processFlags = int(header['nProcessFlags'])
+            self.processFlags = header['nProcessFlags']
             self.nCohInt = int(header['nCoherentIntegrations'][0])
             self.nIncohInt = int(header['nIncoherentIntegrations'][0])
             self.totalSpectra = int(header['nTotalSpectra'][0])

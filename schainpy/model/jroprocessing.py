@@ -62,7 +62,7 @@ class ProcessingUnit:
     def operation(self, **kwargs):
         
         """
-        Operacion directa sobre la data (dataout.data). Es necesario actualizar los valores de los
+        Operacion directa sobre la data (dataOut.data). Es necesario actualizar los valores de los
         atributos del objeto dataOut
         
         Input:
@@ -347,23 +347,10 @@ class VoltageProc(ProcessingUnit):
         
         return 1
     
-    
-    def filterByHeights(self, window):
-        deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
-        
-        if window == None:
-            window = self.dataOut.radarControllerHeaderObj.txA / deltaHeight
-        
-        newdelta = deltaHeight * window
-        r = self.dataOut.data.shape[1] % window
-        buffer = self.dataOut.data[:,0:self.dataOut.data.shape[1]-r] 
-        buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
-        buffer = numpy.sum(buffer,2)
-        self.dataOut.data = buffer
-        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window,newdelta)
-
 
 class CohInt(Operation):
+    
+    __isConfig = False
     
     __profIndex = 0
     __withOverapping  = False
@@ -539,10 +526,10 @@ class CohInt(Operation):
             
         return avgdata, avgdatatime
         
-    def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
+    def run(self, dataOut, **kwargs):
         
         if not self.__isConfig:
-            self.setup(n, timeInterval, overlapping)
+            self.setup(**kwargs)
             self.__isConfig = True
                     
         avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
@@ -556,7 +543,102 @@ class CohInt(Operation):
             dataOut.utctime = avgdatatime
             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt
             dataOut.flagNoData = False
+
+class Decoder(Operation):
+    
+    __isConfig = False
+    __profIndex = 0
+    
+    code = None
+    
+    nCode = None 
+    nBaud = None
+    
+    def __init__(self):
+        
+        self.__isConfig = False
+        
+    def setup(self, code):
+        
+        self.__profIndex = 0
+        
+        self.code = code
+        
+        self.nCode = len(code) 
+        self.nBaud = len(code[0])
+        
+    def convolutionInFreq(self, data):
+        
+        ndata = data.shape[1]
+        newcode = numpy.zeros(ndata)    
+        newcode[0:self.nBaud] = self.code[self.__profIndex]
+        
+        fft_data = numpy.fft.fft(data, axis=1)
+        fft_code = numpy.conj(numpy.fft.fft(newcode))
+        fft_code = fft_code.reshape(1,len(fft_code))
+        
+#        conv = fft_data.copy()
+#        conv.fill(0)
+        
+        conv = fft_data*fft_code
             
+        data = numpy.fft.ifft(conv,axis=1)
+        
+        datadec = data[:,:-self.nBaud+1]
+        ndatadec = ndata - self.nBaud + 1
+        
+        if self.__profIndex == self.nCode: 
+            self.__profIndex = 0             
+               
+        self.__profIndex += 1
+        
+        return ndatadec, datadec
+        
+        
+    def convolutionInTime(self, data):
+        
+        nchannel = data.shape[1]
+        newcode = self.code[self.__profIndex]
+        
+        datadec = data.copy()
+        
+        for i in range(nchannel):
+            datadec[i,:] = numpy.correlate(data[i,:], newcode)
+        
+        ndatadec = ndata - self.nBaud + 1
+        
+        if self.__profIndex == self.nCode:
+            self.__profIndex = 0  
+        
+        self.__profIndex += 1
+        
+        return ndatadec, datadec 
+    
+    def run(self, dataOut, code=None, mode = 0):
+        
+        if not self.__isConfig:
+            
+            if code == None:
+                code = dataOut.code
+                
+            self.setup(code)
+            self.__isConfig = True
+        
+        if mode == 0:
+            ndatadec, datadec = self.convolutionInFreq(data)
+            
+        if mode == 1:
+            ndatadec, datadec = self.convolutionInTime(data)
+        
+        dataOut.data = datadec
+        
+        dataOut.heightList = dataOut.heightList[0:ndatadec+1]
+        
+        dataOut.flagDecodeData = True #asumo q la data no esta decodificada
+    
+#        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+        
+        
 
 class SpectraProc(ProcessingUnit):
     
@@ -606,7 +688,7 @@ class SpectraProc(ProcessingUnit):
             self.buffer
             self.dataOut.flagNoData
         """
-        fft_volt = numpy.fft.fft(self.buffer,axis=1)/numpy.sqrt(self.dataOut.nFFTPoints)
+        fft_volt = numpy.fft.fft(self.buffer,axis=1)
         dc = fft_volt[:,0,:]
         
         #calculo de self-spectra
@@ -635,6 +717,8 @@ class SpectraProc(ProcessingUnit):
         
     def init(self, nFFTPoints=None, pairsList=None):
         
+        self.dataOut.flagNoData = True
+        
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
             return
@@ -660,7 +744,7 @@ class SpectraProc(ProcessingUnit):
                                            dtype='complex')
 
             
-            self.buffer[:,self.profIndex,:] = self.dataIn.data
+            self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
             self.profIndex += 1
             
             if self.firstdatatime == None:
@@ -987,159 +1071,4 @@ class IncohInt(Operation):
             dataOut.utctime = avgdatatime
             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
             dataOut.flagNoData = False
-
-
-class ProfileSelector(Operation):
-    
-    profileIndex = None
-    # Tamanho total de los perfiles
-    nProfiles = None
-    
-    def __init__(self):
-        
-        self.profileIndex = 0
-    
-    def incIndex(self):
-        self.profileIndex += 1
-        
-        if self.profileIndex >= self.nProfiles:
-            self.profileIndex = 0
-    
-    def isProfileInRange(self, minIndex, maxIndex):
-        
-        if self.profileIndex < minIndex:
-            return False
-        
-        if self.profileIndex > maxIndex:
-            return False
-        
-        return True
-    
-    def isProfileInList(self, profileList):
-        
-        if self.profileIndex not in profileList:
-            return False
-        
-        return True
-    
-    def run(self, dataOut, profileList=None, profileRangeList=None):
-        
-        self.nProfiles = dataOut.nProfiles
-
-        if profileList != None:
-            if not(self.isProfileInList(profileList)):
-                dataOut.flagNoData = True
-            else:
-                dataOut.flagNoData = False
-            self.incIndex()
-            return 1
-
-        
-        elif profileRangeList != None:
-            minIndex = profileRangeList[0]
-            maxIndex = profileRangeList[1]
-            if not(self.isProfileInRange(minIndex, maxIndex)):
-                dataOut.flagNoData = True
-            else:
-                dataOut.flagNoData = False
-            self.incIndex()
-            return 1
-        else:
-            raise ValueError, "ProfileSelector needs profileList or profileRangeList"
-        
-        return 0    
-
-class Decoder:
-
-    data = None
-    profCounter = None
-    code = None
-    ncode = None 
-    nbaud = None
-    codeIndex = None
-    flag = False
-    
-    def __init__(self):
-        
-        self.data = None
-        self.ndata = None
-        self.profCounter = 1
-        self.codeIndex = 0 
-        self.flag = False
-        self.code = None
-        self.ncode = None 
-        self.nbaud = None
-        self.__isConfig = False
-        
-    def convolutionInFreq(self, data, ndata):
-        
-        newcode = numpy.zeros(ndata)    
-        newcode[0:self.nbaud] = self.code[self.codeIndex]
-        
-        self.codeIndex += 1
-        
-        fft_data = numpy.fft.fft(data, axis=1)
-        fft_code = numpy.conj(numpy.fft.fft(newcode))
-        fft_code = fft_code.reshape(1,len(fft_code))
-        
-        conv = fft_data.copy()
-        conv.fill(0)
-        
-        conv = fft_data*fft_code
-            
-        data = numpy.fft.ifft(conv,axis=1)
-        self.data = data[:,:-self.nbaud+1]
-        self.flag = True
-        
-        if self.profCounter == self.ncode:
-            self.profCounter = 0
-            self.codeIndex = 0            
-            
-        self.profCounter += 1
-        
-    def convolutionInTime(self, data, ndata):
-
-        nchannel = data.shape[1]
-        newcode = self.code[self.codeIndex]
-        self.codeIndex += 1
-        conv = data.copy()
-        for i in range(nchannel):
-            conv[i,:] = numpy.correlate(data[i,:], newcode)
-            
-        self.data = conv
-        self.flag = True
-        
-        if self.profCounter == self.ncode:
-            self.profCounter = 0
-            self.codeIndex = 0            
-            
-        self.profCounter += 1
-
-    def run(self, dataOut, code=None, mode = 0):
-
-        if not(self.__isConfig):
-            if code == None:
-                code = dataOut.radarControllerHeaderObj.code
-#                code = dataOut.code
-                
-            ncode, nbaud = code.shape
-            self.code = code
-            self.ncode = ncode 
-            self.nbaud = nbaud
-            self.__isConfig = True
-
-        ndata = dataOut.data.shape[1] 
-        
-        if mode == 0:
-            self.convolutionInFreq(dataOut.data, ndata)
-            
-        if mode == 1:
-            self.convolutionInTime(dataOut.data, ndata)
-        
-        self.ndata = ndata - self.nbaud + 1
-        
-        dataOut.data = self.data
-        
-        dataOut.heightList = dataOut.heightList[:self.ndata]
-        
-        dataOut.flagNoData = False
+      

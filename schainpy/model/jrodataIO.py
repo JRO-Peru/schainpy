@@ -1399,6 +1399,7 @@ class VoltageReader(JRODataReader):
             self.dataOut.flagShiftFFT = False
             
             if self.processingHeaderObj.code != None:
+                
                 self.dataOut.nCode = self.processingHeaderObj.nCode
                 
                 self.dataOut.nBaud = self.processingHeaderObj.nBaud
@@ -1408,6 +1409,13 @@ class VoltageReader(JRODataReader):
             self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
             
             self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+            
+            self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
+    
+            self.dataOut.flagDeflipData = False #asumo q la data no esta sin flip
+            
+            self.dataOut.flagShiftFFT = False
+        
         
 #            self.updateDataHeader()
         
@@ -2059,13 +2067,18 @@ class SpectraReader(JRODataReader):
         
         self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.dataOut.nFFTPoints
         
-        self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
-        
 #        self.profileIndex += 1
         
         self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
         
         self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        
+        self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
+        
+        self.dataOut.flagDecodeData = True #asumo q la data no esta decodificada
+    
+        self.dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+            
 
         return self.dataOut.data_spc
 

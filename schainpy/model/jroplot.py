@@ -88,6 +88,7 @@ class CrossSpectraPlot(Figure):
         x = dataOut.getFreqRange(1)
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[:,:,:])
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.average(numpy.abs(z), axis=1)
         
         noise = dataOut.getNoise()
@@ -265,10 +266,11 @@ class RTIPlot(Figure):
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.average(z, axis=1)
         
         noise = dataOut.getNoise()
-            
+        
         if not self.__isConfig:
             
             nplots = len(channelIndexList)
@@ -284,6 +286,7 @@ class RTIPlot(Figure):
             if zmin == None: zmin = numpy.nanmin(avg)*0.9
             if zmax == None: zmax = numpy.nanmax(avg)*0.9
             
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
             
         thisDatetime = dataOut.datatime
@@ -313,9 +316,9 @@ class RTIPlot(Figure):
         self.draw()
         
         if save:
-            date = thisDatetime.strftime("%Y%m%d")
+            
             if figfile == None:
-                figfile = self.getFilename(name = date)
+                figfile = self.getFilename(name = self.name)
             
             self.saveFigure(figpath, figfile)
             
@@ -412,7 +415,9 @@ class SpectraPlot(Figure):
         
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
+        
         z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.average(z, axis=1)
         
         noise = dataOut.getNoise()
@@ -485,6 +490,8 @@ class Scope(Figure):
     
     def setup(self, idfigure, nplots, wintitle):
         
+        self.nplots = nplots
+        
         self.createFigure(idfigure, wintitle)
         
         nrow,ncol = self.getSubplots()
@@ -494,7 +501,7 @@ class Scope(Figure):
         for i in range(nplots):
             self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
             
-        self.nplots = nplots
+        
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False, filename=None):
@@ -522,13 +529,11 @@ class Scope(Figure):
                 channelIndexList.append(dataOut.channelList.index(channel))
         
         x = dataOut.heightList
-        y = dataOut.data[channelList,:] * numpy.conjugate(dataOut.data[channelList,:])
+        y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
         y = y.real
         
-        noise = dataOut.getNoise()
-        
         if not self.__isConfig:
-            nplots = len(channelList)
+            nplots = len(channelIndexList)
             
             self.setup(idfigure=idfigure,
                        nplots=nplots,
@@ -550,7 +555,7 @@ class Scope(Figure):
         self.setWinTitle(title)
         
         for i in range(len(self.axesList)):
-            title = "Channel %d: %4.2fdB" %(i, noise[i])
+            title = "Channel %d" %(i)
             axes = self.axesList[i]
             ychannel = y[i,:]
             axes.pline(x, ychannel,
