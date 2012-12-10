@@ -360,7 +360,7 @@ class VoltageProc(ProcessingUnit):
         buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
         buffer = numpy.average(buffer,2)
         self.dataOut.data = buffer
-        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window,newdelta)
+        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window-newdelta,newdelta)
 
 
 
@@ -586,7 +586,7 @@ class Decoder(Operation):
         
     def convolutionInFreq(self, data):
         
-        ndata = data.shape[1]
+        nchannel, ndata = data.shape
         newcode = numpy.zeros(ndata)    
         newcode[0:self.nBaud] = self.code[self.__profIndex]
         
@@ -604,8 +604,9 @@ class Decoder(Operation):
         datadec = data[:,:-self.nBaud+1]
         ndatadec = ndata - self.nBaud + 1
         
-        if self.__profIndex == self.nCode: 
+        if self.__profIndex == self.nCode-1: 
             self.__profIndex = 0             
+            return ndatadec, datadec
                
         self.__profIndex += 1
         
@@ -614,18 +615,18 @@ class Decoder(Operation):
         
     def convolutionInTime(self, data):
         
-        nchannel = data.shape[1]
+        nchannel, ndata = data.shape
         newcode = self.code[self.__profIndex]
+        ndatadec = ndata - self.nBaud + 1
         
-        datadec = data.copy()
+        datadec = numpy.zeros((nchannel, ndatadec))
         
         for i in range(nchannel):
             datadec[i,:] = numpy.correlate(data[i,:], newcode)
         
-        ndatadec = ndata - self.nBaud + 1
-        
-        if self.__profIndex == self.nCode:
-            self.__profIndex = 0  
+        if self.__profIndex == self.nCode-1: 
+            self.__profIndex = 0             
+            return ndatadec, datadec 
         
         self.__profIndex += 1
         
@@ -642,14 +643,15 @@ class Decoder(Operation):
             self.__isConfig = True
         
         if mode == 0:
-            ndatadec, datadec = self.convolutionInFreq(data)
+            ndatadec, datadec = self.convolutionInFreq(dataOut.data)
             
         if mode == 1:
-            ndatadec, datadec = self.convolutionInTime(data)
+            print "This function is not implemented"
+#            ndatadec, datadec = self.convolutionInTime(dataOut.data)
                 
         dataOut.data = datadec
         
-        dataOut.heightList = dataOut.heightList[0:ndatadec+1]
+        dataOut.heightList = dataOut.heightList[0:ndatadec]
         
         dataOut.flagDecodeData = True #asumo q la data no esta decodificada
     

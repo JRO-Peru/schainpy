@@ -1400,13 +1400,13 @@ class VoltageReader(JRODataReader):
             
             self.dataOut.flagShiftFFT = False
             
-            if self.processingHeaderObj.code != None:
+            if self.radarControllerHeaderObj.code != None:
                 
-                self.dataOut.nCode = self.processingHeaderObj.nCode
+                self.dataOut.nCode = self.radarControllerHeaderObj.nCode
                 
-                self.dataOut.nBaud = self.processingHeaderObj.nBaud
+                self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
                 
-                self.dataOut.code = self.processingHeaderObj.code
+                self.dataOut.code = self.radarControllerHeaderObj.code
             
             self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
             
