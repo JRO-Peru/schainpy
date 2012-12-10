@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'C:\Users\alex\ericworkspace\UIDOS\window.ui'
 #
-# Created: Mon Oct 15 16:44:32 2012
+# Created: Thu Dec 06 08:56:59 2012
 #      by: PyQt4 UI code generator 4.9.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -33,10 +33,10 @@ class Ui_window(object):
         self.label_2.setFont(font)
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.cancelButton = QtGui.QPushButton(self.centralWidget)
-        self.cancelButton.setGeometry(QtCore.QRect(110, 160, 51, 23))
+        self.cancelButton.setGeometry(QtCore.QRect(150, 160, 51, 23))
         self.cancelButton.setObjectName(_fromUtf8("cancelButton"))
         self.okButton = QtGui.QPushButton(self.centralWidget)
-        self.okButton.setGeometry(QtCore.QRect(50, 160, 51, 23))
+        self.okButton.setGeometry(QtCore.QRect(80, 160, 61, 23))
         self.okButton.setObjectName(_fromUtf8("okButton"))
         self.proyectNameLine = QtGui.QLineEdit(self.centralWidget)
         self.proyectNameLine.setGeometry(QtCore.QRect(20, 30, 181, 20))
@@ -44,6 +44,9 @@ class Ui_window(object):
         self.descriptionTextEdit = QtGui.QTextEdit(self.centralWidget)
         self.descriptionTextEdit.setGeometry(QtCore.QRect(20, 80, 181, 71))
         self.descriptionTextEdit.setObjectName(_fromUtf8("descriptionTextEdit"))
+        self.saveButton = QtGui.QPushButton(self.centralWidget)
+        self.saveButton.setGeometry(QtCore.QRect(20, 160, 51, 23))
+        self.saveButton.setObjectName(_fromUtf8("saveButton"))
         MainWindow.setCentralWidget(self.centralWidget)
 
         self.retranslateUi(MainWindow)
@@ -55,6 +58,7 @@ class Ui_window(object):
         self.label_2.setText(QtGui.QApplication.translate("MainWindow", "Description :", None, QtGui.QApplication.UnicodeUTF8))
         self.cancelButton.setText(QtGui.QApplication.translate("MainWindow", "Cancel", None, QtGui.QApplication.UnicodeUTF8))
         self.okButton.setText(QtGui.QApplication.translate("MainWindow", "Ok", None, QtGui.QApplication.UnicodeUTF8))
+        self.saveButton.setText(QtGui.QApplication.translate("MainWindow", "Save", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":
