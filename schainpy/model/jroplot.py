@@ -87,7 +87,7 @@ class CrossSpectraPlot(Figure):
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
         
-        x = dataOut.getFreqRange(1)
+        x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         z = 10.*numpy.log10(dataOut.data_spc[:,:,:])
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
@@ -156,7 +156,7 @@ class CrossSpectraPlot(Figure):
             axes0.pcolor(x, y, phase,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, cblabel='', colormap='RdBu')
+                        ticksize=9, cblabel='', colormap='RdBu_r')
 
 
             
@@ -181,7 +181,7 @@ class RTIPlot(Figure):
     
     def __init__(self):
         
-        self.timerange = 24*60*60
+        self.timerange = 2*60*60
         self.__isConfig = False
         self.__nsubplots = 1
         
@@ -681,7 +681,7 @@ class CoherenceMap(Figure):
     PREFIX = 'coherencemap'
 
     def __init__(self):
-        self.timerange = 24*60*60
+        self.timerange = 2*60*60
         self.__isConfig = False
         self.__nsubplots = 1
         
