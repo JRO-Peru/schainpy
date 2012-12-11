@@ -465,6 +465,9 @@ class SpectraPlot(Figure):
                         xlabel='dB', ylabel='', title='',
                         ytick_visible=False,
                         grid='x')
+                
+                noiseline = numpy.repeat(noise[i], len(y))
+                axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
             
         self.draw()
         

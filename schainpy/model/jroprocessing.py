@@ -216,6 +216,7 @@ class VoltageProc(ProcessingUnit):
         
         self.objectDict = {}
         self.dataOut = Voltage()
+        self.flip = 1
 
     def init(self):
         
@@ -362,6 +363,9 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data = buffer
         self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window-newdelta,newdelta)
 
+    def deFlip(self):
+        self.dataOut.data *= self.flip
+        self.flip *= -1.
 
 
 class CohInt(Operation):

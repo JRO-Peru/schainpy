@@ -130,7 +130,14 @@ def pline(iplot, x, y, xlabel='', ylabel='', title=''):
     
     printLabels(ax, xlabel, ylabel, title)
     
-    iplot.set_data(x, y)
+    set_linedata(ax, x, y, idline=0)
+
+def addpline(ax, x, y, color, linestyle, lw):
+    ax.plot(x,y,color=color,linestyle=linestyle,lw=lw)
+    
+    
+def set_linedata(ax, x, y, idline):
+    ax.lines[idline].set_data(x,y)
 
 def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
                 ticksize=9, xtick_visible=True, ytick_visible=True,

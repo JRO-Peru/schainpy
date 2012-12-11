@@ -197,6 +197,7 @@ class Axes:
         self.plot = None
         
         self.__firsttime = True
+        self.idlineList = []
         
     def setText(self, text):
         
@@ -244,12 +245,26 @@ class Axes:
                                                     ylabel=ylabel,
                                                     title=title,
                                                   **kwargs)
+
+            self.idlineList.append(0)
             self.__firsttime = False
             return
                     
         self.__driver.pline(self.plot, x, y, xlabel=xlabel,
                                                     ylabel=ylabel,
                                                     title=title)
+
+    def addpline(self, x, y, idline, **kwargs):
+        lines = self.ax.lines
+        
+        if idline in self.idlineList:
+            self.__driver.set_linedata(self.ax, x, y, idline)
+        
+        if  idline not in(self.idlineList):
+            self.__driver.addpline(self.ax, x, y, **kwargs)
+            self.idlineList.append(idline)
+
+        return
         
     def pmultiline(self, x, y,
                    xmin=None, xmax=None,
