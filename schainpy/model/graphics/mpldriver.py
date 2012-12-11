@@ -1,7 +1,7 @@
 import numpy
 import datetime
 import matplotlib
-matplotlib.use("TKAgg")
+matplotlib.use("GTKAgg")
 import matplotlib.pyplot
 import matplotlib.dates
 #import scitools.numpyutils
@@ -22,6 +22,7 @@ def createFigure(idfigure, wintitle, width, height, facecolor="w"):
     fig.canvas.manager.set_window_title(wintitle)
     fig.canvas.manager.resize(width, height)
     matplotlib.pyplot.ion()
+    matplotlib.pyplot.show()
     
     return fig
 
@@ -33,7 +34,10 @@ def closeFigure():
     return
 
 def saveFigure(fig, filename):
+    
+    matplotlib.pyplot.ioff()
     fig.savefig(filename)
+    matplotlib.pyplot.ion()
 
 def setWinTitle(fig, title):
     
@@ -45,11 +49,14 @@ def setTitle(fig, title):
 
 def createAxes(fig, nrow, ncol, xpos, ypos, colspan, rowspan):
     
+    matplotlib.pyplot.ioff()
     matplotlib.pyplot.figure(fig.number)
     axes = matplotlib.pyplot.subplot2grid((nrow, ncol),
                                         (xpos, ypos),
                                         colspan=colspan,
                                         rowspan=rowspan)
+    
+    matplotlib.pyplot.ion()
     return axes
 
 def setAxesText(ax, text):
@@ -77,8 +84,9 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
     Input:
         grid    :    None, 'both', 'x', 'y'
     """
-        
-    ax.plot(x, y)
+    
+    matplotlib.pyplot.ioff()
+    
     ax.set_xlim([xmin,xmax])
     ax.set_ylim([ymin,ymax])
     
@@ -105,7 +113,8 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
     
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(ticksize)
-        
+    
+    ax.plot(x, y)
     iplot = ax.lines[-1]
     
     ######################################################
@@ -122,8 +131,14 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
     
     matplotlib.pyplot.tight_layout()
     
+    matplotlib.pyplot.ion()
+    
     return iplot
 
+def set_linedata(ax, x, y, idline):
+    
+    ax.lines[idline].set_data(x,y)
+    
 def pline(iplot, x, y, xlabel='', ylabel='', title=''):
     
     ax = iplot.get_axes()
@@ -133,11 +148,79 @@ def pline(iplot, x, y, xlabel='', ylabel='', title=''):
     set_linedata(ax, x, y, idline=0)
 
 def addpline(ax, x, y, color, linestyle, lw):
+    
     ax.plot(x,y,color=color,linestyle=linestyle,lw=lw)
+
+
+def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
+                 xlabel='', ylabel='', title='', ticksize = 9,
+                 colormap='jet',cblabel='', cbsize="5%",
+                 XAxisAsTime=False):
     
+    matplotlib.pyplot.ioff()
     
-def set_linedata(ax, x, y, idline):
-    ax.lines[idline].set_data(x,y)
+    divider = make_axes_locatable(ax)
+    ax_cb = divider.new_horizontal(size=cbsize, pad=0.05)
+    fig = ax.get_figure()
+    fig.add_axes(ax_cb)
+    
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([ymin,ymax])
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    imesh = ax.pcolormesh(x,y,z.T, vmin=zmin, vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
+    cb =  matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
+    cb.set_label(cblabel)
+    
+#    for tl in ax_cb.get_yticklabels():
+#        tl.set_visible(True)
+    
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize)
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize) 
+    
+    for tick in cb.ax.get_yticklabels():
+        tick.set_fontsize(ticksize)
+                
+    ax_cb.yaxis.tick_right()
+    
+    if '0.' in matplotlib.__version__[0:2]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return imesh
+    
+    if '1.0.' in matplotlib.__version__[0:4]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return imesh
+    
+    matplotlib.pyplot.tight_layout()
+    
+    if XAxisAsTime:
+        
+        func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
+        ax.xaxis.set_major_formatter(FuncFormatter(func))
+        ax.xaxis.set_major_locator(LinearLocator(7))
+    
+    matplotlib.pyplot.ion()
+    return imesh
+
+def pcolor(imesh, z, xlabel='', ylabel='', title=''):
+    
+    z = z.T
+    
+    ax = imesh.get_axes()
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    imesh.set_array(z.ravel())
+
+def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
 
 def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
                 ticksize=9, xtick_visible=True, ytick_visible=True,
@@ -149,7 +232,9 @@ def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', tit
     Input:
         grid    :    None, 'both', 'x', 'y'
     """
-        
+    
+    matplotlib.pyplot.ioff()
+      
     lines = ax.plot(x.T, y)
     leg = ax.legend(lines, legendlabels, loc='upper right')
     leg.get_frame().set_alpha(0.5)
@@ -186,7 +271,9 @@ def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', tit
         ax.grid(b=True, which='major', axis=grid)
     
     matplotlib.pyplot.tight_layout()
-
+    
+    matplotlib.pyplot.ion()
+    
     return iplot
 
 
@@ -210,6 +297,8 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
     Input:
         grid    :    None, 'both', 'x', 'y'
     """
+    
+    matplotlib.pyplot.ioff()
     
     lines = ax.plot(x, y.T, marker=marker,markersize=markersize,linestyle=linestyle)
     leg = ax.legend(lines, legendlabels, bbox_to_anchor=(1.05, 1), loc='upper right', numpoints=1, handlelength=1.5, \
@@ -255,6 +344,8 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
         ax.xaxis.set_major_formatter(FuncFormatter(func))
         ax.xaxis.set_major_locator(LinearLocator(7))
     
+    matplotlib.pyplot.ion()
+    
     return iplot
 
 def pmultilineinyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
@@ -266,73 +357,6 @@ def pmultilineinyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
     for i in range(len(ax.lines)):
         line = ax.lines[i]
         line.set_data(x,y[i,:])
-            
-def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
-                 xlabel='', ylabel='', title='', ticksize = 9,
-                 colormap='jet',cblabel='', cbsize="5%",
-                 XAxisAsTime=False):
-    
-    divider = make_axes_locatable(ax)
-    ax_cb = divider.new_horizontal(size=cbsize, pad=0.05)
-    fig = ax.get_figure()
-    fig.add_axes(ax_cb)
-    
-    ax.set_xlim([xmin,xmax])
-    ax.set_ylim([ymin,ymax])
-    
-    printLabels(ax, xlabel, ylabel, title)
-    
-    imesh = ax.pcolormesh(x,y,z.T, vmin=zmin, vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
-    cb =  matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
-    cb.set_label(cblabel)
-    
-#    for tl in ax_cb.get_yticklabels():
-#        tl.set_visible(True)
-    
-    for tick in ax.yaxis.get_major_ticks():
-        tick.label.set_fontsize(ticksize)
-        
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(ticksize) 
-    
-    for tick in cb.ax.get_yticklabels():
-        tick.set_fontsize(ticksize)
-                
-    ax_cb.yaxis.tick_right()
-    
-    if '0.' in matplotlib.__version__[0:2]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
-        return imesh
-    
-    if '1.0.' in matplotlib.__version__[0:4]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
-        return imesh
-    
-    matplotlib.pyplot.tight_layout()
-    
-    if XAxisAsTime:
-        
-        func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
-        ax.xaxis.set_major_formatter(FuncFormatter(func))
-        ax.xaxis.set_major_locator(LinearLocator(7))
-        
-    return imesh
-
-def pcolor(imesh, z, xlabel='', ylabel='', title=''):
-    
-    z = z.T
-    
-    ax = imesh.get_axes()
-    
-    printLabels(ax, xlabel, ylabel, title)
-    
-    imesh.set_array(z.ravel())
-
-def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
-    
-    printLabels(ax, xlabel, ylabel, title)
-    
-    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
     
 def draw(fig):
     
