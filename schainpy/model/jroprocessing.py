@@ -292,20 +292,20 @@ class VoltageProc(ProcessingUnit):
 
         minIndex = 0
         maxIndex = 0
-        data = self.dataOut.heightList
+        heights = self.dataOut.heightList
         
-        for i,val in enumerate(data): 
-            if val < minHei:
-                continue
-            else:
-                minIndex = i;
-                break
+        inda = numpy.where(heights >= minHei)
+        indb = numpy.where(heights <= maxHei)
         
-        for i,val in enumerate(data): 
-            if val <= maxHei:
-                maxIndex = i;
-            else:
-                break
+        try:
+            minIndex = inda[0][0]
+        except:
+            minIndex = 0
+        
+        try:
+            maxIndex = indb[0][-1]
+        except:
+            maxIndex = len(heights)
 
         self.selectHeightsByIndex(minIndex, maxIndex)
         
