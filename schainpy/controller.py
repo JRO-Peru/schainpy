@@ -26,6 +26,8 @@ class ParameterConf():
     value = None
     format = None
     
+    __value = None
+    
     ELEMENTNAME = 'Parameter'
     
     def __init__(self):
@@ -38,6 +40,10 @@ class ParameterConf():
     
     def getValue(self):
         
+        if self.__value != None:
+            
+            return self.__value
+            
         value = self.value
         
         if self.format == 'list':
@@ -88,7 +94,9 @@ class ParameterConf():
         
         func = eval(self.format)
         
-        return func(value)
+        self.__value = func(value)
+        
+        return self.__value
         
     def setup(self, id, name, value, format='str'):
         
