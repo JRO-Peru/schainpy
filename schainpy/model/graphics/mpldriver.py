@@ -151,7 +151,7 @@ def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', tit
     """
         
     lines = ax.plot(x.T, y)
-    leg = ax.legend(lines, legendlabels, loc='upper left')
+    leg = ax.legend(lines, legendlabels, loc='upper right')
     leg.get_frame().set_alpha(0.5)
     ax.set_xlim([xmin,xmax])
     ax.set_ylim([ymin,ymax]) 
@@ -199,6 +199,73 @@ def pmultiline(iplot, x, y, xlabel='', ylabel='', title=''):
     for i in range(len(ax.lines)):
         line = ax.lines[i]
         line.set_data(x[i,:],y)
+
+def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
+                ticksize=9, xtick_visible=True, ytick_visible=True,
+                nxticks=4, nyticks=10, marker='^', markersize=8, linestyle="solid", 
+                grid=None, XAxisAsTime=False):
+    
+    """
+    
+    Input:
+        grid    :    None, 'both', 'x', 'y'
+    """
+    
+    lines = ax.plot(x, y.T, marker=marker,markersize=markersize,linestyle=linestyle)
+    leg = ax.legend(lines, legendlabels, bbox_to_anchor=(1.05, 1), loc='upper right', numpoints=1, handlelength=1.5, \
+                                handletextpad=0.5, borderpad=0.2, labelspacing=0.2, borderaxespad=0.)
+    
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([ymin,ymax]) 
+    printLabels(ax, xlabel, ylabel, title)
+    
+#    xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+#    ax.set_xticks(xtickspos)
+    
+    for tick in ax.get_xticklabels():
+        tick.set_visible(xtick_visible)
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize) 
+    
+    for tick in ax.get_yticklabels():
+        tick.set_visible(ytick_visible)
+    
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize)
+        
+    iplot = ax.lines[-1]
+    
+    if '0.' in matplotlib.__version__[0:2]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
+    if '1.0.' in matplotlib.__version__[0:4]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
+    if grid != None:
+        ax.grid(b=True, which='major', axis=grid)
+    
+    matplotlib.pyplot.tight_layout()
+    
+    if XAxisAsTime:
+        
+        func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
+        ax.xaxis.set_major_formatter(FuncFormatter(func))
+        ax.xaxis.set_major_locator(LinearLocator(7))
+    
+    return iplot
+
+def pmultilineinyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
+    
+    ax = iplot.get_axes()
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    for i in range(len(ax.lines)):
+        line = ax.lines[i]
+        line.set_data(x,y[i,:])
             
 def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
                  xlabel='', ylabel='', title='', ticksize = 9,

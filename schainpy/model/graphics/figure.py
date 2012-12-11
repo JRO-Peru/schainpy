@@ -293,7 +293,35 @@ class Axes:
         self.__driver.pmultiline(self.plot, x, y, xlabel=xlabel,
                                                     ylabel=ylabel,
                                                     title=title)
+    
+    def pmultilineyaxis(self, x, y,
+                   xmin=None, xmax=None,
+                   ymin=None, ymax=None,
+                   xlabel='', ylabel='',
+                   title='',
+                   **kwargs):
         
+        if self.__firsttime:
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+    
+            self.plot = self.__driver.createPmultilineYAxis(self.ax, x, y,
+                                                  xmin, xmax,
+                                                  ymin, ymax,
+                                                  xlabel=xlabel,
+                                                  ylabel=ylabel,
+                                                  title=title,
+                                                  **kwargs)
+            self.__firsttime = False
+            return
+                    
+        self.__driver.pmultilineyaxis(self.plot, x, y, xlabel=xlabel,
+                                                    ylabel=ylabel,
+                                                    title=title)
+            
     def pcolor(self, x, y, z,
                xmin=None, xmax=None,
                ymin=None, ymax=None,

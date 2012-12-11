@@ -841,24 +841,22 @@ class RTIfromNoise(Figure):
     
     __isConfig = None
     __nsubplots = None
-    
-    WIDTHPROF = None
-    HEIGHTPROF = None
-    PREFIX = 'rti'
+
+    PREFIX = 'rtinoise'
     
     def __init__(self):
         
-        self.__timerange = 24*60*60
+        self.timerange = 24*60*60
         self.__isConfig = False
         self.__nsubplots = 1
         
-        self.WIDTH = 800
+        self.WIDTH = 820
         self.HEIGHT = 200
         
     def getSubplots(self):
         
         ncol = 1
-        nrow = self.nplots
+        nrow = 1
         
         return nrow, ncol
     
@@ -872,50 +870,21 @@ class RTIfromNoise(Figure):
             
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
-                          widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          widthplot = self.WIDTH,
+                          heightplot = self.HEIGHT)
         
         nrow, ncol = self.getSubplots()
                 
         self.addAxes(nrow, ncol, 0, 0, 1, 1)
-                    
-                
-    
-    def __getTimeLim(self, x, xmin, xmax):
-        
-        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
-        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
-        
-        ####################################################
-        #If the x is out of xrange
-        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
-            xmin = None
-            xmax = None
-        
-        if xmin == None:
-            td = thisdatetime - thisdate
-            xmin = td.seconds/(60*60.)
-            
-        if xmax == None:
-            xmax = xmin + self.__timerange/(60*60.)
-        
-        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
-        tmin = time.mktime(mindt.timetuple())
-        
-        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
-        tmax = time.mktime(maxdt.timetuple())
-        
-        self.__timerange = tmax - tmin
-        
-        return tmin, tmax
-    
+                        
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
             save=False, figpath='./', figfile=None):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
+            channelList = dataOut.channelList
         else:
             channelIndexList = []
             for channel in channelList:
@@ -924,16 +893,13 @@ class RTIfromNoise(Figure):
                 channelIndexList.append(dataOut.channelList.index(channel))
         
         if timerange != None:
-            self.__timerange = timerange
+            self.timerange = timerange
         
         tmin = None
         tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
-        x1 = dataOut.datatime
-#        z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
-#        avg = numpy.average(z, axis=1)
-        
+
         noise = dataOut.getNoise()
         
         thisDatetime = dataOut.datatime
@@ -941,43 +907,45 @@ class RTIfromNoise(Figure):
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
-        
         if not self.__isConfig:
             
-            nplots = len(channelIndexList)
+            nplots = 1
             
             self.setup(idfigure=idfigure,
                        nplots=nplots,
                        wintitle=wintitle,
                        showprofile=showprofile)
             
-            tmin, tmax = self.__getTimeLim(x, xmin, xmax)
-            if ymin == None: ymin = numpy.nanmin(y)
-            if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(avg)*0.9
-            if zmax == None: zmax = numpy.nanmax(avg)*0.9
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if ymin == None: ymin = numpy.nanmin(noise)
+            if ymax == None: ymax = numpy.nanmax(noise)
             
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
-            
+        
         
         self.setWinTitle(title)
             
-        for i in range(self.nplots):
-            title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-            axes = self.axesList[i*self.__nsubplots]
-            z = avg[i].reshape((1,-1))
-            axes.pcolor(x, y, z,
-                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
-                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', cbsize="1%")
-
+        
+        title = "RTI Noise %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        
+        legendlabels = ["channel %d"%idchannel for idchannel in channelList]
+        axes = self.axesList[0]
+        xdata = x[0:1]
+        ydata = noise[channelIndexList].reshape(-1,1)
+        axes.pmultilineyaxis(x=xdata, y=ydata,
+                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
+                    XAxisAsTime=True
+                    )
+            
             
         self.draw()
         
         if save:
-            date = thisDatetime.strftime("%Y%m%d")
+            
             if figfile == None:
-                figfile = self.getFilename(name = date)
+                figfile = self.getFilename(name = self.name)
             
             self.saveFigure(figpath, figfile)
             
