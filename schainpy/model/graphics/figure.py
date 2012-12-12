@@ -32,9 +32,10 @@ class Figure:
     
     def getFilename(self, name, ext='.png'):
         
-        filename = '%s-%s_%s%s' %(self.wintitle[0:10], self.PREFIX, name, ext)
+        path = '%s%03d' %(self.PREFIX, self.idfigure)
+        filename = '%s_%s%s' %(self.PREFIX, name, ext)
         
-        return filename
+        return os.path.join(path, filename)
         
     def getAxesObjList(self):
         
@@ -55,7 +56,7 @@ class Figure:
     
     def getTimeLim(self, x, xmin, xmax):
         
-        thisdatetime = datetime.datetime.fromtimestamp(numpy.min(x))
+        thisdatetime = datetime.datetime.utcfromtimestamp(numpy.min(x))
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
         ####################################################
@@ -71,10 +72,10 @@ class Figure:
         if xmax == None:
             xmax = xmin + self.timerange/(60*60.)
         
-        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin)
+        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin) - datetime.timedelta(time.timezone)
         tmin = time.mktime(mindt.timetuple())
         
-        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax)
+        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax) - datetime.timedelta(time.timezone)
         tmax = time.mktime(maxdt.timetuple())
         
         self.timerange = tmax - tmin
@@ -151,6 +152,12 @@ class Figure:
     def saveFigure(self, figpath, figfile, *args):
         
         filename = os.path.join(figpath, figfile)
+        
+        fullpath = os.path.split(filename)[0]
+        
+        if not os.path.exists(fullpath):
+            os.mkdir(fullpath)
+        
         self.__driver.saveFigure(self.fig, filename, *args)
     
     def draw(self):
