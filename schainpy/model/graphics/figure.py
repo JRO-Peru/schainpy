@@ -315,6 +315,11 @@ class Axes:
                                                   ylabel=ylabel,
                                                   title=title,
                                                   **kwargs)
+            if self.xmin == None: self.xmin = xmin
+            if self.xmax == None: self.xmax = xmax
+            if self.ymin == None: self.ymin = ymin
+            if self.ymax == None: self.ymax = ymax
+            
             self.__firsttime = False
             return
                     

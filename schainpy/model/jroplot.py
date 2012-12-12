@@ -86,14 +86,18 @@ class CrossSpectraPlot(Figure):
         
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-        
+        factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
-        z = 10.*numpy.log10(dataOut.data_spc[:,:,:])
+        z = dataOut.data_spc[:,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.average(numpy.abs(z), axis=1)
+        noise = dataOut.getNoise()/factor
         
-        noise = dataOut.getNoise()
+        zdB = 10*numpy.log10(z)
+        avgdB = 10*numpy.log10(avg)
+        noisedB = 10*numpy.log10(noise)
+        
         
         thisDatetime = dataOut.datatime
         title = "Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
@@ -113,8 +117,8 @@ class CrossSpectraPlot(Figure):
             if xmax == None: xmax = numpy.nanmax(x)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(avg)*0.9
-            if zmax == None: zmax = numpy.nanmax(avg)*0.9
+            if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
+            if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
             self.__isConfig = True
         
@@ -123,18 +127,18 @@ class CrossSpectraPlot(Figure):
         for i in range(self.nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
             
-            title = "Channel %d: %4.2fdB" %(pair[0], noise[pair[0]])
-            z = 10.*numpy.log10(dataOut.data_spc[pair[0],:,:])
+            title = "Channel %d: %4.2fdB" %(pair[0], noisedB[pair[0]])
+            zdB = 10.*numpy.log10(dataOut.data_spc[pair[0],:,:]/factor)
             axes0 = self.axesList[i*self.__nsubplots]
-            axes0.pcolor(x, y, z,
+            axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, cblabel='')
             
-            title = "Channel %d: %4.2fdB" %(pair[1], noise[pair[1]])
-            z = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:])
+            title = "Channel %d: %4.2fdB" %(pair[1], noisedB[pair[1]])
+            zdB = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:]/factor)
             axes0 = self.axesList[i*self.__nsubplots+1]
-            axes0.pcolor(x, y, z,
+            axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, cblabel='')
@@ -265,13 +269,18 @@ class RTIPlot(Figure):
         
         tmin = None
         tmax = None
+        factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
-        z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
-        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
-        avg = numpy.average(z, axis=1)
         
-        noise = dataOut.getNoise()
+        z = dataOut.data_spc[channelIndexList,:,:]/factor
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
+        avg = numpy.average(z, axis=1)
+        noise = dataOut.getNoise()/factor
+        
+#        zdB = 10.*numpy.log10(z)
+        avgdB = 10.*numpy.log10(avg)
+        noisedB = 10.*numpy.log10(noise)
         
         thisDatetime = dataOut.datatime
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
@@ -290,8 +299,8 @@ class RTIPlot(Figure):
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(avg)*0.9
-            if zmax == None: zmax = numpy.nanmax(avg)*0.9
+            if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
+            if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
@@ -302,15 +311,15 @@ class RTIPlot(Figure):
         for i in range(self.nplots):
             title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
-            z = avg[i].reshape((1,-1))
-            axes.pcolor(x, y, z,
+            zdB = avgdB[i].reshape((1,-1))
+            axes.pcolor(x, y, zdB,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', cbsize="1%")
             
             if self.__showprofile:
                 axes = self.axesList[i*self.__nsubplots +1]
-                axes.pline(avg[i], y,
+                axes.pline(avgdB[i], y,
                         xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
                         xlabel='dB', ylabel='', title='',
                         ytick_visible=False,
@@ -415,15 +424,18 @@ class SpectraPlot(Figure):
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
-        
+        factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         
-        z = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
-        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        z = dataOut.data_spc[channelIndexList,:,:]/factor
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
+        noise = dataOut.getNoise()/factor
         
-        noise = dataOut.getNoise()
+        zdB = 10*numpy.log10(z)
+        avgdB = 10*numpy.log10(avg)
+        noisedB = 10*numpy.log10(noise)
         
         thisDatetime = dataOut.datatime
         title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
@@ -443,30 +455,30 @@ class SpectraPlot(Figure):
             if xmax == None: xmax = numpy.nanmax(x)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(avg)*0.9
-            if zmax == None: zmax = numpy.nanmax(avg)*0.9
+            if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
+            if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
             self.__isConfig = True
         
         self.setWinTitle(title)
             
         for i in range(self.nplots):
-            title = "Channel %d: %4.2fdB" %(dataOut.channelList[i], noise[i])
+            title = "Channel %d: %4.2fdB" %(dataOut.channelList[i], noisedB[i])
             axes = self.axesList[i*self.__nsubplots]
-            axes.pcolor(x, y, z[i,:,:],
+            axes.pcolor(x, y, zdB[i,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, cblabel='')
             
             if self.__showprofile:
                 axes = self.axesList[i*self.__nsubplots +1]
-                axes.pline(avg[i], y,
+                axes.pline(avgdB[i], y,
                         xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
                         xlabel='dB', ylabel='', title='',
                         ytick_visible=False,
                         grid='x')
                 
-                noiseline = numpy.repeat(noise[i], len(y))
+                noiseline = numpy.repeat(noisedB[i], len(y))
                 axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
             
         self.draw()
@@ -631,10 +643,13 @@ class ProfilePlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
-
-        y = dataOut.getHeiRange()
-        x = 10.*numpy.log10(dataOut.data_spc[channelIndexList,:,:])
+        factor = dataOut.normFactor
+        y = dataOut.getHeiRange()        
+        x = dataOut.data_spc[channelIndexList,:,:]/factor
+        x = numpy.where(numpy.isfinite(x), x, numpy.NAN) 
         avg = numpy.average(x, axis=1)
+        
+        avgdB = 10*numpy.log10(avg)
         
         thisDatetime = dataOut.datatime
         title = "Power Profile"
@@ -651,8 +666,8 @@ class ProfilePlot(Figure):
             
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if xmin == None: xmin = numpy.nanmin(avg)*0.9
-            if xmax == None: xmax = numpy.nanmax(avg)*0.9
+            if xmin == None: xmin = numpy.nanmin(avgdB)*0.9
+            if xmax == None: xmax = numpy.nanmax(avgdB)*0.9
             
             self.__isConfig = True
         
@@ -663,7 +678,7 @@ class ProfilePlot(Figure):
         axes = self.axesList[0]
         
         legendlabels = ["channel %d"%x for x in channelList]
-        axes.pmultiline(avg, y,
+        axes.pmultiline(avgdB, y,
                 xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                 xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels,
                 ytick_visible=True, nxticks=5,
@@ -852,6 +867,10 @@ class RTIfromNoise(Figure):
         
         self.WIDTH = 820
         self.HEIGHT = 200
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.xdata = None
+        self.ydata = None
         
     def getSubplots(self):
         
@@ -865,17 +884,19 @@ class RTIfromNoise(Figure):
         self.__showprofile = showprofile
         self.nplots = nplots
         
-        ncolspan = 1
-        colspan = 1
-            
+        ncolspan = 7
+        colspan = 6
+        self.__nsubplots = 2
+        
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
-                          widthplot = self.WIDTH,
-                          heightplot = self.HEIGHT)
+                          widthplot = self.WIDTH+self.WIDTHPROF,
+                          heightplot = self.HEIGHT+self.HEIGHTPROF)
         
         nrow, ncol = self.getSubplots()
-                
-        self.addAxes(nrow, ncol, 0, 0, 1, 1)
+        
+        self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
+        
                         
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
@@ -899,12 +920,13 @@ class RTIfromNoise(Figure):
         tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
-
-        noise = dataOut.getNoise()
+        factor = dataOut.normFactor
+        noise = dataOut.getNoise()/factor
+        noisedB = 10*numpy.log10(noise)
         
         thisDatetime = dataOut.datatime
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
-        xlabel = "Velocity (m/s)"
+        xlabel = ""
         ylabel = "Range (Km)"
         
         if not self.__isConfig:
@@ -917,12 +939,14 @@ class RTIfromNoise(Figure):
                        showprofile=showprofile)
             
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
-            if ymin == None: ymin = numpy.nanmin(noise)
-            if ymax == None: ymax = numpy.nanmax(noise)
+            if ymin == None: ymin = numpy.nanmin(noisedB)
+            if ymax == None: ymax = numpy.nanmax(noisedB)
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
         
+            self.xdata = numpy.array([])
+            self.ydata = numpy.array([])
         
         self.setWinTitle(title)
             
@@ -931,14 +955,20 @@ class RTIfromNoise(Figure):
         
         legendlabels = ["channel %d"%idchannel for idchannel in channelList]
         axes = self.axesList[0]
-        xdata = x[0:1]
-        ydata = noise[channelIndexList].reshape(-1,1)
-        axes.pmultilineyaxis(x=xdata, y=ydata,
+        
+        self.xdata = numpy.hstack((self.xdata, x[0:1]))
+        
+        if len(self.ydata)==0:
+            self.ydata = noisedB[channelIndexList].reshape(-1,1)
+        else:
+            self.ydata = numpy.hstack((self.ydata, noisedB[channelIndexList].reshape(-1,1)))
+        
+        
+        axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
                     xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
                     xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
                     XAxisAsTime=True
                     )
-            
             
         self.draw()
         
@@ -951,4 +981,6 @@ class RTIfromNoise(Figure):
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
+            del self.xdata
+            del self.ydata
                

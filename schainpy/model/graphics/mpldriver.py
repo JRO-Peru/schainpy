@@ -1,7 +1,11 @@
 import numpy
 import datetime
+import sys
 import matplotlib
-matplotlib.use("GTKAgg")
+if sys.platform == 'linux':
+    matplotlib.use("GTKAgg")
+if sys.platform == 'darwin':
+    matplotlib.use("TKAgg")
 import matplotlib.pyplot
 import matplotlib.dates
 #import scitools.numpyutils

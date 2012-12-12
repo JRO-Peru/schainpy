@@ -161,6 +161,8 @@ class JROData:
     
     noise = None
     
+    windowOfFilter = 1
+    
     #Speed of ligth
     C = 3e8
     
@@ -448,7 +450,7 @@ class Spectra(JROData):
         if type == 3:
             noise = self.getNoisebyWindow()
         
-        return 10*numpy.log10(noise)
+        return noise
 
     
     def getFreqRange(self, extrapoints=0):
@@ -473,8 +475,17 @@ class Spectra(JROData):
         
         return range(self.nPairs)
     
+    def getNormFactor(self):
+        pwcode = 1
+        if self.flagDecodeData:
+            pwcode = numpy.sum(self.code[0]**2)
+        normFactor = min(self.nFFTPoints,self.nProfiles)*self.nIncohInt*self.nCohInt*self.windowOfFilter*pwcode
+        
+        return normFactor
+    
     nPairs = property(getNPairs, "I'm the 'nPairs' property.")
     pairsIndexList = property(getPairsIndexList, "I'm the 'pairsIndexList' property.")
+    normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
         
 class SpectraHeis(JROData):
     

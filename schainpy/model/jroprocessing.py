@@ -359,9 +359,10 @@ class VoltageProc(ProcessingUnit):
         r = self.dataOut.data.shape[1] % window
         buffer = self.dataOut.data[:,0:self.dataOut.data.shape[1]-r] 
         buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
-        buffer = numpy.average(buffer,2)
+        buffer = numpy.sum(buffer,2)
         self.dataOut.data = buffer
         self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window-newdelta,newdelta)
+        self.dataOut.windowOfFilter = window
 
     def deFlip(self):
         self.dataOut.data *= self.flip
@@ -694,6 +695,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
+        self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         
         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
         
@@ -1086,9 +1088,9 @@ class IncohInt(Operation):
         
         if self.__dataReady:
             
-            dataOut.data_spc = avgdata_spc / self.n
-            dataOut.data_cspc = avgdata_cspc / self.n
-            dataOut.data_dc = avgdata_dc / self.n
+            dataOut.data_spc = avgdata_spc
+            dataOut.data_cspc = avgdata_cspc
+            dataOut.data_dc = avgdata_dc
             
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
