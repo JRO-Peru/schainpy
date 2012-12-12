@@ -100,6 +100,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lineHeighProfileTxtopVol.setEnabled(False)
         self.numberIntegration.setEnabled(False)
         self.valuenFFTPointOpSpec.setEnabled(False)
+        self.lineProfileSelecopVolCEB.setEnabled(False)
         
     
     def clickFunctiontree(self,index):
@@ -416,7 +417,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if  p0==0:
             print " deshabilitado" 
             
-           
+
+    @pyqtSignature("int")
+    def on_profileSelecopVolCEB_stateChanged(self, p0):
+        """
+        Slot documentation goes here.
+        """
+        if  p0==2:
+            self.lineProfileSelecopVolCEB.setEnabled(True)
+            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='ProfileSelector', optype='other')
+            print opObj10.id
+            self.operObjList.append(opObj10)
+            print " Select Type of Profile"
+        if  p0==0:
+            print " deshabilitado" 
+            
             
     @pyqtSignature("int")
     def on_coherentIntegrationCEB_stateChanged(self, p0):
@@ -438,9 +454,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.selecChannelopVolCEB.setChecked(False)
         self.selecHeighopVolCEB.setChecked(False)
         self.coherentIntegrationCEB.setChecked(False)
-     
+        self.profileSelecopVolCEB.setChecked(False)
         #self.selecChannelopVolCEB.setEnabled(False)
         self.lineHeighProfileTxtopVol.clear()
+        self.lineProfileSelecopVolCEB.clear()
         self.numberChannelopVol.clear()
         self.numberIntegration.clear()
             
@@ -464,10 +481,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if i.name=='selectHeights' :
                     value=self.lineHeighProfileTxtopVol.text()
                     valueList=value.split(',')
-                    i.addParameter(name='minHei', value=value[0], format='float')
-                    i.addParameter(name='maxHei', value=value[1], format='float')
-            
+                    i.addParameter(name='minHei', value=valueList[0], format='float')
+                    i.addParameter(name='maxHei', value=valueList[1], format='float')
+          
             print "height"
+        
+        
+        if self.selecHeighopVolCEB.isChecked():
+            for i in self.operObjList:
+                if i.name=='ProfileSelector' :
+                    value=self.lineProfileSelecopVolCEB.text()
+                    i.addParameter(name='ProfileSelector', value=value, format='intlist')
+              
+                    
+                    
         if self.coherentIntegrationCEB.isChecked():
             for i in self.operObjList:
                 if i.name=='CohInt':
