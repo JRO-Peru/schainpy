@@ -38,7 +38,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Constructor
         """   
-        print "Inicio de Programa Interfaz Gráfica"
+        print "Inicio de Programa Interfaz GrÃ¡fica"
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
                
@@ -120,7 +120,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
   
     @pyqtSignature("")
-    def on_addpBtn_clicked(self):
+    def on_addprojectBtn_clicked(self):
         """
         Llama al metodo addProject.
         """ 
@@ -176,7 +176,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #        self.parentItem=self.projectObj.arbol
 #        self.loadProjects()
         
-        print "Porfavor ingrese los parámetros de configuracion del Proyecto"
+        print "Porfavor ingrese los parÃ¡metros de configuracion del Proyecto"
         
     def loadProjects(self):
         self.proConfCmbBox.clear()
@@ -549,7 +549,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Slot documentation goes here.
         """
-        print "Añadimos operaciones Spectra,nchannels,value,format"
+        print "AÃ±adimos operaciones Spectra,nchannels,value,format"
         if self.nFFTPointOpSpecCEB.isChecked():
             upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
             value=self.valuenFFTPointOpSpec.text()

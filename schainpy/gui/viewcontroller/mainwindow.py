@@ -19,12 +19,11 @@ from viewer.ui_initwindow import Ui_InitWindow
 from controller import Project,ReadUnitConf,ProcUnitConf,OperationConf,ParameterConf
 import os
 
-HORIZONTAL_HEADERS = ("ITEM :"," DATOS  :  " )
-    
-HORIZONTAL = ("RAMA :",)
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    nop=None
+    __projObjDict = {}
+    __arbolDict = {}
+    
     """
     Class documentation goes here.
     #*##################VENTANA CUERPO  DEL PROGRAMA####################
@@ -54,12 +53,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.upType=0
         self.uporProObjRecover=0
         
-        
         self.readUnitConfObjList=[]
         
         self.upObjVolList=[]
-        self.upobjSpecList=[]
-        
+        self.upobjSpecList=[] 
         
         self.operObjList=[]
         
@@ -72,20 +69,210 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.opObj10=None
         self.opObj12=None
         
-        
         self.setParam()
 
-  #++++++++++++++++++NEW PROPERTIES+++++++++++++++++#
+  #-----------------------------------NEW PROPERTIES-----------------------------------------------#
         QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
-        self.addpBtn.setToolTip('Add_New_Project')    
+        self.addprojectBtn.setToolTip('Add_New_Project')    
         self.addUnitProces.setToolTip('Add_New_Processing_Unit')  
 
-  #++++++++++++++++++NEW PROPERTIES+++++++++++++++++#
+  #-----------------------------------NEW PROPERTIES-----------------------------------------------#
         self.model = QtGui.QStandardItemModel()
         self.treeView.setModel(self.model)
         self.treeView.clicked.connect(self.clickFunctiontree)
         self.treeView.expandAll()
         #self.treeView.clicked.connect(self.treefunction1)
+
+ #-----------------------------------BARRA DE MENU-------------------------------------------------#
+ 
+ #----------------------------------- MENU_Project-------------------------------------------------#  
+        
+    @pyqtSignature("")
+    def on_menuFileAbrirObj_triggered(self):
+        """
+        METODO CARGA UN ARCHIVO DE CONFIGURACION ANTERIOR
+        """
+        print "Leer un archivo xml y extraer sus atributos Not implemented yet"
+        
+    @pyqtSignature("")
+    def on_menuFileCrearObj_triggered(self):
+        """
+        CREAR PROJECT,ANADE UN NUEVO PROYECTO, LLAMA AL MÉTODO QUE CONTIENE LAS OPERACION DE CREACION DE PROYECTOS
+        Llama al metodo addProject..
+        """
+        self.addProject()
+             
+    @pyqtSignature("")
+    def on_menuFileGuardarObj_clicked(self):
+        """
+        METODO  EJECUTADO CUANDO OCURRE EL EVENTO GUARDAR PROJECTO
+        Llama al metodo saveProject.
+        """ 
+        self.saveProject()
+        
+    @pyqtSignature("")
+    def on_menuFileCerrarObj_clicked(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO CERRAR
+        Llama al metodo close.
+        """ 
+        self.close()
+        
+   #-----------------------------------MENU_RUN----------------------------------------------------#   
+    
+    @pyqtSignature("")
+    def on_menuRUNStartObj_clicked(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO RUN 
+        Llama al metodo RUN.
+        """ 
+        print "Not implemented yet"
+        
+    @pyqtSignature("") 
+    def on_menuRUNPausaObj_clicked(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO PAUSA
+        Llama al metodo PAUSA.
+        """ 
+        print "Not implemented yet"
+    
+   #-----------------------------------MENU_OPTION-------------------------------------------------#   
+    @pyqtSignature("") 
+    def on_menuOptConfigLogfileObj_clicked(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO ConfigLog
+        Llama al metodo close.
+        """ 
+        print "Not implemented yet"
+   
+
+    @pyqtSignature("") 
+    def on_menuOptConfigserverObj_clicked(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO Config Server
+        Llama al metodo close.
+        """ 
+        print "Not implemented yet"   
+    #-----------------------------------MENU_HELP--------------------------------------------------#   
+    @pyqtSignature("") 
+    def on_menuHELPAboutObj_clicked(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO HELP
+        Llama al metodo close.
+        """ 
+        print "Not implemented yet"
+    
+    @pyqtSignature("") 
+    def on_menuHELPPrfObj_clicked(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO HElp
+        Llama al metodo close.
+        """ 
+        print "Not implemented yet"    
+        
+  #-----------------------------------BARRA DE HERRAMIENTAS----------------------------------------#
+    
+    @pyqtSignature("")
+    def on_actOpenObj_triggered(self):
+        """
+        METODO CARGA UN ARCHIVO DE CONFIGURACION ANTERIOR
+        """
+        print "Leer un archivo xml y extraer sus atributos Not implemented yet"
+       
+    @pyqtSignature("")
+    def on_actCreateObj_triggered(self):
+        """
+        CREAR PROJECT ,ANADE UN NUEVO PROYECTO, LLAMA AL MÉTODO QUE CONTIENE LAS OPERACION DE CREACION DE PROYECTOS
+        Llama al metodo addProject.
+        """
+        self.addProject()
+             
+         
+    @pyqtSignature("")
+    def on_actStopObj_triggered(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO PAUSA
+        Llama al metodo PAUSA.
+        """ 
+        print "Not implemented yet"
+
+    @pyqtSignature("")
+    def on_actPlayObj_triggered(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO PAUSA
+        Llama al metodo PAUSA.
+        """ 
+        print "Not implemented yet"
+   
+   #-----------------------------------PUSHBUTTON_CREATE PROJECT-----------------------------------#      
+         
+    @pyqtSignature("")
+    def on_addprojectBtn_clicked(self):
+        """
+        CREAR PROJECT ,ANADE UN NUEVO PROYECTO, LLAMA AL MÉTODO QUE CONTIENE LAS OPERACION DE CREACION DE PROYECTOS
+        Llama al metodo addProject.
+        """ 
+        self.addProject()
+        
+   #-----------------------------------PUSHBUTTON_PROCESSING UNIT PROJECT--------------------------#    
+    @pyqtSignature("")
+    def on_addUnitProces_clicked(self):
+        """
+        CREAR PROCESSING UNI ,ANADE UNA UNIDAD DE PROCESAMIENTO, LLAMA AL MÉTODO addUP QUE CONTIENE LAS OPERACION DE CREACION DE UNIDADES DE PROCESAMIENTO
+        Llama al metodo addUP.
+        """
+#        print "En este nivel se adiciona una rama de procesamiento, y se le concatena con el id"
+#        self.procUnitConfObj0 = self.controllerObj.addProcUnit(datatype='Voltage', inputId=self.readUnitConfObj.getId())      
+        self.addUP()
+        
+        
+   #-----------------------------------PUSHBUTTON_dataOkBtn----------------------------------------#    
+    
+    @pyqtSignature("")
+    def on_dataOkBtn_clicked(self):
+        """
+        Añade al Obj XML de Projecto, name,datatype,date,time,readmode,wait,etc, crea el readUnitProcess del archivo xml.
+        Prepara la configuración del diágrama del Arbol del treeView numero 2
+        """     
+        print "En este nivel se pasa el tipo de dato con el que se trabaja,path,startDate,endDate,startTime,endTime,online"
+
+        projectObj=self.proObjList[int(self.proConfCmbBox.currentIndex())]
+        datatype=str(self.dataTypeCmbBox.currentText())
+        path=str(self.dataPathTxt.text())
+        online=int(self.online)
+        starDate=str(self.starDateCmbBox.currentText())
+        endDate=str(self.endDateCmbBox.currentText())
+   
+        
+        self.readUnitConfObj = projectObj.addReadUnit(datatype=datatype,
+                                                path=path,
+                                                startDate=starDate,
+                                                endDate=endDate,
+                                                startTime='06:10:00',
+                                                endTime='23:59:59',
+                                                online=online)
+        
+        self.readUnitConfObjList.append(self.readUnitConfObj)
+        
+        print "self.readUnitConfObj.getId",self.readUnitConfObj.getId(),datatype,path,starDate,endDate,online
+
+        
+        self.model_2=treeModel()
+
+        self.model_2.setParams(name=projectObj.name+str(projectObj.id),
+                               directorio=path,
+                                workspace="C:\\WorkspaceGUI",
+                                  remode=str(self.readModeCmBox.currentText()), 
+                                   dataformat=datatype, 
+                                    date=str(starDate)+"-"+str(endDate),
+                                     initTime='06:10:00',
+                                       endTime='23:59:59',
+                                        timezone="Local" ,
+                                         Summary="test de prueba")
+        self.model_2.arbol()
+        self.treeView_2.setModel(self.model_2)
+        self.treeView_2.expandAll()     
+        
         
     def getNumberofProject(self):
 #        for i in self.proObjList:
@@ -95,7 +282,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 #            print i
         
     def setParam(self):
+        
+        self.tabWidgetProject.setEnabled(False)
         self.dataPathTxt.setText('C:\data')
+        self.nameProjectTxt.setText("Test")
         self.numberChannelopVol.setEnabled(False)
         self.lineHeighProfileTxtopVol.setEnabled(False)
         self.numberIntegration.setEnabled(False)
@@ -113,24 +303,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.namepTree=NameofPro
         #print self.namepTree
 
-  
-    @pyqtSignature("")
-    def on_addpBtn_clicked(self):
-        """
-        ANADIR UN NUEVO PROYECTO
-        """ 
-        print "En este nivel se abre el window"
-
-
-        self.showWindow()
+    def addProject(self):
+        self.tabWidgetProject.setEnabled(True)
+        self.idp += 1
+        self.projectObj = Project()
         
-    def showWindow(self):
-        self.configProject=Window(self)
+        id=int(self.idp)
+        name=str(self.nameProjectTxt.text())
+        desc=str(self.description)
+        
+        self.projectObj.setup(id = id, name=name, description=desc)
+        
+        #self.configProject=Window(self)
         #self.configProject.closed.connect(self.show)
-        self.configProject.show()
+        #self.configProject.show()
         #self.configProject.closed.connect(self.show)
-        self.configProject.saveButton.clicked.connect(self.reciveParameters)
-        self.configProject.closed.connect(self.createProject)
+       # self.configProject.saveButton.clicked.connect(self.reciveParameters)
+        #self.configProject.closed.connect(self.createProject)
         
     def reciveParameters(self):
         self.namep,self.description =self.configProject.almacena()
@@ -271,61 +460,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif p0==1:
             self.online=1
             
-    @pyqtSignature("")
-    def on_dataOkBtn_clicked(self):
-        """
-        Slot documentation goes here.
-        """     
-        print "En este nivel se pasa el tipo de dato con el que se trabaja,path,startDate,endDate,startTime,endTime,online"
-
-        projectObj=self.proObjList[int(self.proConfCmbBox.currentIndex())]
-        datatype=str(self.dataTypeCmbBox.currentText())
-        path=str(self.dataPathTxt.text())
-        online=int(self.online)
-        starDate=str(self.starDateCmbBox.currentText())
-        endDate=str(self.endDateCmbBox.currentText())
-   
-        
-        self.readUnitConfObj = projectObj.addReadUnit(datatype=datatype,
-                                                path=path,
-                                                startDate=starDate,
-                                                endDate=endDate,
-                                                startTime='06:10:00',
-                                                endTime='23:59:59',
-                                                online=online)
-        
-        self.readUnitConfObjList.append(self.readUnitConfObj)
-        
-        print "self.readUnitConfObj.getId",self.readUnitConfObj.getId(),datatype,path,starDate,endDate,online
-
-        
-        self.model_2=treeModel()
-
-        self.model_2.setParams(name=projectObj.name+str(projectObj.id),
-                               directorio=path,
-                                workspace="C:\\WorkspaceGUI",
-                                  remode=str(self.readModeCmBox.currentText()), 
-                                   dataformat=datatype, 
-                                    date=str(starDate)+"-"+str(endDate),
-                                     initTime='06:10:00',
-                                       endTime='23:59:59',
-                                        timezone="Local" ,
-                                         Summary="test de prueba")
-        self.model_2.arbol()
-        self.treeView_2.setModel(self.model_2)
-        self.treeView_2.expandAll()
-        
+            
        
-    @pyqtSignature("")
-    def on_addUnitProces_clicked(self):
-        """
-        Slot documentation goes here.
-        """
-#        print "En este nivel se adiciona una rama de procesamiento, y se le concatena con el id"
-#        self.procUnitConfObj0 = self.controllerObj.addProcUnit(datatype='Voltage', inputId=self.readUnitConfObj.getId())      
-        self.showUp()
-
-    def showUp(self):
+    def addUP(self):
         
         self.configUP=UnitProcess(self)
         for i in self.proObjList:
@@ -611,6 +748,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         GUARDAR EL ARCHIVO DE CONFIGURACION XML
         """
+        self.saveProject()
+        
+        
+    def saveProject(self):
         if self.idp==1:
            self.valuep=1
             
