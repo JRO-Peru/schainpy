@@ -72,10 +72,10 @@ class Figure:
         if xmax == None:
             xmax = xmin + self.timerange/(60*60.)
         
-        mindt = thisdate + datetime.timedelta(0,0,0,0,0, xmin) - datetime.timedelta(time.timezone)
+        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
         tmin = time.mktime(mindt.timetuple())
         
-        maxdt = thisdate + datetime.timedelta(0,0,0,0,0, xmax) - datetime.timedelta(time.timezone)
+        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
         tmax = time.mktime(maxdt.timetuple())
         
         self.timerange = tmax - tmin
