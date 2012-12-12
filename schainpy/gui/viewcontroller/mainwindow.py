@@ -97,6 +97,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setParam(self):
         self.dataPathTxt.setText('C:\data')
         self.numberChannelopVol.setEnabled(False)
+        self.lineHeighProfileTxtopVol.setEnabled(False)
         self.numberIntegration.setEnabled(False)
         self.valuenFFTPointOpSpec.setEnabled(False)
         
@@ -406,6 +407,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Slot documentation goes here.
         """
         if  p0==2:
+            self.lineHeighProfileTxtopVol.setEnabled(True)
             upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
             opObj10=upProcessSelect.addOperation(name='selectHeights')
             print opObj10.id
@@ -461,8 +463,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for i in self.operObjList:
                 if i.name=='selectHeights' :
                     value=self.lineHeighProfileTxtopVol.text()
-                    i.addParameter(name='minHei', value='90', format='float')
-                    i.addParameter(name='maxHei', value='180', format='float')
+                    valueList=value.split(',')
+                    i.addParameter(name='minHei', value=value[0], format='float')
+                    i.addParameter(name='maxHei', value=value[1], format='float')
             
             print "height"
         if self.coherentIntegrationCEB.isChecked():
@@ -479,10 +482,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if  p0==2:
             self.valuenFFTPointOpSpec.setEnabled(True)
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='nFFTPoints')
-            print opObj10.id
-            self.operObjList.append(opObj10)
             print " nFFTPoint"
         if  p0==0:
             print " deshabilitado" 

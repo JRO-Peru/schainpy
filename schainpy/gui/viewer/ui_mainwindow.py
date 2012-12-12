@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+  
 # Form implementation generated from reading ui file 'C:\Users\alex\ericworkspace\UIDOS\MainWindow_NOVTRES.ui'
 #
 # Created: Wed Dec 12 10:10:03 2012
