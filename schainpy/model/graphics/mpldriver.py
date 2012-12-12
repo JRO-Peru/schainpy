@@ -305,8 +305,10 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
     matplotlib.pyplot.ioff()
     
     lines = ax.plot(x, y.T, marker=marker,markersize=markersize,linestyle=linestyle)
-    leg = ax.legend(lines, legendlabels, bbox_to_anchor=(1.05, 1), loc='upper right', numpoints=1, handlelength=1.5, \
-                                handletextpad=0.5, borderpad=0.2, labelspacing=0.2, borderaxespad=0.)
+    leg = ax.legend(lines, legendlabels, loc='upper left', bbox_to_anchor=(1.01, 1.00), numpoints=1, handlelength=1.5, \
+                    handletextpad=0.5, borderpad=0.5, labelspacing=0.5, borderaxespad=0.)
+    
+    for label in leg.get_texts(): label.set_fontsize(9)
     
     ax.set_xlim([xmin,xmax])
     ax.set_ylim([ymin,ymax]) 
@@ -352,7 +354,7 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
     
     return iplot
 
-def pmultilineinyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
+def pmultilineyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
     
     ax = iplot.get_axes()
     

@@ -925,7 +925,7 @@ class RTIfromNoise(Figure):
         noisedB = 10*numpy.log10(noise)
         
         thisDatetime = dataOut.datatime
-        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = "RTI Noise: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
