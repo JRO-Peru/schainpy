@@ -71,12 +71,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.setParam()
 
-  #-----------------------------------NEW PROPERTIES-----------------------------------------------#
+  #-----------------------------------NEW PROPERTIES------------------------------------------------#
         QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
         self.addprojectBtn.setToolTip('Add_New_Project')    
         self.addUnitProces.setToolTip('Add_New_Processing_Unit')  
 
-  #-----------------------------------NEW PROPERTIES-----------------------------------------------#
+  #-----------------------------------NEW PROPERTIES------------------------------------------------#
         self.model = QtGui.QStandardItemModel()
         self.treeView.setModel(self.model)
         self.treeView.clicked.connect(self.clickFunctiontree)
@@ -85,7 +85,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
  #-----------------------------------BARRA DE MENU-------------------------------------------------#
  
- #----------------------------------- MENU_Project-------------------------------------------------#  
+ #----------------------------------- MENU_PROJECT--------------------------------------------------#  
         
     @pyqtSignature("")
     def on_menuFileAbrirObj_triggered(self):
@@ -153,7 +153,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Llama al metodo close.
         """ 
         print "Not implemented yet"   
-    #-----------------------------------MENU_HELP--------------------------------------------------#   
+    #-----------------------------------MENU_HELP-------------------------------------------------------#   
     @pyqtSignature("") 
     def on_menuHELPAboutObj_clicked(self):
         """
@@ -204,7 +204,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ 
         print "Not implemented yet"
    
-   #-----------------------------------PUSHBUTTON_CREATE PROJECT-----------------------------------#      
+    @pyqtSignature("")
+    def on_actSaveObj_triggered(self):
+        """
+        METODO EJECUTADO CUANDO OCURRE EL EVENTO SAVE
+        Llama al metodo SAVE.
+        """ 
+        self.saveProject()
+      
+   #-----------------------------------PUSHBUTTON_CREATE PROJECT----------------------------------#      
          
     @pyqtSignature("")
     def on_addprojectBtn_clicked(self):
@@ -213,20 +221,71 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Llama al metodo addProject.
         """ 
         self.addProject()
+    
+   #------------------------------------VENTANA CONFIGURACION PROJECT----------------------------#     
+   
+    
+    @pyqtSignature("int")
+    def on_dataTypeCmbBox_activated(self,index):
+        """
+        Metodo que identifica que tipo de dato se va a trabajar VOLTAGE O ESPECTRA
+        """
+        self.dataFormatTxt.setReadOnly(True)
+        if index==0:
+           self.datatype='Voltage'
+        elif index==1:
+            self.datatype='Spectra'
+        else :
+              self.datatype=''
+              self.dataFormatTxt.setReadOnly(False)
+        self.dataFormatTxt.setText(self.datatype)
         
-   #-----------------------------------PUSHBUTTON_PROCESSING UNIT PROJECT--------------------------#    
     @pyqtSignature("")
-    def on_addUnitProces_clicked(self):
+    def on_dataPathBrowse_clicked(self):
         """
-        CREAR PROCESSING UNI ,ANADE UNA UNIDAD DE PROCESAMIENTO, LLAMA AL MÉTODO addUP QUE CONTIENE LAS OPERACION DE CREACION DE UNIDADES DE PROCESAMIENTO
-        Llama al metodo addUP.
+        OBTENCION DE LA RUTA DE DATOS
         """
-#        print "En este nivel se adiciona una rama de procesamiento, y se le concatena con el id"
-#        self.procUnitConfObj0 = self.controllerObj.addProcUnit(datatype='Voltage', inputId=self.readUnitConfObj.getId())      
-        self.addUP()
+        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
+        self.dataPathTxt.setText(self.dataPath)
+        self.statusDpath=self.existDir(self.dataPath)
+        self.loadDays()   
         
+    @pyqtSignature("int")
+    def on_starDateCmbBox_activated(self, index):
+        """
+        SELECCION DEL RANGO DE FECHAS -START DATE
+        """
+        var_StopDay_index=self.endDateCmbBox.count() - self.endDateCmbBox.currentIndex()
+        self.endDateCmbBox.clear()
+        for i in self.variableList[index:]:
+            self.endDateCmbBox.addItem(i)
+        self.endDateCmbBox.setCurrentIndex(self.endDateCmbBox.count() - var_StopDay_index)
+        self.getsubList()
+
+    @pyqtSignature("int")
+    def on_endDateCmbBox_activated(self, index):
+        """
+        SELECCION DEL RANGO DE FECHAS-END DATE
+        """
+        var_StartDay_index=self.starDateCmbBox.currentIndex()
+        var_end_index = self.endDateCmbBox.count() - index
+        self.starDateCmbBox.clear()
+        for i in self.variableList[:len(self.variableList) - var_end_index + 1]:
+            self.starDateCmbBox.addItem(i)
+        self.starDateCmbBox.setCurrentIndex(var_StartDay_index)
+        self.getsubList() #Se carga var_sublist[] con el rango de las fechas seleccionadas
+    
+    @pyqtSignature("int")
+    def on_readModeCmBox_activated(self, p0):
+        """
+        SELECCION DEL MODO DE LECTURA ON=1, OFF=0
+        """
+        if p0==0:
+           self.online=0
+        elif p0==1:
+            self.online=1  
         
-   #-----------------------------------PUSHBUTTON_dataOkBtn----------------------------------------#    
+      #---------------PUSHBUTTON_dataOkBtn_CONFIGURATION PROJECT--------------------------#    
     
     @pyqtSignature("")
     def on_dataOkBtn_clicked(self):
@@ -271,8 +330,226 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                          Summary="test de prueba")
         self.model_2.arbol()
         self.treeView_2.setModel(self.model_2)
-        self.treeView_2.expandAll()     
+        self.treeView_2.expandAll()       
         
+    
+   #-----------------PUSHBUTTON_ADD_PROCESSING UNIT PROJECT------------------#    
+    @pyqtSignature("")
+    def on_addUnitProces_clicked(self):
+        """
+        CREAR PROCESSING UNI ,ANADE UNA UNIDAD DE PROCESAMIENTO, LLAMA AL MÉTODO addUP QUE CONTIENE LAS OPERACION DE CREACION DE UNIDADES DE PROCESAMIENTO
+        Llama al metodo addUP.
+        """
+#        print "En este nivel se adiciona una rama de procesamiento, y se le concatena con el id"
+#        self.procUnitConfObj0 = self.controllerObj.addProcUnit(datatype='Voltage', inputId=self.readUnitConfObj.getId())      
+        self.addUP()
+        
+        
+    #-----------------VENTANA CONFIGURACION DE VOLTAGE---------------------------#     
+    
+    @pyqtSignature("int")
+    def on_selecChannelopVolCEB_stateChanged(self, p0):
+        """
+        Check Box habilita operaciones de Selección de Canales
+        """
+        if  p0==2:
+            self.numberChannelopVol.setEnabled(True)
+            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='selectChannels')
+            print opObj10.id
+            self.operObjList.append(opObj10)
+            print " Ingresa seleccion de Canales"
+        if  p0==0:
+            print " deshabilitado" 
+            
+    @pyqtSignature("int")
+    def on_selecHeighopVolCEB_stateChanged(self, p0):
+        """
+        Check Box habilita operaciones de Selección de Alturas 
+        """
+        if  p0==2:
+            self.lineHeighProfileTxtopVol.setEnabled(True)
+            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='selectHeights')
+            print opObj10.id
+            self.operObjList.append(opObj10)
+            print " Select Type of Profile"
+        if  p0==0:
+            print " deshabilitado" 
+            
+
+    @pyqtSignature("int")
+    def on_profileSelecopVolCEB_stateChanged(self, p0):
+        """
+        Check Box habilita ingreso  del rango de Perfiles
+        """
+        if  p0==2:
+            self.lineProfileSelecopVolCEB.setEnabled(True)
+            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='ProfileSelector', optype='other')
+            print opObj10.id
+            self.operObjList.append(opObj10)
+            print " Select Type of Profile"
+        if  p0==0:
+            print " deshabilitado" 
+            
+            
+    @pyqtSignature("int")
+    def on_coherentIntegrationCEB_stateChanged(self, p0):
+        """
+        Check Box habilita ingresode del numero de Integraciones a realizar
+        """
+        if  p0==2:
+            self.numberIntegration.setEnabled(True)
+            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='CohInt', optype='other')
+            print opObj10.id
+            self.operObjList.append(opObj10)
+            print "Choose number of Cohint"
+        if  p0==0:
+            print " deshabilitado"   
+            self.numberChannelopVol.setEnabled(False)  
+            
+    #-----------------------PUSHBUTTON_ACCEPT_OPERATION----------------------------#       
+    
+    @pyqtSignature("")
+    def on_dataopVolOkBtn_clicked(self):
+        """
+        BUSCA EN LA LISTA DE OPERACIONES DEL TIPO VOLTAJE Y LES AÑADE EL PARAMETRO ADECUADO ESPERANDO LA ACEPTACION DEL USUARIO
+        PARA AGREGARLO AL ARCHIVO DE CONFIGURACION XML
+        """   
+        if self.selecChannelopVolCEB.isChecked():
+            for i in self.operObjList:
+                if i.name=='selectChannels':
+                    value=self.numberChannelopVol.text()
+                    i.addParameter(name='channelList', value=value, format='intlist')
+
+            
+            print "channel"
+            
+        if self.selecHeighopVolCEB.isChecked():
+            for i in self.operObjList:
+                if i.name=='selectHeights' :
+                    value=self.lineHeighProfileTxtopVol.text()
+                    valueList=value.split(',')
+                    i.addParameter(name='minHei', value=valueList[0], format='float')
+                    i.addParameter(name='maxHei', value=valueList[1], format='float')
+          
+            print "height"
+        
+        
+        if self.selecHeighopVolCEB.isChecked():
+            for i in self.operObjList:
+                if i.name=='ProfileSelector' :
+                    value=self.lineProfileSelecopVolCEB.text()
+                    i.addParameter(name='ProfileSelector', value=value, format='intlist')
+              
+                    
+                    
+        if self.coherentIntegrationCEB.isChecked():
+            for i in self.operObjList:
+                if i.name=='CohInt':
+                    value=self.numberIntegration.text()
+                    i.addParameter(name='n', value=value, format='int')  
+        
+        
+    #-------------------------VENTANA DE CONFIGURACION SPECTRA------------------------#     
+        
+    @pyqtSignature("int")
+    def on_nFFTPointOpSpecCEB_stateChanged(self, p0):
+        """
+        Habilita la opcion de añadir el parámetro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.valuenFFTPointOpSpec.setEnabled(True)
+            print " nFFTPoint"
+        if  p0==0:
+            print " deshabilitado" 
+            
+    #------------------PUSH_BUTTON_SPECTRA_OK------------------------------------#   
+                 
+    @pyqtSignature("")
+    def on_dataopSpecOkBtn_clicked(self):
+        """
+        Añade al archivo de configuración el parámetros nFFTPoints a la UP.
+        """
+        print "Añadimos operaciones Spectra,nchannels,value,format"
+        if self.nFFTPointOpSpecCEB.isChecked():
+            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
+            value=self.valuenFFTPointOpSpec.text()
+            upProcessSelect.addParameter(name='nFFTPoints',value=value,format='int')
+    #---------------------VENTANA DE CONFIGURACION GRAPH SPECTRA------------------#     
+
+    @pyqtSignature("int")
+    def on_SpectraPlotGraphCEB_stateChanged(self, p0):
+        """
+        Habilita la opcion de Ploteo Spectra Plot
+        """
+        if  p0==2:
+            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='SpectraPlot',optype='other')
+            print opObj10.id
+            self.operObjList.append(opObj10)
+    
+        if  p0==0:
+            print " deshabilitado" 
+    
+    @pyqtSignature("int")
+    def on_CrossSpectraPlotGraphceb_stateChanged(self, p0):
+        """
+        Habilita la opción de Ploteo CrossSpectra
+        """
+        if  p0==2:
+            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='CrossSpectraPlot',optype='other')
+            print opObj10.id
+            self.operObjList.append(opObj10) 
+        if  p0==0:
+            print " deshabilitado"    
+        
+    @pyqtSignature("int")
+    def on_RTIPlotGraphCEB_stateChanged(self, p0):
+        """
+        Habilita la opción de Plote RTIPlot
+        """
+        if  p0==2:
+            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
+            opObj10=upProcessSelect.addOperation(name='RTIPlot',optype='other')
+            print opObj10.id
+            self.operObjList.append(opObj10) 
+        if  p0==0:
+            print " deshabilitado"     
+    
+    #------------------PUSH_BUTTON_SPECTRA_GRAPH_OK-----------------------------#
+    @pyqtSignature("")
+    def on_dataGraphSpecOkBtn_clicked(self):
+        """
+        HABILITAR DE ACUERDO A LOS CHECKBOX QUE TIPO DE PLOTEOS SE VAN A REALIZAR MUESTRA Y GRABA LAS IMAGENES.
+        """
+        print "Graficar Spec op"
+        if self.SpectraPlotGraphCEB.isChecked():
+            for i in self.operObjList:
+                if i.name=='SpectraPlot':
+                    i.addParameter(name='idfigure', value='1', format='int')
+                    i.addParameter(name='wintitle', value='SpectraPlot0', format='str')
+                    i.addParameter(name='zmin', value='40', format='int')
+                    i.addParameter(name='zmax', value='90', format='int')
+                    i.addParameter(name='showprofile', value='1', format='int') 
+            
+        if self.CrossSpectraPlotGraphceb.isChecked():
+            for i in self.operObjList:
+                if i.name=='CrossSpectraPlot' :
+                    i.addParameter(name='idfigure', value='2', format='int')
+                    i.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
+                    i.addParameter(name='zmin', value='40', format='int')
+                    i.addParameter(name='zmax', value='90', format='int') 
+            
+        if self.RTIPlotGraphCEB.isChecked():
+            for i in self.operObjList:
+                if i.name=='RTIPlot':
+                    i.addParameter(name='n', value='2', format='int')
+                    i.addParameter(name='overlapping', value='1', format='int')
+         
         
     def getNumberofProject(self):
 #        for i in self.proObjList:
@@ -344,21 +621,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print "Porfavor ingrese los parámetros de configuracion del Proyecto"
         
     def loadProjects(self):
+        
         self.proConfCmbBox.clear()
         for i in self.proObjList:
             self.proConfCmbBox.addItem("Project"+str(i.id))
                     
-    @pyqtSignature("int")
-    def on_dataTypeCmbBox_activated(self,index):
-        self.dataFormatTxt.setReadOnly(True)
-        if index==0:
-           self.datatype='Voltage'
-        elif index==1:
-            self.datatype='Spectra'
-        else :
-              self.datatype=''
-              self.dataFormatTxt.setReadOnly(False)
-        self.dataFormatTxt.setText(self.datatype)
+ 
         
     def existDir(self, var_dir):
         """
@@ -393,7 +661,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             Dirlist[a]=fname+"/"+str(fechaList[0])+"/"+str(fechaList[1])
             #+"-"+ fechaList[0]+"-"+fechaList[1]
     
-#---------------AQUI TIENE QUE SER MODIFICADO--------#
+        #---------------AQUI TIENE QUE SER MODIFICADO--------#
 
         #Se cargan las listas para seleccionar StartDay y StopDay (QComboBox)
         for i in range(0, (len(Dirlist))):
@@ -414,53 +682,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.subList=[]
         for i in self.variableList[self.starDateCmbBox.currentIndex():self.starDateCmbBox.currentIndex() + self.endDateCmbBox.currentIndex()+1]:
             self.subList.append(i)  
-    
-    @pyqtSignature("")
-    def on_dataPathBrowse_clicked(self):
-        """
-        OBTENCION DE LA RUTA DE DATOS
-        """
-        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
-        self.dataPathTxt.setText(self.dataPath)
-        self.statusDpath=self.existDir(self.dataPath)
-        self.loadDays()   
-        
-    @pyqtSignature("int")
-    def on_starDateCmbBox_activated(self, index):
-        """
-        SELECCION DEL RANGO DE FECHAS -STAR DATE
-        """
-        var_StopDay_index=self.endDateCmbBox.count() - self.endDateCmbBox.currentIndex()
-        self.endDateCmbBox.clear()
-        for i in self.variableList[index:]:
-            self.endDateCmbBox.addItem(i)
-        self.endDateCmbBox.setCurrentIndex(self.endDateCmbBox.count() - var_StopDay_index)
-        self.getsubList()
-
-    @pyqtSignature("int")
-    def on_endDateCmbBox_activated(self, index):
-        """
-        SELECCION DEL RANGO DE FECHAS-END DATE
-        """
-        var_StartDay_index=self.starDateCmbBox.currentIndex()
-        var_end_index = self.endDateCmbBox.count() - index
-        self.starDateCmbBox.clear()
-        for i in self.variableList[:len(self.variableList) - var_end_index + 1]:
-            self.starDateCmbBox.addItem(i)
-        self.starDateCmbBox.setCurrentIndex(var_StartDay_index)
-        self.getsubList() #Se carga var_sublist[] con el rango de las fechas seleccionadas
-    
-    @pyqtSignature("int")
-    def on_readModeCmBox_activated(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if p0==0:
-           self.online=0
-        elif p0==1:
-            self.online=1
-            
-            
        
     def addUP(self):
         
@@ -522,71 +743,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.resetopVolt()
         self.resetopSpec()
-    
-            
-    @pyqtSignature("int")
-    def on_selecChannelopVolCEB_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            self.numberChannelopVol.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='selectChannels')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print " Ingresa seleccion de Canales"
-        if  p0==0:
-            print " deshabilitado" 
-            
-    @pyqtSignature("int")
-    def on_selecHeighopVolCEB_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            self.lineHeighProfileTxtopVol.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='selectHeights')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print " Select Type of Profile"
-        if  p0==0:
-            print " deshabilitado" 
-            
 
-    @pyqtSignature("int")
-    def on_profileSelecopVolCEB_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            self.lineProfileSelecopVolCEB.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='ProfileSelector', optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print " Select Type of Profile"
-        if  p0==0:
-            print " deshabilitado" 
-            
-            
-    @pyqtSignature("int")
-    def on_coherentIntegrationCEB_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            self.numberIntegration.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='CohInt', optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print "Choose number of Cohint"
-        if  p0==0:
-            print " deshabilitado"   
-            self.numberChannelopVol.setEnabled(False)
-            
     def resetopVolt(self):
         self.selecChannelopVolCEB.setChecked(False)
         self.selecHeighopVolCEB.setChecked(False)
@@ -598,159 +755,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.numberChannelopVol.clear()
         self.numberIntegration.clear()
             
-
-    @pyqtSignature("")
-    def on_dataopVolOkBtn_clicked(self):
-        """
-        Slot documentation goes here.
-        """   
-        if self.selecChannelopVolCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='selectChannels':
-                    value=self.numberChannelopVol.text()
-                    i.addParameter(name='channelList', value=value, format='intlist')
-
-            
-            print "channel"
-            
-        if self.selecHeighopVolCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='selectHeights' :
-                    value=self.lineHeighProfileTxtopVol.text()
-                    valueList=value.split(',')
-                    i.addParameter(name='minHei', value=valueList[0], format='float')
-                    i.addParameter(name='maxHei', value=valueList[1], format='float')
-          
-            print "height"
-        
-        
-        if self.selecHeighopVolCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='ProfileSelector' :
-                    value=self.lineProfileSelecopVolCEB.text()
-                    i.addParameter(name='ProfileSelector', value=value, format='intlist')
-              
-                    
-                    
-        if self.coherentIntegrationCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='CohInt':
-                    value=self.numberIntegration.text()
-                    i.addParameter(name='n', value=value, format='int')
-        
-        
-    @pyqtSignature("int")
-    def on_nFFTPointOpSpecCEB_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            self.valuenFFTPointOpSpec.setEnabled(True)
-            print " nFFTPoint"
-        if  p0==0:
-            print " deshabilitado" 
-            
-            
+    
     def resetopSpec(self):
         self.nFFTPointOpSpecCEB.setChecked(False)
         
         self.valuenFFTPointOpSpec.clear()
-   
-   
-    @pyqtSignature("")
-    def on_dataopSpecOkBtn_clicked(self):
-        """
-        Slot documentation goes here.
-        """
-        print "Añadimos operaciones Spectra,nchannels,value,format"
-        if self.nFFTPointOpSpecCEB.isChecked():
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            value=self.valuenFFTPointOpSpec.text()
-            upProcessSelect.addParameter(name='nFFTPoints',value=value,format='int')
-    
-    @pyqtSignature("int")
-    def on_SpectraPlotGraphCEB_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='SpectraPlot',optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-    
-        if  p0==0:
-            print " deshabilitado" 
-    
-    @pyqtSignature("int")
-    def on_CrossSpectraPlotGraphceb_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='CrossSpectraPlot',optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10) 
-        if  p0==0:
-            print " deshabilitado"    
-        
-    @pyqtSignature("int")
-    def on_RTIPlotGraphCEB_stateChanged(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        if  p0==2:
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='RTIPlot',optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10) 
-        if  p0==0:
-            print " deshabilitado"  
-    
     
     def resetgraphSpec(self):
         self.SpectraPlotGraphCEB.setChecked(False)
         self.CrossSpectraPlotGraphceb.setChecked(False)
         self.RTIPlotGraphCEB.setChecked(False)                  
 
-    @pyqtSignature("")
-    def on_dataGraphSpecOkBtn_clicked(self):
-        """
-        Slot documentation goes here.
-        """
-        print "Graficar Spec op"
-        if self.SpectraPlotGraphCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='SpectraPlot':
-                    i.addParameter(name='idfigure', value='1', format='int')
-                    i.addParameter(name='wintitle', value='SpectraPlot0', format='str')
-                    i.addParameter(name='zmin', value='40', format='int')
-                    i.addParameter(name='zmax', value='90', format='int')
-                    i.addParameter(name='showprofile', value='1', format='int') 
-            
-        if self.CrossSpectraPlotGraphceb.isChecked():
-            for i in self.operObjList:
-                if i.name=='CrossSpectraPlot' :
-                    i.addParameter(name='idfigure', value='2', format='int')
-                    i.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
-                    i.addParameter(name='zmin', value='40', format='int')
-                    i.addParameter(name='zmax', value='90', format='int') 
-            
-        if self.RTIPlotGraphCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='RTIPlot':
-                    i.addParameter(name='n', value='2', format='int')
-                    i.addParameter(name='overlapping', value='1', format='int')
-  
-    @pyqtSignature("")
-    def on_actionguardarObj_triggered(self):
-        """
-        GUARDAR EL ARCHIVO DE CONFIGURACION XML
-        """
-        self.saveProject()
-        
-        
+
     def saveProject(self):
         if self.idp==1:
            self.valuep=1
@@ -759,6 +775,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         filename="C:\\WorkspaceGUI\\CONFIG"+str(self.valuep)+".xml"
         self.controllerObj=self.proObjList[int(self.valuep)-1]
         self.controllerObj.writeXml(filename)
+
+
+
 
         
 class Window(QMainWindow, Ui_window):
@@ -815,6 +834,9 @@ class Window(QMainWindow, Ui_window):
         event.accept()
 
 
+
+#--------------------------------------VENTANA DE CONFIGURACION DE LA UP-----------------------#
+
 class UnitProcess(QMainWindow, Ui_UnitProcess):
     """
     Class documentation goes here.
@@ -829,33 +851,7 @@ class UnitProcess(QMainWindow, Ui_UnitProcess):
         self.getFromWindow=None
         self.getfromWindowList=[]
  
-        self.listUP=None      
-
-    def loadTotalList(self):
-        self.comboInputBox.clear()
-        for i in self.getfromWindowList:
-            name=i.getElementName()
-            id= i.id
-            if i.getElementName()=='ProcUnit':
-               id=int(i.id)-1 
-            self.comboInputBox.addItem(str(name)+str(id))
-
-    @pyqtSignature("QString")
-    def on_comboInputBox_activated(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        
-        # TODO: not implemented yet
-        #raise NotImplementedError
-    
-    @pyqtSignature("QString")
-    def on_comboTypeBox_activated(self, p0):
-        """
-        Slot documentation goes here.
-        """
-        # TODO: not implemented yet
-        #raise NotImplementedError
+        self.listUP=None    
         
     @pyqtSignature("")
     def on_unitPokbut_clicked(self):
@@ -880,7 +876,16 @@ class UnitProcess(QMainWindow, Ui_UnitProcess):
         """
         # TODO: not implemented yet
         #raise NotImplementedError
-        self.hide()
+        self.hide()  
+
+    def loadTotalList(self):
+        self.comboInputBox.clear()
+        for i in self.getfromWindowList:
+            name=i.getElementName()
+            id= i.id
+            if i.getElementName()=='ProcUnit':
+               id=int(i.id)-1 
+            self.comboInputBox.addItem(str(name)+str(id))
         
     def almacena(self):
         self.getFromWindow=self.getfromWindowList[int(self.comboInputBox.currentIndex())]
