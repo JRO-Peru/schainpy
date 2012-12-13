@@ -54,7 +54,8 @@ class CrossSpectraPlot(Figure):
     
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None):
+            save=False, figpath='./', figfile=None,
+            power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r'):
         
         """
         
@@ -90,8 +91,8 @@ class CrossSpectraPlot(Figure):
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         z = dataOut.data_spc[:,:,:]/factor
-        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
-        avg = numpy.average(numpy.abs(z), axis=1)
+#        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        avg = numpy.abs(numpy.average(z, axis=1))
         noise = dataOut.getNoise()/factor
         
         zdB = 10*numpy.log10(z)
@@ -133,7 +134,7 @@ class CrossSpectraPlot(Figure):
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, cblabel='')
+                        ticksize=9, colormap=power_cmap, cblabel='')
             
             title = "Channel %d: %4.2fdB" %(pair[1], noisedB[pair[1]])
             zdB = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:]/factor)
@@ -141,26 +142,26 @@ class CrossSpectraPlot(Figure):
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, cblabel='')
+                        ticksize=9, colormap=power_cmap, cblabel='')
 
             coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
             coherence = numpy.abs(coherenceComplex)
-            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
-            
+#            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
+            phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
             
             title = "Coherence %d%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+2]
             axes0.pcolor(x, y, coherence,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, cblabel='')
+                        ticksize=9, colormap=coherence_cmap, cblabel='')
             
             title = "Phase %d%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+3]
             axes0.pcolor(x, y, phase,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, cblabel='', colormap='RdBu_r')
+                        ticksize=9, colormap=phase_cmap, cblabel='')
 
 
             
@@ -719,7 +720,7 @@ class CoherenceMap(Figure):
     
     WIDTHPROF = None
     HEIGHTPROF = None
-    PREFIX = 'coherencemap'
+    PREFIX = 'cmap'
 
     def __init__(self):
         self.timerange = 2*60*60
@@ -766,7 +767,8 @@ class CoherenceMap(Figure):
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None):
+            save=False, figpath='./', figfile=None,
+            coherence_cmap='jet', phase_cmap='RdBu_r'):
                 
         if pairsList == None:
             pairsIndexList = dataOut.pairsIndexList
@@ -817,9 +819,12 @@ class CoherenceMap(Figure):
             
             pair = dataOut.pairsList[pairsIndexList[i]]
             coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
-            coherence = numpy.abs(coherenceComplex)            
-            avg = numpy.average(coherence, axis=0)
-            z = avg.reshape((1,-1))
+            avgcoherenceComplex = numpy.average(coherenceComplex, axis=0)
+            coherence = numpy.abs(avgcoherenceComplex)
+#            coherence = numpy.abs(coherenceComplex)            
+#            avg = numpy.average(coherence, axis=0)
+            
+            z = coherence.reshape((1,-1))
 
             counter = 0
             
@@ -828,33 +833,34 @@ class CoherenceMap(Figure):
             axes.pcolor(x, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', cbsize="1%")
+                        ticksize=9, cblabel='', colormap=coherence_cmap, cbsize="1%")
             
             if self.__showprofile:
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
-                axes.pline(avg, y,
+                axes.pline(coherence, y,
                         xmin=0, xmax=1, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=5,
                         grid='x')
             
             counter += 1
-            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
-            avg = numpy.average(phase, axis=0)
-            z = avg.reshape((1,-1))
+#            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
+            phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
+#            avg = numpy.average(phase, axis=0)
+            z = phase.reshape((1,-1))
             
             title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2 + counter]
             axes.pcolor(x, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', colormap='RdBu', cbsize="1%")
+                        ticksize=9, cblabel='', colormap=phase_cmap, cbsize="1%")
             
             if self.__showprofile:
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
-                axes.pline(avg, y,
+                axes.pline(phase, y,
                         xmin=-180, xmax=180, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=4,

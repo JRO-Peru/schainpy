@@ -360,10 +360,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 thisDate += datetime.timedelta(1)
         
         if pathList == []:
-            print "Any folder found into date range %s-%s" %(startDate, endDate)
+            print "Any folder was found for the date range: %s-%s" %(startDate, endDate)
             return None, None
         
-        print "%d folder(s) found [%s, ...]" %(len(pathList), pathList[0])
+        print "%d folder(s) was(were) found for the date range: %s-%s" %(len(pathList), startDate, endDate)
             
         filenameList = []
         for thisPath in pathList:
@@ -379,8 +379,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                     filenameList.append(filename)
                     
         if not(filenameList):
-            print "Any file found into time range %s-%s" %(startTime, endTime)
+            print "Any file was found for the time range %s - %s" %(startTime, endTime)
             return None, None
+        
+        print "%d file(s) was(were) found for the time range: %s - %s" %(len(filenameList), startTime, endTime)
 
         self.filenameList = filenameList
         
@@ -2077,10 +2079,19 @@ class SpectraReader(JRODataReader):
         
         self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
         
-        self.dataOut.flagDecodeData = True #asumo q la data no esta decodificada
+        self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
     
         self.dataOut.flagDeflipData = True #asumo q la data no esta sin flip
-            
+        
+        if self.processingHeaderObj.code != None:
+                
+                self.dataOut.nCode = self.processingHeaderObj.nCode
+                
+                self.dataOut.nBaud = self.processingHeaderObj.nBaud
+                
+                self.dataOut.code = self.processingHeaderObj.code
+                
+                self.dataOut.flagDecodeData = True
 
         return self.dataOut.data_spc
 

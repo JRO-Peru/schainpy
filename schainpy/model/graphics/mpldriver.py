@@ -2,17 +2,16 @@ import numpy
 import datetime
 import sys
 import matplotlib
-if sys.platform == 'linux':
-    matplotlib.use("GTKAgg")
-if sys.platform == 'darwin':
-    matplotlib.use("TKAgg")
-import matplotlib.pyplot
-import matplotlib.dates
-#import scitools.numpyutils
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from matplotlib.dates import DayLocator, HourLocator, MinuteLocator, SecondLocator, DateFormatter
-from matplotlib.ticker import FuncFormatter
+if 'linux' in sys.platform:
+    matplotlib.use("TKAgg")
+    
+if 'darwin' in sys.platform:
+    matplotlib.use("TKAgg")
+    
+import matplotlib.pyplot
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import *
 
 ###########################################
