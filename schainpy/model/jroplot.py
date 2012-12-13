@@ -178,7 +178,7 @@ class RTIPlot(Figure):
     
     __isConfig = None
     __nsubplots = None
-    
+    __missing = 1E30
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'rti'
@@ -193,6 +193,8 @@ class RTIPlot(Figure):
         self.HEIGHT = 200
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
+        self.x_buffer = None
+        self.avgdB_buffer = None
         
     def getSubplots(self):
         
@@ -276,11 +278,9 @@ class RTIPlot(Figure):
         z = dataOut.data_spc[channelIndexList,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
-        noise = dataOut.getNoise()/factor
         
-#        zdB = 10.*numpy.log10(z)
         avgdB = 10.*numpy.log10(avg)
-        noisedB = 10.*numpy.log10(noise)
+
         
         thisDatetime = dataOut.datatime
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
@@ -303,16 +303,36 @@ class RTIPlot(Figure):
             if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.x_buffer = numpy.array([])
+            self.avgdB_buffer = numpy.array([])
             self.__isConfig = True
         
         
         self.setWinTitle(title)
+        
+        if len(self.avgdB_buffer)==0:
+            self.avgdB_buffer = avgdB
+            newxdim = 1
+            newydim = -1
+        else:
+            if x[0]>self.x_buffer[-1]:
+                gap = avgdB.copy()
+                gap[:] = self.__missing
+                self.avgdB_buffer = numpy.hstack((self.avgdB_buffer, gap))
             
+            self.avgdB_buffer = numpy.hstack((self.avgdB_buffer, avgdB))
+            newxdim = -1
+            newydim = len(y)
+        
+        self.x_buffer = numpy.hstack((self.x_buffer, x))
+        
+        self.avgdB_buffer = numpy.ma.masked_inside(self.avgdB_buffer,0.99*self.__missing,1.01*self.__missing)
+        
         for i in range(self.nplots):
             title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
-            zdB = avgdB[i].reshape((1,-1))
-            axes.pcolor(x, y, zdB,
+            zdB = self.avgdB_buffer[i].reshape(newxdim,newydim)
+            axes.pcolor(self.x_buffer, y, zdB,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', cbsize="1%")

@@ -224,7 +224,9 @@ def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap=
     
     printLabels(ax, xlabel, ylabel, title)
     
-    imesh = ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
+    ax.collections.remove(ax.collections[0])
+    
+    ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
 
 def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
                 ticksize=9, xtick_visible=True, ytick_visible=True,
