@@ -13,8 +13,7 @@ from modelProperties import treeModel
 from viewer.ui_unitprocess import Ui_UnitProcess
 from viewer.ui_window import Ui_window
 from viewer.ui_mainwindow import Ui_MainWindow
-from viewer.ui_workspace import Ui_Workspace
-from viewer.ui_initwindow import Ui_InitWindow
+
 
 from controller import Project,ReadUnitConf,ProcUnitConf,OperationConf,ParameterConf
 import os
@@ -62,6 +61,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.configProject=None
         self.configUP=None
+        
         
         self.controllerObj=None
         self.readUnitConfObj=None
@@ -582,14 +582,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def addProject(self):
         self.tabWidgetProject.setEnabled(True)
+        print "En este nivel se debe crear el proyecto,id,nombre,desc"
+        #+++++Creacion del Objeto Controller-XML++++++++++#
+     
         self.idp += 1
         self.projectObj = Project()
-        
+        self.description="Think"
         id=int(self.idp)
         name=str(self.nameProjectTxt.text())
         desc=str(self.description)
         
         self.projectObj.setup(id = id, name=name, description=desc)
+        self.__projObjDict[id] = self.projectObj
+        self.parentItem = self.model.invisibleRootItem()
+        self.__arbolDict[id] =   QtGui.QStandardItem(QtCore.QString(name+" %0").arg(self.idp))
+        self.parentItem.appendRow(self.__arbolDict[self.projectObj.id])
+        self.parentItem=self.__arbolDict[id]
         
         #self.configProject=Window(self)
         #self.configProject.closed.connect(self.show)
@@ -597,6 +605,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #self.configProject.closed.connect(self.show)
        # self.configProject.saveButton.clicked.connect(self.reciveParameters)
         #self.configProject.closed.connect(self.createProject)
+        
+
+     
+        
+
+        
+         
+        
+        #+++++++++++++++++++LISTA DE PROYECTO++++++++++++++++++++++++++++#
+        
+        
+#        self.parentItem=self.projectObj.arbol
+#        self.loadProjects()
+        
+        print "Porfavor ingrese los parÃ¡metros de configuracion del Proyecto"
+        
+        
+        
+        
         
     def reciveParameters(self):
         self.namep,self.description =self.configProject.almacena()
