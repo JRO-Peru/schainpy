@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """
-Module implementing Pantalla.
+Module implementing InitWindow.
 """
+
 from PyQt4.QtGui import QMainWindow
 from PyQt4.QtCore import pyqtSignature
-from workspace import Workspace
-#from mainwindow import Workspace
-from GUI.ui_initwindow import Ui_InitWindow
+
+from viewer.ui_initwindow import Ui_InitWindow
 
 class InitWindow(QMainWindow, Ui_InitWindow):
     """
@@ -18,30 +18,23 @@ class InitWindow(QMainWindow, Ui_InitWindow):
         Constructor
         """
         QMainWindow.__init__(self, parent)
-      
+        self.setupUi(self)
     
     @pyqtSignature("")
-    def on_pushButton_2_clicked(self):
+    def on_ExitBtn_clicked(self):
         """
-        Close First Window 
+        Exit cierra la ventana de Bienvenida
         """
-        self.close()  
-
+        # TODO: not implemented yet
+        #raise NotImplementedError
+        self.close()
+        
     @pyqtSignature("")
-    def on_pushButton_clicked(self):
+    def on_ContinueBtn_clicked(self):
         """
-        Show Workspace Window
+       Continue cierra la ventana de Bienvenida, a este evento se le complementa con la accion
+       conectar con la ventana de configuracion de Workspace
         """
-        self.showmeconfig()
-    
-    def showmeconfig(self):
-        '''
-        Method to call Workspace
-        '''
-        self.config=Workspace()
-        self.config.closed.connect(self.show)
-        self.config.show()
-        self.hide()
-        
-        
-
+        # TODO: not implemented yet
+        #raise NotImplementedError
+        self.close()
