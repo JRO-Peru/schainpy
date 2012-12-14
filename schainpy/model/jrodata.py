@@ -483,9 +483,25 @@ class Spectra(JROData):
         
         return normFactor
     
+    def getFlagCspc(self):
+        
+        if self.data_cspc == None:
+            return True
+        
+        return False
+    
+    def getFlagDc(self):
+        
+        if self.data_dc == None:
+            return True
+            
+        return False
+    
     nPairs = property(getNPairs, "I'm the 'nPairs' property.")
     pairsIndexList = property(getPairsIndexList, "I'm the 'pairsIndexList' property.")
     normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
+    flag_cspc = property(getFlagCspc)
+    flag_dc = property(getFlagDc)
         
 class SpectraHeis(JROData):
     

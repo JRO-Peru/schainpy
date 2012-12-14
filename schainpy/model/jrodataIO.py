@@ -1965,7 +1965,8 @@ class SpectraReader(JRODataReader):
             if self.processingHeaderObj.flag_cspc:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 cspc = numpy.roll( cspc, shift, axis=2 )
-        
+            
+            self.processingHeaderObj.shif_fft = True
 
         spc = numpy.transpose( spc, (0,2,1) )
         self.data_spc = spc

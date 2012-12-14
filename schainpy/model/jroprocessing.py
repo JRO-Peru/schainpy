@@ -829,7 +829,128 @@ class SpectraProc(ProcessingUnit):
         
         return 1
 
+    def selectHeights(self, minHei, maxHei):
+        """
+        Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
+        minHei <= height <= maxHei
+        
+        Input:
+            minHei    :    valor minimo de altura a considerar 
+            maxHei    :    valor maximo de altura a considerar
+            
+        Affected:
+            Indirectamente son cambiados varios valores a travez del metodo selectHeightsByIndex
+            
+        Return:
+            1 si el metodo se ejecuto con exito caso contrario devuelve 0
+        """
+        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+        
+        if (maxHei > self.dataOut.heightList[-1]):
+            maxHei = self.dataOut.heightList[-1]
+#            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
 
+        minIndex = 0
+        maxIndex = 0
+        heights = self.dataOut.heightList
+        
+        inda = numpy.where(heights >= minHei)
+        indb = numpy.where(heights <= maxHei)
+        
+        try:
+            minIndex = inda[0][0]
+        except:
+            minIndex = 0
+        
+        try:
+            maxIndex = indb[0][-1]
+        except:
+            maxIndex = len(heights)
+
+        self.selectHeightsByIndex(minIndex, maxIndex)
+        
+        return 1
+
+    
+    def selectHeightsByIndex(self, minIndex, maxIndex):
+        """
+        Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
+        minIndex <= index <= maxIndex
+        
+        Input:
+            minIndex    :    valor de indice minimo de altura a considerar 
+            maxIndex    :    valor de indice maximo de altura a considerar
+            
+        Affected:
+            self.dataOut.data_spc
+            self.dataOut.data_cspc
+            self.dataOut.data_dc
+            self.dataOut.heightList
+            
+        Return:
+            1 si el metodo se ejecuto con exito caso contrario devuelve 0
+        """
+        
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        if (maxIndex >= self.dataOut.nHeights):
+            maxIndex = self.dataOut.nHeights-1
+#            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        nHeights = maxIndex - minIndex + 1
+
+        #Spectra
+        data_spc = self.dataOut.data_spc[:,:,minIndex:maxIndex+1]
+        
+        data_cspc = None
+        if self.dataOut.data_cspc != None:
+            data_cspc = self.dataOut.data_cspc[:,:,minIndex:maxIndex+1]
+        
+        data_dc = None
+        if self.dataOut.data_dc != None:
+            data_dc = self.dataOut.data_dc[:,:,minIndex:maxIndex+1]
+        
+        self.dataOut.data_spc = data_spc
+        self.dataOut.data_cspc = data_cspc
+        self.dataOut.data_dc = data_dc
+        
+        self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex+1]
+        
+        return 1
+    
+    def removeDC(self, mode = 1):
+        
+        dc_index = 0
+        freq_index = numpy.array([-2,-1,1,2])
+        data_spc = self.dataOut.data_spc
+        data_cspc = self.dataOut.data_cspc
+        data_dc = self.dataOut.data_dc
+        
+        if self.dataOut.flagShiftFFT:
+            dc_index += self.dataOut.nFFTPoints/2
+            freq_index += self.dataOut.nFFTPoints/2
+            
+        if mode == 1:
+            data_spc[dc_index] = (data_spc[:,freq_index[1],:] + data_spc[:,freq_index[2],:])/2
+            if data_cspc != None:
+                data_cspc[dc_index] = (data_cspc[:,freq_index[1],:] + data_cspc[:,freq_index[2],:])/2
+            return 1
+        
+        if mode == 2:
+            pass
+        
+        if mode == 3:
+            pass
+           
+        raise ValueError, "mode parameter has to be 1, 2 or 3"
+    
+    def removeInterference(self):
+        
+        pass
+
+        
 class IncohInt(Operation):
     
     
