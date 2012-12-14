@@ -92,7 +92,7 @@ class CrossSpectraPlot(Figure):
         y = dataOut.getHeiRange()
         z = dataOut.data_spc[:,:,:]/factor
 #        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
-        avg = numpy.abs(numpy.average(z, axis=1))
+        avg = numpy.average(z, axis=1)
         noise = dataOut.getNoise()/factor
         
         zdB = 10*numpy.log10(z)
@@ -721,6 +721,7 @@ class CoherenceMap(Figure):
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'cmap'
+    __missing = 1E30
 
     def __init__(self):
         self.timerange = 2*60*60
@@ -731,6 +732,9 @@ class CoherenceMap(Figure):
         self.HEIGHT = 200
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
+        self.x_buffer = None
+        self.coherence_buffer = None
+        self.phase_buffer = None
     
     def getSubplots(self):
         ncol = 1
@@ -810,27 +814,54 @@ class CoherenceMap(Figure):
             if ymax == None: ymax = numpy.nanmax(y)
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            
+            self.x_buffer = numpy.array([])
+            self.coherence_buffer = numpy.array([])
+            self.phase_buffer = numpy.array([])
             self.__isConfig = True
         
         self.setWinTitle(title)
         
-        for i in range(self.nplots):
-            
-            pair = dataOut.pairsList[pairsIndexList[i]]
-            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
-            avgcoherenceComplex = numpy.average(coherenceComplex, axis=0)
-            coherence = numpy.abs(avgcoherenceComplex)
-#            coherence = numpy.abs(coherenceComplex)            
-#            avg = numpy.average(coherence, axis=0)
-            
-            z = coherence.reshape((1,-1))
 
-            counter = 0
+        pairArray = numpy.array(dataOut.pairsList)
+        pairArray = pairArray[pairsIndexList]
+        pair0ids = pairArray[:,0]
+        pair1ids = pairArray[:,1]
+                
+        coherenceComplex = dataOut.data_cspc[pairsIndexList,:,:]/numpy.sqrt(dataOut.data_spc[pair0ids,:,:]*dataOut.data_spc[pair1ids,:,:])
+        avgcoherenceComplex = numpy.average(coherenceComplex, axis=1)
+        coherence = numpy.abs(avgcoherenceComplex)
+        
+        phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
+        
+        if len(self.coherence_buffer)==0:
+            self.coherence_buffer = coherence
+            self.phase_buffer = phase
+            newxdim = 1
+            newydim = -1
+        else:
+            if x[0]>self.x_buffer[-1]:
+                gap = coherence.copy()
+                gap[:] = self.__missing
+                self.coherence_buffer = numpy.hstack((self.coherence_buffer, gap))
+                self.phase_buffer = numpy.hstack((self.phase_buffer, gap))
             
-            title = "Coherence %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            self.coherence_buffer = numpy.hstack((self.coherence_buffer, coherence))
+            self.phase_buffer = numpy.hstack((self.phase_buffer, phase))
+            newxdim = -1
+            newydim = len(y)
+        
+        self.x_buffer = numpy.hstack((self.x_buffer, x))
+        
+        self.coherence_buffer = numpy.ma.masked_inside(self.coherence_buffer,0.99*self.__missing,1.01*self.__missing)
+        self.phase_buffer = numpy.ma.masked_inside(self.phase_buffer,0.99*self.__missing,1.01*self.__missing)
+        
+        
+        for i in range(self.nplots):
+            counter = 0            
+            z = self.coherence_buffer[i,:].reshape((newxdim,newydim))
+            title = "Coherence %d%d: %s" %(pair0ids[i], pair1ids[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2]
-            axes.pcolor(x, y, z,
+            axes.pcolor(self.x_buffer, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=coherence_cmap, cbsize="1%")
@@ -838,21 +869,19 @@ class CoherenceMap(Figure):
             if self.__showprofile:
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
-                axes.pline(coherence, y,
+                axes.pline(coherence[i,:], y,
                         xmin=0, xmax=1, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=5,
                         grid='x')
             
             counter += 1
-#            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
-            phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
-#            avg = numpy.average(phase, axis=0)
-            z = phase.reshape((1,-1))
+
+            z = self.phase_buffer[i,:].reshape((newxdim,newydim))
             
-            title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            title = "Phase %d%d: %s" %(pair0ids[i], pair1ids[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2 + counter]
-            axes.pcolor(x, y, z,
+            axes.pcolor(self.x_buffer, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=phase_cmap, cbsize="1%")
@@ -860,7 +889,7 @@ class CoherenceMap(Figure):
             if self.__showprofile:
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
-                axes.pline(phase, y,
+                axes.pline(phase[i,:], y,
                         xmin=-180, xmax=180, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=4,
