@@ -214,15 +214,19 @@ class RTIPlot(Figure):
         
         ncolspan = 1
         colspan = 1
+        widthplot = self.WIDTH
+        heightplot = self.HEIGHT
         if showprofile:
             ncolspan = 7
             colspan = 6
             self.__nsubplots = 2
+            widthplot += self.WIDTHPROF
+            heightplot += self.HEIGHTPROF
             
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
-                          widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          widthplot = widthplot,
+                          heightplot = heightplot)
         
         nrow, ncol = self.getSubplots()
         
@@ -396,15 +400,19 @@ class SpectraPlot(Figure):
         
         ncolspan = 1
         colspan = 1
+        widthplot = self.WIDTH
+        heightplot = self.HEIGHT
         if showprofile:
             ncolspan = 3
             colspan = 2
             self.__nsubplots = 2
-        
+            widthplot += self.WIDTHPROF
+            heightplot += self.HEIGHTPROF
+            
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
-                          widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          widthplot = widthplot,
+                          heightplot = heightplot)
         
         nrow, ncol = self.getSubplots()
         
