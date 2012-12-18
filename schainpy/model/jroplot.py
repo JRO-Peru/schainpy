@@ -194,7 +194,7 @@ class RTIPlot(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 200
+        self.HEIGHT = 180
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.x_buffer = None
@@ -381,7 +381,7 @@ class SpectraPlot(Figure):
         self.__isConfig = False
         self.__nsubplots = 1
         
-        self.WIDTH = 230
+        self.WIDTH = 250
         self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
