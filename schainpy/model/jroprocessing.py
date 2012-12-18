@@ -637,10 +637,11 @@ class Decoder(Operation):
         
         return ndatadec, datadec 
     
-    def run(self, dataOut, code=None, mode = 0):
+    def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
         
         if not self.__isConfig:
-            
+            if code != None:
+                code = numpy.array(code).reshape(nCode,nBaud)
             if code == None:
                 code = dataOut.code
                 
