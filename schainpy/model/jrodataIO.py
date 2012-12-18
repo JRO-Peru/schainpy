@@ -861,6 +861,11 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         print "Number of read blocks %04d" %self.nTotalBlocks
     
+    def printNumberOfBlock(self):
+        
+        if self.flagIsNewBlock:
+            print "Block No. %04d, Total blocks %04d" %(self.basicHeaderObj.dataBlock, self.nTotalBlocks)
+            
     def printInfo(self):
         
         print self.basicHeaderObj.printInfo()
