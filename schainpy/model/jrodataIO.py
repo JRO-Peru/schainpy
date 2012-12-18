@@ -1032,7 +1032,7 @@ class JRODataWriter(JRODataIO, Operation):
         if self.fp != None:
             self.fp.close()
         
-        timeTuple = time.localtime( self.dataOut.dataUtcTime)
+        timeTuple = time.localtime( self.dataOut.utctime)
         subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
 
         fullpath = os.path.join( path, subfolder )
@@ -1382,7 +1382,7 @@ class VoltageReader(JRODataReader):
             if not( self.readNextBlock() ):
                 return 0
         
-            self.dataOut.dtype = self.dtype
+            self.dataOut.dtype = numpy.dtype([('real','<f8'),('imag','<f8')]) #self.dtype
             
             self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
             
@@ -1966,7 +1966,7 @@ class SpectraReader(JRODataReader):
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 cspc = numpy.roll( cspc, shift, axis=2 )
             
-            self.processingHeaderObj.shif_fft = True
+#            self.processingHeaderObj.shif_fft = True
 
         spc = numpy.transpose( spc, (0,2,1) )
         self.data_spc = spc
@@ -2040,7 +2040,7 @@ class SpectraReader(JRODataReader):
     
         self.dataOut.flagNoData = False
 
-        self.dataOut.dtype = self.dtype
+        self.dataOut.dtype = numpy.dtype([('real','<f8'),('imag','<f8')])#self.dtype
 
 #        self.dataOut.nChannels = self.nRdChannels
         
@@ -2280,9 +2280,9 @@ class SpectraWriter(JRODataWriter):
         if self.flagIsNewFile == 0:
             self.getBasicHeader()
         
-        self.data_spc = self.dataOut.data_spc
-        self.data_cspc = self.dataOut.data_cspc
-        self.data_dc = self.dataOut.data_dc
+        self.data_spc = self.dataOut.data_spc.copy()
+        self.data_cspc = self.dataOut.data_cspc.copy()
+        self.data_dc = self.dataOut.data_dc.copy()
         
         # #self.processingHeaderObj.dataBlocksPerFile)
         if self.hasAllDataInBuffer():

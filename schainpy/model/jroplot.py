@@ -53,7 +53,7 @@ class CrossSpectraPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, normalize=True,
             save=False, figpath='./', figfile=None,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r'):
         
@@ -87,11 +87,14 @@ class CrossSpectraPlot(Figure):
         
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-        factor = dataOut.normFactor
+        
+        factor = 1
+        if normalize:
+            factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         z = dataOut.data_spc[:,:,:]/factor
-#        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+
         avg = numpy.average(z, axis=1)
         noise = dataOut.getNoise()/factor
         
@@ -238,7 +241,7 @@ class RTIPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, normalize=True,
             timerange=None,
             save=False, figpath='./', figfile=None):
         
@@ -272,7 +275,9 @@ class RTIPlot(Figure):
         
         tmin = None
         tmax = None
-        factor = dataOut.normFactor
+        factor = 1
+        if normalize:
+            factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
@@ -418,7 +423,7 @@ class SpectraPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, normalize=True, 
             save=False, figpath='./', figfile=None):
         
         """
@@ -445,7 +450,9 @@ class SpectraPlot(Figure):
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
-        factor = dataOut.normFactor
+        factor = 1
+        if normalize:
+            factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         
@@ -651,7 +658,7 @@ class ProfilePlot(Figure):
                 self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
-            xmin=None, xmax=None, ymin=None, ymax=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, normalize=True,
             save=False, figpath='./', figfile=None):
         
         if channelList == None:
@@ -664,7 +671,9 @@ class ProfilePlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
-        factor = dataOut.normFactor
+        factor = 1
+        if normalize:
+            factor = dataOut.normFactor
         y = dataOut.getHeiRange()        
         x = dataOut.data_spc[channelIndexList,:,:]/factor
         x = numpy.where(numpy.isfinite(x), x, numpy.NAN) 
@@ -954,7 +963,7 @@ class RTIfromNoise(Figure):
         
                         
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, normalize=True,
             timerange=None,
             save=False, figpath='./', figfile=None):
         
@@ -975,7 +984,9 @@ class RTIfromNoise(Figure):
         tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
-        factor = dataOut.normFactor
+        factor = 1
+        if normalize:
+            factor = dataOut.normFactor
         noise = dataOut.getNoise()/factor
         noisedB = 10*numpy.log10(noise)
         

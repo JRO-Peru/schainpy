@@ -89,6 +89,7 @@ class BasicHeader(Header):
         return 1
     
     def write(self, fp):
+        self.utc -= self.__LOCALTIME
         headerTuple = (self.size,self.version,self.dataBlock,self.utc,self.miliSecond,self.timeZone,self.dstFlag,self.errorCount)
         header = numpy.array(headerTuple,self.struct)        
         header.tofile(fp)
@@ -390,7 +391,7 @@ class ProcessingHeader(Header):
             if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
                 self.nCode = int(numpy.fromfile(fp,'<u4',1))
                 self.nBaud = int(numpy.fromfile(fp,'<u4',1))
-                self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nBaud,self.nCode)
+                self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nCode,self.nBaud)
             
             if ((self.processFlags & PROCFLAG.SHIFT_FFT_DATA) == PROCFLAG.SHIFT_FFT_DATA):
                 self.shif_fft = True
@@ -449,13 +450,14 @@ class ProcessingHeader(Header):
 
             
         if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
-            nCode = self.nCode #Probar con un dato que almacene codigo, hasta el momento no se hizo la prueba
+            nCode = numpy.array([self.nCode], numpy.dtype('u4')) #Probar con un dato que almacene codigo, hasta el momento no se hizo la prueba
             nCode.tofile(fp)
 
-            nBaud = self.nBaud
+            nBaud = numpy.array([self.nBaud], numpy.dtype('u4'))
             nBaud.tofile(fp)
 
-            code = self.code.reshape(nCode*nBaud)
+            code = self.code.reshape(self.nCode*self.nBaud)
+            code = code.astype(numpy.dtype('<f4'))
             code.tofile(fp)
             
         return 1
