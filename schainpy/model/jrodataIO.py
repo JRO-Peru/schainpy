@@ -1038,7 +1038,7 @@ class JRODataWriter(JRODataIO, Operation):
             self.fp.close()
         
         timeTuple = time.localtime( self.dataOut.utctime)
-        subfolder = 'D%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
+        subfolder = 'd%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
 
         fullpath = os.path.join( path, subfolder )
         if not( os.path.exists(fullpath) ):
