@@ -973,7 +973,10 @@ class IncohInt(Operation):
     
     __dataReady = False
     
+    __timeInterval = None
+    
     n = None
+    
     
     
     def __init__(self):
@@ -1188,6 +1191,7 @@ class IncohInt(Operation):
             return None, None, None, None
         
         avgdatatime = self.__initime
+        self.__timeInterval = (self.__lastdatatime - self.__initime)/(self.n - 1)
         
         deltatime = datatime -self.__lastdatatime
         
@@ -1220,7 +1224,8 @@ class IncohInt(Operation):
             
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
-            dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
+            #dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
+            dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False
 
 class ProfileSelector(Operation):
