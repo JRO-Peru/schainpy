@@ -642,6 +642,9 @@ class Decoder(Operation):
         if not self.__isConfig:
             if code != None:
                 code = numpy.array(code).reshape(nCode,nBaud)
+                dataOut.code = code
+                dataOut.nCode = nCode
+                dataOut.nBaud = nBaud
             if code == None:
                 code = dataOut.code
                 
