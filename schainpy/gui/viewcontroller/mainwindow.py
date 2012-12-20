@@ -10,6 +10,7 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from timeconversions import  Doy2Date
 from modelProperties import treeModel
+
 from viewer.ui_unitprocess import Ui_UnitProcess
 from viewer.ui_window import Ui_window
 from viewer.ui_mainwindow import Ui_MainWindow
@@ -19,21 +20,24 @@ from controller import Project,ReadUnitConf,ProcUnitConf,OperationConf,Parameter
 import os
 
 
-class MainWindow(QMainWindow, Ui_MainWindow):
+class BodyMainWindow(QMainWindow, Ui_MainWindow):
     __projObjDict = {}
     __arbolDict = {}
+    __upObjDict = {}
     
     """
     Class documentation goes here.
     #*##################VENTANA CUERPO  DEL PROGRAMA####################
     """
-    def __init__(self, parent = None):
+    def __init__(self, parent = None):  
         """
         Constructor
         """   
         print "Inicio de Programa Interfaz Gráfica"
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
+        
+        self.indexclick=None
                
         self.online=0
         self.datatype=0
@@ -61,9 +65,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.configProject=None
         self.configUP=None
-        
-        
-        self.controllerObj=None
+    
         self.readUnitConfObj=None
         self.procUnitConfObj0=None
         self.opObj10=None
@@ -90,28 +92,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSignature("")
     def on_menuFileAbrirObj_triggered(self):
         """
-        METODO CARGA UN ARCHIVO DE CONFIGURACION ANTERIOR
+        Abre un archivo de configuracion seleccionado, lee los parametros y
+        actualiza los atributos de esta clase; creando los objetos necesarios
+        con los parametros leidos desde el archivo.
         """
         print "Leer un archivo xml y extraer sus atributos Not implemented yet"
         
     @pyqtSignature("")
     def on_menuFileCrearObj_triggered(self):
         """
-        CREAR PROJECT,ANADE UN NUEVO PROYECTO, LLAMA AL MÉTODO QUE CONTIENE LAS OPERACION DE CREACION DE PROYECTOS
-        Llama al metodo addProject..
+        Crea un proyecto nuevo y lo anade a mi diccionario de proyectos
+        y habilita la ventana de configuracion del proyecto.
+        
         """
         self.addProject()
              
     @pyqtSignature("")
-    def on_menuFileGuardarObj_clicked(self):
+    def on_menuFileGuardarObj_triggered(self):
         """
         METODO  EJECUTADO CUANDO OCURRE EL EVENTO GUARDAR PROJECTO
+        
         Llama al metodo saveProject.
         """ 
+#        my_id = arbol_selected()
+#        filename = savefindow.show()
+#        self.saveProject(id, filename)
+        print "probsave"
         self.saveProject()
         
     @pyqtSignature("")
-    def on_menuFileCerrarObj_clicked(self):
+    def on_menuFileCerrarObj_triggered(self):
         """
         METODO EJECUTADO CUANDO OCURRE EL EVENTO CERRAR
         Llama al metodo close.
@@ -137,6 +147,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print "Not implemented yet"
     
    #-----------------------------------MENU_OPTION-------------------------------------------------#   
+    
     @pyqtSignature("") 
     def on_menuOptConfigLogfileObj_clicked(self):
         """
@@ -145,7 +156,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ 
         print "Not implemented yet"
    
-
     @pyqtSignature("") 
     def on_menuOptConfigserverObj_clicked(self):
         """
@@ -154,6 +164,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ 
         print "Not implemented yet"   
     #-----------------------------------MENU_HELP-------------------------------------------------------#   
+    
     @pyqtSignature("") 
     def on_menuHELPAboutObj_clicked(self):
         """
@@ -186,8 +197,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Llama al metodo addProject.
         """
         self.addProject()
-             
-         
+                    
     @pyqtSignature("")
     def on_actStopObj_triggered(self):
         """
@@ -223,7 +233,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.addProject()
     
    #------------------------------------VENTANA CONFIGURACION PROJECT----------------------------#     
-   
     
     @pyqtSignature("int")
     def on_dataTypeCmbBox_activated(self,index):
@@ -285,7 +294,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif p0==1:
             self.online=1  
         
-      #---------------PUSHBUTTON_dataOkBtn_CONFIGURATION PROJECT--------------------------#    
+    #---------------PUSHBUTTON_DATA    "      OKBUTTON    "_CONFIGURATION PROJECT--------------------------#    
     
     @pyqtSignature("")
     def on_dataOkBtn_clicked(self):
@@ -294,45 +303,58 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Prepara la configuración del diágrama del Arbol del treeView numero 2
         """     
         print "En este nivel se pasa el tipo de dato con el que se trabaja,path,startDate,endDate,startTime,endTime,online"
-
-        projectObj=self.proObjList[int(self.proConfCmbBox.currentIndex())]
-        datatype=str(self.dataTypeCmbBox.currentText())
-        path=str(self.dataPathTxt.text())
-        online=int(self.online)
-        starDate=str(self.starDateCmbBox.currentText())
-        endDate=str(self.endDateCmbBox.currentText())
+       
+        for i in self.__arbolDict:            
+            if self.__arbolDict[i]==self.indexclick:
+               self.projectObj=self.__projObjDict[int(i)]  
+#               print self.projectObj
+#               print i
+#               print "get",self.__arbolDict.items()
+#               print "keys",self.__arbolDict.keys()
+               self.description="Think"          
+               id=i
+               name=str(self.nameProjectTxt.text())
+               desc=str(self.description)
+                
+               self.projectObj.setup(id = id, name=name, description=desc)
+               print self.projectObj.id
+#               print self.projectObj.name
+#               print self.projectObj.description
+        
+               datatype=str(self.dataTypeCmbBox.currentText())
+               path=str(self.dataPathTxt.text())
+               online=int(self.online)
+               starDate=str(self.starDateCmbBox.currentText())
+               endDate=str(self.endDateCmbBox.currentText())
    
         
-        self.readUnitConfObj = projectObj.addReadUnit(datatype=datatype,
-                                                path=path,
-                                                startDate=starDate,
-                                                endDate=endDate,
-                                                startTime='06:10:00',
-                                                endTime='23:59:59',
-                                                online=online)
-        
-        self.readUnitConfObjList.append(self.readUnitConfObj)
-        
-        print "self.readUnitConfObj.getId",self.readUnitConfObj.getId(),datatype,path,starDate,endDate,online
-
-        
-        self.model_2=treeModel()
-
-        self.model_2.setParams(name=projectObj.name+str(projectObj.id),
-                               directorio=path,
-                                workspace="C:\\WorkspaceGUI",
-                                  remode=str(self.readModeCmBox.currentText()), 
-                                   dataformat=datatype, 
-                                    date=str(starDate)+"-"+str(endDate),
-                                     initTime='06:10:00',
-                                       endTime='23:59:59',
-                                        timezone="Local" ,
-                                         Summary="test de prueba")
-        self.model_2.arbol()
-        self.treeView_2.setModel(self.model_2)
-        self.treeView_2.expandAll()       
-        
-    
+               self.readUnitConfObj = self.projectObj.addReadUnit(datatype=datatype,
+                                                        path=path,
+                                                        startDate=starDate,
+                                                        endDate=endDate,
+                                                        startTime='06:10:00',
+                                                        endTime='23:59:59',
+                                                        online=online)
+                
+               self.readUnitConfObjList.append(self.readUnitConfObj)
+               print "self.readUnitConfObj.getId",self.readUnitConfObj.getId(),datatype,path,starDate,endDate,online            
+              
+               self.model_2=treeModel()        
+               self.model_2.setParams(name=self.projectObj.name+str(self.projectObj.id),
+                                      directorio=path,
+                                        workspace="C:\\WorkspaceGUI",
+                                          remode=str(self.readModeCmBox.currentText()), 
+                                           dataformat=datatype, 
+                                            date=str(starDate)+"-"+str(endDate),
+                                             initTime='06:10:00',
+                                               endTime='23:59:59',
+                                                timezone="Local" ,
+                                                 Summary="test de prueba")                                            
+               self.model_2.arbol()
+               self.treeView_2.setModel(self.model_2)
+               self.treeView_2.expandAll()         
+                
+#    
    #-----------------PUSHBUTTON_ADD_PROCESSING UNIT PROJECT------------------#    
     @pyqtSignature("")
     def on_addUnitProces_clicked(self):
@@ -341,216 +363,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Llama al metodo addUP.
         """
 #        print "En este nivel se adiciona una rama de procesamiento, y se le concatena con el id"
-#        self.procUnitConfObj0 = self.controllerObj.addProcUnit(datatype='Voltage', inputId=self.readUnitConfObj.getId())      
         self.addUP()
         
-        
-    #-----------------VENTANA CONFIGURACION DE VOLTAGE---------------------------#     
-    
-    @pyqtSignature("int")
-    def on_selecChannelopVolCEB_stateChanged(self, p0):
-        """
-        Check Box habilita operaciones de Selección de Canales
-        """
-        if  p0==2:
-            self.numberChannelopVol.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='selectChannels')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print " Ingresa seleccion de Canales"
-        if  p0==0:
-            print " deshabilitado" 
-            
-    @pyqtSignature("int")
-    def on_selecHeighopVolCEB_stateChanged(self, p0):
-        """
-        Check Box habilita operaciones de Selección de Alturas 
-        """
-        if  p0==2:
-            self.lineHeighProfileTxtopVol.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='selectHeights')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print " Select Type of Profile"
-        if  p0==0:
-            print " deshabilitado" 
-            
-
-    @pyqtSignature("int")
-    def on_profileSelecopVolCEB_stateChanged(self, p0):
-        """
-        Check Box habilita ingreso  del rango de Perfiles
-        """
-        if  p0==2:
-            self.lineProfileSelecopVolCEB.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='ProfileSelector', optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print " Select Type of Profile"
-        if  p0==0:
-            print " deshabilitado" 
-            
-            
-    @pyqtSignature("int")
-    def on_coherentIntegrationCEB_stateChanged(self, p0):
-        """
-        Check Box habilita ingresode del numero de Integraciones a realizar
-        """
-        if  p0==2:
-            self.numberIntegration.setEnabled(True)
-            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='CohInt', optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-            print "Choose number of Cohint"
-        if  p0==0:
-            print " deshabilitado"   
-            self.numberChannelopVol.setEnabled(False)  
-            
-    #-----------------------PUSHBUTTON_ACCEPT_OPERATION----------------------------#       
-    
-    @pyqtSignature("")
-    def on_dataopVolOkBtn_clicked(self):
-        """
-        BUSCA EN LA LISTA DE OPERACIONES DEL TIPO VOLTAJE Y LES AÑADE EL PARAMETRO ADECUADO ESPERANDO LA ACEPTACION DEL USUARIO
-        PARA AGREGARLO AL ARCHIVO DE CONFIGURACION XML
-        """   
-        if self.selecChannelopVolCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='selectChannels':
-                    value=self.numberChannelopVol.text()
-                    i.addParameter(name='channelList', value=value, format='intlist')
-
-            
-            print "channel"
-            
-        if self.selecHeighopVolCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='selectHeights' :
-                    value=self.lineHeighProfileTxtopVol.text()
-                    valueList=value.split(',')
-                    i.addParameter(name='minHei', value=valueList[0], format='float')
-                    i.addParameter(name='maxHei', value=valueList[1], format='float')
-          
-            print "height"
-        
-        
-        if self.selecHeighopVolCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='ProfileSelector' :
-                    value=self.lineProfileSelecopVolCEB.text()
-                    i.addParameter(name='ProfileSelector', value=value, format='intlist')
-              
-                    
-                    
-        if self.coherentIntegrationCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='CohInt':
-                    value=self.numberIntegration.text()
-                    i.addParameter(name='n', value=value, format='int')  
-        
-        
-    #-------------------------VENTANA DE CONFIGURACION SPECTRA------------------------#     
-        
-    @pyqtSignature("int")
-    def on_nFFTPointOpSpecCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de añadir el parámetro nFFTPoints a la Unidad de Procesamiento .
-        """
-        if  p0==2:
-            self.valuenFFTPointOpSpec.setEnabled(True)
-            print " nFFTPoint"
-        if  p0==0:
-            print " deshabilitado" 
-            
-    #------------------PUSH_BUTTON_SPECTRA_OK------------------------------------#   
-                 
-    @pyqtSignature("")
-    def on_dataopSpecOkBtn_clicked(self):
-        """
-        Añade al archivo de configuración el parámetros nFFTPoints a la UP.
-        """
-        print "Añadimos operaciones Spectra,nchannels,value,format"
-        if self.nFFTPointOpSpecCEB.isChecked():
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            value=self.valuenFFTPointOpSpec.text()
-            upProcessSelect.addParameter(name='nFFTPoints',value=value,format='int')
-    #---------------------VENTANA DE CONFIGURACION GRAPH SPECTRA------------------#     
-
-    @pyqtSignature("int")
-    def on_SpectraPlotGraphCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de Ploteo Spectra Plot
-        """
-        if  p0==2:
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='SpectraPlot',optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10)
-    
-        if  p0==0:
-            print " deshabilitado" 
-    
-    @pyqtSignature("int")
-    def on_CrossSpectraPlotGraphceb_stateChanged(self, p0):
-        """
-        Habilita la opción de Ploteo CrossSpectra
-        """
-        if  p0==2:
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='CrossSpectraPlot',optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10) 
-        if  p0==0:
-            print " deshabilitado"    
-        
-    @pyqtSignature("int")
-    def on_RTIPlotGraphCEB_stateChanged(self, p0):
-        """
-        Habilita la opción de Plote RTIPlot
-        """
-        if  p0==2:
-            upProcessSelect=self.upobjSpecList[int(self.addOpSpecUpselec.currentIndex())]
-            opObj10=upProcessSelect.addOperation(name='RTIPlot',optype='other')
-            print opObj10.id
-            self.operObjList.append(opObj10) 
-        if  p0==0:
-            print " deshabilitado"     
-    
-    #------------------PUSH_BUTTON_SPECTRA_GRAPH_OK-----------------------------#
-    @pyqtSignature("")
-    def on_dataGraphSpecOkBtn_clicked(self):
-        """
-        HABILITAR DE ACUERDO A LOS CHECKBOX QUE TIPO DE PLOTEOS SE VAN A REALIZAR MUESTRA Y GRABA LAS IMAGENES.
-        """
-        print "Graficar Spec op"
-        if self.SpectraPlotGraphCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='SpectraPlot':
-                    i.addParameter(name='idfigure', value='1', format='int')
-                    i.addParameter(name='wintitle', value='SpectraPlot0', format='str')
-                    i.addParameter(name='zmin', value='40', format='int')
-                    i.addParameter(name='zmax', value='90', format='int')
-                    i.addParameter(name='showprofile', value='1', format='int') 
-            
-        if self.CrossSpectraPlotGraphceb.isChecked():
-            for i in self.operObjList:
-                if i.name=='CrossSpectraPlot' :
-                    i.addParameter(name='idfigure', value='2', format='int')
-                    i.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
-                    i.addParameter(name='zmin', value='40', format='int')
-                    i.addParameter(name='zmax', value='90', format='int') 
-            
-        if self.RTIPlotGraphCEB.isChecked():
-            for i in self.operObjList:
-                if i.name=='RTIPlot':
-                    i.addParameter(name='n', value='2', format='int')
-                    i.addParameter(name='overlapping', value='1', format='int')
-         
-        
+      #----------------------------BASICO-----------------------------------#  
+                
     def getNumberofProject(self):
 #        for i in self.proObjList:
 #            print i
@@ -569,92 +385,42 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.valuenFFTPointOpSpec.setEnabled(False)
         self.lineProfileSelecopVolCEB.setEnabled(False)
         
-    
     def clickFunctiontree(self,index):
-        indexclick= index.model().itemFromIndex(index).text()
-        #print indexclick
-        NumofPro=indexclick[8:10]
-        self.valuep=NumofPro
-        #print self.valuep
-        NameofPro=indexclick[0:7]
-        self.namepTree=NameofPro
-        #print self.namepTree
+        self.indexclick= index.model().itemFromIndex(index)
+        print self.indexclick
+        return self.indexclick
+#        self.indexclick= index.model().itemFromIndex(index).text()
+#        return self.indexclick
+#        print self.indexclick()
+#        print index.model().itemFromIndex(index)
+#        print  self.indexclick
+#        NumofPro=self.indexclick[8:10]
+#        self.valuep=NumofPro
+#        #print self.valuep
+#        NameofPro=self.indexclick[0:7]
+#        self.namepTree=NameofPro
+#        print self.namepTree
 
     def addProject(self):
         self.tabWidgetProject.setEnabled(True)
         print "En este nivel se debe crear el proyecto,id,nombre,desc"
-        #+++++Creacion del Objeto Controller-XML++++++++++#
-     
+        #+++++++++++++++++++Creacion del Objeto Controller-XML+++++++++++++#
+        
         self.idp += 1
         self.projectObj = Project()
-        self.description="Think"
-        id=int(self.idp)
-        name=str(self.nameProjectTxt.text())
-        desc=str(self.description)
+        print self.projectObj
+        self.__projObjDict[self.idp] = self.projectObj
         
-        self.projectObj.setup(id = id, name=name, description=desc)
-        self.__projObjDict[id] = self.projectObj
+        #++++++++++++++++++Creación del Arbol++++++++++++++++++++#
         self.parentItem = self.model.invisibleRootItem()
-        self.__arbolDict[id] =   QtGui.QStandardItem(QtCore.QString(name+" %0").arg(self.idp))
-        self.parentItem.appendRow(self.__arbolDict[self.projectObj.id])
-        self.parentItem=self.__arbolDict[id]
-        
-        #self.configProject=Window(self)
-        #self.configProject.closed.connect(self.show)
-        #self.configProject.show()
-        #self.configProject.closed.connect(self.show)
-       # self.configProject.saveButton.clicked.connect(self.reciveParameters)
-        #self.configProject.closed.connect(self.createProject)
-        
-
-     
-        
-
-        
-         
-        
-        #+++++++++++++++++++LISTA DE PROYECTO++++++++++++++++++++++++++++#
-        
-        
-#        self.parentItem=self.projectObj.arbol
-#        self.loadProjects()
-        
-        print "Porfavor ingrese los parÃ¡metros de configuracion del Proyecto"
-        
-        
-        
-        
-        
-    def reciveParameters(self):
-        self.namep,self.description =self.configProject.almacena()
-        
-    def createProject(self):   
-        
-        print "En este nivel se debe crear el proyecto,id,nombre,desc"
-        #+++++Creacion del Objeto Controller-XML++++++++++#
-        self.idp += 1
-        self.controllerObj = Project()
-        id=int(self.idp)
-        name=str(self.namep)
-        desc=str(self.description)
-        self.parentItem=self.model.invisibleRootItem()        
-        self.controllerObj.arbol=QtGui.QStandardItem(QtCore.QString("Project %0").arg(self.idp))
-        self.controllerObj.setup(id = id, name=name, description=desc)
-        self.parentItem.appendRow(self.controllerObj.arbol)        
-        self.proObjList.append(self.controllerObj)#+++++++++++++++++++LISTA DE PROYECTO++++++++++++++++++++++++++++#
-        self.parentItem=self.controllerObj.arbol
-        self.loadProjects()
+        name=str(self.nameProjectTxt.text())
+        self.__arbolDict[self.idp] =   QtGui.QStandardItem(QtCore.QString(name+" %0").arg(self.idp))
+        print self.__arbolDict[self.idp]
+        self.parentItem.appendRow(self.__arbolDict[self.idp])
+        self.parentItem=self.__arbolDict[self.idp]
         
         print "Porfavor ingrese los parámetros de configuracion del Proyecto"
-        
-    def loadProjects(self):
-        
-        self.proConfCmbBox.clear()
-        for i in self.proObjList:
-            self.proConfCmbBox.addItem("Project"+str(i.id))
-                    
- 
-        
+       
     def existDir(self, var_dir):
         """
         METODO PARA VERIFICAR SI LA RUTA EXISTE-VAR_DIR
@@ -713,63 +479,62 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def addUP(self):
         
         self.configUP=UnitProcess(self)
-        for i in self.proObjList:
-            self.configUP.getfromWindowList.append(i) 
-            #print i
-        for i in self.upObjList:
-            self.configUP.getfromWindowList.append(i)
+        for i in self.__arbolDict:       
+            if self.__arbolDict[i]==self.indexclick:
+               if self.__projObjDict.has_key(i)==True:
+                   self.projectObj=self.__projObjDict[int(i)]
+                   print self.projectObj.id
+                   self.configUP.getfromWindowList.append(self.projectObj) 
+                   
+                   
+                   for i in self.projectObj.procUnitConfObjDict:
+                      if self.projectObj.procUnitConfObjDict[i].getElementName()=='ProcUnit':
+                         self.upObj=self.projectObj.procUnitConfObjDict[i]
+                         self.configUP.getfromWindowList.append(self.upObj)          
+               
+
+            
         self.configUP.loadTotalList()
         self.configUP.show()      
-        self.configUP.unitPsavebut.clicked.connect(self.reciveUPparameters)
+        #self.configUP.unitPsavebut.clicked.connect(self.reciveUPparameters)
         self.configUP.closed.connect(self.createUP)
     
-    def reciveUPparameters(self):
-        
-        self.uporProObjRecover,self.upType=self.configUP.almacena()
-           
+
         
     def createUP(self):
+        
         print "En este nivel se adiciona una rama de procesamiento, y se le concatena con el id"
-        projectObj=self.proObjList[int(self.proConfCmbBox.currentIndex())]
+        
+        if not self.configUP.create:
+            return
+        
+        self.uporProObjRecover=self.configUP.getFromWindow
+        
+        self.upType = self.configUP.typeofUP
+        for i in self.__arbolDict: 
+             if self.__arbolDict[i]==self.indexclick:
+               self.projectObj=self.__projObjDict[int(i)] 
         
         datatype=str(self.upType)
         uporprojectObj=self.uporProObjRecover
-        #+++++++++++LET FLY+++++++++++#
+        
         if uporprojectObj.getElementName()=='ProcUnit':
-            inputId=uporprojectObj.getId()
-        elif uporprojectObj.getElementName()=='Project':    
+             inputId=uporprojectObj.getId()
+        else:
             inputId=self.readUnitConfObjList[uporprojectObj.id-1].getId()
-
-            
-        self.procUnitConfObj1 = projectObj.addProcUnit(datatype=datatype, inputId=inputId)
-        self.upObjList.append(self.procUnitConfObj1)
-        print inputId  
-        print self.procUnitConfObj1.getId()
-        self.parentItem=uporprojectObj.arbol
+       
+        print 'uporprojectObj.id','inputId', uporprojectObj.id,inputId       
+        self.procUnitConfObj1 = self.projectObj.addProcUnit(datatype=datatype, inputId=inputId)
+        self.__upObjDict[inputId]= self.procUnitConfObj1    
+       
+        self.parentItem=self.__arbolDict[uporprojectObj.id]
+        #print "i","self.__arbolDict[i]",i ,self.__arbolDict[i] 
         self.numbertree=int(self.procUnitConfObj1.getId())-1
-        self.procUnitConfObj1.arbol=QtGui.QStandardItem(QtCore.QString(datatype +"%1 ").arg(self.numbertree))
-        self.parentItem.appendRow(self.procUnitConfObj1.arbol)        
-        self.parentItem=self.procUnitConfObj1.arbol
-        self.loadUp()
+        self.__arbolDict[self.procUnitConfObj1.id]=QtGui.QStandardItem(QtCore.QString(datatype +"%1 ").arg(self.numbertree))
+        self.parentItem.appendRow(self.__arbolDict[self.procUnitConfObj1.id])        
+        self.parentItem=self.__arbolDict[self.procUnitConfObj1.id]
+    #   self.loadUp()
         self.treeView.expandAll()
-        
-    def loadUp(self):
-        self.addOpUpselec.clear()
-        self.addOpSpecUpselec.clear()
-        for i in self.upObjList:
-            if i.datatype=='Voltage':
-                self.upObjVolList.append(i)
-                name=i.getElementName()
-                id=int(i.id)-1 
-                self.addOpUpselec.addItem(name+str(id))      
-            if i.datatype=='Spectra':
-                self.upobjSpecList.append(i)
-                name=i.getElementName()
-                id=int(i.id)-1 
-                self.addOpSpecUpselec.addItem(name+str(id))
-        
-        self.resetopVolt()
-        self.resetopSpec()
 
     def resetopVolt(self):
         self.selecChannelopVolCEB.setChecked(False)
@@ -795,80 +560,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def saveProject(self):
-        if self.idp==1:
-           self.valuep=1
-            
-        print "Escribiendo el archivo XML"
-        filename="C:\\WorkspaceGUI\\CONFIG"+str(self.valuep)+".xml"
-        self.controllerObj=self.proObjList[int(self.valuep)-1]
-        self.controllerObj.writeXml(filename)
+        print "entro"
+        #filename="C:\WorkspaceGUI\config1.xml"
+        for i in self.__arbolDict:            
+            if self.__arbolDict[i]==self.indexclick:
+                self.projectObj=self.__projObjDict[int(i)] 
+                print "Encontre project"
+        filename="C:\WorkspaceGUI\config"+str(self.projectObj.id)+".xml"
+        print "Escribo Project"
+        self.projectObj.writeXml(filename)
 
-
-
-
-        
-class Window(QMainWindow, Ui_window):
-    """
-    Class documentation goes here.
-    """
-    closed=pyqtSignal()
-    def __init__(self, parent = None):
-        """
-        Constructor
-        """
-        QMainWindow.__init__(self, parent)
-        self.setupUi(self)
-        self.name=0
-        self.nameproject=None
-        self.proyectNameLine.setText('My_name_is...')
-        self.descriptionTextEdit.setText('Write a description...')
-
-    
-    @pyqtSignature("")
-    def on_cancelButton_clicked(self):
-        """
-        Slot documentation goes here.
-        """
-        # TODO: not implemented yet
-        #raise NotImplementedError
-        
-        self.hide()
-        
-    @pyqtSignature("")
-    def on_okButton_clicked(self):
-        """
-        Slot documentation goes here.
-        """
-        #self.almacena()
-        self.close()     
-
-    @pyqtSignature("")
-    def on_saveButton_clicked(self):
-        """
-        Slot documentation goes here.
-        """
-        self.almacena()
-#        self.close()   
-    
-    def almacena(self):
-        #print str(self.proyectNameLine.text())
-        self.nameproject=str(self.proyectNameLine.text())
-        self.description=str(self.descriptionTextEdit.toPlainText())
-        return self.nameproject,self.description
-     
-    def closeEvent(self, event):
-        self.closed.emit()
-        event.accept()
-
-
-
-#--------------------------------------VENTANA DE CONFIGURACION DE LA UP-----------------------#
 
 class UnitProcess(QMainWindow, Ui_UnitProcess):
     """
     Class documentation goes here.
     """
     closed=pyqtSignal()
+    create= False
     def __init__(self, parent = None):
         """
         Constructor
@@ -885,16 +593,12 @@ class UnitProcess(QMainWindow, Ui_UnitProcess):
         """
         Slot documentation goes here.
         """
+        self.create =True
+        self.getFromWindow=self.getfromWindowList[int(self.comboInputBox.currentIndex())]
+        #self.nameofUP= str(self.nameUptxt.text())
+        self.typeofUP= str(self.comboTypeBox.currentText())
         self.close()
-        
-    @pyqtSignature("")
-    def on_unitPsavebut_clicked(self):
-        """
-        Slot documentation goes here.
-        """
- 
-        print "alex"
-        self.almacena()
+
     
     @pyqtSignature("")
     def on_unitPcancelbut_clicked(self):
@@ -903,22 +607,19 @@ class UnitProcess(QMainWindow, Ui_UnitProcess):
         """
         # TODO: not implemented yet
         #raise NotImplementedError
-        self.hide()  
+        self.create=False
+        self.close()  
 
     def loadTotalList(self):
         self.comboInputBox.clear()
         for i in self.getfromWindowList:
+            
             name=i.getElementName()
-            id= i.id
-            if i.getElementName()=='ProcUnit':
+            if name=='Project':
+                id= i.id
+            if name=='ProcUnit':
                id=int(i.id)-1 
-            self.comboInputBox.addItem(str(name)+str(id))
-        
-    def almacena(self):
-        self.getFromWindow=self.getfromWindowList[int(self.comboInputBox.currentIndex())]
-        #self.nameofUP= str(self.nameUptxt.text())
-        self.typeofUP= str(self.comboTypeBox.currentText())
-        return  self.getFromWindow,self.typeofUP    
+            self.comboInputBox.addItem(str(name)+str(id))    
 
     def closeEvent(self, event):
         self.closed.emit()
