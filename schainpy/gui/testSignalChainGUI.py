@@ -5,9 +5,11 @@
 from PyQt4.QtGui import QApplication
 #from PyQt4.QtCore import pyqtSignature
 
-from viewcontroller.initwindow import InitWindow
-from viewcontroller.mainwindow import MainWindow
-from viewcontroller.workspace import Workspace
+#from viewcontroller.initwindow import InitWindow
+from viewcontroller.basicwindow import BasicWindow
+#from viewcontroller.mainwindow import BodyMainWindow
+#from viewer.ui_mainwindow import Ui_MainWindow
+#from viewcontroller.workspace import Workspace
 
 def main():
     import sys
@@ -15,12 +17,17 @@ def main():
     
 #    Welcome=InitWindow()
 #    Welcome.show() 
-    
+#    
 #    WorkPathspace=Workspace()
-#    WorkPathspace.show()
-    #Welcome.ContinueBtn.clicked.connect(WorkPathspace.show)    
-    
-    MainGUI=MainWindow()
+    #WorkPathspace.show()
+#    Welcome.ContinueBtn.clicked.connect(WorkPathspace.show)    
+#    
+#    if self.isBasic():
+#        MainGUI = BasicWindow()
+#    else:
+#        MainGUI = AdvancedWindow()
+        
+    MainGUI=BasicWindow()
 #    WorkPathspace.dirOkbtn.clicked.connect(MainGUI.show)
     MainGUI.show()
     sys.exit(app.exec_())
