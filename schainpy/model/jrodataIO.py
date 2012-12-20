@@ -1387,7 +1387,7 @@ class VoltageReader(JRODataReader):
             if not( self.readNextBlock() ):
                 return 0
         
-            self.dataOut.dtype = numpy.dtype([('real','<f8'),('imag','<f8')]) #self.dtype
+            self.dataOut.dtype = self.dtype
             
             self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
             
@@ -1527,7 +1527,7 @@ class VoltageWriter(JRODataWriter):
         self.datablock = numpy.zeros((self.systemHeaderObj.nChannels,
                                      self.processingHeaderObj.profilesPerBlock,
                                      self.processingHeaderObj.nHeights),
-                                     dtype=numpy.dtype('complex'))
+                                     dtype=numpy.dtype('complex64'))
 
         
     def writeBlock(self):
@@ -2045,7 +2045,7 @@ class SpectraReader(JRODataReader):
     
         self.dataOut.flagNoData = False
 
-        self.dataOut.dtype = numpy.dtype([('real','<f8'),('imag','<f8')])#self.dtype
+        self.dataOut.dtype = self.dtype
 
 #        self.dataOut.nChannels = self.nRdChannels
         
@@ -2225,6 +2225,7 @@ class SpectraWriter(JRODataWriter):
         if not( self.processingHeaderObj.shif_fft ):
             spc = numpy.roll( spc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data = spc.reshape((-1))
+        data = data.astype(self.dtype[0])
         data.tofile(self.fp)
 
         if self.data_cspc != None:

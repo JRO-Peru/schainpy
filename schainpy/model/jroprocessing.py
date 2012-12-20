@@ -680,7 +680,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList
-        self.dataOut.dtype = self.dataIn.dtype
+        self.dataOut.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])
 #        self.dataOut.nHeights = self.dataIn.nHeights
 #        self.dataOut.nChannels = self.dataIn.nChannels
         self.dataOut.nBaud = self.dataIn.nBaud
@@ -714,6 +714,7 @@ class SpectraProc(ProcessingUnit):
             self.dataOut.flagNoData
         """
         fft_volt = numpy.fft.fft(self.buffer,axis=1)
+        fft_volt = fft_volt.astype(numpy.dtype('complex'))
         dc = fft_volt[:,0,:]
         
         #calculo de self-spectra
