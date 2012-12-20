@@ -640,14 +640,17 @@ class Decoder(Operation):
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
         
         if not self.__isConfig:
-            if code != None:
+            if code == None:
+                code = dataOut.code
+            else:
                 code = numpy.array(code).reshape(nCode,nBaud)
                 dataOut.code = code
                 dataOut.nCode = nCode
                 dataOut.nBaud = nBaud
+            
             if code == None:
-                code = dataOut.code
-                
+                return 1
+            
             self.setup(code)
             self.__isConfig = True
         
