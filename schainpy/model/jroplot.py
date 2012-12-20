@@ -53,9 +53,8 @@ class CrossSpectraPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, normalize=True,
-            save=False, figpath='./', figfile=None,
-            power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r'):
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            save=False, figpath='./', figfile=None):
         
         """
         
@@ -87,15 +86,12 @@ class CrossSpectraPlot(Figure):
         
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-        
-        factor = 1
-        if normalize:
-            factor = dataOut.normFactor
+        factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         z = dataOut.data_spc[:,:,:]/factor
-
-        avg = numpy.average(z, axis=1)
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        avg = numpy.average(numpy.abs(z), axis=1)
         noise = dataOut.getNoise()/factor
         
         zdB = 10*numpy.log10(z)
@@ -137,7 +133,7 @@ class CrossSpectraPlot(Figure):
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, colormap=power_cmap, cblabel='')
+                        ticksize=9, cblabel='')
             
             title = "Channel %d: %4.2fdB" %(pair[1], noisedB[pair[1]])
             zdB = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:]/factor)
@@ -145,26 +141,26 @@ class CrossSpectraPlot(Figure):
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, colormap=power_cmap, cblabel='')
+                        ticksize=9, cblabel='')
 
             coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
             coherence = numpy.abs(coherenceComplex)
-#            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
-            phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
+            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
+            
             
             title = "Coherence %d%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+2]
             axes0.pcolor(x, y, coherence,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, colormap=coherence_cmap, cblabel='')
+                        ticksize=9, cblabel='')
             
             title = "Phase %d%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+3]
             axes0.pcolor(x, y, phase,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title,
-                        ticksize=9, colormap=phase_cmap, cblabel='')
+                        ticksize=9, cblabel='', colormap='RdBu_r')
 
 
             
@@ -182,7 +178,7 @@ class RTIPlot(Figure):
     
     __isConfig = None
     __nsubplots = None
-    __missing = 1E30
+    
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'rti'
@@ -194,11 +190,9 @@ class RTIPlot(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 180
+        self.HEIGHT = 200
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
-        self.x_buffer = None
-        self.avgdB_buffer = None
         
     def getSubplots(self):
         
@@ -214,19 +208,15 @@ class RTIPlot(Figure):
         
         ncolspan = 1
         colspan = 1
-        widthplot = self.WIDTH
-        heightplot = self.HEIGHT
         if showprofile:
             ncolspan = 7
             colspan = 6
             self.__nsubplots = 2
-            widthplot += self.WIDTHPROF
-            heightplot += self.HEIGHTPROF
             
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
-                          widthplot = widthplot,
-                          heightplot = heightplot)
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF)
         
         nrow, ncol = self.getSubplots()
         
@@ -245,7 +235,7 @@ class RTIPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, normalize=True,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
             save=False, figpath='./', figfile=None):
         
@@ -279,18 +269,18 @@ class RTIPlot(Figure):
         
         tmin = None
         tmax = None
-        factor = 1
-        if normalize:
-            factor = dataOut.normFactor
+        factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
         z = dataOut.data_spc[channelIndexList,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
+        noise = dataOut.getNoise()/factor
         
+#        zdB = 10.*numpy.log10(z)
         avgdB = 10.*numpy.log10(avg)
-
+        noisedB = 10.*numpy.log10(noise)
         
         thisDatetime = dataOut.datatime
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
@@ -313,36 +303,16 @@ class RTIPlot(Figure):
             if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.x_buffer = numpy.array([])
-            self.avgdB_buffer = numpy.array([])
             self.__isConfig = True
         
         
         self.setWinTitle(title)
-        
-        if len(self.avgdB_buffer)==0:
-            self.avgdB_buffer = avgdB
-            newxdim = 1
-            newydim = -1
-        else:
-            if x[0]>self.x_buffer[-1]:
-                gap = avgdB.copy()
-                gap[:] = self.__missing
-                self.avgdB_buffer = numpy.hstack((self.avgdB_buffer, gap))
             
-            self.avgdB_buffer = numpy.hstack((self.avgdB_buffer, avgdB))
-            newxdim = -1
-            newydim = len(y)
-        
-        self.x_buffer = numpy.hstack((self.x_buffer, x))
-        
-        self.avgdB_buffer = numpy.ma.masked_inside(self.avgdB_buffer,0.99*self.__missing,1.01*self.__missing)
-        
         for i in range(self.nplots):
             title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
-            zdB = self.avgdB_buffer[i].reshape(newxdim,newydim)
-            axes.pcolor(self.x_buffer, y, zdB,
+            zdB = avgdB[i].reshape((1,-1))
+            axes.pcolor(x, y, zdB,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', cbsize="1%")
@@ -381,7 +351,7 @@ class SpectraPlot(Figure):
         self.__isConfig = False
         self.__nsubplots = 1
         
-        self.WIDTH = 250
+        self.WIDTH = 230
         self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
@@ -400,19 +370,15 @@ class SpectraPlot(Figure):
         
         ncolspan = 1
         colspan = 1
-        widthplot = self.WIDTH
-        heightplot = self.HEIGHT
         if showprofile:
             ncolspan = 3
             colspan = 2
             self.__nsubplots = 2
-            widthplot += self.WIDTHPROF
-            heightplot += self.HEIGHTPROF
-            
+        
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
-                          widthplot = widthplot,
-                          heightplot = heightplot)
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF)
         
         nrow, ncol = self.getSubplots()
         
@@ -431,7 +397,7 @@ class SpectraPlot(Figure):
                 counter += 1
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, normalize=True, 
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             save=False, figpath='./', figfile=None):
         
         """
@@ -458,9 +424,7 @@ class SpectraPlot(Figure):
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
-        factor = 1
-        if normalize:
-            factor = dataOut.normFactor
+        factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         
@@ -666,7 +630,7 @@ class ProfilePlot(Figure):
                 self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
-            xmin=None, xmax=None, ymin=None, ymax=None, normalize=True,
+            xmin=None, xmax=None, ymin=None, ymax=None,
             save=False, figpath='./', figfile=None):
         
         if channelList == None:
@@ -679,9 +643,7 @@ class ProfilePlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
-        factor = 1
-        if normalize:
-            factor = dataOut.normFactor
+        factor = dataOut.normFactor
         y = dataOut.getHeiRange()        
         x = dataOut.data_spc[channelIndexList,:,:]/factor
         x = numpy.where(numpy.isfinite(x), x, numpy.NAN) 
@@ -737,8 +699,7 @@ class CoherenceMap(Figure):
     
     WIDTHPROF = None
     HEIGHTPROF = None
-    PREFIX = 'cmap'
-    __missing = 1E30
+    PREFIX = 'coherencemap'
 
     def __init__(self):
         self.timerange = 2*60*60
@@ -749,9 +710,6 @@ class CoherenceMap(Figure):
         self.HEIGHT = 200
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
-        self.x_buffer = None
-        self.coherence_buffer = None
-        self.phase_buffer = None
     
     def getSubplots(self):
         ncol = 1
@@ -788,8 +746,7 @@ class CoherenceMap(Figure):
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None,
-            coherence_cmap='jet', phase_cmap='RdBu_r'):
+            save=False, figpath='./', figfile=None):
                 
         if pairsList == None:
             pairsIndexList = dataOut.pairsIndexList
@@ -831,82 +788,53 @@ class CoherenceMap(Figure):
             if ymax == None: ymax = numpy.nanmax(y)
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.x_buffer = numpy.array([])
-            self.coherence_buffer = numpy.array([])
-            self.phase_buffer = numpy.array([])
+            
             self.__isConfig = True
         
         self.setWinTitle(title)
         
-
-        pairArray = numpy.array(dataOut.pairsList)
-        pairArray = pairArray[pairsIndexList]
-        pair0ids = pairArray[:,0]
-        pair1ids = pairArray[:,1]
-                
-        coherenceComplex = dataOut.data_cspc[pairsIndexList,:,:]/numpy.sqrt(dataOut.data_spc[pair0ids,:,:]*dataOut.data_spc[pair1ids,:,:])
-        avgcoherenceComplex = numpy.average(coherenceComplex, axis=1)
-        coherence = numpy.abs(avgcoherenceComplex)
-        
-        phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
-        
-        if len(self.coherence_buffer)==0:
-            self.coherence_buffer = coherence
-            self.phase_buffer = phase
-            newxdim = 1
-            newydim = -1
-        else:
-            if x[0]>self.x_buffer[-1]:
-                gap = coherence.copy()
-                gap[:] = self.__missing
-                self.coherence_buffer = numpy.hstack((self.coherence_buffer, gap))
-                self.phase_buffer = numpy.hstack((self.phase_buffer, gap))
-            
-            self.coherence_buffer = numpy.hstack((self.coherence_buffer, coherence))
-            self.phase_buffer = numpy.hstack((self.phase_buffer, phase))
-            newxdim = -1
-            newydim = len(y)
-        
-        self.x_buffer = numpy.hstack((self.x_buffer, x))
-        
-        self.coherence_buffer = numpy.ma.masked_inside(self.coherence_buffer,0.99*self.__missing,1.01*self.__missing)
-        self.phase_buffer = numpy.ma.masked_inside(self.phase_buffer,0.99*self.__missing,1.01*self.__missing)
-        
-        
         for i in range(self.nplots):
-            counter = 0            
-            z = self.coherence_buffer[i,:].reshape((newxdim,newydim))
-            title = "Coherence %d%d: %s" %(pair0ids[i], pair1ids[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            
+            pair = dataOut.pairsList[pairsIndexList[i]]
+            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
+            coherence = numpy.abs(coherenceComplex)            
+            avg = numpy.average(coherence, axis=0)
+            z = avg.reshape((1,-1))
+
+            counter = 0
+            
+            title = "Coherence %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2]
-            axes.pcolor(self.x_buffer, y, z,
+            axes.pcolor(x, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', colormap=coherence_cmap, cbsize="1%")
+                        ticksize=9, cblabel='', cbsize="1%")
             
             if self.__showprofile:
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
-                axes.pline(coherence[i,:], y,
+                axes.pline(avg, y,
                         xmin=0, xmax=1, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=5,
                         grid='x')
             
             counter += 1
-
-            z = self.phase_buffer[i,:].reshape((newxdim,newydim))
+            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
+            avg = numpy.average(phase, axis=0)
+            z = avg.reshape((1,-1))
             
-            title = "Phase %d%d: %s" %(pair0ids[i], pair1ids[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2 + counter]
-            axes.pcolor(self.x_buffer, y, z,
+            axes.pcolor(x, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', colormap=phase_cmap, cbsize="1%")
+                        ticksize=9, cblabel='', colormap='RdBu', cbsize="1%")
             
             if self.__showprofile:
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
-                axes.pline(phase[i,:], y,
+                axes.pline(avg, y,
                         xmin=-180, xmax=180, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=4,
@@ -971,7 +899,7 @@ class RTIfromNoise(Figure):
         
                         
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None, normalize=True,
+            xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
             save=False, figpath='./', figfile=None):
         
@@ -992,9 +920,7 @@ class RTIfromNoise(Figure):
         tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
-        factor = 1
-        if normalize:
-            factor = dataOut.normFactor
+        factor = dataOut.normFactor
         noise = dataOut.getNoise()/factor
         noisedB = 10*numpy.log10(noise)
         
