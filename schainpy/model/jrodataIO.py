@@ -1387,7 +1387,7 @@ class VoltageReader(JRODataReader):
             if not( self.readNextBlock() ):
                 return 0
         
-            self.dataOut.dtype = numpy.dtype([('real','<f4'),('imag','<f4')]) #self.dtype
+            self.dataOut.dtype = numpy.dtype([('real','<f8'),('imag','<f8')]) #self.dtype
             
             self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
             
@@ -2045,7 +2045,7 @@ class SpectraReader(JRODataReader):
     
         self.dataOut.flagNoData = False
 
-        self.dataOut.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])#self.dtype
+        self.dataOut.dtype = numpy.dtype([('real','<f8'),('imag','<f8')])#self.dtype
 
 #        self.dataOut.nChannels = self.nRdChannels
         
