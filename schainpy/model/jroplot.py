@@ -191,7 +191,7 @@ class RTIPlot(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 180
+        self.HEIGHT = 150
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         
@@ -283,7 +283,7 @@ class RTIPlot(Figure):
         
         thisDatetime = dataOut.datatime
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
-        xlabel = "Velocity (m/s)"
+        xlabel = ""
         ylabel = "Range (Km)"
         
         if not self.__isConfig:
@@ -706,7 +706,7 @@ class CoherenceMap(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 180
+        self.HEIGHT = 150
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
     
