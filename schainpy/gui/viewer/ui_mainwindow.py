@@ -15,7 +15,9 @@ except AttributeError:
     _fromUtf8 = lambda s: s
 
 class Ui_MainWindow(object):
+    
     def setupUi(self, MainWindow):
+        
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(866, 587)
         self.centralWidget = QtGui.QWidget(MainWindow)
@@ -221,6 +223,7 @@ class Ui_MainWindow(object):
         self.tabWidgetVol = QtGui.QTabWidget(self.tab_7)
         self.tabWidgetVol.setEnabled(True)
         self.tabWidgetVol.setGeometry(QtCore.QRect(10, 10, 291, 331))
+        
         self.tabWidgetVol.setObjectName(_fromUtf8("tabWidgetVol"))
         self.tab_3 = QtGui.QWidget()
         self.tab_3.setObjectName(_fromUtf8("tab_3"))
@@ -1047,6 +1050,30 @@ class Ui_MainWindow(object):
         self.actCreateObj.setToolTip(QtGui.QApplication.translate("MainWindow", "Manage Create", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFileCerrarObj.setText(QtGui.QApplication.translate("MainWindow", "Cerrar", None, QtGui.QApplication.UnicodeUTF8))
 
+class Ui_BasicWindow(Ui_MainWindow):
+    
+    def setupUi(self, BasicWindow):
+        
+        Ui_MainWindow.setupUi(self, BasicWindow)
+    
+    def retranslateUi(self,BasicWindow):
+        
+        Ui_MainWindow.retranslateUi(self,BasicWindow)
+       
+       
+            
+       
+        
+class Ui_AdvancedWindow(Ui_MainWindow):
+    
+    def setupUi(self, AdvancedWindow):
+        
+        Ui_MainWindow.setupUi(self, AdvancedWindow)
+    
+    def retranslateUi(self, AdvancedWindow):
+        
+        Ui_MainWindow.retranslateUi(self, AdvancedWindow)
+        
 from PyQt4 import Qsci
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'C:\Users\alex\ericworkspace\UIDOS\unitProcess.ui'
 #
-# Created: Thu Dec 06 10:52:30 2012
+# Created: Tue Dec 18 15:34:51 2012
 #      by: PyQt4 UI code generator 4.9.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,14 +17,14 @@ except AttributeError:
 class Ui_UnitProcess(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(207, 181)
+        MainWindow.resize(212, 181)
         self.centralWidget = QtGui.QWidget(MainWindow)
         self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
         self.comboInputBox = QtGui.QComboBox(self.centralWidget)
-        self.comboInputBox.setGeometry(QtCore.QRect(80, 50, 111, 22))
+        self.comboInputBox.setGeometry(QtCore.QRect(80, 50, 121, 22))
         self.comboInputBox.setObjectName(_fromUtf8("comboInputBox"))
         self.comboTypeBox = QtGui.QComboBox(self.centralWidget)
-        self.comboTypeBox.setGeometry(QtCore.QRect(80, 90, 111, 22))
+        self.comboTypeBox.setGeometry(QtCore.QRect(80, 90, 121, 22))
         self.comboTypeBox.setObjectName(_fromUtf8("comboTypeBox"))
         self.comboTypeBox.addItem(_fromUtf8(""))
         self.comboTypeBox.addItem(_fromUtf8(""))
@@ -54,26 +54,19 @@ class Ui_UnitProcess(object):
         self.typeLabel.setFont(font)
         self.typeLabel.setObjectName(_fromUtf8("typeLabel"))
         self.unitPokbut = QtGui.QPushButton(self.centralWidget)
-        self.unitPokbut.setGeometry(QtCore.QRect(80, 130, 51, 23))
+        self.unitPokbut.setGeometry(QtCore.QRect(10, 130, 91, 23))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
         self.unitPokbut.setFont(font)
         self.unitPokbut.setObjectName(_fromUtf8("unitPokbut"))
         self.unitPcancelbut = QtGui.QPushButton(self.centralWidget)
-        self.unitPcancelbut.setGeometry(QtCore.QRect(140, 130, 51, 23))
+        self.unitPcancelbut.setGeometry(QtCore.QRect(110, 130, 91, 23))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
         self.unitPcancelbut.setFont(font)
         self.unitPcancelbut.setObjectName(_fromUtf8("unitPcancelbut"))
-        self.unitPsavebut = QtGui.QPushButton(self.centralWidget)
-        self.unitPsavebut.setGeometry(QtCore.QRect(20, 130, 51, 23))
-        font = QtGui.QFont()
-        font.setBold(False)
-        font.setWeight(50)
-        self.unitPsavebut.setFont(font)
-        self.unitPsavebut.setObjectName(_fromUtf8("unitPsavebut"))
         MainWindow.setCentralWidget(self.centralWidget)
 
         self.retranslateUi(MainWindow)
@@ -89,7 +82,6 @@ class Ui_UnitProcess(object):
         self.typeLabel.setText(QtGui.QApplication.translate("MainWindow", "Type:", None, QtGui.QApplication.UnicodeUTF8))
         self.unitPokbut.setText(QtGui.QApplication.translate("MainWindow", "Ok", None, QtGui.QApplication.UnicodeUTF8))
         self.unitPcancelbut.setText(QtGui.QApplication.translate("MainWindow", "Cancel", None, QtGui.QApplication.UnicodeUTF8))
-        self.unitPsavebut.setText(QtGui.QApplication.translate("MainWindow", "Save", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":
@@ -100,3 +92,4 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
+
