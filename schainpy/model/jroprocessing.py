@@ -646,8 +646,8 @@ class Decoder(Operation):
             dataOut.nCode = nCode
             dataOut.nBaud = nBaud
             
-            if code == None:
-                return 1
+        if code == None:
+            return 1
             
         if not self.__isConfig:
             self.setup(code)
