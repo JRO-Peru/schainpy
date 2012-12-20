@@ -1,5 +1,5 @@
 import numpy
-import time, datetime
+import time, datetime, os
 from graphics.figure import  * 
 
 class CrossSpectraPlot(Figure):
@@ -194,6 +194,7 @@ class RTIPlot(Figure):
         self.HEIGHT = 150
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
+        self.counterftp = 0
         
     def getSubplots(self):
         
@@ -238,7 +239,7 @@ class RTIPlot(Figure):
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None):
+            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1):
         
         """
         
@@ -332,6 +333,12 @@ class RTIPlot(Figure):
                 figfile = self.getFilename(name = self.name)
             
             self.saveFigure(figpath, figfile)
+            
+            self.counterftp += 1
+            if (ftp and (self.counterftp==ftpratio)):
+                figfilename = os.path.join(figpath,figfile)
+                self.sendByFTP(figfilename)
+                self.counterftp = 0
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
@@ -709,6 +716,7 @@ class CoherenceMap(Figure):
         self.HEIGHT = 150
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
+        self.counterftp = 0
     
     def getSubplots(self):
         ncol = 1
@@ -745,7 +753,7 @@ class CoherenceMap(Figure):
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None,
+            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1,
             coherence_cmap='jet', phase_cmap='RdBu_r'):
                 
         if pairsList == None:
@@ -852,6 +860,12 @@ class CoherenceMap(Figure):
                 figfile = self.getFilename(name = self.name)
             
             self.saveFigure(figpath, figfile)
+            
+            self.counterftp += 1
+            if (ftp and (self.counterftp==ftpratio)):
+                figfilename = os.path.join(figpath,figfile)
+                self.sendByFTP(figfilename)
+                self.counterftp = 0
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False

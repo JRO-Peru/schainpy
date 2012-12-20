@@ -2,7 +2,7 @@ import os
 import numpy
 import time, datetime
 import mpldriver
-
+from customftp import *
 
 class Figure:
     
@@ -117,6 +117,7 @@ class Figure:
                                               self.heightscreen)
         
         self.axesObjList = []
+
     
     def setDriver(self, driver=mpldriver):
         
@@ -159,6 +160,11 @@ class Figure:
             os.mkdir(fullpath)
         
         self.__driver.saveFigure(self.fig, filename, *args)
+    
+    def sendByFTP(self, figfilename):
+        ftpObj = Ftp()
+        ftpObj.upload(figfilename)
+        ftpObj.close()
     
     def draw(self):
         
