@@ -917,7 +917,7 @@ class SpectraProc(ProcessingUnit):
         
         data_dc = None
         if self.dataOut.data_dc != None:
-            data_dc = self.dataOut.data_dc[:,:,minIndex:maxIndex+1]
+            data_dc = self.dataOut.data_dc[:,minIndex:maxIndex+1]
         
         self.dataOut.data_spc = data_spc
         self.dataOut.data_cspc = data_cspc
