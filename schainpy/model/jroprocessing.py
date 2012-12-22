@@ -596,7 +596,7 @@ class Decoder(Operation):
         
         self.__nChannels, self.__nHeis = shape
         
-        self.__codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.float)
+        self.__codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.float32)
         
         self.__codeBuffer[:,0:self.nBaud] = self.code
         
@@ -686,7 +686,10 @@ class Decoder(Operation):
         if mode == 1:
             print "This function is not implemented"
 #            ndatadec, datadec = self.convolutionInTime(dataOut.data)
-                
+        
+        if mode == 3:
+            ndatadec, datadec = self.convolutionInFreqOpt(dataOut.data)
+              
         dataOut.data = datadec
         
         dataOut.heightList = dataOut.heightList[0:ndatadec]
