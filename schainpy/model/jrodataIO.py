@@ -420,7 +420,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             for thisPath in os.listdir(path):
                 if os.path.isdir(os.path.join(path, thisPath)):
                     dirList.append(thisPath)
-        
+            
             if not(dirList):
                 return None, None, None, None, None
         
@@ -431,12 +431,16 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         else:
             fullpath = path
+            
+        print "%d folder was found: " %(fullpath )
 
         filename = getlastFileFromPath(fullpath, ext)
 
         if not(filename):
             return None, None, None, None, None
-
+        
+        print "%s file was found" %(filename)
+        
         if not(self.__verifyFile(os.path.join(fullpath, filename))):
             return None, None, None, None, None
 
@@ -1849,7 +1853,7 @@ class SpectraReader(JRODataReader):
         
         self.path = None
 
-        self.delay  = 3   #seconds
+        self.delay  = 60   #seconds
         
         self.nTries = 3  #quantity tries
         
