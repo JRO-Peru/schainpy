@@ -644,7 +644,7 @@ class Decoder(Operation):
         
         code = self.code[self.__profIndex].reshape(1,-1)
         
-        for i in range(__nChannels):
+        for i in range(self.__nChannels):
             self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='valid')
         
         print "Time ", time.time() - ini
