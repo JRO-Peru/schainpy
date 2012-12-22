@@ -629,7 +629,7 @@ class Decoder(Operation):
         return ndatadec, datadec
         
     def convolutionInFreqOpt(self, data):
-        
+        ini = time.time()
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
         data = cfunctions.decoder(fft_code, data)
@@ -642,7 +642,7 @@ class Decoder(Operation):
             return ndatadec, datadec
                
         self.__profIndex += 1
-        
+        print time.time() - ini
         return ndatadec, datadec
     
     def convolutionInTime(self, data):
