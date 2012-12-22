@@ -612,15 +612,23 @@ class Decoder(Operation):
         
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
+        print "Freq0 ", time.time() - ini
+        
         fft_data = numpy.fft.fft(data, axis=1)
+        
+        print "Freq1 ", time.time() - ini
         
         conv = fft_data*fft_code
             
+        print "Freq2 ", time.time() - ini
+        
         data = numpy.fft.ifft(conv,axis=1)
+        
+        print "Freq3 ", time.time() - ini
         
         datadec = data[:,:-self.nBaud+1]
         
-        print "Freq ", time.time() - ini
+        print "Freq4 ", time.time() - ini
         
         return datadec
         
