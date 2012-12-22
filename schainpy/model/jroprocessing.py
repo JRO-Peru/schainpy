@@ -591,7 +591,7 @@ class Decoder(Operation):
         
         self.__nChannels, self.__nHeis = shape
         
-        self.__codeBuffer = numpy.zeros(self.nCode, self.__nHeis)
+        self.__codeBuffer = numpy.zeros((self.nCode, self.__nHeis))
         
         self.__codeBuffer[:,0:self.nBaud] = self.code[:,:]
         
