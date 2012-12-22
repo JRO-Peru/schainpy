@@ -12,6 +12,11 @@ from jrodata import *
 from jrodataIO import *
 from jroplot import *
 
+try:
+    import cfunctions
+except:
+    pass
+
 class ProcessingUnit:
     
     """
@@ -591,9 +596,9 @@ class Decoder(Operation):
         
         self.__nChannels, self.__nHeis = shape
         
-        self.__codeBuffer = numpy.zeros((self.nCode, self.__nHeis))
+        self.__codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.float)
         
-        self.__codeBuffer[:,0:self.nBaud] = self.code[:,:]
+        self.__codeBuffer[:,0:self.nBaud] = self.code
         
         self.fft_code = numpy.conj(numpy.fft.fft(self.__codeBuffer, axis=1))
         
@@ -623,7 +628,23 @@ class Decoder(Operation):
         
         return ndatadec, datadec
         
+    def convolutionInFreqOpt(self, data):
         
+        fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
+        
+        data = cfunctions.decoder(fft_code, data)
+        
+        datadec = data[:,:-self.nBaud+1]
+        ndatadec = self.__nHeis - self.nBaud + 1
+        
+        if self.__profIndex == self.nCode-1: 
+            self.__profIndex = 0             
+            return ndatadec, datadec
+               
+        self.__profIndex += 1
+        
+        return ndatadec, datadec
+    
     def convolutionInTime(self, data):
         
         self.__nChannels, self.__nHeis = data.shape
