@@ -629,15 +629,13 @@ class Decoder(Operation):
         return ndatadec, datadec
         
     def convolutionInFreqOpt(self, data):
-        ini = time.time()
+        
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
         data = cfunctions.decoder(fft_code, data)
         
         datadec = data[:,:-self.nBaud+1]
         ndatadec = self.__nHeis - self.nBaud + 1
-        
-        print time.time() - ini, "prof = %d, nCode=%d" %(self.__profIndex, self.nCode)
         
         if self.__profIndex == self.nCode-1: 
             self.__profIndex = 0             
@@ -667,7 +665,7 @@ class Decoder(Operation):
         return ndatadec, datadec 
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
-        
+        ini = time.time()
         if not self.__isConfig:
             
             if code == None:
@@ -699,7 +697,8 @@ class Decoder(Operation):
         dataOut.heightList = dataOut.heightList[0:ndatadec]
         
         dataOut.flagDecodeData = True #asumo q la data no esta decodificada
-    
+        
+        print time.time() - ini, "prof = %d, nCode=%d" %(self.__profIndex, self.nCode)
 #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
         
 
