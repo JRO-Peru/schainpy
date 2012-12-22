@@ -608,33 +608,19 @@ class Decoder(Operation):
         
     def convolutionInFreq(self, data):
         
-        ini = time.time()
-        
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
-        
-        print "Freq0 ", time.time() - ini
         
         fft_data = numpy.fft.fft(data, axis=1)
         
-        print "Freq1 ", time.time() - ini
-        
         conv = fft_data*fft_code
-            
-        print "Freq2 ", time.time() - ini
         
         data = numpy.fft.ifft(conv,axis=1)
         
-        print "Freq3 ", time.time() - ini
-        
         datadec = data[:,:-self.nBaud+1]
-        
-        print "Freq4 ", time.time() - ini
         
         return datadec
         
     def convolutionInFreqOpt(self, data):
-        
-        ini = time.time()
         
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
@@ -642,27 +628,19 @@ class Decoder(Operation):
         
         datadec = data[:,:-self.nBaud+1]
         
-        print "OptFreq ", time.time() - ini
-        
         return datadec
     
     def convolutionInTime(self, data):
         
-        ini = time.time()
-        
         code = self.code[self.__profIndex]
-        
-        print self.datadecTime.shape, data.shape, code.shape
         
         for i in range(self.__nChannels):
             self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='valid')
         
-        print "Time ", time.time() - ini
-        
         return self.datadecTime
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
-        ini = time.time()
+        
         if not self.__isConfig:
             
             if code == None:
@@ -679,13 +657,11 @@ class Decoder(Operation):
             self.setup(code, dataOut.data.shape)
             self.__isConfig = True
         
-        print "DAta shape ", dataOut.data.shape
-        
         if mode == 0:
-            datadec = self.convolutionInFreq(dataOut.data)
+            datadec = self.convolutionInTime(dataOut.data)
             
         if mode == 1:
-            datadec = self.convolutionInTime(dataOut.data)
+            datadec = self.convolutionInFreq(dataOut.data)
         
         if mode == 2:
             datadec = self.convolutionInFreqOpt(dataOut.data)
@@ -695,8 +671,6 @@ class Decoder(Operation):
         dataOut.heightList = dataOut.heightList[0:self.ndatadec]
         
         dataOut.flagDecodeData = True #asumo q la data no esta decodificada
-        
-        print time.time() - ini, "prof = %d, nCode=%d" %(self.__profIndex, self.nCode)
 
         if self.__profIndex == self.nCode-1: 
             self.__profIndex = 0             
