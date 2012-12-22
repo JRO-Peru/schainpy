@@ -596,73 +596,60 @@ class Decoder(Operation):
         
         self.__nChannels, self.__nHeis = shape
         
-        self.__codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.float32)
+        __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.float32)
         
-        self.__codeBuffer[:,0:self.nBaud] = self.code
+        __codeBuffer[:,0:self.nBaud] = self.code
         
-        self.fft_code = numpy.conj(numpy.fft.fft(self.__codeBuffer, axis=1))
+        self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
         
+        self.ndatadec = __nHeis - nBaud + 1
+        
+        self.datadecTime = numpy.zeros((self.__nChannels, self.ndatadec), dtype=numpy.complex)
         
     def convolutionInFreq(self, data):
+        
+        ini = time.time()
         
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
         fft_data = numpy.fft.fft(data, axis=1)
-        
-        
-#        conv = fft_data.copy()
-#        conv.fill(0)
         
         conv = fft_data*fft_code
             
         data = numpy.fft.ifft(conv,axis=1)
         
         datadec = data[:,:-self.nBaud+1]
-        ndatadec = self.__nHeis - self.nBaud + 1
         
-        if self.__profIndex == self.nCode-1: 
-            self.__profIndex = 0             
-            return ndatadec, datadec
-               
-        self.__profIndex += 1
+        print "Freq ", time.time() - ini
         
-        return ndatadec, datadec
+        return datadec
         
     def convolutionInFreqOpt(self, data):
+        
+        ini = time.time()
         
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
         data = cfunctions.decoder(fft_code, data)
         
         datadec = data[:,:-self.nBaud+1]
-        ndatadec = self.__nHeis - self.nBaud + 1
         
-        if self.__profIndex == self.nCode-1: 
-            self.__profIndex = 0             
-            return ndatadec, datadec
-               
-        self.__profIndex += 1
+        print "OptFreq ", time.time() - ini
         
-        return ndatadec, datadec
+        return datadec
     
     def convolutionInTime(self, data):
         
-        self.__nChannels, self.__nHeis = data.shape
-        self.__codeBuffer = self.code[self.__profIndex]
-        ndatadec = self.__nHeis - self.nBaud + 1
+        ini = time.time()
         
-        datadec = numpy.zeros((self.__nChannels, ndatadec))
+        code = self.code[self.__profIndex].reshape(1,-1)
         
-        for i in range(self.__nChannels):
-            datadec[i,:] = numpy.correlate(data[i,:], self.__codeBuffer)
+        for i in range(__nChannels):
+            self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='valid')
         
-        if self.__profIndex == self.nCode-1: 
-            self.__profIndex = 0             
-            return ndatadec, datadec 
+        print "Time ", time.time() - ini
         
-        self.__profIndex += 1
-        
-        return ndatadec, datadec 
+        return self.datadecTime
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
         ini = time.time()
@@ -691,7 +678,9 @@ class Decoder(Operation):
         
         if mode == 2:
             ndatadec, datadec = self.convolutionInFreqOpt(dataOut.data)
-              
+        
+        
+        
         dataOut.data = datadec
         
         dataOut.heightList = dataOut.heightList[0:ndatadec]
@@ -699,8 +688,17 @@ class Decoder(Operation):
         dataOut.flagDecodeData = True #asumo q la data no esta decodificada
         
         print time.time() - ini, "prof = %d, nCode=%d" %(self.__profIndex, self.nCode)
-#        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+
+        if self.__profIndex == self.nCode-1: 
+            self.__profIndex = 0             
+            return 1
         
+        self.__profIndex += 1
+        
+        return 1
+#        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+
+
 
 class SpectraProc(ProcessingUnit):
     
