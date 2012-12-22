@@ -437,8 +437,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             
             #Filtra solo los directorios
             for thisPath in os.listdir(path):
-                if os.path.isdir(os.path.join(path, thisPath)):
-                    dirList.append(thisPath)
+                if not os.path.isdir(os.path.join(path,thisPath)):
+                    continue
+                if not isDoyFolder(thisPath):
+                    continue
             
             if not(dirList):
                 return None, None, None, None, None
