@@ -650,7 +650,7 @@ class Decoder(Operation):
         
         ini = time.time()
         
-        code = self.code[self.__profIndex].reshape(1,-1)
+        code = self.code[self.__profIndex]
         
         print self.datadecTime.shape, data.shape, code.shape
         
