@@ -432,7 +432,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         else:
             fullpath = path
             
-        print "%d folder was found: " %(fullpath )
+        print "%s folder was found: " %(fullpath )
 
         filename = getlastFileFromPath(fullpath, ext)
 
