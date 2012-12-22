@@ -670,20 +670,17 @@ class Decoder(Operation):
             self.__isConfig = True
         
         if mode == 0:
-            ndatadec, datadec = self.convolutionInFreq(dataOut.data)
+            datadec = self.convolutionInFreq(dataOut.data)
             
         if mode == 1:
-            print "This function is not implemented"
-#            ndatadec, datadec = self.convolutionInTime(dataOut.data)
+            datadec = self.convolutionInTime(dataOut.data)
         
         if mode == 2:
-            ndatadec, datadec = self.convolutionInFreqOpt(dataOut.data)
-        
-        
+            datadec = self.convolutionInFreqOpt(dataOut.data)
         
         dataOut.data = datadec
         
-        dataOut.heightList = dataOut.heightList[0:ndatadec]
+        dataOut.heightList = dataOut.heightList[0:self.ndatadec]
         
         dataOut.flagDecodeData = True #asumo q la data no esta decodificada
         
