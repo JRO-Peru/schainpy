@@ -665,18 +665,20 @@ class Decoder(Operation):
         return ndatadec, datadec 
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
-        if code == None:
-                code = dataOut.code
-        else:
-            code = numpy.array(code).reshape(nCode,nBaud)
-            dataOut.code = code
-            dataOut.nCode = nCode
-            dataOut.nBaud = nBaud
-            
-        if code == None:
-            return 1
-            
+        
         if not self.__isConfig:
+            
+            if code == None:
+                code = dataOut.code
+            else:
+                code = numpy.array(code).reshape(nCode,nBaud)
+                dataOut.code = code
+                dataOut.nCode = nCode
+                dataOut.nBaud = nBaud
+                
+            if code == None:
+                return 1
+            
             self.setup(code, dataOut.data.shape)
             self.__isConfig = True
         
@@ -687,7 +689,7 @@ class Decoder(Operation):
             print "This function is not implemented"
 #            ndatadec, datadec = self.convolutionInTime(dataOut.data)
         
-        if mode == 3:
+        if mode == 2:
             ndatadec, datadec = self.convolutionInFreqOpt(dataOut.data)
               
         dataOut.data = datadec
