@@ -214,14 +214,16 @@ def checkForRealPath(path, year, doy, set, ext):
     return fullfilename, filename
 
 def isDoyFolder(folder):
-    
+    print folder
     try:
         year = int(folder[1:5])
+        print year
     except:
         return 0
     
     try:
         doy = int(folder[5:8])
+        print doy
     except:
         return 0
     return 1
