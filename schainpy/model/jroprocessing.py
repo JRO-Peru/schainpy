@@ -656,7 +656,7 @@ class Decoder(Operation):
             return 1
             
         if not self.__isConfig:
-            self.setup(code, data.shape)
+            self.setup(code, dataOut.data.shape)
             self.__isConfig = True
         
         if mode == 0:
