@@ -602,7 +602,7 @@ class Decoder(Operation):
         
         self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
         
-        self.ndatadec = __nHeis - nBaud + 1
+        self.ndatadec = self.__nHeis - self.nBaud + 1
         
         self.datadecTime = numpy.zeros((self.__nChannels, self.ndatadec), dtype=numpy.complex)
         
