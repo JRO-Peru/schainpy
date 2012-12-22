@@ -649,6 +649,7 @@ class Decoder(Operation):
     def convolutionInTime(self, data):
         
         ini = time.time()
+        print self.datadecTime.shape, data.shape, code.shape
         
         code = self.code[self.__profIndex].reshape(1,-1)
         
@@ -676,6 +677,8 @@ class Decoder(Operation):
             
             self.setup(code, dataOut.data.shape)
             self.__isConfig = True
+        
+        print "DAta shape ", dataOut.data.shape
         
         if mode == 0:
             datadec = self.convolutionInFreq(dataOut.data)
