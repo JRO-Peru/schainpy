@@ -637,12 +637,14 @@ class Decoder(Operation):
         datadec = data[:,:-self.nBaud+1]
         ndatadec = self.__nHeis - self.nBaud + 1
         
+        print time.time() - ini, "prof = %d, nCode=%d" %(self.__profIndex, self.nCode)
+        
         if self.__profIndex == self.nCode-1: 
             self.__profIndex = 0             
             return ndatadec, datadec
                
         self.__profIndex += 1
-        print time.time() - ini
+        
         return ndatadec, datadec
     
     def convolutionInTime(self, data):
