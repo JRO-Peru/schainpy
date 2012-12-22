@@ -580,7 +580,7 @@ class Decoder(Operation):
         
         self.__isConfig = False
         
-    def setup(self, code):
+    def setup(self, code, shape):
         
         self.__profIndex = 0
         
@@ -589,15 +589,21 @@ class Decoder(Operation):
         self.nCode = len(code) 
         self.nBaud = len(code[0])
         
+        self.__nChannels, self.__nHeis = shape
+        
+        self.__codeBuffer = numpy.zeros(self.nCode, self.__nHeis)
+        
+        self.__codeBuffer[:,0:self.nBaud] = self.code[:,:]
+        
+        self.fft_code = numpy.conj(numpy.fft.fft(self.__codeBuffer, axis=1))
+        
+        
     def convolutionInFreq(self, data):
         
-        nchannel, ndata = data.shape
-        newcode = numpy.zeros(ndata)    
-        newcode[0:self.nBaud] = self.code[self.__profIndex]
+        fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
         fft_data = numpy.fft.fft(data, axis=1)
-        fft_code = numpy.conj(numpy.fft.fft(newcode))
-        fft_code = fft_code.reshape(1,len(fft_code))
+        
         
 #        conv = fft_data.copy()
 #        conv.fill(0)
@@ -607,7 +613,7 @@ class Decoder(Operation):
         data = numpy.fft.ifft(conv,axis=1)
         
         datadec = data[:,:-self.nBaud+1]
-        ndatadec = ndata - self.nBaud + 1
+        ndatadec = self.__nHeis - self.nBaud + 1
         
         if self.__profIndex == self.nCode-1: 
             self.__profIndex = 0             
@@ -620,14 +626,14 @@ class Decoder(Operation):
         
     def convolutionInTime(self, data):
         
-        nchannel, ndata = data.shape
-        newcode = self.code[self.__profIndex]
-        ndatadec = ndata - self.nBaud + 1
+        self.__nChannels, self.__nHeis = data.shape
+        self.__codeBuffer = self.code[self.__profIndex]
+        ndatadec = self.__nHeis - self.nBaud + 1
         
-        datadec = numpy.zeros((nchannel, ndatadec))
+        datadec = numpy.zeros((self.__nChannels, ndatadec))
         
-        for i in range(nchannel):
-            datadec[i,:] = numpy.correlate(data[i,:], newcode)
+        for i in range(self.__nChannels):
+            datadec[i,:] = numpy.correlate(data[i,:], self.__codeBuffer)
         
         if self.__profIndex == self.nCode-1: 
             self.__profIndex = 0             
@@ -650,7 +656,7 @@ class Decoder(Operation):
             return 1
             
         if not self.__isConfig:
-            self.setup(code)
+            self.setup(code, data.shape)
             self.__isConfig = True
         
         if mode == 0:
