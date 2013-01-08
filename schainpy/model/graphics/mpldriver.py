@@ -223,7 +223,13 @@ def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap=
     
     printLabels(ax, xlabel, ylabel, title)
     
-#    ax.collections.remove(ax.collections[0])
+    ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
+    
+def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
+    
+    printLabels(ax, xlabel, ylabel, title)
+    
+    ax.collections.remove(ax.collections[0])
     
     ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
 

@@ -183,7 +183,7 @@ class Axes:
     fig = None
     ax = None
     plot = None
-    
+    __missing = 1E30
     __firsttime = None
     
     __showprofile = False
@@ -194,6 +194,9 @@ class Axes:
     ymax = None
     zmin = None
     zmax = None
+    
+    x_buffer = None
+    z_buffer = None
     
     def __init__(self, *args):
         
@@ -211,6 +214,9 @@ class Axes:
         
         self.__firsttime = True
         self.idlineList = []
+        
+        self.x_buffer = numpy.array([])
+        self.z_buffer = numpy.array([])
         
     def setText(self, text):
         
@@ -410,5 +416,76 @@ class Axes:
                              xlabel=xlabel,
                              ylabel=ylabel,
                              title=title)
+    
+    def pcolorbuffer(self, x, y, z,
+               xmin=None, xmax=None,
+               ymin=None, ymax=None,
+               zmin=None, zmax=None,
+               xlabel='', ylabel='',
+               title='', rti = False, colormap='jet',
+               **kwargs):
+    
         
+        if self.__firsttime:
+            self.z_buffer = z
+            self.x_buffer = numpy.hstack((self.x_buffer, x))
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            if zmin == None: zmin = numpy.nanmin(z)
+            if zmax == None: zmax = numpy.nanmax(z)
+            
+            
+            self.plot = self.__driver.createPcolor(self.ax, self.x_buffer, y, z,
+                                                   xmin, xmax,
+                                                   ymin, ymax,
+                                                   zmin, zmax,
+                                                   xlabel=xlabel,
+                                                    ylabel=ylabel,
+                                                    title=title,
+                                                    colormap=colormap,
+                                                    **kwargs)
+            
+            if self.xmin == None: self.xmin = xmin
+            if self.xmax == None: self.xmax = xmax
+            if self.ymin == None: self.ymin = ymin
+            if self.ymax == None: self.ymax = ymax
+            if self.zmin == None: self.zmin = zmin
+            if self.zmax == None: self.zmax = zmax
+            
+            self.__firsttime = False
+            return
+        
+        if rti:
+            if x[0]>self.x_buffer[-1]:
+                gap = z.copy()
+                gap[:] = self.__missing
+                self.z_buffer = numpy.hstack((self.z_buffer, gap))
+                self.z_buffer = numpy.ma.masked_inside(self.z_buffer,0.99*self.__missing,1.01*self.__missing)
+                self.x_buffer = numpy.hstack((self.x_buffer, x))
+            
+            else:
+                self.x_buffer = numpy.hstack((self.x_buffer, x[-1]))
+            
+            self.z_buffer = numpy.hstack((self.z_buffer, z))
+            
+            newydim = len(y)
+            
+#            self.z_buffer = numpy.ma.masked_inside(self.z_buffer,0.99*self.__missing,1.01*self.__missing)
+            
+            z_buffer = self.z_buffer.reshape(-1,newydim)
+            
+            self.__driver.addpcolorbuffer(self.ax, self.x_buffer, y, z_buffer, self.zmin, self.zmax,
+                                    xlabel=xlabel,
+                                    ylabel=ylabel,
+                                    title=title,
+                                    colormap=colormap)
+            return
+        
+        self.__driver.pcolor(self.plot, z,
+                             xlabel=xlabel,
+                             ylabel=ylabel,
+                             title=title)
         

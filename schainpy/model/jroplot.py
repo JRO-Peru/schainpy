@@ -312,7 +312,7 @@ class RTIPlot(Figure):
             title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
             zdB = avgdB[i].reshape((1,-1))
-            axes.pcolor(x, y, zdB,
+            axes.pcolorbuffer(x, y, zdB,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', cbsize="1%")
@@ -816,7 +816,7 @@ class CoherenceMap(Figure):
             
             title = "Coherence %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2]
-            axes.pcolor(x, y, z,
+            axes.pcolorbuffer(x, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=coherence_cmap, cbsize="1%")
@@ -838,7 +838,7 @@ class CoherenceMap(Figure):
             
             title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2 + counter]
-            axes.pcolor(x, y, z,
+            axes.pcolorbuffer(x, y, z,
                         xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=phase_cmap, cbsize="1%")
