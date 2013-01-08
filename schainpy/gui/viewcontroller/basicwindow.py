@@ -306,7 +306,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
        
         for i in self.__arbolDict:            
             if self.__arbolDict[i]==self.indexclick:
-               name=str(self.nameProjectTxt.text()) 
+               
+                
 #               self.model.clear()
 #               self.parentItem = self.model.invisibleRootItem()
 #               self.__arbolDict[i]= QtGui.QStandardItem(QtCore.QString(name+" %0").arg(self.idp))
@@ -318,7 +319,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #               print "keys",self.__arbolDict.keys()
                self.description="Think"          
                id=i
-               #name=str(self.nameProjectTxt.text())
+               name=str(self.nameProjectTxt.text())
                desc=str(self.description)
                 
                self.projectObj.setup(id = id, name=name, description=desc)
@@ -578,24 +579,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 if i.name=='RTIPlot':
                     i.addParameter(name='n', value='2', format='int')
                     i.addParameter(name='overlapping', value='1', format='int')
-                      
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+                            
         
       #----------------------------BASICO-----------------------------------#  
                 
@@ -759,7 +743,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
        
         print 'uporprojectObj.id','inputId', uporprojectObj.id,inputId       
         self.procUnitConfObj1 = self.projectObj.addProcUnit(datatype=datatype, inputId=inputId)
-        self.__upObjDict[inputId]= self.procUnitConfObj1    
+        self.__upObjDict[self.procUnitConfObj1.id]= self.procUnitConfObj1    
        
         self.parentItem=self.__arbolDict[uporprojectObj.id]
         #print "i","self.__arbolDict[i]",i ,self.__arbolDict[i] 
