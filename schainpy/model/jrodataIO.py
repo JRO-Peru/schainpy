@@ -1280,7 +1280,7 @@ class VoltageReader(JRODataReader):
         
         self.path = None
         
-        self.profileIndex = 9999
+        self.profileIndex = 2**32-1
 
         self.delay  = 3   #seconds
         
