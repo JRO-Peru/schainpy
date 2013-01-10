@@ -314,6 +314,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     
     flagNoMoreFiles = 0
     
+    __isFirstTimeOnline = 1
+    
     def __init__(self):
         
         """
@@ -638,13 +640,39 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             time.sleep( self.delay )
             
         
-        return 0
+        return 0        
+
+    def __jumpToLastBlock(self):
+        
+        if not(self.__isFirstTimeOnline):
+            return
+        
+        csize = self.fileSize - self.fp.tell()
+        
+        #sata el primer bloque de datos
+        if csize > self.processingHeaderObj.blockSize:
+            self.fp.seek(self.fp.tell() + self.processingHeaderObj.blockSize)
+        else:
+            return
+        
+        csize = self.fileSize - self.fp.tell()
+        neededsize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        factor = int(csize/neededsize)
+        if factor > 0:
+            self.fp.seek(self.fp.tell() + factor*neededsize)
+        
+        self.flagIsNewFile = 0
+        self.__isFirstTimeOnline = 0
+        
 
     def __setNewBlock(self):
         
         if self.fp == None:
             return 0
-
+        
+        if self.online:
+            self.__jumpToLastBlock()
+        
         if self.flagIsNewFile:
             return 1
         
@@ -663,7 +691,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             return 0
 
         deltaTime = self.basicHeaderObj.utc - self.lastUTTime #
-
+        
         self.flagTimeBlock = 0
 
         if deltaTime > self.maxTimeStep:
@@ -1291,6 +1319,8 @@ class VoltageReader(JRODataReader):
         self.nReadBlocks = 0
         
         self.flagIsNewFile = 1
+        
+        self.__isFirstTimeOnline = 1
     
         self.ippSeconds = 0
     
@@ -1883,6 +1913,8 @@ class SpectraReader(JRODataReader):
         self.nReadBlocks = 0
         
         self.flagIsNewFile = 1
+        
+        self.__isFirstTimeOnline = 1
     
         self.ippSeconds = 0
     
