@@ -157,6 +157,11 @@ class Figure:
         fullpath = os.path.split(filename)[0]
         
         if not os.path.exists(fullpath):
+            subpath = os.path.split(fullpath)[0]
+            
+            if not os.path.exists(subpath):
+                os.mkdir(subpath)
+                
             os.mkdir(fullpath)
         
         self.__driver.saveFigure(self.fig, filename, *args)
