@@ -596,7 +596,7 @@ class Decoder(Operation):
         
         self.__nChannels, self.__nHeis = shape
         
-        __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.float32)
+        __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
         
         __codeBuffer[:,0:self.nBaud] = self.code
         
@@ -1219,6 +1219,10 @@ class IncohInt(Operation):
         return avgdatatime, avgdata_spc, avgdata_cspc, avgdata_dc
         
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
+        
+        if n==1:
+            dataOut.flagNoData = False
+            return
         
         if not self.__isConfig:
             self.setup(n, timeInterval, overlapping)
