@@ -116,7 +116,7 @@ def isFileinThisTime(filename, startTime, endTime):
     if not ((startTime <= thisTime) and (endTime > thisTime)):
         return 0
     
-    return 1
+    return thisTime
 
 def getlastFileFromPath(path, ext):
     """
@@ -314,6 +314,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     
     flagNoMoreFiles = 0
     
+    datetimeList = []
+    
     __isFirstTimeOnline = 1
     
     def __init__(self):
@@ -347,6 +349,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                             walk=True):
         
         pathList = []
+        dateList = []
         
         if not walk:
             pathList.append(path)
@@ -376,16 +379,23 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                     continue
                 
                 pathList.append(os.path.join(path,match[0],expLabel))
+                dateList.append(thisDate)
+                
                 thisDate += datetime.timedelta(1)
         
         if pathList == []:
             print "Any folder was found for the date range: %s-%s" %(startDate, endDate)
             return None, None
         
-        print "%d folder(s) was(were) found for the date range: %s-%s" %(len(pathList), startDate, endDate)
+        print "%d folder(s) was(were) found for the date range: %s - %s" %(len(pathList), startDate, endDate)
             
         filenameList = []
-        for thisPath in pathList:
+        datetimeList = []
+        
+        for i in range(len(pathList)):
+            
+            thisPath = pathList[i]
+            thisDate = dateList[i]
             
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
@@ -393,17 +403,26 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             for file in fileList:
                 
                 filename = os.path.join(thisPath,file)
+                thisTime = isFileinThisTime(filename, startTime, endTime)
                 
-                if isFileinThisTime(filename, startTime, endTime):
-                    filenameList.append(filename)
-                    
+                if thisTime == 0:
+                    continue
+                
+                filenameList.append(filename)
+                datetimeList.append(datetime.datetime.combine(thisDate,thisTime))
+                
         if not(filenameList):
             print "Any file was found for the time range %s - %s" %(startTime, endTime)
             return None, None
         
         print "%d file(s) was(were) found for the time range: %s - %s" %(len(filenameList), startTime, endTime)
+        print
+        
+        for i in range(len(filenameList)):
+            print "%s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
 
         self.filenameList = filenameList
+        self.datetimeList = datetimeList
         
         return pathList, filenameList
     
@@ -917,7 +936,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     def printNumberOfBlock(self):
         
         if self.flagIsNewBlock:
-            print "Block No. %04d, Total blocks %04d" %(self.basicHeaderObj.dataBlock, self.nTotalBlocks)
+            print "Block No. %04d, Total blocks %04d -> %s" %(self.basicHeaderObj.dataBlock, self.nTotalBlocks, self.dataOut.datatime.ctime())
             
     def printInfo(self):
         
