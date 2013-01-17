@@ -6,7 +6,7 @@ import pylab as pl
 
 import time
 
-def getInverseFilter(code, lenfilter=None):
+def getInverseFilter(code, lenfilter=8*28):
     
     nBauds = len(code)
     
@@ -140,7 +140,7 @@ signalout3 = filter_decoding(signal, code)
 pl.plot(numpy.abs(signalout[0]))
 #pl.plot(numpy.abs(signalout1[0]))
 #pl.plot(numpy.abs(signalout2[0]))
-pl.plot(numpy.abs(signalout3[0])+1.0)
+pl.plot(numpy.abs(signalout3[0])+0.5)
 pl.show()
 
         
