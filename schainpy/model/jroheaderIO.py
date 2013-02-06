@@ -24,9 +24,12 @@ class Header:
     
     def printInfo(self):
         
+        print "#"*100
+        print self.__class__.__name__.upper()
+        print "#"*100
         for key in self.__dict__.keys():
             print "%s = %s" %(key, self.__dict__[key])
-
+        
 class BasicHeader(Header):
     
     size = None

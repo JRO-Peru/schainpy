@@ -107,16 +107,17 @@ def isFileinThisTime(filename, startTime, endTime):
     sts = basicHeaderObj.read(fp)
     fp.close()
     
+    thisDatetime = basicHeaderObj.datatime
     thisTime = basicHeaderObj.datatime.time()
     
     if not(sts):
         print "Skipping the file %s because it has not a valid header" %(filename)
-        return 0
+        return None
     
     if not ((startTime <= thisTime) and (endTime > thisTime)):
-        return 0
+        return None
     
-    return thisTime
+    return thisDatetime
 
 def getlastFileFromPath(path, ext):
     """
@@ -318,6 +319,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     
     __isFirstTimeOnline = 1
     
+    __printInfo = True
+    
     def __init__(self):
         
         """
@@ -349,11 +352,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                             walk=True):
         
         pathList = []
-        dateList = []
         
         if not walk:
             pathList.append(path)
-            
+        
         else:
             dirList = []
             for thisPath in os.listdir(path):
@@ -379,7 +381,6 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                     continue
                 
                 pathList.append(os.path.join(path,match[0],expLabel))
-                dateList.append(thisDate)
                 
                 thisDate += datetime.timedelta(1)
         
@@ -395,7 +396,6 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         for i in range(len(pathList)):
             
             thisPath = pathList[i]
-            thisDate = dateList[i]
             
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
@@ -403,13 +403,13 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             for file in fileList:
                 
                 filename = os.path.join(thisPath,file)
-                thisTime = isFileinThisTime(filename, startTime, endTime)
+                thisDatetime = isFileinThisTime(filename, startTime, endTime)
                 
-                if thisTime == 0:
+                if not(thisDatetime):
                     continue
                 
                 filenameList.append(filename)
-                datetimeList.append(datetime.datetime.combine(thisDate,thisTime))
+                datetimeList.append(thisDatetime)
                 
         if not(filenameList):
             print "Any file was found for the time range %s - %s" %(startTime, endTime)
@@ -452,8 +452,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         """
         dirList = []
         
-        if walk:
-            
+        if not walk:
+            fullpath = path
+        
+        else:
             #Filtra solo los directorios
             for thisPath in os.listdir(path):
                 if not os.path.isdir(os.path.join(path,thisPath)):
@@ -470,9 +472,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 
             doypath = dirList[-1]
             fullpath = os.path.join(path, doypath, expLabel)
-        
-        else:
-            fullpath = path
+            
             
         print "%s folder was found: " %(fullpath )
 
@@ -491,8 +491,6 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         set  = int( filename[8:11] )        
         
         return fullpath, filename, year, doy, set
-    
-
 
     def __setNextFileOffline(self):
         
@@ -940,10 +938,15 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             
     def printInfo(self):
         
-        print self.basicHeaderObj.printInfo()
-        print self.systemHeaderObj.printInfo()
-        print self.radarControllerHeaderObj.printInfo()
-        print self.processingHeaderObj.printInfo()
+        if self.__printInfo == False:
+            return
+        
+        self.basicHeaderObj.printInfo()
+        self.systemHeaderObj.printInfo()
+        self.radarControllerHeaderObj.printInfo()
+        self.processingHeaderObj.printInfo()
+        
+        self.__printInfo = False
         
     
     def run(self, **kwargs):
