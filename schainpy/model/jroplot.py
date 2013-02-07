@@ -1001,4 +1001,308 @@ class RTIfromNoise(Figure):
             self.__isConfig = False
             del self.xdata
             del self.ydata
+
+
+class SpectraHeisScope(Figure):
+    
+    
+    __isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'spc'
+    
+    def __init__(self):
+        
+        self.__isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 230
+        self.HEIGHT = 250
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        
+    def getSubplots(self):
+        
+        ncol = int(numpy.sqrt(self.nplots)+0.9)
+        nrow = int(self.nplots*1./ncol + 0.9)
+        
+        return nrow, ncol
+    
+    def setup(self, idfigure, nplots, wintitle):
+        
+        showprofile = False
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+        if showprofile:
+            ncolspan = 3
+            colspan = 2
+            self.__nsubplots = 2
+        
+        self.createFigure(idfigure = idfigure,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+        
+        nrow, ncol = self.getSubplots()
+        
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+                
+                if counter >= self.nplots:
+                    break
+                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+                
+                if showprofile:
+                    self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
+                    
+                counter += 1
+
+#    __isConfig = None    
+#    def __init__(self):
+#        
+#        self.__isConfig = False
+#        self.WIDTH = 600
+#        self.HEIGHT = 200
+#    
+#    def getSubplots(self):
+#        
+#        nrow = self.nplots
+#        ncol = 3
+#        return nrow, ncol
+#    
+#    def setup(self, idfigure, nplots, wintitle):
+#        
+#        self.nplots = nplots
+#        
+#        self.createFigure(idfigure, wintitle)
+#        
+#        nrow,ncol = self.getSubplots()
+#        colspan = 3
+#        rowspan = 1
+#        
+#        for i in range(nplots):
+#            self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
+    
+    def run(self, dataOut, idfigure, wintitle="", channelList=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, save=False,
+            figpath='./', figfile=None):
+        
+        """
+        
+        Input:
+            dataOut         :
+            idfigure        :
+            wintitle        :
+            channelList     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+        """
+        
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+        
+#        x = dataOut.heightList
+        c   =  3E8 
+        deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
+        #deberia cambiar para el caso de 1Mhz y 100KHz
+        x = numpy.arange(-1*dataOut.nHeights/2.,dataOut.nHeights/2.)*(c/(2*deltaHeight*dataOut.nHeights*1000))
+        x= x/(10000.0)
+#        y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
+#        y = y.real
+        datadB = 10.*numpy.log10(dataOut.data_spc)
+        y = datadB
+        
+        thisDatetime = dataOut.datatime
+        title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Frequency"
+        ylabel = "Intensity (dB)"
+        
+        if not self.__isConfig:
+            nplots = len(channelIndexList)
+            
+            self.setup(idfigure=idfigure,
+                       nplots=nplots,
+                       wintitle=wintitle)
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+                
+            self.__isConfig = True
+        
+        self.setWinTitle(title)
+        
+        for i in range(len(self.axesList)):
+            title = "Channel %d" %(i)
+            axes = self.axesList[i]
+            ychannel = y[i,:]
+            axes.pline(x, ychannel,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        xlabel=xlabel, ylabel=ylabel, title=title)
+        
+        self.draw()
+            
+        if save:
+            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            if figfile == None:
+                figfile = self.getFilename(name = date)
+            
+            self.saveFigure(figpath, figfile)
+
+
+class RTIfromSpectraHeis(Figure):
+    
+    __isConfig = None
+    __nsubplots = None
+
+    PREFIX = 'rtinoise'
+    
+    def __init__(self):
+        
+        self.timerange = 24*60*60
+        self.__isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 820
+        self.HEIGHT = 200
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.xdata = None
+        self.ydata = None
+        
+    def getSubplots(self):
+        
+        ncol = 1
+        nrow = 1
+        
+        return nrow, ncol
+    
+    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+               
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 7
+        colspan = 6
+        self.__nsubplots = 2
+        
+        self.createFigure(idfigure = idfigure,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH+self.WIDTHPROF,
+                          heightplot = self.HEIGHT+self.HEIGHTPROF)
+        
+        nrow, ncol = self.getSubplots()
+        
+        self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
+        
+                        
+    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
+            xmin=None, xmax=None, ymin=None, ymax=None,
+            timerange=None,
+            save=False, figpath='./', figfile=None):
+        
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+            channelList = dataOut.channelList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+        
+        if timerange != None:
+            self.timerange = timerange
+        
+        tmin = None
+        tmax = None
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
+        
+        factor = 1
+        data = dataOut.data_spc/factor
+        data = numpy.average(data,axis=1)
+        datadB = 10*numpy.log10(data)
+        
+#        factor = dataOut.normFactor
+#        noise = dataOut.getNoise()/factor
+#        noisedB = 10*numpy.log10(noise)
+        
+        thisDatetime = dataOut.datatime
+        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = "Local Time"
+        ylabel = "Intensity (dB)"
+        
+        if not self.__isConfig:
+            
+            nplots = 1
+            
+            self.setup(idfigure=idfigure,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile)
+            
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if ymin == None: ymin = numpy.nanmin(datadB)
+            if ymax == None: ymax = numpy.nanmax(datadB)
+            
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.__isConfig = True
+        
+            self.xdata = numpy.array([])
+            self.ydata = numpy.array([])
+        
+        self.setWinTitle(title)
+            
+        
+        title = "RTI Noise %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        
+        legendlabels = ["channel %d"%idchannel for idchannel in channelList]
+        axes = self.axesList[0]
+        
+        self.xdata = numpy.hstack((self.xdata, x[0:1]))
+        
+        if len(self.ydata)==0:
+            self.ydata = datadB[channelIndexList].reshape(-1,1)
+        else:
+            self.ydata = numpy.hstack((self.ydata, datadB[channelIndexList].reshape(-1,1)))
+        
+        
+        axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
+                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
+                    XAxisAsTime=True
+                    )
+            
+        self.draw()
+        
+        if save:
+            
+            if figfile == None:
+                figfile = self.getFilename(name = self.name)
+            
+            self.saveFigure(figpath, figfile)
+            
+        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+            self.__isConfig = False
+            del self.xdata
+            del self.ydata
+
+
                
