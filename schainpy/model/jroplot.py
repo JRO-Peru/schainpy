@@ -1149,9 +1149,9 @@ class SpectraHeisScope(Figure):
         self.setWinTitle(title)
         
         for i in range(len(self.axesList)):
-            title = "Channel %d" %(i)
-            axes = self.axesList[i]
             ychannel = y[i,:]
+            title = "Channel %d - peak:%.2f" %(i,numpy.max(ychannel))
+            axes = self.axesList[i]
             axes.pline(x, ychannel,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                         xlabel=xlabel, ylabel=ylabel, title=title)
