@@ -450,18 +450,17 @@ class ProcessingHeader(Header):
             spectraComb = numpy.array([],numpy.dtype('u1'))
             spectraComb = self.spectraComb
             spectraComb.tofile(fp)
-
-            
-        if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
-            nCode = numpy.array([self.nCode], numpy.dtype('u4')) #Probar con un dato que almacene codigo, hasta el momento no se hizo la prueba
-            nCode.tofile(fp)
-
-            nBaud = numpy.array([self.nBaud], numpy.dtype('u4'))
-            nBaud.tofile(fp)
-
-            code = self.code.reshape(self.nCode*self.nBaud)
-            code = code.astype(numpy.dtype('<f4'))
-            code.tofile(fp)
+        
+#        if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
+#            nCode = numpy.array([self.nCode], numpy.dtype('u4')) #Probar con un dato que almacene codigo, hasta el momento no se hizo la prueba
+#            nCode.tofile(fp)
+#
+#            nBaud = numpy.array([self.nBaud], numpy.dtype('u4'))
+#            nBaud.tofile(fp)
+#
+#            code = self.code.reshape(self.nCode*self.nBaud)
+#            code = code.astype(numpy.dtype('<f4'))
+#            code.tofile(fp)
             
         return 1
 

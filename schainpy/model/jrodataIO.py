@@ -2483,7 +2483,7 @@ class SpectraWriter(JRODataWriter):
         self.getBasicHeader()
         
         processingHeaderSize = 40 # bytes    
-        self.processingHeaderObj.dtype = 0 # Voltage
+        self.processingHeaderObj.dtype = 1 # Spectra
         self.processingHeaderObj.blockSize = self.__getBlockSize()
         self.processingHeaderObj.profilesPerBlock = self.dataOut.nFFTPoints
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
@@ -2508,16 +2508,17 @@ class SpectraWriter(JRODataWriter):
             self.processingHeaderObj.spectraComb = spectraComb
             sizeOfSpcComb = len(spectraComb)
             processingHeaderSize += sizeOfSpcComb
-        
-        if self.dataOut.code != None:
-            self.processingHeaderObj.code = self.dataOut.code
-            self.processingHeaderObj.nCode = self.dataOut.nCode
-            self.processingHeaderObj.nBaud = self.dataOut.nBaud
-            nCodeSize = 4 # bytes
-            nBaudSize = 4 # bytes
-            codeSize = 4 # bytes
-            sizeOfCode = int(nCodeSize + nBaudSize + codeSize * self.dataOut.nCode * self.dataOut.nBaud)
-            processingHeaderSize += sizeOfCode
+            
+#        The processing header should not have information about code
+#        if self.dataOut.code != None:
+#            self.processingHeaderObj.code = self.dataOut.code
+#            self.processingHeaderObj.nCode = self.dataOut.nCode
+#            self.processingHeaderObj.nBaud = self.dataOut.nBaud
+#            nCodeSize = 4 # bytes
+#            nBaudSize = 4 # bytes
+#            codeSize = 4 # bytes
+#            sizeOfCode = int(nCodeSize + nBaudSize + codeSize * self.dataOut.nCode * self.dataOut.nBaud)
+#            processingHeaderSize += sizeOfCode
         
         if self.processingHeaderObj.nWindows != 0:
             self.processingHeaderObj.firstHeight = self.dataOut.heightList[0]
