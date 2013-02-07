@@ -1130,7 +1130,8 @@ class SpectraHeisScope(Figure):
         
         thisDatetime = dataOut.datatime
         title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Frequency"
+        xlabel = "Frequency x 10000"
+        xlabel = ""
         ylabel = "Intensity (dB)"
         
         if not self.__isConfig:
