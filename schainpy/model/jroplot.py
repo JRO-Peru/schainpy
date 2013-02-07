@@ -1022,6 +1022,7 @@ class SpectraHeisScope(Figure):
         self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
+        self.counterftp = 0
         
     def getSubplots(self):
         
@@ -1092,7 +1093,7 @@ class SpectraHeisScope(Figure):
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None):
+            figpath='./', figfile=None, ftp=False, ftpratio=1):
         
         """
         
@@ -1164,6 +1165,12 @@ class SpectraHeisScope(Figure):
                 figfile = self.getFilename(name = date)
             
             self.saveFigure(figpath, figfile)
+            
+            self.counterftp += 1
+            if (ftp and (self.counterftp==ftpratio)):
+                figfilename = os.path.join(figpath,figfile)
+                self.sendByFTP(figfilename)
+                self.counterftp = 0
 
 
 class RTIfromSpectraHeis(Figure):
@@ -1183,6 +1190,7 @@ class RTIfromSpectraHeis(Figure):
         self.HEIGHT = 200
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
+        self.counterftp = 0
         self.xdata = None
         self.ydata = None
         
@@ -1215,7 +1223,7 @@ class RTIfromSpectraHeis(Figure):
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None):
+            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1271,7 +1279,8 @@ class RTIfromSpectraHeis(Figure):
         self.setWinTitle(title)
             
         
-        title = "RTI %s" %(thisDatetime.strftime("%d-%b-%Y"))
+#        title = "RTI %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = "RTI-Noise - %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         
         legendlabels = ["channel %d"%idchannel for idchannel in channelList]
         axes = self.axesList[0]
@@ -1286,7 +1295,7 @@ class RTIfromSpectraHeis(Figure):
         
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
                     xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
-                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
+                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='.', markersize=8, linestyle="solid",
                     XAxisAsTime=True
                     )
             
@@ -1298,6 +1307,12 @@ class RTIfromSpectraHeis(Figure):
                 figfile = self.getFilename(name = self.name)
             
             self.saveFigure(figpath, figfile)
+            
+            self.counterftp += 1
+            if (ftp and (self.counterftp==ftpratio)):
+                figfilename = os.path.join(figpath,figfile)
+                self.sendByFTP(figfilename)
+                self.counterftp = 0
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
