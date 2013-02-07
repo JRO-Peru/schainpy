@@ -1271,7 +1271,7 @@ class RTIfromSpectraHeis(Figure):
         self.setWinTitle(title)
             
         
-        title = "RTI Noise %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = "RTI %s" %(thisDatetime.strftime("%d-%b-%Y"))
         
         legendlabels = ["channel %d"%idchannel for idchannel in channelList]
         axes = self.axesList[0]
