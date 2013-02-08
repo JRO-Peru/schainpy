@@ -1614,3 +1614,8 @@ class IncohInt4SpectraHeis(Operation):
             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nIncohInt
 #            dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False
+
+
+
+
+            

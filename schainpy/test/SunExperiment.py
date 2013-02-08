@@ -59,6 +59,10 @@ opObj11.addParameter(name='figpath', value='/Users/dsuarez/Pictures/sun_pics', f
 opObj11.addParameter(name='ftp', value='1', format='int')
 opObj11.addParameter(name='ftpratio', value='10', format='int')
 
+opObj11 = procUnitConfObj1.addOperation(name='SpectraHeisWriter', optype='other')
+opObj11.addParameter(name='wrpath', value='/Users/dsuarez/Remote', format='str')
+#opObj11.addParameter(name='blocksPerFile', value='200', format='int')
+
 
 print "Escribiendo el archivo XML"
 controllerObj.writeXml(filename)
