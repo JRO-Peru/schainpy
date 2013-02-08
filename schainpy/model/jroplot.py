@@ -1155,7 +1155,7 @@ class SpectraHeisScope(Figure):
             axes = self.axesList[i]
             axes.pline(x, ychannel,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                        xlabel=xlabel, ylabel=ylabel, title=title)
+                        xlabel=xlabel, ylabel=ylabel, title=title, grid='both')
         
         self.draw()
             
@@ -1295,7 +1295,7 @@ class RTIfromSpectraHeis(Figure):
         
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
                     xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
-                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='.', markersize=8, linestyle="solid",
+                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='.', markersize=8, linestyle="solid", grid='both',
                     XAxisAsTime=True
                     )
             
