@@ -30,7 +30,7 @@ class CrossSpectraPlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -41,7 +41,8 @@ class CrossSpectraPlot(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=True)
         
         nrow, ncol = self.getSubplots()
         
@@ -55,7 +56,7 @@ class CrossSpectraPlot(Figure):
     def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             save=False, figpath='./', figfile=None,
-            power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r'):
+            power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True):
         
         """
         
@@ -112,7 +113,8 @@ class CrossSpectraPlot(Figure):
             self.setup(idfigure=idfigure,
                        nplots=nplots,
                        wintitle=wintitle,
-                       showprofile=showprofile)
+                       showprofile=showprofile,
+                       show=show)
             
             if xmin == None: xmin = numpy.nanmin(x)
             if xmax == None: xmax = numpy.nanmax(x)
@@ -203,7 +205,7 @@ class RTIPlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -218,7 +220,8 @@ class RTIPlot(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
         
         nrow, ncol = self.getSubplots()
         
@@ -239,7 +242,7 @@ class RTIPlot(Figure):
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1):
+            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1, show=True):
         
         """
         
@@ -294,7 +297,8 @@ class RTIPlot(Figure):
             self.setup(idfigure=idfigure,
                        nplots=nplots,
                        wintitle=wintitle,
-                       showprofile=showprofile)
+                       showprofile=showprofile,
+                       show=show)
             
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(y)
@@ -369,7 +373,7 @@ class SpectraPlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -384,7 +388,8 @@ class SpectraPlot(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
         
         nrow, ncol = self.getSubplots()
         
@@ -404,7 +409,7 @@ class SpectraPlot(Figure):
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None):
+            save=False, figpath='./', figfile=None, show=True):
         
         """
         
@@ -455,7 +460,8 @@ class SpectraPlot(Figure):
             self.setup(idfigure=idfigure,
                        nplots=nplots,
                        wintitle=wintitle,
-                       showprofile=showprofile)
+                       showprofile=showprofile,
+                       show=show)
             
             if xmin == None: xmin = numpy.nanmin(x)
             if xmax == None: xmax = numpy.nanmax(x)
@@ -512,11 +518,13 @@ class Scope(Figure):
         ncol = 3
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle):
+    def setup(self, idfigure, nplots, wintitle, show):
         
         self.nplots = nplots
         
-        self.createFigure(idfigure, wintitle)
+        self.createFigure(idfigure=idfigure, 
+                          wintitle=wintitle, 
+                          show=show)
         
         nrow,ncol = self.getSubplots()
         colspan = 3
@@ -529,7 +537,7 @@ class Scope(Figure):
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None):
+            figpath='./', figfile=None, show=True):
         
         """
         
@@ -567,7 +575,8 @@ class Scope(Figure):
             
             self.setup(idfigure=idfigure,
                        nplots=nplots,
-                       wintitle=wintitle)
+                       wintitle=wintitle,
+                       show=show)
             
             if xmin == None: xmin = numpy.nanmin(x)
             if xmax == None: xmax = numpy.nanmax(x)
@@ -616,7 +625,7 @@ class ProfilePlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle):
+    def setup(self, idfigure, nplots, wintitle, show):
         
         self.nplots = nplots
         
@@ -626,7 +635,8 @@ class ProfilePlot(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH,
-                          heightplot = self.HEIGHT)
+                          heightplot = self.HEIGHT,
+                          show=show)
         
         nrow, ncol = self.getSubplots()
         
@@ -637,7 +647,7 @@ class ProfilePlot(Figure):
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None,
-            save=False, figpath='./', figfile=None):
+            save=False, figpath='./', figfile=None, show=True):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -668,7 +678,8 @@ class ProfilePlot(Figure):
             
             self.setup(idfigure=idfigure,
                        nplots=nplots,
-                       wintitle=wintitle)
+                       wintitle=wintitle,
+                       show=show)
             
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
@@ -724,7 +735,7 @@ class CoherenceMap(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
         self.__showprofile = showprofile
         self.nplots = nplots
         
@@ -738,7 +749,8 @@ class CoherenceMap(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=True)
         
         nrow, ncol = self.getSubplots()
         
@@ -754,7 +766,7 @@ class CoherenceMap(Figure):
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
             save=False, figpath='./', figfile=None, ftp=False, ftpratio=1,
-            coherence_cmap='jet', phase_cmap='RdBu_r'):
+            coherence_cmap='jet', phase_cmap='RdBu_r', show=True):
                 
         if pairsList == None:
             pairsIndexList = dataOut.pairsIndexList
@@ -789,7 +801,8 @@ class CoherenceMap(Figure):
             self.setup(idfigure=idfigure,
                        nplots=nplots,
                        wintitle=wintitle,
-                       showprofile=showprofile)
+                       showprofile=showprofile,
+                       show=show)
             
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(y)
@@ -897,7 +910,7 @@ class RTIfromNoise(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -909,7 +922,8 @@ class RTIfromNoise(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH+self.WIDTHPROF,
-                          heightplot = self.HEIGHT+self.HEIGHTPROF)
+                          heightplot = self.HEIGHT+self.HEIGHTPROF,
+                          show=show)
         
         nrow, ncol = self.getSubplots()
         
@@ -919,7 +933,7 @@ class RTIfromNoise(Figure):
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None):
+            save=False, figpath='./', figfile=None, show=True):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -954,7 +968,8 @@ class RTIfromNoise(Figure):
             self.setup(idfigure=idfigure,
                        nplots=nplots,
                        wintitle=wintitle,
-                       showprofile=showprofile)
+                       showprofile=showprofile,
+                       show=show)
             
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(noisedB)
@@ -1031,7 +1046,7 @@ class SpectraHeisScope(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle):
+    def setup(self, idfigure, nplots, wintitle, show):
         
         showprofile = False
         self.__showprofile = showprofile
@@ -1047,7 +1062,8 @@ class SpectraHeisScope(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
-                          heightplot = self.HEIGHT + self.HEIGHTPROF)
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show = show)
         
         nrow, ncol = self.getSubplots()
         
@@ -1093,7 +1109,7 @@ class SpectraHeisScope(Figure):
     
     def run(self, dataOut, idfigure, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None, ftp=False, ftpratio=1):
+            figpath='./', figfile=None, ftp=False, ftpratio=1, show=True):
         
         """
         
@@ -1138,7 +1154,8 @@ class SpectraHeisScope(Figure):
             
             self.setup(idfigure=idfigure,
                        nplots=nplots,
-                       wintitle=wintitle)
+                       wintitle=wintitle,
+                       show=show)
             
             if xmin == None: xmin = numpy.nanmin(x)
             if xmax == None: xmax = numpy.nanmax(x)
@@ -1156,6 +1173,7 @@ class SpectraHeisScope(Figure):
             axes.pline(x, ychannel,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                         xlabel=xlabel, ylabel=ylabel, title=title, grid='both')
+        
         
         self.draw()
             
@@ -1201,7 +1219,7 @@ class RTIfromSpectraHeis(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True):
+    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -1213,7 +1231,8 @@ class RTIfromSpectraHeis(Figure):
         self.createFigure(idfigure = idfigure,
                           wintitle = wintitle,
                           widthplot = self.WIDTH+self.WIDTHPROF,
-                          heightplot = self.HEIGHT+self.HEIGHTPROF)
+                          heightplot = self.HEIGHT+self.HEIGHTPROF,
+                          show = show)
         
         nrow, ncol = self.getSubplots()
         
@@ -1223,7 +1242,7 @@ class RTIfromSpectraHeis(Figure):
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1):
+            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1, show=True):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1264,7 +1283,8 @@ class RTIfromSpectraHeis(Figure):
             self.setup(idfigure=idfigure,
                        nplots=nplots,
                        wintitle=wintitle,
-                       showprofile=showprofile)
+                       showprofile=showprofile,
+                       show=show)
             
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(datadB)

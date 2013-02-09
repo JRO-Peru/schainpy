@@ -18,21 +18,23 @@ from matplotlib.ticker import *
 #Actualizacion de las funciones del driver
 ###########################################
 
-def createFigure(idfigure, wintitle, width, height, facecolor="w"):
+def createFigure(idfigure, wintitle, width, height, facecolor="w", show=True):
     
     matplotlib.pyplot.ioff()
     fig = matplotlib.pyplot.figure(num=idfigure, facecolor=facecolor)
     fig.canvas.manager.set_window_title(wintitle)
     fig.canvas.manager.resize(width, height)
     matplotlib.pyplot.ion()
-    matplotlib.pyplot.show()
+    if show:
+        matplotlib.pyplot.show()
     
     return fig
 
-def closeFigure():
+def closeFigure(show=True):
     
     matplotlib.pyplot.ioff()
-    matplotlib.pyplot.show()
+    if show:
+        matplotlib.pyplot.show()
     
     return
 

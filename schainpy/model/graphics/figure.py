@@ -86,7 +86,7 @@ class Figure:
     
         raise ValueError, "This method has been replaced with createFigure"
     
-    def createFigure(self, idfigure, wintitle, widthplot=None, heightplot=None):
+    def createFigure(self, idfigure, wintitle, widthplot=None, heightplot=None, show=True):
         
         """
         Crea la figura de acuerdo al driver y parametros seleccionados seleccionados.
@@ -111,10 +111,11 @@ class Figure:
         
         self.widthscreen, self.heightscreen = self.getScreenDim(widthplot, heightplot)
         
-        self.fig = self.__driver.createFigure(self.idfigure,
-                                              self.wintitle,
-                                              self.widthscreen,
-                                              self.heightscreen)
+        self.fig = self.__driver.createFigure(idfigure=self.idfigure,
+                                              wintitle=self.wintitle,
+                                              width=self.widthscreen,
+                                              height=self.heightscreen,
+                                              show=show)
         
         self.axesObjList = []
 
