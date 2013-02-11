@@ -158,7 +158,7 @@ def getlastFileFromPath(path, ext):
 
     return None
 
-def checkForRealPath(path, year, doy, set, ext):
+def checkForRealPath(path, foldercounter, year, doy, set, ext):
     """
     Por ser Linux Case Sensitive entonces checkForRealPath encuentra el nombre correcto de un path,
     Prueba por varias combinaciones de nombres entre mayusculas y minusculas para determinar
@@ -198,8 +198,10 @@ def checkForRealPath(path, year, doy, set, ext):
         thispath = path
         if prefixDir != None:
             #formo el nombre del directorio xYYYYDDD (x=d o x=D)
-            thispath = os.path.join(path, "%s%04d%03d" % ( prefixDir, year, doy )) 
-            
+            if foldercounter == 0:
+                thispath = os.path.join(path, "%s%04d%03d" % ( prefixDir, year, doy )) 
+            else:
+                thispath = os.path.join(path, "%s%04d%03d_%02d" % ( prefixDir, year, doy , foldercounter))
         for prefixFile in prefixFileList: #barrido por las dos combinaciones posibles de "D"
             filename = "%s%04d%03d%03d%s" % ( prefixFile, year, doy, set, ext ) #formo el nombre del file xYYYYDDDSSS.ext
             fullfilename = os.path.join( thispath, filename ) #formo el path completo
@@ -314,6 +316,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
     nFiles = 3   #number of files for searching
     
+    path = None
+    
+    foldercounter = 0
+    
     flagNoMoreFiles = 0
     
     datetimeList = []
@@ -376,12 +382,12 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 year = thisDate.timetuple().tm_year
                 doy = thisDate.timetuple().tm_yday
                 
-                match = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy))
-                if len(match) == 0:
+                matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
+                if len(matchlist) == 0:
                     thisDate += datetime.timedelta(1)
                     continue
-                
-                pathList.append(os.path.join(path,match[0],expLabel))
+                for match in matchlist:
+                    pathList.append(os.path.join(path,match,expLabel))
                 
                 thisDate += datetime.timedelta(1)
         
@@ -472,6 +478,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             dirList = sorted( dirList, key=str.lower )
                 
             doypath = dirList[-1]
+            foldercounter = int(doypath.split('_')[1]) if len(doypath.split('_'))>1 else 0
             fullpath = os.path.join(path, doypath, expLabel)
             
             
@@ -491,7 +498,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         doy  = int( filename[5:8] )
         set  = int( filename[8:11] )        
         
-        return fullpath, filename, year, doy, set
+        return fullpath, foldercounter, filename, year, doy, set
 
     def __setNextFileOffline(self):
         
@@ -550,8 +557,12 @@ class JRODataReader(JRODataIO, ProcessingUnit):
 
         self.set += 1
         
+        if self.set > 999:
+            self.set = 0
+            self.foldercounter += 1 
+        
         #busca el 1er file disponible
-        fullfilename, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
+        fullfilename, filename = checkForRealPath( self.path, self.foldercounter, self.year, self.doy, self.set, self.ext )
         if fullfilename:
             if self.__verifyFile(fullfilename, False):
                 fileOk_flag = True
@@ -572,7 +583,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                     else:
                         print "\tSearching next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext)
                     
-                    fullfilename, filename = checkForRealPath( self.path, self.year, self.doy, self.set, self.ext )
+                    fullfilename, filename = checkForRealPath( self.path, self.foldercounter, self.year, self.doy, self.set, self.ext )
                     if fullfilename:
                         if self.__verifyFile(fullfilename):
                             fileOk_flag = True
@@ -589,6 +600,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 if nFiles == (self.nFiles-1): #si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
                     self.set = 0
                     self.doy += 1
+                    self.foldercounter = 0
 
         if fileOk_flag:
             self.fileSize = os.path.getsize( fullfilename )
@@ -853,7 +865,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             print "Searching files in online mode..."  
                    
             for nTries in range( self.nTries ):
-                fullpath, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk)
+                fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk)
                 
                 if fullpath:
                     break
@@ -869,6 +881,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             self.doy  = doy
             self.set  = set - 1
             self.path = path
+            self.foldercounter = foldercounter
 
         else:
             print "Searching files in offline mode ..."
