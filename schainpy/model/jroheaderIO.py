@@ -36,6 +36,7 @@ class BasicHeader(Header):
     version = None
     dataBlock = None
     utc = None
+    ltc = None
     miliSecond = None
     timeZone = None
     dstFlag = None
@@ -45,7 +46,7 @@ class BasicHeader(Header):
     
     __LOCALTIME = None
         
-    def __init__(self, localtime=0):
+    def __init__(self, useLocalTime=True):
         
         self.size = 0
         self.version = 0
@@ -66,7 +67,7 @@ class BasicHeader(Header):
                               ('nErrorCount','<u4')
                               ])   
         
-        self.__LOCALTIME = localtime
+        self.useLocalTime = useLocalTime
     
     def read(self, fp):
         try:
@@ -80,9 +81,12 @@ class BasicHeader(Header):
             self.dstFlag = int(header['nDstflag'][0])
             self.errorCount = int(header['nErrorCount'][0])
             
-            self.utc += self.__LOCALTIME
+            self.ltc = self.utc
             
-            self.datatime = datetime.datetime.utcfromtimestamp(self.utc)
+            if self.useLocalTime:
+                self.ltc -= self.timeZone*60
+            
+            self.datatime = datetime.datetime.utcfromtimestamp(self.ltc)
             
         except Exception, e:
             print "BasicHeader: "
@@ -92,7 +96,7 @@ class BasicHeader(Header):
         return 1
     
     def write(self, fp):
-        self.utc -= self.__LOCALTIME
+        
         headerTuple = (self.size,self.version,self.dataBlock,self.utc,self.miliSecond,self.timeZone,self.dstFlag,self.errorCount)
         header = numpy.array(headerTuple,self.struct)        
         header.tofile(fp)

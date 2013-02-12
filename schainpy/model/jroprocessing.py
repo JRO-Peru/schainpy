@@ -695,6 +695,11 @@ class SpectraProc(ProcessingUnit):
 
     def __updateObjFromInput(self):
         
+        self.dataOut.timeZone = self.dataIn.timeZone
+        self.dataOut.dstFlag = self.dataIn.dstFlag
+        self.dataOut.errorCount = self.dataIn.errorCount
+        self.dataOut.useLocalTime = self.dataIn.useLocalTime
+        
         self.dataOut.radarControllerHeaderObj = self.dataIn.radarControllerHeaderObj.copy()
         self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()
         self.dataOut.channelList = self.dataIn.channelList
@@ -759,6 +764,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_cspc = cspc
         self.dataOut.data_dc = dc
         self.dataOut.blockSize = blocksize
+        self.dataOut.flagShiftFFT = True
         
     def init(self, nFFTPoints=None, pairsList=None):
         

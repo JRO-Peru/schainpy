@@ -137,7 +137,15 @@ class JROData:
     
     flagTimeBlock = False
     
+    useLocalTime = False
+    
     utctime = None
+    
+    timeZone = None
+    
+    dstFlag = None
+    
+    errorCount = None
     
     blocksize = None
     
@@ -213,17 +221,24 @@ class JROData:
         
         return heis
     
+    def getltctime(self):
+        
+        if self.useLocalTime:
+             return self.utctime - self.timeZone*60
+        
+        return self.utctime
+    
     def getDatatime(self):
         
-        datatime = datetime.datetime.utcfromtimestamp(self.utctime)
+        datatime = datetime.datetime.utcfromtimestamp(self.ltctime)
         return datatime
     
     def getTimeRange(self):
         
         datatime = []
         
-        datatime.append(self.utctime)
-        datatime.append(self.utctime + self.timeInterval)
+        datatime.append(self.ltctime)
+        datatime.append(self.ltctime + self.timeInterval)
         
         datatime = numpy.array(datatime)
         
@@ -250,6 +265,7 @@ class JROData:
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")
     noise = property(getNoise, "I'm the 'nHeights' property.")
     datatime = property(getDatatime, "I'm the 'datatime' property")
+    ltctime = property(getltctime, "I'm the 'ltctime' property")
     
 class Voltage(JROData):
     
@@ -288,6 +304,12 @@ class Voltage(JROData):
         self.flagTimeBlock = False
         
         self.utctime = None
+        
+        self.timeZone = None
+    
+        self.dstFlag = None
+        
+        self.errorCount = None
         
         self.nCohInt = None
         

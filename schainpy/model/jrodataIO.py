@@ -10,13 +10,16 @@ import time
 import numpy
 import fnmatch
 import time, datetime
-import pyfits
+try:
+    import pyfits
+except:
+    print "pyfits module has not been imported, it should be installed to save files in fits format"
 
 from jrodata import *
 from jroheaderIO import *
 from jroprocessing import *
 
-LOCALTIME = -18000
+LOCALTIME = True #-18000
 
 def isNumber(str):
     """
@@ -327,6 +330,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
     __isFirstTimeOnline = 1
     
     __printInfo = True
+    
+    profileIndex = None
     
     def __init__(self):
         
@@ -921,6 +926,24 @@ class JRODataReader(JRODataIO, ProcessingUnit):
 
         return self.dataOut
     
+    def getBasicHeader(self):
+        
+        self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
+        
+        self.dataOut.flagTimeBlock = self.flagTimeBlock
+        
+        self.dataOut.timeZone = self.basicHeaderObj.timeZone
+    
+        self.dataOut.dstFlag = self.basicHeaderObj.dstFlag
+        
+        self.dataOut.errorCount = self.basicHeaderObj.errorCount
+        
+        self.dataOut.useLocalTime = self.basicHeaderObj.useLocalTime
+        
+    def getFirstHeader(self):
+        
+        raise ValueError, "This method has not been implemented"
+    
     def getData():
         
         raise ValueError, "This method has not been implemented"
@@ -1011,7 +1034,23 @@ class JRODataWriter(JRODataIO, Operation):
     def putData(self):
         raise ValueError, "No implemented"
 
-    def getDataHeader(self):
+    
+    def setBasicHeader(self):
+        
+        self.basicHeaderObj.size = self.basicHeaderSize #bytes
+        self.basicHeaderObj.version = self.versionFile
+        self.basicHeaderObj.dataBlock = self.nTotalBlocks
+        
+        utc = numpy.floor(self.dataOut.utctime)
+        milisecond  = (self.dataOut.utctime - utc)* 1000.0
+        
+        self.basicHeaderObj.utc = utc
+        self.basicHeaderObj.miliSecond = milisecond
+        self.basicHeaderObj.timeZone = self.dataOut.timeZone
+        self.basicHeaderObj.dstFlag = self.dataOut.dstFlag
+        self.basicHeaderObj.errorCount = self.dataOut.errorCount
+            
+    def setFirstHeader(self):
         """
         Obtiene una copia del First Header
         
@@ -1027,22 +1066,7 @@ class JRODataWriter(JRODataIO, Operation):
         """
         
         raise ValueError, "No implemented"
-    
-    def getBasicHeader(self):
-        
-        self.basicHeaderObj.size = self.basicHeaderSize #bytes
-        self.basicHeaderObj.version = self.versionFile
-        self.basicHeaderObj.dataBlock = self.nTotalBlocks
-        
-        utc = numpy.floor(self.dataOut.utctime)
-        milisecond  = (self.dataOut.utctime - utc)* 1000.0
-        
-        self.basicHeaderObj.utc = utc
-        self.basicHeaderObj.miliSecond = milisecond
-        self.basicHeaderObj.timeZone = 0
-        self.basicHeaderObj.dstFlag = 0
-        self.basicHeaderObj.errorCount = 0
-        
+           
     def __writeFirstHeader(self):
         """
         Escribe el primer header del file es decir el Basic header y el Long header (SystemHeader, RadarControllerHeader, ProcessingHeader)
@@ -1170,7 +1194,7 @@ class JRODataWriter(JRODataIO, Operation):
         self.setFile = setFile
         self.flagIsNewFile = 1
         
-        self.getDataHeader()
+        self.setFirstHeader()
         
         print 'Writing the file: %s'%self.filename
         
@@ -1441,6 +1465,43 @@ class VoltageReader(JRODataReader):
           
         return 1
 
+    def getFirstHeader(self):
+        
+        self.dataOut.dtype = self.dtype
+            
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
+        
+        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
+
+        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+        
+        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
+        
+        self.dataOut.ippSeconds = self.ippSeconds
+        
+        self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
+        
+        self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
+        
+        self.dataOut.flagShiftFFT = False
+        
+        if self.radarControllerHeaderObj.code != None:
+            
+            self.dataOut.nCode = self.radarControllerHeaderObj.nCode
+            
+            self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
+            
+            self.dataOut.code = self.radarControllerHeaderObj.code
+        
+        self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
+        
+        self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        
+        self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
+
+        self.dataOut.flagDeflipData = False #asumo q la data no esta sin flip
+        
+        self.dataOut.flagShiftFFT = False
     
     def getData(self):
         """
@@ -1478,48 +1539,7 @@ class VoltageReader(JRODataReader):
             if not( self.readNextBlock() ):
                 return 0
         
-            self.dataOut.dtype = self.dtype
-            
-            self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
-            
-            xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
-    
-            self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
-            
-            self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
-            
-            self.dataOut.flagTimeBlock = self.flagTimeBlock
-            
-            self.dataOut.ippSeconds = self.ippSeconds
-            
-            self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt
-            
-            self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
-            
-            self.dataOut.flagShiftFFT = False
-            
-            if self.radarControllerHeaderObj.code != None:
-                
-                self.dataOut.nCode = self.radarControllerHeaderObj.nCode
-                
-                self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
-                
-                self.dataOut.code = self.radarControllerHeaderObj.code
-            
-            self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
-            
-            self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
-            
-            self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
-    
-            self.dataOut.flagDeflipData = False #asumo q la data no esta sin flip
-            
-            self.dataOut.flagShiftFFT = False
-        
-        
-#            self.updateDataHeader()
-        
-        #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
+            self.getFirstHeader()
         
         if self.datablock == None:
             self.dataOut.flagNoData = True
@@ -1527,16 +1547,11 @@ class VoltageReader(JRODataReader):
         
         self.dataOut.data = self.datablock[:,self.profileIndex,:]
         
-        self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.ippSeconds
-        
-        self.profileIndex += 1
-        
         self.dataOut.flagNoData = False
         
-#        print self.profileIndex, self.dataOut.utctime 
-#        if self.profileIndex == 800:
-#            a=1
+        self.getBasicHeader()
         
+        self.profileIndex += 1
         
         return self.dataOut.data
 
@@ -1678,7 +1693,7 @@ class VoltageWriter(JRODataWriter):
             self.setNextFile()
         
         if self.profileIndex == 0:
-            self.getBasicHeader()
+            self.setBasicHeader()
         
         self.datablock[:,self.profileIndex,:] = self.dataOut.data
         
@@ -1687,7 +1702,7 @@ class VoltageWriter(JRODataWriter):
         if self.hasAllDataInBuffer():
             #if self.flagIsNewFile: 
             self.writeNextBlock()
-#            self.getDataHeader()
+#            self.setFirstHeader()
         
         return 1
     
@@ -1759,7 +1774,7 @@ class VoltageWriter(JRODataWriter):
         
         return blocksize
     
-    def getDataHeader(self):
+    def setFirstHeader(self):
         
         """
         Obtiene una copia del First Header
@@ -1777,7 +1792,7 @@ class VoltageWriter(JRODataWriter):
         self.systemHeaderObj.nChannels = self.dataOut.nChannels
         self.radarControllerHeaderObj = self.dataOut.radarControllerHeaderObj.copy()
         
-        self.getBasicHeader()
+        self.setBasicHeader()
         
         processingHeaderSize = 40 # bytes    
         self.processingHeaderObj.dtype = 0 # Voltage
@@ -1864,7 +1879,6 @@ class SpectraReader(JRODataReader):
     nRdPairs = None
     
     rdPairList = []
-
     
     def __init__(self):
         """ 
@@ -1963,6 +1977,8 @@ class SpectraReader(JRODataReader):
         self.blocksize = 0
         
         self.dataOut = self.createObjByDefault()
+        
+        self.profileIndex = 1 #Always
 
 
     def createObjByDefault(self):
@@ -2088,7 +2104,52 @@ class SpectraReader(JRODataReader):
 
         return 1
     
+    def getFirstHeader(self):
 
+        self.dataOut.dtype = self.dtype
+        
+        self.dataOut.nPairs = self.nRdPairs
+        
+        self.dataOut.pairsList = self.rdPairList
+        
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
+        
+        self.dataOut.nFFTPoints = self.processingHeaderObj.profilesPerBlock
+        
+        self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
+        
+        self.dataOut.nIncohInt = self.processingHeaderObj.nIncohInt
+        
+        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
+
+        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+        
+        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
+        
+        self.dataOut.ippSeconds = self.ippSeconds
+        
+        self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.dataOut.nFFTPoints
+        
+        self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
+        
+        self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        
+        self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
+        
+        self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
+    
+        self.dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+        
+        if self.processingHeaderObj.code != None:
+            
+            self.dataOut.nCode = self.processingHeaderObj.nCode
+            
+            self.dataOut.nBaud = self.processingHeaderObj.nBaud
+            
+            self.dataOut.code = self.processingHeaderObj.code
+            
+            self.dataOut.flagDecodeData = True
+        
     def getData(self):
         """
         Copia el buffer de lectura a la clase "Spectra",
@@ -2118,80 +2179,26 @@ class SpectraReader(JRODataReader):
 
             if not( self.readNextBlock() ):
                 self.dataOut.flagNoData = True
-                return 0 
-            
-#            self.updateDataHeader()
+                return 0
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
 
         if self.data_dc == None:
             self.dataOut.flagNoData = True
             return 0
+        
+        self.getBasicHeader()
+        
+        self.getFirstHeader()
 
         self.dataOut.data_spc = self.data_spc
         
         self.dataOut.data_cspc = self.data_cspc
         
         self.dataOut.data_dc = self.data_dc
-                
-        self.dataOut.flagTimeBlock = self.flagTimeBlock
     
         self.dataOut.flagNoData = False
-
-        self.dataOut.dtype = self.dtype
-
-#        self.dataOut.nChannels = self.nRdChannels
         
-        self.dataOut.nPairs = self.nRdPairs
-        
-        self.dataOut.pairsList = self.rdPairList
-        
-#        self.dataOut.nHeights = self.processingHeaderObj.nHeights
-        
-        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
-        
-        self.dataOut.nFFTPoints = self.processingHeaderObj.profilesPerBlock
-        
-        self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
-        
-        self.dataOut.nIncohInt = self.processingHeaderObj.nIncohInt
-        
-        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
-
-        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
-        
-        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
-        
-#        self.dataOut.channelIndexList = range(self.systemHeaderObj.nChannels)
-        
-        self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000.#+ self.profileIndex * self.ippSeconds
-        
-        self.dataOut.ippSeconds = self.ippSeconds
-        
-        self.dataOut.timeInterval = self.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.dataOut.nFFTPoints
-        
-#        self.profileIndex += 1
-        
-        self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
-        
-        self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
-        
-        self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
-        
-        self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
-    
-        self.dataOut.flagDeflipData = True #asumo q la data no esta sin flip
-        
-        if self.processingHeaderObj.code != None:
-                
-                self.dataOut.nCode = self.processingHeaderObj.nCode
-                
-                self.dataOut.nBaud = self.processingHeaderObj.nBaud
-                
-                self.dataOut.code = self.processingHeaderObj.code
-                
-                self.dataOut.flagDecodeData = True
-
         return self.dataOut.data_spc
 
 
@@ -2377,7 +2384,7 @@ class SpectraWriter(JRODataWriter):
             self.setNextFile()
         
         if self.flagIsNewFile == 0:
-            self.getBasicHeader()
+            self.setBasicHeader()
         
         self.data_spc = self.dataOut.data_spc.copy()
         self.data_cspc = self.dataOut.data_cspc.copy()
@@ -2385,7 +2392,7 @@ class SpectraWriter(JRODataWriter):
         
         # #self.processingHeaderObj.dataBlocksPerFile)
         if self.hasAllDataInBuffer():
-#            self.getDataHeader()
+#            self.setFirstHeader()
             self.writeNextBlock()
         
         return 1
@@ -2476,7 +2483,7 @@ class SpectraWriter(JRODataWriter):
 
         return blocksize
     
-    def getDataHeader(self):
+    def setFirstHeader(self):
         
         """
         Obtiene una copia del First Header
@@ -2494,7 +2501,7 @@ class SpectraWriter(JRODataWriter):
         self.systemHeaderObj.nChannels = self.dataOut.nChannels
         self.radarControllerHeaderObj = self.dataOut.radarControllerHeaderObj.copy()
         
-        self.getBasicHeader()
+        self.setBasicHeader()
         
         processingHeaderSize = 40 # bytes    
         self.processingHeaderObj.dtype = 1 # Spectra
@@ -2506,6 +2513,7 @@ class SpectraWriter(JRODataWriter):
         self.processingHeaderObj.nCohInt = self.dataOut.nCohInt# Se requiere para determinar el valor de timeInterval
         self.processingHeaderObj.nIncohInt = self.dataOut.nIncohInt 
         self.processingHeaderObj.totalSpectra = self.dataOut.nPairs + self.dataOut.nChannels
+        self.processingHeaderObj.shif_fft = self.dataOut.flagShiftFFT
         
         if self.processingHeaderObj.totalSpectra > 0:
             channelList = []
