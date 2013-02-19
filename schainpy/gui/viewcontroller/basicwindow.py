@@ -3,7 +3,9 @@
 Module implementing MainWindow.
 #+++++++++++++INTERFAZ DE USUARIO V1.1++++++++++++++#
 """
-import os
+import os,sys
+
+
 import datetime
 
 from PyQt4.QtGui           import QMainWindow
@@ -17,7 +19,16 @@ from modelProperties       import treeModel
 from viewer.ui_unitprocess import Ui_UnitProcess
 from viewer.ui_window      import Ui_window
 from viewer.ui_mainwindow  import Ui_BasicWindow
-from controller            import Project,ReadUnitConf,ProcUnitConf,OperationConf,ParameterConf
+
+print "Nohayproblema"
+pathe = os.path.split(os.getcwd())[0]
+sys.path.append(pathe)
+print "leer", pathe
+  
+from controller import *
+
+
+#from controller            import Project,ReadUnitConf,ProcUnitConf,OperationConf,ParameterConf
 
 
 def isRadarFile(file):
@@ -62,6 +73,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.__upObjDict = {}
         self.__opObjDict= {}
         self.indexclick=None
+        self.b=0
                
         self.online=0
         self.datatype=0
@@ -113,7 +125,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.treeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.treeView.customContextMenuRequested.connect(self.popup)
         #self.treeView.clicked.connect(self.treefunction1)
-
+        self.model_2=treeModel()
 
 
  #-----------------------------------BARRA DE MENU-------------------------------------------------#
@@ -189,6 +201,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         METODO EJECUTADO CUANDO OCURRE EL EVENTO RUN 
         Llama al metodo RUN.
         """ 
+        
+        print "Leyendo el archivo XML"
+        for i in self.__arbolDict:            
+            if self.__arbolDict[i]==self.indexclick:
+                self.projectObj=self.__projObjDict[i] 
+                print "Encontre project"
+        filename="C:\WorkspaceGUI\config"+str(self.projectObj.id)+".xml"
+        self.projectObj.readXml(filename)
+        #controllerObj.printattr()
+        
+        self.projectObj.createObjects()
+        self.projectObj.connectObjects()
+        self.projectObj.run()
         print "Not implemented yet"
         
     @pyqtSignature("") 
@@ -226,14 +251,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """ 
         print "Not implemented yet"
     
-    @pyqtSignature("") 
-    def on_menuHELPPrfObj_clicked(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO HElp
-        Llama al metodo close.
-        """ 
-        print "Not implemented yet"    
-        
+      
   #-----------------------------------BARRA DE HERRAMIENTAS----------------------------------------#
     
     @pyqtSignature("")
@@ -265,6 +283,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         METODO EJECUTADO CUANDO OCURRE EL EVENTO PAUSA
         Llama al metodo PAUSA.
         """ 
+        print "Leyendo el archivo XML"
+        for i in self.__arbolDict:            
+            if self.__arbolDict[i]==self.indexclick:
+                self.projectObj=self.__projObjDict[i] 
+                print "Encontre project"
+        filename="C:\WorkspaceGUI\config"+str(self.projectObj.id)+".xml"
+        self.projectObj.readXml(filename)
+        #controllerObj.printattr()
+        
+        self.projectObj.createObjects()
+        self.projectObj.connectObjects()
+        self.projectObj.run()
         print "Not implemented yet"
    
     @pyqtSignature("")
@@ -287,7 +317,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.setProjectParam()
     
    #------------------------------------VENTANA CONFIGURACION PROJECT----------------------------#     
-    
+   
     @pyqtSignature("int")
     def on_dataTypeCmbBox_activated(self,index):
         """
@@ -396,7 +426,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         reloj1=self.startTimeEdit.time()
         print 
         
-        reloj2=self.timeEdit_2.time()
+        reloj2=self.endTimeEdit.time()
         
         print reloj1.hour()
         print reloj1.minute()
@@ -414,7 +444,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.readUnitConfObjList.append(self.readUnitConfObj)           
              
         #--------VISUALIZACION EN LA VENTANA PROJECT PROPERTIES-----------------#
-        self.model_2=treeModel()        
+        #self.model_2=treeModel()        
+        self.model_2=treeModel()
         self.model_2.setParams(name       =  self.projectObj.name,
                                directorio =  path,
                                workspace  =  "C:\\WorkspaceGUI",
@@ -427,6 +458,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                                Summary    =  "test de prueba")                                                 
         
         self.model_2.arbol()
+        self.model_2.showtree()
         self.treeView_2.setModel(self.model_2)
         self.treeView_2.expandAll()  
         
@@ -458,17 +490,39 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.tabVoltage.setEnabled(False)
         self.tabSpectra.setEnabled(False)
         self.tabCorrelation.setEnabled(False)
-        self.dataPathTxt.setText('C:\data')
+        self.dataPathTxt.setText('C:\data2')
         self.nameProjectTxt.setText("Test")
         self.numberChannelopVol.setEnabled(False)
+        self.lineFilteropVolCEB.setEnabled(False)
         self.lineHeighProfileTxtopVol.setEnabled(False)
         self.numberIntegration.setEnabled(False)
         self.valuenFFTPointOpSpec.setEnabled(False)
         self.lineProfileSelecopVolCEB.setEnabled(False)
-    
+        self.valueSelecChOpVol.setEnabled(False)
+        self.valueSelecHeigOpVol.setEnabled(False)
+        self.profileSelecOpVol.setEnabled(False)
+        self.decodeCcob.setEnabled(False)
+        self.decodeMcob.setEnabled(False)
+        
+        self.wiWineTxtGraphicsVol.setEnabled(False)
+        self.channelLisstTxtVol.setEnabled(False)
+        self.xminTxtVol.setEnabled(False)
+        self.yminTxtVol.setEnabled(False)
+        
+        self.setDisableAllSpecop()
+        self.setDisableAllElementSpecGraph()
+#         self.winTitleGraphSpec.setEnabled(False)
+#         self.channelListgraphSpec.setEnabled(False)
+#         self.xminGraphSpec.setEnabled(False)
+#         self.yminGraphSpec.setEnabled(False)
+#         self.zminGraphSpec.setEnabled(False)
+#         self.timeRangeGraphSpec.setEnabled(False)   
+#         self.dataPathTxtSpec.setEnabled(False)
+#         self.dataPrefixGraphSpec.setEnabled(False) 
+        
     def setProjectParam(self):
         self.nameProjectTxt.setText("Test")
-        self.dataPathTxt.setText('C:\data')
+        self.dataPathTxt.setText('C:\data2')
         self.dataTypeCmbBox.clear()
         self.dataTypeCmbBox.addItem("Voltage")
         self.dataTypeCmbBox.addItem("Spectra")
@@ -481,7 +535,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.time.setHMS(int(starlist[0]),int(starlist[1]),int(starlist[2])) 
         self.startTimeEdit.setTime(self.time)
         self.time.setHMS(int(endlist[0]),int(endlist[1]),int(endlist[2])) 
-        self.timeEdit_2.setTime(self.time)
+        self.endTimeEdit.setTime(self.time)
 
     def clickFunctiontree(self,index):
         
@@ -518,24 +572,25 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     self.time.setHMS(int(starlist[0]),int(starlist[1]),int(starlist[2])) 
                     self.startTimeEdit.setTime(self.time)
                     self.time.setHMS(int(endlist[0]),int(endlist[1]),int(endlist[2])) 
-                    self.timeEdit_2.setTime(self.time)
+                    self.endTimeEdit.setTime(self.time)
                     
                             #--------VISUALIZACION EN LA VENTANA PROJECT PROPERTIES-----------------#
-                    self.model_2=treeModel()        
-                    self.model_2.setParams(name       = str(self.__projObjDict[i].name),
-                                           directorio = str(self.readUnitConfObjList[i-1].path),
-                                           workspace  =  "C:\\WorkspaceGUI",
-                                           remode     =  str(self.readModeCmBox.currentText()), 
-                                           dataformat =  "Voltage", 
-                                           date       =  str(self.readUnitConfObjList[i-1].startDate)+"-"+str(self.readUnitConfObjList[i-1].endDate),
-                                           initTime   =  str(starlist[0]) +":"+str(starlist[1])+":"+ str(starlist[2]),
-                                           endTime    =  str(endlist[0]) +":"+str(endlist[1])+":"+ str(endlist[2]),
-                                           timezone   =  "Local" ,
-                                           Summary    =  "test de prueba")                                                    
-                    
-                    self.model_2.arbol()
-                    self.treeView_2.setModel(self.model_2)
-                    self.treeView_2.expandAll() 
+#                     self.model_2=treeModel()        
+#                     self.model_2.setParams(name       = str(self.__projObjDict[i].name),
+#                                            directorio = str(self.readUnitConfObjList[i-1].path),
+#                                            workspace  =  "C:\\WorkspaceGUI",
+#                                            remode     =  str(self.readModeCmBox.currentText()), 
+#                                            dataformat =  "Voltage", 
+#                                            date       =  str(self.readUnitConfObjList[i-1].startDate)+"-"+str(self.readUnitConfObjList[i-1].endDate),
+#                                            initTime   =  str(starlist[0]) +":"+str(starlist[1])+":"+ str(starlist[2]),
+#                                            endTime    =  str(endlist[0]) +":"+str(endlist[1])+":"+ str(endlist[2]),
+#                                            timezone   =  "Local" ,
+#                                            Summary    =  "test de prueba")                                                    
+#                     
+#                     self.model_2.arbol()
+#                     self.model_2.showtree()
+#                     self.treeView_2.setModel(self.model_2)
+#                     self.treeView_2.expandAll() 
                     
                     #self.dataPathTxt.setText(str(self.__projObjDict[i].addReadUnit.path()))
                
@@ -548,6 +603,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if self.indexclick.text()=='Spectra':
            self.tabSpectra.setEnabled(True) 
            self.tabWidgetProject.setCurrentWidget(self.tabSpectra)
+           
             
         if self.indexclick.text()=='Correlation':
            self.tabCorrelation.setEnabled(True) 
@@ -684,7 +740,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.time.setHMS(self.hour, self.min, self.sec) 
         self.startTimeEdit.setTime(self.time)
         
-        self.timeEdit_2.setTime(self.time)
+        self.endTimeEdit.setTime(self.time)
         
        
     def addUP(self):
@@ -772,12 +828,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.selecHeighopVolCEB.setChecked(False)
         self.coherentIntegrationCEB.setChecked(False)
         self.profileSelecopVolCEB.setChecked(False)
+        self.FilterCEB.setChecked(False)
+        
         #self.selecChannelopVolCEB.setEnabled(False)
         self.lineHeighProfileTxtopVol.clear()
         self.lineProfileSelecopVolCEB.clear()
         self.numberChannelopVol.clear()
         self.numberIntegration.clear()
-            
+        self.lineFilteropVolCEB.clear()
     
     def resetopSpec(self):
         
@@ -800,10 +858,22 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         print "Escribo Project"
         self.projectObj.writeXml(filename)
 
+# -----------------OPCIONES DE CONFIGURACION VOLTAGE---------------------------#      
 
+    @pyqtSignature("")
+    def on_dataGraphicsVolPathBrowse_clicked(self):
+        """
+        OBTENCION DE LA RUTA DE DATOS
+        """
+        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
+        self.dataPathtxtGraphicsVol.setText(self.dataPath)
+        
+        if not os.path.exists(self.dataPath):
+            self.dataGraphVolOkBtn.setEnabled(False)
+            return
 
 # -----------------VENTANA CONFIGURACION DE VOLTAGE---------------------------#     
-    
+
     @pyqtSignature("int")
     def on_selecChannelopVolCEB_stateChanged(self, p0):
         """
@@ -811,14 +881,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         if  p0==2:
             self.numberChannelopVol.setEnabled(True)
-#            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-#            opObj10=upProcessSelect.addOperation(name='selectChannels')
-#            print opObj10.id
-#            self.operObjList.append(opObj10)
+            self.valueSelecChOpVol.setEnabled(True)
             print " Ingresa seleccion de Canales"
         if  p0==0:
             self.numberChannelopVol.setEnabled(False)
-
+            self.valueSelecChOpVol.setEnabled(False)
             print " deshabilitado" 
             
     @pyqtSignature("int")
@@ -828,16 +895,26 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         if  p0==2:
             self.lineHeighProfileTxtopVol.setEnabled(True)
-#            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-#            opObj10=upProcessSelect.addOperation(name='selectHeights')
-#            print opObj10.id
-#            self.operObjList.append(opObj10)
+            self.valueSelecHeigOpVol.setEnabled(True)
             print " Select Type of Profile"
         if  p0==0:
             self.lineHeighProfileTxtopVol.setEnabled(False)
+            self.valueSelecHeigOpVol.setEnabled(False)
             print " deshabilitado" 
             
 
+    @pyqtSignature("int")
+    def on_filterCEB_stateChanged(self, p0):
+         """
+         Name='Decoder', optype='other'
+         """
+         if  p0==2:
+            self.lineFilteropVolCEB.setEnabled(True)
+            print " Select Type of Profile"
+         if  p0==0:
+            self.lineFilteropVolCEB.setEnabled(False)
+            print " deshabilitado" 
+         
     @pyqtSignature("int")
     def on_profileSelecopVolCEB_stateChanged(self, p0):
         """
@@ -845,16 +922,28 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         if  p0==2:
             self.lineProfileSelecopVolCEB.setEnabled(True)
-#            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-#            opObj10=upProcessSelect.addOperation(name='ProfileSelector', optype='other')
-#            print opObj10.id
-#            self.operObjList.append(opObj10)
+            self.profileSelecOpVol.setEnabled(True)
             print " Select Type of Profile"
         if  p0==0:
             self.lineProfileSelecopVolCEB.setEnabled(False)
-
+            self.profileSelecOpVol.setEnabled(False)
             print " deshabilitado" 
-            
+    
+   
+    @pyqtSignature("int")
+    def on_decodeCEB_stateChanged(self, p0):
+        """
+        Check Box habilita ingresode del numero de Integraciones a realizar
+        """
+        if  p0==2:
+            self.decodeCcob.setEnabled(True)
+            self.decodeMcob.setEnabled(True)
+            print "Choose number of Cohint"
+        if  p0==0:
+            print " deshabilitado"   
+            self.decodeCcob.setEnabled(False)
+            self.decodeMcob.setEnabled(False)
+    
             
     @pyqtSignature("int")
     def on_coherentIntegrationCEB_stateChanged(self, p0):
@@ -863,16 +952,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         if  p0==2:
             self.numberIntegration.setEnabled(True)
-#            upProcessSelect=self.upObjVolList[int(self.addOpUpselec.currentIndex())]
-#            opObj10=upProcessSelect.addOperation(name='CohInt', optype='other')
-#            print opObj10.id
-#            self.operObjList.append(opObj10)
             print "Choose number of Cohint"
         if  p0==0:
             print " deshabilitado"   
             self.numberIntegration.setEnabled(False)
             
-    #-----------------------PUSHBUTTON_ACCEPT_OPERATION----------------------------#       
+    #-----------------------VOL_PUSHBUTTON_ACCEPT_OPERATION----------------------------#       
     
     @pyqtSignature("")
     def on_dataopVolOkBtn_clicked(self):
@@ -885,48 +970,165 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                print "INDEXCLICK=ARBOLDICT",i
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
-#            self.operObjList.append(opObj10)
-       
-                   if self.selecChannelopVolCEB.isChecked():
-                        opObj10=self.upObj.addOperation(name='selectChannels')
-                        self.operObjList.append(opObj10)
-                        value=self.numberChannelopVol.text()
-                        opObj10.addParameter(name='channelList', value=value, format='intlist')
-            
-                        
-                        print "channel"
-                        
-                   if self.selecHeighopVolCEB.isChecked():
-                       opObj10=self.upObj.addOperation(name='selectHeights')
-                       print opObj10.id
-                       self.operObjList.append(opObj10)
-                       value=self.lineHeighProfileTxtopVol.text()
-                       valueList=value.split(',')
-                       opObj10.addParameter(name='minHei', value=valueList[0], format='float')
-                       opObj10.addParameter(name='maxHei', value=valueList[1], format='float')
-                      
-                       print "height"
-                    
-                    
-                   if self.selecHeighopVolCEB.isChecked():
-                       obj10=self.upObj.addOperation(name='ProfileSelector', optype='other')
-                       print opObj10.id
-                       self.operObjList.append(opObj10)
-                       value=self.lineProfileSelecopVolCEB.text()
-                       obj10.addParameter(name='ProfileSelector', value=value, format='intlist')
+                   print self.__upObjDict[i].name
+                   print "TamañodeupObjDict",len(self.__upObjDict)
+                  # if len(self.__upObjDict)>=1 and len(self.__upObjDict)> self.b:
                        
-#                        for i in self.operObjList:
-#                            if i.name=='ProfileSelector' :
-#                                value=self.lineProfileSelecopVolCEB.text()
-#                                i.addParameter(name='ProfileSelector', value=value, format='intlist')
+                   if self.selecChannelopVolCEB.isChecked():
+                         if  self.valueSelecChOpVol.currentIndex()== 0:
+                             opObj10=self.upObj.addOperation(name="selectChannels")
+                             self.operObjList.append(opObj10)
+                             value=self.numberChannelopVol.text()                    
+                             opObj10.addParameter(name='channelList', value=value, format='intlist')
+                         else:
+                             opObj10=self.upObj.addOperation(name="selectChannelsByIndex")
+                             self.operObjList.append(opObj10)
+                             value=self.numberChannelopVol.text()                    
+                             opObj10.addParameter(name='channelIndexList', value=value, format='intlist')
+                             print "channel"
+                                                     
+                   if self.selecHeighopVolCEB.isChecked():
+                         if  self.valueSelecHeigOpVol.currentIndex()== 0:
+                             opObj10=self.upObj.addOperation(name='selectHeights')
+                             value=self.lineHeighProfileTxtopVol.text()
+                             valueList=value.split(',')
+                             opObj10.addParameter(name='minHei', value=valueList[0], format='float')
+                             opObj10.addParameter(name='maxHei', value=valueList[1], format='float')
+                         else:
+                             opObj10=self.upObj.addOperation(name='selectHeightsByIndex')
+                             value=self.lineHeighProfileTxtopVol.text()
+                             valueList=value.split(',')
+                             opObj10.addParameter(name='minIndex', value=valueList[0], format='float')
+                             opObj10.addParameter(name='maxIndex', value=valueList[1], format='float')
+                                
+                         print "height"
+                             
+                   if self.filterCEB.isChecked():
+                         opObj10=self.upObj.addOperation(name='filterByHeights')
+                         value=self.lineFilteropVolCEB.text()
+                         opObj10.addParameter(name='window', value=value, format='int')
+                         print "filter"    
+     
+                   if self.profileSelecopVolCEB.isChecked():
+                         obj10=self.upObj.addOperation(name='ProfileSelector', optype='other')
+                         if  self.profileSelecOpVol.currentIndex()== 0:
+                             self.operObjList.append(opObj10)
+                             value=self.lineProfileSelecopVolCEB.text()
+                             obj10.addParameter(name='profileList', value=value, format='intlist')
+                         else:
+                             self.operObjList.append(opObj10)
+                             value=self.lineProfileSelecopVolCEB.text()
+                             obj10.addParameter(name='profileRangeList', value=value, format='intlist')
+                             print "profile"
+          
+                   if self.decodeCEB.isChecked():
+                        opObj10=self.upObj.addOperation(name='Decoder') 
+                        if self.decodeCcob.currentIndex()==0:
+                            opObj10.addParameter(name='code', value='1,1,-1,-1,-1,1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='3', format='int')
+                        if self.decodeCcob.currentIndex()==1:
+                            opObj10.addParameter(name='code', value='1,1,−1,1,-1,-1,1,-1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='4', format='int')
+                        if self.decodeCcob.currentIndex()==2:
+                            opObj10.addParameter(name='code', value='1,1,1,−1,1,-1,-1,-1,1,-1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='5', format='int')    
+                        if self.decodeCcob.currentIndex()==3:
+                            opObj10.addParameter(name='code', value='1,1,1,−1,−1,1,−1,-1,-1,-1,1,1,-1,1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='7', format='int')
+                        if self.decodeCcob.currentIndex()==4:
+                            opObj10.addParameter(name='code', value='1,1,1,−1,−1,−1,1,−1,−1,1,−1,-1 ,-1 ,-1 ,1 ,1 ,1 ,-1 ,1 ,1 ,-1 ,1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='11', format='int')    
+                        if self.decodeCcob.currentIndex()==5:
+                            opObj10.addParameter(name='code', value='1,1,1,1,1,−1,−1,1,1,−1,1,−1,1,-1,-1,-1,-1,-1,1,1,-1,-1,1,-1,1,-1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='13', format='int')   
                         
+                        if self.decodeMcob.currentIndex()==0:
+                           opObj10.addParameter(name='mode', value='0', format='int')
+       
+                        if self.decodeMcob.currentIndex()==1:   
+                            opObj10.addParameter(name='mode', value='1', format='int') 
+                  
+                        if self.decodeMcob.currentIndex()==2:
+                            opObj10.addParameter(name='mode', value='2', format='int')
+                              
                    if self.coherentIntegrationCEB.isChecked():
-                       opObj10=self.upObj.addOperation(name='CohInt', optype='other')
-                       print opObj10.id
+                           opObj10=self.upObj.addOperation(name='CohInt', optype='other')
+                           print opObj10.id
+                           self.operObjList.append(opObj10)
+                           value=self.numberIntegration.text()
+                           opObj10.addParameter(name='n', value=value, format='int') 
+                           print "Coherent"
+                           
+                           
+#                        print "TamañodeupObjDict",len(self.__upObjDict)
+#                        self.b=len(self.__upObjDict)
+#                        print "self.b", self.b                      
+#                        self.model_2.properties_projecto("estaesunaprueba")
+#                        anadir=self.model_2.properties_projecto("estaesunaprueba")
+#                        self.model_2.addProjectproperties(anadir)
+#                        self.model_2.showtree()
+#                        self.treeView_2.setModel(self.model_2)
+#                        self.treeView_2.expandAll() 
+#                    else:
+#                         print"It doesn't works"
+                                      
+#            self.o     
+     
+         
+    # -----------------VENTANA CONFIGURACION GRAPH VOLTAGE---------------------------#                   
+   
+    @pyqtSignature("int")
+    def on_dataTypeSelecVol_activated(self,index):
+        """
+        Metodo que identifica que tipo de dato se va a trabajar VOLTAGE O ESPECTRA
+        """
+        
+        if index==0:
+           self.wiWineTxtGraphicsVol.setEnabled(True)
+           self.channelLisstTxtVol.setEnabled(True)
+           self.xminTxtVol.setEnabled(True)
+           self.yminTxtVol.setEnabled(True)    
+    
+    @pyqtSignature(" ")
+    def on_dataGraphVolOkBtn_clicked(self):
+        """
+        GRAPH
+        """   
+        for i in self.__arbolDict:       
+            if self.__arbolDict[i]==self.indexclick:
+               print "INDEXCLICK=ARBOLDICT",i
+               if self.__upObjDict.has_key(i)==True:
+                   self.upObj=self.__upObjDict[i]
+                   print self.__upObjDict[i].name
+                   
+                   if self.valueSelecChOpVol.currentIndex()==0:
+                       opObj10=self.upObj.addOperation(name='Scope', optype='other')
                        self.operObjList.append(opObj10)
-                       value=self.numberIntegration.text()
-                       opObj10.addParameter(name='n', value=value, format='int') 
-                 #  self.__opObjDict[i]==self.operObjList
+                       wintitle=self.wiWineTxtGraphicsVol.text()      
+                       channelList=self.channelLisstTxtVol.text()
+                       xvalue= self.xminTxtVol.text()         
+                       yvalue= self.yminTxtVol.text()      
+                     
+                       opObj10.addParameter(name='wintitle', value=wintitle, format='str')
+                       opObj10.addParameter(name='channelList', value=channelList, format='int')
+                       xvalueList=xvalue.split(',')
+                       opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                       opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                       yvalueList=yvalue.split(",")
+                       opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                       opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+
+                       if self.savedataCEBGraphicsVol.isChecked():
+                           opObj10.addParameter(name='save', value='1', format='int')
+                           opObj10.addParameter(name='figpath', value= self.dataPathtxtGraphicsVol.text())
+                           opObj10.addParameter(name='figfile', value= self.dataPrefixtxtGraphicsVol.text())
+
 
 
     #-------------------------VENTANA DE CONFIGURACION SPECTRA------------------------#     
@@ -943,111 +1145,286 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             print " deshabilitado" 
             self.valuenFFTPointOpSpec.setEnabled(False)
                       
+    @pyqtSignature("int")
+    def on_SelectHeiopSpecCEB_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.valueSelecChOpHei.setEnabled(True)
+            self.selecHeiopSpec.setEnabled(True)
+            print "selectHeights"
+        if  p0==0:
+            print " deshabilitado" 
+            self.valueSelecChOpHei.setEnabled(False)
+            self.selecHeiopSpec.setEnabled(False)            
+            
+    @pyqtSignature("int")
+    def on_selecChannelopSpecCEB_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.valueSelecChOpSpec.setEnabled(True)
+            self.numberChannelopSpec.setEnabled(True)
+            print "selectChannel"
+        if  p0==0:
+            print " deshabilitado" 
+            self.valueSelecChOpSpec.setEnabled(False)
+            self.numberChannelopSpec.setEnabled(False)        
+    
+    @pyqtSignature("int")
+    def on_IncohIntOpSpecCEB_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.valueIncohIntOpSpec.setEnabled(True)
+
+            print "selectIncohInt"
+        if  p0==0:
+            print " deshabilitado" 
+            self.valueIncohIntOpSpec.setEnabled(False)
+
+    @pyqtSignature("int")
+    def on_removedcOpSpecCEB_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.valueremoveDCOpSpec.setEnabled(True)
+
+            print "removedcOpSpecCEB"
+        if  p0==0:
+            print " deshabilitado" 
+            self.valueremoveDCOpSpec.setEnabled(False)
+            
+            
+    def setDisableAllSpecop(self):
+        self.valuenFFTPointOpSpec.setEnabled(False)
+        self.valueSelecChOpHei.setEnabled(False)
+        self.selecHeiopSpec.setEnabled(False)            
+        self.numberChannelopSpec.setEnabled(False)
+        self.valueSelecChOpSpec.setEnabled(False)
+        self.valueIncohIntOpSpec.setEnabled(False)
+        self.valueremoveDCOpSpec.setEnabled(False)
+    #-----------------------SPEC_PUSHBUTTON_ACCEPT_OPERATION----------------------------#   
+    
+    
 
 
     @pyqtSignature("")
     def on_dataopSpecOkBtn_clicked(self):
         """
-                            A�ade al archivo de configuraci�n el par�metros nFFTPoints a la UP.
+        AÑADE OPERACION SPECTRA
         """
-        print "A�adimos operaciones Spectra,nchannels,value,format"
+        print "AÑADEOPERACIONSPECTRA"
+        for i in self.__arbolDict:       
+            if self.__arbolDict[i]==self.indexclick:
+               print "INDEXCLICK=ARBOLDICT",i
+               if self.__upObjDict.has_key(i)==True:
+                   self.upObj=self.__upObjDict[i]
+                   print self.__upObjDict[i].name
+                   #            self.operObjList.append(opObj10)
+       
+                   if self.nFFTPointOpSpecCEB.isChecked():                     
+                        value=self.valuenFFTPointOpSpec.text()
+                        self.upObj.addParameter(name='nFFTPoints',value=value,format='int')
+                        print "nFFTpoints"
+                   
+                   
+                   if self.SelectHeiopSpecCEB.isChecked():
+                      if  self.valueSelecChOpHei.currentIndex()== 0:
+                          opObj10=self.upObj.addOperation(name='selectHeights')
+                          value=self.selecHeiopSpec.text()
+                          valueList=value.split(',')
+                          opObj10.addParameter(name='minHei', value=valueList[0], format='float')
+                          opObj10.addParameter(name='maxHei', value=valueList[1], format='float') 
+                      else:
+                          opObj10=self.upObj.addOperation(name='selectHeightsByIndex')
+                          value=self.selecHeiopSpec.text()
+                          valueList=value.split(',')
+                          opObj10.addParameter(name='minIndex', value=valueList[0], format='float')
+                          opObj10.addParameter(name='maxIndex', value=valueList[1], format='float') 
+                       
+                   if self.selecChannelopSpecCEB.isChecked():
+                       if  self.valueSelecChOpSpec.currentIndex()== 0:
+                           opObj10=self.upObj.addOperation(name="selectChannels")
+                           self.operObjList.append(opObj10)
+                           value=self.numberChannelopSpec.text()                    
+                           opObj10.addParameter(name='channelList', value=value, format='intlist')
+                       else:
+                           opObj10=self.upObj.addOperation(name="selectChannelsByIndex")
+                           self.operObjList.append(opObj10)
+                           value=self.numberChannelopSpec.text()                    
+                           opObj10.addParameter(name='channelIndexList', value=value, format='intlist')
+                           print "channel"                                       
+                       
+                   if self.IncohIntOpSpecCEB.isChecked():
+                      opObj10=self.upObj.addOperation(name='IncohInt', optype='other')
+                      self.operObjList.append(opObj10)
+                      value=self.valueIncohIntOpSpec.text()                    
+                      opObj10.addParameter(name='n', value=value, format='float') 
+                      
+                   if self.removedcOpSpecCEB.isChecked():
+                       opObj10=self.upObj.addOperation(name='removeDC')
+                       value=self.valueremoveDCOpSpec.text()     
+                       opObj10.addParameter(name='mode', value=value,format='int')
+                 
+                   
+    #---------------------VENTANA DE CONFIGURACION GRAPH SPECTRA------------------#       
+    @pyqtSignature("int")
+    def on_dataTypeSelectorCmb_activated(self,index):
+        self.setClearAllElementGraph()
+        self.setEnableAllElementGraph()
+        if index==0:
+            self.timeRangeGraphSpec.setEnabled(False)
+        if index==1:
+            self.timeRangeGraphSpec.setEnabled(False)
+        if index==2:
+            self.timeRangeGraphSpec.setEnabled(False)
+        if index==3:
+            self.timeRangeGraphSpec.setEnabled(False)
+     
+        
+    @pyqtSignature("int")
+    def on_saveGraphSpec_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.dataPathTxtSpec.setEnabled(True)
+            self.dataPrefixGraphSpec.setEnabled(True)
+            print " nFFTPoint"
+        if  p0==0:
+            print " deshabilitado" 
+            self.dataPathTxtSpec.setEnabled(False)
+            self.dataPrefixGraphSpec.setEnabled(False)
+        
+        
+    @pyqtSignature("")
+    def on_dataGraphSpecOkBtn_clicked(self):
+        
+        print "AÑADEOPERACIONSPECTRA"
       
         for i in self.__arbolDict:       
             if self.__arbolDict[i]==self.indexclick:
                print "INDEXCLICK=ARBOLDICT",i
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
-                   #            self.operObjList.append(opObj10)
-       
-                   if self.nFFTPointOpSpecCEB.isChecked():                     
-                        value=self.numberChannelopVol.text()
-                        self.upObj.addParameter(name='nFFTPoints',value=value,format='int')
-                        print "nFFTpoints"
-                        
-                        
-
-    #---------------------VENTANA DE CONFIGURACION GRAPH SPECTRA------------------#     
-
-    @pyqtSignature("int")
-    def on_SpectraPlotGraphCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de Ploteo Spectra Plot
-        """
-        if  p0==2:
-            print "Habilitado"
-    
-        if  p0==0:
-            print " deshabilitado" 
-    
-    @pyqtSignature("int")
-    def on_CrossSpectraPlotGraphceb_stateChanged(self, p0):
-        """
-        Habilita la opci�n de Ploteo CrossSpectra
-        """
-        if  p0==2:
-            print "Habilitado"
-        if  p0==0:
-            print " deshabilitado"    
+                   print self.__upObjDict[i].name
         
-    @pyqtSignature("int")
-    def on_RTIPlotGraphCEB_stateChanged(self, p0):
-        """
-        Habilita la opci�n de Plote RTIPlot
-        """
-        if  p0==2:
-            print "Habilitado"
-        if  p0==0:
-            print " deshabilitado"     
-    
-    #------------------PUSH_BUTTON_SPECTRA_GRAPH_OK-----------------------------#
-    @pyqtSignature("")
-    def on_dataGraphSpecOkBtn_clicked(self):
-        """
-        HABILITAR DE ACUERDO A LOS CHECKBOX QUE TIPO DE PLOTEOS SE VAN A REALIZAR MUESTRA Y GRABA LAS IMAGENES.
-        """
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
-               print "INDEXCLICK=ARBOLDICT",i
-               if self.__upObjDict.has_key(i)==True:
-                   self.upObj=self.__upObjDict[i]
-                   print "Graficar Spec op"
-                   
-                   if self.SpectraPlotGraphCEB_2.isChecked():
+                   if self.dataTypeSelectorCmb.currentIndex()==0:  
                       opObj10=self.upObj.addOperation(name='SpectraPlot',optype='other')
-                      print opObj10.id
-                      self.operObjList.append(opObj10) 
-                      for i in self.operObjList:
-                            if i.name=='SpectraPlot':
-                                i.addParameter(name='idfigure', value='1', format='int')
-                                i.addParameter(name='wintitle', value='SpectraPlot0', format='str')
-                                i.addParameter(name='zmin', value='40', format='int')
-                                i.addParameter(name='zmax', value='90', format='int')
-                                i.addParameter(name='showprofile', value='1', format='int') 
-                        
-                   if self.CrossSpectraPlotGraphceb.isChecked():
-                       opObj10=self.upObj.addOperation(name='CrossSpectraPlot',optype='other')
-                       print opObj10.id
-                       self.operObjList.append(opObj10) 
-                       for i in self.operObjList:
-                            if i.name=='CrossSpectraPlot' :
-                                i.addParameter(name='idfigure', value='2', format='int')
-                                i.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
-                                i.addParameter(name='zmin', value='40', format='int')
-                                i.addParameter(name='zmax', value='90', format='int') 
-                    
-                   if self.RTIPlotGraphCEB.isChecked():
-                       opObj10=self.upObj.addOperation(name='RTIPlot',optype='other')
-                       print opObj10.id
-                       self.operObjList.append(opObj10) 
-                       for i in self.operObjList:
-                           if i.name=='RTIPlot':
-                            i.addParameter(name='n', value='2', format='int')
-                            i.addParameter(name='overlapping', value='1', format='int')
-                                    
+                      opObj10.addParameter(name='idfigure', value='1', format='int')
+                      self.properSpecGraph(opObj10)
+                                 
+                   if self.dataTypeSelectorCmb.currentIndex()==1:    
+                      opObj10=self.upObj.addOperation(name='CrossSpectraPlot',optype='other')
+                      self.properSpecGraph(opObj10)        
+                      opObj10.addParameter(name='power_cmap', value='jet', format='str')
+                      opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
+                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')              
+                      
+                   if self.dataTypeSelectorCmb.currentIndex()==2:
+                      opObj10=self.upObj.addOperation(name='RTIPlot',optype='other')
+                      self.properSpecGraph(opObj10)         
+   
+                   if self.dataTypeSelectorCmb.currentIndex()==3:
+                      opObj10=self.upObj.addOperation(name='CoherenceMap',optype='other')
+                      self.properSpecGraph(opObj10) 
+                      opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
+                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
+                   
+                   if self.dataTypeSelectorCmb.currentIndex()==4:
+                      opObj10=self.upObj.addOperation(name='RTIfromNoise',optype='other')
+                      self.properSpecGraph(opObj10) 
+                   self.setDisableAllElementSpecGraph()
+                   print "Funciona o no"
+               
+    @pyqtSignature("")    
+    def on_dataGraphSpecCancelBtn_clicked(self): 
+            print "alexvaldez" 
+
+    def properSpecGraph(self,opObj10):
+          print opObj10.id                         
+          self.operObjList.append(opObj10)
+          wintitle=self.winTitleGraphSpec.text()      
+          opObj10.addParameter(name='wintitle', value=wintitle, format='str')
+          idfigure=self.idfigureGraphSpec.text()
+          opObj10.addParameter(name='idfigure', value=idfigure, format='int')
+
+          
+          channelList=self.channelListgraphSpec.text()
+          if self.channelListgraphSpec.isModified():
+              opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+          
+          xvalue= self.xminGraphSpec.text() 
+          if self.xminGraphSpec.isModified():
+              xvalueList=xvalue.split(',')
+              opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+              opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+          else:
+              print "cambio"
+          yvalue= self.yminGraphSpec.text()
+          if self.yminGraphSpec.isModified():
+              yvalueList=yvalue.split(",")
+              opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+              opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+          else:
+              print "cambio"
+          zvalue= self.zminGraphSpec.text()       
+          if self.zminGraphSpec.isModified():
+             zvalueList=zvalue.split(",")            
+          if opObj10.name=="RTIfromNoise":
+              print "No_z"
+          else:
+              if self.zminGraphSpec.isModified():
+                  zvalueList=zvalue.split(",")
+                  opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
+                  opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
+                  opObj10.addParameter(name='showprofile', value='1', format='int') 
+
+              else:
+                  print "cambio"
+          
+          if self.savedataCEBGraphicsVol.isChecked():
+              opObj10.addParameter(name='save', value='1', format='int')
+              opObj10.addParameter(name='figpath', value= self.dataPathTxtSpec.text())
+              opObj10.addParameter(name='figfile', value= self.dataPrefixGraphSpec.text())  
         
 
-                         
-   
+    def setClearAllElementGraph(self):
+            self.winTitleGraphSpec.clear()
+            self.channelListgraphSpec.clear()
+            self.xminGraphSpec.clear()
+            self.yminGraphSpec.clear()
+            self.zminGraphSpec.clear()
+            self.timeRangeGraphSpec.clear()    
+            self.dataPathTxtSpec.clear()
+            self.dataPrefixGraphSpec.clear() 
+            
+    def setDisableAllElementSpecGraph(self):
+            self.winTitleGraphSpec.setEnabled(False)
+            self.channelListgraphSpec.setEnabled(False)
+            self.xminGraphSpec.setEnabled(False)
+            self.yminGraphSpec.setEnabled(False)
+            self.zminGraphSpec.setEnabled(False)
+            self.timeRangeGraphSpec.setEnabled(False)   
+            self.dataPathTxtSpec.setEnabled(False)
+            self.dataPrefixGraphSpec.setEnabled(False) 
+#             
+    def setEnableAllElementGraph(self):
+            self.winTitleGraphSpec.setEnabled(True)
+            self.channelListgraphSpec.setEnabled(True)
+            self.xminGraphSpec.setEnabled(True)
+            self.yminGraphSpec.setEnabled(True)
+            self.zminGraphSpec.setEnabled(True)
+            self.timeRangeGraphSpec.setEnabled(True)   
+#      
+        
+        
+        
 class UnitProcess(QMainWindow, Ui_UnitProcess):
     """
     Class documentation goes here.
