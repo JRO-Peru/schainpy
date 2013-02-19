@@ -5,12 +5,12 @@ Created on September , 2012
 from xml.etree.ElementTree import Element, SubElement, ElementTree
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
-
-#import sys
-#import datetime
-#from model.jrodataIO import *
-#from model.jroprocessing import *
-#from model.jroplot import *
+# 
+# import sys
+# import datetime
+# from model.jrodataIO import *
+# from model.jroprocessing import *
+# from model.jroplot import *
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -26,6 +26,8 @@ class ParameterConf():
     value = None
     format = None
     
+    __value = None
+    
     ELEMENTNAME = 'Parameter'
     
     def __init__(self):
@@ -38,6 +40,10 @@ class ParameterConf():
     
     def getValue(self):
         
+        if self.__value != None:
+            
+            return self.__value
+            
         value = self.value
         
         if self.format == 'list':
@@ -88,7 +94,9 @@ class ParameterConf():
         
         func = eval(self.format)
         
-        return func(value)
+        self.__value = func(value)
+        
+        return self.__value
         
     def setup(self, id, name, value, format='str'):
         
@@ -222,7 +230,6 @@ class ProcUnitConf():
     name = None
     datatype = None
     inputId = None
-    arbol=None
     
     opConfObjList = []
     
@@ -237,7 +244,6 @@ class ProcUnitConf():
         self.datatype = None
         self.name = None
         self.inputId = None
-        self.arbol=None
         
         self.opConfObjList = []
         
@@ -435,7 +441,6 @@ class Project():
     id = None
     name = None
     description = None
-    arbol=None
 #    readUnitConfObjList = None
     procUnitConfObjDict = None
     
@@ -446,7 +451,7 @@ class Project():
         self.id = None
         self.name = None
         self.description = None
-        self.arbol=None
+        
 #        self.readUnitConfObjList = []
         self.procUnitConfObjDict = {}
         
