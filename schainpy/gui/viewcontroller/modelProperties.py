@@ -19,9 +19,21 @@ class treeModel(QtCore.QAbstractItemModel):
     timezone=None
     Summary=None
     
+    description=None
+    
     def __init__(self ,parent=None):
         super(treeModel, self).__init__(parent)
         self.people = []
+        
+        
+    def properties_projecto(self,description):
+        self.caracteristica="Project_Properties"
+        self.principal     ="Name"
+        self.description =description
+        exam_project=person_class(self.caracteristica,self.principal,self.description)
+        return exam_project
+        
+        
         
     def arbol(self):     
             for caracteristica,principal, descripcion in   (("Properties","Name",self.name), 
@@ -38,15 +50,20 @@ class treeModel(QtCore.QAbstractItemModel):
                                                             ):
                 person = person_class(caracteristica, principal, descripcion)
                 self.people.append(person)
+    def addProjectproperties(self,person):
+         self.people.append(person)
                 
-            self.rootItem = TreeItem(None, "ALL", None)
-            self.parents = {0 : self.rootItem}
-            self.setupModelData()
-        
+       
     #def veamos(self):
     #    self.update= MainWindow(self)
     #    self.update.dataProyectTxt.text()
     #    return self.update.dataProyectTxt.text()
+    
+    def showtree(self):
+        self.rootItem = TreeItem(None, "ALL", None)
+        self.parents = {0 : self.rootItem}
+        self.setupModelData()
+        
     def setParams(self,name,directorio,workspace,remode,dataformat,date,initTime,endTime,timezone,Summary):
         self.name=name
         self.workspace=workspace
