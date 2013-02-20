@@ -1259,8 +1259,7 @@ class RTIfromSpectraHeis(Figure):
         
         tmin = None
         tmax = None
-        x = dataOut.getTimeRange()
-        y = dataOut.getHeiRange()
+        
         
         factor = 1
         data = dataOut.data_spc/factor
@@ -1282,6 +1281,9 @@ class RTIfromSpectraHeis(Figure):
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Local Time"
         ylabel = "Intensity (dB)"
+        
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
         
         if not self.__isConfig:
             
