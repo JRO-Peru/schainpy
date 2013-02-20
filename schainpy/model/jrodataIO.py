@@ -2735,3 +2735,186 @@ class FITS:
         if os.path.isfile(filename):
             os.remove(filename)
         self.thdulist.writeto(filename) 
+
+
+class ParameterConf:
+    ELEMENTNAME = 'Parameter'
+    def __init__(self):
+        self.name = ''
+        self.value = ''
+
+    def readXml(self, parmElement):
+        self.name = parmElement.get('name')
+        self.value = parmElement.get('value')
+
+    def getElementName(self):
+        return self.ELEMENTNAME
+
+class Metadata:
+    
+    def __init__(self, filename):
+        self.parmConfObjList = []
+        self.readXml(filename)
+        
+    def readXml(self, filename):
+        self.projectElement = None
+        self.procUnitConfObjDict = {}
+        self.projectElement = ElementTree().parse(filename)
+        self.project = self.projectElement.tag      
+
+        parmElementList = self.projectElement.getiterator(ParameterConf().getElementName())
+        
+        for parmElement in parmElementList:
+            parmConfObj = ParameterConf()
+            parmConfObj.readXml(parmElement)
+            self.parmConfObjList.append(parmConfObj)
+
+class FitsWriter(Operation):
+    
+    def __init__(self):
+        self.isConfig = False
+        self.dataBlocksPerFile = None
+        self.blockIndex = 0
+        self.flagIsNewFile = 1
+        self.fitsObj = None
+        self.optchar = 'P'
+        self.ext = '.fits'
+        self.setFile = 0
+        
+    def setFitsHeader(self, dataOut, metadatafile):
+        
+        header_data = pyfits.PrimaryHDU()
+        
+        metadata4fits = Metadata(metadatafile)
+        for parameter in metadata4fits.parmConfObjList:
+            parm_name = parameter.name
+            parm_value = parameter.value
+            
+            if parm_value == 'fromdatadatetime':
+                value = time.strftime("%b %d %Y %H:%M:%S", dataOut.datatime.timetuple())
+            elif parm_value == 'fromdataheights':
+                value = dataOut.nHeights
+            elif parm_value == 'fromdatachannel':
+                value = dataOut.nChannels
+            elif parm_value == 'fromdatasamples':
+                value = dataOut.nFFTPoints
+            else:
+                value = parm_value
+                
+            header_data.header[parm_name] = value
+            
+        header_data.header['NBLOCK'] = self.blockIndex
+        
+        header_data.writeto(self.filename)
+        
+        
+    def setup(self, dataOut, path, dataBlocksPerFile, metadatafile):
+        
+        self.path = path
+        self.dataOut = dataOut
+        self.metadatafile = metadatafile
+        self.dataBlocksPerFile = dataBlocksPerFile
+    
+    def open(self):
+        self.fitsObj = pyfits.open(self.filename, mode='update')
+
+    
+    def addData(self, data):
+        self.open()
+        extension = pyfits.ImageHDU(data=data, name=self.fitsObj[0].header['DATA'])
+        extension.header['UTCTIME'] = self.dataOut.utctime
+        self.fitsObj.append(extension)
+        self.blockIndex += 1
+        self.fitsObj[0].header['NBLOCK'] = self.blockIndex
+
+        self.write()
+
+    def write(self):
+        
+        self.fitsObj.flush(verbose=True)
+        self.fitsObj.close()
+        
+    
+    def setNextFile(self):
+
+        ext = self.ext
+        path = self.path
+        
+        timeTuple = time.localtime( self.dataOut.utctime)
+        subfolder = 'd%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
+
+        fullpath = os.path.join( path, subfolder )
+        if not( os.path.exists(fullpath) ):
+            os.mkdir(fullpath)
+            self.setFile = -1 #inicializo mi contador de seteo
+        else:
+            filesList = os.listdir( fullpath )
+            if len( filesList ) > 0:
+                filesList = sorted( filesList, key=str.lower )
+                filen = filesList[-1]
+ 
+                if isNumber( filen[8:11] ):
+                    self.setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
+                else:    
+                    self.setFile = -1
+            else:
+                self.setFile = -1 #inicializo mi contador de seteo
+                
+        setFile = self.setFile
+        setFile += 1
+                
+        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
+                                        timeTuple.tm_year,
+                                        timeTuple.tm_yday,
+                                        setFile,
+                                        ext )
+
+        filename = os.path.join( path, subfolder, file )
+        
+        self.blockIndex = 0
+        self.filename = filename
+        self.setFile = setFile
+        self.flagIsNewFile = 1
+
+        print 'Writing the file: %s'%self.filename
+                
+        self.setFitsHeader(self.dataOut, self.metadatafile)
+        
+        return 1
+
+    def writeBlock(self):
+        self.addData(self.dataOut.data_spc)        
+        self.flagIsNewFile = 0
+
+    
+    def __setNewBlock(self):
+
+        if self.flagIsNewFile:
+            return 1
+        
+        if self.blockIndex < self.dataBlocksPerFile:
+            return 1
+        
+        if not( self.setNextFile() ):
+            return 0
+        
+        return 1
+
+    def writeNextBlock(self):
+        if not( self.__setNewBlock() ):
+            return 0
+        self.writeBlock()
+        return 1  
+    
+    def putData(self):        
+        if self.flagIsNewFile:
+            self.setNextFile()
+        self.writeNextBlock()
+        
+    def run(self, dataOut, **kwargs):
+        if not(self.isConfig):
+            self.setup(dataOut, **kwargs)
+            self.isConfig = True
+        self.putData()
+    
+    
