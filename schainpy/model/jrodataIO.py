@@ -10,6 +10,7 @@ import time
 import numpy
 import fnmatch
 import time, datetime
+from xml.etree.ElementTree import Element, SubElement, ElementTree
 try:
     import pyfits
 except:
