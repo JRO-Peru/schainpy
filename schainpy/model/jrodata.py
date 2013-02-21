@@ -572,3 +572,53 @@ class SpectraHeis(JROData):
         self.utctime = None
         
         self.blocksize = None
+
+class Fits:
+    
+    def __init__(self):
+        self.useLocalTime = False
+        self.utctime = None
+        self.timeZone = None
+        self.ltctime = None
+        self.timeInterval = None
+        self.header = None
+        self.data_header = None
+        self.data = None
+        self.datatime = None
+        self.flagNoData = False
+        self.expName = ''
+        self.nChannels = None
+        self.nSamples = None
+        self.dataBlocksPerFile = None
+        self.comments = ''
+
+    
+    def getltctime(self):
+        
+        if self.useLocalTime:
+             return self.utctime - self.timeZone*60
+        
+        return self.utctime
+    
+    def getDatatime(self):
+        
+        datatime = datetime.datetime.utcfromtimestamp(self.ltctime)
+        return datatime
+    
+    def getTimeRange(self):
+        
+        datatime = []
+        
+        datatime.append(self.ltctime)
+        datatime.append(self.ltctime + self.timeInterval)
+        
+        datatime = numpy.array(datatime)
+        
+        return datatime
+    
+    def isEmpty(self):
+        
+        return self.flagNoData
+    
+    datatime = property(getDatatime, "I'm the 'datatime' property")
+    ltctime = property(getltctime, "I'm the 'ltctime' property")
