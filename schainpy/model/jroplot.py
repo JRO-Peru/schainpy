@@ -1242,7 +1242,7 @@ class RTIfromSpectraHeis(Figure):
     def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1, show=True, useLocalTime=False, timezone=0):
+            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1, show=True):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1259,7 +1259,8 @@ class RTIfromSpectraHeis(Figure):
         
         tmin = None
         tmax = None
-        
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
         
         factor = 1
         data = dataOut.data_spc/factor
@@ -1271,19 +1272,9 @@ class RTIfromSpectraHeis(Figure):
 #        noisedB = 10*numpy.log10(noise)
         
         thisDatetime = dataOut.datatime
-        if useLocalTime:
-            first_timezone  = dataOut.timeZone
-            first_useLocalTime = dataOut.useLocalTime
-            dataOut.timeZone = timezone
-            dataOut.useLocalTime = useLocalTime 
-            thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
-            
         title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Local Time"
         ylabel = "Intensity (dB)"
-        
-        x = dataOut.getTimeRange()
-        y = dataOut.getHeiRange()
         
         if not self.__isConfig:
             
@@ -1348,6 +1339,5 @@ class RTIfromSpectraHeis(Figure):
             del self.xdata
             del self.ydata
 
-        dataOut.timeZone = first_timezone
-        dataOut.useLocalTime = first_useLocalTime
+
                
