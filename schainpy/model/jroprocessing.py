@@ -366,7 +366,7 @@ class VoltageProc(ProcessingUnit):
         buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
         buffer = numpy.sum(buffer,2)
         self.dataOut.data = buffer
-        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window-newdelta,newdelta)
+        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window,newdelta)
         self.dataOut.windowOfFilter = window
 
     def deFlip(self):
