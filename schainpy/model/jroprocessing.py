@@ -716,7 +716,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.utctime = self.firstdatatime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
-        self.dataOut.flagShiftFFT = self.dataIn.flagShiftFFT
+#        self.dataOut.flagShiftFFT = self.dataIn.flagShiftFFT
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
@@ -764,7 +764,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_cspc = cspc
         self.dataOut.data_dc = dc
         self.dataOut.blockSize = blocksize
-        self.dataOut.flagShiftFFT = True
+        self.dataOut.flagShiftFFT = False
         
     def init(self, nFFTPoints=None, pairsList=None):
         
@@ -1344,7 +1344,7 @@ class SpectraHeisProc(ProcessingUnit):
 #        self.dataOut.utctime = self.firstdatatime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
-        self.dataOut.flagShiftFFT = self.dataIn.flagShiftFFT
+#        self.dataOut.flagShiftFFT = self.dataIn.flagShiftFFT
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds= self.dataIn.ippSeconds
