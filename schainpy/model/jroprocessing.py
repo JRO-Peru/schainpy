@@ -1323,6 +1323,11 @@ class SpectraHeisProc(ProcessingUnit):
         self.dataOut = SpectraHeis()
 
     def __updateObjFromInput(self):
+        self.dataOut.timeZone = self.dataIn.timeZone
+        self.dataOut.dstFlag = self.dataIn.dstFlag
+        self.dataOut.errorCount = self.dataIn.errorCount
+        self.dataOut.useLocalTime = self.dataIn.useLocalTime
+        
         self.dataOut.radarControllerHeaderObj = self.dataIn.radarControllerHeaderObj.copy()#
         self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()#
         self.dataOut.channelList = self.dataIn.channelList
