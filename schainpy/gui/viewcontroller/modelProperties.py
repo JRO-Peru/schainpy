@@ -1,6 +1,6 @@
 from PyQt4 import QtCore
 
-HORIZONTAL_HEADERS = ("ITEM :"," DATOS  :  " )
+HORIZONTAL_HEADERS = ("Property","Value " )
     
 HORIZONTAL = ("RAMA :",)
    
@@ -75,6 +75,25 @@ class treeModel(QtCore.QAbstractItemModel):
         self.endTime=endTime
         self.timezone=timezone
         self.Summary=Summary
+        
+        
+        for caracteristica,principal, descripcion in   (("Properties","Name",self.name), 
+                                                            ("Properties","Data Path",self.directorio),
+                                                            ("Properties","Workspace",self.workspace),
+                                                            ("Parameters", "Read Mode     ",self.remode),
+                                                            ("Parameters", "DataType    ",self.dataformat),
+                                                            ("Parameters", "Date          ",self.date),
+                                                            ("Parameters", "Init Time     ",self.initTime),
+                                                            ("Parameters", "Final Time    ",self.endTime),
+                                                            ("Parameters", " Time zone    ",self.timezone),
+                                                            ("Parameters", "Profiles      ","1"),
+                                                            ("Description", "Summary      ", self.Summary),
+                                                            ):
+                person = person_class(caracteristica, principal, descripcion)
+                self.people.append(person)
+        self.rootItem = TreeItem(None, "ALL", None)
+        self.parents = {0 : self.rootItem}
+        self.setupModelData()
         
     
     def columnCount(self, parent=None):
