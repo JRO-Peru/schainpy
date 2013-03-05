@@ -1,644 +1,1034 @@
 # -*- coding: utf-8 -*-
 """
 Module implementing MainWindow.
-#+++++++++++++INTERFAZ DE USUARIO V1.1++++++++++++++#
+#+++++++++++++GUI V1++++++++++++++#
+@author: AlexanderValdezPortocarrero ñ_ñ
 """
-import os,sys
-
-
+import os, sys
 import datetime
-
-from PyQt4.QtGui           import QMainWindow
+from PyQt4.QtGui           import QMainWindow 
 from PyQt4.QtCore          import pyqtSignature
 from PyQt4.QtCore          import pyqtSignal
 from PyQt4                 import QtCore
 from PyQt4                 import QtGui
-from timeconversions       import  Doy2Date
-from modelProperties       import treeModel
 
 from viewer.ui_unitprocess import Ui_UnitProcess
 from viewer.ui_window      import Ui_window
 from viewer.ui_mainwindow  import Ui_BasicWindow
 
-print "Nohayproblema"
-pathe = os.path.split(os.getcwd())[0]
-sys.path.append(pathe)
-print "leer", pathe
-  
-from controller import *
 
+from modelProperties  import treeModel
 
-#from controller            import Project,ReadUnitConf,ProcUnitConf,OperationConf,ParameterConf
+path = os.path.split(os.getcwd())[0]
 
+sys.path.append(path)
+
+from controller  import *
 
 def isRadarFile(file):
-
-    try:
-        year = int(file[1:5])
-        doy = int(file[5:8])
-        set = int(file[8:11])
-    except:
-        return 0
+        try:
+            year = int(file[1:5])
+            doy = int(file[5:8])
+            set = int(file[8:11])
+        except:
+            return 0
     
-    return 1
+        return 1
 
 def isRadarPath(path):
-    try:
-        year = int(path[1:5])
-        doy = int(path[5:8])
-    except:
-        return 0
+        try:
+            year = int(path[1:5])
+            doy = int(path[5:8])
+        except:
+            return 0
     
-    return 1
+        return 1
+    
 
-class BasicWindow(QMainWindow, Ui_BasicWindow):
-    __projObjDict = None
-    __arbolDict = None
-    __upObjDict = None
-    
+class BasicWindow(QMainWindow,Ui_BasicWindow):
     """
-    Class documentation goes here.
-    #*############VENTANA CUERPO  DEL PROGRAMA##############
+     
     """
-    def __init__(self, parent = None):  
-        """
-        Constructor
-        """   
-        print "INICIO PROGRAMA "
-        QMainWindow.__init__(self, parent)
-        self.setupUi(self)
-        
-        self.__projObjDict = {}
-        self.__arbolDict = {}
-        self.__upObjDict = {}
-        self.__opObjDict= {}
-        self.indexclick=None
-        self.b=0
-               
-        self.online=0
-        self.datatype=0
-        self.dateList=[]
-        
-        self.proObjList=[]      
-        self.idp=0
-        self.namep=0
-        self.description=0
-        self.namepTree=0
-        self.valuep=0
-
-        self.upObjList= []     
-        self.upn=0
-        self.upName=0
-        self.upType=0
-        self.uporProObjRecover=0
-        
-        self.readUnitConfObjList=[]
-        
-        self.upObjVolList=[]
-        self.upobjSpecList=[] 
-        
-        self.operObjList=[]
-        
-        self.configProject=None
-        self.configUP=None
-    
-        self.readUnitConfObj=None
-        self.procUnitConfObj0=None
-        self.opObj10=None
-        self.opObj12=None
-        
-        self.setParam()     
-
-  #------------------VistadelNombreCompletousandoelpunteroSobrelosbotones---------------------------#
-        QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
-        self.addprojectBtn.setToolTip('Add_New_Project')    
-        self.addUnitProces.setToolTip('Add_New_Processing_Unit')  
-
-  #------------------------ManejodeEventosconelmouse------------------------------------------------#
-        self.model = QtGui.QStandardItemModel()
-        self.treeView.setModel(self.model)
-        self.treeView.clicked.connect(self.clickFunctiontree)
-        self.treeView.doubleClicked.connect(self.doubleclickFunctiontree)
-        self.treeView.expandAll()
-        
-        #self.treeView.setReadOnly(True)
-        self.treeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.treeView.customContextMenuRequested.connect(self.popup)
-        #self.treeView.clicked.connect(self.treefunction1)
-        self.model_2=treeModel()
-
-
- #-----------------------------------BARRA DE MENU-------------------------------------------------#
- 
-    def popup(self, pos):
-#        for i in self.treeView.selectionModel().selection().indexes():
-#            print i.row(), i.column()
-        menu = QtGui.QMenu()
-        #menu.centralWidget.setObjectName(_fromUtf8("centralWidget"))
-        quitAction0 = menu.addAction("Add Branch")
-        quitAction1 = menu.addAction("Delete Branch")
-        quitAction2 = menu.addAction("Exit")
-        #quitAction2 = menu.addAction("Exit")
-        print "pos:", pos
-        action = menu.exec_(self.mapToGlobal(pos))
-        if action == quitAction0:
-           self.addUP()
-           
-        if action == quitAction1:
-            for i in self.__arbolDict: 
-             if self.__arbolDict[i]==self.indexclick:
-                 self.arbolItem=self.__arbolDict[i]
-                 print self.arbolItem
-                 self.arbolItem.removeRows(self.arbolItem.row(),1)
-        if action == quitAction2:
-            return
- #----------------------------------- MENU_PROJECT--------------------------------------------------#  
-        
-    @pyqtSignature("")
-    def on_menuFileAbrirObj_triggered(self):
-        """
-        Abre un archivo de configuracion seleccionado, lee los parametros y
-        actualiza los atributos de esta clase; creando los objetos necesarios
-        con los parametros leidos desde el archivo.
-        """
-        print "Leer un archivo xml y extraer sus atributos Not implemented yet"
-        
-    @pyqtSignature("")
-    def on_menuFileCrearObj_triggered(self):
-        """
-        Crea un proyecto nuevo y lo anade a mi diccionario de proyectos
-        y habilita la ventana de configuracion del proyecto.
-        
-        """
-        self.addProject()
-             
-    @pyqtSignature("")
-    def on_menuFileGuardarObj_triggered(self):
-        """
-        METODO  EJECUTADO CUANDO OCURRE EL EVENTO GUARDAR PROJECTO
-        
-        Llama al metodo saveProject.
-        """ 
-#        my_id = arbol_selected()
-#        filename = savefindow.show()
-#        self.saveProject(id, filename)
-        print "probsave"
-        self.saveProject()
-        
-    @pyqtSignature("")
-    def on_menuFileCerrarObj_triggered(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO CERRAR
-        Llama al metodo close.
-        """ 
-        self.close()
-        
-   #-----------------------------------MENU_RUN----------------------------------------------------#   
-    
-    @pyqtSignature("")
-    def on_menuRUNStartObj_clicked(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO RUN 
-        Llama al metodo RUN.
-        """ 
-        
-        print "Leyendo el archivo XML"
-        for i in self.__arbolDict:            
-            if self.__arbolDict[i]==self.indexclick:
-                self.projectObj=self.__projObjDict[i] 
-                print "Encontre project"
-        filename="C:\WorkspaceGUI\config"+str(self.projectObj.id)+".xml"
-        self.projectObj.readXml(filename)
-        #controllerObj.printattr()
-        
-        self.projectObj.createObjects()
-        self.projectObj.connectObjects()
-        self.projectObj.run()
-        print "Not implemented yet"
-        
-    @pyqtSignature("") 
-    def on_menuRUNPausaObj_clicked(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO PAUSA
-        Llama al metodo PAUSA.
-        """ 
-        print "Not implemented yet"
-    
-   #-----------------------------------MENU_OPTION-------------------------------------------------#   
-    
-    @pyqtSignature("") 
-    def on_menuOptConfigLogfileObj_clicked(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO ConfigLog
-        Llama al metodo close.
-        """ 
-        print "Not implemented yet"
-   
-    @pyqtSignature("") 
-    def on_menuOptConfigserverObj_clicked(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO Config Server
-        Llama al metodo close.
-        """ 
-        print "Not implemented yet"   
-    #-----------------------------------MENU_HELP-------------------------------------------------------#   
-    
-    @pyqtSignature("") 
-    def on_menuHELPAboutObj_clicked(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO HELP
-        Llama al metodo close.
-        """ 
-        print "Not implemented yet"
-    
-      
-  #-----------------------------------BARRA DE HERRAMIENTAS----------------------------------------#
-    
-    @pyqtSignature("")
-    def on_actOpenObj_triggered(self):
-        """
-        METODO CARGA UN ARCHIVO DE CONFIGURACION ANTERIOR
-        """
-        print "Leer un archivo xml y extraer sus atributos Not implemented yet"
-       
-    @pyqtSignature("")
-    def on_actCreateObj_triggered(self):
-        """
-        CREAR PROJECT ,ANADE UN NUEVO PROYECTO, LLAMA AL MÉTODO QUE CONTIENE LAS OPERACION DE CREACION DE PROYECTOS
-        Llama al metodo addProject.
-        """
-        self.addProject()
-                    
-    @pyqtSignature("")
-    def on_actStopObj_triggered(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO PAUSA
-        Llama al metodo PAUSA.
-        """ 
-        print "Not implemented yet"
-
-    @pyqtSignature("")
-    def on_actPlayObj_triggered(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO PAUSA
-        Llama al metodo PAUSA.
-        """ 
-        print "Leyendo el archivo XML"
-        for i in self.__arbolDict:            
-            if self.__arbolDict[i]==self.indexclick:
-                self.projectObj=self.__projObjDict[i] 
-                print "Encontre project"
-        filename="C:\WorkspaceGUI\config"+str(self.projectObj.id)+".xml"
-        self.projectObj.readXml(filename)
-        #controllerObj.printattr()
-        
-        self.projectObj.createObjects()
-        self.projectObj.connectObjects()
-        self.projectObj.run()
-        print "Not implemented yet"
-   
-    @pyqtSignature("")
-    def on_actSaveObj_triggered(self):
-        """
-        METODO EJECUTADO CUANDO OCURRE EL EVENTO SAVE
-        Llama al metodo SAVE.
-        """ 
-        self.saveProject()
-      
-   #-----------------------------------PUSHBUTTON_CREATE PROJECT----------------------------------#      
+    def __init__(self,parent = None):
+         """
          
+         """
+         QMainWindow.__init__(self,parent)
+         self.setupUi(self)
+         self.__projObjDict = {}
+         self.__upObjDict = {}
+         self.__arbolDict = {}
+         self.readUnitConfObjList=[]
+         self.operObjList=[]
+         self.idp = 0
+         self.online=0
+         self.walk=1
+         self.indexclick=None
+         self.setParameter() 
+        
     @pyqtSignature("")
-    def on_addprojectBtn_clicked(self):
+    def on_actionCreate_triggered(self):
         """
-        CREAR PROJECT ,ANADE UN NUEVO PROYECTO, LLAMA AL MÉTODO QUE CONTIENE LAS OPERACION DE CREACION DE PROYECTOS
-        Llama al metodo addProject.
-        """ 
-        self.addProject()
+        Slot documentation goes here.
+        """
         self.setProjectParam()
-    
-   #------------------------------------VENTANA CONFIGURACION PROJECT----------------------------#     
-   
-    @pyqtSignature("int")
-    def on_dataTypeCmbBox_activated(self,index):
+            
+    @pyqtSignature("")
+    def on_actionSave_triggered(self):
         """
-        Metodo que identifica que tipo de dato se va a trabajar VOLTAGE O ESPECTRA
+        Slot documentation goes here.
+        """ 
+        self.saveProject()   
+        
+    def on_actionStart_triggered(self):
         """
-        self.dataFormatTxt.setReadOnly(True)
-        if index==0:
-           self.datatype='.r'
-        elif index==1:
-            self.datatype='.pdata'
-        else :
-              self.datatype=''
-              self.dataFormatTxt.setReadOnly(False)
-        self.dataFormatTxt.setText(self.datatype)  
-        self.loadDays()
+        """
+        self.playProject()
         
     @pyqtSignature("")
-    def on_dataPathBrowse_clicked(self):
+    def on_actionCreateToolbar_triggered(self):
         """
-        OBTENCION DE LA RUTA DE DATOS
+        Slot documentation goes here.
         """
-        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
-        self.dataPathTxt.setText(self.dataPath)
-        
-        self.starDateCmbBox.clear()
-        self.endDateCmbBox.clear()
-        
-        if not os.path.exists(self.dataPath):
-            self.dataOkBtn.setEnabled(False)
-            return
-        
-        self.loadDays()  
-        
-    @pyqtSignature("int")
-    def on_starDateCmbBox_activated(self, index):
-        """
-        SELECCION DEL RANGO DE FECHAS -START DATE
-        """
-        stopIndex = self.endDateCmbBox.count() - self.endDateCmbBox.currentIndex()
-        self.endDateCmbBox.clear()
-        
-        for i in self.dateList[index:]:
-            self.endDateCmbBox.addItem(i)
-            
-        self.endDateCmbBox.setCurrentIndex(self.endDateCmbBox.count() - stopIndex)
-
-    @pyqtSignature("int")
-    def on_endDateCmbBox_activated(self, index):
-        """
-        SELECCION DEL RANGO DE FECHAS-END DATE
-        """
-        startIndex=self.starDateCmbBox.currentIndex()
-        stopIndex = self.endDateCmbBox.count() - index
-        self.starDateCmbBox.clear()
-        for i in self.dateList[:len(self.dateList) - stopIndex + 1]:
-            self.starDateCmbBox.addItem(i)
-        self.starDateCmbBox.setCurrentIndex(startIndex)
+        self.setProjectParam()     
     
+    @pyqtSignature("")
+    def on_actionSaveToolbar_triggered(self):
+        """
+        Slot documentation goes here.
+        """
+        self.saveProject()
+    
+    @pyqtSignature("")
+    def on_actionStarToolbar_triggered(self):
+        """
+        Slot documentation goes here.
+        """
+        self.playProject()
+
+        
     @pyqtSignature("int")
-    def on_readModeCmBox_activated(self, p0):
+    def on_proComReadMode_activated(self, p0):
         """
         SELECCION DEL MODO DE LECTURA ON=1, OFF=0
         """
         if p0==0:
            self.online=0
+           self.proDelay.setEnabled(False)
         elif p0==1:
-            self.online=1  
+            self.online=1
+            self.proDelay.setEnabled(True)   
+        self.console.clear()
+        self.console.append("Choose the type of Walk")
+
         
-    #---------------PUSHBUTTON_DATA    "      OKBUTTON    "_CONFIGURATION PROJECT--------------------------#    
-    
+        
+    @pyqtSignature("int")
+    def on_proComDataType_activated(self,index):
+        """
+        Voltage or Spectra
+        """
+        if index==0:
+           self.datatype='.r'
+        elif index==1:
+            self.datatype='.pdata'
+
+        self.proDataType.setText(self.datatype)
+        self.console.clear()
+        self.console.append("Choose your DataPath")
+        self.console.append("Use the toolpath or Write the path")   
+        
+    @pyqtSignature("int")
+    def on_proComWalk_activated(self,index):
+        """
+ 
+        """
+        if index==0:
+           self.walk=0
+        elif index==1:
+            self.walk=1
+        
+            self.console.clear()
+            self.console.append("Now, Push the Button Load to charge the date")
+                
     @pyqtSignature("")
-    def on_dataOkBtn_clicked(self):
+    def on_proToolPath_clicked(self):
+        """
+        Choose your path
+        """
+        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
+        self.proDataPath.setText(self.dataPath)
+        
+        self.proComStartDate.clear()
+        self.proComEndDate.clear()
+        
+        if not os.path.exists(self.dataPath):
+            self.proOk.setEnabled(False)
+            self.console.clear()
+            self.console.append("Write a correct a path")
+            return 
+        self.console.clear()
+        self.console.append("Select the read mode")
+        
+        
+    @pyqtSignature("")
+    def on_proLoadButton_clicked(self):     
+        self.proOk.setEnabled(True)
+        self.console.clear()
+        self.console.append("You will see the range of date Load")
+        self.console.append("First,Don't forget to Choose the Read Mode: OffLine or Online")
+        self.console.append("The option Wait is for default 0")   
+        self.loadDays()
+         
+    
+    @pyqtSignature("int")
+    def on_proComStartDate_activated(self, index):
+        """
+        SELECCION DEL RANGO DE FECHAS -START DATE
+        """
+        stopIndex = self.proComEndDate.count() - self.proComEndDate.currentIndex()
+        self.proComEndDate.clear()
+        
+        for i in self.dateList[index:]:
+            self.proComEndDate.addItem(i)
+            
+        self.proComEndDate.setCurrentIndex(self.proComEndDate.count() - stopIndex)
+
+    @pyqtSignature("int")
+    def on_proComEndDate_activated(self, index):
+        """
+        SELECCION DEL RANGO DE FECHAS-END DATE
+        """
+        startIndex=self.proComStartDate.currentIndex()
+        stopIndex = self.proComEndDate.count() - index
+        self.proComStartDate.clear()
+        for i in self.dateList[:len(self.dateList) - stopIndex + 1]:
+            self.proComStartDate.addItem(i)
+        self.proComStartDate.setCurrentIndex(startIndex)
+             
+    @pyqtSignature("")
+    def on_proOk_clicked(self):
         """
         Añade al Obj XML de Projecto, name,datatype,date,time,readmode,wait,etc, crea el readUnitProcess del archivo xml.
         Prepara la configuración del diágrama del Arbol del treeView numero 2
-        """     
-        print "DATOS DEL PROJECT PATH,DATE,TIME"   
-           
-#               print self.projectObj
-#               print i
-#               print "get",self.__arbolDict.items()
-#               print "keys",self.__arbolDict.keys()
-
-        self.idp += 1
-        self.projectObj = Project()
-        self.__projObjDict[self.idp] = self.projectObj
-
-        self.description="Think" 
-                 
-        id      =   self.idp
-        name    =   str(self.nameProjectTxt.text())
-        desc    =   str(self.description)
-         
+        """   
+        self.console.clear()
+        self.idp +=1
+        self.projectObj= Project ()
+        self.__projObjDict[self.idp]=self.projectObj
+        
+        id = self.idp
+        name = str(self.proName.text())
+        desc=str(self.proDescription.toPlainText())
         self.projectObj.setup(id = id, name=name, description=desc)
-        print "self.projectObj.id",self.projectObj.id
-        
-        #-------AÑADIENDO PARAMETROS A LA UNIDAD DE LECTURA---------#
- 
-        datatype  =  str(self.dataTypeCmbBox.currentText())
-        path      =  str(self.dataPathTxt.text())
+        datatype  =  str(self.proComDataType.currentText())
+        path      =  str(self.proDataPath.text())
+        #path='C://data3'
         online    =  int(self.online)
-        starDate  =  str(self.starDateCmbBox.currentText())
-        endDate   =  str(self.endDateCmbBox.currentText())
+        walk      =  int(self.walk)
+        starDate  =  str(self.proComStartDate.currentText())
+        endDate   =  str(self.proComEndDate.currentText())
+        reloj1=self.proStartTime.time()
+        reloj2=self.proEndTime.time()
         
-        
-        reloj1=self.startTimeEdit.time()
-        print 
-        
-        reloj2=self.endTimeEdit.time()
-        
-        print reloj1.hour()
-        print reloj1.minute()
-        print reloj1.second()
-
         self.readUnitConfObj = self.projectObj.addReadUnit(datatype    =    datatype,
-                                                           path        =    path,
-                                                           startDate   =    starDate,
-                                                           endDate     =    endDate,
-                                                           startTime   =    str(reloj1.hour()) +":"+str(reloj1.minute())+":"+ str(reloj1.second()),
-                                                           endTime     =    str(reloj2.hour()) +":"+str(reloj2.minute())+":"+ str(reloj2.second()),
-                                                           online      =    online)
-        print self.readUnitConfObj.datatype,"self.readUnitConfObj.datatype"
-         
-        self.readUnitConfObjList.append(self.readUnitConfObj)           
-             
-        #--------VISUALIZACION EN LA VENTANA PROJECT PROPERTIES-----------------#
-        #self.model_2=treeModel()        
-        self.model_2=treeModel()
-        self.model_2.setParams(name       =  self.projectObj.name,
-                               directorio =  path,
-                               workspace  =  "C:\\WorkspaceGUI",
-                               remode     =  str(self.readModeCmBox.currentText()), 
-                               dataformat =  datatype, 
-                               date       =  str(starDate)+"-"+str(endDate),
-                               initTime   =  str(reloj1.hour()) +":"+str(reloj1.minute())+":"+ str(reloj1.second()),
-                               endTime    =  str(reloj2.hour()) +":"+str(reloj2.minute())+":"+ str(reloj2.second()),
-                               timezone   =  "Local" ,
-                               Summary    =  "test de prueba")                                                 
+                                                            path        =    path,
+                                                            startDate   =   starDate,
+                                                            endDate     =    endDate,
+                                                            startTime=  str(reloj1.hour()) +":"+str(reloj1.minute())+":"+ str(reloj1.second()),
+                                                            endTime= str(reloj2.hour()) +":"+str(reloj2.minute())+":"+ str(reloj2.second()),
+                                                            online= online,
+                                                            walk= walk)
+        self.readUnitConfObjList.append(self.readUnitConfObj) 
         
-        self.model_2.arbol()
-        self.model_2.showtree()
-        self.treeView_2.setModel(self.model_2)
-        self.treeView_2.expandAll()  
-        
-        #--------CREACIÓNDELDIAGRAMADELARBOL------------------------#                   
-        self.parentItem = self.model.invisibleRootItem()
-        #self.__arbolDict[self.idp] =   QtGui.QStandardItem(QtCore.QString(name).arg(self.idp))
-        self.__arbolDict[self.idp] =   QtGui.QStandardItem(QtCore.QString(name).arg(self.idp))
-
-        print self.__arbolDict[self.idp]
+        #Project Explorer
+        self.parentItem=self.model.invisibleRootItem()
+        self.__arbolDict[self.idp] =QtGui.QStandardItem(QtCore.QString(name).arg(self.idp))
         self.parentItem.appendRow(self.__arbolDict[self.idp])
         self.parentItem=self.__arbolDict[self.idp]
-    
-        #--------BLOQUEO-------#    
-        self.tabProject.setEnabled(False)
+          
+        #Project Properties
+        self.model_2=treeModel()
+        self.model_2.setParams(name       =  self.projectObj.name,
+                                directorio =  path,
+                                 workspace  =  "C:\\WorkspaceGUI",
+                                  remode     =  str(self.proComReadMode.currentText()), 
+                                   dataformat =  datatype, 
+                                    date       =  str(starDate)+"-"+str(endDate),
+                                      initTime   =  str(reloj1.hour()) +":"+str(reloj1.minute())+":"+ str(reloj1.second()),
+                                       endTime    =  str(reloj2.hour()) +":"+str(reloj2.minute())+":"+ str(reloj2.second()),
+                                        timezone   =  "Local" ,
+                                          Summary   = desc)
 
+        self.treeProjectProperties.setModel(self.model_2)
+        self.treeProjectProperties.expandAll()
         
-   #-----------------PUSHBUTTON_ADD_PROCESSING UNIT PROJECT------------------#    
+        #Disable tabProject after finish the creation
+        #self.tabProject.setEnabled(False)
+        self.console.clear()
+        self.console.append("Now you can add a Unit Processing")
+        self.console.append("If you want to save your project")
+        self.console.append("click on your project name in the Tree Project Explorer")
+#----------------Voltage Operation-------------------#    
+
+    @pyqtSignature("int")
+    def on_volOpCebChannels_stateChanged(self, p0):
+        """
+        Check Box habilita operaciones de Selecci�n de Canales
+        """
+        if  p0==2:
+            self.volOpComChannels.setEnabled(True)
+            self.volOpChannel.setEnabled(True)
+            
+        if  p0==0:
+            self.volOpComChannels.setEnabled(False)
+            self.volOpChannel.setEnabled(False)
+
+            
+    @pyqtSignature("int")
+    def on_volOpCebHeights_stateChanged(self, p0):
+        """
+        Check Box habilita operaciones de Selecci�n de Alturas 
+        """
+        if  p0==2:
+            self.volOpHeights.setEnabled(True)
+            self.volOpComHeights.setEnabled(True)
+
+        if  p0==0:
+            self.volOpHeights.setEnabled(False)
+            self.volOpComHeights.setEnabled(False)
+
+    @pyqtSignature("int")
+    def on_volOpCebFilter_stateChanged(self, p0):
+         """
+         Name='Decoder', optype='other'
+         """
+         if  p0==2:
+            self.volOpFilter.setEnabled(True)
+  
+         if  p0==0:
+            self.volOpFilter.setEnabled(False)
+
+    @pyqtSignature("int")
+    def on_volOpCebProfile_stateChanged(self, p0):
+        """
+        Check Box habilita ingreso  del rango de Perfiles
+        """
+        if  p0==2:
+            self.volOpComProfile.setEnabled(True)
+            self.volOpProfile.setEnabled(True)
+
+        if  p0==0:
+            self.volOpComProfile.setEnabled(False)
+            self.volOpProfile.setEnabled(False)
+
+    @pyqtSignature("int")
+    def on_volOpCebDecodification_stateChanged(self, p0):
+        """
+        Check Box habilita 
+        """
+        if  p0==2:
+            self.volOpComCode.setEnabled(True)
+            self.volOpComMode.setEnabled(True)
+
+        if  p0==0:
+            self.volOpComCode.setEnabled(False)
+            self.volOpComMode.setEnabled(False)
+    
+            
+    @pyqtSignature("int")
+    def on_volOpCebCohInt_stateChanged(self, p0):
+        """
+        Check Box habilita ingresode del numero de Integraciones a realizar
+        """
+        if  p0==2:
+            self.volOpCohInt.setEnabled(True)
+        if  p0==0:
+            self.volOpCohInt.setEnabled(False)
+           
+            
+                 
+        
     @pyqtSignature("")
-    def on_addUnitProces_clicked(self):
+    def on_volOpOk_clicked(self):
         """
-        CREAR PROCESSING UNIT ,añade unidad de procesamiento, LLAMA AL MÉTODO addUP QUE CONTIENE LAS OPERACION DE CREACION DE UNIDADES DE PROCESAMIENTO
-        Llama al metodo addUP.
+        BUSCA EN LA LISTA DE OPERACIONES DEL TIPO VOLTAJE Y LES A�ADE EL PARAMETRO ADECUADO ESPERANDO LA ACEPTACION DEL USUARIO
+        PARA AGREGARLO AL ARCHIVO DE CONFIGURACION XML
+        """   
+        for i in self.__arbolDict:       
+            if self.__arbolDict[i]==self.indexclick:
+               if self.__upObjDict.has_key(i)==True:
+                   self.upObj=self.__upObjDict[i]
+                       
+                   if self.volOpCebChannels.isChecked():
+                         if  self.volOpComChannels.currentIndex()== 0:
+                             opObj10=self.upObj.addOperation(name="selectChannels")
+                             self.operObjList.append(opObj10)
+                             value=self.volOpChannel.text()                    
+                             opObj10.addParameter(name='channelList', value=value, format='intlist')
+                         else:
+                             opObj10=self.upObj.addOperation(name="selectChannelsByIndex")
+                             self.operObjList.append(opObj10)
+                             value=self.volOpChannel.text()                    
+                             opObj10.addParameter(name='channelIndexList', value=value, format='intlist')
+                                                     
+                   if self.volOpCebHeights.isChecked():
+                         if  self.volOpComHeights.currentIndex()== 0:
+                             opObj10=self.upObj.addOperation(name='selectHeights')
+                             value=self.volOpHeights.text()
+                             valueList=value.split(',')
+                             opObj10.addParameter(name='minHei', value=valueList[0], format='float')
+                             opObj10.addParameter(name='maxHei', value=valueList[1], format='float')
+                         else:
+                             opObj10=self.upObj.addOperation(name='selectHeightsByIndex')
+                             value=self.volOpHeights.text()
+                             valueList=value.split(',')
+                             opObj10.addParameter(name='minIndex', value=valueList[0], format='float')
+                             opObj10.addParameter(name='maxIndex', value=valueList[1], format='float')
+                             
+                   if self.volOpCebFilter.isChecked():
+                         opObj10=self.upObj.addOperation(name='filterByHeights')
+                         value=self.volOpFilter.text()
+                         opObj10.addParameter(name='window', value=value, format='int')
+      
+                   if self.volOpCebProfile.isChecked():
+                         opObj10=self.upObj.addOperation(name='ProfileSelector', optype='other')
+                         if  self.volOpComProfile.currentIndex()== 0:
+                             self.operObjList.append(opObj10)
+                             value=self.volOpProfile.text()
+                             opObj10.addParameter(name='profileList', value=value, format='intlist')
+                         else:
+                             self.operObjList.append(opObj10)
+                             value=self.volOpProfile.text()
+                             opObj10.addParameter(name='profileRangeList', value=value, format='intlist')
+                                                                  
+                   if self.volOpCebDecodification.isChecked():
+                        opObj10=self.upObj.addOperation(name='Decoder', optype='other') 
+                        if self.volOpComCode.currentIndex()==0:
+                            opObj10.addParameter(name='code', value='1,1,-1,-1,-1,1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='3', format='int')
+                        if self.volOpComCode.currentIndex()==1:
+                            opObj10.addParameter(name='code', value='1,1,−1,1,-1,-1,1,-1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='4', format='int')
+                        if self.volOpComCode.currentIndex()==2:
+                            opObj10.addParameter(name='code', value='1,1,1,−1,1,-1,-1,-1,1,-1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='5', format='int')    
+                        if self.volOpComCode.currentIndex()==3:
+                            opObj10.addParameter(name='code', value='1,1,1,−1,−1,1,−1,-1,-1,-1,1,1,-1,1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='7', format='int')
+                        if self.volOpComCode.currentIndex()==4:
+                            opObj10.addParameter(name='code', value='1,1,1,−1,−1,−1,1,−1,−1,1,−1,-1 ,-1 ,-1 ,1 ,1 ,1 ,-1 ,1 ,1 ,-1 ,1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='11', format='int')    
+                        if self.volOpComCode.currentIndex()==5:
+                            opObj10.addParameter(name='code', value='1,1,1,1,1,−1,−1,1,1,−1,1,−1,1,-1,-1,-1,-1,-1,1,1,-1,-1,1,-1,1,-1', format='floatlist')
+                            opObj10.addParameter(name='nCode', value='2', format='int')
+                            opObj10.addParameter(name='nBaud', value='13', format='int')   
+                        
+                        if self.volOpComMode.currentIndex()==0:
+                           opObj10.addParameter(name='mode', value='0', format='int')
+       
+                        if self.volOpComMode.currentIndex()==1:   
+                            opObj10.addParameter(name='mode', value='1', format='int') 
+                  
+                        if self.volOpComMode.currentIndex()==2:
+                            opObj10.addParameter(name='mode', value='2', format='int')
+                              
+                   if self.volOpCebCohInt.isChecked():
+                           opObj10=self.upObj.addOperation(name='CohInt', optype='other')
+                           self.operObjList.append(opObj10)
+                           value=self.volOpCohInt.text()
+                           opObj10.addParameter(name='n', value=value, format='int') 
+        #self.tabopVoltage.setEnabled(False)  
+        self.console.clear()
+        self.console.append("If you want to save your project")
+        self.console.append("click on your project name in the Tree Project Explorer")
+                           
+#----------------Voltage Graph-------------------#    
+    @pyqtSignature("int")
+    def on_volGraphCebSave_stateChanged(self, p0):
         """
-        self.addUP()      
+        Check Box habilita ingresode del numero de Integraciones a realizar
+        """
+        if  p0==2:
+            self.volGraphPath.setEnabled(True)
+            self.volGraphPrefix.setEnabled(True)
+            self.volGraphToolPath.setEnabled(True)
+
+        if  p0==0:
+            self.volGraphPath.setEnabled(False)
+            self.volGraphPrefix.setEnabled(False)
+            self.volGraphToolPath.setEnabled(False)
+    
+    @pyqtSignature("")
+    def on_volGraphToolPath_clicked(self):
+        """
+        Donde se guardan los DATOS
+        """
+        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
+        self.volGraphPath.setText(self.dataPath)
         
-    def setParam(self):
+        if not os.path.exists(self.dataPath):
+            self.volGraphOk.setEnabled(False)
+            return                          
+    
+    
+    @pyqtSignature("int")
+    def on_volGraphComType_activated(self,index):
+        """
+        Metodo que identifica que tipo de dato se va a trabajar VOLTAGE O ESPECTRA
+        """
+        if index==0:
+           self.volGraphIdFigure.setEnabled(False)
+           self.volGraphWintitle.setEnabled(False)
+           self.volGraphChannelList.setEnabled(False)
+           self.volGraphxrange.setEnabled(False)
+           self.volGraphyrange.setEnabled(False)
+        if index==1:
+           self.volGraphIdFigure.setEnabled(True)
+           self.volGraphWintitle.setEnabled(True)
+           self.volGraphChannelList.setEnabled(True)
+           self.volGraphxrange.setEnabled(True)
+           self.volGraphyrange.setEnabled(True)    
+       
+    @pyqtSignature(" ")
+    def on_volGraphOk_clicked(self):
+        """
+        GRAPH
+        """   
+        for i in self.__arbolDict:       
+            if self.__arbolDict[i]==self.indexclick:
+               if self.__upObjDict.has_key(i)==True:
+                   self.upObj=self.__upObjDict[i]
+                 
+                   if self.volGraphComType.currentIndex()==1:
+                       opObj10=self.upObj.addOperation(name='Scope', optype='other')
+                       self.operObjList.append(opObj10)
+                       wintitle=self.volGraphWintitle.text()      
+                       channelList=self.volGraphChannelList.text()
+                       xvalue= self.volGraphxrange.text()         
+                       yvalue= self.volGraphxrange.text()      
+                     
+                       opObj10.addParameter(name='wintitle', value=wintitle, format='str')
+                       opObj10.addParameter(name='channelList', value=channelList, format='int')
+                       xvalueList=xvalue.split(',')
+                       opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                       opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                       yvalueList=yvalue.split(",")
+                       opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                       opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+
+                       if self.volGraphCebSave.isChecked():
+                           opObj10.addParameter(name='save', value='1', format='int')
+                           opObj10.addParameter(name='figpath', value= self.volGraphPath.text())
+                           opObj10.addParameter(name='figfile', value= self.volGraphPrefix.text())
+        self.tabgraphVoltage.setEnabled(False)  
+        self.console.clear()
+        self.console.append("If you want to save your project")
+        self.console.append("click on your project name in the Tree Project Explorer")
         
-        self.tabWidgetProject.setEnabled(False)
-        self.tabVoltage.setEnabled(False)
-        self.tabSpectra.setEnabled(False)
-        self.tabCorrelation.setEnabled(False)
-        self.dataPathTxt.setText('C:\data2')
-        self.nameProjectTxt.setText("Test")
-        self.numberChannelopVol.setEnabled(False)
-        self.lineFilteropVolCEB.setEnabled(False)
-        self.lineHeighProfileTxtopVol.setEnabled(False)
-        self.numberIntegration.setEnabled(False)
-        self.valuenFFTPointOpSpec.setEnabled(False)
-        self.lineProfileSelecopVolCEB.setEnabled(False)
-        self.valueSelecChOpVol.setEnabled(False)
-        self.valueSelecHeigOpVol.setEnabled(False)
-        self.profileSelecOpVol.setEnabled(False)
-        self.decodeCcob.setEnabled(False)
-        self.decodeMcob.setEnabled(False)
+#------Spectra operation--------#       
+    @pyqtSignature("int")
+    def on_specOpCebnFFTpoints_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.specOpnFFTpoints.setEnabled(True)
+            self.specOppairsList.setEnabled(True)
+        if  p0==0:
+            self.specOpnFFTpoints.setEnabled(False)
+            self.specOppairsList.setEnabled(False)
+            
+    @pyqtSignature("int")
+    def on_specOpCebChannel_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.specOpChannel.setEnabled(True)
+            self.specOpComChannel.setEnabled(True)
+        if  p0==0:
+            self.specOpChannel.setEnabled(False)
+            self.specOpComChannel.setEnabled(False)                     
+   
+    @pyqtSignature("int")
+    def on_specOpCebHeights_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.specOpComHeights.setEnabled(True)
+            self.specOpHeights.setEnabled(True)
+        if  p0==0:
+            self.specOpComHeights.setEnabled(False)
+            self.specOpHeights.setEnabled(False)            
+    
+    
+    @pyqtSignature("int")
+    def on_specOpCebIncoherent_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.specOpIncoherent.setEnabled(True)
+        if  p0==0:
+            self.specOpIncoherent.setEnabled(False)
+
+    @pyqtSignature("int")
+    def on_specOpCebRemoveDC_stateChanged(self, p0):
+        """
+        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        """
+        if  p0==2:
+            self.specOpRemoveDC.setEnabled(True)
+        if  p0==0:
+            self.specOpRemoveDC.setEnabled(False)    
         
-        self.wiWineTxtGraphicsVol.setEnabled(False)
-        self.channelLisstTxtVol.setEnabled(False)
-        self.xminTxtVol.setEnabled(False)
-        self.yminTxtVol.setEnabled(False)
+    @pyqtSignature("")
+    def on_specOpOk_clicked(self):
+        """
+        AÑADE OPERACION SPECTRA
+        """
+        for i in self.__arbolDict:       
+            if self.__arbolDict[i]==self.indexclick:
+               if self.__upObjDict.has_key(i)==True:
+                   self.upObj=self.__upObjDict[i]
+                   #            self.operObjList.append(opObj10)      
+                   if self.specOpCebnFFTpoints.isChecked():                     
+                         value1=self.specOpnFFTpoints.text()
+                         value2=self.specOppairsList.text()
+                         self.upObj.addParameter(name='nFFTPoints',value=value1,format='int')
+                         self.upObj.addParameter(name='pairsList', value=value2, format='pairslist')
+                   
+                   if self.specOpCebHeights.isChecked():
+                      if  self.specOpComHeights.currentIndex()== 0:
+                          opObj10=self.upObj.addOperation(name='selectHeights')
+                          value=self.specOpHeights.text()
+                          valueList=value.split(',')
+                          opObj10.addParameter(name='minHei', value=valueList[0], format='float')
+                          opObj10.addParameter(name='maxHei', value=valueList[1], format='float') 
+                      else:
+                          opObj10=self.upObj.addOperation(name='selectHeightsByIndex')
+                          value=self.specOpHeights.text()
+                          valueList=value.split(',')
+                          opObj10.addParameter(name='minIndex', value=valueList[0], format='float')
+                          opObj10.addParameter(name='maxIndex', value=valueList[1], format='float') 
+                       
+                   if self.specOpCebChannel.isChecked():
+                       if  self.specOpComChannel.currentIndex()== 0:
+                           opObj10=self.upObj.addOperation(name="selectChannels")
+                           self.operObjList.append(opObj10)
+                           value=self.specOpChannel.text()                    
+                           opObj10.addParameter(name='channelList', value=value, format='intlist')
+                       else:
+                           opObj10=self.upObj.addOperation(name="selectChannelsByIndex")
+                           self.operObjList.append(opObj10)
+                           value=self.specOpChannel.text()                    
+                           opObj10.addParameter(name='channelIndexList', value=value, format='intlist')                                    
+                       
+                   if self.specOpCebIncoherent.isChecked():
+                      opObj10=self.upObj.addOperation(name='IncohInt', optype='other')
+                      self.operObjList.append(opObj10)
+                      value=self.specOpIncoherent.text()                    
+                      opObj10.addParameter(name='n', value=value, format='float') 
+                      
+                   if self.specOpCebRemoveDC.isChecked():
+                       opObj10=self.upObj.addOperation(name='removeDC')
+                       value=self.specOpRemoveDC.text()     
+                       opObj10.addParameter(name='mode', value=value,format='int')   
+
+                        
+        self.tabopSpectra.setEnabled(False)
+        self.console.clear()
+        self.console.append("If you want to save your project")
+        self.console.append("click on your project name in the Tree Project Explorer")
         
-        self.setDisableAllSpecop()
-        self.setDisableAllElementSpecGraph()
-#         self.winTitleGraphSpec.setEnabled(False)
-#         self.channelListgraphSpec.setEnabled(False)
-#         self.xminGraphSpec.setEnabled(False)
-#         self.yminGraphSpec.setEnabled(False)
-#         self.zminGraphSpec.setEnabled(False)
-#         self.timeRangeGraphSpec.setEnabled(False)   
-#         self.dataPathTxtSpec.setEnabled(False)
-#         self.dataPrefixGraphSpec.setEnabled(False) 
         
+ #------Spectra  Graph--------#
+    @pyqtSignature("int")
+    def on_specGraphComType_activated(self,index):
+        if index==0:
+            print "return"        
+
+        if index==1:
+            self.setspecGraph()
+            self.specGraphTimeRange.setEnabled(False)
+            
+        if index==2:
+            self.setspecGraph()
+            self.specGraphTimeRange.setEnabled(False)
+            
+        if index==3:
+            self.setspecGraph()
+            
+            
+        if index==4:
+            self.setspecGraph()
+            self.specGraphTimeRange.setEnabled(False)
+        
+        if index==5:
+            self.setspecGraph()
+            
+        if index==6:
+            self.setspecGraph()
+            self.specGgraphzrange.setEnabled(False)
+            
+    @pyqtSignature("int")
+    def on_specGraphCebSave_stateChanged(self, p0):
+        """
+        """
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+        if  p0==0:
+            self.specGraphPath.setEnabled(False)
+            self.specGraphPrefix.setEnabled(False)
+            slef.specGraphToolPath.setEnabled(False)   
+    @pyqtSignature("")
+    def on_specGraphToolPath_clicked(self):        
+        """
+        """
+        self.savePath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
+        self.specGraphPath.setText(self.savePath)
+        if not os.path.exists(self.savePath):
+            self.console.clear()
+            self.console.append("Write a correct a path")
+            return 
+        
+    @pyqtSignature("")
+    def on_specGraphOk_clicked(self):
+        
+        for i in self.__arbolDict:       
+            if self.__arbolDict[i]==self.indexclick:
+               if self.__upObjDict.has_key(i)==True:
+                   self.upObj=self.__upObjDict[i]
+       
+                   if self.specGraphComType.currentIndex()==1:  
+                      opObj10=self.upObj.addOperation(name='SpectraPlot',optype='other')
+                      self.properSpecGraph(opObj10)                 
+                                 
+                   if self.specGraphComType.currentIndex()==2:    
+                      opObj10=self.upObj.addOperation(name='CrossSpectraPlot',optype='other')
+                      self.properSpecGraph(opObj10)        
+                      opObj10.addParameter(name='power_cmap', value='jet', format='str')
+                      opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
+                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')              
+                      
+                   if self.specGraphComType.currentIndex()==3:
+                      opObj10=self.upObj.addOperation(name='RTIPlot',optype='other')
+                      self.properSpecGraph(opObj10)      
+                      value =self.specGraphTimeRange.text()
+                      opObj10.addParameter(name='timerange', value=value, format='int')   
+   
+                   if self.specGraphComType.currentIndex()==4:
+                      opObj10=self.upObj.addOperation(name='CoherenceMap',optype='other')
+                      self.properSpecGraph(opObj10) 
+                      opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
+                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
+                   
+                   if self.specGraphComType.currentIndex()==5:
+                      opObj10=self.upObj.addOperation(name='RTIfromNoise',optype='other')
+                      self.properSpecGraph(opObj10) 
+                      self.specGgraphzrange.setEnabled(False)
+                    
+                   if self.specGraphComType.currentIndex()==6:
+                      opObj10=self.upObj.addOperation(name='ProfilePlot',optype='other')
+                      self.properSpecGraph(opObj10) 
+                      self.specGgraphzrange.setEnabled(False)   
+                   
+     
+        #self.tabgraphSpectra.setEnabled(False)   
+        self.specGraphComType.setEnabled(False)
+        self.console.clear()
+        self.console.append("If you want to save your project")
+        self.console.append("click on your project name in the Tree Project Explorer")       
+    
+    @pyqtSignature("")
+    def on_specGraphClear_clicked(self):
+        self.clearspecGraph()
+        
+    def properSpecGraph(self,opObj10):
+          
+          self.operObjList.append(opObj10)
+          wintitle=self.specGraphWinTitle.text()      
+          opObj10.addParameter(name='wintitle', value=wintitle, format='str')
+          idfigure=self.specGraphIdFigure.text()
+          
+          opObj10.addParameter(name='idfigure', value=idfigure, format='int')
+   
+          channelList=self.specGraphChannelList.text()
+          if self.specGraphChannelList.isModified():
+              opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+          
+          xvalue= self.specGgraphxrange.text() 
+          if self.specGgraphxrange.isModified():
+              xvalueList=xvalue.split(',')
+              try:
+                       value=int(xvalueList[0])
+                       value=int(xvalueList[1])
+                       opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                       opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+              except:
+                           return 0     
+ 
+          yvalue= self.specGgraphyrange.text()
+          if self.specGgraphyrange.isModified():
+              yvalueList=yvalue.split(",")
+              try:
+                       value=int(yvalueList[0])
+                       value=int(yvalueList[1])
+                       opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                       opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+              except:
+                           return 0     
+          
+          zvalue= self.specGgraphzrange.text()               
+          if self.specGgraphzrange.isModified():
+                   zvalueList=zvalue.split(",")
+                   try:
+                       value=int(zvalueList[0])
+                       value=int(zvalueList[1])
+                       opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
+                       opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
+                   except:
+                           return 0
+          
+          
+          if self.specGraphCebSave.isChecked():
+              opObj10.addParameter(name='save', value='1', format='bool')
+              opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
+              opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str')                
+      
+
+    def setspecGraph(self):
+        self.specGraphIdFigure.setEnabled(True)
+        self.specGraphWinTitle.setEnabled(True)
+        self.specGraphChannelList.setEnabled(True)
+        self.specGgraphxrange.setEnabled(True)
+        self.specGgraphyrange.setEnabled(True)
+        self.specGgraphzrange.setEnabled(True)
+        self.specGraphTimeRange.setEnabled(True)
+#         self.specGraphPath.setEnabled(True)
+#         self.specGraphToolPath.setEnabled(True)
+#         self.specGraphPrefix.setEnabled(True)
+    def clearspecGraph(self):
+        self.specGraphComType.setEnabled(True)
+        self.specGraphComType.setCurrentIndex(0)
+        self.specGraphIdFigure.clear()
+        self.specGraphWinTitle.clear()
+        self.specGraphChannelList.clear()
+        self.specGgraphxrange.clear()
+        self.specGgraphyrange.clear()
+        self.specGgraphzrange.clear()
+        self.specGraphTimeRange.clear()
+        
+    def playProject(self):
+
+        for i in self.__arbolDict:            
+            if self.__arbolDict[i]==self.indexclick:
+                self.projectObj=self.__projObjDict[i] 
+        filename="C:\WorkspaceGUI\config"+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
+        self.projectObj.readXml(filename)
+        #controllerObj.printattr()
+        
+        self.projectObj.createObjects()
+        self.projectObj.connectObjects()
+        self.projectObj.run()
+        self.console.clear()
+        self.console.append("Please Wait...")
+
+                          
+    def saveProject(self):
+
+        for i in self.__arbolDict:            
+            if self.__arbolDict[i]==self.indexclick:
+                self.projectObj=self.__projObjDict[i] 
+        filename="C:\WorkspaceGUI\config"+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
+        self.projectObj.writeXml(filename)     
+        self.console.clear()
+        self.console.append("Now,  you can push the icon Start in the toolbar or push start in menu run")
+        
+                
+    def clickFunction(self,index):  
+        self.indexclick= index.model().itemFromIndex(index)
+       
+    def doubleclickFunction(self):
+        for i in self.__arbolDict: 
+            if self.__arbolDict[i]==self.indexclick:
+                if self.__projObjDict.has_key(i)==True:       
+                   self.proName.setText(str(self.__projObjDict[i].name))
+                   self.proDataPath.setText(str(self.readUnitConfObjList[i-1].path))
+                   self.model_2=treeModel()        
+                   self.model_2.setParams(name       = str(self.__projObjDict[i].name),
+                                           directorio = str(self.readUnitConfObjList[i-1].path),
+                                           workspace  =  "C:\\WorkspaceGUI",
+                                           remode     =  "off Line", 
+                                           dataformat =  self.readUnitConfObjList[i-1].datatype, 
+                                           date       =  str(self.readUnitConfObjList[i-1].startDate)+"-"+str(self.readUnitConfObjList[i-1].endDate),
+                                           initTime   =   str(self.readUnitConfObjList[i-1].startTime),
+                                           endTime    = str(self.readUnitConfObjList[i-1].endTime),
+                                           timezone   =  "Local" ,
+                                           Summary    =  str(self.__projObjDict[i].description))  
+                   self.treeProjectProperties.setModel(self.model_2)
+                   self.treeProjectProperties.expandAll()
+                   self.tabWidgetProject.setCurrentWidget(self.tabProject)
+                   
+        if self.indexclick.text()=='Voltage':
+           self.tabVoltage.setEnabled(True)
+           self.tabSpectra.setEnabled(False)
+           self.tabCorrelation.setEnabled(False)
+           self.tabWidgetProject.setCurrentWidget(self.tabVoltage)
+
+           self.volOpComChannels.setEnabled(False)
+           self.volOpComHeights.setEnabled(False)
+           self.volOpFilter.setEnabled(False)
+           self.volOpComProfile.setEnabled(False)
+           self.volOpComCode.setEnabled(False)
+           self.volOpCohInt.setEnabled(False)
+           self.volOpChannel.clear()
+           self.volOpHeights.clear()
+           self.volOpProfile.clear()
+           self.volOpFilter.clear()
+        
+           self.volOpChannel.setEnabled(False)
+           self.volOpHeights.setEnabled(False)
+           self.volOpProfile.setEnabled(False)
+           self.volOpCebHeights.clearFocus()
+#            self.volOpCebChannels.clear()
+#            self.volOpCebHeights.clear()
+#            self.volOpCebFilter.clear()
+#            self.volOpCebProfile.clear()
+#            self.volOpCebDecodification.clear()
+#            self.volOpCebCohInt.clear()
+     
+
+        if self.indexclick.text()=='Spectra':
+           self.tabSpectra.setEnabled(True) 
+           self.tabVoltage.setEnabled(False)
+           self.tabCorrelation.setEnabled(False)
+           self.tabWidgetProject.setCurrentWidget(self.tabSpectra)         
+            
+        if self.indexclick.text()=='Correlation':
+           self.tabCorrelation.setEnabled(True) 
+           self.tabVoltage.setEnabled(False)
+           self.tabSpectra.setEnabled(False)
+           self.tabWidgetProject.setCurrentWidget(self.tabCorrelation)                    
+        
+    def popup(self, pos):
+
+        menu = QtGui.QMenu()
+        quitAction0 = menu.addAction("AddNewProject")
+        quitAction1 = menu.addAction("AddNewProcessingUnit")
+        quitAction2 = menu.addAction("Exit")
+        #quitAction2 = menu.addAction("Exit")
+        action = menu.exec_(self.mapToGlobal(pos))
+        if action == quitAction0:
+           self.setProjectParam()
+        if action == quitAction1:
+           self.addPU()   
+           self.console.clear()
+           self.console.append("Please, Choose the type of Processing Unit")
+           self.console.append("If your Datatype is rawdata, you will start with processing unit Type Voltage")
+           self.console.append("If your Datatype is pdata, you will choose between processing unit Type Spectra or Correlation")
+        if action == quitAction2:
+            return
+    
     def setProjectParam(self):
-        self.nameProjectTxt.setText("Test")
-        self.dataPathTxt.setText('C:\data2')
-        self.dataTypeCmbBox.clear()
-        self.dataTypeCmbBox.addItem("Voltage")
-        self.dataTypeCmbBox.addItem("Spectra")
+        self.tabWidgetProject.setEnabled(True)
+        self.tabWidgetProject.setCurrentWidget(self.tabProject)
+        self.tabProject.setEnabled(True)
+        
+        self.proName.clear()
+        self.proDataPath.clear()
+        self.proComDataType.clear()
+        self.proComDataType.addItem("Voltage")
+        self.proComDataType.addItem("Spectra")
         startTime="00:00:00"
         endTime="23:59:59"
         starlist=startTime.split(":")
         endlist=endTime.split(":")
-        print starlist[0],starlist[1],starlist[2]
-        print endlist[0],endlist[1],endlist[2]
+
         self.time.setHMS(int(starlist[0]),int(starlist[1]),int(starlist[2])) 
-        self.startTimeEdit.setTime(self.time)
+        self.proStartTime.setTime(self.time)
         self.time.setHMS(int(endlist[0]),int(endlist[1]),int(endlist[2])) 
-        self.endTimeEdit.setTime(self.time)
-
-    def clickFunctiontree(self,index):
+        self.proEndTime.setTime(self.time)
+        self.proDescription.clear()
         
-        self.indexclick= index.model().itemFromIndex(index)
-        print "OPCION CLICK"
-        print "ArbolDict",self.indexclick
-        print "name:",self.indexclick.text()
-        #print self.tabWidgetProject.currentIndex()
+        self.console.clear()
+        self.console.append("Please, Write a name Project")
+        self.console.append("Introduce Project Parameters")
+        self.console.append("Select data type Voltage( .rawdata)  or Spectra(.pdata)")
         
-
-
-
-    def doubleclickFunctiontree(self):
-        for i in self.__arbolDict: 
+        
+    def addPU(self):
+        self.configUP=UnitProcess(self)
+        for i in self.__arbolDict:       
             if self.__arbolDict[i]==self.indexclick:
-                print "INDEXCLICK=ARBOLDICT",i
-                if self.__projObjDict.has_key(i)==True:       
-                    self.tabWidgetProject.setCurrentWidget(self.tabProject)
-                    self.nameProjectTxt.setText(str(self.__projObjDict[i].name))
-                    self.dataTypeCmbBox.clear()
-                    self.dataTypeCmbBox.addItem(str(self.readUnitConfObjList[i-1].datatype))
-                    print str(self.readUnitConfObjList[i-1].path)
-                    self.dataPathTxt.setText(str(self.readUnitConfObjList[i-1].path))
-                    self.starDateCmbBox.clear()
-                    self.endDateCmbBox.clear()
-                    self.starDateCmbBox.addItem(str(self.readUnitConfObjList[i-1].startDate))
-                    self.endDateCmbBox.addItem(str(self.readUnitConfObjList[i-1].endDate))
-                    startTime=self.readUnitConfObjList[i-1].startTime 
-                    endTime=self.readUnitConfObjList[i-1].endTime
-                    starlist=startTime.split(":")
-                    endlist=endTime.split(":")
-                    print starlist[0],starlist[1],starlist[2]
-                    print endlist[0],endlist[1],endlist[2]
-                    self.time.setHMS(int(starlist[0]),int(starlist[1]),int(starlist[2])) 
-                    self.startTimeEdit.setTime(self.time)
-                    self.time.setHMS(int(endlist[0]),int(endlist[1]),int(endlist[2])) 
-                    self.endTimeEdit.setTime(self.time)
-                    
-                            #--------VISUALIZACION EN LA VENTANA PROJECT PROPERTIES-----------------#
-#                     self.model_2=treeModel()        
-#                     self.model_2.setParams(name       = str(self.__projObjDict[i].name),
-#                                            directorio = str(self.readUnitConfObjList[i-1].path),
-#                                            workspace  =  "C:\\WorkspaceGUI",
-#                                            remode     =  str(self.readModeCmBox.currentText()), 
-#                                            dataformat =  "Voltage", 
-#                                            date       =  str(self.readUnitConfObjList[i-1].startDate)+"-"+str(self.readUnitConfObjList[i-1].endDate),
-#                                            initTime   =  str(starlist[0]) +":"+str(starlist[1])+":"+ str(starlist[2]),
-#                                            endTime    =  str(endlist[0]) +":"+str(endlist[1])+":"+ str(endlist[2]),
-#                                            timezone   =  "Local" ,
-#                                            Summary    =  "test de prueba")                                                    
-#                     
-#                     self.model_2.arbol()
-#                     self.model_2.showtree()
-#                     self.treeView_2.setModel(self.model_2)
-#                     self.treeView_2.expandAll() 
-                    
-                    #self.dataPathTxt.setText(str(self.__projObjDict[i].addReadUnit.path()))
-               
-        if self.indexclick.text()=='Voltage':
-           self.tabVoltage.setEnabled(True)
-           self.tabWidgetProject.setCurrentWidget(self.tabVoltage)
-#           for i in self.__opObjDict[i]
-#                self.OpObj=
+               if self.__projObjDict.has_key(i)==True:
+                   self.projectObj=self.__projObjDict[int(i)]
+                   self.configUP.dataTypeProject=str(self.proComDataType.currentText())
+                   self.configUP.getfromWindowList.append(self.projectObj) 
+               else:
+                   self.upObj=self.__upObjDict[i]
+                   self.configUP.getfromWindowList.append(self.upObj)
 
-        if self.indexclick.text()=='Spectra':
-           self.tabSpectra.setEnabled(True) 
-           self.tabWidgetProject.setCurrentWidget(self.tabSpectra)
-           
-            
-        if self.indexclick.text()=='Correlation':
-           self.tabCorrelation.setEnabled(True) 
-           self.tabWidgetProject.setCurrentWidget(self.tabCorrelation) 
-                                                                         
-    def addProject(self):
-      
-        self.tabWidgetProject.setEnabled(True)
-        #---------------KILL-----------------#
-#        self.tabWidgetProject.setTabsClosable(True)  
-#        self.tabWidgetProject.tabCloseRequested.connect(self.tabWidgetProject.removeTab)
-        #------------------------------------#
-        self.tabWidgetProject.setCurrentWidget(self.tabProject)
-        self.tabProject.setEnabled(True)
-        #self.tabVoltage.setEnabled(False)
-        print "HABILITA WIDGET"        
-       
-    def existDir(self, var_dir):
-        """
-        METODO PARA VERIFICAR SI LA RUTA EXISTE-VAR_DIR
-        VARIABLE DIRECCION
-        """
-        if os.path.isdir(var_dir): 
-            return True
+        self.configUP.loadTotalList()
+        self.configUP.show()      
+        self.configUP.closed.connect(self.createUP)
+        
+    def createUP(self):
+             
+        if not self.configUP.create:
+            return
+        
+        self.uporProObjRecover=self.configUP.getFromWindow
+        
+        self.upType = self.configUP.typeofUP
+        for i in self.__arbolDict: 
+             if self.__arbolDict[i]==self.indexclick:
+                  if self.__projObjDict.has_key(i)==True: 
+                     self.projectObj=self.__projObjDict[int(i)] 
+                     
+                  if self.__upObjDict.has_key(i)==True:
+                      self.upObj=self.__upObjDict[i]
+                      getIdProject=self.upObj.id[0]
+                      self.projectObj=self.__projObjDict[int(getIdProject)] 
+        
+        datatype=str(self.upType)
+        uporprojectObj=self.uporProObjRecover
+        
+        if uporprojectObj.getElementName()=='ProcUnit':
+             inputId=uporprojectObj.getId()
+             self.console.clear()
+             self.console.append("Double Clik on the Processing Unit to enable the tab")
+             self.console.append("Before Add other Processing Unit complete the tab")
         else:
-            self.textEdit.append("Incorrect path:" + str(var_dir))
-            return False
-    
-    def searchData(self, path, ext, expLabel='', walk=1):
+            inputId=self.readUnitConfObjList[uporprojectObj.id-1].getId()
+            self.console.clear()
+            self.console.append("Double Clik on the Processing Unit to enable the tab")
+            self.console.append("Before Add other Project or Processing Unit complete the tab")
+            
+        self.procUnitConfObj1 = self.projectObj.addProcUnit(datatype=datatype, inputId=inputId)
+        self.__upObjDict[self.procUnitConfObj1.id]= self.procUnitConfObj1    
+        self.parentItem=self.__arbolDict[uporprojectObj.id]
+        self.numbertree=int(self.procUnitConfObj1.getId())-1         
+        self.__arbolDict[self.procUnitConfObj1.id]=QtGui.QStandardItem(QtCore.QString(datatype).arg(self.numbertree))
+        self.parentItem.appendRow(self.__arbolDict[self.procUnitConfObj1.id])        
+        self.parentItem=self.__arbolDict[self.procUnitConfObj1.id]
+        self.treeProjectExplorer.expandAll()
+
         
-        dateList = []
-        fileList = []
-        
-        if walk == 0:
-            files = os.listdir(path)    
+    def searchData(self,path,ext,walk,expLabel=''):
+        dateList=[]
+        fileList=[]
+        if walk== 0:
+            files= os.listdir(path)
             for thisFile in files:
                 if not os.path.isfile(thisFile):
                     continue
@@ -652,6 +1042,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             for thisFile in fileList:
                 
                 if not isRadarFile(thisFile):
+                    self.console.clear()
+                    self.console.append("Please, Choose the Correct Path")
+                    self.proOk.setEnabled(False)
                     continue
                 
                 year = int(thisFile[1:5])
@@ -673,6 +1066,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             for thisDir in dirList:
                 
                 if not isRadarPath(thisDir):
+                    self.console.clear()
+                    self.console.append("Please, Choose the Correct Path")
+                    self.proOk.setEnabled(False)
                     continue
                 
                 doypath = os.path.join(path, thisDir, expLabel)
@@ -686,6 +1082,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                         continue
                     
                     if not isRadarFile(thisFile):
+                        self.proOk.setEnabled(False)
+                        self.console.clear()
+                        self.console.append("Please, Choose the Correct Path")  
                         continue
                 
                     fileList.append(thisFile)
@@ -705,724 +1104,161 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def loadDays(self):
         """
-        METODO PARA CARGAR LOS DIAS
+        Method to loads day
         """
-        ext = self.datatype
-        path = str(self.dataPathTxt.text())
+        ext=str(self.proDataType.text())
+        try:
+            punto = str(ext[1:2])
+            ext=self.datatype
+        except:
+            self.console.clear()
+            self.console.append("Please, Choose DataType")
+            return 0
         
-        self.starDateCmbBox.clear()
-        self.endDateCmbBox.clear()
-
-        dateList = self.searchData(path, ext=ext)
-        #Se cargan las listas para seleccionar StartDay y StopDay (QComboBox)
-        self.dateList = dateList
+        #-------------------------#
+        walk= self.walk
         
+        path=str(self.proDataPath.text())
+        self.proComStartDate.clear()
+        self.proComEndDate.clear()
+        #Load List to select start day and end day.(QComboBox)
+        dateList=self.searchData(path,ext=ext,walk=walk)
+        self.dateList=dateList
         for thisDate in dateList:
-            self.starDateCmbBox.addItem(thisDate)
-            self.endDateCmbBox.addItem(thisDate)
-            
-        self.endDateCmbBox.setCurrentIndex(self.starDateCmbBox.count()-1) 
-        self.dataOkBtn.setEnabled(True) 
-            
-    def HourChanged(self): 
-        #self.hour = self.HourScrollBar.value() 
-        self.set_time() 
+            self.proComStartDate.addItem(thisDate)
+            self.proComEndDate.addItem(thisDate)
+        self.proComEndDate.setCurrentIndex(self.proComStartDate.count()-1)
+                
+    def setParameter(self):
+        self.setWindowTitle("ROJ-Signal Chain")
+        self.setWindowIcon(QtGui.QIcon("figure/adn.jpg"))
+        self.tabWidgetProject.setEnabled(False)
+        self.tabVoltage.setEnabled(False)
+        self.tabSpectra.setEnabled(False)
+        self.tabCorrelation.setEnabled(False)
+        
+        self.proName.clear()
+        self.proDataPath.setText('C:\Rawdata')
+        self.console.append("Welcome to Signal Chain please Create a New Project")
+        self.proStartTime.setDisplayFormat("hh:mm:ss")
+        self.time =QtCore.QTime()
+        self.hour =0
+        self.min  =0
+        self.sec  =0 
+        self.proEndTime.setDisplayFormat("hh:mm:ss")
+        startTime="00:00:00"
+        endTime="23:59:59"
+        starlist=startTime.split(":")
+        endlist=endTime.split(":")
+        self.time.setHMS(int(starlist[0]),int(starlist[1]),int(starlist[2])) 
+        self.proStartTime.setTime(self.time)
+        self.time.setHMS(int(endlist[0]),int(endlist[1]),int(endlist[2])) 
+        self.proEndTime.setTime(self.time)
+        self.proOk.setEnabled(False)
+        #set model Project Explorer
+        self.model = QtGui.QStandardItemModel()
+        self.model.setHorizontalHeaderLabels(("Project Explorer",))
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(self.treeProjectExplorer)
+        self.treeProjectExplorer.setModel(self.model)
+        self.treeProjectExplorer.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.treeProjectExplorer.customContextMenuRequested.connect(self.popup)
+        self.treeProjectExplorer.clicked.connect(self.clickFunction)
 
-    def MinChanged(self): 
-        #self.min = self.MinScrollBar.value() 
-        self.set_time() 
-
-    def SecChanged(self): 
-        #self.sec = self.SecScrollBar.value() 
-        self.set_time() 
-
-    def set_time(self): 
-        self.time.setHMS(self.hour, self.min, self.sec) 
-        self.startTimeEdit.setTime(self.time)
+        self.treeProjectExplorer.doubleClicked.connect(self.doubleclickFunction)
+        self.treeProjectExplorer.expandAll()
+        #set model Project Properties
         
-        self.endTimeEdit.setTime(self.time)
-        
-       
-    def addUP(self):
-        
-        self.configUP=UnitProcess(self)
-        
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
-               print "INDEXCLICK=ARBOLDICT",i
-               if self.__projObjDict.has_key(i)==True:
-                   self.projectObj=self.__projObjDict[int(i)]
-                   print "self.projectObj.id",self.projectObj.id
-                   #-----------Añadiendo Tipo de dato y Projecto a la Clase UnitProcess que abre la ventana de selección----#
-                   self.configUP.dataTypeProject=str(self.dataTypeCmbBox.currentText())
-                   self.configUP.getfromWindowList.append(self.projectObj) 
-                                      
-#                   for i in self.projectObj.procUnitConfObjDict:
-#                      if self.projectObj.procUnitConfObjDict[i].getElementName()=='ProcUnit':
-#                         self.upObj=self.projectObj.procUnitConfObjDict[i]
-#                         self.configUP.getfromWindowList.append(self.upObj)          
-               else:
-                   #-----------Añadiendo Unidad de Procesamiento a una Unidad de Procesamiento----#
-                   self.upObj=self.__upObjDict[i]
-                   print "self.upObj.id",self.upObj.id
-                   self.configUP.getfromWindowList.append(self.upObj)
-
-        self.configUP.loadTotalList()
-        self.configUP.show()      
-        self.configUP.closed.connect(self.createUP)
-
-    def createUP(self):
-        
-        print "ADICION DE BRANCH Y ID"
-        
-        if not self.configUP.create:
-            return
-        
-        self.uporProObjRecover=self.configUP.getFromWindow
-        
-        self.upType = self.configUP.typeofUP
-        for i in self.__arbolDict: 
-             print self.__arbolDict[i],"VALORES DEL DIC"
-             if self.__arbolDict[i]==self.indexclick:
-                  if self.__projObjDict.has_key(i)==True:
-                    # print "self.__projObjDict[int(i)]" ,__projObjDict[int(i)] 
-                     self.projectObj=self.__projObjDict[int(i)] 
-                     print self.__projObjDict[int(i)]
-                     
-                  if self.__upObjDict.has_key(i)==True:
-                      print "Entro al else"
-                      print self.__upObjDict.items()
-                      self.upObj=self.__upObjDict[i]
-                      getIdProject=self.upObj.id[0]
-                      print getIdProject
-                      self.projectObj=self.__projObjDict[int(getIdProject)] 
-        
-        datatype=str(self.upType)
-        uporprojectObj=self.uporProObjRecover
-        
-        if uporprojectObj.getElementName()=='ProcUnit':
-             inputId=uporprojectObj.getId()
-        else:
-            inputId=self.readUnitConfObjList[uporprojectObj.id-1].getId()
-       
-        print 'uporprojectObj.id:',uporprojectObj.id,'inputId:',inputId       
-        self.procUnitConfObj1 = self.projectObj.addProcUnit(datatype=datatype, inputId=inputId)
-        self.__upObjDict[self.procUnitConfObj1.id]= self.procUnitConfObj1    
-        print "PRIMERA UP_VEAMOS",self.__upObjDict.items()
-        self.parentItem=self.__arbolDict[uporprojectObj.id]
-        #print "i","self.__arbolDict[i]",i ,self.__arbolDict[i] 
-        self.numbertree=int(self.procUnitConfObj1.getId())-1
-        print self.procUnitConfObj1.id," ID DE LA UNIDAD DE PROCESAMIENTO "
-        #self.__arbolDict[self.procUnitConfObj1.id]=QtGui.QStandardItem(QtCore.QString(datatype+"%1").arg(self.numbertree))
-        
-        
-        
-        self.__arbolDict[self.procUnitConfObj1.id]=QtGui.QStandardItem(QtCore.QString(datatype).arg(self.numbertree))
-        self.parentItem.appendRow(self.__arbolDict[self.procUnitConfObj1.id])        
-        self.parentItem=self.__arbolDict[self.procUnitConfObj1.id]
-    #   self.loadUp()
-        self.treeView.expandAll()
-
-    def resetopVolt(self):
-        self.selecChannelopVolCEB.setChecked(False)
-        self.selecHeighopVolCEB.setChecked(False)
-        self.coherentIntegrationCEB.setChecked(False)
-        self.profileSelecopVolCEB.setChecked(False)
-        self.FilterCEB.setChecked(False)
-        
-        #self.selecChannelopVolCEB.setEnabled(False)
-        self.lineHeighProfileTxtopVol.clear()
-        self.lineProfileSelecopVolCEB.clear()
-        self.numberChannelopVol.clear()
-        self.numberIntegration.clear()
-        self.lineFilteropVolCEB.clear()
-    
-    def resetopSpec(self):
-        
-        self.nFFTPointOpSpecCEB.setChecked(False)
-        self.valuenFFTPointOpSpec.clear()
-    
-    def resetgraphSpec(self):
-        self.SpectraPlotGraphCEB.setChecked(False)
-        self.CrossSpectraPlotGraphceb.setChecked(False)
-        self.RTIPlotGraphCEB.setChecked(False)                  
-
-    def saveProject(self):
-        print "entro"
-        #filename="C:\WorkspaceGUI\config1.xml"
-        for i in self.__arbolDict:            
-            if self.__arbolDict[i]==self.indexclick:
-                self.projectObj=self.__projObjDict[i] 
-                print "Encontre project"
-        filename="C:\WorkspaceGUI\config"+str(self.projectObj.id)+".xml"
-        print "Escribo Project"
-        self.projectObj.writeXml(filename)
-
-# -----------------OPCIONES DE CONFIGURACION VOLTAGE---------------------------#      
-
-    @pyqtSignature("")
-    def on_dataGraphicsVolPathBrowse_clicked(self):
-        """
-        OBTENCION DE LA RUTA DE DATOS
-        """
-        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './',  QtGui.QFileDialog.ShowDirsOnly))
-        self.dataPathtxtGraphicsVol.setText(self.dataPath)
-        
-        if not os.path.exists(self.dataPath):
-            self.dataGraphVolOkBtn.setEnabled(False)
-            return
-
-# -----------------VENTANA CONFIGURACION DE VOLTAGE---------------------------#     
-
-    @pyqtSignature("int")
-    def on_selecChannelopVolCEB_stateChanged(self, p0):
-        """
-        Check Box habilita operaciones de Selecci�n de Canales
-        """
-        if  p0==2:
-            self.numberChannelopVol.setEnabled(True)
-            self.valueSelecChOpVol.setEnabled(True)
-            print " Ingresa seleccion de Canales"
-        if  p0==0:
-            self.numberChannelopVol.setEnabled(False)
-            self.valueSelecChOpVol.setEnabled(False)
-            print " deshabilitado" 
-            
-    @pyqtSignature("int")
-    def on_selecHeighopVolCEB_stateChanged(self, p0):
-        """
-        Check Box habilita operaciones de Selecci�n de Alturas 
-        """
-        if  p0==2:
-            self.lineHeighProfileTxtopVol.setEnabled(True)
-            self.valueSelecHeigOpVol.setEnabled(True)
-            print " Select Type of Profile"
-        if  p0==0:
-            self.lineHeighProfileTxtopVol.setEnabled(False)
-            self.valueSelecHeigOpVol.setEnabled(False)
-            print " deshabilitado" 
-            
-
-    @pyqtSignature("int")
-    def on_filterCEB_stateChanged(self, p0):
-         """
-         Name='Decoder', optype='other'
-         """
-         if  p0==2:
-            self.lineFilteropVolCEB.setEnabled(True)
-            print " Select Type of Profile"
-         if  p0==0:
-            self.lineFilteropVolCEB.setEnabled(False)
-            print " deshabilitado" 
+        self.model_2=treeModel()
+        self.model_2.showtree()
+        self.treeProjectProperties.setModel(self.model_2)
+        self.treeProjectProperties.expandAll()
+        #set Project
+        self.proDelay.setEnabled(False)  
          
-    @pyqtSignature("int")
-    def on_profileSelecopVolCEB_stateChanged(self, p0):
-        """
-        Check Box habilita ingreso  del rango de Perfiles
-        """
-        if  p0==2:
-            self.lineProfileSelecopVolCEB.setEnabled(True)
-            self.profileSelecOpVol.setEnabled(True)
-            print " Select Type of Profile"
-        if  p0==0:
-            self.lineProfileSelecopVolCEB.setEnabled(False)
-            self.profileSelecOpVol.setEnabled(False)
-            print " deshabilitado" 
-    
-   
-    @pyqtSignature("int")
-    def on_decodeCEB_stateChanged(self, p0):
-        """
-        Check Box habilita ingresode del numero de Integraciones a realizar
-        """
-        if  p0==2:
-            self.decodeCcob.setEnabled(True)
-            self.decodeMcob.setEnabled(True)
-            print "Choose number of Cohint"
-        if  p0==0:
-            print " deshabilitado"   
-            self.decodeCcob.setEnabled(False)
-            self.decodeMcob.setEnabled(False)
-    
-            
-    @pyqtSignature("int")
-    def on_coherentIntegrationCEB_stateChanged(self, p0):
-        """
-        Check Box habilita ingresode del numero de Integraciones a realizar
-        """
-        if  p0==2:
-            self.numberIntegration.setEnabled(True)
-            print "Choose number of Cohint"
-        if  p0==0:
-            print " deshabilitado"   
-            self.numberIntegration.setEnabled(False)
-            
-    #-----------------------VOL_PUSHBUTTON_ACCEPT_OPERATION----------------------------#       
-    
-    @pyqtSignature("")
-    def on_dataopVolOkBtn_clicked(self):
-        """
-        BUSCA EN LA LISTA DE OPERACIONES DEL TIPO VOLTAJE Y LES A�ADE EL PARAMETRO ADECUADO ESPERANDO LA ACEPTACION DEL USUARIO
-        PARA AGREGARLO AL ARCHIVO DE CONFIGURACION XML
-        """   
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
-               print "INDEXCLICK=ARBOLDICT",i
-               if self.__upObjDict.has_key(i)==True:
-                   self.upObj=self.__upObjDict[i]
-                   print self.__upObjDict[i].name
-                   print "TamañodeupObjDict",len(self.__upObjDict)
-                  # if len(self.__upObjDict)>=1 and len(self.__upObjDict)> self.b:
-                       
-                   if self.selecChannelopVolCEB.isChecked():
-                         if  self.valueSelecChOpVol.currentIndex()== 0:
-                             opObj10=self.upObj.addOperation(name="selectChannels")
-                             self.operObjList.append(opObj10)
-                             value=self.numberChannelopVol.text()                    
-                             opObj10.addParameter(name='channelList', value=value, format='intlist')
-                         else:
-                             opObj10=self.upObj.addOperation(name="selectChannelsByIndex")
-                             self.operObjList.append(opObj10)
-                             value=self.numberChannelopVol.text()                    
-                             opObj10.addParameter(name='channelIndexList', value=value, format='intlist')
-                             print "channel"
-                                                     
-                   if self.selecHeighopVolCEB.isChecked():
-                         if  self.valueSelecHeigOpVol.currentIndex()== 0:
-                             opObj10=self.upObj.addOperation(name='selectHeights')
-                             value=self.lineHeighProfileTxtopVol.text()
-                             valueList=value.split(',')
-                             opObj10.addParameter(name='minHei', value=valueList[0], format='float')
-                             opObj10.addParameter(name='maxHei', value=valueList[1], format='float')
-                         else:
-                             opObj10=self.upObj.addOperation(name='selectHeightsByIndex')
-                             value=self.lineHeighProfileTxtopVol.text()
-                             valueList=value.split(',')
-                             opObj10.addParameter(name='minIndex', value=valueList[0], format='float')
-                             opObj10.addParameter(name='maxIndex', value=valueList[1], format='float')
-                                
-                         print "height"
-                             
-                   if self.filterCEB.isChecked():
-                         opObj10=self.upObj.addOperation(name='filterByHeights')
-                         value=self.lineFilteropVolCEB.text()
-                         opObj10.addParameter(name='window', value=value, format='int')
-                         print "filter"    
-     
-                   if self.profileSelecopVolCEB.isChecked():
-                         obj10=self.upObj.addOperation(name='ProfileSelector', optype='other')
-                         if  self.profileSelecOpVol.currentIndex()== 0:
-                             self.operObjList.append(opObj10)
-                             value=self.lineProfileSelecopVolCEB.text()
-                             obj10.addParameter(name='profileList', value=value, format='intlist')
-                         else:
-                             self.operObjList.append(opObj10)
-                             value=self.lineProfileSelecopVolCEB.text()
-                             obj10.addParameter(name='profileRangeList', value=value, format='intlist')
-                             print "profile"
-          
-                   if self.decodeCEB.isChecked():
-                        opObj10=self.upObj.addOperation(name='Decoder') 
-                        if self.decodeCcob.currentIndex()==0:
-                            opObj10.addParameter(name='code', value='1,1,-1,-1,-1,1', format='floatlist')
-                            opObj10.addParameter(name='nCode', value='2', format='int')
-                            opObj10.addParameter(name='nBaud', value='3', format='int')
-                        if self.decodeCcob.currentIndex()==1:
-                            opObj10.addParameter(name='code', value='1,1,−1,1,-1,-1,1,-1', format='floatlist')
-                            opObj10.addParameter(name='nCode', value='2', format='int')
-                            opObj10.addParameter(name='nBaud', value='4', format='int')
-                        if self.decodeCcob.currentIndex()==2:
-                            opObj10.addParameter(name='code', value='1,1,1,−1,1,-1,-1,-1,1,-1', format='floatlist')
-                            opObj10.addParameter(name='nCode', value='2', format='int')
-                            opObj10.addParameter(name='nBaud', value='5', format='int')    
-                        if self.decodeCcob.currentIndex()==3:
-                            opObj10.addParameter(name='code', value='1,1,1,−1,−1,1,−1,-1,-1,-1,1,1,-1,1', format='floatlist')
-                            opObj10.addParameter(name='nCode', value='2', format='int')
-                            opObj10.addParameter(name='nBaud', value='7', format='int')
-                        if self.decodeCcob.currentIndex()==4:
-                            opObj10.addParameter(name='code', value='1,1,1,−1,−1,−1,1,−1,−1,1,−1,-1 ,-1 ,-1 ,1 ,1 ,1 ,-1 ,1 ,1 ,-1 ,1', format='floatlist')
-                            opObj10.addParameter(name='nCode', value='2', format='int')
-                            opObj10.addParameter(name='nBaud', value='11', format='int')    
-                        if self.decodeCcob.currentIndex()==5:
-                            opObj10.addParameter(name='code', value='1,1,1,1,1,−1,−1,1,1,−1,1,−1,1,-1,-1,-1,-1,-1,1,1,-1,-1,1,-1,1,-1', format='floatlist')
-                            opObj10.addParameter(name='nCode', value='2', format='int')
-                            opObj10.addParameter(name='nBaud', value='13', format='int')   
-                        
-                        if self.decodeMcob.currentIndex()==0:
-                           opObj10.addParameter(name='mode', value='0', format='int')
-       
-                        if self.decodeMcob.currentIndex()==1:   
-                            opObj10.addParameter(name='mode', value='1', format='int') 
-                  
-                        if self.decodeMcob.currentIndex()==2:
-                            opObj10.addParameter(name='mode', value='2', format='int')
-                              
-                   if self.coherentIntegrationCEB.isChecked():
-                           opObj10=self.upObj.addOperation(name='CohInt', optype='other')
-                           print opObj10.id
-                           self.operObjList.append(opObj10)
-                           value=self.numberIntegration.text()
-                           opObj10.addParameter(name='n', value=value, format='int') 
-                           print "Coherent"
-                           
-                           
-#                        print "TamañodeupObjDict",len(self.__upObjDict)
-#                        self.b=len(self.__upObjDict)
-#                        print "self.b", self.b                      
-#                        self.model_2.properties_projecto("estaesunaprueba")
-#                        anadir=self.model_2.properties_projecto("estaesunaprueba")
-#                        self.model_2.addProjectproperties(anadir)
-#                        self.model_2.showtree()
-#                        self.treeView_2.setModel(self.model_2)
-#                        self.treeView_2.expandAll() 
-#                    else:
-#                         print"It doesn't works"
-                                      
-#            self.o     
-     
-         
-    # -----------------VENTANA CONFIGURACION GRAPH VOLTAGE---------------------------#                   
-   
-    @pyqtSignature("int")
-    def on_dataTypeSelecVol_activated(self,index):
-        """
-        Metodo que identifica que tipo de dato se va a trabajar VOLTAGE O ESPECTRA
-        """
+         #set Operation Voltage
+        self.volOpComChannels.setEnabled(False)
+        self.volOpComHeights.setEnabled(False)
+        self.volOpFilter.setEnabled(False)
+        self.volOpComProfile.setEnabled(False)
+        self.volOpComCode.setEnabled(False)
+        self.volOpCohInt.setEnabled(False)
         
-        if index==0:
-           self.wiWineTxtGraphicsVol.setEnabled(True)
-           self.channelLisstTxtVol.setEnabled(True)
-           self.xminTxtVol.setEnabled(True)
-           self.yminTxtVol.setEnabled(True)    
-    
-    @pyqtSignature(" ")
-    def on_dataGraphVolOkBtn_clicked(self):
-        """
-        GRAPH
-        """   
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
-               print "INDEXCLICK=ARBOLDICT",i
-               if self.__upObjDict.has_key(i)==True:
-                   self.upObj=self.__upObjDict[i]
-                   print self.__upObjDict[i].name
-                   
-                   if self.valueSelecChOpVol.currentIndex()==0:
-                       opObj10=self.upObj.addOperation(name='Scope', optype='other')
-                       self.operObjList.append(opObj10)
-                       wintitle=self.wiWineTxtGraphicsVol.text()      
-                       channelList=self.channelLisstTxtVol.text()
-                       xvalue= self.xminTxtVol.text()         
-                       yvalue= self.yminTxtVol.text()      
-                     
-                       opObj10.addParameter(name='wintitle', value=wintitle, format='str')
-                       opObj10.addParameter(name='channelList', value=channelList, format='int')
-                       xvalueList=xvalue.split(',')
-                       opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
-                       opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
-                       yvalueList=yvalue.split(",")
-                       opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
-                       opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
-
-                       if self.savedataCEBGraphicsVol.isChecked():
-                           opObj10.addParameter(name='save', value='1', format='int')
-                           opObj10.addParameter(name='figpath', value= self.dataPathtxtGraphicsVol.text())
-                           opObj10.addParameter(name='figfile', value= self.dataPrefixtxtGraphicsVol.text())
-
-
-
-    #-------------------------VENTANA DE CONFIGURACION SPECTRA------------------------#     
+        self.volOpChannel.setEnabled(False)
+        self.volOpHeights.setEnabled(False)
+        self.volOpProfile.setEnabled(False)
+        self.volOpComMode.setEnabled(False)
         
-    @pyqtSignature("int")
-    def on_nFFTPointOpSpecCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
-        """
-        if  p0==2:
-            self.valuenFFTPointOpSpec.setEnabled(True)
-            print " nFFTPoint"
-        if  p0==0:
-            print " deshabilitado" 
-            self.valuenFFTPointOpSpec.setEnabled(False)
-                      
-    @pyqtSignature("int")
-    def on_SelectHeiopSpecCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
-        """
-        if  p0==2:
-            self.valueSelecChOpHei.setEnabled(True)
-            self.selecHeiopSpec.setEnabled(True)
-            print "selectHeights"
-        if  p0==0:
-            print " deshabilitado" 
-            self.valueSelecChOpHei.setEnabled(False)
-            self.selecHeiopSpec.setEnabled(False)            
-            
-    @pyqtSignature("int")
-    def on_selecChannelopSpecCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
-        """
-        if  p0==2:
-            self.valueSelecChOpSpec.setEnabled(True)
-            self.numberChannelopSpec.setEnabled(True)
-            print "selectChannel"
-        if  p0==0:
-            print " deshabilitado" 
-            self.valueSelecChOpSpec.setEnabled(False)
-            self.numberChannelopSpec.setEnabled(False)        
-    
-    @pyqtSignature("int")
-    def on_IncohIntOpSpecCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
-        """
-        if  p0==2:
-            self.valueIncohIntOpSpec.setEnabled(True)
-
-            print "selectIncohInt"
-        if  p0==0:
-            print " deshabilitado" 
-            self.valueIncohIntOpSpec.setEnabled(False)
-
-    @pyqtSignature("int")
-    def on_removedcOpSpecCEB_stateChanged(self, p0):
-        """
-        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
-        """
-        if  p0==2:
-            self.valueremoveDCOpSpec.setEnabled(True)
-
-            print "removedcOpSpecCEB"
-        if  p0==0:
-            print " deshabilitado" 
-            self.valueremoveDCOpSpec.setEnabled(False)
-            
-            
-    def setDisableAllSpecop(self):
-        self.valuenFFTPointOpSpec.setEnabled(False)
-        self.valueSelecChOpHei.setEnabled(False)
-        self.selecHeiopSpec.setEnabled(False)            
-        self.numberChannelopSpec.setEnabled(False)
-        self.valueSelecChOpSpec.setEnabled(False)
-        self.valueIncohIntOpSpec.setEnabled(False)
-        self.valueremoveDCOpSpec.setEnabled(False)
-    #-----------------------SPEC_PUSHBUTTON_ACCEPT_OPERATION----------------------------#   
-    
-    
-
-
-    @pyqtSignature("")
-    def on_dataopSpecOkBtn_clicked(self):
-        """
-        AÑADE OPERACION SPECTRA
-        """
-        print "AÑADEOPERACIONSPECTRA"
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
-               print "INDEXCLICK=ARBOLDICT",i
-               if self.__upObjDict.has_key(i)==True:
-                   self.upObj=self.__upObjDict[i]
-                   print self.__upObjDict[i].name
-                   #            self.operObjList.append(opObj10)
-       
-                   if self.nFFTPointOpSpecCEB.isChecked():                     
-                        value=self.valuenFFTPointOpSpec.text()
-                        self.upObj.addParameter(name='nFFTPoints',value=value,format='int')
-                        print "nFFTpoints"
-                   
-                   
-                   if self.SelectHeiopSpecCEB.isChecked():
-                      if  self.valueSelecChOpHei.currentIndex()== 0:
-                          opObj10=self.upObj.addOperation(name='selectHeights')
-                          value=self.selecHeiopSpec.text()
-                          valueList=value.split(',')
-                          opObj10.addParameter(name='minHei', value=valueList[0], format='float')
-                          opObj10.addParameter(name='maxHei', value=valueList[1], format='float') 
-                      else:
-                          opObj10=self.upObj.addOperation(name='selectHeightsByIndex')
-                          value=self.selecHeiopSpec.text()
-                          valueList=value.split(',')
-                          opObj10.addParameter(name='minIndex', value=valueList[0], format='float')
-                          opObj10.addParameter(name='maxIndex', value=valueList[1], format='float') 
-                       
-                   if self.selecChannelopSpecCEB.isChecked():
-                       if  self.valueSelecChOpSpec.currentIndex()== 0:
-                           opObj10=self.upObj.addOperation(name="selectChannels")
-                           self.operObjList.append(opObj10)
-                           value=self.numberChannelopSpec.text()                    
-                           opObj10.addParameter(name='channelList', value=value, format='intlist')
-                       else:
-                           opObj10=self.upObj.addOperation(name="selectChannelsByIndex")
-                           self.operObjList.append(opObj10)
-                           value=self.numberChannelopSpec.text()                    
-                           opObj10.addParameter(name='channelIndexList', value=value, format='intlist')
-                           print "channel"                                       
-                       
-                   if self.IncohIntOpSpecCEB.isChecked():
-                      opObj10=self.upObj.addOperation(name='IncohInt', optype='other')
-                      self.operObjList.append(opObj10)
-                      value=self.valueIncohIntOpSpec.text()                    
-                      opObj10.addParameter(name='n', value=value, format='float') 
-                      
-                   if self.removedcOpSpecCEB.isChecked():
-                       opObj10=self.upObj.addOperation(name='removeDC')
-                       value=self.valueremoveDCOpSpec.text()     
-                       opObj10.addParameter(name='mode', value=value,format='int')
-                 
-                   
-    #---------------------VENTANA DE CONFIGURACION GRAPH SPECTRA------------------#       
-    @pyqtSignature("int")
-    def on_dataTypeSelectorCmb_activated(self,index):
-        self.setClearAllElementGraph()
-        self.setEnableAllElementGraph()
-        if index==0:
-            self.timeRangeGraphSpec.setEnabled(False)
-        if index==1:
-            self.timeRangeGraphSpec.setEnabled(False)
-        if index==2:
-            self.timeRangeGraphSpec.setEnabled(False)
-        if index==3:
-            self.timeRangeGraphSpec.setEnabled(False)
-     
+        self.volGraphPath.setEnabled(False)
+        self.volGraphPrefix.setEnabled(False)
+        self.volGraphToolPath.setEnabled(False)
         
-    @pyqtSignature("int")
-    def on_saveGraphSpec_stateChanged(self, p0):
-        """
-        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
-        """
-        if  p0==2:
-            self.dataPathTxtSpec.setEnabled(True)
-            self.dataPrefixGraphSpec.setEnabled(True)
-            print " nFFTPoint"
-        if  p0==0:
-            print " deshabilitado" 
-            self.dataPathTxtSpec.setEnabled(False)
-            self.dataPrefixGraphSpec.setEnabled(False)
+        #set Graph Voltage
+        self.volGraphIdFigure.setEnabled(False)
+        self.volGraphWintitle.setEnabled(False)
+        self.volGraphChannelList.setEnabled(False)
+        self.volGraphxrange.setEnabled(False)
+        self.volGraphyrange.setEnabled(False)  
+        #set Operation Spectra
+        self.specOpnFFTpoints.setEnabled(False)
+        self.specOppairsList.setEnabled(False)
+        self.specOpComChannel.setEnabled(False)
+        self.specOpComHeights.setEnabled(False)
+        self.specOpIncoherent.setEnabled(False)
+        self.specOpRemoveDC .setEnabled(False)
+        self.specOpRemoveInterference.setEnabled(False)
+        
+        self.specOpChannel.setEnabled(False)
+        self.specOpHeights.setEnabled(False)
+        #set Graph Spectra  
+        self.specGraphIdFigure.setEnabled(False)      
+        self.specGraphWinTitle.setEnabled(False)
+        self.specGraphChannelList.setEnabled(False)
+        self.specGgraphxrange.setEnabled(False)
+        self.specGgraphyrange.setEnabled(False)
+        self.specGgraphzrange.setEnabled(False)
+        self.specGraphTimeRange.setEnabled(False)
+        self.specGraphPath.setEnabled(False)
+        self.specGraphToolPath.setEnabled(False)
+        self.specGraphPrefix.setEnabled(False)
         
         
-    @pyqtSignature("")
-    def on_dataGraphSpecOkBtn_clicked(self):
-        
-        print "AÑADEOPERACIONSPECTRA"
-      
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
-               print "INDEXCLICK=ARBOLDICT",i
-               if self.__upObjDict.has_key(i)==True:
-                   self.upObj=self.__upObjDict[i]
-                   print self.__upObjDict[i].name
-        
-                   if self.dataTypeSelectorCmb.currentIndex()==0:  
-                      opObj10=self.upObj.addOperation(name='SpectraPlot',optype='other')
-                      opObj10.addParameter(name='idfigure', value='1', format='int')
-                      self.properSpecGraph(opObj10)
-                                 
-                   if self.dataTypeSelectorCmb.currentIndex()==1:    
-                      opObj10=self.upObj.addOperation(name='CrossSpectraPlot',optype='other')
-                      self.properSpecGraph(opObj10)        
-                      opObj10.addParameter(name='power_cmap', value='jet', format='str')
-                      opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
-                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')              
-                      
-                   if self.dataTypeSelectorCmb.currentIndex()==2:
-                      opObj10=self.upObj.addOperation(name='RTIPlot',optype='other')
-                      self.properSpecGraph(opObj10)         
-   
-                   if self.dataTypeSelectorCmb.currentIndex()==3:
-                      opObj10=self.upObj.addOperation(name='CoherenceMap',optype='other')
-                      self.properSpecGraph(opObj10) 
-                      opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
-                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
-                   
-                   if self.dataTypeSelectorCmb.currentIndex()==4:
-                      opObj10=self.upObj.addOperation(name='RTIfromNoise',optype='other')
-                      self.properSpecGraph(opObj10) 
-                   self.setDisableAllElementSpecGraph()
-                   print "Funciona o no"
-               
-    @pyqtSignature("")    
-    def on_dataGraphSpecCancelBtn_clicked(self): 
-            print "alexvaldez" 
+        #tool tip gui
+        QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
+        self.treeProjectExplorer.setToolTip('Right clik to add Project or Unit Process')
+        #tool tip gui project
+        self.proComWalk.setToolTip('Search 0: Search in format .r or pdata ,Search 1 : Search in D2009123004')
+        self.proComWalk.setCurrentIndex(1)
+        #tool tip gui volOp
+        self.volOpChannel.setToolTip('Example: 1,2,3,4,5')    
+        self.volOpHeights.setToolTip('Example: 90,180')
+        self.volOpFilter.setToolTip('Example: 3')
+        self.volOpProfile.setToolTip('Example:0,125 ')
+        self.volOpCohInt.setToolTip('Example: 100')
+        self.volOpOk.setToolTip('If you have finish, please Ok ')
+        #tool tip gui volGraph
+        self.volGraphIdFigure.setToolTip('Example: 1')
+        self.volGraphxrange.setToolTip('Example: 10,150')
+        self.volGraphyrange.setToolTip('Example: 20,180')
+        self.volGraphOk.setToolTip('If you have finish, please Ok ')
+        #tool tip gui specOp
+        self.specOpnFFTpoints.setToolTip('Example: 100')
+        self.specOpIncoherent.setToolTip('Example: 150')
+        self.specOpRemoveDC .setToolTip('Example: 1')
 
-    def properSpecGraph(self,opObj10):
-          print opObj10.id                         
-          self.operObjList.append(opObj10)
-          wintitle=self.winTitleGraphSpec.text()      
-          opObj10.addParameter(name='wintitle', value=wintitle, format='str')
-          idfigure=self.idfigureGraphSpec.text()
-          opObj10.addParameter(name='idfigure', value=idfigure, format='int')
-
-          
-          channelList=self.channelListgraphSpec.text()
-          if self.channelListgraphSpec.isModified():
-              opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
-          
-          xvalue= self.xminGraphSpec.text() 
-          if self.xminGraphSpec.isModified():
-              xvalueList=xvalue.split(',')
-              opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
-              opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
-          else:
-              print "cambio"
-          yvalue= self.yminGraphSpec.text()
-          if self.yminGraphSpec.isModified():
-              yvalueList=yvalue.split(",")
-              opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
-              opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
-          else:
-              print "cambio"
-          zvalue= self.zminGraphSpec.text()       
-          if self.zminGraphSpec.isModified():
-             zvalueList=zvalue.split(",")            
-          if opObj10.name=="RTIfromNoise":
-              print "No_z"
-          else:
-              if self.zminGraphSpec.isModified():
-                  zvalueList=zvalue.split(",")
-                  opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
-                  opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
-                  opObj10.addParameter(name='showprofile', value='1', format='int') 
-
-              else:
-                  print "cambio"
-          
-          if self.savedataCEBGraphicsVol.isChecked():
-              opObj10.addParameter(name='save', value='1', format='int')
-              opObj10.addParameter(name='figpath', value= self.dataPathTxtSpec.text())
-              opObj10.addParameter(name='figfile', value= self.dataPrefixGraphSpec.text())  
         
+        self.specOpChannel.setToolTip('Example: 1,2,3,4,5')
+        self.specOpHeights.setToolTip('Example: 90,180')
+        self.specOppairsList.setToolTip('Example: (0,1),(2,3)')
+        #tool tip gui specGraph
+        self.specGraphIdFigure.setToolTip('Example: 2')      
+        self.specGraphWinTitle.setToolTip('Example: Myplot')
+        self.specGraphChannelList.setToolTip('Example: Myplot')
+        self.specGgraphxrange.setToolTip('Example: 10,150')
+        self.specGgraphyrange.setToolTip('Example: 20,160')
+        self.specGgraphzrange.setToolTip('Example: 30,170')
 
-    def setClearAllElementGraph(self):
-            self.winTitleGraphSpec.clear()
-            self.channelListgraphSpec.clear()
-            self.xminGraphSpec.clear()
-            self.yminGraphSpec.clear()
-            self.zminGraphSpec.clear()
-            self.timeRangeGraphSpec.clear()    
-            self.dataPathTxtSpec.clear()
-            self.dataPrefixGraphSpec.clear() 
-            
-    def setDisableAllElementSpecGraph(self):
-            self.winTitleGraphSpec.setEnabled(False)
-            self.channelListgraphSpec.setEnabled(False)
-            self.xminGraphSpec.setEnabled(False)
-            self.yminGraphSpec.setEnabled(False)
-            self.zminGraphSpec.setEnabled(False)
-            self.timeRangeGraphSpec.setEnabled(False)   
-            self.dataPathTxtSpec.setEnabled(False)
-            self.dataPrefixGraphSpec.setEnabled(False) 
-#             
-    def setEnableAllElementGraph(self):
-            self.winTitleGraphSpec.setEnabled(True)
-            self.channelListgraphSpec.setEnabled(True)
-            self.xminGraphSpec.setEnabled(True)
-            self.yminGraphSpec.setEnabled(True)
-            self.zminGraphSpec.setEnabled(True)
-            self.timeRangeGraphSpec.setEnabled(True)   
-#      
-        
+        self.specGraphPrefix.setToolTip('Example: figure')
         
         
 class UnitProcess(QMainWindow, Ui_UnitProcess):
@@ -1468,16 +1304,13 @@ class UnitProcess(QMainWindow, Ui_UnitProcess):
         for i in self.getfromWindowList:
             
             name=i.getElementName()
-            print "name",name
             if name=='Project':
                 id= i.id
                 name=i.name
-                print "tipodeproyecto",self.dataTypeProject
                 if self.dataTypeProject=='Voltage':
                     self.comboTypeBox.clear()
                     self.comboTypeBox.addItem("Voltage")
-                    self.comboTypeBox.addItem("Spectra")
-                    self.comboTypeBox.addItem("Correlation") 
+
                 if self.dataTypeProject=='Spectra':
                     self.comboTypeBox.clear()
                     self.comboTypeBox.addItem("Spectra")
@@ -1502,5 +1335,3 @@ class UnitProcess(QMainWindow, Ui_UnitProcess):
     def closeEvent(self, event):
         self.closed.emit()
         event.accept()
-      
-  
