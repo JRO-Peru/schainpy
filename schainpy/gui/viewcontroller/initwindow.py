@@ -6,6 +6,8 @@ Module implementing InitWindow.
 
 from PyQt4.QtGui import QMainWindow
 from PyQt4.QtCore import pyqtSignature
+from PyQt4                 import QtCore
+from PyQt4                 import QtGui
 
 from viewer.ui_initwindow import Ui_InitWindow
 
@@ -19,14 +21,14 @@ class InitWindow(QMainWindow, Ui_InitWindow):
         """
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
+        self.setWindowTitle("ROJ-Signal Chain")
+        self.setWindowIcon(QtGui.QIcon("figure/adn.jpg"))
     
     @pyqtSignature("")
     def on_ExitBtn_clicked(self):
         """
         Exit cierra la ventana de Bienvenida
         """
-        # TODO: not implemented yet
-        #raise NotImplementedError
         self.close()
         
     @pyqtSignature("")
