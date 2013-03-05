@@ -175,6 +175,8 @@ class JROData:
     C = 3e8
     
     frequency = 49.92e6
+    
+    realtime = False
 
     def __init__(self):
         

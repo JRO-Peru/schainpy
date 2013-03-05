@@ -1,6 +1,12 @@
 import numpy
 import time, datetime, os
 from graphics.figure import  * 
+def isRealtime(utcdatatime):
+    utcnow = time.mktime(datetime.datetime.utcnow().timetuple())
+    delta = utcnow - utcdatatime # abs
+    if delta >= 5*60.:
+        return False
+    return True
 
 class CrossSpectraPlot(Figure):
     
@@ -1124,6 +1130,11 @@ class SpectraHeisScope(Figure):
             ymax            :    None,
         """
         
+        if dataOut.realtime:
+            if not(isRealtime(utcdatatime = dataOut.utctime)):
+                print 'Skipping this plot function'
+                return
+            
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
         else:

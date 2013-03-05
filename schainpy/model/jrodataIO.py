@@ -467,7 +467,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         if not walk:
             fullpath = path
-        
+            foldercounter = ''
         else:
             #Filtra solo los directorios
             for thisPath in os.listdir(path):
@@ -479,7 +479,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 dirList.append(thisPath)
             
             if not(dirList):
-                return None, None, None, None, None
+                return None, None, None, None, None, None
         
             dirList = sorted( dirList, key=str.lower )
                 
@@ -1554,6 +1554,8 @@ class VoltageReader(JRODataReader):
         
         self.profileIndex += 1
         
+        self.dataOut.realtime = self.online
+        
         return self.dataOut.data
 
 
@@ -2199,6 +2201,8 @@ class SpectraReader(JRODataReader):
         self.dataOut.data_dc = self.data_dc
     
         self.dataOut.flagNoData = False
+        
+        self.dataOut.realtime = self.online
         
         return self.dataOut.data_spc
 
