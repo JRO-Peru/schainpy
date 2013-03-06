@@ -98,19 +98,19 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
     printLabels(ax, xlabel, ylabel, title)
     
     ######################################################
-#    if (xmax-xmin)<=1:
-#        xtickspos = numpy.linspace(xmin,xmax,nxticks)
-#        xtickspos = numpy.array([float("%.1f"%i) for i in xtickspos])
-#        ax.set_xticks(xtickspos)
-#    else:
-#        xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
-#        ax.set_xticks(xtickspos)
-#    
-#    for tick in ax.get_xticklabels():
-#        tick.set_visible(xtick_visible)
-#        
-#    for tick in ax.xaxis.get_major_ticks():
-#        tick.label.set_fontsize(ticksize) 
+    if (xmax-xmin)<=1:
+        xtickspos = numpy.linspace(xmin,xmax,nxticks)
+        xtickspos = numpy.array([float("%.1f"%i) for i in xtickspos])
+        ax.set_xticks(xtickspos)
+    else:
+        xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+        ax.set_xticks(xtickspos)
+    
+    for tick in ax.get_xticklabels():
+        tick.set_visible(xtick_visible)
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize) 
     
     ######################################################
     for tick in ax.get_yticklabels():
