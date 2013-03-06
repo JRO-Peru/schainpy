@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-'
-
-#from PyQt4 import QtCore, QtGuis
+import sys
+from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QApplication
 #from PyQt4.QtCore import pyqtSignature
 
@@ -13,23 +13,22 @@ from viewcontroller.workspace import Workspace
 
 def main():
     import sys
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     
     Welcome=InitWindow()
-    Welcome.show() 
-#    
+    if not Welcome.exec_(): 
+        sys.exit(-1) 
+
     WorkPathspace=Workspace()
-    #WorkPathspace.show()
-    Welcome.ContinueBtn.clicked.connect(WorkPathspace.show)    
-#    
+    if not WorkPathspace.exec_(): 
+          sys.exit(-1)
 #    if self.isBasic():
 #        MainGUI = BasicWindow()
 #    else:
-#        MainGUI = AdvancedWindow()
-        
+#        MainGUI = AdvancedWindow()  
     MainGUI=BasicWindow()
-    WorkPathspace.closed.connect(MainGUI.show)
-   # MainGUI.show()
+    MainGUI.setWorkSpaceGUI(WorkPathspace.dirComBox.currentText())  
+    MainGUI.show()
     sys.exit(app.exec_())
     
 if __name__ == "__main__":
