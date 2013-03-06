@@ -114,9 +114,11 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         """
         if p0==0:
            self.online=0
+           self.proDelay.setText("0")
            self.proDelay.setEnabled(False)
         elif p0==1:
             self.online=1
+            self.proDelay.setText("5")
             self.proDelay.setEnabled(True)   
         self.console.clear()
         self.console.append("Choose the type of Walk")
@@ -149,6 +151,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             self.walk=1
         
             self.console.clear()
+            self.console.append("If you have choose online mode write the delay")
             self.console.append("Now, Push the Button Load to charge the date")
                 
     @pyqtSignature("")
@@ -170,14 +173,14 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.console.clear()
         self.console.append("Select the read mode")
         
-        
+          
     @pyqtSignature("")
     def on_proLoadButton_clicked(self):     
         self.proOk.setEnabled(True)
         self.console.clear()
         self.console.append("You will see the range of date Load")
         self.console.append("First,Don't forget to Choose the Read Mode: OffLine or Online")
-        self.console.append("The option Wait is for default 0")   
+        self.console.append("The option delay is for default 0")   
         self.loadDays()
          
     
@@ -219,12 +222,31 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         
         id = self.idp
         name = str(self.proName.text())
+        try:
+           name=str(self.proName.text())
+        except:
+            self.console.clear()
+            self.console.append("Please Write  a name")
+            return 0
+            
+            
         desc=str(self.proDescription.toPlainText())
         self.projectObj.setup(id = id, name=name, description=desc)
         datatype  =  str(self.proComDataType.currentText())
         path      =  str(self.proDataPath.text())
         #path='C://data3'
         online    =  int(self.online)
+        if online ==0:
+            delay=0
+        else:
+            delay=self.proDelay.text()
+            try:
+                delay=int(self.proDelay.text())
+            except:
+                self.console.clear()
+                self.console.append("Please Write  a number for delay")
+                return 0    
+        
         walk      =  int(self.walk)
         starDate  =  str(self.proComStartDate.currentText())
         endDate   =  str(self.proComEndDate.currentText())
@@ -238,6 +260,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                                                             startTime=  str(reloj1.hour()) +":"+str(reloj1.minute())+":"+ str(reloj1.second()),
                                                             endTime= str(reloj2.hour()) +":"+str(reloj2.minute())+":"+ str(reloj2.second()),
                                                             online= online,
+                                                            delay=delay,
                                                             walk= walk)
         self.readUnitConfObjList.append(self.readUnitConfObj) 
         
@@ -251,7 +274,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.model_2=treeModel()
         self.model_2.setParams(name       =  self.projectObj.name,
                                 directorio =  path,
-                                 workspace  =  "C:\\WorkspaceGUI",
+                                 workspace  =  self.pathWorkSpace,
                                   remode     =  str(self.proComReadMode.currentText()), 
                                    dataformat =  datatype, 
                                     date       =  str(starDate)+"-"+str(endDate),
@@ -833,7 +856,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         for i in self.__arbolDict:            
             if self.__arbolDict[i]==self.indexclick:
                 self.projectObj=self.__projObjDict[i] 
-        filename="C:\WorkspaceGUI\config"+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
+        filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
         self.projectObj.readXml(filename)
         #controllerObj.printattr()
         
@@ -849,7 +872,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         for i in self.__arbolDict:            
             if self.__arbolDict[i]==self.indexclick:
                 self.projectObj=self.__projObjDict[i] 
-        filename="C:\WorkspaceGUI\config"+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
+ 
+        filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
         self.projectObj.writeXml(filename)     
         self.console.clear()
         self.console.append("Now,  you can push the icon Start in the toolbar or push start in menu run")
@@ -867,7 +891,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                    self.model_2=treeModel()        
                    self.model_2.setParams(name       = str(self.__projObjDict[i].name),
                                            directorio = str(self.readUnitConfObjList[i-1].path),
-                                           workspace  =  "C:\\WorkspaceGUI",
+                                           workspace  =  self.pathWorkSpace,
                                            remode     =  "off Line", 
                                            dataformat =  self.readUnitConfObjList[i-1].datatype, 
                                            date       =  str(self.readUnitConfObjList[i-1].startDate)+"-"+str(self.readUnitConfObjList[i-1].endDate),
@@ -1059,6 +1083,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         if walk == 1:
             
             dirList =  os.listdir(path)
+            
             dirList.sort()     
             
             dateList = []
@@ -1111,6 +1136,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             punto = str(ext[1:2])
             ext=self.datatype
         except:
+            self.proOk.setEnabled(False)
             self.console.clear()
             self.console.append("Please, Choose DataType")
             return 0
@@ -1119,6 +1145,11 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         walk= self.walk
         
         path=str(self.proDataPath.text())
+        if not os.path.exists(path):
+            self.proOk.setEnabled(False)
+            self.console.clear()
+            self.console.append("Write a correct a path")
+            return 
         self.proComStartDate.clear()
         self.proComEndDate.clear()
         #Load List to select start day and end day.(QComboBox)
@@ -1128,6 +1159,9 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             self.proComStartDate.addItem(thisDate)
             self.proComEndDate.addItem(thisDate)
         self.proComEndDate.setCurrentIndex(self.proComStartDate.count()-1)
+        
+    def setWorkSpaceGUI(self,pathWorkSpace):
+         self.pathWorkSpace = pathWorkSpace
                 
     def setParameter(self):
         self.setWindowTitle("ROJ-Signal Chain")
@@ -1175,6 +1209,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.treeProjectProperties.expandAll()
         #set Project
         self.proDelay.setEnabled(False)  
+        self.proDataType.setReadOnly(True)
          
          #set Operation Voltage
         self.volOpComChannels.setEnabled(False)
@@ -1227,7 +1262,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
         self.treeProjectExplorer.setToolTip('Right clik to add Project or Unit Process')
         #tool tip gui project
-        self.proComWalk.setToolTip('Search 0: Search in format .r or pdata ,Search 1 : Search in D2009123004')
+        self.proComWalk.setToolTip('Search 0: Search file in format .r or pdata ,Search 1 : Search file in a directory DYYYYDOY')
         self.proComWalk.setCurrentIndex(1)
         #tool tip gui volOp
         self.volOpChannel.setToolTip('Example: 1,2,3,4,5')    
