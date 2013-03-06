@@ -4,14 +4,14 @@
 Module implementing InitWindow.
 """
 
-from PyQt4.QtGui import QMainWindow
+from PyQt4.QtGui import QDialog
 from PyQt4.QtCore import pyqtSignature
 from PyQt4                 import QtCore
 from PyQt4                 import QtGui
 
 from viewer.ui_initwindow import Ui_InitWindow
 
-class InitWindow(QMainWindow, Ui_InitWindow):
+class InitWindow(QDialog, Ui_InitWindow):
     """
     Class documentation goes here.
     """
@@ -19,7 +19,7 @@ class InitWindow(QMainWindow, Ui_InitWindow):
         """
         Constructor
         """
-        QMainWindow.__init__(self, parent)
+        QDialog.__init__(self, parent)
         self.setupUi(self)
         self.setWindowTitle("ROJ-Signal Chain")
         self.setWindowIcon(QtGui.QIcon("figure/adn.jpg"))
@@ -39,4 +39,4 @@ class InitWindow(QMainWindow, Ui_InitWindow):
         """
         # TODO: not implemented yet
         #raise NotImplementedError
-        self.close()
+        self.accept()
