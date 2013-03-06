@@ -1,29 +1,32 @@
 # -*- coding: utf-8 -*-
-
-from PyQt4.QtGui import QMainWindow
+import os
+from PyQt4.QtGui import QDialog
 from PyQt4.QtCore import pyqtSignature
 from PyQt4.QtCore import pyqtSignal
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from viewer.ui_workspace import Ui_Workspace
+from os.path import  expanduser
 
-class Workspace(QMainWindow, Ui_Workspace):
+class Workspace(QDialog, Ui_Workspace):
     """
     Class documentation goes here.
     """
-    closed=pyqtSignal()
+  
     def __init__(self, parent = None):
         """
         Constructor
         """
-        QMainWindow.__init__(self, parent)
+        QDialog.__init__(self, parent)
         self.dirList=[]
         self.setupUi(self)
         self.setWindowTitle("ROJ-Signal Chain")
         self.setWindowIcon(QtGui.QIcon("figure/adn.jpg"))
         #*#######   DIRECTORIO DE TRABAJO  #########*#
         #self.dirCmbBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "C:\WorkSpaceGui", None, QtGui.QApplication.UnicodeUTF8))
-        
-        self.dir=str("C:\WorkSpaceGui")
+        home=expanduser("~")
+        self.dir=os.path.join(home,'schain_workspace')
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
         self.dirComBox.addItem(self.dir)
         self.i=0
         
@@ -45,8 +48,9 @@ class Workspace(QMainWindow, Ui_Workspace):
         """
         VISTA DE INTERFAZ GRÃFICA
         """
-        self.close()
-               
+        self.accept()
+        #        self.close()
+#               
     @pyqtSignature("")
     def on_dirCancelBtn_clicked(self):
         """
@@ -54,9 +58,7 @@ class Workspace(QMainWindow, Ui_Workspace):
         """
         self.close()
 
-    def closeEvent(self, event):
-        self.closed.emit()
-        event.accept()
+ 
     
 
     
