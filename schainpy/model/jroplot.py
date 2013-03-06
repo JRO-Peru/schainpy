@@ -610,7 +610,7 @@ class Scope(Figure):
             
             self.saveFigure(figpath, figfile)
 
-class ProfilePlot(Figure):
+class PowerProfilePlot(Figure):
     __isConfig = None
     __nsubplots = None
     
