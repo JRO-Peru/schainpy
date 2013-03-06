@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\alex\ericworkspace\GUIV1\workspacev3.ui'
+# Form implementation generated from reading ui file '/home/roj-idl71/SignalChain/workspacev4.ui'
 #
-# Created: Tue Mar 05 16:29:15 2013
-#      by: PyQt4 UI code generator 4.9.4
+# Created: Wed Mar  6 14:59:06 2013
+#      by: PyQt4 UI code generator 4.8.6
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -15,30 +15,40 @@ except AttributeError:
     _fromUtf8 = lambda s: s
 
 class Ui_Workspace(object):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(678, 304)
-        self.centralWidget = QtGui.QWidget(MainWindow)
-        self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
-        self.gridLayout = QtGui.QGridLayout(self.centralWidget)
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.resize(801, 309)
+        Dialog.setWindowTitle(QtGui.QApplication.translate("Dialog", "Dialog", None, QtGui.QApplication.UnicodeUTF8))
+        self.gridLayout_2 = QtGui.QGridLayout(Dialog)
+        self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
+        self.gridLayout = QtGui.QGridLayout()
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.dirWork = QtGui.QLabel(self.centralWidget)
-        font = QtGui.QFont()
-        font.setPointSize(8)
-        self.dirWork.setFont(font)
-        self.dirWork.setObjectName(_fromUtf8("dirWork"))
-        self.gridLayout.addWidget(self.dirWork, 3, 0, 1, 1)
-        self.dirLabel = QtGui.QTextEdit(self.centralWidget)
+        self.dirLabel = QtGui.QTextEdit(Dialog)
         self.dirLabel.setMaximumSize(QtCore.QSize(16777215, 75))
         self.dirLabel.setReadOnly(True)
+        self.dirLabel.setHtml(QtGui.QApplication.translate("Dialog", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'Cantarell\'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600;\"> Select a workspace</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt; font-weight:600;\"><br /></p>\n"
+"<p align=\"justify\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">  Signal Chain stores your projects in a folder called a workspace.</span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">  Choose a workspace folder to use for this session.</span></p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
         self.dirLabel.setObjectName(_fromUtf8("dirLabel"))
         self.gridLayout.addWidget(self.dirLabel, 0, 0, 1, 2)
-        self.line = QtGui.QFrame(self.centralWidget)
+        self.line = QtGui.QFrame(Dialog)
         self.line.setFrameShape(QtGui.QFrame.HLine)
         self.line.setFrameShadow(QtGui.QFrame.Sunken)
         self.line.setObjectName(_fromUtf8("line"))
         self.gridLayout.addWidget(self.line, 1, 0, 1, 2)
-        self.dirComBox = QtGui.QComboBox(self.centralWidget)
+        self.dirWork = QtGui.QLabel(Dialog)
+        font = QtGui.QFont()
+        font.setPointSize(8)
+        self.dirWork.setFont(font)
+        self.dirWork.setText(QtGui.QApplication.translate("Dialog", "Workspace :", None, QtGui.QApplication.UnicodeUTF8))
+        self.dirWork.setObjectName(_fromUtf8("dirWork"))
+        self.gridLayout.addWidget(self.dirWork, 2, 0, 1, 1)
+        self.dirComBox = QtGui.QComboBox(Dialog)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -51,7 +61,14 @@ class Ui_Workspace(object):
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
         self.dirComBox.setPalette(palette)
         self.dirComBox.setObjectName(_fromUtf8("dirComBox"))
-        self.gridLayout.addWidget(self.dirComBox, 5, 0, 1, 1)
+        self.gridLayout.addWidget(self.dirComBox, 3, 0, 1, 1)
+        self.dirToolPath = QtGui.QToolButton(Dialog)
+        font = QtGui.QFont()
+        font.setPointSize(8)
+        self.dirToolPath.setFont(font)
+        self.dirToolPath.setText(QtGui.QApplication.translate("Dialog", "...", None, QtGui.QApplication.UnicodeUTF8))
+        self.dirToolPath.setObjectName(_fromUtf8("dirToolPath"))
+        self.gridLayout.addWidget(self.dirToolPath, 3, 1, 1, 1)
         self.horizontalLayout_3 = QtGui.QHBoxLayout()
         self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
         spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
@@ -64,68 +81,38 @@ class Ui_Workspace(object):
         self.horizontalLayout_3.addItem(spacerItem3)
         spacerItem4 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.horizontalLayout_3.addItem(spacerItem4)
-        self.gridLayout.addLayout(self.horizontalLayout_3, 8, 0, 1, 1)
-        self.horizontalLayout_2 = QtGui.QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
-        self.dirButton = QtGui.QRadioButton(self.centralWidget)
-        font = QtGui.QFont()
-        font.setPointSize(8)
-        self.dirButton.setFont(font)
-        self.dirButton.setObjectName(_fromUtf8("dirButton"))
-        self.horizontalLayout_2.addWidget(self.dirButton)
-        spacerItem5 = QtGui.QSpacerItem(428, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem5)
-        self.gridLayout.addLayout(self.horizontalLayout_2, 9, 0, 1, 2)
+        self.gridLayout.addLayout(self.horizontalLayout_3, 4, 0, 1, 1)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
-        spacerItem6 = QtGui.QSpacerItem(438, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(spacerItem6)
-        self.dirOkBtn = QtGui.QPushButton(self.centralWidget)
+        spacerItem5 = QtGui.QSpacerItem(438, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem5)
+        self.dirOkBtn = QtGui.QPushButton(Dialog)
         font = QtGui.QFont()
         font.setPointSize(8)
         self.dirOkBtn.setFont(font)
+        self.dirOkBtn.setText(QtGui.QApplication.translate("Dialog", "OK", None, QtGui.QApplication.UnicodeUTF8))
         self.dirOkBtn.setObjectName(_fromUtf8("dirOkBtn"))
         self.horizontalLayout.addWidget(self.dirOkBtn)
-        self.dirCancelBtn = QtGui.QPushButton(self.centralWidget)
+        self.dirCancelBtn = QtGui.QPushButton(Dialog)
+        self.dirCancelBtn.setText(QtGui.QApplication.translate("Dialog", "Cancel", None, QtGui.QApplication.UnicodeUTF8))
         self.dirCancelBtn.setObjectName(_fromUtf8("dirCancelBtn"))
         self.horizontalLayout.addWidget(self.dirCancelBtn)
-        self.gridLayout.addLayout(self.horizontalLayout, 10, 0, 1, 2)
-        self.dirToolPath = QtGui.QToolButton(self.centralWidget)
-        font = QtGui.QFont()
-        font.setPointSize(8)
-        self.dirToolPath.setFont(font)
-        self.dirToolPath.setObjectName(_fromUtf8("dirToolPath"))
-        self.gridLayout.addWidget(self.dirToolPath, 5, 1, 1, 1)
-        MainWindow.setCentralWidget(self.centralWidget)
+        self.gridLayout.addLayout(self.horizontalLayout, 5, 0, 1, 1)
+        self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
 
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
 
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
-        self.dirWork.setText(QtGui.QApplication.translate("MainWindow", "Workspace :", None, QtGui.QApplication.UnicodeUTF8))
-        self.dirLabel.setHtml(QtGui.QApplication.translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Cantarell\'; font-size:8pt; font-weight:600;\"> Select a workspace</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'Cantarell\'; font-size:8pt; font-weight:600;\"><br /></p>\n"
-"<p align=\"justify\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Cantarell\'; font-size:8pt;\">  Signal Chain stores your projects in a folder called a workspace.</span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Cantarell\'; font-size:8pt;\">  Choose a workspace folder to use for this session.</span></p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
-        self.dirButton.setText(QtGui.QApplication.translate("MainWindow", "Use this as the default and do not ask again", None, QtGui.QApplication.UnicodeUTF8))
-        self.dirOkBtn.setText(QtGui.QApplication.translate("MainWindow", "OK", None, QtGui.QApplication.UnicodeUTF8))
-        self.dirCancelBtn.setText(QtGui.QApplication.translate("MainWindow", "Cancel", None, QtGui.QApplication.UnicodeUTF8))
-        self.dirToolPath.setText(QtGui.QApplication.translate("MainWindow", "...", None, QtGui.QApplication.UnicodeUTF8))
+    def retranslateUi(self, Dialog):
+        pass
 
 
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
-    MainWindow = QtGui.QMainWindow()
+    Dialog = QtGui.QDialog()
     ui = Ui_Workspace()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
+    ui.setupUi(Dialog)
+    Dialog.show()
     sys.exit(app.exec_())
-
-
 
