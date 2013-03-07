@@ -79,6 +79,13 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         Slot documentation goes here.
         """ 
         self.saveProject()   
+    
+    @pyqtSignature("")
+    def on_actionClose_triggered(self):
+        """
+        Slot documentation goes here.
+        """ 
+        self.close() 
         
     def on_actionStart_triggered(self):
         """
@@ -287,11 +294,16 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.treeProjectProperties.expandAll()
         
         #Disable tabProject after finish the creation
-        #self.tabProject.setEnabled(False)
+        self.tabProject.setEnabled(False)
         self.console.clear()
         self.console.append("Now you can add a Unit Processing")
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
+        
+        
+    @pyqtSignature("")
+    def on_proClear_clicked(self):
+        self.setProjectParam()
 #----------------Voltage Operation-------------------#    
 
     @pyqtSignature("int")
@@ -821,8 +833,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                        opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
                    except:
                            return 0
-          
-          
+
           if self.specGraphCebSave.isChecked():
               opObj10.addParameter(name='save', value='1', format='bool')
               opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
@@ -856,15 +867,19 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         for i in self.__arbolDict:            
             if self.__arbolDict[i]==self.indexclick:
                 self.projectObj=self.__projObjDict[i] 
-        filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
-        self.projectObj.readXml(filename)
-        #controllerObj.printattr()
-        
-        self.projectObj.createObjects()
-        self.projectObj.connectObjects()
-        self.projectObj.run()
-        self.console.clear()
-        self.console.append("Please Wait...")
+            else:
+                self.console.clear()
+                self.console.append("Please, Select the poject")
+                return 0
+            filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
+            self.projectObj.readXml(filename)
+            #controllerObj.printattr()
+            
+            self.projectObj.createObjects()
+            self.projectObj.connectObjects()
+            self.projectObj.run()
+            self.console.clear()
+            self.console.append("Please Wait...")
 
                           
     def saveProject(self):
@@ -872,12 +887,16 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         for i in self.__arbolDict:            
             if self.__arbolDict[i]==self.indexclick:
                 self.projectObj=self.__projObjDict[i] 
+            else:
+                self.console.clear()
+                self.console.append("First, Click on current project")
+                return 0
  
-        filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
-        self.projectObj.writeXml(filename)     
-        self.console.clear()
-        self.console.append("Now,  you can push the icon Start in the toolbar or push start in menu run")
-        
+            filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
+            self.projectObj.writeXml(filename)     
+            self.console.clear()
+            self.console.append("Now,  you can push the icon Start in the toolbar or push start in menu run")
+            
                 
     def clickFunction(self,index):  
         self.indexclick= index.model().itemFromIndex(index)
@@ -885,14 +904,31 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
     def doubleclickFunction(self):
         for i in self.__arbolDict: 
             if self.__arbolDict[i]==self.indexclick:
-                if self.__projObjDict.has_key(i)==True:       
+                if self.__projObjDict.has_key(i)==True:  
+                   #self.tabProject.setEnabled(True)
                    self.proName.setText(str(self.__projObjDict[i].name))
                    self.proDataPath.setText(str(self.readUnitConfObjList[i-1].path))
+                   
+                   startDate   =   str(self.readUnitConfObjList[i-1].startDate)
+                   endDate     =   str(self.readUnitConfObjList[i-1].endDate)
+                   self.proComStartDate.clear()
+                   self.proComEndDate.clear()
+                   self.proComStartDate.addItem( startDate)
+                   self.proComEndDate.addItem(endDate)
+                   startTime=str(self.readUnitConfObjList[i-1].startTime)
+                   endTime=str(self.readUnitConfObjList[i-1].endTime)
+                   starlist=startTime.split(":")
+                   endlist=endTime.split(":")
+                   self.time.setHMS(int(starlist[0]),int(starlist[1]),int(starlist[2])) 
+                   self.proStartTime.setTime(self.time)
+                   self.time.setHMS(int(endlist[0]),int(endlist[1]),int(endlist[2])) 
+                   self.proEndTime.setTime(self.time)
+
                    self.model_2=treeModel()        
                    self.model_2.setParams(name       = str(self.__projObjDict[i].name),
                                            directorio = str(self.readUnitConfObjList[i-1].path),
                                            workspace  =  self.pathWorkSpace,
-                                           remode     =  "off Line", 
+                                           remode     =  "Off Line", 
                                            dataformat =  self.readUnitConfObjList[i-1].datatype, 
                                            date       =  str(self.readUnitConfObjList[i-1].startDate)+"-"+str(self.readUnitConfObjList[i-1].endDate),
                                            initTime   =   str(self.readUnitConfObjList[i-1].startTime),
@@ -946,12 +982,13 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         
     def popup(self, pos):
 
-        menu = QtGui.QMenu()
-        quitAction0 = menu.addAction("AddNewProject")
-        quitAction1 = menu.addAction("AddNewProcessingUnit")
-        quitAction2 = menu.addAction("Exit")
-        #quitAction2 = menu.addAction("Exit")
-        action = menu.exec_(self.mapToGlobal(pos))
+        self.menu = QtGui.QMenu()
+        quitAction0 = self.menu.addAction("AddNewProject")
+        quitAction1 = self.menu.addAction("AddNewProcessingUnit")
+        quitAction2 = self.menu.addAction("Delete Branch")
+        quitAction3 = self.menu.addAction("Exit")
+        
+        action = self.menu.exec_(self.mapToGlobal(pos))
         if action == quitAction0:
            self.setProjectParam()
         if action == quitAction1:
@@ -961,6 +998,14 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
            self.console.append("If your Datatype is rawdata, you will start with processing unit Type Voltage")
            self.console.append("If your Datatype is pdata, you will choose between processing unit Type Spectra or Correlation")
         if action == quitAction2:
+           for i in self.__arbolDict: 
+               if self.__arbolDict[i]==self.indexclick:
+                   self.arbolItem=self.__arbolDict[i]
+                   #print self.arbolItem
+                   #self.treeProjectExplorer.removeRows(self.arbolItem)
+                   self.arbolItem.removeRows(self.arbolItem.row(),1)
+
+        if action == quitAction3:
             return
     
     def setProjectParam(self):
@@ -969,10 +1014,15 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.tabProject.setEnabled(True)
         
         self.proName.clear()
+        self.proDataType.setText('.r')
         self.proDataPath.clear()
         self.proComDataType.clear()
         self.proComDataType.addItem("Voltage")
         self.proComDataType.addItem("Spectra")
+        
+        self.proComStartDate.clear()
+        self.proComEndDate.clear()
+        
         startTime="00:00:00"
         endTime="23:59:59"
         starlist=startTime.split(":")
@@ -1040,6 +1090,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             
         self.procUnitConfObj1 = self.projectObj.addProcUnit(datatype=datatype, inputId=inputId)
         self.__upObjDict[self.procUnitConfObj1.id]= self.procUnitConfObj1    
+        
         self.parentItem=self.__arbolDict[uporprojectObj.id]
         self.numbertree=int(self.procUnitConfObj1.getId())-1         
         self.__arbolDict[self.procUnitConfObj1.id]=QtGui.QStandardItem(QtCore.QString(datatype).arg(self.numbertree))
@@ -1054,14 +1105,15 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         if walk== 0:
             files= os.listdir(path)
             for thisFile in files:
-                if not os.path.isfile(thisFile):
-                    continue
                 thisExt = os.path.splitext(thisFile)[-1]
-                
+                print thisExt
                 if thisExt != ext:
+                    self.console.clear()
+                    self.console.append("There is no datatype selected in the path Directory")
+                    self.proOk.setEnabled(False)
                     continue
                 
-                fileList.append(file)
+                fileList.append(thisFile)
             
             for thisFile in fileList:
                 
@@ -1097,14 +1149,20 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                     continue
                 
                 doypath = os.path.join(path, thisDir, expLabel)
-                
+                if not os.path.exists(doypath):
+                    self.console.clear()
+                    self.console.append("Please, Choose the Correct Path")
+                    return 
                 files = os.listdir(doypath)
                 fileList = []
                 
                 for thisFile in files:
-                    
-                    if os.path.splitext(thisFile)[-1] != ext:
-                        continue
+                    thisExt=os.path.splitext(thisFile)[-1]
+                    if thisExt != ext:
+                       self.console.clear()
+                       self.console.append("There is no datatype selected in the Path Directory")
+                       self.proOk.setEnabled(False)
+                       continue
                     
                     if not isRadarFile(thisFile):
                         self.proOk.setEnabled(False)
@@ -1132,15 +1190,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         Method to loads day
         """
         ext=str(self.proDataType.text())
-        try:
-            punto = str(ext[1:2])
-            ext=self.datatype
-        except:
-            self.proOk.setEnabled(False)
-            self.console.clear()
-            self.console.append("Please, Choose DataType")
-            return 0
-        
+    
         #-------------------------#
         walk= self.walk
         
@@ -1171,8 +1221,13 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.tabSpectra.setEnabled(False)
         self.tabCorrelation.setEnabled(False)
         
+        self.actionCreate.setShortcut('Ctrl+P')
+        self.actionStart.setShortcut('Ctrl+R')
+        self.actionSave.setShortcut('Ctrl+S')
+        self.actionClose.setShortcut('Ctrl+Q')
+        
         self.proName.clear()
-        self.proDataPath.setText('C:\Rawdata')
+        self.proDataPath.setText('')
         self.console.append("Welcome to Signal Chain please Create a New Project")
         self.proStartTime.setDisplayFormat("hh:mm:ss")
         self.time =QtCore.QTime()
@@ -1262,7 +1317,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
         self.treeProjectExplorer.setToolTip('Right clik to add Project or Unit Process')
         #tool tip gui project
-        self.proComWalk.setToolTip('Search 0: Search file in format .r or pdata ,Search 1 : Search file in a directory DYYYYDOY')
+        self.proComWalk.setToolTip('<b>Search0</b>:<i>Search file in format .r or pdata</i> <b>Search1</b>:<i>Search file in a directory DYYYYDOY</i>')
         self.proComWalk.setCurrentIndex(1)
         #tool tip gui volOp
         self.volOpChannel.setToolTip('Example: 1,2,3,4,5')    
