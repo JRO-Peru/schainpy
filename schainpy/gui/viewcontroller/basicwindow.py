@@ -574,15 +574,15 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
     
 #------Spectra operation--------#       
     @pyqtSignature("int")
-    def on_specOpCebnFFTpoints_stateChanged(self, p0):
+    def on_specOpCebCrossSpectra_stateChanged(self, p0):
         """
-        Habilita la opcion de a�adir el par�metro nFFTPoints a la Unidad de Procesamiento .
+        Habilita la opcion de a�adir el par�metro CrossSpectra a la Unidad de Procesamiento .
         """
         if  p0==2:
-            self.specOpnFFTpoints.setEnabled(True)
+          #  self.specOpnFFTpoints.setEnabled(True)
             self.specOppairsList.setEnabled(True)
         if  p0==0:
-            self.specOpnFFTpoints.setEnabled(False)
+          #  self.specOpnFFTpoints.setEnabled(False)
             self.specOppairsList.setEnabled(False)
             
     @pyqtSignature("int")
@@ -595,7 +595,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             self.specOpComChannel.setEnabled(True)
         if  p0==0:
             self.specOpChannel.setEnabled(False)
-            self.specOpComChannel.setEnabled(False)                     
+            self.specOpComChannel.setEnabled(False)                       
    
     @pyqtSignature("int")
     def on_specOpCebHeights_stateChanged(self, p0):
@@ -639,11 +639,11 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             if self.__arbolDict[i]==self.indexclick:
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
+                   value1=self.specOpnFFTpoints.text()
+                   self.upObj.addParameter(name='nFFTPoints',value=value1,format='int')
                    #            self.operObjList.append(opObj10)      
-                   if self.specOpCebnFFTpoints.isChecked():                     
-                         value1=self.specOpnFFTpoints.text()
+                   if self.specOpCebCrossSpectra.isChecked():                     
                          value2=self.specOppairsList.text()
-                         self.upObj.addParameter(name='nFFTPoints',value=value1,format='int')
                          self.upObj.addParameter(name='pairsList', value=value2, format='pairslist')
                    
                    if self.specOpCebHeights.isChecked():
@@ -1603,7 +1603,6 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.volGraphfreqrange.setEnabled(False)
         self.volGraphHeightrange.setEnabled(False)
         
-        self.volGraphyrange.setEnabled(False)  
         #set Operation Spectra
         self.specOpnFFTpoints.setEnabled(False)
         self.specOppairsList.setEnabled(False)
