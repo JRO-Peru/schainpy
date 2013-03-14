@@ -61,6 +61,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
          self.readUnitConfObjList=[]
          self.operObjList=[]
          self.idp = 0
+         self.idImag=0
          self.online=0
          self.walk=1
          self.indexclick=None
@@ -222,11 +223,11 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         Añade al Obj XML de Projecto, name,datatype,date,time,readmode,wait,etc, crea el readUnitProcess del archivo xml.
         Prepara la configuración del diágrama del Arbol del treeView numero 2
         """   
+       
         self.console.clear()
         self.idp +=1
         self.projectObj= Project ()
         self.__projObjDict[self.idp]=self.projectObj
-        
         id = self.idp
         name = str(self.proName.text())
         try:
@@ -241,7 +242,12 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.projectObj.setup(id = id, name=name, description=desc)
         datatype  =  str(self.proComDataType.currentText())
         path      =  str(self.proDataPath.text())
-        #path='C://data3'
+        if not os.path.exists(path):
+            self.proOk.setEnabled(False)
+            self.console.clear()
+            self.console.append("Write a correct a path")
+            return 
+
         online    =  int(self.online)
         if online ==0:
             delay=0
@@ -295,11 +301,11 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         
         #Disable tabProject after finish the creation
         self.tabProject.setEnabled(False)
-        self.console.clear()
-        self.console.append("Now you can add a Unit Processing")
-        self.console.append("If you want to save your project")
-        self.console.append("click on your project name in the Tree Project Explorer")
-        
+#         self.console.clear()
+#         self.console.append("Now you can add a Unit Processing")
+#         self.console.append("If you want to save your project")
+#         self.console.append("click on your project name in the Tree Project Explorer")
+#         
         
     @pyqtSignature("")
     def on_proClear_clicked(self):
@@ -483,7 +489,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
                            
-#----------------Voltage Graph-------------------#    
+#----------------Voltage Graph-------------------#      
     @pyqtSignature("int")
     def on_volGraphCebSave_stateChanged(self, p0):
         """
@@ -511,24 +517,24 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             self.volGraphOk.setEnabled(False)
             return                          
     
-    
     @pyqtSignature("int")
-    def on_volGraphComType_activated(self,index):
+    def on_volGraphCebshow_stateChanged(self, p0):
         """
-        Metodo que identifica que tipo de dato se va a trabajar VOLTAGE O ESPECTRA
-        """
-        if index==0:
-           self.volGraphIdFigure.setEnabled(False)
-           self.volGraphWintitle.setEnabled(False)
+        Check Box habilita ingresode del numero de Integraciones a realizar
+        """   
+        if p0==0:
+ 
            self.volGraphChannelList.setEnabled(False)
-           self.volGraphxrange.setEnabled(False)
-           self.volGraphyrange.setEnabled(False)
-        if index==1:
-           self.volGraphIdFigure.setEnabled(True)
-           self.volGraphWintitle.setEnabled(True)
+           self.volGraphfreqrange.setEnabled(False)
+           self.volGraphHeightrange.setEnabled(False)
+        if p0==2:
+
            self.volGraphChannelList.setEnabled(True)
-           self.volGraphxrange.setEnabled(True)
-           self.volGraphyrange.setEnabled(True)    
+           self.volGraphfreqrange.setEnabled(True)
+           self.volGraphHeightrange.setEnabled(True)  
+           self.idImag += 1    
+           print self.idImag
+
        
     @pyqtSignature(" ")
     def on_volGraphOk_clicked(self):
@@ -540,15 +546,14 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
                  
-                   if self.volGraphComType.currentIndex()==1:
+                   if self.volGraphCebshow.isChecked():
                        opObj10=self.upObj.addOperation(name='Scope', optype='other')
                        self.operObjList.append(opObj10)
-                       wintitle=self.volGraphWintitle.text()      
                        channelList=self.volGraphChannelList.text()
-                       xvalue= self.volGraphxrange.text()         
-                       yvalue= self.volGraphxrange.text()      
-                     
-                       opObj10.addParameter(name='wintitle', value=wintitle, format='str')
+                       xvalue= self.volGraphfreqrange.text()         
+                       yvalue= self.volGraphHeightrange.text()
+                       
+                       opObj1.addParameter(name='idfigure', value=int(self.idImag), format='int')
                        opObj10.addParameter(name='channelList', value=channelList, format='int')
                        xvalueList=xvalue.split(',')
                        opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
@@ -561,11 +566,12 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                            opObj10.addParameter(name='save', value='1', format='int')
                            opObj10.addParameter(name='figpath', value= self.volGraphPath.text())
                            opObj10.addParameter(name='figfile', value= self.volGraphPrefix.text())
+       
         self.tabgraphVoltage.setEnabled(False)  
         self.console.clear()
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
-        
+    
 #------Spectra operation--------#       
     @pyqtSignature("int")
     def on_specOpCebnFFTpoints_stateChanged(self, p0):
@@ -678,7 +684,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                        opObj10.addParameter(name='mode', value=value,format='int')   
 
                         
-        self.tabopSpectra.setEnabled(False)
+        #self.tabopSpectra.setEnabled(False)
         self.console.clear()
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
@@ -686,35 +692,93 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         
  #------Spectra  Graph--------#
     @pyqtSignature("int")
-    def on_specGraphComType_activated(self,index):
-        if index==0:
-            print "return"        
-
-        if index==1:
-            self.setspecGraph()
-            self.specGraphTimeRange.setEnabled(False)
-            
-        if index==2:
-            self.setspecGraph()
-            self.specGraphTimeRange.setEnabled(False)
-            
-        if index==3:
-            self.setspecGraph()
-            
-            
-        if index==4:
-            self.setspecGraph()
-            self.specGraphTimeRange.setEnabled(False)
+    def on_specGraphCebSpectraplot_stateChanged(self, p0):
         
-        if index==5:
-            self.setspecGraph()
+        if  p0==2:
+            self.specGgraphFreq.setEnabled(True)
+            self.specGgraphHeight.setEnabled(True)
+            self.specGgraphDbsrange.setEnabled(True)
+        if  p0==0:
+            self.specGgraphFreq.setEnabled(False)
+            self.specGgraphHeight.setEnabled(False)
+            self.specGgraphDbsrange.setEnabled(False)  
             
-        if index==6:
-            self.setspecGraph()
-            self.specGgraphzrange.setEnabled(False)
             
     @pyqtSignature("int")
-    def on_specGraphCebSave_stateChanged(self, p0):
+    def on_specGraphCebCrossSpectraplot_stateChanged(self, p0):
+        
+        if  p0==2:
+            self.specGgraphFreq.setEnabled(True)
+            self.specGgraphHeight.setEnabled(True)
+            self.specGgraphmagnitud.setEnabled(True)
+        if  p0==0:
+            self.specGgraphFreq.setEnabled(False)
+            self.specGgraphHeight.setEnabled(False)
+            self.specGgraphmagnitud.setEnabled(False)  
+            
+    @pyqtSignature("int")
+    def on_specGraphCebRTIplot_stateChanged(self, p0):
+        
+        if  p0==2:
+            self.specGgraphTimeRange.setEnabled(True)
+            self.specGgraphHeight.setEnabled(True)
+            self.specGgraphDbsrange.setEnabled(True)
+        if  p0==0:
+            self.specGgraphTimeRange.setEnabled(False)
+            self.specGgraphHeight.setEnabled(False)
+            self.specGgraphDbsrange.setEnabled(False)
+            
+            
+             
+    @pyqtSignature("int")
+    def on_specGraphCebCoherencmap_stateChanged(self, p0):
+        
+        if  p0==2:
+            self.specGgraphTimeRange.setEnabled(True)
+            self.specGgraphHeight.setEnabled(True)
+            self.specGgraphmagnitud.setEnabled(True)
+        if  p0==0:
+            self.specGgraphTimeRange.setEnabled(False)
+            self.specGgraphHeight.setEnabled(False)
+            self.specGgraphmagnitud.setEnabled(False)
+ 
+
+    @pyqtSignature("int")
+    def on_specGraphRTIfromnoise_stateChanged(self, p0):
+        
+        if  p0==2:
+            self.specGgraphTimeRange.setEnabled(True)
+            self.specGgraphHeight.setEnabled(True)
+            self.specGgraphDbsrange.setEnabled(True)
+        if  p0==0:
+            self.specGgraphTimeRange.setEnabled(False)
+            self.specGgraphHeight.setEnabled(False)
+            self.specGgraphDbsrange.setEnabled(False)
+            
+    @pyqtSignature("int")
+    def on_specGraphPowerprofile_stateChanged(self, p0):
+        
+        if  p0==2:
+    
+            self.specGgraphHeight.setEnabled(True)
+            self.specGgraphDbsrange.setEnabled(True)
+        if  p0==0:
+            self.specGgraphHeight.setEnabled(False)
+            self.specGgraphDbsrange.setEnabled(False)        
+    
+    @pyqtSignature("int")
+    def on_specGraphPhase_stateChanged(self, p0):
+        
+        if  p0==2:
+            self.specGgraphTimeRange.setEnabled(True)
+            self.specGgraphPhaserange.setEnabled(True)
+
+        if  p0==0:
+            self.specGgraphTimeRange.setEnabled(False)
+            self.specGgraphPhaserange.setEnabled(False)
+               
+    @pyqtSignature("int")
+    def on_specGraphSaveSpectra_stateChanged(self, p0):
         """
         """
         if  p0==2:
@@ -724,7 +788,58 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         if  p0==0:
             self.specGraphPath.setEnabled(False)
             self.specGraphPrefix.setEnabled(False)
-            slef.specGraphToolPath.setEnabled(False)   
+            self.specGraphToolPath.setEnabled(False)   
+            
+            
+    @pyqtSignature("int")
+    def on_specGraphSaveCross_stateChanged(self, p0):       
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+        
+    @pyqtSignature("int")
+    def on_specGraphSaveRTIplot_stateChanged(self, p0):       
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+            
+    @pyqtSignature("int")
+    def on_specGraphSaveCoherencemap_stateChanged(self, p0):       
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+            
+    @pyqtSignature("int")
+    def on_specGraphSaveRTIfromNoise_stateChanged(self, p0):       
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+            
+    @pyqtSignature("int")
+    def on_specGraphSavePowerprofile_stateChanged(self, p0):       
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+            
+    @pyqtSignature("int")
+    def on_specGraphSavePhase_stateChanged(self, p0):       
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+            
+    @pyqtSignature("int")
+    def on_specGraphSaveCCF_stateChanged(self, p0):       
+        if  p0==2:
+            self.specGraphPath.setEnabled(True)
+            self.specGraphPrefix.setEnabled(True)
+            self.specGraphToolPath.setEnabled(True)
+               
     @pyqtSignature("")
     def on_specGraphToolPath_clicked(self):        
         """
@@ -743,160 +858,342 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             if self.__arbolDict[i]==self.indexclick:
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
-       
-                   if self.specGraphComType.currentIndex()==1:  
+                   if self.specGraphCebSpectraplot.isChecked():   
                       opObj10=self.upObj.addOperation(name='SpectraPlot',optype='other')
-                      self.properSpecGraph(opObj10)                 
-                                 
-                   if self.specGraphComType.currentIndex()==2:    
+                      
+                      self.idImag += 1   
+                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+               
+                      channelList=self.specGgraphChannelList.text()
+                      if self.specGgraphChannelList.isModified():
+                          opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+                      
+                      xvalue= self.specGgraphFreq.text() 
+                      if self.specGgraphFreq.isModified():
+                          xvalueList=xvalue.split(',')
+                          try:
+                                   value=int(xvalueList[0])
+                                   value=int(xvalueList[1])
+                                   opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                                   opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                          except:
+                                       return 0     
+             
+                      yvalue= self.specGgraphHeight.text()
+                      if self.specGgraphHeight.isModified():
+                          yvalueList=yvalue.split(",")
+                          try:
+                                   value=int(yvalueList[0])
+                                   value=int(yvalueList[1])
+                                   opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                                   opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+                          except:
+                                       return 0     
+                      
+                      zvalue= self.specGgraphDbsrange.text()               
+                      if self.specGgraphDbsrange.isModified():
+                               zvalueList=zvalue.split(",")
+                               try:
+                                   value=int(zvalueList[0])
+                                   value=int(zvalueList[1])
+                                   opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
+                                   opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
+                               except:
+                                       return 0
+            
+                      if self.specGraphSaveSpectra.isChecked():
+                          opObj10.addParameter(name='save', value='1', format='bool')
+                          opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
+                          opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str')  
+                                         
+                            
+                   if self.specGraphCebCrossSpectraplot.isChecked():                
                       opObj10=self.upObj.addOperation(name='CrossSpectraPlot',optype='other')
-                      self.properSpecGraph(opObj10)        
+                        
                       opObj10.addParameter(name='power_cmap', value='jet', format='str')
                       opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
-                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')              
+                      opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')    
                       
-                   if self.specGraphComType.currentIndex()==3:
-                      opObj10=self.upObj.addOperation(name='RTIPlot',optype='other')
-                      self.properSpecGraph(opObj10)      
-                      value =self.specGraphTimeRange.text()
-                      opObj10.addParameter(name='timerange', value=value, format='int')   
+                      
+                      self.idImag += 1   
+                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+               
+                      channelList=self.specGgraphChannelList.text()
+                      if self.specGgraphChannelList.isModified():
+                          opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+                      
+                      xvalue= self.specGgraphFreq.text() 
+                      if self.specGgraphFreq.isModified():
+                          xvalueList=xvalue.split(',')
+                          try:
+                                   value=int(xvalueList[0])
+                                   value=int(xvalueList[1])
+                                   opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                                   opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                          except:
+                                       return 0     
+             
+                      yvalue= self.specGgraphHeight.text()
+                      if self.specGgraphHeight.isModified():
+                          yvalueList=yvalue.split(",")
+                          try:
+                                   value=int(yvalueList[0])
+                                   value=int(yvalueList[1])
+                                   opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                                   opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+                          except:
+                                       return 0     
+                      
+                      zvalue= self.specGgraphmagnitud.text()               
+                      if self.specGgraphmagnitud.isModified():
+                               zvalueList=zvalue.split(",")
+                               try:
+                                   value=int(zvalueList[0])
+                                   value=int(zvalueList[1])
+                                   opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
+                                   opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
+                               except:
+                                       return 0
+            
+                      if self.specGraphSaveCross.isChecked():
+                          opObj10.addParameter(name='save', value='1', format='bool')
+                          opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
+                          opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str') 
+                      
+                      
+                   
+                   if self.specGraphCebRTIplot.isChecked():
+                      opObj10=self.upObj.addOperation(name='RTIPlot',optype='other')   
+                                                   
+                      self.idImag += 1   
+                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+               
+                      channelList=self.specGgraphChannelList.text()
+                      if self.specGgraphChannelList.isModified():
+                          opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+                      
+                      xvalue= self.specGgraphTimeRange.text() 
+                      if self.specGgraphTimeRange.isModified():
+                          xvalueList=xvalue.split(',')
+                          try:
+                                   value=int(xvalueList[0])
+                                   value=int(xvalueList[1])
+                                   opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                                   opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                          except:
+                                       return 0     
+             
+                      yvalue= self.specGgraphHeight.text()
+                      if self.specGgraphHeight.isModified():
+                          yvalueList=yvalue.split(",")
+                          try:
+                                   value=int(yvalueList[0])
+                                   value=int(yvalueList[1])
+                                   opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                                   opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+                          except:
+                                       return 0     
+                      
+                      zvalue= self.specGgraphDbsrange.text()               
+                      if self.specGgraphDbsrange.isModified():
+                               zvalueList=zvalue.split(",")
+                               try:
+                                   value=int(zvalueList[0])
+                                   value=int(zvalueList[1])
+                                   opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
+                                   opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
+                               except:
+                                       return 0
+            
+                      if self.specGraphSaveRTIplot.isChecked():
+                          opObj10.addParameter(name='save', value='1', format='bool')
+                          opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
+                          opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str')  
    
-                   if self.specGraphComType.currentIndex()==4:
+                   if self.specGraphCebCoherencmap.isChecked():
                       opObj10=self.upObj.addOperation(name='CoherenceMap',optype='other')
-                      self.properSpecGraph(opObj10) 
+
                       opObj10.addParameter(name='coherence_cmap', value='jet', format='str')
                       opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
+                      
+                      self.idImag += 1   
+                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+               
+                      channelList=self.specGgraphChannelList.text()
+                      if self.specGgraphChannelList.isModified():
+                          opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+                      
+                      xvalue= self.specGgraphTimeRange.text() 
+                      if self.specGgraphTimeRange.isModified():
+                          xvalueList=xvalue.split(',')
+                          try:
+                                   value=int(xvalueList[0])
+                                   value=int(xvalueList[1])
+                                   opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                                   opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                          except:
+                                       return 0     
+             
+                      yvalue= self.specGgraphHeight.text()
+                      if self.specGgraphHeight.isModified():
+                          yvalueList=yvalue.split(",")
+                          try:
+                                   value=int(yvalueList[0])
+                                   value=int(yvalueList[1])
+                                   opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                                   opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+                          except:
+                                       return 0     
+                      
+                      zvalue= self.specGgraphmagnitud.text()               
+                      if self.specGgraphmagnitud.isModified():
+                               zvalueList=zvalue.split(",")
+                               try:
+                                   value=int(zvalueList[0])
+                                   value=int(zvalueList[1])
+                                   opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
+                                   opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
+                               except:
+                                       return 0
+            
+                      if self.specGraphSaveCoherencemap.isChecked():
+                          opObj10.addParameter(name='save', value='1', format='bool')
+                          opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
+                          opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str')
+                                  
                    
-                   if self.specGraphComType.currentIndex()==5:
+                   if self.specGraphRTIfromnoise.isChecked():
                       opObj10=self.upObj.addOperation(name='RTIfromNoise',optype='other')
-                      self.properSpecGraph(opObj10) 
-                      self.specGgraphzrange.setEnabled(False)
-                    
-                   if self.specGraphComType.currentIndex()==6:
-                      opObj10=self.upObj.addOperation(name='ProfilePlot',optype='other')
-                      self.properSpecGraph(opObj10) 
-                      self.specGgraphzrange.setEnabled(False)   
                    
+                      self.idImag += 1   
+                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+               
+                      channelList=self.specGgraphChannelList.text()
+                      if self.specGgraphChannelList.isModified():
+                          opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+                      
+                      xvalue= self.specGgraphTimeRange.text() 
+                      if self.specGgraphTimeRange.isModified():
+                          xvalueList=xvalue.split(',')
+                          try:
+                                   value=int(xvalueList[0])
+                                   value=int(xvalueList[1])
+                                   opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                                   opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                          except:
+                                       return 0     
+             
+                      yvalue= self.specGgraphHeight.text()
+                      if self.specGgraphHeight.isModified():
+                          yvalueList=yvalue.split(",")
+                          try:
+                                   value=int(yvalueList[0])
+                                   value=int(yvalueList[1])
+                                   opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                                   opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+                          except:
+                                       return 0     
+                      
+   
+                      if self.specGraphSaveRTIfromNoise.isChecked():
+                          opObj10.addParameter(name='save', value='1', format='bool')
+                          opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
+                          opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str')  
+   
+                    
+                   if self.specGraphPowerprofile.isChecked():
+                      opObj10=self.upObj.addOperation(name='ProfilePlot',optype='other')
+                      self.idImag += 1   
+                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+               
+                      channelList=self.specGgraphChannelList.text()
+                      if self.specGgraphChannelList.isModified():
+                          opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
+                      
+                      xvalue= self.specGgraphDbsrange.text() 
+                      if self.specGgraphDbsrange.isModified():
+                          xvalueList=xvalue.split(',')
+                          try:
+                                   value=int(xvalueList[0])
+                                   value=int(xvalueList[1])
+                                   opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                                   opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
+                          except:
+                                       return 0     
+             
+                      yvalue= self.specGgraphHeight.text()
+                      if self.specGgraphHeight.isModified():
+                          yvalueList=yvalue.split(",")
+                          try:
+                                   value=int(yvalueList[0])
+                                   value=int(yvalueList[1])
+                                   opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                                   opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+                          except:
+                                       return 0     
+                      
+            
+                      if self.specGraphSavePowerprofile.isChecked():
+                          opObj10.addParameter(name='save', value='1', format='bool')
+                          opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
+                          opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str')  
+   
+
      
         #self.tabgraphSpectra.setEnabled(False)   
-        self.specGraphComType.setEnabled(False)
+        
         self.console.clear()
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")       
-    
+   
     @pyqtSignature("")
     def on_specGraphClear_clicked(self):
         self.clearspecGraph()
-        
-    def properSpecGraph(self,opObj10):
-          
-          self.operObjList.append(opObj10)
-          wintitle=self.specGraphWinTitle.text()      
-          opObj10.addParameter(name='wintitle', value=wintitle, format='str')
-          idfigure=self.specGraphIdFigure.text()
-          
-          opObj10.addParameter(name='idfigure', value=idfigure, format='int')
-   
-          channelList=self.specGraphChannelList.text()
-          if self.specGraphChannelList.isModified():
-              opObj10.addParameter(name='channelList', value=channelList, format='intlist') 
-          
-          xvalue= self.specGgraphxrange.text() 
-          if self.specGgraphxrange.isModified():
-              xvalueList=xvalue.split(',')
-              try:
-                       value=int(xvalueList[0])
-                       value=int(xvalueList[1])
-                       opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
-                       opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
-              except:
-                           return 0     
- 
-          yvalue= self.specGgraphyrange.text()
-          if self.specGgraphyrange.isModified():
-              yvalueList=yvalue.split(",")
-              try:
-                       value=int(yvalueList[0])
-                       value=int(yvalueList[1])
-                       opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
-                       opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
-              except:
-                           return 0     
-          
-          zvalue= self.specGgraphzrange.text()               
-          if self.specGgraphzrange.isModified():
-                   zvalueList=zvalue.split(",")
-                   try:
-                       value=int(zvalueList[0])
-                       value=int(zvalueList[1])
-                       opObj10.addParameter(name='zmin', value=zvalueList[0], format='int')
-                       opObj10.addParameter(name='zmax', value=zvalueList[1], format='int')
-                   except:
-                           return 0
-
-          if self.specGraphCebSave.isChecked():
-              opObj10.addParameter(name='save', value='1', format='bool')
-              opObj10.addParameter(name='figpath', value= self.specGraphPath.text(),format='str')
-              opObj10.addParameter(name='figfile', value= self.specGraphPrefix.text(),format='str')                
-      
 
     def setspecGraph(self):
-        self.specGraphIdFigure.setEnabled(True)
-        self.specGraphWinTitle.setEnabled(True)
-        self.specGraphChannelList.setEnabled(True)
-        self.specGgraphxrange.setEnabled(True)
-        self.specGgraphyrange.setEnabled(True)
-        self.specGgraphzrange.setEnabled(True)
-        self.specGraphTimeRange.setEnabled(True)
-#         self.specGraphPath.setEnabled(True)
-#         self.specGraphToolPath.setEnabled(True)
-#         self.specGraphPrefix.setEnabled(True)
+
+        self.specGgraphChannelList.setEnabled(True)
+
     def clearspecGraph(self):
-        self.specGraphComType.setEnabled(True)
-        self.specGraphComType.setCurrentIndex(0)
-        self.specGraphIdFigure.clear()
-        self.specGraphWinTitle.clear()
-        self.specGraphChannelList.clear()
-        self.specGgraphxrange.clear()
-        self.specGgraphyrange.clear()
-        self.specGgraphzrange.clear()
-        self.specGraphTimeRange.clear()
+
+        self.specGgraphChannelList.clear()
+
         
     def playProject(self):
 
         for i in self.__arbolDict:            
             if self.__arbolDict[i]==self.indexclick:
-                self.projectObj=self.__projObjDict[i] 
-            else:
-                self.console.clear()
-                self.console.append("Please, Select the poject")
-                return 0
-            filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
-            self.projectObj.readXml(filename)
-            #controllerObj.printattr()
-            
-            self.projectObj.createObjects()
-            self.projectObj.connectObjects()
-            self.projectObj.run()
-            self.console.clear()
-            self.console.append("Please Wait...")
+                if self.__projObjDict.has_key(i)==True:
+                    self.projectObj=self.__projObjDict[i] 
+                    filename=self.pathWorkSpace+"/"+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
+                    self.console.clear()
+                    self.console.append("Please Wait...")
+                    self.projectObj.readXml(filename)
+                    self.projectObj.createObjects()
+                    self.projectObj.connectObjects()
+                    self.projectObj.run()
+                    return 0
+                else:
+                    self.console.clear()
+                    self.console.append("First,click on current project")
+        
 
                           
     def saveProject(self):
-
-        for i in self.__arbolDict:            
+        print self.indexclick
+        for i in self.__arbolDict:       
             if self.__arbolDict[i]==self.indexclick:
-                self.projectObj=self.__projObjDict[i] 
-            else:
-                self.console.clear()
-                self.console.append("First, Click on current project")
-                return 0
- 
-            filename=self.pathWorkSpace+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
-            self.projectObj.writeXml(filename)     
+                if self.__projObjDict.has_key(i)==True:
+                    self.projectObj=self.__projObjDict[int(i)] 
+                else:
+                    self.console.clear()
+                    self.console.append("First,click on current project")
+        
+            filename=self.pathWorkSpace+"/"+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
             self.console.clear()
+            self.projectObj.writeXml(filename)     
             self.console.append("Now,  you can push the icon Start in the toolbar or push start in menu run")
-            
+ 
                 
     def clickFunction(self,index):  
         self.indexclick= index.model().itemFromIndex(index)
@@ -906,6 +1203,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             if self.__arbolDict[i]==self.indexclick:
                 if self.__projObjDict.has_key(i)==True:  
                    #self.tabProject.setEnabled(True)
+                   
                    self.proName.setText(str(self.__projObjDict[i].name))
                    self.proDataPath.setText(str(self.readUnitConfObjList[i-1].path))
                    
@@ -970,10 +1268,20 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
 
         if self.indexclick.text()=='Spectra':
            self.tabSpectra.setEnabled(True) 
+           self.specOpnFFTpoints.setEnabled(True)
            self.tabVoltage.setEnabled(False)
            self.tabCorrelation.setEnabled(False)
-           self.tabWidgetProject.setCurrentWidget(self.tabSpectra)         
-            
+           self.tabWidgetProject.setCurrentWidget(self.tabSpectra)    
+           
+           self.specOpnFFTpoints.clear()
+           self.specOppairsList.clear()
+           self.specOpChannel.clear()
+           self.specOpHeights.clear()
+           self.specOpIncoherent.clear()
+           self.specOpRemoveDC.clear()
+           self.specOpRemoveInterference.clear()
+           
+
         if self.indexclick.text()=='Correlation':
            self.tabCorrelation.setEnabled(True) 
            self.tabVoltage.setEnabled(False)
@@ -1001,8 +1309,6 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
            for i in self.__arbolDict: 
                if self.__arbolDict[i]==self.indexclick:
                    self.arbolItem=self.__arbolDict[i]
-                   #print self.arbolItem
-                   #self.treeProjectExplorer.removeRows(self.arbolItem)
                    self.arbolItem.removeRows(self.arbolItem.row(),1)
 
         if action == quitAction3:
@@ -1106,7 +1412,6 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             files= os.listdir(path)
             for thisFile in files:
                 thisExt = os.path.splitext(thisFile)[-1]
-                print thisExt
                 if thisExt != ext:
                     self.console.clear()
                     self.console.append("There is no datatype selected in the path Directory")
@@ -1211,11 +1516,21 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.proComEndDate.setCurrentIndex(self.proComStartDate.count()-1)
         
     def setWorkSpaceGUI(self,pathWorkSpace):
-         self.pathWorkSpace = pathWorkSpace
+         self.pathWorkSpace = pathWorkSpace    
+#---Comandos Usados en Console----#   
+    def __del__(self):
+        sys.stdout=sys.__stdout__
+        
+    def normalOutputWritten(self,text):
+        self.console.append(text)
+        
+ #-----Fin------#  
                 
     def setParameter(self):
         self.setWindowTitle("ROJ-Signal Chain")
         self.setWindowIcon(QtGui.QIcon("figure/adn.jpg"))
+        sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
+
         self.tabWidgetProject.setEnabled(False)
         self.tabVoltage.setEnabled(False)
         self.tabSpectra.setEnabled(False)
@@ -1284,10 +1599,10 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.volGraphToolPath.setEnabled(False)
         
         #set Graph Voltage
-        self.volGraphIdFigure.setEnabled(False)
-        self.volGraphWintitle.setEnabled(False)
         self.volGraphChannelList.setEnabled(False)
-        self.volGraphxrange.setEnabled(False)
+        self.volGraphfreqrange.setEnabled(False)
+        self.volGraphHeightrange.setEnabled(False)
+        
         self.volGraphyrange.setEnabled(False)  
         #set Operation Spectra
         self.specOpnFFTpoints.setEnabled(False)
@@ -1301,13 +1616,13 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.specOpChannel.setEnabled(False)
         self.specOpHeights.setEnabled(False)
         #set Graph Spectra  
-        self.specGraphIdFigure.setEnabled(False)      
-        self.specGraphWinTitle.setEnabled(False)
-        self.specGraphChannelList.setEnabled(False)
-        self.specGgraphxrange.setEnabled(False)
-        self.specGgraphyrange.setEnabled(False)
-        self.specGgraphzrange.setEnabled(False)
-        self.specGraphTimeRange.setEnabled(False)
+        self.specGgraphChannelList.setEnabled(False)
+        self.specGgraphFreq.setEnabled(False)
+        self.specGgraphHeight.setEnabled(False)
+        self.specGgraphDbsrange.setEnabled(False)
+        self.specGgraphmagnitud.setEnabled(False)
+        self.specGgraphTimeRange.setEnabled(False)
+        self.specGgraphPhaserange.setEnabled(False)
         self.specGraphPath.setEnabled(False)
         self.specGraphToolPath.setEnabled(False)
         self.specGraphPrefix.setEnabled(False)
@@ -1327,11 +1642,10 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.volOpCohInt.setToolTip('Example: 100')
         self.volOpOk.setToolTip('If you have finish, please Ok ')
         #tool tip gui volGraph
-        self.volGraphIdFigure.setToolTip('Example: 1')
-        self.volGraphxrange.setToolTip('Example: 10,150')
-        self.volGraphyrange.setToolTip('Example: 20,180')
+        self.volGraphfreqrange.setToolTip('Example: 10,150')
+        self.volGraphHeightrange.setToolTip('Example: 20,180')
         self.volGraphOk.setToolTip('If you have finish, please Ok ')
-        #tool tip gui specOp
+       #tool tip gui specOp
         self.specOpnFFTpoints.setToolTip('Example: 100')
         self.specOpIncoherent.setToolTip('Example: 150')
         self.specOpRemoveDC .setToolTip('Example: 1')
@@ -1341,15 +1655,13 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.specOpHeights.setToolTip('Example: 90,180')
         self.specOppairsList.setToolTip('Example: (0,1),(2,3)')
         #tool tip gui specGraph
-        self.specGraphIdFigure.setToolTip('Example: 2')      
-        self.specGraphWinTitle.setToolTip('Example: Myplot')
-        self.specGraphChannelList.setToolTip('Example: Myplot')
-        self.specGgraphxrange.setToolTip('Example: 10,150')
-        self.specGgraphyrange.setToolTip('Example: 20,160')
-        self.specGgraphzrange.setToolTip('Example: 30,170')
-
-        self.specGraphPrefix.setToolTip('Example: figure')
         
+        self.specGgraphChannelList.setToolTip('Example: Myplot')
+        self.specGgraphFreq.setToolTip('Example: 10,150')
+        self.specGgraphHeight.setToolTip('Example: 20,160')
+        self.specGgraphDbsrange.setToolTip('Example: 30,170')
+
+        self.specGraphPrefix.setToolTip('Example: figure')   
         
 class UnitProcess(QMainWindow, Ui_UnitProcess):
     """
@@ -1425,3 +1737,8 @@ class UnitProcess(QMainWindow, Ui_UnitProcess):
     def closeEvent(self, event):
         self.closed.emit()
         event.accept()
+        
+class ShowMeConsole(QtCore.QObject):
+        textWritten=QtCore.pyqtSignal(str)
+        def write (self,text):
+            self.textWritten.emit(str(text))
