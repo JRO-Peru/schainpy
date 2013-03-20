@@ -642,7 +642,9 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                    value1=self.specOpnFFTpoints.text()
                    try:
                            value1=int(self.specOpnFFTpoints.text())
+                           self.tabgraphSpectra.setEnabled(True)
                    except:
+                            self.tabgraphSpectra.setEnabled(False)
                             self.console.clear()
                             self.console.append("Please Write the number of FFT")
                             return 0     
