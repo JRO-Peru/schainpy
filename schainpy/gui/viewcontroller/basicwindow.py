@@ -57,10 +57,10 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
          self.setupUi(self)
          self.__projObjDict = {}
          self.__upObjDict = {}
-         self.__arbolDict = {}
+         self.__treeObjDict = {}
          self.readUnitConfObjList=[]
          self.operObjList=[]
-         self.idp = 0
+         self.idProject = 0
          self.idImag=0
          self.online=0
          self.walk=1
@@ -225,10 +225,10 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         """   
        
         self.console.clear()
-        self.idp +=1
+        self.idProject +=1
         self.projectObj= Project ()
-        self.__projObjDict[self.idp]=self.projectObj
-        id = self.idp
+        self.__projObjDict[self.idProject]=self.projectObj
+        id = self.idProject
         name = str(self.proName.text())
         try:
            name=str(self.proName.text())
@@ -279,9 +279,9 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         
         #Project Explorer
         self.parentItem=self.model.invisibleRootItem()
-        self.__arbolDict[self.idp] =QtGui.QStandardItem(QtCore.QString(name).arg(self.idp))
-        self.parentItem.appendRow(self.__arbolDict[self.idp])
-        self.parentItem=self.__arbolDict[self.idp]
+        self.__treeObjDict[self.idProject] =QtGui.QStandardItem(QtCore.QString(name).arg(self.idProject))
+        self.parentItem.appendRow(self.__treeObjDict[self.idProject])
+        self.parentItem=self.__treeObjDict[self.idProject]
           
         #Project Properties
         self.model_2=treeModel()
@@ -396,8 +396,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         BUSCA EN LA LISTA DE OPERACIONES DEL TIPO VOLTAJE Y LES A�ADE EL PARAMETRO ADECUADO ESPERANDO LA ACEPTACION DEL USUARIO
         PARA AGREGARLO AL ARCHIVO DE CONFIGURACION XML
         """   
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict:       
+            if self.__treeObjDict[i]==self.indexclick:
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
                        
@@ -541,8 +541,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         """
         GRAPH
         """   
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict:       
+            if self.__treeObjDict[i]==self.indexclick:
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
                  
@@ -635,8 +635,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         """
         AÑADE OPERACION SPECTRA
         """
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict:       
+            if self.__treeObjDict[i]==self.indexclick:
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
                    value1=self.specOpnFFTpoints.text()
@@ -860,8 +860,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
     @pyqtSignature("")
     def on_specGraphOk_clicked(self):
         
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict:       
+            if self.__treeObjDict[i]==self.indexclick:
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
                    if self.specGraphCebSpectraplot.isChecked():   
@@ -1167,8 +1167,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         
     def playProject(self):
 
-        for i in self.__arbolDict:            
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict:            
+            if self.__treeObjDict[i]==self.indexclick:
                 if self.__projObjDict.has_key(i)==True:
                     self.projectObj=self.__projObjDict[i] 
                     filename=self.pathWorkSpace+"/"+str(self.projectObj.name)+str(self.projectObj.id)+".xml"
@@ -1187,8 +1187,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                           
     def saveProject(self):
         print self.indexclick
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict:       
+            if self.__treeObjDict[i]==self.indexclick:
                 if self.__projObjDict.has_key(i)==True:
                     self.projectObj=self.__projObjDict[int(i)] 
                 else:
@@ -1205,8 +1205,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.indexclick= index.model().itemFromIndex(index)
        
     def doubleclickFunction(self):
-        for i in self.__arbolDict: 
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict: 
+            if self.__treeObjDict[i]==self.indexclick:
                 if self.__projObjDict.has_key(i)==True:  
                    #self.tabProject.setEnabled(True)
                    
@@ -1314,9 +1314,9 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
            self.console.append("If your Datatype is rawdata, you will start with processing unit Type Voltage")
            self.console.append("If your Datatype is pdata, you will choose between processing unit Type Spectra or Correlation")
         if action == quitAction2:
-           for i in self.__arbolDict: 
-               if self.__arbolDict[i]==self.indexclick:
-                   self.arbolItem=self.__arbolDict[i]
+           for i in self.__treeObjDict: 
+               if self.__treeObjDict[i]==self.indexclick:
+                   self.arbolItem=self.__treeObjDict[i]
                    self.arbolItem.removeRows(self.arbolItem.row(),1)
 
         if action == quitAction3:
@@ -1356,8 +1356,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         
     def addPU(self):
         self.configUP=UnitProcess(self)
-        for i in self.__arbolDict:       
-            if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict:       
+            if self.__treeObjDict[i]==self.indexclick:
                if self.__projObjDict.has_key(i)==True:
                    self.projectObj=self.__projObjDict[int(i)]
                    self.configUP.dataTypeProject=str(self.proComDataType.currentText())
@@ -1378,8 +1378,8 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.uporProObjRecover=self.configUP.getFromWindow
         
         self.upType = self.configUP.typeofUP
-        for i in self.__arbolDict: 
-             if self.__arbolDict[i]==self.indexclick:
+        for i in self.__treeObjDict: 
+             if self.__treeObjDict[i]==self.indexclick:
                   if self.__projObjDict.has_key(i)==True: 
                      self.projectObj=self.__projObjDict[int(i)] 
                      
@@ -1405,11 +1405,11 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
         self.procUnitConfObj1 = self.projectObj.addProcUnit(datatype=datatype, inputId=inputId)
         self.__upObjDict[self.procUnitConfObj1.id]= self.procUnitConfObj1    
         
-        self.parentItem=self.__arbolDict[uporprojectObj.id]
+        self.parentItem=self.__treeObjDict[uporprojectObj.id]
         self.numbertree=int(self.procUnitConfObj1.getId())-1         
-        self.__arbolDict[self.procUnitConfObj1.id]=QtGui.QStandardItem(QtCore.QString(datatype).arg(self.numbertree))
-        self.parentItem.appendRow(self.__arbolDict[self.procUnitConfObj1.id])        
-        self.parentItem=self.__arbolDict[self.procUnitConfObj1.id]
+        self.__treeObjDict[self.procUnitConfObj1.id]=QtGui.QStandardItem(QtCore.QString(datatype).arg(self.numbertree))
+        self.parentItem.appendRow(self.__treeObjDict[self.procUnitConfObj1.id])        
+        self.parentItem=self.__treeObjDict[self.procUnitConfObj1.id]
         self.treeProjectExplorer.expandAll()
 
         
