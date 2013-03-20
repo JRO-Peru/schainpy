@@ -640,6 +640,12 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
                    value1=self.specOpnFFTpoints.text()
+                   try:
+                           value1=int(self.specOpnFFTpoints.text())
+                   except:
+                            self.console.clear()
+                            self.console.append("Please Write the number of FFT")
+                            return 0     
                    self.upObj.addParameter(name='nFFTPoints',value=value1,format='int')
                    #            self.operObjList.append(opObj10)      
                    if self.specOpCebCrossSpectra.isChecked():                     
@@ -1272,7 +1278,9 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
            self.tabVoltage.setEnabled(False)
            self.tabCorrelation.setEnabled(False)
            self.tabWidgetProject.setCurrentWidget(self.tabSpectra)    
-           
+           self.specGgraphChannelList.setEnabled(True)
+           self.specGgraphChannelList.clear()
+
            self.specOpnFFTpoints.clear()
            self.specOppairsList.clear()
            self.specOpChannel.clear()
