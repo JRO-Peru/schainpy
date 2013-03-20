@@ -7,8 +7,6 @@ from PyQt4.QtGui import QApplication
 
 from viewcontroller.initwindow import InitWindow
 from viewcontroller.basicwindow import BasicWindow
-#from viewcontroller.mainwindow import BodyMainWindow
-#from viewer.ui_mainwindow import Ui_MainWindow
 from viewcontroller.workspace import Workspace
 
 def main():
@@ -22,10 +20,7 @@ def main():
     WorkPathspace=Workspace()
     if not WorkPathspace.exec_(): 
           sys.exit(-1)
-#    if self.isBasic():
-#        MainGUI = BasicWindow()
-#    else:
-#        MainGUI = AdvancedWindow()  
+
     MainGUI=BasicWindow()
     MainGUI.setWorkSpaceGUI(WorkPathspace.dirComBox.currentText())  
     MainGUI.show()
