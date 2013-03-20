@@ -483,7 +483,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                            opObj10=self.upObj.addOperation(name='CohInt', optype='other')
                            self.operObjList.append(opObj10)
                            value=self.volOpCohInt.text()
-                           opObj10.addParameter(name='n', value=value, format='int') 
+                           opObj10.addParameter(name='n', value=value, format='float') 
         #self.tabopVoltage.setEnabled(False)  
         self.console.clear()
         self.console.append("If you want to save your project")
