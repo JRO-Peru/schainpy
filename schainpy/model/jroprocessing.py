@@ -1213,8 +1213,11 @@ class IncohInt(Operation):
             return None, None, None, None
         
         avgdatatime = self.__initime
-        self.__timeInterval = (self.__lastdatatime - self.__initime)/(self.n - 1)
-        
+        try:
+            self.__timeInterval = (self.__lastdatatime - self.__initime)/(self.n - 1)
+        except:
+            self.__timeInterval = self.__lastdatatime - self.__initime
+            
         deltatime = datatime -self.__lastdatatime
         
         if not self.__withOverapping:

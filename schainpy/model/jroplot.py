@@ -291,8 +291,9 @@ class RTIPlot(Figure):
         avgdB = 10.*numpy.log10(avg)
 
         
-        thisDatetime = dataOut.datatime
-        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+#        thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle+' ' + "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
@@ -505,7 +506,7 @@ class SpectraPlot(Figure):
             date = thisDatetime.strftime("%Y%m%d_%H%M%S")
             if figfile == None:
                 figfile = self.getFilename(name = date)
-            
+
             self.saveFigure(figpath, figfile)
 
 class Scope(Figure):

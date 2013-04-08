@@ -124,6 +124,43 @@ def isFileinThisTime(filename, startTime, endTime):
     
     return thisDatetime
 
+def getFileFromSet(path,ext,set):
+    validFilelist = []
+    fileList = os.listdir(path)
+    
+    # 0 1234 567 89A BCDE
+    # H YYYY DDD SSS .ext
+    
+    for file in fileList:
+        try:
+            year = int(file[1:5])
+            doy  = int(file[5:8])
+        
+            
+        except:
+            continue
+        
+        if (os.path.splitext(file)[-1].lower() != ext.lower()):
+            continue
+        
+        validFilelist.append(file)
+
+    myfile = fnmatch.filter(validFilelist,'*%4.4d%3.3d%3.3d*'%(year,doy,set))
+    
+    if len(myfile)!= 0:
+        return myfile[0]
+    else:
+        filename = '*%4.4d%3.3d%3.3d%s'%(year,doy,set,ext.lower())
+        print 'the filename %s does not exist'%filename
+        print '...going to the last file: '
+        
+    if validFilelist:
+        validFilelist = sorted( validFilelist, key=str.lower )
+        return validFilelist[-1]
+
+    return None
+
+
 def getlastFileFromPath(path, ext):
     """
     Depura el fileList dejando solo los que cumplan el formato de "PYYYYDDDSSS.ext"
@@ -439,7 +476,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         return pathList, filenameList
     
-    def __searchFilesOnLine(self, path, expLabel = "", ext = None, walk=True):
+    def __searchFilesOnLine(self, path, expLabel = "", ext = None, walk=True, set=None):
         
         """
         Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
@@ -467,7 +504,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         if not walk:
             fullpath = path
-            foldercounter = ''
+            foldercounter = 0
         else:
             #Filtra solo los directorios
             for thisPath in os.listdir(path):
@@ -490,15 +527,18 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             
         print "%s folder was found: " %(fullpath )
 
-        filename = getlastFileFromPath(fullpath, ext)
+        if set == None:
+            filename = getlastFileFromPath(fullpath, ext)
+        else:
+            filename = getFileFromSet(fullpath, ext, set)
 
         if not(filename):
-            return None, None, None, None, None
+            return None, None, None, None, None, None
         
         print "%s file was found" %(filename)
         
         if not(self.__verifyFile(os.path.join(fullpath, filename))):
-            return None, None, None, None, None
+            return None, None, None, None, None, None
 
         year = int( filename[1:5] )
         doy  = int( filename[5:8] )
@@ -672,6 +712,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 self.__rdBasicHeader()
                 return 1
             
+            if self.fileSize == self.fileSizeByHeader:
+#                self.flagEoF = True
+                return 0
+            
             print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
             time.sleep( self.delay )
             
@@ -684,18 +728,29 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             return
         
         csize = self.fileSize - self.fp.tell()
+        blocksize = self.processingHeaderObj.blockSize
         
-        #sata el primer bloque de datos
+        #salta el primer bloque de datos
         if csize > self.processingHeaderObj.blockSize:
-            self.fp.seek(self.fp.tell() + self.processingHeaderObj.blockSize)
+            self.fp.seek(self.fp.tell() + blocksize)
         else:
             return
         
         csize = self.fileSize - self.fp.tell()
         neededsize = self.processingHeaderObj.blockSize + self.basicHeaderSize
-        factor = int(csize/neededsize)
-        if factor > 0:
-            self.fp.seek(self.fp.tell() + factor*neededsize)
+        while True:
+            
+            if self.fp.tell()<self.fileSize:
+                self.fp.seek(self.fp.tell() + neededsize)
+            else:
+                self.fp.seek(self.fp.tell() - neededsize)
+                break
+        
+#        csize = self.fileSize - self.fp.tell()
+#        neededsize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+#        factor = int(csize/neededsize)
+#        if factor > 0:
+#            self.fp.seek(self.fp.tell() + factor*neededsize)
         
         self.flagIsNewFile = 0
         self.__isFirstTimeOnline = 0
@@ -854,7 +909,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
                 endDate=None, 
                 startTime=datetime.time(0,0,0), 
                 endTime=datetime.time(23,59,59), 
-                set=0, 
+                set=None, 
                 expLabel = "", 
                 ext = None, 
                 online = False,
@@ -871,7 +926,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             print "Searching files in online mode..."  
                    
             for nTries in range( self.nTries ):
-                fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk)
+                fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk, set=set)
                 
                 if fullpath:
                     break
