@@ -107,8 +107,9 @@ class CrossSpectraPlot(Figure):
         noisedB = 10*numpy.log10(noise)
         
         
-        thisDatetime = dataOut.datatime
-        title = "Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
@@ -293,7 +294,7 @@ class RTIPlot(Figure):
         
 #        thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
-        title = wintitle+' ' + "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = wintitle + " RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
@@ -455,8 +456,9 @@ class SpectraPlot(Figure):
         avgdB = 10*numpy.log10(avg)
         noisedB = 10*numpy.log10(noise)
         
-        thisDatetime = dataOut.datatime
-        title = "Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
@@ -572,8 +574,9 @@ class Scope(Figure):
         y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
         y = y.real
         
-        thisDatetime = dataOut.datatime
-        title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Range (Km)"
         ylabel = "Intensity"
         
@@ -674,8 +677,9 @@ class PowerProfilePlot(Figure):
         
         avgdB = 10*numpy.log10(avg)
         
-        thisDatetime = dataOut.datatime
-        title = "Power Profile"
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Power Profile %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "dB"
         ylabel = "Range (Km)"
         
@@ -798,8 +802,9 @@ class CoherenceMap(Figure):
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        thisDatetime = dataOut.datatime
-        title = "CoherenceMap: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " CoherenceMap: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
@@ -963,8 +968,9 @@ class RTIfromNoise(Figure):
         noise = dataOut.getNoise()/factor
         noisedB = 10*numpy.log10(noise)
         
-        thisDatetime = dataOut.datatime
-        title = "RTI Noise: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " RTI Noise: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
@@ -1156,8 +1162,9 @@ class SpectraHeisScope(Figure):
         datadB = 10.*numpy.log10(dataOut.data_spc)
         y = datadB
         
-        thisDatetime = dataOut.datatime
-        title = "Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Frequency x 10000"
         ylabel = "Intensity (dB)"
         
@@ -1283,8 +1290,9 @@ class RTIfromSpectraHeis(Figure):
 #        noise = dataOut.getNoise()/factor
 #        noisedB = 10*numpy.log10(noise)
         
-        thisDatetime = dataOut.datatime
-        title = "RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Local Time"
         ylabel = "Intensity (dB)"
         

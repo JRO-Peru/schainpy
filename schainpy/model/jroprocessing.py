@@ -273,7 +273,7 @@ class VoltageProc(ProcessingUnit):
         
         return 1
     
-    def selectHeights(self, minHei, maxHei):
+    def selectHeights(self, minHei=None, maxHei=None):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
         minHei <= height <= maxHei
@@ -288,8 +288,16 @@ class VoltageProc(ProcessingUnit):
         Return:
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
+        
+        if minHei == None:
+            minHei = self.dataOut.heightList[0]
+            
+        if maxHei == None:
+            maxHei = self.dataOut.heightList[-1]
+            
         if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
             raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+        
         
         if (maxHei > self.dataOut.heightList[-1]):
             maxHei = self.dataOut.heightList[-1]
@@ -358,7 +366,7 @@ class VoltageProc(ProcessingUnit):
         deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
         
         if window == None:
-            window = self.dataOut.radarControllerHeaderObj.txA / deltaHeight
+            window = (self.dataOut.radarControllerHeaderObj.txA/self.dataOut.radarControllerHeaderObj.nBaud) / deltaHeight
         
         newdelta = deltaHeight * window
         r = self.dataOut.data.shape[1] % window
@@ -366,7 +374,7 @@ class VoltageProc(ProcessingUnit):
         buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
         buffer = numpy.sum(buffer,2)
         self.dataOut.data = buffer
-        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*self.dataOut.nHeights/window,newdelta)
+        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*(self.dataOut.nHeights-r)/window,newdelta)
         self.dataOut.windowOfFilter = window
 
     def deFlip(self):

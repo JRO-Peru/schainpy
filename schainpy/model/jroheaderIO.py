@@ -376,56 +376,56 @@ class ProcessingHeader(Header):
         self.flag_cspc = False
     
     def read(self, fp):
-        try:
-            header = numpy.fromfile(fp,self.struct,1)
-            self.size = int(header['nSize'][0])
-            self.dtype = int(header['nDataType'][0])
-            self.blockSize = int(header['nSizeOfDataBlock'][0])
-            self.profilesPerBlock = int(header['nProfilesperBlock'][0])
-            self.dataBlocksPerFile = int(header['nDataBlocksperFile'][0])
-            self.nWindows = int(header['nNumWindows'][0])
-            self.processFlags = header['nProcessFlags']
-            self.nCohInt = int(header['nCoherentIntegrations'][0])
-            self.nIncohInt = int(header['nIncoherentIntegrations'][0])
-            self.totalSpectra = int(header['nTotalSpectra'][0])
-            self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.nWindows)
-            self.nHeights = int(numpy.sum(self.samplingWindow['nsa']))
-            self.firstHeight = float(self.samplingWindow['h0'][0])
-            self.deltaHeight = float(self.samplingWindow['dh'][0])
-            self.samplesWin = self.samplingWindow['nsa']
-            self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
+#        try:
+        header = numpy.fromfile(fp,self.struct,1)
+        self.size = int(header['nSize'][0])
+        self.dtype = int(header['nDataType'][0])
+        self.blockSize = int(header['nSizeOfDataBlock'][0])
+        self.profilesPerBlock = int(header['nProfilesperBlock'][0])
+        self.dataBlocksPerFile = int(header['nDataBlocksperFile'][0])
+        self.nWindows = int(header['nNumWindows'][0])
+        self.processFlags = header['nProcessFlags']
+        self.nCohInt = int(header['nCoherentIntegrations'][0])
+        self.nIncohInt = int(header['nIncoherentIntegrations'][0])
+        self.totalSpectra = int(header['nTotalSpectra'][0])
+        self.samplingWindow = numpy.fromfile(fp,self.structSamplingWindow,self.nWindows)
+        self.nHeights = int(numpy.sum(self.samplingWindow['nsa']))
+        self.firstHeight = float(self.samplingWindow['h0'][0])
+        self.deltaHeight = float(self.samplingWindow['dh'][0])
+        self.samplesWin = self.samplingWindow['nsa']
+        self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
+        
+#        if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
+#            self.nCode = int(numpy.fromfile(fp,'<u4',1))
+#            self.nBaud = int(numpy.fromfile(fp,'<u4',1))
+#            self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nCode,self.nBaud)
+        
+        if ((self.processFlags & PROCFLAG.SHIFT_FFT_DATA) == PROCFLAG.SHIFT_FFT_DATA):
+            self.shif_fft = True
+        else:
+            self.shif_fft = False
             
-            if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
-                self.nCode = int(numpy.fromfile(fp,'<u4',1))
-                self.nBaud = int(numpy.fromfile(fp,'<u4',1))
-                self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nCode,self.nBaud)
-            
-            if ((self.processFlags & PROCFLAG.SHIFT_FFT_DATA) == PROCFLAG.SHIFT_FFT_DATA):
-                self.shif_fft = True
+        if ((self.processFlags & PROCFLAG.SAVE_CHANNELS_DC) == PROCFLAG.SAVE_CHANNELS_DC):
+            self.flag_dc = True
+        
+        nChannels = 0
+        nPairs = 0
+        pairList = []
+        
+        for i in range( 0, self.totalSpectra*2, 2 ):
+            if self.spectraComb[i] == self.spectraComb[i+1]:
+                nChannels = nChannels + 1   #par de canales iguales 
             else:
-                self.shif_fft = False
+                nPairs = nPairs + 1 #par de canales diferentes
+                pairList.append( (self.spectraComb[i], self.spectraComb[i+1]) )
+        
+        self.flag_cspc = False
+        if nPairs > 0:
+            self.flag_cspc = True
                 
-            if ((self.processFlags & PROCFLAG.SAVE_CHANNELS_DC) == PROCFLAG.SAVE_CHANNELS_DC):
-                self.flag_dc = True
-            
-            nChannels = 0
-            nPairs = 0
-            pairList = []
-            
-            for i in range( 0, self.totalSpectra*2, 2 ):
-                if self.spectraComb[i] == self.spectraComb[i+1]:
-                    nChannels = nChannels + 1   #par de canales iguales 
-                else:
-                    nPairs = nPairs + 1 #par de canales diferentes
-                    pairList.append( (self.spectraComb[i], self.spectraComb[i+1]) )
-            
-            self.flag_cspc = False
-            if nPairs > 0:
-                self.flag_cspc = True
-                
-        except Exception, e:
-            print "ProcessingHeader: " + e
-            return 0
+#        except Exception, e:
+#            print "Error ProcessingHeader: "
+#            return 0
         
         return 1
     
