@@ -321,7 +321,7 @@ class RTIPlot(Figure):
         self.setWinTitle(title)
             
         for i in range(self.nplots):
-            title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
             zdB = avgdB[i].reshape((1,-1))
             axes.pcolorbuffer(x, y, zdB,
@@ -484,7 +484,7 @@ class SpectraPlot(Figure):
         self.setWinTitle(title)
             
         for i in range(self.nplots):
-            title = "Channel %d: %4.2fdB" %(dataOut.channelList[i], noisedB[i])
+            title = "Channel %d: %4.2fdB" %(dataOut.channelList[i]+1, noisedB[i])
             axes = self.axesList[i*self.__nsubplots]
             axes.pcolor(x, y, zdB[i,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
