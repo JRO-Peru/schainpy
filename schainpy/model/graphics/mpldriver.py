@@ -18,10 +18,10 @@ from matplotlib.ticker import *
 #Actualizacion de las funciones del driver
 ###########################################
 
-def createFigure(idfigure, wintitle, width, height, facecolor="w", show=True):
+def createFigure(id, wintitle, width, height, facecolor="w", show=True):
     
     matplotlib.pyplot.ioff()
-    fig = matplotlib.pyplot.figure(num=idfigure, facecolor=facecolor)
+    fig = matplotlib.pyplot.figure(num=id, facecolor=facecolor)
     fig.canvas.manager.set_window_title(wintitle)
     fig.canvas.manager.resize(width, height)
     matplotlib.pyplot.ion()

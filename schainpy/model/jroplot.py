@@ -36,7 +36,7 @@ class CrossSpectraPlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -44,7 +44,7 @@ class CrossSpectraPlot(Figure):
         ncolspan = 1
         colspan = 1
         
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
                           heightplot = self.HEIGHT + self.HEIGHTPROF,
@@ -59,7 +59,7 @@ class CrossSpectraPlot(Figure):
                 
                 counter += 1
     
-    def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             save=False, figpath='./', figfile=None,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True):
@@ -68,7 +68,7 @@ class CrossSpectraPlot(Figure):
         
         Input:
             dataOut         :
-            idfigure        :
+            id        :
             wintitle        :
             channelList     :
             showProfile     :
@@ -117,7 +117,7 @@ class CrossSpectraPlot(Figure):
             
             nplots = len(pairsIndexList)
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        showprofile=showprofile,
@@ -203,7 +203,7 @@ class RTIPlot(Figure):
         self.HEIGHT = 150
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
-        self.counterftp = 0
+        self.counter_imagwr = 0
         
     def getSubplots(self):
         
@@ -212,7 +212,7 @@ class RTIPlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -224,7 +224,7 @@ class RTIPlot(Figure):
             colspan = 6
             self.__nsubplots = 2
             
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
                           heightplot = self.HEIGHT + self.HEIGHTPROF,
@@ -246,16 +246,16 @@ class RTIPlot(Figure):
                     
                 counter += 1
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1, show=True):
+            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1, show=True):
         
         """
         
         Input:
             dataOut         :
-            idfigure        :
+            id        :
             wintitle        :
             channelList     :
             showProfile     :
@@ -302,7 +302,7 @@ class RTIPlot(Figure):
             
             nplots = len(channelIndexList)
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        showprofile=showprofile,
@@ -341,16 +341,18 @@ class RTIPlot(Figure):
         
         if save:
             
-            if figfile == None:
-                figfile = self.getFilename(name = self.name)
-            
-            self.saveFigure(figpath, figfile)
-            
-            self.counterftp += 1
-            if (ftp and (self.counterftp==ftpratio)):
-                figfilename = os.path.join(figpath,figfile)
-                self.sendByFTP(figfilename)
-                self.counterftp = 0
+            self.counter_imagwr += 1
+            if (self.counter_imagwr==res_imagwr):
+                
+                
+                fig_file = self.getFilename(name = self.name)
+                self.saveFigure(figpath, fig_file)
+                if ftp:
+                    self.saveFigure(figpath, figfile)
+                    figfilename = os.path.join(figpath,figfile)
+                    self.sendByFTP(figfilename)
+                
+                self.counter_imagwr = 0
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
@@ -381,7 +383,7 @@ class SpectraPlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -393,7 +395,7 @@ class SpectraPlot(Figure):
             colspan = 2
             self.__nsubplots = 2
         
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
                           heightplot = self.HEIGHT + self.HEIGHTPROF,
@@ -415,7 +417,7 @@ class SpectraPlot(Figure):
                     
                 counter += 1
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             save=False, figpath='./', figfile=None, show=True):
         
@@ -423,7 +425,7 @@ class SpectraPlot(Figure):
         
         Input:
             dataOut         :
-            idfigure        :
+            id        :
             wintitle        :
             channelList     :
             showProfile     :
@@ -466,7 +468,7 @@ class SpectraPlot(Figure):
             
             nplots = len(channelIndexList)
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        showprofile=showprofile,
@@ -527,11 +529,11 @@ class Scope(Figure):
         ncol = 3
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, show):
+    def setup(self, id, nplots, wintitle, show):
         
         self.nplots = nplots
         
-        self.createFigure(idfigure=idfigure, 
+        self.createFigure(id=id, 
                           wintitle=wintitle, 
                           show=show)
         
@@ -544,7 +546,7 @@ class Scope(Figure):
             
         
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None,
+    def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
             figpath='./', figfile=None, show=True):
         
@@ -552,7 +554,7 @@ class Scope(Figure):
         
         Input:
             dataOut         :
-            idfigure        :
+            id        :
             wintitle        :
             channelList     :
             xmin            :    None,
@@ -583,7 +585,7 @@ class Scope(Figure):
         if not self.__isConfig:
             nplots = len(channelIndexList)
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        show=show)
@@ -635,14 +637,14 @@ class PowerProfilePlot(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, show):
+    def setup(self, id, nplots, wintitle, show):
         
         self.nplots = nplots
         
         ncolspan = 1
         colspan = 1
         
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH,
                           heightplot = self.HEIGHT,
@@ -655,7 +657,7 @@ class PowerProfilePlot(Figure):
             for x in range(ncol):                
                 self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None,
+    def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None,
             save=False, figpath='./', figfile=None, show=True):
         
@@ -687,7 +689,7 @@ class PowerProfilePlot(Figure):
             
             nplots = 1
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        show=show)
@@ -738,7 +740,7 @@ class CoherenceMap(Figure):
         self.HEIGHT = 150
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
-        self.counterftp = 0
+        self.counter_imagwr = 0
     
     def getSubplots(self):
         ncol = 1
@@ -746,7 +748,7 @@ class CoherenceMap(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
         self.__showprofile = showprofile
         self.nplots = nplots
         
@@ -757,7 +759,7 @@ class CoherenceMap(Figure):
             colspan = 6
             self.__nsubplots = 2
             
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
                           heightplot = self.HEIGHT + self.HEIGHTPROF,
@@ -773,10 +775,10 @@ class CoherenceMap(Figure):
                 if showprofile:
                     self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
     
-    def run(self, dataOut, idfigure, wintitle="", pairsList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1,
+            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1,
             coherence_cmap='jet', phase_cmap='RdBu_r', show=True):
                 
         if pairsList == None:
@@ -810,7 +812,7 @@ class CoherenceMap(Figure):
         
         if not self.__isConfig:    
             nplots = len(pairsIndexList)
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        showprofile=showprofile,
@@ -881,16 +883,16 @@ class CoherenceMap(Figure):
         
         if save:
             
-            if figfile == None:
-                figfile = self.getFilename(name = self.name)
-            
-            self.saveFigure(figpath, figfile)
-            
-            self.counterftp += 1
-            if (ftp and (self.counterftp==ftpratio)):
-                figfilename = os.path.join(figpath,figfile)
-                self.sendByFTP(figfilename)
-                self.counterftp = 0
+            self.counter_imagwr += 1
+            if (self.counter_imagwr==res_imagwr):
+                fig_file = self.getFilename(name = self.name)
+                self.saveFigure(figpath, fig_file)
+                if ftp:
+                    self.saveFigure(figpath, figfile)
+                    figfilename = os.path.join(figpath,figfile)
+                    self.sendByFTP(figfilename)
+                
+                self.counter_imagwr = 0
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
@@ -922,7 +924,7 @@ class RTIfromNoise(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -931,7 +933,7 @@ class RTIfromNoise(Figure):
         colspan = 6
         self.__nsubplots = 2
         
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH+self.WIDTHPROF,
                           heightplot = self.HEIGHT+self.HEIGHTPROF,
@@ -942,7 +944,7 @@ class RTIfromNoise(Figure):
         self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
         
                         
-    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
             save=False, figpath='./', figfile=None, show=True):
@@ -978,7 +980,7 @@ class RTIfromNoise(Figure):
             
             nplots = 1
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        showprofile=showprofile,
@@ -1050,7 +1052,7 @@ class SpectraHeisScope(Figure):
         self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
-        self.counterftp = 0
+        self.counter_imagwr = 0
         
     def getSubplots(self):
         
@@ -1059,7 +1061,7 @@ class SpectraHeisScope(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, show):
+    def setup(self, id, nplots, wintitle, show):
         
         showprofile = False
         self.__showprofile = showprofile
@@ -1072,7 +1074,7 @@ class SpectraHeisScope(Figure):
             colspan = 2
             self.__nsubplots = 2
         
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH + self.WIDTHPROF,
                           heightplot = self.HEIGHT + self.HEIGHTPROF,
@@ -1107,11 +1109,11 @@ class SpectraHeisScope(Figure):
 #        ncol = 3
 #        return nrow, ncol
 #    
-#    def setup(self, idfigure, nplots, wintitle):
+#    def setup(self, id, nplots, wintitle):
 #        
 #        self.nplots = nplots
 #        
-#        self.createFigure(idfigure, wintitle)
+#        self.createFigure(id, wintitle)
 #        
 #        nrow,ncol = self.getSubplots()
 #        colspan = 3
@@ -1120,15 +1122,15 @@ class SpectraHeisScope(Figure):
 #        for i in range(nplots):
 #            self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
     
-    def run(self, dataOut, idfigure, wintitle="", channelList=None,
+    def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None, ftp=False, ftpratio=1, show=True):
+            figpath='./', figfile=None, ftp=False, res_imagwr=1, show=True):
         
         """
         
         Input:
             dataOut         :
-            idfigure        :
+            id        :
             wintitle        :
             channelList     :
             xmin            :    None,
@@ -1171,7 +1173,7 @@ class SpectraHeisScope(Figure):
         if not self.__isConfig:
             nplots = len(channelIndexList)
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        show=show)
@@ -1203,11 +1205,11 @@ class SpectraHeisScope(Figure):
             
             self.saveFigure(figpath, figfile)
             
-            self.counterftp += 1
-            if (ftp and (self.counterftp==ftpratio)):
+            self.counter_imagwr += 1
+            if (ftp and (self.counter_imagwr==res_imagwr)):
                 figfilename = os.path.join(figpath,figfile)
                 self.sendByFTP(figfilename)
-                self.counterftp = 0
+                self.counter_imagwr = 0
 
 
 class RTIfromSpectraHeis(Figure):
@@ -1227,7 +1229,7 @@ class RTIfromSpectraHeis(Figure):
         self.HEIGHT = 200
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
-        self.counterftp = 0
+        self.counter_imagwr = 0
         self.xdata = None
         self.ydata = None
         
@@ -1238,7 +1240,7 @@ class RTIfromSpectraHeis(Figure):
         
         return nrow, ncol
     
-    def setup(self, idfigure, nplots, wintitle, showprofile=True, show=True):
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
         self.nplots = nplots
@@ -1247,7 +1249,7 @@ class RTIfromSpectraHeis(Figure):
         colspan = 6
         self.__nsubplots = 2
         
-        self.createFigure(idfigure = idfigure,
+        self.createFigure(id = id,
                           wintitle = wintitle,
                           widthplot = self.WIDTH+self.WIDTHPROF,
                           heightplot = self.HEIGHT+self.HEIGHTPROF,
@@ -1258,10 +1260,10 @@ class RTIfromSpectraHeis(Figure):
         self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
         
                         
-    def run(self, dataOut, idfigure, wintitle="", channelList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, ftpratio=1, show=True):
+            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1, show=True):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1300,7 +1302,7 @@ class RTIfromSpectraHeis(Figure):
             
             nplots = 1
             
-            self.setup(idfigure=idfigure,
+            self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
                        showprofile=showprofile,
@@ -1348,11 +1350,11 @@ class RTIfromSpectraHeis(Figure):
             
             self.saveFigure(figpath, figfile)
             
-            self.counterftp += 1
-            if (ftp and (self.counterftp==ftpratio)):
+            self.counter_imagwr += 1
+            if (ftp and (self.counter_imagwr==res_imagwr)):
                 figfilename = os.path.join(figpath,figfile)
                 self.sendByFTP(figfilename)
-                self.counterftp = 0
+                self.counter_imagwr = 0
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False

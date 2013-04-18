@@ -9,7 +9,7 @@ class Figure:
     __driver = mpldriver
     fig = None
     
-    idfigure = None
+    id = None
     wintitle = None
     width = None
     height = None
@@ -32,7 +32,7 @@ class Figure:
     
     def getFilename(self, name, ext='.png'):
         
-        path = '%s%03d' %(self.PREFIX, self.idfigure)
+        path = '%s%03d' %(self.PREFIX, self.id)
         filename = '%s_%s%s' %(self.PREFIX, name, ext)
         
         return os.path.join(path, filename)
@@ -82,11 +82,11 @@ class Figure:
         
         return tmin, tmax
     
-    def init(self, idfigure, nplots, wintitle):
+    def init(self, id, nplots, wintitle):
     
         raise ValueError, "This method has been replaced with createFigure"
     
-    def createFigure(self, idfigure, wintitle, widthplot=None, heightplot=None, show=True):
+    def createFigure(self, id, wintitle, widthplot=None, heightplot=None, show=True):
         
         """
         Crea la figura de acuerdo al driver y parametros seleccionados seleccionados.
@@ -94,7 +94,7 @@ class Figure:
         y self.HEIGHT y el numero de subplots (nrow, ncol)
             
         Input:
-            idfigure    :    Los parametros necesarios son 
+            id    :    Los parametros necesarios son 
             wintitle    :    
         
         """
@@ -105,13 +105,13 @@ class Figure:
         if heightplot == None:
             heightplot = self.HEIGHT
         
-        self.idfigure = idfigure
+        self.id = id
         
         self.wintitle = wintitle
         
         self.widthscreen, self.heightscreen = self.getScreenDim(widthplot, heightplot)
         
-        self.fig = self.__driver.createFigure(idfigure=self.idfigure,
+        self.fig = self.__driver.createFigure(id=self.id,
                                               wintitle=self.wintitle,
                                               width=self.widthscreen,
                                               height=self.heightscreen,
@@ -203,6 +203,9 @@ class Axes:
     
     x_buffer = None
     z_buffer = None
+    
+    __MAXNUMX = 1000
+    __MAXNUMY = 500
     
     def __init__(self, *args):
         
@@ -429,8 +432,14 @@ class Axes:
                zmin=None, zmax=None,
                xlabel='', ylabel='',
                title='', rti = False, colormap='jet',
+               maxNumX = None, maxNumY = None,
                **kwargs):
     
+        if maxNumX == None:
+            maxNumX = self.__MAXNUMX
+        
+        if maxNumY == None:
+            maxNumY = self.__MAXNUMY
         
         if self.__firsttime:
             self.z_buffer = z
@@ -461,6 +470,16 @@ class Axes:
             if self.zmin == None: self.zmin = zmin
             if self.zmax == None: self.zmax = zmax
             
+            
+            deltax = (xmax - xmin)/maxNumX
+            deltay = (ymax - ymin)/maxNumY
+            
+            resolutionx = x[1]-x[0]
+            resolutiony = y[1]-y[0]
+            
+            self.decimationx = numpy.ceil(deltax / resolutionx) 
+            self.decimationy = numpy.ceil(deltay / resolutiony)
+            
             self.__firsttime = False
             return
         
@@ -477,13 +496,16 @@ class Axes:
             
             self.z_buffer = numpy.hstack((self.z_buffer, z))
             
-            newydim = len(y)
-            
 #            self.z_buffer = numpy.ma.masked_inside(self.z_buffer,0.99*self.__missing,1.01*self.__missing)
+            ydim = len(y)
+            z_buffer = self.z_buffer.reshape(-1,ydim)
             
-            z_buffer = self.z_buffer.reshape(-1,newydim)
+            x_buffer = self.x_buffer[::self.decimationx]
+            y_buffer = y[::self.decimationy]    
+            z_buffer = z_buffer[::self.decimationx, ::self.decimationy]
+            #===================================================
             
-            self.__driver.addpcolorbuffer(self.ax, self.x_buffer, y, z_buffer, self.zmin, self.zmax,
+            self.__driver.addpcolorbuffer(self.ax, x_buffer, y_buffer, z_buffer, self.zmin, self.zmax,
                                     xlabel=xlabel,
                                     ylabel=ylabel,
                                     title=title,
