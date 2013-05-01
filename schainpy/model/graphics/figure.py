@@ -204,6 +204,9 @@ class Axes:
     x_buffer = None
     z_buffer = None
     
+    decimationx = None
+    decimationy = None
+    
     __MAXNUMX = 1000
     __MAXNUMY = 500
     
@@ -431,7 +434,7 @@ class Axes:
                ymin=None, ymax=None,
                zmin=None, zmax=None,
                xlabel='', ylabel='',
-               title='', rti = False, colormap='jet',
+               title='', rti = True, colormap='jet',
                maxNumX = None, maxNumY = None,
                **kwargs):
     
@@ -470,50 +473,49 @@ class Axes:
             if self.zmin == None: self.zmin = zmin
             if self.zmax == None: self.zmax = zmax
             
+            self.__firsttime = False
+            return
             
-            deltax = (xmax - xmin)/maxNumX
-            deltay = (ymax - ymin)/maxNumY
+        self.x_buffer = numpy.hstack((self.x_buffer, x[-1]))
+        self.z_buffer = numpy.hstack((self.z_buffer, z))
+        
+        if self.decimationx == None:
+            deltax = (self.xmax - self.xmin)/maxNumX
+            deltay = (self.ymax - self.ymin)/maxNumY
             
-            resolutionx = x[1]-x[0]
+            resolutionx = self.x_buffer[2]-self.x_buffer[0]
             resolutiony = y[1]-y[0]
             
             self.decimationx = numpy.ceil(deltax / resolutionx) 
             self.decimationy = numpy.ceil(deltay / resolutiony)
-            
-            self.__firsttime = False
-            return
         
-        if rti:
-            if x[0]>self.x_buffer[-1]:
-                gap = z.copy()
-                gap[:] = self.__missing
-                self.z_buffer = numpy.hstack((self.z_buffer, gap))
-                self.z_buffer = numpy.ma.masked_inside(self.z_buffer,0.99*self.__missing,1.01*self.__missing)
-                self.x_buffer = numpy.hstack((self.x_buffer, x))
-            
-            else:
-                self.x_buffer = numpy.hstack((self.x_buffer, x[-1]))
-            
-            self.z_buffer = numpy.hstack((self.z_buffer, z))
-            
-#            self.z_buffer = numpy.ma.masked_inside(self.z_buffer,0.99*self.__missing,1.01*self.__missing)
-            ydim = len(y)
-            z_buffer = self.z_buffer.reshape(-1,ydim)
-            
-            x_buffer = self.x_buffer[::self.decimationx]
-            y_buffer = y[::self.decimationy]    
-            z_buffer = z_buffer[::self.decimationx, ::self.decimationy]
-            #===================================================
-            
-            self.__driver.addpcolorbuffer(self.ax, x_buffer, y_buffer, z_buffer, self.zmin, self.zmax,
-                                    xlabel=xlabel,
-                                    ylabel=ylabel,
-                                    title=title,
-                                    colormap=colormap)
-            return
+        z_buffer = self.z_buffer.reshape(-1,len(y))
         
-        self.__driver.pcolor(self.plot, z,
-                             xlabel=xlabel,
-                             ylabel=ylabel,
-                             title=title)
+        x_buffer = self.x_buffer[::self.decimationx]
+        y_buffer = y[::self.decimationy]    
+        z_buffer = z_buffer[::self.decimationx, ::self.decimationy]
+        #===================================================
+        
+        x_buffer, y_buffer, z_buffer = self.__fillGaps(x_buffer, y_buffer, z_buffer)
+        
+        self.__driver.addpcolorbuffer(self.ax, x_buffer, y_buffer, z_buffer, self.zmin, self.zmax,
+                                xlabel=xlabel,
+                                ylabel=ylabel,
+                                title=title,
+                                colormap=colormap)
+    def __fillGaps(self, x_buffer, y_buffer, z_buffer):
+        
+        deltas = x_buffer[1:] - x_buffer[0:-1]
+        x_median = numpy.median(deltas)
+        
+        index = numpy.where(deltas >= 2*x_median)
+        
+        if len(index[0]) != 0:
+            z_buffer[index[0],::] = self.__missing
+            z_buffer = numpy.ma.masked_inside(z_buffer,0.99*self.__missing,1.01*self.__missing)
+
+        return x_buffer, y_buffer, z_buffer
+        
+        
+        
         
