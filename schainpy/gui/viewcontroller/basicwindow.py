@@ -549,18 +549,32 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                    if self.volGraphCebshow.isChecked():
                        opObj10=self.upObj.addOperation(name='Scope', optype='other')
                        self.operObjList.append(opObj10)
+                       self.idImag += 1 
+                       opObj10.addParameter(name='id', value=int(self.idImag), format='int')
+
                        channelList=self.volGraphChannelList.text()
-                       xvalue= self.volGraphfreqrange.text()         
+                       if self.volGraphChannelList.isModified():
+                           try:
+                               opObj10.addParameter(name='channelList', value=channelList, format='int')
+                           except: 
+                                    return 0
+
+                       xvalue= self.volGraphfreqrange.text() 
+                       if self.volGraphfreqrange.isModified():
+                           xvalueList=xvalue.split(',')
+                           try:
+                              opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
+                              opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')  
+                           except:
+                                  return 0
                        yvalue= self.volGraphHeightrange.text()
-                       
-                       opObj1.addParameter(name='idfigure', value=int(self.idImag), format='int')
-                       opObj10.addParameter(name='channelList', value=channelList, format='int')
-                       xvalueList=xvalue.split(',')
-                       opObj10.addParameter(name='xmin', value=xvalueList[0], format='int')
-                       opObj10.addParameter(name='xmax', value=xvalueList[1], format='int')
-                       yvalueList=yvalue.split(",")
-                       opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
-                       opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')
+                       if self.volGraphHeightrange.isModified():
+                          yvalueList=yvalue.split(",")
+                          try:
+                              opObj10.addParameter(name='ymin', value=yvalueList[0], format='int')
+                              opObj10.addParameter(name='ymax', value=yvalueList[1], format='int')  
+                          except:
+                                  return 0
 
                        if self.volGraphCebSave.isChecked():
                            opObj10.addParameter(name='save', value='1', format='int')
@@ -639,16 +653,20 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
             if self.__treeObjDict[i]==self.indexclick:
                if self.__upObjDict.has_key(i)==True:
                    self.upObj=self.__upObjDict[i]
-                   value1=self.specOpnFFTpoints.text()
-                   try:
-                           value1=int(self.specOpnFFTpoints.text())
-                           self.tabgraphSpectra.setEnabled(True)
-                   except:
-                            self.tabgraphSpectra.setEnabled(False)
-                            self.console.clear()
-                            self.console.append("Please Write the number of FFT")
-                            return 0     
-                   self.upObj.addParameter(name='nFFTPoints',value=value1,format='int')
+                   if self.datatype==".r":
+                       value1=self.specOpnFFTpoints.text()
+                       try:
+                               value1=int(self.specOpnFFTpoints.text())
+                               self.tabgraphSpectra.setEnabled(True)
+                       except:
+                                self.tabgraphSpectra.setEnabled(False)
+                                self.console.clear()
+                                self.console.append("Please Write the number of FFT")
+                                return 0     
+                       self.upObj.addParameter(name='nFFTPoints',value=value1,format='int')
+                   else:
+                        pass
+                  
                    #            self.operObjList.append(opObj10)      
                    if self.specOpCebCrossSpectra.isChecked():                     
                          value2=self.specOppairsList.text()
@@ -870,7 +888,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                       opObj10=self.upObj.addOperation(name='SpectraPlot',optype='other')
                       
                       self.idImag += 1   
-                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+                      opObj10.addParameter(name='id', value=int(self.idImag), format='int')
                
                       channelList=self.specGgraphChannelList.text()
                       if self.specGgraphChannelList.isModified():
@@ -924,7 +942,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                       
                       
                       self.idImag += 1   
-                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+                      opObj10.addParameter(name='id', value=int(self.idImag), format='int')
                
                       channelList=self.specGgraphChannelList.text()
                       if self.specGgraphChannelList.isModified():
@@ -974,7 +992,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                       opObj10=self.upObj.addOperation(name='RTIPlot',optype='other')   
                                                    
                       self.idImag += 1   
-                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+                      opObj10.addParameter(name='id', value=int(self.idImag), format='int')
                
                       channelList=self.specGgraphChannelList.text()
                       if self.specGgraphChannelList.isModified():
@@ -1025,7 +1043,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                       opObj10.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
                       
                       self.idImag += 1   
-                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+                      opObj10.addParameter(name='id', value=int(self.idImag), format='int')
                
                       channelList=self.specGgraphChannelList.text()
                       if self.specGgraphChannelList.isModified():
@@ -1074,7 +1092,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                       opObj10=self.upObj.addOperation(name='RTIfromNoise',optype='other')
                    
                       self.idImag += 1   
-                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+                      opObj10.addParameter(name='id', value=int(self.idImag), format='int')
                
                       channelList=self.specGgraphChannelList.text()
                       if self.specGgraphChannelList.isModified():
@@ -1112,7 +1130,7 @@ class BasicWindow(QMainWindow,Ui_BasicWindow):
                    if self.specGraphPowerprofile.isChecked():
                       opObj10=self.upObj.addOperation(name='ProfilePlot',optype='other')
                       self.idImag += 1   
-                      opObj10.addParameter(name='idfigure', value=int(self.idImag), format='int')
+                      opObj10.addParameter(name='id', value=int(self.idImag), format='int')
                
                       channelList=self.specGgraphChannelList.text()
                       if self.specGgraphChannelList.isModified():
