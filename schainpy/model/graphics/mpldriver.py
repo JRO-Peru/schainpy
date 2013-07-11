@@ -7,7 +7,7 @@ if 'linux' in sys.platform:
     matplotlib.use("TKAgg")
     
 if 'darwin' in sys.platform:
-    matplotlib.use("TKAgg")
+    matplotlib.use("GTKAgg")
     
 import matplotlib.pyplot
 
@@ -103,7 +103,8 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
         xtickspos = numpy.array([float("%.1f"%i) for i in xtickspos])
         ax.set_xticks(xtickspos)
     else:
-        xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+#         xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+        xtickspos = numpy.arange(nxticks)*float(xmax-xmin)/float(nxticks) + int(xmin)
         ax.set_xticks(xtickspos)
     
     for tick in ax.get_xticklabels():

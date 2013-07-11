@@ -821,6 +821,8 @@ class CoherenceMap(Figure):
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
+            if zmin == None: zmin = 0.
+            if zmax == None: zmax = 1.
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             
@@ -844,7 +846,7 @@ class CoherenceMap(Figure):
             title = "Coherence %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2]
             axes.pcolorbuffer(x, y, z,
-                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
+                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=coherence_cmap, cbsize="1%")
             
@@ -852,7 +854,7 @@ class CoherenceMap(Figure):
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
                 axes.pline(coherence, y,
-                        xmin=0, xmax=1, ymin=ymin, ymax=ymax,
+                        xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=5,
                         grid='x')
