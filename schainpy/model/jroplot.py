@@ -315,6 +315,7 @@ class RTIPlot(Figure):
             if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.name = '%4d%3d00010000000'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
             self.__isConfig = True
         
         
@@ -348,8 +349,8 @@ class RTIPlot(Figure):
                 fig_file = self.getFilename(name = self.name)
                 self.saveFigure(figpath, fig_file)
                 if ftp:
-                    self.saveFigure(figpath, figfile)
-                    figfilename = os.path.join(figpath,figfile)
+#                     self.saveFigure(figpath, figfile)
+                    figfilename = os.path.join(figpath,fig_file)
                     self.sendByFTP(figfilename)
                 
                 self.counter_imagwr = 0
@@ -375,6 +376,7 @@ class SpectraPlot(Figure):
         self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
+        self.counter_imagwr = 0
         
     def getSubplots(self):
         
@@ -419,7 +421,7 @@ class SpectraPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None, show=True):
+            save=False, figpath='./', figfile=None, show=True, ftp=False, res_imagwr=1):
         
         """
         
@@ -507,11 +509,29 @@ class SpectraPlot(Figure):
         self.draw()
         
         if save:
-            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            if figfile == None:
-                figfile = self.getFilename(name = date)
-
-            self.saveFigure(figpath, figfile)
+            
+            self.counter_imagwr += 1
+            if (self.counter_imagwr==res_imagwr):
+                date = '%4d%3d00010000100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                
+                fig_file = self.getFilename(name = date)
+                self.saveFigure(figpath, fig_file)
+                
+                if ftp:
+#                     self.saveFigure(figpath, figfile)
+                    figfilename = os.path.join(figpath,fig_file)
+                    self.sendByFTP(figfilename)
+                
+                self.counter_imagwr = 0
+        
+        
+#         if save:
+#             date = thisDatetime.strftime("%Y%m%d_%H%M%S")
+#             date = '%4d%3d00010000100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+#             if figfile == None:
+#                 figfile = self.getFilename(name = date)
+# 
+#             self.saveFigure(figpath, figfile)
 
 class Scope(Figure):
     

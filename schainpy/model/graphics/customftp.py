@@ -86,10 +86,10 @@ class Ftp():
 #                print 'filename: %s - size: %d'%(f,self.ftp.size(f))
 
     def parmsByDefault(self):
-        host = 'jro.igp.gob.pe'
-        username = 'operaciones'
-        passw = 'mst98vhf'
-        remotefolder = '/users/database/on-line/'
+        host = 'jro-app.igp.gob.pe'
+        username = 'wmaster'
+        passw = 'mst2010vhf'
+        remotefolder = '/home/wmaster/graficos'
         
         return host, username, passw, remotefolder
         
