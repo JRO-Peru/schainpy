@@ -23,7 +23,7 @@ class CrossSpectraPlot(Figure):
         
         self.__isConfig = False
         self.__nsubplots = 4
-        
+        self.counter_imagwr = 0
         self.WIDTH = 250
         self.HEIGHT = 250
         self.WIDTHPROF = 0
@@ -59,9 +59,9 @@ class CrossSpectraPlot(Figure):
                 
                 counter += 1
     
-    def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", pairsList=None, 
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None,
+            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True):
         
         """
@@ -120,7 +120,7 @@ class CrossSpectraPlot(Figure):
             self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
-                       showprofile=showprofile,
+                       showprofile=False,
                        show=show)
             
             if xmin == None: xmin = numpy.nanmin(x)
@@ -136,8 +136,8 @@ class CrossSpectraPlot(Figure):
             
         for i in range(self.nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
-            
-            title = "Channel %d: %4.2fdB" %(pair[0], noisedB[pair[0]])
+            str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
+            title = "Ch%d: %4.2fdB: %s" %(pair[0], noisedB[pair[0]], str_datetime)
             zdB = 10.*numpy.log10(dataOut.data_spc[pair[0],:,:]/factor)
             axes0 = self.axesList[i*self.__nsubplots]
             axes0.pcolor(x, y, zdB,
@@ -145,7 +145,7 @@ class CrossSpectraPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=power_cmap, cblabel='')
             
-            title = "Channel %d: %4.2fdB" %(pair[1], noisedB[pair[1]])
+            title = "Ch%d: %4.2fdB: %s" %(pair[1], noisedB[pair[1]], str_datetime)
             zdB = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:]/factor)
             axes0 = self.axesList[i*self.__nsubplots+1]
             axes0.pcolor(x, y, zdB,
@@ -177,11 +177,37 @@ class CrossSpectraPlot(Figure):
         self.draw()
         
         if save:
-            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            if figfile == None:
-                figfile = self.getFilename(name = date)
             
-            self.saveFigure(figpath, figfile)
+            self.counter_imagwr += 1
+            if (self.counter_imagwr==res_imagwr):
+                if figfile == None:
+                    str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                    figfile = self.getFilename(name = str_datetime)
+                
+                self.saveFigure(figpath, figfile)
+                
+                if ftp:
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = '%4d%3d00010001100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    
+                    try:
+                        self.sendByFTP(ftp_filename)
+                    except:
+                        raise ValueError, 'Error FTP'
+                
+                self.counter_imagwr = 0
+        
+        
+#         if save:
+#             date = thisDatetime.strftime("%Y%m%d_%H%M%S")
+#             if figfile == None:
+#                 figfile = self.getFilename(name = date)
+#             
+#             self.saveFigure(figpath, figfile)
 
 
 class RTIPlot(Figure):
@@ -294,7 +320,7 @@ class RTIPlot(Figure):
         
 #        thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
-        title = wintitle + " RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = wintitle + " RTI" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
@@ -315,14 +341,13 @@ class RTIPlot(Figure):
             if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.name = '%4d%3d00010000000'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
             self.__isConfig = True
         
         
         self.setWinTitle(title)
             
         for i in range(self.nplots):
-            title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
             zdB = avgdB[i].reshape((1,-1))
             axes.pcolorbuffer(x, y, zdB,
@@ -344,17 +369,24 @@ class RTIPlot(Figure):
             
             self.counter_imagwr += 1
             if (self.counter_imagwr==res_imagwr):
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
                 
-                
-                fig_file = self.getFilename(name = self.name)
-                self.saveFigure(figpath, fig_file)
                 if ftp:
-#                     self.saveFigure(figpath, figfile)
-                    figfilename = os.path.join(figpath,fig_file)
-                    self.sendByFTP(figfilename)
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = '%4d%3d00010000000'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    try:
+                        self.sendByFTP(ftp_filename)
+                    except:
+                        raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
-            
+                    
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
         
@@ -372,7 +404,7 @@ class SpectraPlot(Figure):
         self.__isConfig = False
         self.__nsubplots = 1
         
-        self.WIDTH = 230
+        self.WIDTH = 280
         self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
@@ -462,7 +494,7 @@ class SpectraPlot(Figure):
         
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
-        title = wintitle + " Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        title = wintitle + " Spectra" 
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
@@ -488,7 +520,8 @@ class SpectraPlot(Figure):
         self.setWinTitle(title)
             
         for i in range(self.nplots):
-            title = "Channel %d: %4.2fdB" %(dataOut.channelList[i]+1, noisedB[i])
+            str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
+            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[i]+1, noisedB[i], str_datetime)
             axes = self.axesList[i*self.__nsubplots]
             axes.pcolor(x, y, zdB[i,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
@@ -512,26 +545,26 @@ class SpectraPlot(Figure):
             
             self.counter_imagwr += 1
             if (self.counter_imagwr==res_imagwr):
-                date = '%4d%3d00010000100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                if figfile == None:
+                    str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                    figfile = self.getFilename(name = str_datetime)
                 
-                fig_file = self.getFilename(name = date)
-                self.saveFigure(figpath, fig_file)
+                self.saveFigure(figpath, figfile)
                 
                 if ftp:
-#                     self.saveFigure(figpath, figfile)
-                    figfilename = os.path.join(figpath,fig_file)
-                    self.sendByFTP(figfilename)
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = '%4d%3d00010000100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    try:
+                        self.sendByFTP(ftp_filename)
+                    except:
+                        raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
-        
-        
-#         if save:
-#             date = thisDatetime.strftime("%Y%m%d_%H%M%S")
-#             date = '%4d%3d00010000100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
-#             if figfile == None:
-#                 figfile = self.getFilename(name = date)
-# 
-#             self.saveFigure(figpath, figfile)
+
 
 class Scope(Figure):
     
@@ -907,14 +940,24 @@ class CoherenceMap(Figure):
             
             self.counter_imagwr += 1
             if (self.counter_imagwr==res_imagwr):
-                fig_file = self.getFilename(name = self.name)
-                self.saveFigure(figpath, fig_file)
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+                
                 if ftp:
-                    self.saveFigure(figpath, figfile)
-                    figfilename = os.path.join(figpath,figfile)
-                    self.sendByFTP(figfilename)
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = '%4d%3d00010001000'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    try:
+                        self.sendByFTP(ftp_filename)
+                    except:
+                        raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
+        
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
