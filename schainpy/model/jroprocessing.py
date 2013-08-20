@@ -381,7 +381,12 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data *= self.flip
         self.flip *= -1.
 
-
+    def setRadarFrequency(self, frequency=None):
+        if frequency != None:
+            self.dataOut.frequency = frequency
+        
+        return 1
+    
 class CohInt(Operation):
     
     __isConfig = False
@@ -731,6 +736,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         
         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
+        self.dataOut.frequency = self.dataIn.frequency
         
     def __getFft(self):
         """
@@ -984,6 +990,12 @@ class SpectraProc(ProcessingUnit):
     def removeInterference(self):
         
         pass
+    
+    def setRadarFrequency(self, frequency=None):
+        if frequency != None:
+            self.dataOut.frequency = frequency
+        
+        return 1
 
         
 class IncohInt(Operation):
