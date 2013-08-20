@@ -29,6 +29,12 @@ class CrossSpectraPlot(Figure):
         self.WIDTHPROF = 0
         self.HEIGHTPROF = 0
         
+        self.PLOT_CODE = 1
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        
     def getSubplots(self):
         
         ncol = 4
@@ -61,8 +67,10 @@ class CrossSpectraPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", pairsList=None, 
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1,
-            power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True):
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
+            power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
         """
         
@@ -130,6 +138,11 @@ class CrossSpectraPlot(Figure):
             if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
             if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
             self.__isConfig = True
         
         self.setWinTitle(title)
@@ -179,7 +192,7 @@ class CrossSpectraPlot(Figure):
         if save:
             
             self.counter_imagwr += 1
-            if (self.counter_imagwr==res_imagwr):
+            if (self.counter_imagwr==wr_period):
                 if figfile == None:
                     str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
                     figfile = self.getFilename(name = str_datetime)
@@ -188,26 +201,18 @@ class CrossSpectraPlot(Figure):
                 
                 if ftp:
                     #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = '%4d%3d00010001100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
                     path = '%s%03d' %(self.PREFIX, self.id)
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
                     
                     try:
-                        self.sendByFTP(ftp_filename)
+                        self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
                         raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
-        
-        
-#         if save:
-#             date = thisDatetime.strftime("%Y%m%d_%H%M%S")
-#             if figfile == None:
-#                 figfile = self.getFilename(name = date)
-#             
-#             self.saveFigure(figpath, figfile)
 
 
 class RTIPlot(Figure):
@@ -230,6 +235,12 @@ class RTIPlot(Figure):
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
+        
+        self.PLOT_CODE = 0
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
         
     def getSubplots(self):
         
@@ -275,7 +286,9 @@ class RTIPlot(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1, show=True):
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
         """
         
@@ -340,6 +353,11 @@ class RTIPlot(Figure):
             if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
             if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
         
@@ -368,20 +386,20 @@ class RTIPlot(Figure):
         if save:
             
             self.counter_imagwr += 1
-            if (self.counter_imagwr==res_imagwr):
+            if (self.counter_imagwr==wr_period):
                 if figfile == None:
                     figfile = self.getFilename(name = self.name)
                 self.saveFigure(figpath, figfile)
                 
                 if ftp:
                     #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = '%4d%3d00010000000'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
                     path = '%s%03d' %(self.PREFIX, self.id)
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
                     try:
-                        self.sendByFTP(ftp_filename)
+                        self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
                         raise ValueError, 'Error FTP'
                 
@@ -409,6 +427,12 @@ class SpectraPlot(Figure):
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
+        
+        self.PLOT_CODE = 1
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
         
     def getSubplots(self):
         
@@ -451,9 +475,11 @@ class SpectraPlot(Figure):
                     
                 counter += 1
     
-    def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile=True,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None, show=True, ftp=False, res_imagwr=1):
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
         """
         
@@ -515,6 +541,11 @@ class SpectraPlot(Figure):
             if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
             if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
             
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
             self.__isConfig = True
         
         self.setWinTitle(title)
@@ -544,7 +575,7 @@ class SpectraPlot(Figure):
         if save:
             
             self.counter_imagwr += 1
-            if (self.counter_imagwr==res_imagwr):
+            if (self.counter_imagwr==wr_period):
                 if figfile == None:
                     str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
                     figfile = self.getFilename(name = str_datetime)
@@ -553,13 +584,13 @@ class SpectraPlot(Figure):
                 
                 if ftp:
                     #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = '%4d%3d00010000100'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
                     path = '%s%03d' %(self.PREFIX, self.id)
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
                     try:
-                        self.sendByFTP(ftp_filename)
+                        self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
                         raise ValueError, 'Error FTP'
                 
@@ -794,6 +825,13 @@ class CoherenceMap(Figure):
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
+        
+        self.PLOT_CODE = 3
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        self.counter_imagwr = 0
     
     def getSubplots(self):
         ncol = 1
@@ -831,8 +869,10 @@ class CoherenceMap(Figure):
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1,
-            coherence_cmap='jet', phase_cmap='RdBu_r', show=True):
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
+            coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
                 
         if pairsList == None:
             pairsIndexList = dataOut.pairsIndexList
@@ -859,7 +899,7 @@ class CoherenceMap(Figure):
         
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
-        title = wintitle + " CoherenceMap: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = wintitle + " CoherenceMap" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
@@ -876,6 +916,11 @@ class CoherenceMap(Figure):
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = 0.
             if zmax == None: zmax = 1.
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             
@@ -939,20 +984,20 @@ class CoherenceMap(Figure):
         if save:
             
             self.counter_imagwr += 1
-            if (self.counter_imagwr==res_imagwr):
+            if (self.counter_imagwr==wr_period):
                 if figfile == None:
                     figfile = self.getFilename(name = self.name)
                 self.saveFigure(figpath, figfile)
                 
                 if ftp:
                     #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = '%4d%3d00010001000'%(thisDatetime.timetuple().tm_year,thisDatetime.timetuple().tm_yday)
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
                     path = '%s%03d' %(self.PREFIX, self.id)
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
                     try:
-                        self.sendByFTP(ftp_filename)
+                        self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
                         raise ValueError, 'Error FTP'
                 
@@ -1189,7 +1234,7 @@ class SpectraHeisScope(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None, ftp=False, res_imagwr=1, show=True):
+            figpath='./', figfile=None, ftp=False, wr_period=1, show=True):
         
         """
         
@@ -1271,7 +1316,7 @@ class SpectraHeisScope(Figure):
             self.saveFigure(figpath, figfile)
             
             self.counter_imagwr += 1
-            if (ftp and (self.counter_imagwr==res_imagwr)):
+            if (ftp and (self.counter_imagwr==wr_period)):
                 figfilename = os.path.join(figpath,figfile)
                 self.sendByFTP(figfilename)
                 self.counter_imagwr = 0
@@ -1328,7 +1373,7 @@ class RTIfromSpectraHeis(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, res_imagwr=1, show=True):
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1416,7 +1461,7 @@ class RTIfromSpectraHeis(Figure):
             self.saveFigure(figpath, figfile)
             
             self.counter_imagwr += 1
-            if (ftp and (self.counter_imagwr==res_imagwr)):
+            if (ftp and (self.counter_imagwr==wr_period)):
                 figfilename = os.path.join(figpath,figfile)
                 self.sendByFTP(figfilename)
                 self.counter_imagwr = 0

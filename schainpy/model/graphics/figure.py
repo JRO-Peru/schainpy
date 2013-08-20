@@ -166,10 +166,21 @@ class Figure:
         
         self.__driver.saveFigure(self.fig, filename, *args)
     
-    def sendByFTP(self, figfilename):
-        ftpObj = Ftp()
+    def sendByFTP(self, figfilename, server, folder, username, password):
+        ftpObj = Ftp(host=server, username=username, passw=password, remotefolder=folder)
         ftpObj.upload(figfilename)
         ftpObj.close()
+    
+    def getNameToFtp(self, thisDatetime, FTP_WEI, EXP_CODE, SUB_EXP_CODE, PLOT_CODE, PLOT_POS):
+        YEAR_STR = '%4.4d'%thisDatetime.timetuple().tm_year  
+        DOY_STR = '%3.3d'%thisDatetime.timetuple().tm_yday
+        FTP_WEI = '%2.2d'%FTP_WEI
+        EXP_CODE = '%3.3d'%EXP_CODE
+        SUB_EXP_CODE = '%2.2d'%SUB_EXP_CODE
+        PLOT_CODE = '%2.2d'%PLOT_CODE
+        PLOT_POS = '%2.2d'%PLOT_POS
+        name = YEAR_STR + DOY_STR + FTP_WEI + EXP_CODE + SUB_EXP_CODE + PLOT_CODE + PLOT_POS
+        return name
     
     def draw(self):
         
