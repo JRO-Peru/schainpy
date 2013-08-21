@@ -2,8 +2,8 @@ import numpy
 import time, datetime, os
 from graphics.figure import  * 
 def isRealtime(utcdatatime):
-    utcnow = time.mktime(datetime.datetime.utcnow().timetuple())
-    delta = utcnow - utcdatatime # abs
+    utcnow = time.mktime(time.localtime())
+    delta = abs(utcnow - utcdatatime) # abs
     if delta >= 30.:
         return False
     return True
@@ -479,7 +479,7 @@ class SpectraPlot(Figure):
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False):
         
         """
         
@@ -497,7 +497,7 @@ class SpectraPlot(Figure):
             zmax            :    None
         """
         
-        if dataOut.realtime:
+        if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
                 print 'Skipping this plot function'
                 return
