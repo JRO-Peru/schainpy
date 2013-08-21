@@ -2407,7 +2407,10 @@ class SpectraWriter(JRODataWriter):
             data.tofile(self.fp)
 
         self.data_spc.fill(0)
-        self.data_dc.fill(0)
+        
+        if self.data_dc != None:
+            self.data_dc.fill(0)
+            
         if self.data_cspc != None:
             self.data_cspc.fill(0)
         
@@ -2447,7 +2450,8 @@ class SpectraWriter(JRODataWriter):
             self.setBasicHeader()
         
         self.data_spc = self.dataOut.data_spc.copy()
-        self.data_cspc = self.dataOut.data_cspc.copy()
+        if self.dataOut.data_cspc != None:
+            self.data_cspc = self.dataOut.data_cspc.copy()
         self.data_dc = self.dataOut.data_dc.copy()
         
         # #self.processingHeaderObj.dataBlocksPerFile)
@@ -2580,11 +2584,13 @@ class SpectraWriter(JRODataWriter):
             for channel in range(self.dataOut.nChannels):
                 channelList.append(channel)
                 channelList.append(channel)
-                
+            
             pairsList = []
-            for pair in self.dataOut.pairsList:
-                pairsList.append(pair[0])
-                pairsList.append(pair[1])
+            if self.dataOut.nPairs > 0:
+                for pair in self.dataOut.pairsList:
+                    pairsList.append(pair[0])
+                    pairsList.append(pair[1])
+            
             spectraComb = channelList + pairsList
             spectraComb = numpy.array(spectraComb,dtype="u1")
             self.processingHeaderObj.spectraComb = spectraComb

@@ -751,7 +751,7 @@ class SpectraProc(ProcessingUnit):
             self.buffer
             self.dataOut.flagNoData
         """
-        fft_volt = numpy.fft.fft(self.buffer,axis=1)
+        fft_volt = numpy.fft.fft(self.buffer,n=self.dataOut.nFFTPoints,axis=1)
         fft_volt = fft_volt.astype(numpy.dtype('complex'))
         dc = fft_volt[:,0,:]
         
@@ -780,7 +780,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = False
         
-    def init(self, nFFTPoints=None, pairsList=None):
+    def init(self, nProfiles, nFFTPoints=None, pairsList=None):
         
         self.dataOut.flagNoData = True
         
@@ -804,7 +804,7 @@ class SpectraProc(ProcessingUnit):
             
             if self.buffer == None:
                 self.buffer = numpy.zeros((self.dataIn.nChannels,
-                                           self.dataOut.nFFTPoints,
+                                           nProfiles,
                                            self.dataIn.nHeights), 
                                            dtype='complex')
 
