@@ -737,6 +737,7 @@ class SpectraProc(ProcessingUnit):
         
         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
         self.dataOut.frequency = self.dataIn.frequency
+        self.dataOut.realtime = self.dataIn.realtime
         
     def __getFft(self):
         """
