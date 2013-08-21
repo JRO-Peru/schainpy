@@ -11,11 +11,13 @@ filename = "meteor20130812.xml"
 controllerObj = Project()
 controllerObj.setup(id = '191', name='meteor_test01', description=desc)
 
-path = '/home/dsuarez/.gvfs/datos on 10.10.20.2/High_Power_Meteor'
+# path = '/home/dsuarez/.gvfs/datos on 10.10.20.2/High_Power_Meteor'
+# 
+# path = '/Volumes/FREE_DISK/meteor_data'
+# 
+# path = '/Users/dsuarez/Movies/meteor'
 
-path = '/Volumes/FREE_DISK/meteor_data'
-
-path = '/Users/dsuarez/Movies/meteor'
+path = '/home/dsuarez/.gvfs/datos on 10.10.20.2/High_Power_Meteor_Jasmet'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             path=path,
@@ -23,7 +25,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             endDate='2013/08/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
-                                            online=0,
+                                            online=1,
                                             delay=5,
                                             walk=0)
 
@@ -79,7 +81,7 @@ opObj11.addParameter(name='nCode', value='1', format='int')
 opObj11.addParameter(name='nBaud', value='13', format='int')
 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
-procUnitConfObj1.addParameter(name='nFFTPoints', value='64', format='int')
+procUnitConfObj1.addParameter(name='nFFTPoints', value='400', format='int')
 
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='n', value='5', format='int')
@@ -87,20 +89,26 @@ opObj11.addParameter(name='n', value='5', format='int')
 opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
 opObj11.addParameter(name='id', value='100', format='int')
 opObj11.addParameter(name='wintitle', value='MeteorSpectra', format='str')
-# opObj11.addParameter(name='save', value='1', format='int')
-# opObj11.addParameter(name='figpath', value='/Users/dsuarez/Pictures', format='str')
-# opObj11.addParameter(name='ftp', value='1', format='int')
-# opObj11.addParameter(name='res_imagwr', value='1', format='int')
+opObj11.addParameter(name='zmin', value='10', format='float')
+opObj11.addParameter(name='zmax', value='40', format='float')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/meteor_root', format='str')
+opObj11.addParameter(name='ftp', value='1', format='int')
+opObj11.addParameter(name='wr_period', value='1', format='int')
+opObj11.addParameter(name='exp_code', value='15', format='int')
 
-# opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-# opObj11.addParameter(name='id', value='101', format='int')
-# opObj11.addParameter(name='wintitle', value='MeteorRTI', format='str')
-# opObj11.addParameter(name='xmin', value='0', format='float')
-# opObj11.addParameter(name='xmax', value='24', format='float')
-# opObj11.addParameter(name='save', value='1', format='int')
-# opObj11.addParameter(name='figpath', value='/Users/dsuarez/Pictures', format='str')
-# opObj11.addParameter(name='ftp', value='1', format='int')
-# opObj11.addParameter(name='res_imagwr', value='1', format='int')
+opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
+opObj11.addParameter(name='id', value='101', format='int')
+opObj11.addParameter(name='wintitle', value='MeteorRTI', format='str')
+opObj11.addParameter(name='xmin', value='0', format='float')
+opObj11.addParameter(name='xmax', value='24', format='float')
+opObj11.addParameter(name='zmin', value='10', format='float')
+opObj11.addParameter(name='zmax', value='40', format='float')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/meteor_root', format='str')
+opObj11.addParameter(name='ftp', value='1', format='int')
+opObj11.addParameter(name='wr_period', value='1', format='int')
+opObj11.addParameter(name='exp_code', value='15', format='int')
 
 
 print "Escribiendo el archivo XML"

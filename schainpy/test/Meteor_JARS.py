@@ -62,7 +62,7 @@ opObj11.addParameter(name='n', value='2', format='int')
 
 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
-procUnitConfObj1.addParameter(name='nProfiles', value='200', format='int')
+procUnitConfObj1.addParameter(name='nProfiles', value='400', format='int')
 procUnitConfObj1.addParameter(name='nFFTPoints', value='50', format='int')
 
 
@@ -72,11 +72,11 @@ opObj11.addParameter(name='n', value='4', format='int')
 
 
 opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-opObj11.addParameter(name='id', value='100', format='int')
-opObj11.addParameter(name='wintitle', value='JASMET', format='str')
+opObj11.addParameter(name='id', value='1000', format='int')
+opObj11.addParameter(name='wintitle', value='JASMET-JARS', format='str')
 opObj11.addParameter(name='timerange', value='300', format='int')
-opObj11.addParameter(name='zmin', value='20', format='float')
-opObj11.addParameter(name='zmax', value='50', format='float')
+opObj11.addParameter(name='zmin', value='15', format='float')
+opObj11.addParameter(name='zmax', value='40', format='float')
 opObj11.addParameter(name='xmin', value='18', format='float')
 # opObj11.addParameter(name='xmax', value='', format='float')
 # opObj11.addParameter(name='show', value='0', format='bool')
@@ -88,10 +88,10 @@ opObj11.addParameter(name='xmin', value='18', format='float')
 
 
 opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
-opObj11.addParameter(name='id', value='101', format='int')
-opObj11.addParameter(name='wintitle', value='JASMET', format='str')
-opObj11.addParameter(name='zmin', value='20', format='float')
-opObj11.addParameter(name='zmax', value='50', format='float')
+opObj11.addParameter(name='id', value='1001', format='int')
+opObj11.addParameter(name='wintitle', value='JASMET-JARS', format='str')
+opObj11.addParameter(name='zmin', value='15', format='float')
+opObj11.addParameter(name='zmax', value='40', format='float')
 # opObj11.addParameter(name='show', value='0', format='bool')
 # opObj11.addParameter(name='save', value='1', format='int')
 # opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/meteor_jasmet_offline', format='str')
