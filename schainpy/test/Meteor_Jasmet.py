@@ -1,3 +1,4 @@
+
 import os, sys
 
 path = os.path.split(os.getcwd())[0]
@@ -18,7 +19,7 @@ controllerObj.setup(id = '191', name='meteor_test01', description=desc)
 # path = '/Users/dsuarez/Movies/meteor'
 
 path = '/home/dsuarez/.gvfs/data on 10.10.20.6/RAW_EXP'
-path = '/home/dsuarez/.gvfs/data on 10.10.20.13/DataJasmet'
+
 
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
@@ -27,9 +28,9 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             endDate='2013/08/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
-                                            online=1,
+                                            online=0,
                                             delay=2,
-                                            walk=1)
+                                            walk=0)
 
 opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 
@@ -63,7 +64,7 @@ opObj11.addParameter(name='n', value='2', format='int')
 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
 procUnitConfObj1.addParameter(name='nProfiles', value='200', format='int')
-procUnitConfObj1.addParameter(name='nFFTPoints', value='50', format='int')
+procUnitConfObj1.addParameter(name='nFFTPoints', value='200', format='int')
 
 
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
@@ -77,12 +78,12 @@ opObj11.addParameter(name='wintitle', value='JASMET', format='str')
 opObj11.addParameter(name='timerange', value='300', format='int')
 opObj11.addParameter(name='zmin', value='20', format='float')
 opObj11.addParameter(name='zmax', value='50', format='float')
-opObj11.addParameter(name='xmin', value='18', format='float')
+#opObj11.addParameter(name='xmin', value='18', format='float')
 # opObj11.addParameter(name='xmax', value='', format='float')
 # opObj11.addParameter(name='show', value='0', format='bool')
-# opObj11.addParameter(name='save', value='1', format='int')
-# opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/meteor_jasmet_offline', format='str')
-# opObj11.addParameter(name='ftp', value='1', format='int')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/meteor_jasmet_offline', format='str')
+#opObj11.addParameter(name='ftp', value='1', format='int')
 # opObj11.addParameter(name='wr_period', value='60', format='int')
 # opObj11.addParameter(name='exp_code', value='10', format='int')
 
@@ -93,8 +94,8 @@ opObj11.addParameter(name='wintitle', value='JASMET', format='str')
 opObj11.addParameter(name='zmin', value='20', format='float')
 opObj11.addParameter(name='zmax', value='50', format='float')
 # opObj11.addParameter(name='show', value='0', format='bool')
-# opObj11.addParameter(name='save', value='1', format='int')
-# opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/meteor_jasmet_offline', format='str')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/meteor_jasmet_offline', format='str')
 # opObj11.addParameter(name='ftp', value='1', format='int')
 # opObj11.addParameter(name='wr_period', value='60', format='int')
 # opObj11.addParameter(name='exp_code', value='10', format='int')
