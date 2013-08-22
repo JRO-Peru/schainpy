@@ -55,14 +55,20 @@ class Figure:
     
     def getTimeLim(self, x, xmin, xmax):
         
+        if self.timerange != None:
+            txmin = x[0] - x[0]%self.timerange
+        else:
+            txmin = numpy.min(x)
+        
         thisdatetime = datetime.datetime.utcfromtimestamp(numpy.min(x))
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
         ####################################################
         #If the x is out of xrange
-        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
-            xmin = None
-            xmax = None
+        if xmax != None:
+            if xmax < (thisdatetime - thisdate).seconds/(60*60.):
+                xmin = None
+                xmax = None
         
         if xmin == None:
             td = thisdatetime - thisdate
