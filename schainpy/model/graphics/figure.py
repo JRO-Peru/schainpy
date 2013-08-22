@@ -60,7 +60,7 @@ class Figure:
         else:
             txmin = numpy.min(x)
         
-        thisdatetime = datetime.datetime.utcfromtimestamp(numpy.min(x))
+        thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
         ####################################################
