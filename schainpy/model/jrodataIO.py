@@ -1258,7 +1258,7 @@ class JRODataWriter(JRODataIO, Operation):
         
         return 1
     
-    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=None, set=0, ext=None):
+    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=0, ext=None):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
@@ -1828,7 +1828,7 @@ class VoltageWriter(JRODataWriter):
                 datatypeValue = datatypeValueList[index]
                 break
         
-        blocksize = int(self.dataOut.nHeights * self.dataOut.nChannels * self.dataOut.nProfiles * datatypeValue * 2)
+        blocksize = int(self.dataOut.nHeights * self.dataOut.nChannels * self.profilesPerBlock * datatypeValue * 2)
         
         return blocksize
     
@@ -1863,12 +1863,12 @@ class VoltageWriter(JRODataWriter):
         self.processingHeaderObj.nIncohInt = 1 # Cuando la data de origen es de tipo Voltage
         self.processingHeaderObj.totalSpectra = 0 # Cuando la data de origen es de tipo Voltage
         
-        if self.dataOut.code != None:
-            self.processingHeaderObj.code = self.dataOut.code
-            self.processingHeaderObj.nCode = self.dataOut.nCode
-            self.processingHeaderObj.nBaud = self.dataOut.nBaud
-            codesize = int(8 + 4 * self.dataOut.nCode * self.dataOut.nBaud)
-            processingHeaderSize += codesize
+#         if self.dataOut.code != None:
+#             self.processingHeaderObj.code = self.dataOut.code
+#             self.processingHeaderObj.nCode = self.dataOut.nCode
+#             self.processingHeaderObj.nBaud = self.dataOut.nBaud
+#             codesize = int(8 + 4 * self.dataOut.nCode * self.dataOut.nBaud)
+#             processingHeaderSize += codesize
         
         if self.processingHeaderObj.nWindows != 0:
             self.processingHeaderObj.firstHeight = self.dataOut.heightList[0]
