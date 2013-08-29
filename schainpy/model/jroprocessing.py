@@ -1053,7 +1053,7 @@ class IncohInt(Operation):
             self.n = n
             self.__byTime = False
         else:
-            self.__integrationtime = timeInterval * 60. #if (type(timeInterval)!=integer) -> change this line
+            self.__integrationtime = timeInterval #if (type(timeInterval)!=integer) -> change this line
             self.n = 9999
             self.__byTime = True
         
