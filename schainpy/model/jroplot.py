@@ -1012,25 +1012,31 @@ class CoherenceMap(Figure):
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
 
-class RTIfromNoise(Figure):
+class Noise(Figure):
     
     __isConfig = None
     __nsubplots = None
 
-    PREFIX = 'rtinoise'
+    PREFIX = 'noise'
     
     def __init__(self):
         
         self.timerange = 24*60*60
         self.__isConfig = False
         self.__nsubplots = 1
-        
-        self.WIDTH = 820
-        self.HEIGHT = 200
+        self.counter_imagwr = 0
+        self.WIDTH = 600
+        self.HEIGHT = 300
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.xdata = None
         self.ydata = None
+        
+        self.PLOT_CODE = 77
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
         
     def getSubplots(self):
         
@@ -1062,7 +1068,9 @@ class RTIfromNoise(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, show=True):
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1087,9 +1095,9 @@ class RTIfromNoise(Figure):
         
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
-        title = wintitle + " RTI Noise: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = wintitle + " Noise" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
-        ylabel = "Range (Km)"
+        ylabel = "Intensity (dB)"
         
         if not self.__isConfig:
             
@@ -1102,8 +1110,16 @@ class RTIfromNoise(Figure):
                        show=show)
             
             tmin, tmax = self.getTimeLim(x, xmin, xmax)
-            if ymin == None: ymin = numpy.nanmin(noisedB)
-            if ymax == None: ymax = numpy.nanmax(noisedB)
+            if ymin == None: ymin = numpy.nanmin(noisedB) - 10.0
+            if ymax == None: ymax = numpy.nanmax(noisedB) + 10.0
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
@@ -1114,9 +1130,9 @@ class RTIfromNoise(Figure):
         self.setWinTitle(title)
             
         
-        title = "RTI Noise %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = "Noise %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
         
-        legendlabels = ["channel %d"%idchannel for idchannel in channelList]
+        legendlabels = ["channel %d"%(idchannel+1) for idchannel in channelList]
         axes = self.axesList[0]
         
         self.xdata = numpy.hstack((self.xdata, x[0:1]))
@@ -1130,18 +1146,40 @@ class RTIfromNoise(Figure):
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
                     xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
                     xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
-                    XAxisAsTime=True
+                    XAxisAsTime=True, grid='both'
                     )
             
         self.draw()
         
+#         if save:
+#             
+#             if figfile == None:
+#                 figfile = self.getFilename(name = self.name)
+#             
+#             self.saveFigure(figpath, figfile)
+        
         if save:
             
-            if figfile == None:
-                figfile = self.getFilename(name = self.name)
-            
-            self.saveFigure(figpath, figfile)
-            
+            self.counter_imagwr += 1
+            if (self.counter_imagwr==wr_period):
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+                
+                if ftp:
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    try:
+                        self.sendByFTP(ftp_filename, server, folder, username, password)
+                    except:
+                        raise ValueError, 'Error FTP'
+                
+                self.counter_imagwr = 0
+                    
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
             del self.xdata
