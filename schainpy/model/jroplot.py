@@ -210,6 +210,7 @@ class CrossSpectraPlot(Figure):
                     try:
                         self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
+                        self.counter_imagwr = 0
                         raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
@@ -401,6 +402,7 @@ class RTIPlot(Figure):
                     try:
                         self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
+                        self.counter_imagwr = 0
                         raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
@@ -597,6 +599,7 @@ class SpectraPlot(Figure):
                     try:
                         self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
+                        self.counter_imagwr = 0
                         raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
@@ -1004,6 +1007,7 @@ class CoherenceMap(Figure):
                     try:
                         self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
+                        self.counter_imagwr = 0
                         raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
@@ -1176,6 +1180,7 @@ class Noise(Figure):
                     try:
                         self.sendByFTP(ftp_filename, server, folder, username, password)
                     except:
+                        self.counter_imagwr = 0
                         raise ValueError, 'Error FTP'
                 
                 self.counter_imagwr = 0
