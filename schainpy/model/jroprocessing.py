@@ -781,7 +781,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = False
         
-    def init(self, nProfiles, nFFTPoints=None, pairsList=None):
+    def init(self, nProfiles=None, nFFTPoints=None, pairsList=None):
         
         self.dataOut.flagNoData = True
         
