@@ -14,7 +14,7 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 
 path = '/remote'
 path = '/home/dsuarez/.gvfs/data on 10.10.20.13/EW_Faraday_imaging'
-path = '/home/dsuarez/imaging_data'
+# path = '/home/dsuarez/imaging_data'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             path=path,
@@ -32,7 +32,7 @@ opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
 #
 opObj11 = procUnitConfObj0.addOperation(name='ProfileSelector', optype='other')
-opObj11.addParameter(name='profileRangeList', value='0,39', format='intlist')
+opObj11.addParameter(name='profileRangeList', value='133,172', format='intlist')
 
 #opObj11 = procUnitConfObj0.addOperation(name='filterByHeights')
 #opObj11.addParameter(name='window', value='4', format='int')
@@ -49,6 +49,7 @@ opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
 procUnitConfObj1.addParameter(name='nFFTPoints', value='8', format='int')
+procUnitConfObj1.addParameter(name='nProfiles', value='8', format='int')
 procUnitConfObj1.addParameter(name='pairsList', value='(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(0,7), \
 							(1,2),(1,3),(1,4),(1,5),(1,6),(1,7), \
 							(2,3),(2,4),(2,5),(2,6),(2,7), \
