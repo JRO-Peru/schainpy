@@ -816,7 +816,7 @@ class SpectraProc(ProcessingUnit):
             if self.firstdatatime == None:
                 self.firstdatatime = self.dataIn.utctime
             
-            if self.profIndex == self.dataOut.nFFTPoints:
+            if self.profIndex == nProfiles:
                 self.__updateObjFromInput()
                 self.__getFft()
                 
