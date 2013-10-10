@@ -21,6 +21,7 @@ def verifyCmdArguments():
     wpath = None
     save_figure = None
     save_pdata = None
+    id_rti = None
 
     longarglist = ['path=',
                    'startDate=',
@@ -34,6 +35,7 @@ def verifyCmdArguments():
                    'gpath=',
                    'wpath=',
                    'save_figure=',
+                   'id_rti=',
                    'save_pdata='
                    ]
     
@@ -62,6 +64,8 @@ def verifyCmdArguments():
             gpath = opt[1]
         elif opt[0] == '--wpath':
             wpath = opt[1]
+        elif opt[0] == '--id_rti':
+            id_rti = opt[1]
         elif opt[0] == '--save_figure':
             save_figure = bool(int(opt[1]))
         elif opt[0] == '--save_pdata':
@@ -72,7 +76,7 @@ def verifyCmdArguments():
             sys.exit(-1)
     
     #print path,startDate,startTime,endDate,endTime,xmin,xmax,zmin,zmax
-    return path,startDate,startTime,endDate,endTime,xmin,xmax,zmin,zmax,gpath,save_figure,wpath,save_pdata
+    return path,startDate,startTime,endDate,endTime,xmin,xmax,zmin,zmax,gpath,save_figure,id_rti,wpath,save_pdata
 
 
 desc = "EWDrifts+Imaging+Faraday Experiment"
@@ -87,7 +91,7 @@ path = '/home/dsuarez/.gvfs/data on 10.10.20.13/EW_Faraday_imaging/d2013270'
 path = '/home/dsuarez/.gvfs/data on 10.10.20.13/EW_Faraday_imaging/d2013267'
 path = '/home/dsuarez/.gvfs/data on 10.10.20.13/Imaging_Driver4'
 
-path,startDate,startTime,endDate,endTime,xmin,xmax,zmin,zmax,gpath,save_figure,wpath,save_pdata = verifyCmdArguments()
+path,startDate,startTime,endDate,endTime,xmin,xmax,zmin,zmax,gpath,save_figure,id_rti,wpath,save_pdata = verifyCmdArguments()
 
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
@@ -135,7 +139,7 @@ opObj11.addParameter(name='timeInterval', value='5', format='float')
 
 
 opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-opObj11.addParameter(name='id', value='1', format='int')
+opObj11.addParameter(name='id', value=id_rti, format='int')
 opObj11.addParameter(name='wintitle', value='Imaging', format='str')
 opObj11.addParameter(name='showprofile', value='0', format='int')
 opObj11.addParameter(name='xmin', value=xmin, format='float')
