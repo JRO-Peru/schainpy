@@ -75,7 +75,7 @@ class ParameterConf():
         if self.format == 'bool':
             value = int(value)
         
-        if self.format == 'pairslist':
+        if self.format == 'pairsList':
             """
             Example:
                 value = (0,1),(1,2)
