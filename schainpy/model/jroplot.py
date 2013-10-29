@@ -939,11 +939,20 @@ class CoherenceMap(Figure):
         for i in range(self.nplots):
             
             pair = dataOut.pairsList[pairsIndexList[i]]
-            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
-            avgcoherenceComplex = numpy.average(coherenceComplex, axis=0)
+#             coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
+#             avgcoherenceComplex = numpy.average(coherenceComplex, axis=0)
+#             coherence = numpy.abs(avgcoherenceComplex)
+
+##            coherence = numpy.abs(coherenceComplex)            
+##            avg = numpy.average(coherence, axis=0)
+            
+            ccf = numpy.average(dataOut.data_cspc[pairsIndexList[i],:,:],axis=0)
+            powa = numpy.average(dataOut.data_spc[pair[0],:,:],axis=0)
+            powb = numpy.average(dataOut.data_spc[pair[1],:,:],axis=0)
+            
+            
+            avgcoherenceComplex = ccf/numpy.sqrt(powa*powb)
             coherence = numpy.abs(avgcoherenceComplex)
-#            coherence = numpy.abs(coherenceComplex)            
-#            avg = numpy.average(coherence, axis=0)
             
             z = coherence.reshape((1,-1))
 
