@@ -1,6 +1,6 @@
 """
 
-Este script se ha configurado para procesar datos de JASMET 30.15MHz
+
 
 Se debe verficar que el disco de datos se encuentra montado en el sistema
 
