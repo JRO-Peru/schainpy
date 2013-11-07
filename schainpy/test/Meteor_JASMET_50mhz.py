@@ -45,11 +45,6 @@ opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
 
 
-opObj11 = procUnitConfObj0.addOperation(name='setRadarFrequency')
-
-opObj11.addParameter(name='frequency', value='30.15e6', format='float')
-
-
 opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
 
 
