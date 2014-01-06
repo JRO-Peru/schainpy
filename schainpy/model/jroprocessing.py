@@ -1278,6 +1278,52 @@ class IncohInt(Operation):
             dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False
 
+class ProfileConcat(Operation):
+    
+    __isConfig = False
+    buffer = None
+    
+    def __init__(self):
+        
+        self.profileIndex = 0
+    
+    def reset(self):
+        self.buffer = numpy.zeros_like(self.buffer)
+        self.start_index = 0
+        self.times = 1
+    
+    def setup(self, data, m, n=1):
+        self.buffer = numpy.zeros((data.shape[0],data.shape[1]*m),dtype=type(data[0,0]))
+        self.profiles = data.shape[1]
+        self.start_index = 0
+        self.times = 1
+    
+    def concat(self, data):
+        
+        self.buffer[:,self.start_index:self.profiles*self.times] = data.copy()
+        self.start_index = self.start_index + self.profiles 
+        
+    def run(self, dataOut, m):
+        
+        dataOut.flagNoData = True
+        
+        if not self.__isConfig:
+            self.setup(dataOut.data, m, 1)
+            self.__isConfig = True
+        
+        self.concat(dataOut.data)
+        self.times += 1
+        if self.times > m:
+            dataOut.data = self.buffer
+            self.reset()
+            dataOut.flagNoData = False
+            # se deben actualizar mas propiedades del header y del objeto dataOut, por ejemplo, las alturas
+            deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]  
+            xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * 5
+            dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight) 
+        
+        
+
 class ProfileSelector(Operation):
     
     profileIndex = None
