@@ -269,11 +269,12 @@ class RadarControllerHeader(Header):
                 self.nCode = int(numpy.fromfile(fp,'<u4',1))
                 self.nBaud = int(numpy.fromfile(fp,'<u4',1))
                 self.code = numpy.empty([self.nCode,self.nBaud],dtype='u1')
-                tempList = []
+                
                 for ic in range(self.nCode):
-                    temp = numpy.fromfile(fp,'u1',4*int(numpy.ceil(self.nBaud/32.)))
-                    tempList.append(temp)
-                    self.code[ic] = numpy.unpackbits(temp[::-1])[-1*self.nBaud:]
+                    temp = numpy.fromfile(fp,'u4',int(numpy.ceil(self.nBaud/32.)))
+                    for ib in range(self.nBaud-1,-1,-1):
+                        self.code[ic,ib] = temp[ib/32]%2
+                        temp[ib/32] = temp[ib/32]/2
                 self.code = 2.0*self.code - 1.0
             
             if self.line5Function == RCfunction.FLIP:
