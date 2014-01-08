@@ -722,6 +722,29 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         return 0        
 
+    def waitDataBlock(self,pointer_location):
+        
+        currentPointer = pointer_location
+        
+        neededSize = self.processingHeaderObj.blockSize #+ self.basicHeaderSize
+        
+        for nTries in range( self.nTries ):
+            self.fp.close()
+            self.fp = open( self.filename, 'rb' )
+            self.fp.seek( currentPointer )
+            
+            self.fileSize = os.path.getsize( self.filename )
+            currentSize = self.fileSize - currentPointer
+            
+            if ( currentSize >= neededSize ):
+                return 1
+            
+            print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+            time.sleep( self.delay )
+        
+        return 0
+            
+
     def __jumpToLastBlock(self):
         
         if not(self.__isFirstTimeOnline):
@@ -1499,14 +1522,18 @@ class VoltageReader(JRODataReader):
         Exceptions: 
             Si un bloque leido no es un bloque valido
         """
-        
+        current_pointer_location = self.fp.tell()
         junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
         
         try:
             junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
         except:
-            print "The read block (%3d) has not enough data" %self.nReadBlocks
-            return 0
+            #print "The read block (%3d) has not enough data" %self.nReadBlocks
+            
+            if self.waitDataBlock(pointer_location=current_pointer_location):
+                junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
+                junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
+#             return 0
         
         junk = numpy.transpose(junk, (2,0,1))
         self.datablock = junk['real'] + junk['imag']*1j
