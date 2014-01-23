@@ -596,11 +596,9 @@ class SpectraPlot(Figure):
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
-                    try:
-                        self.sendByFTP(ftp_filename, server, folder, username, password)
-                    except:
-                        self.counter_imagwr = 0
-                        print ValueError, 'Error FTP'
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                    self.counter_imagwr = 0
+
                 
                 self.counter_imagwr = 0
 

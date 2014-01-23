@@ -4,9 +4,51 @@ import time, datetime
 import mpldriver
 from customftp import *
 
+import Queue
+import threading
+
+class FTP_Thread (threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.exitFlag = 0
+        self.queueLock = threading.Lock()
+        self.workQueue = Queue.Queue()
+        
+    def run(self):
+        self.send_data()
+
+    def fin(self):
+        self.exitFlag = 1
+
+    def put_data(self, data):
+        # Fill the queue
+        self.queueLock.acquire()
+        self.workQueue.put(data)
+        self.queueLock.release()         
+            
+    def send_data(self):
+        while not self.exitFlag:
+            if self.workQueue.qsize():
+                
+                data = self.workQueue.get(True)
+                
+                try:
+                    ftpObj = Ftp(host=data['server'], 
+                                 username=data['username'], 
+                                 passw=data['password'], 
+                                 remotefolder=data['folder'])
+                    
+                    ftpObj.upload(data['figfilename'])
+                    ftpObj.close()
+                except:
+                    print ValueError, 'Error FTP'
+                    print "don't worry still running the program"
+
+
 class Figure:
     
     __driver = mpldriver
+    __isConfigThread = False
     fig = None
     
     id = None
@@ -176,6 +218,19 @@ class Figure:
         ftpObj = Ftp(host=server, username=username, passw=password, remotefolder=folder)
         ftpObj.upload(figfilename)
         ftpObj.close()
+    
+    def sendByFTP_Thread(self, figfilename, server, folder, username, password):
+        data = {'figfilename':figfilename,'server':server,'folder':folder,'username':username,'password':password}
+
+        if not(self.__isConfigThread):
+            
+            self.thread = FTP_Thread()
+            self.thread.start()
+            self.__isConfigThread = True
+        
+        self.thread.put_data(data)
+        print 'thread.isAlive()', self.thread.isAlive()
+    
     
     def getNameToFtp(self, thisDatetime, FTP_WEI, EXP_CODE, SUB_EXP_CODE, PLOT_CODE, PLOT_POS):
         YEAR_STR = '%4.4d'%thisDatetime.timetuple().tm_year  
