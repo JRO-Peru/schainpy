@@ -552,7 +552,7 @@ class Axes:
         
         if self.decimationx == None:
             deltax = (self.xmax - self.xmin)/maxNumX
-            deltay = (self.ymax - self.ymin)/maxNumY
+            deltay = float(self.ymax - self.ymin)/maxNumY
             
             resolutionx = self.x_buffer[2]-self.x_buffer[0]
             resolutiony = y[1]-y[0]
