@@ -577,22 +577,77 @@ class SpectraHeis(JROData):
 
 class Fits:
     
+    heightList = None
+    
+    channelList = None
+    
+    flagNoData = True
+    
+    flagTimeBlock = False
+    
+    useLocalTime = False
+    
+    utctime = None
+    
+    timeZone = None
+    
+    ippSeconds = None
+    
+    timeInterval = None
+    
+    nCohInt = None
+    
+    nIncohInt = None
+    
+    noise = None
+    
+    windowOfFilter = 1
+    
+    #Speed of ligth
+    C = 3e8
+    
+    frequency = 49.92e6
+    
+    realtime = False
+
+    
     def __init__(self):
-        self.useLocalTime = False
+        
+        self.type = "Fits"
+        
+        self.nProfiles = None
+        
+        self.heightList = None
+        
+        self.channelList = None
+        
+#         self.channelIndexList = None
+        
+        self.flagNoData = True
+        
         self.utctime = None
-        self.timeZone = None
-        self.ltctime = None
-        self.timeInterval = None
-        self.header = None
-        self.data_header = None
-        self.data = None
-        self.datatime = None
-        self.flagNoData = False
-        self.expName = ''
-        self.nChannels = None
-        self.nSamples = None
-        self.dataBlocksPerFile = None
-        self.comments = ''
+        
+        self.nCohInt = None
+        
+        self.nIncohInt = None
+        
+        self.useLocalTime = True
+        
+#         self.utctime = None
+#         self.timeZone = None
+#         self.ltctime = None
+#         self.timeInterval = None
+#         self.header = None
+#         self.data_header = None
+#         self.data = None
+#         self.datatime = None
+#         self.flagNoData = False
+#         self.expName = ''
+#         self.nChannels = None
+#         self.nSamples = None
+#         self.dataBlocksPerFile = None
+#         self.comments = ''
+#         
 
     
     def getltctime(self):
@@ -618,9 +673,49 @@ class Fits:
         
         return datatime
     
+    def getHeiRange(self):
+        
+        heis = self.heightList
+        
+        return heis
+    
     def isEmpty(self):
         
         return self.flagNoData
     
+    def getNHeights(self):
+        
+        return len(self.heightList)
+    
+    def getNChannels(self):
+        
+        return len(self.channelList)
+        
+    def getChannelIndexList(self):
+        
+        return range(self.nChannels)
+    
+    def getNoise(self, type = 1):
+        
+        self.noise = numpy.zeros(self.nChannels)
+        
+        if type == 1:
+            noise = self.getNoisebyHildebrand()
+        
+        if type == 2:
+            noise = self.getNoisebySort()
+        
+        if type == 3:
+            noise = self.getNoisebyWindow()
+        
+        return noise
+    
     datatime = property(getDatatime, "I'm the 'datatime' property")
+    nHeights = property(getNHeights, "I'm the 'nHeights' property.")
+    nChannels = property(getNChannels, "I'm the 'nChannel' property.")
+    channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
+    noise = property(getNoise, "I'm the 'nHeights' property.")
+    datatime = property(getDatatime, "I'm the 'datatime' property")
+    ltctime = property(getltctime, "I'm the 'ltctime' property")
+
     ltctime = property(getltctime, "I'm the 'ltctime' property")

@@ -1487,9 +1487,9 @@ class RTIfromSpectraHeis(Figure):
             
         
 #        title = "RTI %s" %(thisDatetime.strftime("%d-%b-%Y"))
-        title = "RTI-Noise - %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        title = "RTI - %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         
-        legendlabels = ["channel %d"%idchannel for idchannel in channelList]
+        legendlabels = ["channel %d"%idchannel for idchannel in channelIndexList]
         axes = self.axesList[0]
         
         self.xdata = numpy.hstack((self.xdata, x[0:1]))

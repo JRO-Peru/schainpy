@@ -2883,22 +2883,35 @@ class FitsWriter(Operation):
             parm_name = parameter.name
             parm_value = parameter.value
             
-            if parm_value == 'fromdatadatetime':
-                value = time.strftime("%b %d %Y %H:%M:%S", dataOut.datatime.timetuple())
-            elif parm_value == 'fromdataheights':
-                value = dataOut.nHeights
-            elif parm_value == 'fromdatachannel':
-                value = dataOut.nChannels
-            elif parm_value == 'fromdatasamples':
-                value = dataOut.nFFTPoints
-            else:
-                value = parm_value
+#             if parm_value == 'fromdatadatetime':
+#                 value = time.strftime("%b %d %Y %H:%M:%S", dataOut.datatime.timetuple())
+#             elif parm_value == 'fromdataheights':
+#                 value = dataOut.nHeights
+#             elif parm_value == 'fromdatachannel':
+#                 value = dataOut.nChannels
+#             elif parm_value == 'fromdatasamples':
+#                 value = dataOut.nFFTPoints
+#             else:
+#                 value = parm_value
                 
-            header_data.header[parm_name] = value
+            header_data.header[parm_name] = parm_value
             
+        
+        header_data.header['DATETIME'] = time.strftime("%b %d %Y %H:%M:%S", dataOut.datatime.timetuple())
+        header_data.header['CHANNELLIST'] = str(dataOut.channelList)
+        header_data.header['NCHANNELS'] = dataOut.nChannels
+        #header_data.header['HEIGHTS'] = dataOut.heightList
+        header_data.header['NHEIGHTS'] = dataOut.nHeights
+        
+        header_data.header['IPPSECONDS'] = dataOut.ippSeconds
+        header_data.header['NCOHINT'] = dataOut.nCohInt
+        header_data.header['NINCOHINT'] = dataOut.nIncohInt
+        header_data.header['TIMEZONE'] = dataOut.timeZone
         header_data.header['NBLOCK'] = self.blockIndex
         
         header_data.writeto(self.filename)
+        
+        self.addExtension(dataOut.heightList,'HEIGHTLIST')
         
         
     def setup(self, dataOut, path, dataBlocksPerFile, metadatafile):
@@ -2912,9 +2925,16 @@ class FitsWriter(Operation):
         self.fitsObj = pyfits.open(self.filename, mode='update')
 
     
+    def addExtension(self, data, tagname):
+        self.open()
+        extension = pyfits.ImageHDU(data=data, name=tagname)
+        #extension.header['TAG'] = tagname
+        self.fitsObj.append(extension)
+        self.write()
+    
     def addData(self, data):
         self.open()
-        extension = pyfits.ImageHDU(data=data, name=self.fitsObj[0].header['DATA'])
+        extension = pyfits.ImageHDU(data=data, name=self.fitsObj[0].header['DATATYPE'])
         extension.header['UTCTIME'] = self.dataOut.utctime
         self.fitsObj.append(extension)
         self.blockIndex += 1
@@ -3013,7 +3033,7 @@ class FitsWriter(Operation):
     
 class FitsReader(ProcessingUnit):
     
-    __TIMEZONE = time.timezone
+#     __TIMEZONE = time.timezone
     
     expName = None
     datetimestr = None
@@ -3038,6 +3058,7 @@ class FitsReader(ProcessingUnit):
         self.filename = None
         self.fileSize = None
         self.fitsObj = None
+        self.timeZone = None
         self.nReadBlocks = 0
         self.nTotalBlocks = 0
         self.dataOut = self.createObjByDefault()
@@ -3098,7 +3119,7 @@ class FitsReader(ProcessingUnit):
         self.filename = filename
         self.fileSize = fileSize
         self.fitsObj = fitsObj
-
+        self.blockIndex = 0
         print "Setting the file: %s"%self.filename
 
         return 1
@@ -3107,15 +3128,39 @@ class FitsReader(ProcessingUnit):
         headerObj = self.fitsObj[0]
         
         self.header_dict = headerObj.header
-        self.expName = headerObj.header['EXPNAME']
-        self.datetimestr = headerObj.header['DATETIME']
-        struct_time = time.strptime(headerObj.header['DATETIME'], "%b %d %Y %H:%M:%S")
-#        self.utc = time.mktime(struct_time) - self.__TIMEZONE
-        self.nChannels = headerObj.header['NCHANNEL']
-        self.nSamples = headerObj.header['NSAMPLE']
-        self.dataBlocksPerFile = headerObj.header['NBLOCK']
-        self.comments = headerObj.header['COMMENT'] 
+        if 'EXPNAME' in headerObj.header.keys():
+            self.expName = headerObj.header['EXPNAME']
         
+        if 'DATATYPE' in headerObj.header.keys():
+            self.dataType = headerObj.header['DATATYPE']
+        
+        self.datetimestr = headerObj.header['DATETIME']
+        self.channelList = headerObj.header['CHANNELLIST']
+        self.nChannels = headerObj.header['NCHANNELS']
+        self.nHeights = headerObj.header['NHEIGHTS']
+        self.ippSeconds = headerObj.header['IPPSECONDS']
+        self.nCohInt = headerObj.header['NCOHINT']
+        self.nIncohInt = headerObj.header['NINCOHINT']
+        self.dataBlocksPerFile = headerObj.header['NBLOCK']
+        self.timeZone = headerObj.header['TIMEZONE']
+        
+        self.timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
+        
+        if 'COMMENT' in headerObj.header.keys():
+            self.comments = headerObj.header['COMMENT']
+        
+        self.readHeightList()
+    
+    def readHeightList(self):
+        self.blockIndex = self.blockIndex + 1
+        obj = self.fitsObj[self.blockIndex]
+        self.heightList = obj.data
+        self.blockIndex = self.blockIndex + 1
+    
+    def readExtension(self):
+        obj = self.fitsObj[self.blockIndex]
+        self.heightList = obj.data
+        self.blockIndex = self.blockIndex + 1
     
     def setNextFile(self):
 
@@ -3130,7 +3175,7 @@ class FitsReader(ProcessingUnit):
         self.readHeader()
         
         self.nReadBlocks = 0
-        self.blockIndex = 1
+#         self.blockIndex = 1
         return 1
 
     def __searchFilesOffLine(self,
@@ -3298,7 +3343,7 @@ class FitsReader(ProcessingUnit):
         if not self.online:
             return 0
         
-        if (self.nReadBlocks >= self.processingHeaderObj.dataBlocksPerFile):
+        if (self.nReadBlocks >= self.dataBlocksPerFile):
             return 0
         
         currentPointer = self.fp.tell()
@@ -3388,10 +3433,12 @@ class FitsReader(ProcessingUnit):
         self.dataOut.header = self.header_dict 
         self.dataOut.expName = self.expName
         self.dataOut.nChannels = self.nChannels
-        self.dataOut.nSamples = self.nSamples
+        self.dataOut.timeZone = self.timeZone
         self.dataOut.dataBlocksPerFile = self.dataBlocksPerFile
         self.dataOut.comments = self.comments 
-        
+        self.dataOut.timeInterval = self.timeInterval
+        self.dataOut.channelList = self.channelList
+        self.dataOut.heightList = self.heightList
         self.dataOut.flagNoData = False
         
         return self.dataOut.data

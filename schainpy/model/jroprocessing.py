@@ -1430,6 +1430,19 @@ class SpectraHeisProc(ProcessingUnit):
 #        self.dataOut.deltaHeight=self.dataIn.deltaHeight
 
 
+    def __updateObjFromFits(self):
+        self.dataOut.utctime = self.dataIn.utctime
+        self.dataOut.channelIndexList = self.dataIn.channelIndexList
+        
+        self.dataOut.channelList = self.dataIn.channelList
+        self.dataOut.heightList = self.dataIn.heightList
+        self.dataOut.data_spc = self.dataIn.data
+        self.dataOut.timeInterval = self.dataIn.timeInterval
+        self.dataOut.timeZone = self.dataIn.timeZone
+        self.dataOut.useLocalTime = True
+#         self.dataOut.
+#         self.dataOut.
+
     def __getFft(self):
            
         fft_volt = numpy.fft.fft(self.dataIn.data, axis=1)
@@ -1440,6 +1453,11 @@ class SpectraHeisProc(ProcessingUnit):
     def init(self):
 
         self.dataOut.flagNoData = True
+        
+        if self.dataIn.type == "Fits":
+            self.__updateObjFromFits()
+            self.dataOut.flagNoData = False
+            return
         
         if self.dataIn.type == "SpectraHeis":
             self.dataOut.copy(self.dataIn)
