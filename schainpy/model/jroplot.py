@@ -1261,31 +1261,6 @@ class SpectraHeisScope(Figure):
                     
                 counter += 1
 
-#    __isConfig = None    
-#    def __init__(self):
-#        
-#        self.__isConfig = False
-#        self.WIDTH = 600
-#        self.HEIGHT = 200
-#    
-#    def getSubplots(self):
-#        
-#        nrow = self.nplots
-#        ncol = 3
-#        return nrow, ncol
-#    
-#    def setup(self, id, nplots, wintitle):
-#        
-#        self.nplots = nplots
-#        
-#        self.createFigure(id, wintitle)
-#        
-#        nrow,ncol = self.getSubplots()
-#        colspan = 3
-#        rowspan = 1
-#        
-#        for i in range(nplots):
-#            self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
@@ -1323,7 +1298,8 @@ class SpectraHeisScope(Figure):
         deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
         #deberia cambiar para el caso de 1Mhz y 100KHz
         x = numpy.arange(-1*dataOut.nHeights/2.,dataOut.nHeights/2.)*(c/(2*deltaHeight*dataOut.nHeights*1000))
-        x= x/(10000.0)
+        #para 1Mhz descomentar la siguiente linea
+        #x= x/(10000.0)
 #        y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
 #        y = y.real
         datadB = 10.*numpy.log10(dataOut.data_spc)
@@ -1332,7 +1308,9 @@ class SpectraHeisScope(Figure):
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
         title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Frequency x 10000"
+        xlabel = ""
+        #para 1Mhz descomentar la siguiente linea
+        #xlabel = "Frequency x 10000"
         ylabel = "Intensity (dB)"
         
         if not self.__isConfig:
@@ -1354,7 +1332,8 @@ class SpectraHeisScope(Figure):
         
         for i in range(len(self.axesList)):
             ychannel = y[i,:]
-            title = "Channel %d - peak:%.2f" %(i,numpy.max(ychannel))
+            str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
+            title = "Channel %d: %4.2fdB: %s" %(i, numpy.max(ychannel), str_datetime)
             axes = self.axesList[i]
             axes.pline(x, ychannel,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
