@@ -3241,7 +3241,7 @@ class FitsReader(ProcessingUnit):
             for file in fileList:
                 
                 filename = os.path.join(thisPath,file)
-                thisDatetime = self.isFileinThisTime(filename, startTime, endTime, useLocalTime=True)
+                thisDatetime = self.isFileinThisTime(filename, startTime, endTime)
                 
                 if not(thisDatetime):
                     continue
