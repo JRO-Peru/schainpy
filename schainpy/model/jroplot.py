@@ -207,11 +207,8 @@ class CrossSpectraPlot(Figure):
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
                     
-                    try:
-                        self.sendByFTP(ftp_filename, server, folder, username, password)
-                    except:
-                        self.counter_imagwr = 0
-                        print ValueError, 'Error FTP'
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                    self.counter_imagwr = 0
                 
                 self.counter_imagwr = 0
 
@@ -399,11 +396,8 @@ class RTIPlot(Figure):
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
-                    try:
-                        self.sendByFTP(ftp_filename, server, folder, username, password)
-                    except:
-                        self.counter_imagwr = 0
-                        print ValueError, 'Error FTP'
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                    self.counter_imagwr = 0
                 
                 self.counter_imagwr = 0
                     
@@ -612,6 +606,7 @@ class Scope(Figure):
         self.__isConfig = False
         self.WIDTH = 600
         self.HEIGHT = 200
+        self.counter_imagwr = 0
     
     def getSubplots(self):
         
@@ -638,7 +633,8 @@ class Scope(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None, show=True):
+            figpath='./', figfile=None, show=True, wr_period=1,
+            server=None, folder=None, username=None, password=None):
         
         """
         
@@ -705,6 +701,12 @@ class Scope(Figure):
                 figfile = self.getFilename(name = date)
             
             self.saveFigure(figpath, figfile)
+            
+            self.counter_imagwr += 1
+            if (ftp and (self.counter_imagwr==wr_period)):
+                ftp_filename = os.path.join(figpath,figfile)
+                self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                self.counter_imagwr = 0
 
 class PowerProfilePlot(Figure):
     __isConfig = None
@@ -720,6 +722,7 @@ class PowerProfilePlot(Figure):
         
         self.WIDTH = 300
         self.HEIGHT = 500
+        self.counter_imagwr = 0
     
     def getSubplots(self):
         ncol = 1
@@ -749,7 +752,8 @@ class PowerProfilePlot(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None,
-            save=False, figpath='./', figfile=None, show=True):
+            save=False, figpath='./', figfile=None, show=True, wr_period=1,
+            server=None, folder=None, username=None, password=None,):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -812,6 +816,12 @@ class PowerProfilePlot(Figure):
                 figfile = self.getFilename(name = date)
             
             self.saveFigure(figpath, figfile)
+            
+            self.counter_imagwr += 1
+            if (ftp and (self.counter_imagwr==wr_period)):
+                ftp_filename = os.path.join(figpath,figfile)
+                self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                self.counter_imagwr = 0
 
 class CoherenceMap(Figure):
     __isConfig = None
@@ -1011,11 +1021,8 @@ class CoherenceMap(Figure):
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
-                    try:
-                        self.sendByFTP(ftp_filename, server, folder, username, password)
-                    except:
-                        self.counter_imagwr = 0
-                        print ValueError, 'Error FTP'
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                    self.counter_imagwr = 0
                 
                 self.counter_imagwr = 0
         
@@ -1184,11 +1191,8 @@ class Noise(Figure):
                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
                     self.saveFigure(figpath, ftp_file)
                     ftp_filename = os.path.join(figpath,ftp_file)
-                    try:
-                        self.sendByFTP(ftp_filename, server, folder, username, password)
-                    except:
-                        self.counter_imagwr = 0
-                        print ValueError, 'Error FTP'
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                    self.counter_imagwr = 0
                 
                 self.counter_imagwr = 0
                     
@@ -1264,7 +1268,8 @@ class SpectraHeisScope(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None, ftp=False, wr_period=1, show=True):
+            figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
+            server=None, folder=None, username=None, password=None):
         
         """
         
@@ -1351,8 +1356,8 @@ class SpectraHeisScope(Figure):
             
             self.counter_imagwr += 1
             if (ftp and (self.counter_imagwr==wr_period)):
-                figfilename = os.path.join(figpath,figfile)
-                self.sendByFTP(figfilename)
+                ftp_filename = os.path.join(figpath,figfile)
+                self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
                 self.counter_imagwr = 0
 
 
@@ -1407,7 +1412,8 @@ class RTIfromSpectraHeis(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True):
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
+            server=None, folder=None, username=None, password=None):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1496,8 +1502,8 @@ class RTIfromSpectraHeis(Figure):
             
             self.counter_imagwr += 1
             if (ftp and (self.counter_imagwr==wr_period)):
-                figfilename = os.path.join(figpath,figfile)
-                self.sendByFTP(figfilename)
+                ftp_filename = os.path.join(figpath,figfile)
+                self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
                 self.counter_imagwr = 0
             
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
