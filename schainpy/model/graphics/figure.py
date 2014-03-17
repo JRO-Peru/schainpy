@@ -551,7 +551,7 @@ class Axes:
         self.z_buffer = numpy.hstack((self.z_buffer, z))
         
         if self.decimationx == None:
-            deltax = (self.xmax - self.xmin)/maxNumX
+            deltax = float(self.xmax - self.xmin)/maxNumX
             deltay = float(self.ymax - self.ymin)/maxNumY
             
             resolutionx = self.x_buffer[2]-self.x_buffer[0]
