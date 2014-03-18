@@ -781,7 +781,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = False
         
-    def init(self, nProfiles=None, nFFTPoints=None, pairsList=None):
+    def init(self, nProfiles=None, nFFTPoints=None, pairsList=None, ippFactor=None):
         
         self.dataOut.flagNoData = True
         
@@ -798,6 +798,10 @@ class SpectraProc(ProcessingUnit):
                 nPairs = 0
             else:
                 nPairs = len(pairsList)
+            
+            if ippFactor == None:
+                ippFactor = 1
+            self.dataOut.ippFactor = ippFactor
             
             self.dataOut.nFFTPoints = nFFTPoints
             self.dataOut.pairsList = pairsList
@@ -828,7 +832,7 @@ class SpectraProc(ProcessingUnit):
             
             return
         
-        raise ValuError, "The type object %s is not valid"%(self.dataIn.type)
+        raise ValueError, "The type object %s is not valid"%(self.dataIn.type)
     
     def selectChannels(self, channelList):
         
@@ -962,35 +966,228 @@ class SpectraProc(ProcessingUnit):
         
         return 1
     
-    def removeDC(self, mode = 1):
+    def removeDC(self, mode = 2):
+        jspectra = self.dataOut.data_spc
+        jcspectra = self.dataOut.data_cspc
         
-        dc_index = 0
-        freq_index = numpy.array([-2,-1,1,2])
-        data_spc = self.dataOut.data_spc
-        data_cspc = self.dataOut.data_cspc
-        data_dc = self.dataOut.data_dc
+                
+        num_chan = jspectra.shape[0]
+        num_hei = jspectra.shape[2]
         
-        if self.dataOut.flagShiftFFT:
-            dc_index += self.dataOut.nFFTPoints/2
-            freq_index += self.dataOut.nFFTPoints/2
-            
-        if mode == 1:
-            data_spc[dc_index] = (data_spc[:,freq_index[1],:] + data_spc[:,freq_index[2],:])/2
-            if data_cspc != None:
-                data_cspc[dc_index] = (data_cspc[:,freq_index[1],:] + data_cspc[:,freq_index[2],:])/2
-            return 1
+        if jcspectra != None:
+            jcspectraExist = True
+            num_pairs = jcspectra.shape[0]
+        else:   jcspectraExist = False
+             
+        freq_dc = jspectra.shape[1]/2
+        ind_vel = numpy.array([-2,-1,1,2]) + freq_dc 
+        
+        if ind_vel[0]<0:
+            ind_vel[range(0,1)] = ind_vel[range(0,1)] + self.num_prof
+        
+        if mode == 1:         
+            jspectra[:freq_dc,:] = (jspectra[:ind_vel[1],:] + jspectra[:,ind_vel[2],:])/2 #CORRECCION
+                
+            if jcspectraExist:
+                jcspectra[:freq_dc,:] = (jcspectra[:ind_vel[1],:] + jcspectra[:,ind_vel[2],:])/2
         
         if mode == 2:
-            pass
+            
+            vel = numpy.array([-2,-1,1,2])
+            xx = numpy.zeros([4,4])
+                
+            for fil in range(4):
+                xx[fil,:] = vel[fil]**numpy.asarray(range(4))
+                    
+            xx_inv = numpy.linalg.inv(xx)
+            xx_aux = xx_inv[0,:]
+                   
+            for ich in range(num_chan):
+                yy = jspectra[ich,ind_vel,:]
+                jspectra[ich,freq_dc,:] = numpy.dot(xx_aux,yy)
+
+                junkid = jspectra[ich,freq_dc,:]<=0
+                cjunkid = sum(junkid)
+            
+                if cjunkid.any():
+                    jspectra[ich,freq_dc,junkid.nonzero()] = (jspectra[ich,ind_vel[1],junkid] + jspectra[ich,ind_vel[2],junkid])/2
+       
+            if jcspectraExist:
+                for ip in range(num_pairs):
+                    yy = jcspectra[ip,ind_vel,:]
+                    jcspectra[ip,freq_dc,:] = numpy.dot(xx_aux,yy)
         
-        if mode == 3:
-            pass
-           
-        raise ValueError, "mode parameter has to be 1, 2 or 3"
+        
+        self.dataOut.data_spc = jspectra
+        self.dataOut.data_cspc = jcspectra
+        
+        return 1
     
-    def removeInterference(self):
+    def removeInterference(self,  interf = 2,hei_interf = None, nhei_interf = None, offhei_interf = None):
         
-        pass
+        jspectra = self.dataOut.data_spc
+        jcspectra = self.dataOut.data_cspc
+        jnoise = self.dataOut.getNoise()
+        num_incoh = self.dataOut.nIncohInt
+        
+        num_channel  = jspectra.shape[0]
+        num_prof  = jspectra.shape[1]
+        num_hei   = jspectra.shape[2]
+        
+        #hei_interf
+        if hei_interf == None:
+            count_hei = num_hei/2   #Como es entero no importa
+            hei_interf = numpy.asmatrix(range(count_hei)) + num_hei - count_hei
+            hei_interf = numpy.asarray(hei_interf)[0]
+        #nhei_interf    
+        if (nhei_interf == None):
+            nhei_interf = 5
+        if (nhei_interf < 1):
+            nhei_interf = 1        
+        if (nhei_interf > count_hei):
+            nhei_interf = count_hei
+        if (offhei_interf == None):    
+            offhei_interf = 0
+            
+        ind_hei = range(num_hei)
+#         mask_prof = numpy.asarray(range(num_prof - 2)) + 1 
+#         mask_prof[range(num_prof/2 - 1,len(mask_prof))] += 1
+        mask_prof = numpy.asarray(range(num_prof)) 
+        num_mask_prof = mask_prof.size
+        comp_mask_prof = [0, num_prof/2]
+       
+         
+        #noise_exist:    Determina si la variable jnoise ha sido definida y contiene la informacion del ruido de cada canal
+        if (jnoise.size < num_channel or numpy.isnan(jnoise).any()):
+            jnoise = numpy.nan
+        noise_exist = jnoise[0] < numpy.Inf
+         
+        #Subrutina de Remocion de la Interferencia
+        for ich in range(num_channel):
+            #Se ordena los espectros segun su potencia (menor a mayor)
+            power = jspectra[ich,mask_prof,:]
+            power = power[:,hei_interf]
+            power = power.sum(axis = 0)
+            psort = power.ravel().argsort()
+            
+            #Se estima la interferencia promedio en los Espectros de Potencia empleando
+            junkspc_interf = jspectra[ich,:,hei_interf[psort[range(offhei_interf, nhei_interf + offhei_interf)]]]
+            
+            if noise_exist:
+            #    tmp_noise = jnoise[ich] / num_prof
+                tmp_noise = jnoise[ich]
+            junkspc_interf = junkspc_interf - tmp_noise
+            #junkspc_interf[:,comp_mask_prof] = 0
+            
+            jspc_interf = junkspc_interf.sum(axis = 0) / nhei_interf
+            jspc_interf = jspc_interf.transpose()
+            #Calculando el espectro de interferencia promedio
+            noiseid =  numpy.where(jspc_interf <= tmp_noise/ math.sqrt(num_incoh))
+            noiseid = noiseid[0]
+            cnoiseid = noiseid.size
+            interfid = numpy.where(jspc_interf > tmp_noise/ math.sqrt(num_incoh))
+            interfid = interfid[0]
+            cinterfid = interfid.size
+            
+            if (cnoiseid > 0):   jspc_interf[noiseid] = 0
+            
+            #Expandiendo los perfiles a limpiar
+            if (cinterfid > 0):
+                new_interfid = (numpy.r_[interfid - 1, interfid, interfid + 1] + num_prof)%num_prof
+                new_interfid = numpy.asarray(new_interfid)   
+                new_interfid = {x for x in new_interfid}
+                new_interfid = numpy.array(list(new_interfid))
+                new_cinterfid = new_interfid.size
+            else: new_cinterfid = 0
+            
+            for ip in range(new_cinterfid):
+                ind = junkspc_interf[:,new_interfid[ip]].ravel().argsort()  
+                jspc_interf[new_interfid[ip]] = junkspc_interf[ind[nhei_interf/2],new_interfid[ip]]
+                
+            
+            jspectra[ich,:,ind_hei] = jspectra[ich,:,ind_hei] - jspc_interf #Corregir indices
+            
+            #Removiendo la interferencia del punto de mayor interferencia
+            ListAux = jspc_interf[mask_prof].tolist()
+            maxid = ListAux.index(max(ListAux))
+            
+            
+            if cinterfid > 0:
+                for ip in range(cinterfid*(interf == 2) - 1):
+                    ind = (jspectra[ich,interfid[ip],:] < tmp_noise*(1 + 1/math.sqrt(num_incoh))).nonzero()
+                    cind = len(ind)
+                    
+                    if (cind > 0):
+                        jspectra[ich,interfid[ip],ind] = tmp_noise*(1 + (numpy.random.uniform(cind) - 0.5)/math.sqrt(num_incoh))
+                    
+                ind = numpy.array([-2,-1,1,2])
+                xx = numpy.zeros([4,4])
+                
+                for id1 in range(4):
+                    xx[:,id1] = ind[id1]**numpy.asarray(range(4))
+                    
+                xx_inv = numpy.linalg.inv(xx)
+                xx = xx_inv[:,0]
+                ind = (ind + maxid + num_mask_prof)%num_mask_prof
+                yy = jspectra[ich,mask_prof[ind],:]
+                jspectra[ich,mask_prof[maxid],:] = numpy.dot(yy.transpose(),xx)
+                    
+                    
+            indAux = (jspectra[ich,:,:] < tmp_noise*(1-1/math.sqrt(num_incoh))).nonzero()         
+            jspectra[ich,indAux[0],indAux[1]] = tmp_noise * (1 - 1/math.sqrt(num_incoh))
+            
+        #Remocion de Interferencia en el Cross Spectra
+        if jcspectra == None: return jspectra, jcspectra
+        num_pairs = jcspectra.size/(num_prof*num_hei)
+        jcspectra = jcspectra.reshape(num_pairs, num_prof, num_hei)
+        
+        for ip in range(num_pairs):
+            
+            #-------------------------------------------
+            
+            cspower = numpy.abs(jcspectra[ip,mask_prof,:])
+            cspower = cspower[:,hei_interf]
+            cspower = cspower.sum(axis = 0)
+            
+            cspsort = cspower.ravel().argsort()
+            junkcspc_interf = jcspectra[ip,:,hei_interf[cspsort[range(offhei_interf, nhei_interf + offhei_interf)]]]
+            junkcspc_interf = junkcspc_interf.transpose()
+            jcspc_interf = junkcspc_interf.sum(axis = 1)/nhei_interf
+            
+            ind = numpy.abs(jcspc_interf[mask_prof]).ravel().argsort()
+            
+            median_real = numpy.median(numpy.real(junkcspc_interf[mask_prof[ind[range(3*num_prof/4)]],:]))
+            median_imag = numpy.median(numpy.imag(junkcspc_interf[mask_prof[ind[range(3*num_prof/4)]],:]))
+            junkcspc_interf[comp_mask_prof,:] = numpy.complex(median_real, median_imag)
+            
+            for iprof in range(num_prof):
+                ind = numpy.abs(junkcspc_interf[iprof,:]).ravel().argsort()
+                jcspc_interf[iprof] = junkcspc_interf[iprof, ind[nhei_interf/2]]
+            
+            #Removiendo la Interferencia
+            jcspectra[ip,:,ind_hei] = jcspectra[ip,:,ind_hei] - jcspc_interf
+            
+            ListAux = numpy.abs(jcspc_interf[mask_prof]).tolist()
+            maxid = ListAux.index(max(ListAux))
+            
+            ind = numpy.array([-2,-1,1,2])
+            xx = numpy.zeros([4,4])
+                
+            for id1 in range(4):
+                xx[:,id1] = ind[id1]**numpy.asarray(range(4))
+                    
+            xx_inv = numpy.linalg.inv(xx)
+            xx = xx_inv[:,0]
+            
+            ind = (ind + maxid + num_mask_prof)%num_mask_prof
+            yy = jcspectra[ip,mask_prof[ind],:]
+            jcspectra[ip,mask_prof[maxid],:] = numpy.dot(yy.transpose(),xx)
+        
+        #Guardar Resultados
+        self.dataOut.data_spc = jspectra
+        self.dataOut.data_cspc = jcspectra
+            
+        return 1
     
     def setRadarFrequency(self, frequency=None):
         if frequency != None:
@@ -1470,7 +1667,7 @@ class SpectraHeisProc(ProcessingUnit):
                             
             return
         
-        raise ValuError, "The type object %s is not valid"%(self.dataIn.type)
+        raise ValueError, "The type object %s is not valid"%(self.dataIn.type)
     
     
     def selectChannels(self, channelList):

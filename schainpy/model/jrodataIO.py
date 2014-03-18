@@ -2766,69 +2766,6 @@ class SpectraHeisWriter(Operation):
         self.putData()
 
 
-class FITS: 
-    name=None
-    format=None
-    array =None
-    data =None
-    thdulist=None
-    prihdr=None
-    hdu=None
-    
-    def __init__(self):
-        
-        pass
-    
-    def setColF(self,name,format,array):
-        self.name=name
-        self.format=format
-        self.array=array
-        a1=numpy.array([self.array],dtype=numpy.float32)
-        self.col1 = pyfits.Column(name=self.name, format=self.format, array=a1)
-        return self.col1
-            
-#    def setColP(self,name,format,data):
-#        self.name=name
-#        self.format=format
-#        self.data=data
-#        a2=numpy.array([self.data],dtype=numpy.float32)
-#        self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
-#        return self.col2
-    
-
-    def writeData(self,name,format,data):
-        self.name=name
-        self.format=format
-        self.data=data
-        a2=numpy.array([self.data],dtype=numpy.float32)
-        self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
-        return self.col2
-    
-    def cFImage(self,idblock,year,month,day,hour,minute,second):
-        self.hdu= pyfits.PrimaryHDU(idblock)
-        self.hdu.header.set("Year",year)
-        self.hdu.header.set("Month",month)
-        self.hdu.header.set("Day",day)
-        self.hdu.header.set("Hour",hour)
-        self.hdu.header.set("Minute",minute)
-        self.hdu.header.set("Second",second)
-        return self.hdu 
-
-
-    def Ctable(self,colList):
-        self.cols=pyfits.ColDefs(colList)
-        self.tbhdu = pyfits.new_table(self.cols)
-        return self.tbhdu
-    
-  
-    def CFile(self,hdu,tbhdu):
-        self.thdulist=pyfits.HDUList([hdu,tbhdu])
-               
-    def wFile(self,filename):
-        if os.path.isfile(filename):
-            os.remove(filename)
-        self.thdulist.writeto(filename) 
-
 
 class ParameterConf:
     ELEMENTNAME = 'Parameter'

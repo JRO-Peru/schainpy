@@ -78,7 +78,7 @@ def sorting_bruce(data, navg):
         
     rtest = 1.0 + 1.0/navg
     
-    sum = 0.
+    sump = 0.
     
     sumq = 0.
     
@@ -88,23 +88,23 @@ def sorting_bruce(data, navg):
     
     while((cont==1)and(j<lenOfData)):
         
-        sum += sortdata[j]
+        sump += sortdata[j]
         
         sumq += sortdata[j]**2
         
         j += 1
         
         if j > nums_min:
-            if ((sumq*j) <= (rtest*sum**2)):
-                lnoise = sum / j
+            if ((sumq*j) <= (rtest*sump**2)):
+                lnoise = sump / j
             else:
                 j = j - 1
-                sum  = sum - sordata[j]
-                sumq =  sumq - sordata[j]**2
+                sump  = sump - sortdata[j]
+                sumq =  sumq - sortdata[j]**2
                 cont = 0
                 
         if j == nums_min:
-            lnoise = sum /j
+            lnoise = sump /j
     
     return lnoise   
 
@@ -370,6 +370,8 @@ class Spectra(JROData):
     
     nCohInt = None #se requiere para determinar el valor de timeInterval
     
+    ippFactor = None
+    
     def __init__(self):
         '''
         Constructor
@@ -479,14 +481,14 @@ class Spectra(JROData):
     
     def getFreqRange(self, extrapoints=0):
         
-        deltafreq = self.getFmax() / self.nFFTPoints
+        deltafreq = self.getFmax() / (self.nFFTPoints*self.ippFactor)
         freqrange = deltafreq*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
         
         return freqrange
 
     def getVelRange(self, extrapoints=0):
         
-        deltav = self.getVmax() / self.nFFTPoints
+        deltav = self.getVmax() / (self.nFFTPoints*self.ippFactor)
         velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltav/2       
         
         return velrange
