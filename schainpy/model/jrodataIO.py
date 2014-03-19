@@ -3072,7 +3072,12 @@ class FitsReader(ProcessingUnit):
             self.dataType = headerObj.header['DATATYPE']
         
         self.datetimestr = headerObj.header['DATETIME']
-        self.channelList = headerObj.header['CHANNELLIST']
+        channelList = headerObj.header['CHANNELLIST']
+        channelList = channelList.split('[')
+        channelList = channelList[1].split(']')
+        channelList = channelList[0].split(',')
+        channelList = [int(ch) for ch in channelList]
+        self.channelList = channelList
         self.nChannels = headerObj.header['NCHANNELS']
         self.nHeights = headerObj.header['NHEIGHTS']
         self.ippSeconds = headerObj.header['IPPSECONDS']
