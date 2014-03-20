@@ -7,7 +7,7 @@ import os
 import numpy
 import datetime
 import time
-
+import math
 from jrodata import *
 from jrodataIO import *
 from jroplot import *
@@ -986,10 +986,10 @@ class SpectraProc(ProcessingUnit):
             ind_vel[range(0,1)] = ind_vel[range(0,1)] + self.num_prof
         
         if mode == 1:         
-            jspectra[:freq_dc,:] = (jspectra[:ind_vel[1],:] + jspectra[:,ind_vel[2],:])/2 #CORRECCION
+            jspectra[:,freq_dc,:] = (jspectra[:,ind_vel[1],:] + jspectra[:,ind_vel[2],:])/2 #CORRECCION
                 
             if jcspectraExist:
-                jcspectra[:freq_dc,:] = (jcspectra[:ind_vel[1],:] + jcspectra[:,ind_vel[2],:])/2
+                jcspectra[:,freq_dc,:] = (jcspectra[:,ind_vel[1],:] + jcspectra[:,ind_vel[2],:])/2
         
         if mode == 2:
             
