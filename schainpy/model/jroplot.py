@@ -102,13 +102,13 @@ class CrossSpectraPlot(Figure):
         
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-        factor = dataOut.normFactor
+        #factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
-        z = dataOut.data_spc[:,:,:]/factor
+        z = dataOut.data_spc[:,:,:]#/factor
 #        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.abs(numpy.average(z, axis=1))
-        noise = dataOut.getNoise()/factor
+        noise = dataOut.getNoise()#/factor
         
         zdB = 10*numpy.log10(z)
         avgdB = 10*numpy.log10(avg)
@@ -151,7 +151,7 @@ class CrossSpectraPlot(Figure):
             pair = dataOut.pairsList[pairsIndexList[i]]
             str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
             title = "Ch%d: %4.2fdB: %s" %(pair[0], noisedB[pair[0]], str_datetime)
-            zdB = 10.*numpy.log10(dataOut.data_spc[pair[0],:,:]/factor)
+            zdB = 10.*numpy.log10(dataOut.data_spc[pair[0],:,:])
             axes0 = self.axesList[i*self.__nsubplots]
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
@@ -159,7 +159,7 @@ class CrossSpectraPlot(Figure):
                         ticksize=9, colormap=power_cmap, cblabel='')
             
             title = "Ch%d: %4.2fdB: %s" %(pair[1], noisedB[pair[1]], str_datetime)
-            zdB = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:]/factor)
+            zdB = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:])
             axes0 = self.axesList[i*self.__nsubplots+1]
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
@@ -318,11 +318,11 @@ class RTIPlot(Figure):
         
         tmin = None
         tmax = None
-        factor = dataOut.normFactor
+        #factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        z = dataOut.data_spc[channelIndexList,:,:]/factor
+        z = dataOut.data_spc[channelIndexList,:,:]#/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
         
@@ -506,14 +506,14 @@ class SpectraPlot(Figure):
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
-        factor = dataOut.normFactor
+        #factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         
-        z = dataOut.data_spc[channelIndexList,:,:]/factor
+        z = dataOut.data_spc[channelIndexList,:,:]#/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
-        noise = dataOut.getNoise()/factor
+        noise = dataOut.getNoise()#/factor
         
         zdB = 10*numpy.log10(z)
         avgdB = 10*numpy.log10(avg)
@@ -765,9 +765,9 @@ class PowerProfilePlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
-        factor = dataOut.normFactor
+        #factor = dataOut.normFactor
         y = dataOut.getHeiRange()        
-        x = dataOut.data_spc[channelIndexList,:,:]/factor
+        x = dataOut.data_spc[channelIndexList,:,:]#/factor
         x = numpy.where(numpy.isfinite(x), x, numpy.NAN) 
         avg = numpy.average(x, axis=1)
         
@@ -1107,8 +1107,8 @@ class Noise(Figure):
         tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
-        factor = dataOut.normFactor
-        noise = dataOut.getNoise()/factor
+        #factor = dataOut.normFactor
+        noise = dataOut.getNoise()#/factor
         noisedB = 10*numpy.log10(noise)
         
         #thisDatetime = dataOut.datatime
@@ -1433,8 +1433,8 @@ class RTIfromSpectraHeis(Figure):
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        factor = 1
-        data = dataOut.data_spc/factor
+        #factor = 1
+        data = dataOut.data_spc#/factor
         data = numpy.average(data,axis=1)
         datadB = 10*numpy.log10(data)
         

@@ -1194,6 +1194,49 @@ class SpectraProc(ProcessingUnit):
             self.dataOut.frequency = frequency
         
         return 1
+    
+    def getNoise(self, minHei, maxHei):        
+        
+        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+        
+        if (maxHei > self.dataOut.heightList[-1]):
+            maxHei = self.dataOut.heightList[-1]
+
+        minIndex = 0
+        maxIndex = 0
+        heights = self.dataOut.heightList
+        
+        inda = numpy.where(heights >= minHei)
+        indb = numpy.where(heights <= maxHei)
+        
+        try:
+            minIndex = inda[0][0]
+        except:
+            minIndex = 0
+        
+        try:
+            maxIndex = indb[0][-1]
+        except:
+            maxIndex = len(heights)
+
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+        
+        if (maxIndex >= self.dataOut.nHeights):
+            maxIndex = self.dataOut.nHeights-1
+
+        data_spc = self.dataOut.data_spc[:,:,minIndex:maxIndex+1]
+        
+        noise = numpy.zeros(self.dataOut.nChannels)
+        
+        for channel in range(self.dataOut.nChannels):
+            daux = data_spc[channel,:,:]
+            noise[channel] = hildebrand_sekhon(daux, self.dataOut.nIncohInt)
+        
+        self.dataOut.noise = noise.copy()
+        
+        return 1
 
         
 class IncohInt(Operation):

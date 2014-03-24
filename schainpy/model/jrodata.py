@@ -420,6 +420,8 @@ class Spectra(JROData):
         self.flagDeflipData = False #asumo q la data no esta sin flip
         
         self.flagShiftFFT = False
+        
+        self.ippFactor = 1
     
     def getNoisebyHildebrand(self):
         """
@@ -464,19 +466,19 @@ class Spectra(JROData):
         return self.noise 
     
     def getNoise(self, type = 1):
+        if self.noise == None:
+            self.noise = numpy.zeros(self.nChannels)
+            
+            if type == 1:
+                self.noise = self.getNoisebyHildebrand()
+            
+            if type == 2:
+                self.noise = self.getNoisebySort()
+            
+            if type == 3:
+                self.noise = self.getNoisebyWindow()
         
-        self.noise = numpy.zeros(self.nChannels)
-        
-        if type == 1:
-            noise = self.getNoisebyHildebrand()
-        
-        if type == 2:
-            noise = self.getNoisebySort()
-        
-        if type == 3:
-            noise = self.getNoisebyWindow()
-        
-        return noise
+        return self.noise
 
     
     def getFreqRange(self, extrapoints=0):
