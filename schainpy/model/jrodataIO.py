@@ -404,35 +404,41 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         pathList = []
         
         if not walk:
-            pathList.append(path)
+            #pathList.append(path)
+            multi_path = path.split(',')
+            for single_path in multi_path:
+                pathList.append(single_path)
         
         else:
-            dirList = []
-            for thisPath in os.listdir(path):
-                if not os.path.isdir(os.path.join(path,thisPath)):
-                    continue
-                if not isDoyFolder(thisPath):
-                    continue
+            #dirList = []
+            multi_path = path.split(',')
+            for single_path in multi_path:
+                dirList = []
+                for thisPath in os.listdir(single_path):
+                    if not os.path.isdir(os.path.join(single_path,thisPath)):
+                        continue
+                    if not isDoyFolder(thisPath):
+                        continue
                 
-                dirList.append(thisPath)
+                    dirList.append(thisPath)
     
-            if not(dirList):
-                return None, None
+                if not(dirList):
+                    return None, None
             
-            thisDate = startDate
+                thisDate = startDate
             
-            while(thisDate <= endDate):
-                year = thisDate.timetuple().tm_year
-                doy = thisDate.timetuple().tm_yday
-                
-                matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
-                if len(matchlist) == 0:
+                while(thisDate <= endDate):
+                    year = thisDate.timetuple().tm_year
+                    doy = thisDate.timetuple().tm_yday
+                    
+                    matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
+                    if len(matchlist) == 0:
+                        thisDate += datetime.timedelta(1)
+                        continue
+                    for match in matchlist:
+                        pathList.append(os.path.join(single_path,match,expLabel))
+                    
                     thisDate += datetime.timedelta(1)
-                    continue
-                for match in matchlist:
-                    pathList.append(os.path.join(path,match,expLabel))
-                
-                thisDate += datetime.timedelta(1)
         
         if pathList == []:
             print "Any folder was found for the date range: %s-%s" %(startDate, endDate)
@@ -442,6 +448,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             
         filenameList = []
         datetimeList = []
+        pathDict = {}
+        filenameList_to_sort = []
         
         for i in range(len(pathList)):
             
@@ -449,7 +457,18 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
+            pathDict.setdefault(fileList[0])
+            pathDict[fileList[0]] = i
+            filenameList_to_sort.append(fileList[0])
+        
+        filenameList_to_sort.sort()
+        
+        for file in filenameList_to_sort:
+            thisPath = pathList[pathDict[file]]
             
+            fileList = glob.glob1(thisPath, "*%s" %ext)
+            fileList.sort()
+        
             for file in fileList:
                 
                 filename = os.path.join(thisPath,file)
