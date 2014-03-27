@@ -1195,14 +1195,44 @@ class SpectraProc(ProcessingUnit):
         
         return 1
     
-    def getNoise(self, minHei, maxHei):        
+    def getNoise(self, minHei=None, maxHei=None, minVel=None, maxVel=None):        
+        #validacion de rango
+        if minHei == None:
+            minHei = self.dataOut.heightList[0]
         
-        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
-            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
-        
-        if (maxHei > self.dataOut.heightList[-1]):
+        if maxHei == None:
             maxHei = self.dataOut.heightList[-1]
-
+            
+        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
+            print 'minHei: %.2f is out of the heights range'%(minHei)
+            print 'minHei is setting to %.2f'%(self.dataOut.heightList[0])
+            minHei = self.dataOut.heightList[0]
+        
+        if (maxHei > self.dataOut.heightList[-1]) or (maxHei < minHei):
+            print 'maxHei: %.2f is out of the heights range'%(maxHei)
+            print 'maxHei is setting to %.2f'%(self.dataOut.heightList[-1])
+            maxHei = self.dataOut.heightList[-1]
+        
+        # validacion de velocidades
+        velrange = self.dataOut.getVelRange(1)
+        
+        if minVel == None:
+            minVel = velrange[0]
+        
+        if maxVel == None:
+            maxVel = velrange[-1]
+        
+        if (minVel < velrange[0]) or (minVel > maxVel):
+            print 'minVel: %.2f is out of the velocity range'%(minVel)
+            print 'minVel is setting to %.2f'%(velrange[0])
+            minVel = velrange[0]
+        
+        if (maxVel > velrange[-1]) or (maxVel < minVel):
+            print 'maxVel: %.2f is out of the velocity range'%(maxVel)
+            print 'maxVel is setting to %.2f'%(velrange[-1])
+            maxVel = velrange[-1]
+        
+        # seleccion de indices para rango        
         minIndex = 0
         maxIndex = 0
         heights = self.dataOut.heightList
@@ -1226,8 +1256,22 @@ class SpectraProc(ProcessingUnit):
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights-1
 
-        data_spc = self.dataOut.data_spc[:,:,minIndex:maxIndex+1]
+        # seleccion de indices para velocidades
+        indminvel = numpy.where(velrange >= minVel)
+        indmaxvel = numpy.where(velrange <= maxVel)
+        try:
+            minIndexVel = indminvel[0][0]
+        except:
+            minIndexVel = 0
         
+        try:
+            maxIndexVel = indmaxvel[0][-1]
+        except: 
+            maxIndexVel = len(velrange)
+        
+        #seleccion del espectro
+        data_spc = self.dataOut.data_spc[:,minIndexVel:maxIndexVel+1,minIndex:maxIndex+1]
+        #estimacion de ruido
         noise = numpy.zeros(self.dataOut.nChannels)
         
         for channel in range(self.dataOut.nChannels):
