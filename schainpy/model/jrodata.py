@@ -384,7 +384,7 @@ class Spectra(JROData):
         
         return self.noise 
         
-    def getNoise(self, type = 1):
+    def getNoise(self):
         if self.noise == None:
             self.noise = numpy.zeros(self.nChannels)
             self.noise = self.getNoisebyHildebrand()
