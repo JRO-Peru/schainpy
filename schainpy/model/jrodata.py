@@ -377,19 +377,19 @@ class Spectra(JROData):
         Return:
             noiselevel
         """
-
+        noise = numpy.zeros(self.nChannels)
         for channel in range(self.nChannels):
             daux = self.data_spc[channel,:,:]
-            self.noise[channel] = hildebrand_sekhon(daux, self.nIncohInt)
+            noise[channel] = hildebrand_sekhon(daux, self.nIncohInt)
         
-        return self.noise 
+        return noise 
         
     def getNoise(self):
-        if self.noise == None:
-            self.noise = numpy.zeros(self.nChannels)
-            self.noise = self.getNoisebyHildebrand()
-
-        return self.noise
+        if self.noise != None:
+            return self.noise
+        else:
+            noise = self.getNoisebyHildebrand()
+            return noise
 
     
     def getFreqRange(self, extrapoints=0):
