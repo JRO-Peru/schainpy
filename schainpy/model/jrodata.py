@@ -122,6 +122,8 @@ class JROData:
     frequency = 49.92e6
     
     realtime = False
+    
+    beacon_heiIndexList = None
 
     def __init__(self):
         
@@ -369,6 +371,9 @@ class Spectra(JROData):
         self.ippFactor = 1
         
         self.noise = None
+        
+        self.beacon_heiIndexList = []
+        
     
     def getNoisebyHildebrand(self):
         """

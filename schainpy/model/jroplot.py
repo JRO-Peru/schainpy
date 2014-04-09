@@ -1030,6 +1030,166 @@ class CoherenceMap(Figure):
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
             self.__isConfig = False
 
+class BeaconPhase(Figure):
+    
+    __isConfig = None
+    __nsubplots = None
+
+    PREFIX = 'beacon_phase'
+    
+    def __init__(self):
+        
+        self.timerange = 24*60*60
+        self.__isConfig = False
+        self.__nsubplots = 1
+        self.counter_imagwr = 0
+        self.WIDTH = 600
+        self.HEIGHT = 300
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.xdata = None
+        self.ydata = None
+        
+        self.PLOT_CODE = 999999
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        
+    def getSubplots(self):
+        
+        ncol = 1
+        nrow = 1
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
+               
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 7
+        colspan = 6
+        self.__nsubplots = 2
+        
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH+self.WIDTHPROF,
+                          heightplot = self.HEIGHT+self.HEIGHTPROF,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
+        
+                        
+    def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
+            xmin=None, xmax=None, ymin=None, ymax=None,
+            timerange=None,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+        
+        if pairsList == None:
+            pairsIndexList = dataOut.pairsIndexList
+        else:
+            pairsIndexList = []
+            for pair in pairsList:
+                if pair not in dataOut.pairsList:
+                    raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
+                pairsIndexList.append(dataOut.pairsList.index(pair))
+        
+        if pairsIndexList == []:
+            return
+        
+        if len(pairsIndexList) > 4:
+            pairsIndexList = pairsIndexList[0:4]
+
+        if timerange != None:
+            self.timerange = timerange
+        
+        tmin = None
+        tmax = None
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
+
+        
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Phase of Beacon Signal" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = "Local Time"
+        ylabel = "Phase"
+        
+        nplots = len(pairsIndexList)
+        #phase = numpy.zeros((len(pairsIndexList),len(dataOut.beacon_heiIndexList)))
+        phase_beacon = numpy.zeros(len(pairsIndexList))
+        for i in range(nplots):
+            pair = dataOut.pairsList[pairsIndexList[i]]
+            ccf = numpy.average(dataOut.data_cspc[pairsIndexList[i],:,:],axis=0)
+            powa = numpy.average(dataOut.data_spc[pair[0],:,:],axis=0)
+            powb = numpy.average(dataOut.data_spc[pair[1],:,:],axis=0)
+            avgcoherenceComplex = ccf/numpy.sqrt(powa*powb)
+            phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
+            
+            #print "Phase %d%d" %(pair[0], pair[1])
+            #print phase[dataOut.beacon_heiIndexList]
+            
+            phase_beacon[i] = numpy.average(phase[dataOut.beacon_heiIndexList])
+            
+        if not self.__isConfig:
+             
+            nplots = len(pairsIndexList)
+             
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile,
+                       show=show)
+             
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if ymin == None: ymin = numpy.nanmin(phase_beacon) - 10.0
+            if ymax == None: ymax = numpy.nanmax(phase_beacon) + 10.0
+             
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+             
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+             
+             
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.__isConfig = True
+         
+            self.xdata = numpy.array([])
+            self.ydata = numpy.array([])
+         
+        self.setWinTitle(title)
+             
+         
+        title = "Beacon Signal %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+         
+        legendlabels = ["pairs %d%d"%(pair[0], pair[1]) for pair in dataOut.pairsList]
+        
+        axes = self.axesList[0]
+         
+        self.xdata = numpy.hstack((self.xdata, x[0:1]))
+         
+        if len(self.ydata)==0:
+            self.ydata = phase_beacon.reshape(-1,1)
+        else:
+            self.ydata = numpy.hstack((self.ydata, phase_beacon.reshape(-1,1)))
+         
+         
+        axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
+                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
+                    XAxisAsTime=True, grid='both'
+                    )
+             
+        self.draw()
+
+
 class Noise(Figure):
     
     __isConfig = None

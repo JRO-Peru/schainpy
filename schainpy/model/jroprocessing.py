@@ -918,6 +918,41 @@ class SpectraProc(ProcessingUnit):
         
         return 1
 
+    def getBeaconSignal(self, tauindex = 0, channelindex = 0):
+        newheis = numpy.where(self.dataOut.heightList>self.dataOut.radarControllerHeaderObj.Taus[tauindex])
+        minIndex = min(newheis[0])
+        maxIndex = max(newheis[0])
+        data_spc = self.dataOut.data_spc[:,:,minIndex:maxIndex+1]
+        heightList = self.dataOut.heightList[minIndex:maxIndex+1]
+        
+        # determina indices
+        nheis = int(self.dataOut.radarControllerHeaderObj.txB/(self.dataOut.heightList[1]-self.dataOut.heightList[0]))
+        avg_dB = 10*numpy.log10(numpy.sum(data_spc[channelindex,:,:],axis=0))
+        beacon_dB = numpy.sort(avg_dB)[-nheis:]
+        beacon_heiIndexList = []
+        for val in avg_dB.tolist():
+            if val >= beacon_dB[0]:
+                beacon_heiIndexList.append(avg_dB.tolist().index(val))
+        
+        #data_spc = data_spc[:,:,beacon_heiIndexList]
+        data_cspc = None
+        if self.dataOut.data_cspc != None:
+            data_cspc = self.dataOut.data_cspc[:,:,minIndex:maxIndex+1]
+            #data_cspc = data_cspc[:,:,beacon_heiIndexList]
+        
+        data_dc = None
+        if self.dataOut.data_dc != None:
+            data_dc = self.dataOut.data_dc[:,minIndex:maxIndex+1]
+            #data_dc = data_dc[:,beacon_heiIndexList]
+        
+        self.dataOut.data_spc = data_spc
+        self.dataOut.data_cspc = data_cspc
+        self.dataOut.data_dc = data_dc
+        self.dataOut.heightList = heightList
+        self.dataOut.beacon_heiIndexList = beacon_heiIndexList
+        
+        return 1
+        
     
     def selectHeightsByIndex(self, minIndex, maxIndex):
         """
