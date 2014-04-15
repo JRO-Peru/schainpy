@@ -985,6 +985,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             self.set  = set - 1
             self.path = path
             self.foldercounter = foldercounter
+            last_set = None
 
         else:
             print "Searching files in offline mode ..."
@@ -1004,7 +1005,10 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             self.fileIndex = -1
             self.pathList = pathList
             self.filenameList = filenameList
-
+            file_name = os.path.basename(filenameList[-1])
+            basename, ext = os.path.splitext(file_name)
+            last_set = int(basename[-3:])
+            
         self.online = online
         self.delay = delay
         ext = ext.lower()
@@ -1021,7 +1025,8 @@ class JRODataReader(JRODataIO, ProcessingUnit):
             sys.exit(-1)
 
 #        self.updateDataHeader()
-
+        if last_set != None:
+            self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
         return self.dataOut
     
     def getBasicHeader(self):
@@ -1070,7 +1075,7 @@ class JRODataReader(JRODataIO, ProcessingUnit):
         
         if self.flagIsNewBlock:
             print "Block No. %04d, Total blocks %04d -> %s" %(self.basicHeaderObj.dataBlock, self.nTotalBlocks, self.dataOut.datatime.ctime())
-            
+            self.dataOut.blocknow = self.basicHeaderObj.dataBlock
     def printInfo(self):
         
         if self.__printInfo == False:

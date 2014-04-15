@@ -124,6 +124,10 @@ class JROData:
     realtime = False
     
     beacon_heiIndexList = None
+    
+    last_block = None
+    
+    blocknow = None
 
     def __init__(self):
         
