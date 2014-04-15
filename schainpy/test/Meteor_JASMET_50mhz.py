@@ -28,7 +28,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=1,
-                                            delay=10,
+                                            delay=3,
                                             walk=1)
 
 opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
@@ -59,6 +59,7 @@ opObj11.addParameter(name='zmax', value='75', format='float')
 # # opObj11.addParameter(name='xmin', value='18', format='float')
 # # opObj11.addParameter(name='xmax', value='', format='float')
 opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='lastone', value='1', format='int')
 opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/jasmet_abril', format='str')
 opObj11.addParameter(name='ftp', value='1', format='int')
 opObj11.addParameter(name='ftp_wei', value='1', format='int')
@@ -70,6 +71,7 @@ opObj11.addParameter(name='id', value='101', format='int')
 opObj11.addParameter(name='wintitle', value='JASMET50MHZ', format='str')
 opObj11.addParameter(name='zmin', value='55', format='float')
 opObj11.addParameter(name='zmax', value='75', format='float')
+opObj11.addParameter(name='wr_period', value='10', format='int')
 opObj11.addParameter(name='save', value='1', format='int')
 opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/jasmet_abril', format='str')
 opObj11.addParameter(name='ftp', value='1', format='int')
@@ -86,7 +88,9 @@ opObj11.addParameter(name='xmin', value='0', format='float')
 opObj11.addParameter(name='xmax', value='24', format='float')
 opObj11.addParameter(name='zmin', value='55', format='float')
 opObj11.addParameter(name='zmax', value='75', format='float')
+opObj11.addParameter(name='wr_period', value='10', format='int')
 opObj11.addParameter(name='save', value='1', format='int')
+#opObj11.addParameter(name='lastone', value='1', format='int')
 opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/jasmet_abril', format='str')
 
 
@@ -110,6 +114,7 @@ opObj11.addParameter(name='wintitle', value='Beacon Phase', format='str')
 opObj11.addParameter(name='timerange', value='300', format='int')
 opObj11.addParameter(name='ymin', value='-180', format='float')
 opObj11.addParameter(name='ymax', value='180', format='float')
+opObj11.addParameter(name='wr_period', value='10', format='int')
 opObj11.addParameter(name='save', value='1', format='int')
 opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/jasmet_abril', format='str')
 opObj11.addParameter(name='ftp', value='1', format='int')
