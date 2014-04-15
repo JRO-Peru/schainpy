@@ -284,7 +284,7 @@ class RTIPlot(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
+            save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
@@ -381,7 +381,13 @@ class RTIPlot(Figure):
             
         self.draw()
         
-        if save:
+        if lastone:
+            if dataOut.blocknow >= dataOut.last_block:
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+        
+        if (save and not(lastone)):
             
             self.counter_imagwr += 1
             if (self.counter_imagwr==wr_period):
@@ -402,7 +408,23 @@ class RTIPlot(Figure):
                 self.counter_imagwr = 0
                     
         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+            
             self.__isConfig = False
+            
+            if lastone:
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+                
+                if ftp:
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+
         
 class SpectraPlot(Figure):
     
