@@ -1050,7 +1050,7 @@ class BeaconPhase(Figure):
         self.xdata = None
         self.ydata = None
         
-        self.PLOT_CODE = 999999
+        self.PLOT_CODE = 18
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -1102,8 +1102,8 @@ class BeaconPhase(Figure):
         if pairsIndexList == []:
             return
         
-        if len(pairsIndexList) > 4:
-            pairsIndexList = pairsIndexList[0:4]
+#         if len(pairsIndexList) > 4:
+#             pairsIndexList = pairsIndexList[0:4]
 
         if timerange != None:
             self.timerange = timerange
@@ -1156,9 +1156,6 @@ class BeaconPhase(Figure):
             self.PLOT_POS = plot_pos
              
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-             
-             
-            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
          
             self.xdata = numpy.array([])
@@ -1188,6 +1185,32 @@ class BeaconPhase(Figure):
                     )
              
         self.draw()
+        
+        if save:
+            
+            self.counter_imagwr += 1
+            if (self.counter_imagwr==wr_period):
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+                
+                if ftp:
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                
+                self.counter_imagwr = 0
+                    
+        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+            self.__isConfig = False
+            del self.xdata
+            del self.ydata
+
+        
 
 
 class Noise(Figure):
