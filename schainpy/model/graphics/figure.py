@@ -229,7 +229,7 @@ class Figure:
             self.__isConfigThread = True
         
         self.thread.put_data(data)
-        print 'thread.isAlive()', self.thread.isAlive()
+        #print 'thread.isAlive()', self.thread.isAlive()
     
     
     def getNameToFtp(self, thisDatetime, FTP_WEI, EXP_CODE, SUB_EXP_CODE, PLOT_CODE, PLOT_POS):
