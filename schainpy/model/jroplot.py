@@ -1078,6 +1078,8 @@ class BeaconPhase(Figure):
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
         
+        self.filename_phase = None
+        
     def getSubplots(self):
         
         ncol = 1
@@ -1103,8 +1105,27 @@ class BeaconPhase(Figure):
         nrow, ncol = self.getSubplots()
         
         self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
-        
-                        
+
+    def save_phase(self, filename_phase):
+        f = open(filename_phase,'w+') 
+        f.write('\n\n')
+        f.write('JICAMARCA RADIO OBSERVATORY - Beacon Phase \n')
+        f.write('DD MM YYYY  HH MM SS   pair(2,0) pair(2,1) pair(2,3) pair(2,4)\n\n' ) 
+        f.close()
+
+    def save_data(self, filename_phase, data, data_datetime):
+        f=open(filename_phase,'a')
+        timetuple_data = data_datetime.timetuple()
+        day = str(timetuple_data.tm_mday)
+        month = str(timetuple_data.tm_mon)
+        year = str(timetuple_data.tm_year)
+        hour = str(timetuple_data.tm_hour)
+        minute = str(timetuple_data.tm_min)
+        second = str(timetuple_data.tm_sec)
+        f.write(day+' '+month+' '+year+'  '+hour+' '+minute+' '+second+'   '+str(data[0])+'   '+str(data[1])+'   '+str(data[2])+'   '+str(data[3])+'\n')
+        f.close()
+
+
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
@@ -1182,7 +1203,17 @@ class BeaconPhase(Figure):
          
             self.xdata = numpy.array([])
             self.ydata = numpy.array([])
+            
+            #open file beacon phase
+            path = '%s%03d' %(self.PREFIX, self.id)
+            beacon_file = os.path.join(path,'%s.txt'%self.name)
+            self.filename_phase = os.path.join(figpath,beacon_file)
+            self.save_phase(self.filename_phase)
          
+        
+        #store data beacon phase
+        self.save_data(self.filename_phase, phase_beacon, thisDatetime)
+        
         self.setWinTitle(title)
              
          

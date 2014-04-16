@@ -19,9 +19,9 @@ path = '/home/dsuarez/.gvfs/data on 10.10.20.13/Jasmet50'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             path=path,
-                                            startDate='2014/04/15',
-                                            endDate='2014/04/15',
-                                            startTime='17:00:00',
+                                            startDate='2014/04/16',
+                                            endDate='2014/04/16',
+                                            startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=0,
                                             walk=1)
@@ -38,7 +38,7 @@ opObj11 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
 opObj11.addParameter(name='n', value='2', format='int')
 
 opObj11 = procUnitConfObj0.addOperation(name='VoltageWriter', optype='other')
-opObj11.addParameter(name='path', value='/media/datos/jasmet50_abril')
+opObj11.addParameter(name='path', value='/home/jasmet/jasmet30_abril')
 opObj11.addParameter(name='blocksPerFile', value='100', format='int')
 opObj11.addParameter(name='profilesPerBlock', value='200', format='int')
 
@@ -58,14 +58,13 @@ opObj11.addParameter(name='n', value='4', format='int')
 opObj11 = procUnitConfObjBeacon.addOperation(name='getBeaconSignal')
 
 opObj11 = procUnitConfObjBeacon.addOperation(name='BeaconPhase', optype='other')
-opObj11.addParameter(name='id', value='201', format='int')
+opObj11.addParameter(name='id', value='301', format='int')
 opObj11.addParameter(name='wintitle', value='Beacon Phase', format='str')
-opObj11.addParameter(name='timerange', value='300', format='int')
 opObj11.addParameter(name='xmin', value='0', format='float')
 opObj11.addParameter(name='xmax', value='24', format='float')
 opObj11.addParameter(name='ymin', value='-180', format='float')
 opObj11.addParameter(name='ymax', value='180', format='float')
-opObj11.addParameter(name='figpath', value='/media/datos/jasmet50_phase', format='str')
+opObj11.addParameter(name='figpath', value='/home/jasmet/jasmet30_phase', format='str')
 
 
 print "Escribiendo el archivo XML"

@@ -19,9 +19,9 @@ path = '/home/dsuarez/.gvfs/data on 10.10.20.13/Jasmet50'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             path=path,
-                                            startDate='2014/04/15',
-                                            endDate='2014/04/15',
-                                            startTime='17:00:00',
+                                            startDate='2014/04/16',
+                                            endDate='2014/04/16',
+                                            startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=0,
                                             walk=1)
@@ -30,6 +30,8 @@ opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 
 procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
 
+opObj11 = procUnitConfObj0.addOperation(name='setRadarFrequency')
+opObj11.addParameter(name='frequency', value='30.15e6', format='float')
 
 opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
 
@@ -58,9 +60,8 @@ opObj11.addParameter(name='n', value='4', format='int')
 opObj11 = procUnitConfObjBeacon.addOperation(name='getBeaconSignal')
 
 opObj11 = procUnitConfObjBeacon.addOperation(name='BeaconPhase', optype='other')
-opObj11.addParameter(name='id', value='201', format='int')
+opObj11.addParameter(name='id', value='301', format='int')
 opObj11.addParameter(name='wintitle', value='Beacon Phase', format='str')
-opObj11.addParameter(name='timerange', value='300', format='int')
 opObj11.addParameter(name='xmin', value='0', format='float')
 opObj11.addParameter(name='xmax', value='24', format='float')
 opObj11.addParameter(name='ymin', value='-180', format='float')
