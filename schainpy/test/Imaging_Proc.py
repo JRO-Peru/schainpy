@@ -18,11 +18,11 @@ path = '/home/dsuarez/.gvfs/data on 10.10.20.13/EW_Faraday_imaging'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             path=path,
-                                            startDate='2013/09/27',
-                                            endDate='2013/09/27',
+                                            startDate='2014/04/21',
+                                            endDate='2014/04/30',
                                             startTime='16:00:00',
                                             endTime='23:59:59',
-                                            delay=20,
+                                            delay=5,
                                             online=1,
                                             walk=1)
 
@@ -61,14 +61,14 @@ procUnitConfObj1.addParameter(name='pairsList', value='(0,1),(0,2),(0,3),(0,4),(
 							(4,5),(4,6),(4,7), \
 							(5,6),(5,7), \
 							(6,7)', \
-							format='pairslist')
+							format='pairsList')
 
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='timeInterval', value='5', format='float')
 
 
 opObj11 = procUnitConfObj1.addOperation(name='SpectraWriter', optype='other')
-opObj11.addParameter(name='path', value='/media/datos/IMAGING/IMAGING/setiembre2013')
+opObj11.addParameter(name='path', value='/media/datos/IMAGING/IMAGING/abril2014')
 opObj11.addParameter(name='blocksPerFile', value='10', format='int')
 
 
