@@ -102,13 +102,13 @@ class CrossSpectraPlot(Figure):
         
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-        #factor = dataOut.normFactor
+        factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
-        z = dataOut.data_spc[:,:,:]#/factor
+        z = dataOut.data_spc[:,:,:]/factor
 #        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.abs(numpy.average(z, axis=1))
-        noise = dataOut.getNoise()#/factor
+        noise = dataOut.getNoise()/factor
         
         zdB = 10*numpy.log10(z)
         avgdB = 10*numpy.log10(avg)
@@ -318,11 +318,11 @@ class RTIPlot(Figure):
         
         tmin = None
         tmax = None
-        #factor = dataOut.normFactor
+        factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        z = dataOut.data_spc[channelIndexList,:,:]#/factor
+        z = dataOut.data_spc[channelIndexList,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
         
@@ -528,14 +528,14 @@ class SpectraPlot(Figure):
                 if channel not in dataOut.channelList:
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
-        #factor = dataOut.normFactor
+        factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         
-        z = dataOut.data_spc[channelIndexList,:,:]#/factor
+        z = dataOut.data_spc[channelIndexList,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
-        noise = dataOut.getNoise()#/factor
+        noise = dataOut.getNoise()/factor
         
         zdB = 10*numpy.log10(z)
         avgdB = 10*numpy.log10(avg)
@@ -787,9 +787,9 @@ class PowerProfilePlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
-        #factor = dataOut.normFactor
+        factor = dataOut.normFactor
         y = dataOut.getHeiRange()        
-        x = dataOut.data_spc[channelIndexList,:,:]#/factor
+        x = dataOut.data_spc[channelIndexList,:,:]/factor
         x = numpy.where(numpy.isfinite(x), x, numpy.NAN) 
         avg = numpy.average(x, axis=1)
         
@@ -1299,6 +1299,26 @@ class Noise(Figure):
         
         return nrow, ncol
     
+    def openfile(self, filename):
+        f = open(filename,'w+') 
+        f.write('\n\n')
+        f.write('JICAMARCA RADIO OBSERVATORY - Noise \n')
+        f.write('DD MM YYYY  HH MM SS   Channel0    Channel1    Channel2    Channel3\n\n' ) 
+        f.close()
+
+    def save_data(self, filename_phase, data, data_datetime):
+        f=open(filename_phase,'a')
+        timetuple_data = data_datetime.timetuple()
+        day = str(timetuple_data.tm_mday)
+        month = str(timetuple_data.tm_mon)
+        year = str(timetuple_data.tm_year)
+        hour = str(timetuple_data.tm_hour)
+        minute = str(timetuple_data.tm_min)
+        second = str(timetuple_data.tm_sec)
+        f.write(day+' '+month+' '+year+'  '+hour+' '+minute+' '+second+'   '+str(data[0])+'   '+str(data[1])+'   '+str(data[2])+'   '+str(data[3])+'\n')
+        f.close()
+
+    
     def setup(self, id, nplots, wintitle, showprofile=True, show=True):
                
         self.__showprofile = showprofile
@@ -1343,8 +1363,8 @@ class Noise(Figure):
         tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
-        #factor = dataOut.normFactor
-        noise = dataOut.getNoise()#/factor
+        factor = dataOut.normFactor
+        noise = dataOut.getNoise()/factor
         noisedB = 10*numpy.log10(noise)
         
         #thisDatetime = dataOut.datatime
@@ -1372,14 +1392,23 @@ class Noise(Figure):
             self.SUB_EXP_CODE = sub_exp_code
             self.PLOT_POS = plot_pos
             
-            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
         
             self.xdata = numpy.array([])
             self.ydata = numpy.array([])
+            
+            #open file beacon phase
+            path = '%s%03d' %(self.PREFIX, self.id)
+            noise_file = os.path.join(path,'%s.txt'%self.name)
+            self.filename_noise = os.path.join(figpath,noise_file)
+            self.openfile(self.filename_noise)
+         
+        
+        #store data beacon phase
+        self.save_data(self.filename_noise, noisedB, thisDatetime)
+            
         
         self.setWinTitle(title)
             
