@@ -2249,13 +2249,13 @@ class SpectraReader(JRODataReader):
     
         self.dataOut.flagDeflipData = True #asumo q la data no esta sin flip
         
-        if self.processingHeaderObj.code != None:
+        if self.radarControllerHeaderObj.code != None:
             
-            self.dataOut.nCode = self.processingHeaderObj.nCode
+            self.dataOut.nCode = self.radarControllerHeaderObj.nCode
             
-            self.dataOut.nBaud = self.processingHeaderObj.nBaud
+            self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
             
-            self.dataOut.code = self.processingHeaderObj.code
+            self.dataOut.code = self.radarControllerHeaderObj.code
             
             self.dataOut.flagDecodeData = True
         

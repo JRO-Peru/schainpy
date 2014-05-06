@@ -654,18 +654,19 @@ class Decoder(Operation):
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
         
-        if not self.__isConfig:
+        if code == None:
+            code = dataOut.code
+        else:
+            code = numpy.array(code).reshape(nCode,nBaud)
+            dataOut.code = code
+            dataOut.nCode = nCode
+            dataOut.nBaud = nBaud
+            dataOut.radarControllerHeaderObj.code = code
+            dataOut.radarControllerHeaderObj.nCode = nCode
+            dataOut.radarControllerHeaderObj.nBaud = nBaud
             
-            if code == None:
-                code = dataOut.code
-            else:
-                code = numpy.array(code).reshape(nCode,nBaud)
-                dataOut.code = code
-                dataOut.nCode = nCode
-                dataOut.nBaud = nBaud
-                
-            if code == None:
-                return 1
+        
+        if not self.__isConfig:
             
             self.setup(code, dataOut.data.shape)
             self.__isConfig = True
