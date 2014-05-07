@@ -14,17 +14,19 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 
 path='/remote/ewdrifts/RAW_EXP/EW_DRIFT_FARADAY/EW_Drift'
 
-path = '/home/operaciones/.gvfs/data on 10.10.20.13/MST_ISR/d2014007'
+path = '/media/New Volume/DATA/MST_ISR'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             path=path,
-                                            startDate='2013/01/11',
-                                            endDate='2013/12/12',
+                                            startDate='2014/01/10',
+                                            endDate='2014/01/10',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
-                                            online=1,
+                                            online=0,
                                             delay=10,
-                                            walk=0)
+                                            walk=1)
+
+opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 
 ################ ISR ####################################
 procUnitConfObjISR = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
@@ -40,28 +42,35 @@ opObj11 = procUnitConfObjISR.addOperation(name='filterByHeights')
 opObj11.addParameter(name='window', value='20', format='int')
 
 barker3x1 = '1,1,-1,-1,-1,1'
-barker3x5 = '1,1,1,1,1, 1,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1,1,1'
+barker3x5 = '1,1,1,1,1, 1,1,1,1,1,-1,-1,-1,-1,-1,' + \
+            '-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1,1,1'
+
  
 opObj11 = procUnitConfObjISR.addOperation(name='Decoder', optype='other')
 opObj11.addParameter(name='code', value=barker3x5, format='floatlist')
 opObj11.addParameter(name='nCode', value='2', format='int')
 opObj11.addParameter(name='nBaud', value='15', format='int')
 
+# opObj11 = procUnitConfObjISR.addOperation(name='VoltageWriter', optype='other')
+# opObj11.addParameter(name='path', value='/media/datos/mstisr_only_isr')
+# opObj11.addParameter(name='blocksPerFile', value='600', format='int')
+# opObj11.addParameter(name='profilesPerBlock', value='16', format='int')
+
 procUnitConfObjISRSpectra = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObjISR.getId())
 procUnitConfObjISRSpectra.addParameter(name='nFFTPoints', value='16', format='int')
 procUnitConfObjISRSpectra.addParameter(name='nProfiles', value='16', format='int')
-
+ 
 opObj11 = procUnitConfObjISRSpectra.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='timeInterval', value='60', format='float')
 
-opObj11 = procUnitConfObjISRSpectra.addOperation(name='SpectraPlot', optype='other')
-opObj11.addParameter(name='id', value='300', format='int')
-opObj11.addParameter(name='wintitle', value='ISR', format='str')
-opObj11.addParameter(name='zmin', value='48', format='int')
-opObj11.addParameter(name='zmax', value='58', format='int')
-opObj11.addParameter(name='save', value='1', format='int')
-opObj11.addParameter(name='figpath', value='/home/operaciones/Pictures/MST-ISR', format='str')
-opObj11.addParameter(name='wr_period', value='1', format='int')
+# opObj11 = procUnitConfObjISRSpectra.addOperation(name='SpectraPlot', optype='other')
+# opObj11.addParameter(name='id', value='300', format='int')
+# opObj11.addParameter(name='wintitle', value='ISR', format='str')
+# opObj11.addParameter(name='zmin', value='30', format='int')
+# opObj11.addParameter(name='zmax', value='65', format='int')
+# opObj11.addParameter(name='save', value='1', format='int')
+# opObj11.addParameter(name='figpath', value='/home/operaciones/Pictures/MST-ISR', format='str')
+# opObj11.addParameter(name='wr_period', value='1', format='int')
 # opObj11.addParameter(name='ftp', value='1', format='int')
 # opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
 # opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
@@ -78,11 +87,12 @@ opObj11.addParameter(name='wintitle', value='ISR', format='str')
 opObj11.addParameter(name='showprofile', value='0', format='int')
 opObj11.addParameter(name='xmin', value='0', format='int')
 opObj11.addParameter(name='xmax', value='24', format='int')
-opObj11.addParameter(name='zmin', value='48', format='int')
-opObj11.addParameter(name='zmax', value='58', format='int')
+opObj11.addParameter(name='zmin', value='30', format='int')
+opObj11.addParameter(name='zmax', value='65', format='int')
 opObj11.addParameter(name='save', value='1', format='int')
-opObj11.addParameter(name='figpath', value='/home/operaciones/Pictures/MST-ISR', format='str')
-opObj11.addParameter(name='wr_period', value='1', format='int')
+#opObj11.addParameter(name='lastone', value='1', format='int')
+opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/isr', format='str')
+opObj11.addParameter(name='wr_period', value='2', format='int')
 # opObj11.addParameter(name='ftp', value='1', format='int')
 # opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
 # opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
