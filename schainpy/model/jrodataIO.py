@@ -2615,6 +2615,9 @@ class SpectraWriter(JRODataWriter):
         self.systemHeaderObj = self.dataOut.systemHeaderObj.copy()
         self.systemHeaderObj.nChannels = self.dataOut.nChannels
         self.radarControllerHeaderObj = self.dataOut.radarControllerHeaderObj.copy()
+        old_code_size = self.dataOut.radarControllerHeaderObj.code_size
+        new_code_size = int(numpy.ceil(self.dataOut.nBaud/32.))*self.dataOut.nCode*4
+        self.radarControllerHeaderObj.size = self.radarControllerHeaderObj.size - old_code_size + new_code_size
         
         self.setBasicHeader()
         
