@@ -30,6 +30,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             delay=3,
+                                            set=0,
                                             online=1,
                                             walk=1)
 
@@ -58,47 +59,47 @@ procUnitConfObjMSTSpectra.addParameter(name='nProfiles', value='64', format='int
 opObj11 = procUnitConfObjMSTSpectra.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='n', value='2', format='float')
 
-opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SpectraWriter', optype='other')
-opObj11.addParameter(name='path', value='/media/datos/mst2014')
-opObj11.addParameter(name='blocksPerFile', value='10', format='int')
+# opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SpectraWriter', optype='other')
+# opObj11.addParameter(name='path', value='/media/datos/mst2014')
+# opObj11.addParameter(name='blocksPerFile', value='10', format='int')
 
 
-# opObj11 = procUnitConfObjMSTSpectra.addOperation(name='RTIPlot', optype='other')
-# opObj11.addParameter(name='id', value='1000', format='int')
-# opObj11.addParameter(name='wintitle', value='MST', format='str')
-# opObj11.addParameter(name='showprofile', value='0', format='int')
-# opObj11.addParameter(name='xmin', value='0', format='int')
-# opObj11.addParameter(name='xmax', value='24', format='int')
-# opObj11.addParameter(name='ymin', value='120', format='int')
-# opObj11.addParameter(name='ymax', value='190', format='int')
-# opObj11.addParameter(name='zmin', value='20', format='int')
-# opObj11.addParameter(name='zmax', value='50', format='int')
+opObj11 = procUnitConfObjMSTSpectra.addOperation(name='RTIPlot', optype='other')
+opObj11.addParameter(name='id', value='1000', format='int')
+opObj11.addParameter(name='wintitle', value='MST', format='str')
+opObj11.addParameter(name='showprofile', value='0', format='int')
+opObj11.addParameter(name='xmin', value='0', format='int')
+opObj11.addParameter(name='xmax', value='24', format='int')
+opObj11.addParameter(name='ymin', value='120', format='int')
+opObj11.addParameter(name='ymax', value='190', format='int')
+opObj11.addParameter(name='zmin', value='20', format='int')
+opObj11.addParameter(name='zmax', value='50', format='int')
+ 
+opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SpectraPlot', optype='other')
+opObj11.addParameter(name='id', value='1001', format='int')
+opObj11.addParameter(name='wintitle', value='MST', format='str')
+opObj11.addParameter(name='ymin', value='120', format='int')
+opObj11.addParameter(name='ymax', value='190', format='int')
+opObj11.addParameter(name='zmin', value='20', format='int')
+opObj11.addParameter(name='zmax', value='50', format='int')
+ 
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value=gpath, format='str')
+opObj11.addParameter(name='wr_period', value='5', format='int')
+opObj11.addParameter(name='ftp', value='1', format='int')
+opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
+opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
+opObj11.addParameter(name='username', value='wmaster', format='str')
+opObj11.addParameter(name='password', value='mst2010vhf', format='str')
+opObj11.addParameter(name='ftp_wei', value='0', format='int')
+opObj11.addParameter(name='exp_code', value='19', format='int')
+opObj11.addParameter(name='sub_exp_code', value='0', format='int')
+opObj11.addParameter(name='plot_pos', value='0', format='int') 
 
-# opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SpectraPlot', optype='other')
-# opObj11.addParameter(name='id', value='1001', format='int')
-# opObj11.addParameter(name='wintitle', value='MST', format='str')
-# opObj11.addParameter(name='ymin', value='120', format='int')
-# opObj11.addParameter(name='ymax', value='190', format='int')
-# opObj11.addParameter(name='zmin', value='20', format='int')
-# opObj11.addParameter(name='zmax', value='50', format='int')
-# 
-# opObj11.addParameter(name='save', value='1', format='int')
-# opObj11.addParameter(name='figpath', value=gpath, format='str')
-# opObj11.addParameter(name='wr_period', value='5', format='int')
-# opObj11.addParameter(name='ftp', value='1', format='int')
-# opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
-# opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
-# opObj11.addParameter(name='username', value='wmaster', format='str')
-# opObj11.addParameter(name='password', value='mst2010vhf', format='str')
-# opObj11.addParameter(name='ftp_wei', value='0', format='int')
-# opObj11.addParameter(name='exp_code', value='19', format='int')
-# opObj11.addParameter(name='sub_exp_code', value='0', format='int')
-# opObj11.addParameter(name='plot_pos', value='0', format='int') 
 
-
-#########################################################
-################ ISR ####################################
-#########################################################
+########################################################
+############### ISR ####################################
+########################################################
 
 procUnitConfObjISR = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
  
@@ -132,45 +133,45 @@ procUnitConfObjISRSpectra.addParameter(name='nProfiles', value='16', format='int
 opObj11 = procUnitConfObjISRSpectra.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='n', value='36', format='float')
 
-opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SpectraWriter', optype='other')
-opObj11.addParameter(name='path', value='/media/datos/isr2014')
-opObj11.addParameter(name='blocksPerFile', value='120', format='int')
+# opObj11 = procUnitConfObjISRSpectra.addOperation(name='SpectraWriter', optype='other')
+# opObj11.addParameter(name='path', value='/media/datos/isr2014')
+# opObj11.addParameter(name='blocksPerFile', value='120', format='int')
 
 
-# opObj11 = procUnitConfObjISRSpectra.addOperation(name='RTIPlot', optype='other')
-# opObj11.addParameter(name='id', value='2000', format='int')
-# opObj11.addParameter(name='wintitle', value='ISR', format='str')
-# opObj11.addParameter(name='showprofile', value='0', format='int')
-# opObj11.addParameter(name='xmin', value='0', format='int')
-# opObj11.addParameter(name='xmax', value='24', format='int')
-# opObj11.addParameter(name='zmin', value='30', format='int')
-# opObj11.addParameter(name='zmax', value='70', format='int')  
+opObj11 = procUnitConfObjISRSpectra.addOperation(name='RTIPlot', optype='other')
+opObj11.addParameter(name='id', value='2000', format='int')
+opObj11.addParameter(name='wintitle', value='ISR', format='str')
+opObj11.addParameter(name='showprofile', value='0', format='int')
+opObj11.addParameter(name='xmin', value='0', format='int')
+opObj11.addParameter(name='xmax', value='24', format='int')
+opObj11.addParameter(name='zmin', value='30', format='int')
+opObj11.addParameter(name='zmax', value='70', format='int')  
 
-# opObj11 = procUnitConfObjISRSpectra.addOperation(name='SpectraPlot', optype='other')
-# opObj11.addParameter(name='id', value='2001', format='int')
-# opObj11.addParameter(name='wintitle', value='ISR', format='str')
-# opObj11.addParameter(name='zmin', value='20', format='int')
-# opObj11.addParameter(name='zmax', value='60', format='int')
-# 
-# opObj11.addParameter(name='save', value='1', format='int')
-# opObj11.addParameter(name='figpath', value=gpath, format='str')
-# opObj11.addParameter(name='wr_period', value='5', format='int')
-# opObj11.addParameter(name='ftp', value='1', format='int')
-# opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
-# opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
-# opObj11.addParameter(name='username', value='wmaster', format='str')
-# opObj11.addParameter(name='password', value='mst2010vhf', format='str')
-# opObj11.addParameter(name='ftp_wei', value='0', format='int')
-# opObj11.addParameter(name='exp_code', value='20', format='int')
-# opObj11.addParameter(name='sub_exp_code', value='0', format='int')
-# opObj11.addParameter(name='plot_pos', value='0', format='int') 
-
-
+opObj11 = procUnitConfObjISRSpectra.addOperation(name='SpectraPlot', optype='other')
+opObj11.addParameter(name='id', value='2001', format='int')
+opObj11.addParameter(name='wintitle', value='ISR', format='str')
+opObj11.addParameter(name='zmin', value='20', format='int')
+opObj11.addParameter(name='zmax', value='60', format='int')
+ 
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value=gpath, format='str')
+opObj11.addParameter(name='wr_period', value='5', format='int')
+opObj11.addParameter(name='ftp', value='1', format='int')
+opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
+opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
+opObj11.addParameter(name='username', value='wmaster', format='str')
+opObj11.addParameter(name='password', value='mst2010vhf', format='str')
+opObj11.addParameter(name='ftp_wei', value='0', format='int')
+opObj11.addParameter(name='exp_code', value='20', format='int')
+opObj11.addParameter(name='sub_exp_code', value='0', format='int')
+opObj11.addParameter(name='plot_pos', value='0', format='int') 
+ 
+ 
 #########################################################
 ################ EEJ ####################################
 #########################################################
 #########################################################
-
+ 
 procUnitConfObjEEJ = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
   
 opObj11 = procUnitConfObjEEJ.addOperation(name='ProfileSelector', optype='other')
@@ -188,37 +189,37 @@ procUnitConfObjEEJSpecta.addParameter(name='nProfiles', value='64', format='int'
 opObj11 = procUnitConfObjEEJSpecta.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='n', value='36', format='float')
 
-opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SpectraWriter', optype='other')
-opObj11.addParameter(name='path', value='/media/datos/eej2014')
-opObj11.addParameter(name='blocksPerFile', value='10', format='int')
-
-
-# opObj11 = procUnitConfObjEEJSpecta.addOperation(name='RTIPlot', optype='other')
-# opObj11.addParameter(name='id', value='3000', format='int')
-# opObj11.addParameter(name='wintitle', value='EEJ', format='str')
-# opObj11.addParameter(name='showprofile', value='0', format='int')
-# opObj11.addParameter(name='xmin', value='0', format='int')
-# opObj11.addParameter(name='xmax', value='24', format='int')
-# opObj11.addParameter(name='zmin', value='20', format='int')
-# opObj11.addParameter(name='zmax', value='50', format='int')  
-
-# opObj11 = procUnitConfObjEEJSpecta.addOperation(name='SpectraPlot', optype='other')
-# opObj11.addParameter(name='id', value='3001', format='int')
-# opObj11.addParameter(name='wintitle', value='EEJ', format='str')
-# opObj11.addParameter(name='zmin', value='20', format='int')
-# opObj11.addParameter(name='zmax', value='50', format='int')
-# opObj11.addParameter(name='save', value='1', format='int')
-# opObj11.addParameter(name='figpath', value=gpath, format='str')
-# opObj11.addParameter(name='wr_period', value='5', format='int')
-# opObj11.addParameter(name='ftp', value='1', format='int')
-# opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
-# opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
-# opObj11.addParameter(name='username', value='wmaster', format='str')
-# opObj11.addParameter(name='password', value='mst2010vhf', format='str')
-# opObj11.addParameter(name='ftp_wei', value='0', format='int')
-# opObj11.addParameter(name='exp_code', value='22', format='int')
-# opObj11.addParameter(name='sub_exp_code', value='0', format='int')
-# opObj11.addParameter(name='plot_pos', value='0', format='int') 
+# opObj11 = procUnitConfObjEEJSpecta.addOperation(name='SpectraWriter', optype='other')
+# opObj11.addParameter(name='path', value='/media/datos/eej2014')
+# opObj11.addParameter(name='blocksPerFile', value='10', format='int')
+ 
+ 
+opObj11 = procUnitConfObjEEJSpecta.addOperation(name='RTIPlot', optype='other')
+opObj11.addParameter(name='id', value='3000', format='int')
+opObj11.addParameter(name='wintitle', value='EEJ', format='str')
+opObj11.addParameter(name='showprofile', value='0', format='int')
+opObj11.addParameter(name='xmin', value='0', format='int')
+opObj11.addParameter(name='xmax', value='24', format='int')
+opObj11.addParameter(name='zmin', value='20', format='int')
+opObj11.addParameter(name='zmax', value='50', format='int')  
+ 
+opObj11 = procUnitConfObjEEJSpecta.addOperation(name='SpectraPlot', optype='other')
+opObj11.addParameter(name='id', value='3001', format='int')
+opObj11.addParameter(name='wintitle', value='EEJ', format='str')
+opObj11.addParameter(name='zmin', value='20', format='int')
+opObj11.addParameter(name='zmax', value='50', format='int')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value=gpath, format='str')
+opObj11.addParameter(name='wr_period', value='5', format='int')
+opObj11.addParameter(name='ftp', value='1', format='int')
+opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
+opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
+opObj11.addParameter(name='username', value='wmaster', format='str')
+opObj11.addParameter(name='password', value='mst2010vhf', format='str')
+opObj11.addParameter(name='ftp_wei', value='0', format='int')
+opObj11.addParameter(name='exp_code', value='22', format='int')
+opObj11.addParameter(name='sub_exp_code', value='0', format='int')
+opObj11.addParameter(name='plot_pos', value='0', format='int') 
 
 
 
