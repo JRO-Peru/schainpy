@@ -212,6 +212,226 @@ class CrossSpectraPlot(Figure):
                 
                 self.counter_imagwr = 0
 
+class SNRPlot(Figure):
+    
+    __isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'snr'
+    
+    def __init__(self):
+        
+        self.timerange = 2*60*60
+        self.__isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 800
+        self.HEIGHT = 150
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.counter_imagwr = 0
+        
+        self.PLOT_CODE = 0
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        
+    def getSubplots(self):
+        
+        ncol = 1
+        nrow = self.nplots
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
+               
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+        if showprofile:
+            ncolspan = 7
+            colspan = 6
+            self.__nsubplots = 2
+            
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+                
+                if counter >= self.nplots:
+                    break
+                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+                
+                if showprofile:
+                    self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
+                    
+                counter += 1
+    
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            timerange=None,
+            save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+        
+        """
+        
+        Input:
+            dataOut         :
+            id        :
+            wintitle        :
+            channelList     :
+            showProfile     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+            zmin            :    None,
+            zmax            :    None
+        """
+        
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+        
+        if timerange != None:
+            self.timerange = timerange
+        
+        tmin = None
+        tmax = None
+        factor = dataOut.normFactor
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
+        
+        z = dataOut.data_spc[channelIndexList,:,:]/factor
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
+        avg = numpy.average(z, axis=1)
+        
+        avgdB = 10.*numpy.log10(avg)
+
+        noise = dataOut.getNoise()/factor
+        noisedB = 10.*numpy.log10(noise)
+        
+        SNR = numpy.transpose(numpy.divide(avg.T,noise))
+        
+        SNR_dB = 10.*numpy.log10(SNR)
+        
+        #SNR_dB = numpy.transpose(numpy.subtract(avgdB.T, noisedB))
+        
+#        thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " RTI" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = ""
+        ylabel = "Range (Km)"
+        
+        if not self.__isConfig:
+            
+            nplots = len(channelIndexList)
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile,
+                       show=show)
+            
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
+            if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.__isConfig = True
+        
+        
+        self.setWinTitle(title)
+            
+        for i in range(self.nplots):
+            title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            axes = self.axesList[i*self.__nsubplots]
+            zdB = SNR_dB[i].reshape((1,-1))
+            axes.pcolorbuffer(x, y, zdB,
+                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                        ticksize=9, cblabel='', cbsize="1%")
+            
+#             if self.__showprofile:
+#                 axes = self.axesList[i*self.__nsubplots +1]
+#                 axes.pline(avgdB[i], y,
+#                         xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
+#                         xlabel='dB', ylabel='', title='',
+#                         ytick_visible=False,
+#                         grid='x')
+#             
+        self.draw()
+        
+        if lastone:
+            if dataOut.blocknow >= dataOut.last_block:
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+        
+        if (save and not(lastone)):
+            
+            self.counter_imagwr += 1
+            if (self.counter_imagwr==wr_period):
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+                
+                if ftp:
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+                    self.counter_imagwr = 0
+                
+                self.counter_imagwr = 0
+                    
+        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+            
+            self.__isConfig = False
+            
+            if lastone:
+                if figfile == None:
+                    figfile = self.getFilename(name = self.name)
+                self.saveFigure(figpath, figfile)
+                
+                if ftp:
+                    #provisionalmente envia archivos en el formato de la web en tiempo real
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    path = '%s%03d' %(self.PREFIX, self.id)
+                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
+                    self.saveFigure(figpath, ftp_file)
+                    ftp_filename = os.path.join(figpath,ftp_file)
+                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+
 
 class RTIPlot(Figure):
     
