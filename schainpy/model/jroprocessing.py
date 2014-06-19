@@ -919,8 +919,12 @@ class SpectraProc(ProcessingUnit):
         
         return 1
 
-    def getBeaconSignal(self, tauindex = 0, channelindex = 0):
+    def getBeaconSignal(self, tauindex = 0, channelindex = 0, hei_ref=None):
         newheis = numpy.where(self.dataOut.heightList>self.dataOut.radarControllerHeaderObj.Taus[tauindex])
+        
+        if hei_ref != None:
+            newheis = numpy.where(self.dataOut.heightList>hei_ref)
+            
         minIndex = min(newheis[0])
         maxIndex = max(newheis[0])
         data_spc = self.dataOut.data_spc[:,:,minIndex:maxIndex+1]

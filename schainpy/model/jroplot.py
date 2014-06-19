@@ -459,6 +459,11 @@ class RTIPlot(Figure):
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
+        self.tmin = None 
+        self.tmax = None
+        
+        self.xmin = None
+        self.xmax = None
         
     def getSubplots(self):
         
@@ -536,8 +541,8 @@ class RTIPlot(Figure):
         if timerange != None:
             self.timerange = timerange
         
-        tmin = None
-        tmax = None
+        #tmin = None
+        #tmax = None
         factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
@@ -565,7 +570,14 @@ class RTIPlot(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
+            
+#             if timerange != None:
+#                 self.timerange = timerange
+#                 self.xmin, self.tmax = self.getTimeLim(x, xmin, xmax, timerange)
+            
+            
+            
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
@@ -581,13 +593,16 @@ class RTIPlot(Figure):
         
         
         self.setWinTitle(title)
-            
+        
+        if ((self.xmax - x[1]) < (x[1]-x[0])):
+            x[1] = self.xmax
+        
         for i in range(self.nplots):
             title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
             zdB = avgdB[i].reshape((1,-1))
             axes.pcolorbuffer(x, y, zdB,
-                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', cbsize="1%")
             
@@ -601,49 +616,54 @@ class RTIPlot(Figure):
             
         self.draw()
         
-        if lastone:
-            if dataOut.blocknow >= dataOut.last_block:
-                if figfile == None:
-                    figfile = self.getFilename(name = self.name)
-                self.saveFigure(figpath, figfile)
-        
-        if (save and not(lastone)):
-            
-            self.counter_imagwr += 1
-            if (self.counter_imagwr==wr_period):
-                if figfile == None:
-                    figfile = self.getFilename(name = self.name)
-                self.saveFigure(figpath, figfile)
+#         if lastone:
+#             if dataOut.blocknow >= dataOut.last_block:
+#                 if figfile == None:
+#                     figfile = self.getFilename(name = self.name)
+#                 self.saveFigure(figpath, figfile)
+#         
+#         if (save and not(lastone)):
+#             
+#             self.counter_imagwr += 1
+#             if (self.counter_imagwr==wr_period):
+#                 if figfile == None:
+#                     figfile = self.getFilename(name = self.name)
+#                 self.saveFigure(figpath, figfile)
+#                 
+#                 if ftp:
+#                     #provisionalmente envia archivos en el formato de la web en tiempo real
+#                     name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+#                     path = '%s%03d' %(self.PREFIX, self.id)
+#                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
+#                     self.saveFigure(figpath, ftp_file)
+#                     ftp_filename = os.path.join(figpath,ftp_file)
+#                     self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+#                     self.counter_imagwr = 0
+#                 
+#                 self.counter_imagwr = 0
                 
-                if ftp:
-                    #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    path = '%s%03d' %(self.PREFIX, self.id)
-                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
-                    self.saveFigure(figpath, ftp_file)
-                    ftp_filename = os.path.join(figpath,ftp_file)
-                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
-                    self.counter_imagwr = 0
-                
-                self.counter_imagwr = 0
-                    
-        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
-            
+        #if ((dataOut.utctime-time.timezone) >= self.axesList[0].xmax):
+        if x[1] >= self.axesList[0].xmax:
+            self.saveFigure(figpath, figfile)
             self.__isConfig = False
             
-            if lastone:
-                if figfile == None:
-                    figfile = self.getFilename(name = self.name)
-                self.saveFigure(figpath, figfile)
-                
-                if ftp:
-                    #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    path = '%s%03d' %(self.PREFIX, self.id)
-                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
-                    self.saveFigure(figpath, ftp_file)
-                    ftp_filename = os.path.join(figpath,ftp_file)
-                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+#         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+#              
+#             self.__isConfig = False
+             
+#             if lastone:
+#                 if figfile == None:
+#                     figfile = self.getFilename(name = self.name)
+#                 self.saveFigure(figpath, figfile)
+#                  
+#                 if ftp:
+#                     #provisionalmente envia archivos en el formato de la web en tiempo real
+#                     name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+#                     path = '%s%03d' %(self.PREFIX, self.id)
+#                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
+#                     self.saveFigure(figpath, ftp_file)
+#                     ftp_filename = os.path.join(figpath,ftp_file)
+#                     self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
 
         
 class SpectraPlot(Figure):
@@ -1090,6 +1110,9 @@ class CoherenceMap(Figure):
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
         self.counter_imagwr = 0
+        
+        self.xmin = None
+        self.xmax = None
     
     def getSubplots(self):
         ncol = 1
@@ -1150,8 +1173,8 @@ class CoherenceMap(Figure):
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
             
-        tmin = None
-        tmax = None
+#         tmin = None
+#         tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
@@ -1169,7 +1192,10 @@ class CoherenceMap(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            #tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
+            
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = 0.
@@ -1185,6 +1211,9 @@ class CoherenceMap(Figure):
             self.__isConfig = True
         
         self.setWinTitle(title)
+        
+        if ((self.xmax - x[1]) < (x[1]-x[0])):
+            x[1] = self.xmax
         
         for i in range(self.nplots):
             
@@ -1211,7 +1240,7 @@ class CoherenceMap(Figure):
             title = "Coherence %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2]
             axes.pcolorbuffer(x, y, z,
-                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=coherence_cmap, cbsize="1%")
             
@@ -1233,7 +1262,7 @@ class CoherenceMap(Figure):
             title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2 + counter]
             axes.pcolorbuffer(x, y, z,
-                        xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=phase_cmap, cbsize="1%")
             
@@ -1248,29 +1277,33 @@ class CoherenceMap(Figure):
             
         self.draw()
         
-        if save:
-            
-            self.counter_imagwr += 1
-            if (self.counter_imagwr==wr_period):
-                if figfile == None:
-                    figfile = self.getFilename(name = self.name)
-                self.saveFigure(figpath, figfile)
-                
-                if ftp:
-                    #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    path = '%s%03d' %(self.PREFIX, self.id)
-                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
-                    self.saveFigure(figpath, ftp_file)
-                    ftp_filename = os.path.join(figpath,ftp_file)
-                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
-                    self.counter_imagwr = 0
-                
-                self.counter_imagwr = 0
-        
-            
-        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+        if x[1] >= self.axesList[0].xmax:
+            self.saveFigure(figpath, figfile)
             self.__isConfig = False
+        
+#         if save:
+#             
+#             self.counter_imagwr += 1
+#             if (self.counter_imagwr==wr_period):
+#                 if figfile == None:
+#                     figfile = self.getFilename(name = self.name)
+#                 self.saveFigure(figpath, figfile)
+#                 
+#                 if ftp:
+#                     #provisionalmente envia archivos en el formato de la web en tiempo real
+#                     name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+#                     path = '%s%03d' %(self.PREFIX, self.id)
+#                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
+#                     self.saveFigure(figpath, ftp_file)
+#                     ftp_filename = os.path.join(figpath,ftp_file)
+#                     self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+#                     self.counter_imagwr = 0
+#                 
+#                 self.counter_imagwr = 0
+#         
+#             
+#         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
+#             self.__isConfig = False
 
 class BeaconPhase(Figure):
     
@@ -1428,11 +1461,11 @@ class BeaconPhase(Figure):
             path = '%s%03d' %(self.PREFIX, self.id)
             beacon_file = os.path.join(path,'%s.txt'%self.name)
             self.filename_phase = os.path.join(figpath,beacon_file)
-            self.save_phase(self.filename_phase)
+            #self.save_phase(self.filename_phase)
          
         
         #store data beacon phase
-        self.save_data(self.filename_phase, phase_beacon, thisDatetime)
+        #self.save_data(self.filename_phase, phase_beacon, thisDatetime)
         
         self.setWinTitle(title)
              

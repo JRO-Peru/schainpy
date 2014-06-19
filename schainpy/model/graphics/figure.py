@@ -64,6 +64,9 @@ class Figure:
     HEIGHT = None
     PREFIX = 'fig'
     
+    xmin = None
+    xmax = None
+    
     def __init__(self):
          
         raise ValueError, "This method is not implemented"
@@ -95,39 +98,73 @@ class Figure:
         
         return widthscreen, heightscreen
     
-    def getTimeLim(self, x, xmin, xmax):
+    def getTimeLim(self, x, xmin=None, xmax=None, timerange=None):
         
-        if self.timerange != None:
-            txmin = x[0] - x[0]%self.timerange
-        else:
-            txmin = numpy.min(x)
-        
-        thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
-        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
-        
-        ####################################################
-        #If the x is out of xrange
-        if xmax != None:
-            if xmax < (thisdatetime - thisdate).seconds/(60*60.):
-                xmin = None
-                xmax = None
-        
-        if xmin == None:
-            td = thisdatetime - thisdate
-            xmin = td.seconds/(60*60.)
+        if self.xmin != None and self.xmax != None:
+            if timerange == None:
+                timerange = self.xmax - self.xmin
+            xmin = self.xmin + timerange
+            xmax = self.xmax + timerange
             
-        if xmax == None:
-            xmax = xmin + self.timerange/(60*60.)
+            return xmin, xmax
+        
+        
+        if timerange != None and self.xmin == None and self.xmax == None:
+            txmin = x[0] - x[0]%timerange
+            thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
+            thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
+            xmin = (thisdatetime - thisdate).seconds/(60*60.)
+            xmax = xmin + timerange/(60*60.)
+            
+        
+        if timerange == None:
+            txmin = numpy.min(x)
+            thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
+            thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
         mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
-        tmin = time.mktime(mindt.timetuple())
+        xmin_sec = time.mktime(mindt.timetuple())
         
         maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
-        tmax = time.mktime(maxdt.timetuple())
+        xmax_sec = time.mktime(maxdt.timetuple())
+
+        return xmin_sec, xmax_sec
         
-        self.timerange = tmax - tmin
         
-        return tmin, tmax
+        
+        
+        
+#         if timerange != None:
+#             txmin = x[0] - x[0]%timerange
+#         else:
+#             txmin = numpy.min(x)
+#         
+#         thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
+#         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
+#         
+#         ####################################################
+#         #If the x is out of xrange
+#         if xmax != None:
+#             if xmax < (thisdatetime - thisdate).seconds/(60*60.):
+#                 xmin = None
+#                 xmax = None
+#         
+#         if xmin == None:
+#             td = thisdatetime - thisdate
+#             xmin = td.seconds/(60*60.)
+#             
+#         if xmax == None:
+#             xmax = xmin + self.timerange/(60*60.)
+#         
+#         mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
+#         tmin = time.mktime(mindt.timetuple())
+#         
+#         maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
+#         tmax = time.mktime(maxdt.timetuple())
+#         
+#         #self.timerange = tmax - tmin
+#         
+#         return tmin, tmax
     
     def init(self, id, nplots, wintitle):
     
@@ -278,8 +315,8 @@ class Axes:
     decimationx = None
     decimationy = None
     
-    __MAXNUMX = 1000
-    __MAXNUMY = 500
+    __MAXNUMX = 300
+    __MAXNUMY = 150
     
     def __init__(self, *args):
         
