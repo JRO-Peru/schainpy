@@ -644,3 +644,14 @@ class Fits:
     ltctime = property(getltctime, "I'm the 'ltctime' property")
 
     ltctime = property(getltctime, "I'm the 'ltctime' property")
+    
+class AMISR:
+    def __init__(self):
+        self.flagNoData = True
+        self.data = None
+        self.utctime = None
+        self.type = "AMISR"
+        
+    def isEmpty(self):
+        
+        return self.flagNoData
