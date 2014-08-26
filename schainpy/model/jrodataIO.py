@@ -3667,7 +3667,8 @@ class AMISRReader(ProcessingUnit):
     
     def readRanges(self):
         dataset = self.amisrFilePointer.get('Raw11/Data/Samples/Range')
-        self.rangeFromFile = dataset.values()
+        #self.rangeFromFile = dataset.value
+        self.rangeFromFile = numpy.reshape(dataset.value,(-1))
         return range
     
     
@@ -3750,7 +3751,9 @@ class AMISRReader(ProcessingUnit):
         if self.flagIsNewFile:
             self.dataByFrame = self.__setDataByFrame()        
             self.beamCodeByFrame = self.amisrFilePointer.get('Raw11/Data/RadacHeader/BeamCode').value[idrecord, :]
-
+                
+            #reading ranges
+            self.readRanges()
             #reading dataset
             self.dataset = self.__readDataSet()
         
@@ -3788,6 +3791,13 @@ class AMISRReader(ProcessingUnit):
             return 1
         return 0
     
+    def setObjProperties(self):
+        self.dataOut.heightList = self.rangeFromFile/1000.0 #km
+        self.dataOut.nProfiles = self.radacHeaderObj.npulses
+        self.dataOut.timeInterval = self.dataOut.ippSeconds * self.dataOut.nCohInt
+        self.dataOut.nBaud = None
+        self.dataOut.nCode = None
+        self.dataOut.code = None
     
     def getData(self):
         
@@ -3820,6 +3830,7 @@ class AMISRReader(ProcessingUnit):
     def run(self, **kwargs):
         if not(self.isConfig):
             self.setup(**kwargs)
+            self.setObjProperties()
             self.isConfig = True
         
         self.getData()

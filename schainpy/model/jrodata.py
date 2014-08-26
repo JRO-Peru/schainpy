@@ -652,6 +652,39 @@ class AMISR:
         self.utctime = None
         self.type = "AMISR"
         
+        #propiedades para compatibilidad con Voltages
+        self.timeZone = 0#self.dataIn.timeZone
+        self.dstFlag = 0#self.dataIn.dstFlag
+        self.errorCount = 0#self.dataIn.errorCount
+        self.useLocalTime = True#self.dataIn.useLocalTime
+        
+        self.radarControllerHeaderObj = None#self.dataIn.radarControllerHeaderObj.copy()
+        self.systemHeaderObj = None#self.dataIn.systemHeaderObj.copy()
+        self.channelList = [1]#self.dataIn.channelList esto solo aplica para el caso de AMISR
+        self.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])
+        
+        self.flagTimeBlock = None#self.dataIn.flagTimeBlock
+        #self.utctime = #self.firstdatatime
+        self.flagDecodeData = None#self.dataIn.flagDecodeData #asumo q la data esta decodificada
+        self.flagDeflipData = None#self.dataIn.flagDeflipData #asumo q la data esta sin flip
+
+        self.nCohInt = 1#self.dataIn.nCohInt
+        self.nIncohInt = 1
+        self.ippSeconds = 0.004#self.dataIn.ippSeconds, segun el filename/Setup/Tufile
+        self.windowOfFilter = None#self.dataIn.windowOfFilter
+        
+        self.timeInterval = None#self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
+        self.frequency = 20000#self.dataIn.frequency
+        self.realtime = 0#self.dataIn.realtime
+        
+        #actualizar en la lectura de datos
+        self.heightList = None#self.dataIn.heightList
+        self.nProfiles = None#self.dataOut.nFFTPoints
+        self.nBaud = None#self.dataIn.nBaud
+        self.nCode = None#self.dataIn.nCode
+        self.code = None#self.dataIn.code
+        
+        
     def isEmpty(self):
         
         return self.flagNoData

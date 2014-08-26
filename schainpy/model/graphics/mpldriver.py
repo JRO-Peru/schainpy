@@ -82,7 +82,7 @@ def printLabels(ax, xlabel, ylabel, title):
 def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='',
                 ticksize=9, xtick_visible=True, ytick_visible=True,
                 nxticks=4, nyticks=10,
-                grid=None):
+                grid=None,color='blue'):
     
     """
     
@@ -120,7 +120,7 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(ticksize)
     
-    ax.plot(x, y)
+    ax.plot(x, y, color=color)
     iplot = ax.lines[-1]
     
     ######################################################

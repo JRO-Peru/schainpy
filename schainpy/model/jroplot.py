@@ -866,7 +866,7 @@ class Scope(Figure):
     def __init__(self):
         
         self.__isConfig = False
-        self.WIDTH = 600
+        self.WIDTH = 300
         self.HEIGHT = 200
         self.counter_imagwr = 0
     
@@ -890,13 +890,80 @@ class Scope(Figure):
         
         for i in range(nplots):
             self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
-            
+    
+    def plot_iq(self, x, y, id, channelIndexList, thisDatetime, wintitle, show, xmin, xmax, ymin, ymax):
+        yreal = y[channelIndexList,:].real
+        yimag = y[channelIndexList,:].imag
         
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Range (Km)"
+        ylabel = "Intensity - IQ"
+        
+        if not self.__isConfig:
+            nplots = len(channelIndexList)
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle='',
+                       show=show)
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = min(numpy.nanmin(yreal),numpy.nanmin(yimag))
+            if ymax == None: ymax = max(numpy.nanmax(yreal),numpy.nanmax(yimag))
+                
+            self.__isConfig = True
+        
+        self.setWinTitle(title)
+        
+        for i in range(len(self.axesList)):
+            title = "Channel %d" %(i)
+            axes = self.axesList[i]
+
+            axes.pline(x, yreal[i,:],
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        xlabel=xlabel, ylabel=ylabel, title=title)
+
+            axes.addpline(x, yimag[i,:], idline=1, color="red", linestyle="solid", lw=2)
+            
+    def plot_power(self, x, y, id, channelIndexList, thisDatetime, wintitle, show, xmin, xmax, ymin, ymax):
+        y = y[channelIndexList,:] * numpy.conjugate(y[channelIndexList,:])
+        yreal = y.real
+        
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Range (Km)"
+        ylabel = "Intensity"
+        
+        if not self.__isConfig:
+            nplots = len(channelIndexList)
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle='',
+                       show=show)
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(yreal)
+            if ymax == None: ymax = numpy.nanmax(yreal)
+                
+            self.__isConfig = True
+        
+        self.setWinTitle(title)
+        
+        for i in range(len(self.axesList)):
+            title = "Channel %d" %(i)
+            axes = self.axesList[i]
+            ychannel = yreal[i,:]
+            axes.pline(x, ychannel,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        xlabel=xlabel, ylabel=ylabel, title=title)
+
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
             figpath='./', figfile=None, show=True, wr_period=1,
-            server=None, folder=None, username=None, password=None):
+            server=None, folder=None, username=None, password=None, type='power'):
         
         """
         
@@ -924,36 +991,34 @@ class Scope(Figure):
         y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
         y = y.real
         
-        #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
-        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Range (Km)"
-        ylabel = "Intensity"
         
-        if not self.__isConfig:
-            nplots = len(channelIndexList)
-            
-            self.setup(id=id,
-                       nplots=nplots,
-                       wintitle=wintitle,
-                       show=show)
-            
-            if xmin == None: xmin = numpy.nanmin(x)
-            if xmax == None: xmax = numpy.nanmax(x)
-            if ymin == None: ymin = numpy.nanmin(y)
-            if ymax == None: ymax = numpy.nanmax(y)
-                
-            self.__isConfig = True
+        if type == "power":
+            self.plot_power(dataOut.heightList, 
+                            dataOut.data,
+                            id, 
+                            channelIndexList, 
+                            thisDatetime,
+                            wintitle,
+                            show,
+                            xmin,
+                            xmax,
+                            ymin,
+                            ymax)
         
-        self.setWinTitle(title)
+        if type == "iq":
+            self.plot_iq(dataOut.heightList, 
+                         dataOut.data,
+                         id, 
+                         channelIndexList, 
+                         thisDatetime,
+                         wintitle,
+                         show,
+                         xmin,
+                         xmax,
+                         ymin,
+                         ymax)
         
-        for i in range(len(self.axesList)):
-            title = "Channel %d" %(i)
-            axes = self.axesList[i]
-            ychannel = y[i,:]
-            axes.pline(x, ychannel,
-                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                        xlabel=xlabel, ylabel=ylabel, title=title)
         
         self.draw()
             
@@ -970,7 +1035,7 @@ class Scope(Figure):
                 self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
                 self.counter_imagwr = 0
 
-class PowerProfilePlot(Figure):
+class PowerProfile(Figure):
     __isConfig = None
     __nsubplots = None
     
@@ -1027,15 +1092,28 @@ class PowerProfilePlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
-        factor = dataOut.normFactor
-        y = dataOut.getHeiRange()        
-        x = dataOut.data_spc[channelIndexList,:,:]/factor
-        x = numpy.where(numpy.isfinite(x), x, numpy.NAN) 
-        avg = numpy.average(x, axis=1)
+        try:
+            factor = dataOut.normFactor
+        except:
+            factor = 1
         
-        avgdB = 10*numpy.log10(avg)
+        y = dataOut.getHeiRange()
         
-        #thisDatetime = dataOut.datatime
+        #for voltage
+        if dataOut.type == 'Voltage':
+            x = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
+            x = x.real
+            x = numpy.where(numpy.isfinite(x), x, numpy.NAN)
+                
+        #for spectra
+        if dataOut.type == 'Spectra':
+            x = dataOut.data_spc[channelIndexList,:,:]/factor
+            x = numpy.where(numpy.isfinite(x), x, numpy.NAN) 
+            x = numpy.average(x, axis=1)
+        
+        
+        xdB = 10*numpy.log10(x)
+        
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
         title = wintitle + " Power Profile %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "dB"
@@ -1052,19 +1130,18 @@ class PowerProfilePlot(Figure):
             
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if xmin == None: xmin = numpy.nanmin(avgdB)*0.9
-            if xmax == None: xmax = numpy.nanmax(avgdB)*0.9
+            if xmin == None: xmin = numpy.nanmin(xdB)*0.9
+            if xmax == None: xmax = numpy.nanmax(xdB)*0.9
             
             self.__isConfig = True
         
         self.setWinTitle(title)
         
-        
         title = "Power Profile: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         axes = self.axesList[0]
         
         legendlabels = ["channel %d"%x for x in channelList]
-        axes.pmultiline(avgdB, y,
+        axes.pmultiline(xdB, y,
                 xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                 xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels,
                 ytick_visible=True, nxticks=5,
