@@ -238,6 +238,10 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.nProfiles = self.dataIn.nProfiles
         
+        self.dataOut.nCohInt = self.dataIn.nCohInt
+        self.dataOut.ippSeconds = self.dataIn.ippSeconds
+        self.dataOut.frequency = self.dataIn.frequency
+        
         pass
 
     def init(self):

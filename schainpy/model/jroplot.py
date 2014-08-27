@@ -644,7 +644,7 @@ class RTIPlot(Figure):
                 
         #if ((dataOut.utctime-time.timezone) >= self.axesList[0].xmax):
         if x[1] >= self.axesList[0].xmax:
-            self.saveFigure(figpath, figfile)
+            #self.saveFigure(figpath, figfile)
             self.__isConfig = False
             
 #         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
@@ -754,6 +754,9 @@ class SpectraPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
+        
+        if dataOut.flagNoData:
+            return None
         
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
@@ -977,6 +980,8 @@ class Scope(Figure):
             ymin            :    None,
             ymax            :    None,
         """
+        if dataOut.flagNoData:
+            return None
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1081,6 +1086,9 @@ class PowerProfile(Figure):
             xmin=None, xmax=None, ymin=None, ymax=None,
             save=False, figpath='./', figfile=None, show=True, wr_period=1,
             server=None, folder=None, username=None, password=None,):
+        
+        if dataOut.flagNoData:
+            return None
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList

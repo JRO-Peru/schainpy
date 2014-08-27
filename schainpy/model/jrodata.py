@@ -674,7 +674,7 @@ class AMISR:
         self.windowOfFilter = None#self.dataIn.windowOfFilter
         
         self.timeInterval = None#self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
-        self.frequency = 20000#self.dataIn.frequency
+        self.frequency = 20000000#self.dataIn.frequency
         self.realtime = 0#self.dataIn.realtime
         
         #actualizar en la lectura de datos
