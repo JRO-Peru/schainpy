@@ -8,7 +8,7 @@ import os, sys
 import copy
 import numpy
 import datetime
-
+import time
 from jroheaderIO import SystemHeader, RadarControllerHeader
 
 
@@ -653,14 +653,14 @@ class AMISR:
         self.type = "AMISR"
         
         #propiedades para compatibilidad con Voltages
-        self.timeZone = 0#self.dataIn.timeZone
+        self.timeZone = 300#timezone like jroheader, difference in minutes between UTC and localtime 
         self.dstFlag = 0#self.dataIn.dstFlag
         self.errorCount = 0#self.dataIn.errorCount
         self.useLocalTime = True#self.dataIn.useLocalTime
         
         self.radarControllerHeaderObj = None#self.dataIn.radarControllerHeaderObj.copy()
         self.systemHeaderObj = None#self.dataIn.systemHeaderObj.copy()
-        self.channelList = [1]#self.dataIn.channelList esto solo aplica para el caso de AMISR
+        self.channelList = [0]#self.dataIn.channelList esto solo aplica para el caso de AMISR
         self.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])
         
         self.flagTimeBlock = None#self.dataIn.flagTimeBlock

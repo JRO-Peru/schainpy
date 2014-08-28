@@ -643,8 +643,9 @@ class RTIPlot(Figure):
 #                 self.counter_imagwr = 0
                 
         #if ((dataOut.utctime-time.timezone) >= self.axesList[0].xmax):
+        self.saveFigure(figpath, figfile)
         if x[1] >= self.axesList[0].xmax:
-            #self.saveFigure(figpath, figfile)
+            self.saveFigure(figpath, figfile)
             self.__isConfig = False
             
 #         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
