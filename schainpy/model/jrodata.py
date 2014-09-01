@@ -653,7 +653,7 @@ class AMISR:
         self.type = "AMISR"
         
         #propiedades para compatibilidad con Voltages
-        self.timeZone = 300#timezone like jroheader, difference in minutes between UTC and localtime 
+        self.timeZone = 0#timezone like jroheader, difference in minutes between UTC and localtime 
         self.dstFlag = 0#self.dataIn.dstFlag
         self.errorCount = 0#self.dataIn.errorCount
         self.useLocalTime = True#self.dataIn.useLocalTime
@@ -684,6 +684,18 @@ class AMISR:
         self.nCode = None#self.dataIn.nCode
         self.code = None#self.dataIn.code
         
+        #consideracion para los Beams
+        self.beamCodeDict = None
+        self.beamRangeDict = None
+        
+    def copy(self, inputObj=None):
+        
+        if inputObj == None:
+            return copy.deepcopy(self)
+
+        for key in inputObj.__dict__.keys():
+            self.__dict__[key] = inputObj.__dict__[key]
+
         
     def isEmpty(self):
         

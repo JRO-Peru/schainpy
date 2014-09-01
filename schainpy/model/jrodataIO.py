@@ -3425,7 +3425,8 @@ class FitsReader(ProcessingUnit):
 class RadacHeader():
     def __init__(self, fp):
         header = 'Raw11/Data/RadacHeader'
-        self.beamCode = fp.get(header+'/BeamCode')
+        self.beamCodeByPulse = fp.get(header+'/BeamCode')
+        self.beamCode = fp.get('Raw11/Data/Beamcodes')
         self.code = fp.get(header+'/Code')
         self.frameCount = fp.get(header+'/FrameCount')
         self.modeGroup = fp.get(header+'/ModeGroup')
@@ -3438,6 +3439,7 @@ class RadacHeader():
         self.nrecords = self.pulseCount.shape[0] #numero de bloques
         self.npulses = self.pulseCount.shape[1] #numero de perfiles
         self.nsamples = self.nsamplesPulse[0,0] #numero de alturas
+        self.nbeams = self.beamCode.shape[1] #numero de beams
 
     
     def getIndexRangeToPulse(self, idrecord=0):
@@ -3491,6 +3493,9 @@ class AMISRReader(ProcessingUnit):
         self.rangeFromFile = None
         self.dataByFrame = None
         self.dataset = None
+        
+        self.beamCodeDict = {}
+        self.beamRangeDict = {}
         
         
     def __createObjByDefault(self):
@@ -3631,7 +3636,22 @@ class AMISRReader(ProcessingUnit):
     def __readHeader(self):
         self.radacHeaderObj = RadacHeader(self.amisrFilePointer)
         self.flagIsNewFile = 1
+    
+    def __getBeamCode(self):
+        self.beamCodeDict = {}
+        self.beamRangeDict = {}
         
+        for i in range(len(self.radacHeaderObj.beamCode[0,:])):
+            self.beamCodeDict.setdefault(i)
+            self.beamRangeDict.setdefault(i)
+            self.beamCodeDict[i] = self.radacHeaderObj.beamCode[0,i]
+            
+        
+        just4record0 = self.radacHeaderObj.beamCodeByPulse[0,:]
+        
+        for i in range(len(self.beamCodeDict.values())):
+            xx = numpy.where(just4record0==self.beamCodeDict.values()[i])
+            self.beamRangeDict[i] = xx[0]
         
     
     def __setNextFile(self):
@@ -3642,7 +3662,7 @@ class AMISRReader(ProcessingUnit):
             return 0
         
         self.__readHeader()
-        
+        self.__getBeamCode()
         self.readDataBlock()
 
     
@@ -3791,6 +3811,10 @@ class AMISRReader(ProcessingUnit):
             return 1
         return 0
     
+    def printUTC(self):
+        print self.dataOut.utctime
+        print ''
+    
     def setObjProperties(self):
         self.dataOut.heightList = self.rangeFromFile/1000.0 #km
         self.dataOut.nProfiles = self.radacHeaderObj.npulses
@@ -3798,6 +3822,9 @@ class AMISRReader(ProcessingUnit):
         self.dataOut.nBaud = None
         self.dataOut.nCode = None
         self.dataOut.code = None
+        
+        self.dataOut.beamCodeDict = self.beamCodeDict
+        self.dataOut.beamRangeDict = self.beamRangeDict
     
     def getData(self):
         
