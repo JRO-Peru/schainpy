@@ -670,11 +670,11 @@ class AMISR:
 
         self.nCohInt = 1#self.dataIn.nCohInt
         self.nIncohInt = 1
-        self.ippSeconds = 0.004#self.dataIn.ippSeconds, segun el filename/Setup/Tufile
+        self.ippSeconds = None#self.dataIn.ippSeconds, segun el filename/Setup/Tufile
         self.windowOfFilter = None#self.dataIn.windowOfFilter
         
         self.timeInterval = None#self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
-        self.frequency = 20000000#self.dataIn.frequency
+        self.frequency = None#self.dataIn.frequency
         self.realtime = 0#self.dataIn.realtime
         
         #actualizar en la lectura de datos

@@ -11,6 +11,7 @@ import numpy
 import fnmatch
 import time, datetime
 import h5py
+import re
 from xml.etree.ElementTree import Element, SubElement, ElementTree
 try:
     import pyfits
@@ -3497,6 +3498,14 @@ class AMISRReader(ProcessingUnit):
         self.beamCodeDict = {}
         self.beamRangeDict = {}
         
+        #experiment cgf file
+        self.npulsesint_fromfile = None
+        self.recordsperfile_fromfile = None
+        self.nbeamcodes_fromfile = None
+        self.ngates_fromfile = None
+        self.ippSeconds_fromfile = None
+        self.frequency_h5file = None
+        
         
     def __createObjByDefault(self):
         
@@ -3532,7 +3541,7 @@ class AMISRReader(ProcessingUnit):
     
     def __findDataForDates(self):
         
-        import re
+        
         
         if not(self.status):
             return None
@@ -3635,6 +3644,17 @@ class AMISRReader(ProcessingUnit):
     
     def __readHeader(self):
         self.radacHeaderObj = RadacHeader(self.amisrFilePointer)
+        
+        #update values from experiment cfg file
+        self.radacHeaderObj.nrecords = self.recordsperfile_fromfile
+        self.radacHeaderObj.nbeams = self.nbeamcodes_fromfile
+        self.radacHeaderObj.npulses = self.npulsesint_fromfile
+        self.radacHeaderObj.nsamples = self.ngates_fromfile
+        
+        #get tuning frequency
+        frequency_h5file_dataset = self.amisrFilePointer.get('Rx'+'/TuningFrequency')
+        self.frequency_h5file = frequency_h5file_dataset[0,0]
+        
         self.flagIsNewFile = 1
     
     def __getBeamCode(self):
@@ -3652,7 +3672,46 @@ class AMISRReader(ProcessingUnit):
         for i in range(len(self.beamCodeDict.values())):
             xx = numpy.where(just4record0==self.beamCodeDict.values()[i])
             self.beamRangeDict[i] = xx[0]
+    
+    def __getExpParameters(self):
+        if not(self.status):
+            return None
         
+        experimentCfgPath = os.path.join(self.path, self.dirnameList[0], 'Setup')
+        
+        expFinder = glob.glob1(experimentCfgPath,'*.exp')
+        if len(expFinder)== 0:
+            self.status = 0
+            return None
+        
+        experimentFilename = os.path.join(experimentCfgPath,expFinder[0])
+        
+        f = open(experimentFilename)
+        lines = f.readlines()
+        f.close()
+        
+        parmsList = ['npulsesint*','recordsperfile*','nbeamcodes*','ngates*']
+        filterList = [fnmatch.filter(lines, x) for x in parmsList]
+
+        
+        values = [re.sub(r'\D',"",x[0]) for x in filterList]
+        
+        self.npulsesint_fromfile = int(values[0])
+        self.recordsperfile_fromfile = int(values[1])
+        self.nbeamcodes_fromfile = int(values[2])
+        self.ngates_fromfile = int(values[3])
+        
+        tufileFinder = fnmatch.filter(lines, 'tufile=*')
+        tufile = tufileFinder[0].split('=')[1].split('\n')[0]
+        tufilename = os.path.join(experimentCfgPath,tufile)
+        
+        f = open(tufilename)
+        lines = f.readlines()
+        f.close()
+        self.ippSeconds_fromfile = float(lines[1].split()[2])/1E6
+        
+        
+        self.status = 1
     
     def __setNextFile(self):
         
@@ -3680,6 +3739,8 @@ class AMISRReader(ProcessingUnit):
             print "There is no files into the folder: %s"%(path)
                 
             sys.exit(-1)
+
+        self.__getExpParameters()
 
         self.fileIndex = -1
         
@@ -3818,7 +3879,9 @@ class AMISRReader(ProcessingUnit):
     def setObjProperties(self):
         self.dataOut.heightList = self.rangeFromFile/1000.0 #km
         self.dataOut.nProfiles = self.radacHeaderObj.npulses
+        self.dataOut.ippSeconds = self.ippSeconds_fromfile
         self.dataOut.timeInterval = self.dataOut.ippSeconds * self.dataOut.nCohInt
+        self.dataOut.frequency = self.frequency_h5file
         self.dataOut.nBaud = None
         self.dataOut.nCode = None
         self.dataOut.code = None
