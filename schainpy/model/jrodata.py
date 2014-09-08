@@ -653,7 +653,7 @@ class AMISR:
         self.type = "AMISR"
         
         #propiedades para compatibilidad con Voltages
-        self.timeZone = 0#timezone like jroheader, difference in minutes between UTC and localtime 
+        self.timeZone = 300#timezone like jroheader, difference in minutes between UTC and localtime 
         self.dstFlag = 0#self.dataIn.dstFlag
         self.errorCount = 0#self.dataIn.errorCount
         self.useLocalTime = True#self.dataIn.useLocalTime
@@ -679,7 +679,9 @@ class AMISR:
         
         #actualizar en la lectura de datos
         self.heightList = None#self.dataIn.heightList
-        self.nProfiles = None#self.dataOut.nFFTPoints
+        self.nProfiles = None#Number of samples or nFFTPoints
+        self.nRecords = None
+        self.nBeams = None
         self.nBaud = None#self.dataIn.nBaud
         self.nCode = None#self.dataIn.nCode
         self.code = None#self.dataIn.code

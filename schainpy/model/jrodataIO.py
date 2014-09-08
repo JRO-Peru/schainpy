@@ -3531,13 +3531,16 @@ class AMISRReader(ProcessingUnit):
         return
     
     def __selDates(self, amisr_dirname_format):
-        year = int(amisr_dirname_format[0:4])
-        month = int(amisr_dirname_format[4:6])
-        dom = int(amisr_dirname_format[6:8])
-        thisDate = datetime.date(year,month,dom)
-        
-        if (thisDate>=self.startDate and thisDate <= self.endDate):
-            return amisr_dirname_format
+        try:
+            year = int(amisr_dirname_format[0:4])
+            month = int(amisr_dirname_format[4:6])
+            dom = int(amisr_dirname_format[6:8])
+            thisDate = datetime.date(year,month,dom)
+            
+            if (thisDate>=self.startDate and thisDate <= self.endDate):
+                return amisr_dirname_format
+        except:
+            return None
     
     def __findDataForDates(self):
         
@@ -3547,7 +3550,9 @@ class AMISRReader(ProcessingUnit):
             return None
         
         pat = '\d+.\d+'
-        dirnameList = [re.search(pat,x).string for x in os.listdir(self.path)]
+        dirnameList = [re.search(pat,x) for x in os.listdir(self.path)]
+        dirnameList = filter(lambda x:x!=None,dirnameList)
+        dirnameList = [x.string for x in dirnameList]
         dirnameList = [self.__selDates(x) for x in dirnameList]
         dirnameList = filter(lambda x:x!=None,dirnameList)
         if len(dirnameList)>0:
@@ -3879,6 +3884,8 @@ class AMISRReader(ProcessingUnit):
     def setObjProperties(self):
         self.dataOut.heightList = self.rangeFromFile/1000.0 #km
         self.dataOut.nProfiles = self.radacHeaderObj.npulses
+        self.dataOut.nRecords = self.radacHeaderObj.nrecords
+        self.dataOut.nBeams = self.radacHeaderObj.nbeams
         self.dataOut.ippSeconds = self.ippSeconds_fromfile
         self.dataOut.timeInterval = self.dataOut.ippSeconds * self.dataOut.nCohInt
         self.dataOut.frequency = self.frequency_h5file
