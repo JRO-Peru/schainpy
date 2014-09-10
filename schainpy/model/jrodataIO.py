@@ -3507,6 +3507,9 @@ class AMISRReader(ProcessingUnit):
         self.frequency_h5file = None
         
         
+        self.__firstFile = True
+        self.buffer_radactime = None
+        
     def __createObjByDefault(self):
         
         dataObj = AMISR()
@@ -3651,7 +3654,8 @@ class AMISRReader(ProcessingUnit):
         self.radacHeaderObj = RadacHeader(self.amisrFilePointer)
         
         #update values from experiment cfg file
-        self.radacHeaderObj.nrecords = self.recordsperfile_fromfile
+        if self.radacHeaderObj.nrecords == self.recordsperfile_fromfile:
+            self.radacHeaderObj.nrecords = self.recordsperfile_fromfile
         self.radacHeaderObj.nbeams = self.nbeamcodes_fromfile
         self.radacHeaderObj.npulses = self.npulsesint_fromfile
         self.radacHeaderObj.nsamples = self.ngates_fromfile
@@ -3718,6 +3722,15 @@ class AMISRReader(ProcessingUnit):
         
         self.status = 1
     
+    def __setIdsAndArrays(self):
+        self.dataByFrame = self.__setDataByFrame()
+        self.beamCodeByFrame = self.amisrFilePointer.get('Raw11/Data/RadacHeader/BeamCode').value[0, :]        
+        self.readRanges()
+        self.idpulse_range1, self.idpulse_range2 = self.radacHeaderObj.getIndexRangeToPulse(0)
+        self.radacTimeByFrame = numpy.zeros(self.radacHeaderObj.npulses)
+        self.buffer_radactime = numpy.zeros_like(self.radacTimeByFrame)
+        
+    
     def __setNextFile(self):
         
         newFile = self.__setNextFileOffline()
@@ -3726,6 +3739,11 @@ class AMISRReader(ProcessingUnit):
             return 0
         
         self.__readHeader()
+        
+        if self.__firstFile:
+            self.__setIdsAndArrays()
+            self.__firstFile = False
+        
         self.__getBeamCode()
         self.readDataBlock()
 
@@ -3798,37 +3816,39 @@ class AMISRReader(ProcessingUnit):
     def readSamples_version1(self,idrecord):
         #estas tres primeras lineas solo se deben ejecutar una vez
         if self.flagIsNewFile:
-            self.idpulse_range1, self.idpulse_range2 = self.radacHeaderObj.getIndexRangeToPulse(0)
-            self.dataByFrame = self.__setDataByFrame()        
-            self.beamCodeByFrame = self.readBeamCode(idrecord, self.idpulse_range1, self.idpulse_range2)
-            self.radacTimeByFrame = self.readRadacTime(idrecord, self.idpulse_range1, self.idpulse_range2)
             #reading dataset
-            self.dataset = self.__readDataSet()
+            self.dataset = self.__readDataSet()    
+            self.flagIsNewFile = 0
         
         if idrecord == 0:
+            #if self.buffer_last_record == None:
+            selectorById = self.radacHeaderObj.pulseCount[0,self.idpulse_range2]
             
-            if len(numpy.where(self.dataByFrame!=0.0)[0]) or len(numpy.where(self.dataByFrame!=0.0)[1]) or len(numpy.where(self.dataByFrame!=0.0)[2]):
-                #falta agregar una condicion para datos discontinuos
-                #por defecto une los datos del record anterior
-                self.dataByFrame[self.idpulse_range2, :, :] = self.dataset[idrecord, self.idpulse_range2, :, :]
-                #timepulse
-                self.radacTimeByFrame[self.idpulse_range2] = self.radacHeaderObj.radacTime[idrecord, self.idpulse_range2]
-            else:
-                self.dataByFrame[self.idpulse_range1, :, :] = self.dataset[idrecord, self.idpulse_range1, :, :]
-                
-                self.radacTimeByFrame[self.idpulse_range1] = self.radacHeaderObj.radacTime[idrecord, self.idpulse_range1]    
+            self.dataByFrame[selectorById,:,:] = self.dataset[0, self.idpulse_range2,:,:]
+        
+            self.radacTimeByFrame[selectorById] = self.radacHeaderObj.radacTime[0, self.idpulse_range2]
+            
+            selectorById = self.radacHeaderObj.pulseCount[0,self.idpulse_range1]
+            
+            self.radacTimeByFrame[selectorById] = self.buffer_radactime[selectorById]
             
             datablock = self.__setDataBlock()
             
             return datablock
+                
+        selectorById = self.radacHeaderObj.pulseCount[idrecord-1,self.idpulse_range1]
+        self.dataByFrame[selectorById,:,:] = self.dataset[idrecord-1, self.idpulse_range1, :, :]
+        self.radacTimeByFrame[selectorById] = self.radacHeaderObj.radacTime[idrecord-1, self.idpulse_range1]
         
-        self.dataByFrame[self.idpulse_range1, :, :] = self.dataset[idrecord - 1,self.idpulse_range1, :, :]
-        self.dataByFrame[self.idpulse_range2, :, :] = self.dataset[idrecord, self.idpulse_range2, :, :]
-        datablock = self.__setDataBlock()
-        self.flagIsNewFile = 0
-    
-        self.dataByFrame[self.idpulse_range1, :, :] = self.dataset[idrecord, self.idpulse_range1, :, :]
+        selectorById = self.radacHeaderObj.pulseCount[idrecord,self.idpulse_range2]#data incompleta ultimo archivo de carpeta, verifica el record real segun la dimension del arreglo de datos
+        self.dataByFrame[selectorById,:,:] = self.dataset[idrecord, self.idpulse_range2, :, :]
+        self.radacTimeByFrame[selectorById] = self.radacHeaderObj.radacTime[idrecord, self.idpulse_range2]
         
+        datablock = self.__setDataBlock()        
+        
+        selectorById = self.radacHeaderObj.pulseCount[idrecord,self.idpulse_range1]
+        self.dataByFrame[selectorById,:,:] = self.dataset[idrecord, self.idpulse_range1, :, :]
+        self.buffer_radactime[selectorById] = self.radacHeaderObj.radacTime[idrecord, self.idpulse_range1]
         
         return datablock
         
@@ -3852,8 +3872,8 @@ class AMISRReader(ProcessingUnit):
     
     def readDataBlock(self):
         
+        self.datablock = self.readSamples_version1(self.idrecord_count)
         #self.datablock = self.readSamples(self.idrecord_count)
-        self.datablock = self.readSamples(self.idrecord_count)
         #print 'record:', self.idrecord_count
         
         self.idrecord_count += 1 
@@ -3905,9 +3925,7 @@ class AMISRReader(ProcessingUnit):
         
         if self.__hasNotDataInBuffer():
             self.readNextBlock()
-#             if not( self.readNextBlock() ):
-#                 return 0
-#             self.getFirstHeader()
+
         
         if self.datablock == None: # setear esta condicion cuando no hayan datos por leers
             self.dataOut.flagNoData = True 
