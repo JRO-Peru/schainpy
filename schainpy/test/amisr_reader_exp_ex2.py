@@ -101,7 +101,7 @@ procUnitAMISRBeam0 = controllerObj.addProcUnit(datatype='AMISR', inputId=readUni
 
 
 opObj11 = procUnitAMISRBeam0.addOperation(name='BeamSelector', optype='other')
-opObj11.addParameter(name='beam', value='1', format='int')
+opObj11.addParameter(name='beam', value='0', format='int')
 
 procUnitConfObjBeam0 = controllerObj.addProcUnit(datatype='Voltage', inputId=procUnitAMISRBeam0.getId())
 
