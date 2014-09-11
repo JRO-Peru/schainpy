@@ -13,9 +13,9 @@ controllerObj = Project()
 
 controllerObj.setup(id = '191', name='test01', description=desc)
 
-path = '$HOME/Documents/amisr'
+path = os.path.join(os.environ['HOME'],'Documents/amisr') #'/home/signalchain/Documents/amisr'
 
-figpath = '$HOME/Pictures/amisr'
+figpath = os.path.join(os.environ['HOME'],'Pictures/amisr')
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='AMISR',
                                             path=path,
