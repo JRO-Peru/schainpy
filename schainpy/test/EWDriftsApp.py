@@ -14,46 +14,42 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 
 path='/remote/ewdrifts/RAW_EXP/EW_DRIFT_FARADAY/EW_Drift'
 
-path = '/Users/dsuarez/Documents/Radar/drifts'
-path = '/Users/dsuarez/Documents/EW_DRIFT_WITH_TR'
-path = '/home/administrator/Radar/drifts/2014'
-readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
+
+path = '/home/signalchain/Puma/2014_07/EW_Drift'
+
+readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
-                                            startDate='2014/01/11',
-                                            endDate='2014/12/12',
+                                            startDate='2014/07/01',
+                                            endDate='2014/07/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=0,
                                             delay=5,
                                             walk=0)
 
-procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
+opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 
-opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='other')
-opObj11.addParameter(name='id', value='101', format='int')
-opObj11.addParameter(name='wintitle', value='AMISR', format='str')
+procUnitConfObj0 = controllerObj.addProcUnit(datatype='VoltageProc', inputId=readUnitConfObj.getId())
 
-# 
-# opObj11 = procUnitConfObj0.addOperation(name='ProfileSelector', optype='other')
-# opObj11.addParameter(name='profileRangeList', value='0,127', format='intlist')
-# 
-# opObj11 = procUnitConfObj0.addOperation(name='filterByHeights')
-# opObj11.addParameter(name='window', value='3', format='int')
-#  
-# opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
-# 
-# 
-# procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
-# procUnitConfObj1.addParameter(name='nFFTPoints', value='128', format='int')
-# procUnitConfObj1.addParameter(name='nProfiles', value='128', format='int')
-# 
-# 
-# opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
-# opObj11.addParameter(name='timeInterval', value='60', format='float')
-# 
-# opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
-# opObj11.addParameter(name='id', value='100', format='int')
-# opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
+opObj11 = procUnitConfObj0.addOperation(name='ProfileSelector', optype='other')
+opObj11.addParameter(name='profileRangeList', value='0,127', format='intlist')
+ 
+opObj11 = procUnitConfObj0.addOperation(name='filterByHeights')
+opObj11.addParameter(name='window', value='3', format='int')
+  
+opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
+ 
+procUnitConfObj1 = controllerObj.addProcUnit(datatype='SpectraProc', inputId=procUnitConfObj0.getId())
+procUnitConfObj1.addParameter(name='nFFTPoints', value='128', format='int')
+procUnitConfObj1.addParameter(name='nProfiles', value='128', format='int')
+ 
+ 
+opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
+opObj11.addParameter(name='timeInterval', value='60', format='float')
+
+opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+opObj11.addParameter(name='id', value='100', format='int')
+opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
 # #opObj11.addParameter(name='channelList', value='0,1,2,3', format='intlist') 
 # # opObj11.addParameter(name='zmin', value='0', format='int')
 # # opObj11.addParameter(name='zmax', value='100', format='int')
@@ -74,7 +70,7 @@ opObj11.addParameter(name='wintitle', value='AMISR', format='str')
 
 #
 #opObj11 = procUnitConfObj1.addOperation(name='PowerProfilePlot', optype='other')
-#opObj11.addParameter(name='idfigure', value='2', format='int')
+#opObj11.addParameter(name='id', value='2', format='int')
 #opObj11.addParameter(name='channelList', value='0,1,2,3', format='intlist') 
 #opObj11.addParameter(name='save', value='1', format='bool')
 #opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/EW_DRIFTS_2012_DEC', format='str')
@@ -82,7 +78,7 @@ opObj11.addParameter(name='wintitle', value='AMISR', format='str')
 ##opObj11.addParameter(name='xmax', value='40', format='int')
 #
 # opObj11 = procUnitConfObj1.addOperation(name='CrossSpectraPlot', optype='other')
-# opObj11.addParameter(name='idfigure', value='3', format='int')
+# opObj11.addParameter(name='id', value='3', format='int')
 # opObj11.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
 # #opObj11.addParameter(name='save', value='1', format='bool')
 # #opObj11.addParameter(name='figpath', value='/home/dsuarez/Pictures/EW_DRIFTS_2012_DEC', format='str')

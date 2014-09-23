@@ -305,7 +305,8 @@ class RadarControllerHeader(Header):
                         self.code[ic,ib] = temp[ib/32]%2
                         temp[ib/32] = temp[ib/32]/2
                 self.code = 2.0*self.code - 1.0
-            
+                self.code_size = int(numpy.ceil(self.nBaud/32.))*self.nCode*4
+                
             if self.line5Function == RCfunction.FLIP:
                 self.flip1 = numpy.fromfile(fp,'<u4',1)
 
@@ -313,10 +314,9 @@ class RadarControllerHeader(Header):
                 self.flip2 = numpy.fromfile(fp,'<u4',1)
                 
             endFp = self.size + startFp
-#             jumpFp =  endFp - fp.tell()
-#             if jumpFp > 0:
-#             
-            fp.seek(endFp)
+            jumpFp =  endFp - fp.tell()
+            if jumpFp > 0:
+                fp.seek(jumpFp)
         
         except Exception, e:
             print "RadarControllerHeader: " + e

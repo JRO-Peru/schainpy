@@ -182,28 +182,21 @@ class SpectraPlot(Figure):
             
         self.draw()
         
-        if save:
-            
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
             self.counter_imagwr += 1
-            if (self.counter_imagwr==wr_period):
-                if figfile == None:
-                    str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                    figfile = self.getFilename(name = str_datetime)
-                
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
                 self.saveFigure(figpath, figfile)
-                
-                if ftp:
-                    #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    path = '%s%03d' %(self.PREFIX, self.id)
-                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
-                    self.saveFigure(figpath, ftp_file)
-                    ftp_filename = os.path.join(figpath,ftp_file)
-                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
-                    self.counter_imagwr = 0
-
-                
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
+
 
 class CrossSpectraPlot(Figure):
     
@@ -595,55 +588,27 @@ class RTIPlot(Figure):
             
         self.draw()
         
-#         if lastone:
-#             if dataOut.blocknow >= dataOut.last_block:
-#                 if figfile == None:
-#                     figfile = self.getFilename(name = self.name)
-#                 self.saveFigure(figpath, figfile)
-#         
-#         if (save and not(lastone)):
-#             
-#             self.counter_imagwr += 1
-#             if (self.counter_imagwr==wr_period):
-#                 if figfile == None:
-#                     figfile = self.getFilename(name = self.name)
-#                 self.saveFigure(figpath, figfile)
-#                 
-#                 if ftp:
-#                     #provisionalmente envia archivos en el formato de la web en tiempo real
-#                     name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-#                     path = '%s%03d' %(self.PREFIX, self.id)
-#                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
-#                     self.saveFigure(figpath, ftp_file)
-#                     ftp_filename = os.path.join(figpath,ftp_file)
-#                     self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
-#                     self.counter_imagwr = 0
-#                 
-#                 self.counter_imagwr = 0
-                
-        #if ((dataOut.utctime-time.timezone) >= self.axesList[0].xmax):
-        self.saveFigure(figpath, figfile)
         if x[1] >= self.axesList[0].xmax:
-            self.saveFigure(figpath, figfile)
-            self.isConfig = False
+            self.counter_imagwr = wr_period
+            self.__isConfig = False
+        
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
             
-#         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
-#              
-#             self.isConfig = False
-             
-#             if lastone:
-#                 if figfile == None:
-#                     figfile = self.getFilename(name = self.name)
-#                 self.saveFigure(figpath, figfile)
-#                  
-#                 if ftp:
-#                     #provisionalmente envia archivos en el formato de la web en tiempo real
-#                     name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-#                     path = '%s%03d' %(self.PREFIX, self.id)
-#                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
-#                     self.saveFigure(figpath, ftp_file)
-#                     ftp_filename = os.path.join(figpath,ftp_file)
-#                     self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+            self.counter_imagwr += 1
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
+                self.saveFigure(figpath, figfile)
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)
+                
+                self.counter_imagwr = 0
+
 
 class CoherenceMap(Figure):
     isConfig = None
@@ -778,12 +743,6 @@ class CoherenceMap(Figure):
         for i in range(self.nplots):
             
             pair = dataOut.pairsList[pairsIndexList[i]]
-#             coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
-#             avgcoherenceComplex = numpy.average(coherenceComplex, axis=0)
-#             coherence = numpy.abs(avgcoherenceComplex)
-
-##            coherence = numpy.abs(coherenceComplex)            
-##            avg = numpy.average(coherence, axis=0)
             
             ccf = numpy.average(dataOut.data_cspc[pairsIndexList[i],:,:],axis=0)
             powa = numpy.average(dataOut.data_spc[pair[0],:,:],axis=0)
@@ -814,9 +773,9 @@ class CoherenceMap(Figure):
                         grid='x')
             
             counter += 1
-#            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
+
             phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
-#            avg = numpy.average(phase, axis=0)
+
             z = phase.reshape((1,-1))
             
             title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
@@ -838,32 +797,25 @@ class CoherenceMap(Figure):
         self.draw()
         
         if x[1] >= self.axesList[0].xmax:
-            self.saveFigure(figpath, figfile)
-            self.isConfig = False
+            self.counter_imagwr = wr_period
+            self.__isConfig = False
         
-#         if save:
-#             
-#             self.counter_imagwr += 1
-#             if (self.counter_imagwr==wr_period):
-#                 if figfile == None:
-#                     figfile = self.getFilename(name = self.name)
-#                 self.saveFigure(figpath, figfile)
-#                 
-#                 if ftp:
-#                     #provisionalmente envia archivos en el formato de la web en tiempo real
-#                     name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-#                     path = '%s%03d' %(self.PREFIX, self.id)
-#                     ftp_file = os.path.join(path,'ftp','%s.png'%name)
-#                     self.saveFigure(figpath, ftp_file)
-#                     ftp_filename = os.path.join(figpath,ftp_file)
-#                     self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
-#                     self.counter_imagwr = 0
-#                 
-#                 self.counter_imagwr = 0
-#         
-#             
-#         if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
-#             self.isConfig = False
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
+            
+            self.counter_imagwr += 1
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
+                self.saveFigure(figpath, figfile)
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)
+                
+                self.counter_imagwr = 0
 
 class PowerProfile(Figure):
     isConfig = None
