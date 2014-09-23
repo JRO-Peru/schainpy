@@ -7,6 +7,14 @@ from customftp import *
 import Queue
 import threading
 
+def isRealtime(utcdatatime):
+    utcnow = time.mktime(time.localtime())
+    delta = abs(utcnow - utcdatatime) # abs
+    if delta >= 30.:
+        return False
+    return True
+
+
 class FTP_Thread (threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -288,6 +296,10 @@ class Figure:
         
         raise ValueError, "This method is not implemented"
     
+    def close(self):
+        
+        self.__driver.show(True)
+        
     axesList = property(getAxesObjList)
             
 
