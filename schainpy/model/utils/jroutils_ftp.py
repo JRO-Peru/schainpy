@@ -299,6 +299,7 @@ class FTP():
 class SendByFTP(Operation):
     def __init__(self):
         self.status = 1
+        self.counter = 0
     
     def error_print(self, ValueError):
         print ValueError, 'Error FTP'
@@ -337,12 +338,17 @@ class SendByFTP(Operation):
         if len(self.filenameList) == 0:
             self.status = 0
     
-    def run(self, dataOut, ext, localfolder, remotefolder, server, username, password):
+    def run(self, dataOut, ext, localfolder, remotefolder, server, username, password, period=1):
         
-        self.filterByExt(ext, localfolder)
+        self.counter += 1 
+        if self.counter >= period:
+            self.filterByExt(ext, localfolder)
+            
+            self.connect(server, username, password, remotefolder)
+            
+            self.put()
+            
+            self.close()
+            
+            self.counter = 0
         
-        self.connect(server, username, password, remotefolder)
-        
-        self.put()
-        
-        self.close()
