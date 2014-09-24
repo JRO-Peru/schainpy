@@ -437,6 +437,8 @@ class RTIPlot(Figure):
         self.xmin = None
         self.xmax = None
         
+        self.figfile = None
+        
     def getSubplots(self):
         
         ncol = 1
@@ -562,7 +564,7 @@ class RTIPlot(Figure):
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.isConfig = True
-        
+            self.figfile = figfile
         
         self.setWinTitle(title)
         
@@ -592,16 +594,17 @@ class RTIPlot(Figure):
             self.counter_imagwr = wr_period
             self.__isConfig = False
         
-        if figfile == None:
+        
+        if self.figfile == None:
             str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            figfile = self.getFilename(name = str_datetime)
+            self.figfile = self.getFilename(name = str_datetime)
         
         if figpath != '':
             
             self.counter_imagwr += 1
             if (self.counter_imagwr>=wr_period):
                 # store png plot to local folder
-                self.saveFigure(figpath, figfile)
+                self.saveFigure(figpath, self.figfile)
                 # store png plot to FTP server according to RT-Web format 
                 name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
                 ftp_filename = os.path.join(figpath, name)
