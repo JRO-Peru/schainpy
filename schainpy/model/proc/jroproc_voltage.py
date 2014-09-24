@@ -15,26 +15,32 @@ class VoltageProc(ProcessingUnit):
         self.flip = 1
 
     def run(self):
-        self.dataOut.copy(self.dataIn)
+        if self.dataIn.type == 'AMISR':
+            self.__updateObjFromAmisrInput()
+        
+        if self.dataIn.type == 'Voltage':
+            self.dataOut.copy(self.dataIn)
+            
+#         self.dataOut.copy(self.dataIn)
 
-#    def __updateObjFromAmisrInput(self):
-#        
-#        self.dataOut.timeZone = self.dataIn.timeZone
-#        self.dataOut.dstFlag = self.dataIn.dstFlag
-#        self.dataOut.errorCount = self.dataIn.errorCount
-#        self.dataOut.useLocalTime = self.dataIn.useLocalTime
-#        
-#       self.dataOut.flagNoData = self.dataIn.flagNoData
-#        self.dataOut.data = self.dataIn.data
-#        self.dataOut.utctime = self.dataIn.utctime
-#        self.dataOut.channelList = self.dataIn.channelList
-#        self.dataOut.timeInterval = self.dataIn.timeInterval
-#        self.dataOut.heightList = self.dataIn.heightList
-#        self.dataOut.nProfiles = self.dataIn.nProfiles
-#        
-#        self.dataOut.nCohInt = self.dataIn.nCohInt
-#        self.dataOut.ippSeconds = self.dataIn.ippSeconds
-#        self.dataOut.frequency = self.dataIn.frequency
+    def __updateObjFromAmisrInput(self):
+        
+        self.dataOut.timeZone = self.dataIn.timeZone
+        self.dataOut.dstFlag = self.dataIn.dstFlag
+        self.dataOut.errorCount = self.dataIn.errorCount
+        self.dataOut.useLocalTime = self.dataIn.useLocalTime
+        
+        self.dataOut.flagNoData = self.dataIn.flagNoData
+        self.dataOut.data = self.dataIn.data
+        self.dataOut.utctime = self.dataIn.utctime
+        self.dataOut.channelList = self.dataIn.channelList
+        self.dataOut.timeInterval = self.dataIn.timeInterval
+        self.dataOut.heightList = self.dataIn.heightList
+        self.dataOut.nProfiles = self.dataIn.nProfiles
+        
+        self.dataOut.nCohInt = self.dataIn.nCohInt
+        self.dataOut.ippSeconds = self.dataIn.ippSeconds
+        self.dataOut.frequency = self.dataIn.frequency
 #        
 #        pass#
 #

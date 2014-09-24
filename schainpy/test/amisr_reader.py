@@ -17,7 +17,7 @@ path = os.path.join(os.environ['HOME'],'Documents/amisr') #'/home/signalchain/Do
 
 figpath = os.path.join(os.environ['HOME'],'Pictures/amisr')
 
-readUnitConfObj = controllerObj.addReadUnit(datatype='AMISR',
+readUnitConfObj = controllerObj.addReadUnit(datatype='AMISRReader',
                                             path=path,
                                             startDate='2014/08/18',
                                             endDate='2014/08/18',
@@ -25,7 +25,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='AMISR',
                                             endTime='23:59:59',
                                             walk=1)
 
-procUnitAMISR = controllerObj.addProcUnit(datatype='AMISR', inputId=readUnitConfObj.getId())
+procUnitAMISR = controllerObj.addProcUnit(datatype='AMISRProc', inputId=readUnitConfObj.getId())
 
 opObj11 = procUnitAMISR.addOperation(name='PrintInfo', optype='other')
 

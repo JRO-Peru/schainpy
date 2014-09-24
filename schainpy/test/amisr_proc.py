@@ -17,7 +17,7 @@ path = os.path.join(os.environ['HOME'],'Documents/amisr')
 
 figpath = os.path.join(os.environ['HOME'],'Pictures/amisr')
 
-readUnitConfObj = controllerObj.addReadUnit(datatype='AMISR',
+readUnitConfObj = controllerObj.addReadUnit(datatype='AMISRReader',
                                             path=path,
                                             startDate='2014/08/18',
                                             endDate='2014/08/18',
@@ -26,19 +26,19 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='AMISR',
                                             walk=1)
 
 #AMISR Processing Unit
-procUnitAMISRBeam0 = controllerObj.addProcUnit(datatype='AMISR', inputId=readUnitConfObj.getId())
+procUnitAMISRBeam0 = controllerObj.addProcUnit(datatype='AMISRProc', inputId=readUnitConfObj.getId())
 
 #Beam Selector
 opObj11 = procUnitAMISRBeam0.addOperation(name='BeamSelector', optype='other')
 opObj11.addParameter(name='beam', value='0', format='int')
 
 #Voltage Processing Unit
-procUnitConfObjBeam0 = controllerObj.addProcUnit(datatype='Voltage', inputId=procUnitAMISRBeam0.getId())
+procUnitConfObjBeam0 = controllerObj.addProcUnit(datatype='VoltageProc', inputId=procUnitAMISRBeam0.getId())
 #Coherent Integration
 opObj11 = procUnitConfObjBeam0.addOperation(name='CohInt', optype='other')
 opObj11.addParameter(name='n', value='128', format='int')
 #Spectra Unit Processing, getting spectras with nProfiles and nFFTPoints
-procUnitConfObjSpectraBeam0 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObjBeam0.getId())
+procUnitConfObjSpectraBeam0 = controllerObj.addProcUnit(datatype='SpectraProc', inputId=procUnitConfObjBeam0.getId())
 procUnitConfObjSpectraBeam0.addParameter(name='nFFTPoints', value=32, format='int')
 procUnitConfObjSpectraBeam0.addParameter(name='nProfiles', value=32, format='int')
 #Noise Estimation    
@@ -66,7 +66,7 @@ opObj11.addParameter(name='zmax', value='70', format='int')
 #Save RTI
 figfile0 = 'amisr_rti_beam0.png'
 opObj11.addParameter(name='figpath', value=figpath, format='str')
-opObj11.addParameter(name='figfile', value=figfile0, format='str')
+#opObj11.addParameter(name='figfile', value=figfile0, format='str')
 
 
 print "Escribiendo el archivo XML"

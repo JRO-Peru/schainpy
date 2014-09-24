@@ -2,6 +2,7 @@ import numpy
 
 from jroproc_base import ProcessingUnit, Operation
 from model.data.jrodata import Spectra
+from model.data.jrodata import hildebrand_sekhon
 
 class SpectraProc(ProcessingUnit):
     

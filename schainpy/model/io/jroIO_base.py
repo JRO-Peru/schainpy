@@ -8,7 +8,7 @@ import time
 import numpy
 import fnmatch
 import time, datetime
-import h5py
+#import h5py
 import traceback
 
 #try:
