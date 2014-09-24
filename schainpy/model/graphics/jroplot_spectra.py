@@ -76,7 +76,7 @@ class SpectraPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=True,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False):
         
@@ -257,7 +257,7 @@ class CrossSpectraPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", pairsList=None, 
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
+            save=False, figpath='', figfile=None, ftp=False, wr_period=1,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
@@ -483,7 +483,7 @@ class RTIPlot(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
+            save=False, figpath='', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
@@ -678,7 +678,7 @@ class CoherenceMap(Figure):
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
+            save=False, figpath='', figfile=None, ftp=False, wr_period=1,
             coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
@@ -864,7 +864,7 @@ class PowerProfile(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None,
-            save=False, figpath='./', figfile=None, show=True, wr_period=1,
+            save=False, figpath='', figfile=None, show=True, wr_period=1,
             server=None, folder=None, username=None, password=None,):
         
         if dataOut.flagNoData:
@@ -1026,7 +1026,7 @@ class Noise(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
