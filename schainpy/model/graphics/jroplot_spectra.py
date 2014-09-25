@@ -379,31 +379,21 @@ class CrossSpectraPlot(Figure):
             
         self.draw()
         
-        if save:
-            
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
             self.counter_imagwr += 1
-            if (self.counter_imagwr==wr_period):
-                if figfile == None:
-                    str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                    figfile = self.getFilename(name = str_datetime)
-                
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
                 self.saveFigure(figpath, figfile)
-                
-                if ftp:
-                    #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    path = '%s%03d' %(self.PREFIX, self.id)
-                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
-                    self.saveFigure(figpath, ftp_file)
-                    ftp_filename = os.path.join(figpath,ftp_file)
-                    
-                    try:
-                        self.sendByFTP(ftp_filename, server, folder, username, password)
-                    except:
-                        self.counter_imagwr = 0
-                        print ValueError, 'Error FTP'
-                
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
+
 
 class RTIPlot(Figure):
     
@@ -937,18 +927,22 @@ class PowerProfile(Figure):
         
         self.draw()
         
-        if save:
-            date = thisDatetime.strftime("%Y%m%d")
-            if figfile == None:
-                figfile = self.getFilename(name = date)
-            
-            self.saveFigure(figpath, figfile)
-            
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
             self.counter_imagwr += 1
-            if (ftp and (self.counter_imagwr==wr_period)):
-                ftp_filename = os.path.join(figpath,figfile)
-                self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
+                self.saveFigure(figpath, figfile)
+                # store png plot to FTP server according to RT-Web format 
+                #name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                #ftp_filename = os.path.join(figpath, name)
+                #self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
+
+
 
 class Noise(Figure):
     
@@ -970,11 +964,12 @@ class Noise(Figure):
         self.xdata = None
         self.ydata = None
         
-        self.PLOT_CODE = 77
+        self.PLOT_CODE = 17
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
+        self.figfile = None
         
     def getSubplots(self):
         
@@ -1079,7 +1074,7 @@ class Noise(Figure):
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.isConfig = True
-        
+            self.figfile = figfile
             self.xdata = numpy.array([])
             self.ydata = numpy.array([])
             
@@ -1118,34 +1113,234 @@ class Noise(Figure):
             
         self.draw()
         
-#         if save:
-#             
-#             if figfile == None:
-#                 figfile = self.getFilename(name = self.name)
-#             
-#             self.saveFigure(figpath, figfile)
-        
-        if save:
-            
-            self.counter_imagwr += 1
-            if (self.counter_imagwr==wr_period):
-                if figfile == None:
-                    figfile = self.getFilename(name = self.name)
-                self.saveFigure(figpath, figfile)
-                
-                if ftp:
-                    #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    path = '%s%03d' %(self.PREFIX, self.id)
-                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
-                    self.saveFigure(figpath, ftp_file)
-                    ftp_filename = os.path.join(figpath,ftp_file)
-                    self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
-                    self.counter_imagwr = 0
-                
-                self.counter_imagwr = 0
-                    
-        if x[1] + (x[1]-x[0]) >= self.axesList[0].xmax:
-            self.isConfig = False
+        if x[1] >= self.axesList[0].xmax:
+            self.counter_imagwr = wr_period
             del self.xdata
             del self.ydata
+            self.__isConfig = False
+        
+        if self.figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
+            self.counter_imagwr += 1
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
+                self.saveFigure(figpath, self.figfile)
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)                
+                self.counter_imagwr = 0
+        
+        
+class BeaconPhase(Figure):
+    
+    __isConfig = None
+    __nsubplots = None
+
+    PREFIX = 'beacon_phase'
+    
+    def __init__(self):
+        
+        self.timerange = 24*60*60
+        self.__isConfig = False
+        self.__nsubplots = 1
+        self.counter_imagwr = 0
+        self.WIDTH = 600
+        self.HEIGHT = 300
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.xdata = None
+        self.ydata = None
+        
+        self.PLOT_CODE = 18
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        
+        self.filename_phase = None
+        
+        self.figfile = None
+        
+    def getSubplots(self):
+        
+        ncol = 1
+        nrow = 1
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
+               
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 7
+        colspan = 6
+        self.__nsubplots = 2
+        
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH+self.WIDTHPROF,
+                          heightplot = self.HEIGHT+self.HEIGHTPROF,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
+
+    def save_phase(self, filename_phase):
+        f = open(filename_phase,'w+') 
+        f.write('\n\n')
+        f.write('JICAMARCA RADIO OBSERVATORY - Beacon Phase \n')
+        f.write('DD MM YYYY  HH MM SS   pair(2,0) pair(2,1) pair(2,3) pair(2,4)\n\n' ) 
+        f.close()
+
+    def save_data(self, filename_phase, data, data_datetime):
+        f=open(filename_phase,'a')
+        timetuple_data = data_datetime.timetuple()
+        day = str(timetuple_data.tm_mday)
+        month = str(timetuple_data.tm_mon)
+        year = str(timetuple_data.tm_year)
+        hour = str(timetuple_data.tm_hour)
+        minute = str(timetuple_data.tm_min)
+        second = str(timetuple_data.tm_sec)
+        f.write(day+' '+month+' '+year+'  '+hour+' '+minute+' '+second+'   '+str(data[0])+'   '+str(data[1])+'   '+str(data[2])+'   '+str(data[3])+'\n')
+        f.close()
+
+
+    def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
+            xmin=None, xmax=None, ymin=None, ymax=None,
+            timerange=None,
+            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+        
+        if pairsList == None:
+            pairsIndexList = dataOut.pairsIndexList
+        else:
+            pairsIndexList = []
+            for pair in pairsList:
+                if pair not in dataOut.pairsList:
+                    raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
+                pairsIndexList.append(dataOut.pairsList.index(pair))
+        
+        if pairsIndexList == []:
+            return
+        
+#         if len(pairsIndexList) > 4:
+#             pairsIndexList = pairsIndexList[0:4]
+
+        if timerange != None:
+            self.timerange = timerange
+        
+        tmin = None
+        tmax = None
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
+
+        
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Phase of Beacon Signal" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = "Local Time"
+        ylabel = "Phase"
+        
+        nplots = len(pairsIndexList)
+        #phase = numpy.zeros((len(pairsIndexList),len(dataOut.beacon_heiIndexList)))
+        phase_beacon = numpy.zeros(len(pairsIndexList))
+        for i in range(nplots):
+            pair = dataOut.pairsList[pairsIndexList[i]]
+            ccf = numpy.average(dataOut.data_cspc[pairsIndexList[i],:,:],axis=0)
+            powa = numpy.average(dataOut.data_spc[pair[0],:,:],axis=0)
+            powb = numpy.average(dataOut.data_spc[pair[1],:,:],axis=0)
+            avgcoherenceComplex = ccf/numpy.sqrt(powa*powb)
+            phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
+            
+            #print "Phase %d%d" %(pair[0], pair[1])
+            #print phase[dataOut.beacon_heiIndexList]
+            
+            phase_beacon[i] = numpy.average(phase[dataOut.beacon_heiIndexList])
+            
+        if not self.__isConfig:
+             
+            nplots = len(pairsIndexList)
+             
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile,
+                       show=show)
+             
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if ymin == None: ymin = numpy.nanmin(phase_beacon) - 10.0
+            if ymax == None: ymax = numpy.nanmax(phase_beacon) + 10.0
+             
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+             
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.__isConfig = True
+            self.figfile = figfile
+            self.xdata = numpy.array([])
+            self.ydata = numpy.array([])
+            
+            #open file beacon phase
+            path = '%s%03d' %(self.PREFIX, self.id)
+            beacon_file = os.path.join(path,'%s.txt'%self.name)
+            self.filename_phase = os.path.join(figpath,beacon_file)
+            #self.save_phase(self.filename_phase)
+         
+        
+        #store data beacon phase
+        #self.save_data(self.filename_phase, phase_beacon, thisDatetime)
+        
+        self.setWinTitle(title)
+             
+         
+        title = "Beacon Signal %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+         
+        legendlabels = ["pairs %d%d"%(pair[0], pair[1]) for pair in dataOut.pairsList]
+        
+        axes = self.axesList[0]
+         
+        self.xdata = numpy.hstack((self.xdata, x[0:1]))
+         
+        if len(self.ydata)==0:
+            self.ydata = phase_beacon.reshape(-1,1)
+        else:
+            self.ydata = numpy.hstack((self.ydata, phase_beacon.reshape(-1,1)))
+         
+         
+        axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
+                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
+                    XAxisAsTime=True, grid='both'
+                    )
+             
+        self.draw()
+        
+        if x[1] >= self.axesList[0].xmax:
+            self.counter_imagwr = wr_period
+            del self.xdata
+            del self.ydata
+            self.__isConfig = False
+        
+        if self.figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
+            self.counter_imagwr += 1
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
+                self.saveFigure(figpath, self.figfile)
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)                
+                self.counter_imagwr = 0
