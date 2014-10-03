@@ -188,21 +188,33 @@ class VoltageProc(ProcessingUnit):
         return 1
     
  
-    def filterByHeights(self, window):
+    def filterByHeights(self, window, axis=1):
         deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
         
         if window == None:
             window = (self.dataOut.radarControllerHeaderObj.txA/self.dataOut.radarControllerHeaderObj.nBaud) / deltaHeight
         
         newdelta = deltaHeight * window
-        r = self.dataOut.data.shape[1] % window
-        buffer = self.dataOut.data[:,0:self.dataOut.data.shape[1]-r] 
-        buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1]/window,window)
-        buffer = numpy.sum(buffer,2)
-        self.dataOut.data = buffer
+        r = self.dataOut.data.shape[axis] % window
+        if axis == 1:
+            buffer = self.dataOut.data[:,0:self.dataOut.data.shape[axis]-r] 
+            buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[axis]/window,window)
+            buffer = numpy.sum(buffer,axis+1)
+
+        elif axis == 2:
+            buffer = self.dataOut.data[:, :, 0:self.dataOut.data.shape[axis]-r]
+            buffer = buffer.reshape(self.dataOut.data.shape[0],self.dataOut.data.shape[1],self.dataOut.data.shape[axis]/window,window)
+            buffer = numpy.sum(buffer,axis+1)
+        
+        else:
+            raise ValueError, "axis value should be 1 or 2, the input value %d is not valid" % (axis)
+        
+        self.dataOut.data = buffer.copy()
         self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*(self.dataOut.nHeights-r)/window,newdelta)
         self.dataOut.windowOfFilter = window
-
+        
+        return 1
+        
     def deFlip(self):
         self.dataOut.data *= self.flip
         self.flip *= -1.
@@ -238,7 +250,7 @@ class CohInt(Operation):
         
 #         self.isConfig = False
     
-    def setup(self, n=None, timeInterval=None, overlapping=False):
+    def setup(self, n=None, timeInterval=None, overlapping=False, byblock=False):
         """
         Set the parameters of the integration class.
         
@@ -254,7 +266,7 @@ class CohInt(Operation):
         self.__lastdatatime = 0
         self.__buffer = None
         self.__dataReady = False
-        
+        self.byblock = byblock
         
         if n == None and timeInterval == None:
             raise ValueError, "n or timeInterval should be specified ..." 
@@ -392,14 +404,35 @@ class CohInt(Operation):
             self.__initime += deltatime
             
         return avgdata, avgdatatime
+    
+    def integrateByBlock(self, dataOut):
+        times = int(dataOut.data.shape[1]/self.n)
+        avgdata = numpy.zeros((dataOut.nChannels, times, dataOut.nHeights), dtype=numpy.complex)
         
+        id_min = 0
+        id_max = self.n
+        
+        for i in range(times):
+            junk = dataOut.data[:,id_min:id_max,:]
+            avgdata[:,i,:] = junk.sum(axis=1)
+            id_min += self.n
+            id_max += self.n 
+        
+        timeInterval = dataOut.ippSeconds*self.n
+        avgdatatime = (times - 1) * timeInterval + dataOut.utctime 
+        self.__dataReady = True
+        return avgdata, avgdatatime
+    
     def run(self, dataOut, **kwargs):
         
         if not self.isConfig:
             self.setup(**kwargs)
             self.isConfig = True
-                    
-        avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
+        
+        if self.byblock:
+            avgdata, avgdatatime = self.integrateByBlock(dataOut)
+        else:            
+            avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
         
 #        dataOut.timeInterval *= n
         dataOut.flagNoData = True
@@ -421,12 +454,17 @@ class Decoder(Operation):
     nCode = None 
     nBaud = None
     
+    
     def __init__(self):
         
         Operation.__init__(self)
+        
+        self.times = None
+        self.osamp = None
+        self.__setValues = False
 #         self.isConfig = False
         
-    def setup(self, code, shape):
+    def setup(self, code, shape, times, osamp):
         
         self.__profIndex = 0
         
@@ -435,17 +473,34 @@ class Decoder(Operation):
         self.nCode = len(code) 
         self.nBaud = len(code[0])
         
-        self.__nChannels, self.__nHeis = shape
+        if times != None:
+            self.times = times
         
-        __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
+        if ((osamp != None) and (osamp >1)):
+            self.osamp = osamp
+            self.code = numpy.repeat(code, repeats=self.osamp,axis=1)
+            self.nBaud = self.nBaud*self.osamp
         
-        __codeBuffer[:,0:self.nBaud] = self.code
+        if len(shape) == 2:
+            self.__nChannels, self.__nHeis = shape
+            
+            __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
+            
+            __codeBuffer[:,0:self.nBaud] = self.code
+            
+            self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
+            
+            self.ndatadec = self.__nHeis - self.nBaud + 1
+            
+            self.datadecTime = numpy.zeros((self.__nChannels, self.ndatadec), dtype=numpy.complex)
+        else:
+            self.__nChannels, self.__nProfiles, self.__nHeis = shape
+            
+            self.ndatadec = self.__nHeis - self.nBaud + 1
+            
+            self.datadecTime = numpy.zeros((self.__nChannels, self.__nProfiles, self.ndatadec), dtype=numpy.complex)
         
-        self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
-        
-        self.ndatadec = self.__nHeis - self.nBaud + 1
-        
-        self.datadecTime = numpy.zeros((self.__nChannels, self.ndatadec), dtype=numpy.complex)
+         
         
     def convolutionInFreq(self, data):
         
@@ -480,12 +535,30 @@ class Decoder(Operation):
         
         return self.datadecTime
     
-    def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0):
+    def convolutionByBlockInTime(self, data):
+        junk = numpy.lib.stride_tricks.as_strided(self.code, (self.times, self.code.size), (0, self.code.itemsize))
+        junk = junk.flatten()
+        code_block = numpy.reshape(junk, (self.nCode*self.times,self.nBaud))
+        
+        for i in range(self.__nChannels):
+            for j in range(self.__nProfiles):
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='valid')
+        
+        return self.datadecTime
+    
+    def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, times=None, osamp=None):
         
         if code == None:
             code = dataOut.code
         else:
             code = numpy.array(code).reshape(nCode,nBaud)
+            
+            
+        
+        if not self.isConfig:
+            
+            self.setup(code, dataOut.data.shape, times, osamp)
+            
             dataOut.code = code
             dataOut.nCode = nCode
             dataOut.nBaud = nBaud
@@ -493,10 +566,6 @@ class Decoder(Operation):
             dataOut.radarControllerHeaderObj.nCode = nCode
             dataOut.radarControllerHeaderObj.nBaud = nBaud
             
-        
-        if not self.isConfig:
-            
-            self.setup(code, dataOut.data.shape)
             self.isConfig = True
         
         if mode == 0:
@@ -507,6 +576,18 @@ class Decoder(Operation):
         
         if mode == 2:
             datadec = self.convolutionInFreqOpt(dataOut.data)
+            
+        if mode == 3:
+            datadec = self.convolutionByBlockInTime(dataOut.data)
+        
+        if not(self.__setValues):
+            dataOut.code = self.code
+            dataOut.nCode = self.nCode
+            dataOut.nBaud = self.nBaud
+            dataOut.radarControllerHeaderObj.code = self.code
+            dataOut.radarControllerHeaderObj.nCode = self.nCode
+            dataOut.radarControllerHeaderObj.nBaud = self.nBaud
+            self.__setValues = True
         
         dataOut.data = datadec
         
@@ -522,3 +603,149 @@ class Decoder(Operation):
         
         return 1
 #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+
+
+class ProfileConcat(Operation):
+    
+    isConfig = False
+    buffer = None
+    
+    def __init__(self):
+        
+        Operation.__init__(self)
+        self.profileIndex = 0
+    
+    def reset(self):
+        self.buffer = numpy.zeros_like(self.buffer)
+        self.start_index = 0
+        self.times = 1
+    
+    def setup(self, data, m, n=1):
+        self.buffer = numpy.zeros((data.shape[0],data.shape[1]*m),dtype=type(data[0,0]))
+        self.profiles = data.shape[1]
+        self.start_index = 0
+        self.times = 1
+    
+    def concat(self, data):
+        
+        self.buffer[:,self.start_index:self.profiles*self.times] = data.copy()
+        self.start_index = self.start_index + self.profiles 
+        
+    def run(self, dataOut, m):
+        
+        dataOut.flagNoData = True
+        
+        if not self.isConfig:
+            self.setup(dataOut.data, m, 1)
+            self.isConfig = True
+        
+        self.concat(dataOut.data)
+        self.times += 1
+        if self.times > m:
+            dataOut.data = self.buffer
+            self.reset()
+            dataOut.flagNoData = False
+            # se deben actualizar mas propiedades del header y del objeto dataOut, por ejemplo, las alturas
+            deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]  
+            xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * 5
+            dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight) 
+
+class ProfileSelector(Operation):
+    
+    profileIndex = None
+    # Tamanho total de los perfiles
+    nProfiles = None
+    
+    def __init__(self):
+        
+        Operation.__init__(self)
+        self.profileIndex = 0
+    
+    def incIndex(self):
+        self.profileIndex += 1
+        
+        if self.profileIndex >= self.nProfiles:
+            self.profileIndex = 0
+    
+    def isProfileInRange(self, minIndex, maxIndex):
+        
+        if self.profileIndex < minIndex:
+            return False
+        
+        if self.profileIndex > maxIndex:
+            return False
+        
+        return True
+    
+    def isProfileInList(self, profileList):
+        
+        if self.profileIndex not in profileList:
+            return False
+        
+        return True
+    
+    def run(self, dataOut, profileList=None, profileRangeList=None, beam=None, byblock=False):
+        
+        dataOut.flagNoData = True
+        self.nProfiles = dataOut.nProfiles
+        
+        if byblock:
+            
+            if profileList != None:
+                dataOut.data = dataOut.data[:,profileList,:]
+                pass
+            else:
+                pmin = profileRangeList[0]
+                pmax = profileRangeList[1]
+                dataOut.data = dataOut.data[:,pmin:pmax+1,:]
+            dataOut.flagNoData = False
+            self.profileIndex = 0
+            return 1
+        
+        if profileList != None:
+            if self.isProfileInList(profileList):
+                dataOut.flagNoData = False
+                
+            self.incIndex()
+            return 1
+
+        
+        elif profileRangeList != None:
+            minIndex = profileRangeList[0]
+            maxIndex = profileRangeList[1]
+            if self.isProfileInRange(minIndex, maxIndex):
+                dataOut.flagNoData = False
+                
+            self.incIndex()
+            return 1
+        elif beam != None: #beam is only for AMISR data
+            if self.isProfileInList(dataOut.beamRangeDict[beam]):
+                dataOut.flagNoData = False
+                
+            self.incIndex()
+            return 1
+        
+        else:
+            raise ValueError, "ProfileSelector needs profileList or profileRangeList"
+        
+        return 0    
+
+        
+        
+class Reshaper(Operation):
+    def __init__(self):
+        Operation.__init__(self)
+        self.updateNewHeights = False
+    
+    def run(self, dataOut, shape):
+        shape_tuple = tuple(shape)
+        dataOut.data = numpy.reshape(dataOut.data, shape_tuple)
+        dataOut.flagNoData = False
+        
+        if not(self.updateNewHeights):
+            old_nheights = dataOut.nHeights
+            new_nheights = dataOut.data.shape[2]
+            factor = new_nheights / old_nheights  
+            deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]  
+            xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * factor
+            dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight)

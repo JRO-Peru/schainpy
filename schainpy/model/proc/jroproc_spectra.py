@@ -14,6 +14,8 @@ class SpectraProc(ProcessingUnit):
         self.firstdatatime = None
         self.profIndex = 0
         self.dataOut = Spectra()
+        self.id_min = None
+        self.id_max = None
 
     def __updateObjFromInput(self):
         
@@ -103,12 +105,9 @@ class SpectraProc(ProcessingUnit):
             if nFFTPoints == None:
                 raise ValueError, "This SpectraProc.run() need nFFTPoints input variable"
             
-            nProfiles = nFFTPoints
-            
-#            if pairsList == None:
-#                nPairs = 0
-#            else:
-#                nPairs = len(pairsList)
+            if nProfiles == None:
+                raise ValueError, "This SpectraProc.run() need nProfiles input variable"
+
             
             if ippFactor == None:
                 ippFactor = 1
@@ -116,17 +115,32 @@ class SpectraProc(ProcessingUnit):
             
             self.dataOut.nFFTPoints = nFFTPoints
             self.dataOut.pairsList = pairsList
-#             self.dataOut.nPairs = nPairs
-            
+
             if self.buffer == None:
                 self.buffer = numpy.zeros((self.dataIn.nChannels,
                                            nProfiles,
                                            self.dataIn.nHeights), 
-                                           dtype='complex')
+                                        dtype='complex')
+                self.id_min = 0
+                self.id_max = self.dataIn.data.shape[1]
 
-            
-            self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
-            self.profIndex += 1
+            if len(self.dataIn.data.shape) == 2:           
+                self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
+                self.profIndex += 1
+            else:
+                if self.dataIn.data.shape[1] == nProfiles:
+                    self.buffer = self.dataIn.data.copy()
+                    self.profIndex = nProfiles
+                elif self.dataIn.data.shape[1] < nProfiles:
+                    self.buffer[:,self.id_min:self.id_max,:] = self.dataIn.data
+                    self.profIndex += self.dataIn.data.shape[1]
+                    self.id_min += self.dataIn.data.shape[1]
+                    self.id_max += self.dataIn.data.shape[1]
+                else:
+                    raise ValueError, "The type object %s has %d profiles, it should be equal to %d profiles"%(self.dataIn.type,self.dataIn.data.shape[1],nProfiles)
+                    self.dataOut.flagNoData = True
+                    return 0
+                    
             
             if self.firstdatatime == None:
                 self.firstdatatime = self.dataIn.utctime
@@ -911,115 +925,3 @@ class IncohInt(Operation):
             #dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
             dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False
-
-class ProfileConcat(Operation):
-    
-    isConfig = False
-    buffer = None
-    
-    def __init__(self):
-        
-        Operation.__init__(self)
-        self.profileIndex = 0
-    
-    def reset(self):
-        self.buffer = numpy.zeros_like(self.buffer)
-        self.start_index = 0
-        self.times = 1
-    
-    def setup(self, data, m, n=1):
-        self.buffer = numpy.zeros((data.shape[0],data.shape[1]*m),dtype=type(data[0,0]))
-        self.profiles = data.shape[1]
-        self.start_index = 0
-        self.times = 1
-    
-    def concat(self, data):
-        
-        self.buffer[:,self.start_index:self.profiles*self.times] = data.copy()
-        self.start_index = self.start_index + self.profiles 
-        
-    def run(self, dataOut, m):
-        
-        dataOut.flagNoData = True
-        
-        if not self.isConfig:
-            self.setup(dataOut.data, m, 1)
-            self.isConfig = True
-        
-        self.concat(dataOut.data)
-        self.times += 1
-        if self.times > m:
-            dataOut.data = self.buffer
-            self.reset()
-            dataOut.flagNoData = False
-            # se deben actualizar mas propiedades del header y del objeto dataOut, por ejemplo, las alturas
-            deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]  
-            xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * 5
-            dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight) 
-
-class ProfileSelector(Operation):
-    
-    profileIndex = None
-    # Tamanho total de los perfiles
-    nProfiles = None
-    
-    def __init__(self):
-        
-        Operation.__init__(self)
-        self.profileIndex = 0
-    
-    def incIndex(self):
-        self.profileIndex += 1
-        
-        if self.profileIndex >= self.nProfiles:
-            self.profileIndex = 0
-    
-    def isProfileInRange(self, minIndex, maxIndex):
-        
-        if self.profileIndex < minIndex:
-            return False
-        
-        if self.profileIndex > maxIndex:
-            return False
-        
-        return True
-    
-    def isProfileInList(self, profileList):
-        
-        if self.profileIndex not in profileList:
-            return False
-        
-        return True
-    
-    def run(self, dataOut, profileList=None, profileRangeList=None, beam=None):
-        
-        dataOut.flagNoData = True
-        self.nProfiles = dataOut.nProfiles
-
-        if profileList != None:
-            if self.isProfileInList(profileList):
-                dataOut.flagNoData = False
-                
-            self.incIndex()
-            return 1
-
-        
-        elif profileRangeList != None:
-            minIndex = profileRangeList[0]
-            maxIndex = profileRangeList[1]
-            if self.isProfileInRange(minIndex, maxIndex):
-                dataOut.flagNoData = False
-                
-            self.incIndex()
-            return 1
-        elif beam != None:
-            if self.isProfileInList(dataOut.beamRangeDict[beam]):
-                dataOut.flagNoData = False
-                
-            self.incIndex()
-            return 1
-        
-        else:
-            raise ValueError, "ProfileSelector needs profileList or profileRangeList"
-        
-        return 0    

@@ -344,6 +344,8 @@ class JRODataIO:
     
     blocksize = None
     
+    getblock = False
+    
     def __init__(self):
         
         raise ValueError, "Not implemented"
@@ -934,7 +936,8 @@ class JRODataReader(JRODataIO):
                 ext = None, 
                 online = False,
                 delay = 60,
-                walk = True):
+                walk = True,
+                getblock = False):
 
         if path == None:
             raise ValueError, "The path is not valid"
@@ -991,7 +994,7 @@ class JRODataReader(JRODataIO):
         self.delay = delay
         ext = ext.lower()
         self.ext = ext
-
+        self.getblock = getblock
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):
                 print "No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())

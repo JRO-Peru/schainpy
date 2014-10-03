@@ -309,13 +309,18 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.dataOut.flagNoData = True
             return 0
         
-        self.dataOut.data = self.datablock[:,self.profileIndex,:]
+        if self.getblock:
+            self.dataOut.data = self.datablock
+            self.profileIndex = self.processingHeaderObj.profilesPerBlock
+        else:
+            self.dataOut.data = self.datablock[:,self.profileIndex,:]
+            self.profileIndex += 1
         
         self.dataOut.flagNoData = False
         
         self.getBasicHeader()
         
-        self.profileIndex += 1
+        
         
         self.dataOut.realtime = self.online
         
