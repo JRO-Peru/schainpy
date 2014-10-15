@@ -114,7 +114,9 @@ class SpectraHeisScope(Figure):
         #x= x/(10000.0)
 #        y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
 #        y = y.real
-        datadB = 10.*numpy.log10(dataOut.data_spc)
+        factor = dataOut.normFactor
+        data = dataOut.data_spc / factor
+        datadB = 10.*numpy.log10(data)
         y = datadB
         
         #thisDatetime = dataOut.datatime

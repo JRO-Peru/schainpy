@@ -577,6 +577,17 @@ class SpectraHeis(Spectra):
         self.utctime = None
         
         self.blocksize = None
+    
+    def getNormFactor(self):
+        pwcode = 1
+        if self.flagDecodeData:
+            pwcode = numpy.sum(self.code[0]**2)
+        
+        normFactor = self.nIncohInt*self.nCohInt*pwcode
+        
+        return normFactor
+    
+    normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
 
 class Fits:
     
