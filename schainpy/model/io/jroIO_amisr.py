@@ -7,6 +7,7 @@ import sys
 import glob
 import fnmatch
 import datetime
+import time
 import re
 import h5py
 import numpy
@@ -32,16 +33,21 @@ class RadacHeader():
         self.npulses = self.pulseCount.shape[1] #nprofile
         self.nsamples = self.nsamplesPulse[0,0] #ngates
         self.nbeams = self.beamCode.shape[1]
-
+        
     
     def getIndexRangeToPulse(self, idrecord=0):
-        indexToZero = numpy.where(self.pulseCount.value[idrecord,:]==0)
-        startPulseCountId = indexToZero[0][0]
-        endPulseCountId = startPulseCountId - 1
-        range1 = numpy.arange(startPulseCountId,self.npulses,1)
-        range2 = numpy.arange(0,startPulseCountId,1)
-        return range1, range2
+        #indexToZero = numpy.where(self.pulseCount.value[idrecord,:]==0)
+        #startPulseCountId = indexToZero[0][0]
+        #endPulseCountId = startPulseCountId - 1
+        #range1 = numpy.arange(startPulseCountId,self.npulses,1)
+        #range2 = numpy.arange(0,startPulseCountId,1)
+        #return range1, range2
     
+        looking_zeros_index = numpy.where(self.pulseCount.value[idrecord,:]==0)[0]
+        getLastIndexZero = looking_zeros_index[-1]
+        index_data = numpy.arange(0,getLastIndexZero,1)
+        index_buffer = numpy.arange(getLastIndexZero,self.npulses,1)
+        return index_data, index_buffer
     
 class AMISRReader(ProcessingUnit):
     
@@ -75,8 +81,8 @@ class AMISRReader(ProcessingUnit):
         self.range = None
         self.idrecord_count = 0
         self.profileIndex = 0
-        self.idpulse_range1 = None 
-        self.idpulse_range2 = None
+        self.index_amisr_sample = None 
+        self.index_amisr_buffer = None
         self.beamCodeByFrame = None
         self.radacTimeByFrame = None
         #atributos originales tal y como esta en el archivo de datos
@@ -101,6 +107,15 @@ class AMISRReader(ProcessingUnit):
         self.__firstFile = True
         self.buffer_radactime = None
         
+        self.index4_schain_datablock = None
+        self.index4_buffer = None
+        self.schain_datablock = None
+        self.buffer = None
+        self.linear_pulseCount = None
+        self.npulseByFrame = None
+        self.profileIndex_offset = None
+        self.timezone = 'ut'
+                
     def __createObjByDefault(self):
         
         dataObj = AMISR()
@@ -251,6 +266,20 @@ class AMISRReader(ProcessingUnit):
         self.radacHeaderObj.npulses = self.npulsesint_fromfile
         self.radacHeaderObj.nsamples = self.ngates_fromfile
         
+        #looking index list for data
+        start_index = self.radacHeaderObj.pulseCount[0,:][0]
+        end_index = self.radacHeaderObj.npulses
+        range4data = range(start_index, end_index)
+        self.index4_schain_datablock = numpy.array(range4data)
+        
+        buffer_start_index = 0
+        buffer_end_index = self.radacHeaderObj.pulseCount[0,:][0]
+        range4buffer = range(buffer_start_index, buffer_end_index)
+        self.index4_buffer = numpy.array(range4buffer)
+        
+        self.linear_pulseCount = numpy.array(range4data + range4buffer)
+        self.npulseByFrame = max(self.radacHeaderObj.pulseCount[0,:]+1)
+
         #get tuning frequency
         frequency_h5file_dataset = self.amisrFilePointer.get('Rx'+'/TuningFrequency')
         self.frequency_h5file = frequency_h5file_dataset[0,0]
@@ -317,7 +346,7 @@ class AMISRReader(ProcessingUnit):
         self.dataByFrame = self.__setDataByFrame()
         self.beamCodeByFrame = self.amisrFilePointer.get('Raw11/Data/RadacHeader/BeamCode').value[0, :]        
         self.readRanges()
-        self.idpulse_range1, self.idpulse_range2 = self.radacHeaderObj.getIndexRangeToPulse(0)
+        self.index_amisr_sample, self.index_amisr_buffer = self.radacHeaderObj.getIndexRangeToPulse(0)
         self.radacTimeByFrame = numpy.zeros(self.radacHeaderObj.npulses)
         self.buffer_radactime = numpy.zeros_like(self.radacTimeByFrame)
         
@@ -344,8 +373,10 @@ class AMISRReader(ProcessingUnit):
                     endDate=None, 
                     startTime=datetime.time(0,0,0), 
                     endTime=datetime.time(23,59,59),
-                    walk=True):
+                    walk=True,
+                    timezone='ut',):
         
+        self.timezone = timezone
         #Busqueda de archivos offline
         self.__searchFilesOffline(path, startDate, endDate, startTime, endTime, walk)
         
@@ -359,6 +390,11 @@ class AMISRReader(ProcessingUnit):
         self.fileIndex = -1
         
         self.__setNextFile()
+        
+        first_beamcode = self.radacHeaderObj.beamCodeByPulse[0,0]
+        index = numpy.where(self.radacHeaderObj.beamCodeByPulse[0,:]!=first_beamcode)[0][0]
+        self.profileIndex_offset = self.radacHeaderObj.pulseCount[0,:][index]
+        self.profileIndex = self.profileIndex_offset
     
     def readRanges(self):
         dataset = self.amisrFilePointer.get('Raw11/Data/Samples/Range')
@@ -412,34 +448,23 @@ class AMISRReader(ProcessingUnit):
             self.flagIsNewFile = 0
         
         if idrecord == 0:
-            #if self.buffer_last_record == None:
-            selectorById = self.radacHeaderObj.pulseCount[0,self.idpulse_range2]
-            
-            self.dataByFrame[selectorById,:,:] = self.dataset[0, self.idpulse_range2,:,:]
-        
-            self.radacTimeByFrame[selectorById] = self.radacHeaderObj.radacTime[0, self.idpulse_range2]
-            
-            selectorById = self.radacHeaderObj.pulseCount[0,self.idpulse_range1]
-            
-            self.radacTimeByFrame[selectorById] = self.buffer_radactime[selectorById]
-            
+            self.dataByFrame[self.index4_schain_datablock, : ,:] = self.dataset[0, self.index_amisr_sample,:,:]
+            self.radacTimeByFrame[self.index4_schain_datablock] = self.radacHeaderObj.radacTime[0, self.index_amisr_sample]
             datablock = self.__setDataBlock()
+            
+            self.buffer = self.dataset[0, self.index_amisr_buffer,:,:]
+            self.buffer_radactime = self.radacHeaderObj.radacTime[0, self.index_amisr_buffer]
             
             return datablock
                 
-        selectorById = self.radacHeaderObj.pulseCount[idrecord-1,self.idpulse_range1]
-        self.dataByFrame[selectorById,:,:] = self.dataset[idrecord-1, self.idpulse_range1, :, :]
-        self.radacTimeByFrame[selectorById] = self.radacHeaderObj.radacTime[idrecord-1, self.idpulse_range1]
+        self.dataByFrame[self.index4_buffer,:,:] = self.buffer.copy()
+        self.radacTimeByFrame[self.index4_buffer] = self.buffer_radactime.copy()
+        self.dataByFrame[self.index4_schain_datablock,:,:] = self.dataset[idrecord, self.index_amisr_sample,:,:]
+        self.radacTimeByFrame[self.index4_schain_datablock] = self.radacHeaderObj.radacTime[idrecord, self.index_amisr_sample]
+        datablock = self.__setDataBlock()
         
-        selectorById = self.radacHeaderObj.pulseCount[idrecord,self.idpulse_range2]#data incompleta ultimo archivo de carpeta, verifica el record real segun la dimension del arreglo de datos
-        self.dataByFrame[selectorById,:,:] = self.dataset[idrecord, self.idpulse_range2, :, :]
-        self.radacTimeByFrame[selectorById] = self.radacHeaderObj.radacTime[idrecord, self.idpulse_range2]
-        
-        datablock = self.__setDataBlock()        
-        
-        selectorById = self.radacHeaderObj.pulseCount[idrecord,self.idpulse_range1]
-        self.dataByFrame[selectorById,:,:] = self.dataset[idrecord, self.idpulse_range1, :, :]
-        self.buffer_radactime[selectorById] = self.radacHeaderObj.radacTime[idrecord, self.idpulse_range1]
+        self.buffer = self.dataset[idrecord, self.index_amisr_buffer, :, :]
+        self.buffer_radactime = self.radacHeaderObj.radacTime[idrecord, self.index_amisr_buffer]
         
         return datablock
         
@@ -500,13 +525,19 @@ class AMISRReader(ProcessingUnit):
         self.dataOut.ippSeconds = self.ippSeconds_fromfile
         self.dataOut.timeInterval = self.dataOut.ippSeconds * self.dataOut.nCohInt
         self.dataOut.frequency = self.frequency_h5file
+        self.dataOut.npulseByFrame = self.npulseByFrame
         self.dataOut.nBaud = None
         self.dataOut.nCode = None
         self.dataOut.code = None
         
         self.dataOut.beamCodeDict = self.beamCodeDict
         self.dataOut.beamRangeDict = self.beamRangeDict
-    
+        
+        if self.timezone == 'lt':
+            self.dataOut.timeZone = time.timezone / 60. #get the timezone in minutes
+        else: 
+            self.dataOut.timeZone = 0 #by default time is UTC
+            
     def getData(self):
         
         if self.flagNoMoreFiles:

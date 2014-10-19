@@ -2,7 +2,7 @@ import os
 import numpy
 import time, datetime
 import mpldriver
-from customftp import *
+
 
 import Queue
 import threading

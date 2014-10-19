@@ -18,19 +18,24 @@ class AMISRProc(ProcessingUnit):
 
 class PrintInfo(Operation):
     def __init__(self):
-        pass
+        self.__isPrinted = False
     
     def run(self, dataOut):
         
-        print 'Number of Records by File: %d'%dataOut.nRecords
-        print 'Number of Pulses: %d'%dataOut.nProfiles
-        print 'Number of Samples by Pulse: %d'%len(dataOut.heightList)
-        print 'Ipp Seconds: %f'%dataOut.ippSeconds
-        print 'Number of Beams: %d'%dataOut.nBeams
-        print 'BeamCodes:'
-        beamStrList = ['Beam %d -> Code %d'%(k,v) for k,v in dataOut.beamCodeDict.items()]
-        for b in beamStrList:
-            print b
+        if not self.__isPrinted:
+            print 'Number of Records by File: %d'%dataOut.nRecords
+            print 'Number of Pulses: %d'%dataOut.nProfiles
+            print 'Number of Pulses by Frame: %d'%dataOut.npulseByFrame
+            print 'Number of Samples by Pulse: %d'%len(dataOut.heightList)
+            print 'Ipp Seconds: %f'%dataOut.ippSeconds
+            print 'Number of Beams: %d'%dataOut.nBeams
+            print 'BeamCodes:'
+            beamStrList = ['Beam %d -> Code %d'%(k,v) for k,v in dataOut.beamCodeDict.items()]
+            for b in beamStrList:
+                print b
+            self.__isPrinted = True
+        
+        return
         
         
 class BeamSelector(Operation):
