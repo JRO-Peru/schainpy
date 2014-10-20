@@ -189,6 +189,10 @@ class JROData(GenericData):
     
     blocknow = None
 
+    azimuth = None
+    
+    zenith = None
+    
     def __init__(self):
         
         raise ValueError, "This class has not been implemented"

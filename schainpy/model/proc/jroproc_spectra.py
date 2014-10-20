@@ -50,6 +50,9 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.frequency = self.dataIn.frequency
         self.dataOut.realtime = self.dataIn.realtime
         
+        self.dataOut.azimuth = self.dataIn.azimuth
+        self.dataOut.zenith = self.dataIn.zenith
+        
     def __getFft(self):
         """
         Convierte valores de Voltaje a Spectra

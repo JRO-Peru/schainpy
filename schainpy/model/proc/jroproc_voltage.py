@@ -41,6 +41,9 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
         self.dataOut.frequency = self.dataIn.frequency
+        
+        self.dataOut.azimuth = self.dataIn.azimuth
+        self.dataOut.zenith = self.dataIn.zenith
 #        
 #        pass#
 #

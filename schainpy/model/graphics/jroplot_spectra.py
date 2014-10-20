@@ -131,6 +131,9 @@ class SpectraPlot(Figure):
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
         title = wintitle + " Spectra" 
+        if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+            title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
+        
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
@@ -185,7 +188,10 @@ class SpectraPlot(Figure):
         if figfile == None:
             str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
             figfile = self.getFilename(name = str_datetime)
-        
+            name = str_datetime
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith) 
+            figfile = self.getFilename(name)
         if figpath != '':
             self.counter_imagwr += 1
             if (self.counter_imagwr>=wr_period):
@@ -563,6 +569,8 @@ class RTIPlot(Figure):
         
         for i in range(self.nplots):
             title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
             axes = self.axesList[i*self.__nsubplots]
             zdB = avgdB[i].reshape((1,-1))
             axes.pcolorbuffer(x, y, zdB,

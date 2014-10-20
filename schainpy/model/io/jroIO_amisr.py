@@ -173,7 +173,37 @@ class AMISRReader(ProcessingUnit):
             return None
     
     def __getTimeFromData(self):
-        pass
+        startDateTime_Reader = datetime.datetime.combine(self.startDate,self.startTime)
+        endDateTime_Reader = datetime.datetime.combine(self.endDate,self.endTime)
+
+        print 'Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader)
+        print '........................................'
+        filter_filenameList = []
+        for filename in self.filenameList:
+            fp = h5py.File(filename,'r')
+            time_str = fp.get('Time/RadacTimeString')
+            
+            startDateTimeStr_File = time_str[0][0].split('.')[0]
+            junk = time.strptime(startDateTimeStr_File, '%Y-%m-%d %H:%M:%S')
+            startDateTime_File = datetime.datetime(junk.tm_year,junk.tm_mon,junk.tm_mday,junk.tm_hour, junk.tm_min, junk.tm_sec)
+            
+            endDateTimeStr_File = time_str[-1][-1].split('.')[0]
+            junk = time.strptime(endDateTimeStr_File, '%Y-%m-%d %H:%M:%S')
+            endDateTime_File = datetime.datetime(junk.tm_year,junk.tm_mon,junk.tm_mday,junk.tm_hour, junk.tm_min, junk.tm_sec)
+            
+            fp.close()
+            
+            if self.timezone == 'lt':
+                startDateTime_File = startDateTime_File - datetime.timedelta(minutes = 300)
+                endDateTime_File = endDateTime_File - datetime.timedelta(minutes = 300)
+
+            if (endDateTime_File>=startDateTime_Reader and endDateTime_File<endDateTime_Reader):
+                #self.filenameList.remove(filename)
+                filter_filenameList.append(filename)
+        
+        filter_filenameList.sort()
+        self.filenameList = filter_filenameList
+        return 1
     
     def __filterByGlob1(self, dirName):
         filter_files = glob.glob1(dirName, '*.*%s'%self.extension_file)
@@ -200,7 +230,11 @@ class AMISRReader(ProcessingUnit):
         fileListInKeys = [self.__filterByGlob1(x) for x in dirList]
         
         self.__getFilenameList(fileListInKeys, dirList)
-        
+        #filtro por tiempo
+        if not(self.all):
+            self.__getTimeFromData()
+
+
         if len(self.filenameList)>0:
             self.status = 1
             self.filenameList.sort()
@@ -290,16 +324,22 @@ class AMISRReader(ProcessingUnit):
         self.beamCodeDict = {}
         self.beamRangeDict = {}
         
+        beamCodeMap = self.amisrFilePointer.get('Setup/BeamcodeMap')
+        
         for i in range(len(self.radacHeaderObj.beamCode[0,:])):
             self.beamCodeDict.setdefault(i)
             self.beamRangeDict.setdefault(i)
-            self.beamCodeDict[i] = self.radacHeaderObj.beamCode[0,i]
+            beamcodeValue = self.radacHeaderObj.beamCode[0,i]
+            beamcodeIndex = numpy.where(beamCodeMap[:,0] == beamcodeValue)[0][0]
+            x = beamCodeMap[beamcodeIndex][1]
+            y = beamCodeMap[beamcodeIndex][2]
+            z = beamCodeMap[beamcodeIndex][3]
+            self.beamCodeDict[i] = [beamcodeValue, x, y, z]
             
-        
         just4record0 = self.radacHeaderObj.beamCodeByPulse[0,:]
         
         for i in range(len(self.beamCodeDict.values())):
-            xx = numpy.where(just4record0==self.beamCodeDict.values()[i])
+            xx = numpy.where(just4record0==self.beamCodeDict.values()[i][0])
             self.beamRangeDict[i] = xx[0]
     
     def __getExpParameters(self):
@@ -332,6 +372,7 @@ class AMISRReader(ProcessingUnit):
         
         tufileFinder = fnmatch.filter(lines, 'tufile=*')
         tufile = tufileFinder[0].split('=')[1].split('\n')[0]
+        tufile = tufile.split('\r')[0]
         tufilename = os.path.join(experimentCfgPath,tufile)
         
         f = open(tufilename)
@@ -374,9 +415,11 @@ class AMISRReader(ProcessingUnit):
                     startTime=datetime.time(0,0,0), 
                     endTime=datetime.time(23,59,59),
                     walk=True,
-                    timezone='ut',):
+                    timezone='ut',
+                    all=0,):
         
         self.timezone = timezone
+        self.all = all
         #Busqueda de archivos offline
         self.__searchFilesOffline(path, startDate, endDate, startTime, endTime, walk)
         

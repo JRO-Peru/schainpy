@@ -30,7 +30,7 @@ class PrintInfo(Operation):
             print 'Ipp Seconds: %f'%dataOut.ippSeconds
             print 'Number of Beams: %d'%dataOut.nBeams
             print 'BeamCodes:'
-            beamStrList = ['Beam %d -> Code %d'%(k,v) for k,v in dataOut.beamCodeDict.items()]
+            beamStrList = ['Beam %d -> Code=%d, azimuth=%2.2f,  zenith=%2.2f, gain=%2.2f'%(k,v[0],v[1],v[2],v[3]) for k,v in dataOut.beamCodeDict.items()]
             for b in beamStrList:
                 print b
             self.__isPrinted = True
@@ -76,6 +76,10 @@ class BeamSelector(Operation):
 
         if beam != None:
             if self.isProfileInList(dataOut.beamRangeDict[beam]):
+                beamInfo = dataOut.beamCodeDict[beam]
+                dataOut.azimuth = beamInfo[1]
+                dataOut.zenith = beamInfo[2]
+                dataOut.gain = beamInfo[3]
                 dataOut.flagNoData = False
                 
             self.incIndex()

@@ -44,7 +44,11 @@ class AMISR:
         #consideracion para los Beams
         self.beamCodeDict = None
         self.beamRangeDict = None
-        
+        self.beamcode = None
+        self.azimuth = None
+        self.zenith = None
+        self.gain = None
+    
         self.npulseByFrame = None
         
     def copy(self, inputObj=None):
