@@ -89,6 +89,12 @@ def hildebrand_sekhon(data, navg):
     stdv = numpy.sqrt((sumq - lnoise**2)/(j - 1))
     return lnoise   
 
+class Beam:
+    def __init__(self):
+        self.codeList = []
+        self.azimuthList = []
+        self.zenithList = [] 
+
 class GenericData(object):
     
     flagNoData = True
@@ -192,6 +198,8 @@ class JROData(GenericData):
     azimuth = None
     
     zenith = None
+    
+    beam = Beam()
     
     def __init__(self):
         
@@ -734,7 +742,5 @@ class Fits:
     channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
     noise = property(getNoise, "I'm the 'nHeights' property.")
     datatime = property(getDatatime, "I'm the 'datatime' property")
-    ltctime = property(getltctime, "I'm the 'ltctime' property")
-
     ltctime = property(getltctime, "I'm the 'ltctime' property")
     

@@ -1,7 +1,7 @@
 '''
 @author: Daniel Suarez
 '''
-
+import numpy
 from jroproc_base import ProcessingUnit, Operation
 from model.data.jroamisr import AMISR
 
@@ -88,4 +88,43 @@ class BeamSelector(Operation):
         else:
             raise ValueError, "BeamSelector needs beam value"
         
-        return 0              
+        return 0
+
+class ProfileToChannels(Operation):
+
+    def __init__(self):
+        self.__isConfig = False
+        self.__counter_chan = 0
+        self.buffer = None
+
+    
+    def run(self, dataOut):
+        
+        dataOut.flagNoData = True
+        
+        if not(self.__isConfig):
+            nchannels = len(dataOut.beamRangeDict.keys())
+            nsamples = dataOut.nHeights
+            self.buffer = numpy.zeros((nchannels, nsamples), dtype = 'complex128')
+            self.__isConfig = True
+        
+        for i in range(self.buffer.shape[0]):
+            if dataOut.profileIndex in dataOut.beamRangeDict[i]:
+                self.buffer[i,:] = dataOut.data
+                if len(dataOut.beam.codeList) < self.buffer.shape[0]:
+                    beamInfo = dataOut.beamCodeDict[i]
+                    dataOut.beam.codeList.append(beamInfo[0])
+                    dataOut.beam.azimuthList.append(beamInfo[1])
+                    dataOut.beam.zenithList.append(beamInfo[2])
+                break
+            
+        self.__counter_chan += 1
+          
+        if self.__counter_chan >= self.buffer.shape[0]:
+            self.__counter_chan = 0
+            dataOut.data = self.buffer.copy()
+            dataOut.channelList = range(self.buffer.shape[0])
+            self.__isConfig = False
+            dataOut.flagNoData = False
+        pass
+              

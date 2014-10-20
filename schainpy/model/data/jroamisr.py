@@ -1,5 +1,12 @@
 import numpy
 
+class Beam:
+    def __init__(self):
+        self.codeList = []
+        self.azimuthList = []
+        self.zenithList = [] 
+
+
 class AMISR:
     def __init__(self):
         self.flagNoData = True
@@ -51,6 +58,10 @@ class AMISR:
     
         self.npulseByFrame = None
         
+        self.profileIndex = None
+        
+        self.beam = Beam()
+        
     def copy(self, inputObj=None):
         
         if inputObj == None:
@@ -58,8 +69,14 @@ class AMISR:
 
         for key in inputObj.__dict__.keys():
             self.__dict__[key] = inputObj.__dict__[key]
+    
+    def getNHeights(self):
+
+        return len(self.heightList)
 
         
     def isEmpty(self):
         
         return self.flagNoData
+    
+    nHeights = property(getNHeights, "I'm the 'nHeights' property.")

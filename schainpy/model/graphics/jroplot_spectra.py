@@ -166,6 +166,9 @@ class SpectraPlot(Figure):
         for i in range(self.nplots):
             str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
             title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[i]+1, noisedB[i], str_datetime)
+            if len(dataOut.beam.codeList) != 0:
+                title = "Ch%d:%4.2fdB,%2.2f,%2.2f:%s" %(dataOut.channelList[i]+1, noisedB[i], dataOut.beam.azimuthList[i], dataOut.beam.zenithList[i], str_datetime)
+
             axes = self.axesList[i*self.__nsubplots]
             axes.pcolor(x, y, zdB[i,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,

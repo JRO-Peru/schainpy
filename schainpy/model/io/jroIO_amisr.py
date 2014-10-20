@@ -600,7 +600,7 @@ class AMISRReader(ProcessingUnit):
         self.dataOut.data = numpy.reshape(self.datablock[self.profileIndex,:],(1,-1))
         
         self.dataOut.utctime = self.radacTimeByFrame[self.profileIndex]
-        
+        self.dataOut.profileIndex = self.profileIndex
         self.dataOut.flagNoData = False
         
         self.profileIndex += 1

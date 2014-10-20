@@ -77,7 +77,7 @@ def printLabels(ax, xlabel, ylabel, title):
     
     ax.set_xlabel(xlabel, size=11)
     ax.set_ylabel(ylabel, size=11)
-    ax.set_title(title, size=12)
+    ax.set_title(title, size=8)
     
 def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='',
                 ticksize=9, xtick_visible=True, ytick_visible=True,
