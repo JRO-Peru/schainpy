@@ -244,8 +244,8 @@ class RTIfromSpectraHeis(Figure):
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        
-        data = dataOut.data_spc
+        factor = dataOut.normFactor
+        data = dataOut.data_spc / factor
         data = numpy.average(data,axis=1)
         datadB = 10*numpy.log10(data)
         
