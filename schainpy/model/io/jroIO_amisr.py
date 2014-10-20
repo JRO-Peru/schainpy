@@ -179,7 +179,8 @@ class AMISRReader(ProcessingUnit):
         print 'Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader)
         print '........................................'
         filter_filenameList = []
-        for filename in self.filenameList:
+        for i in range(len(self.filenameList)-1):
+            filename = self.filenameList[i]
             fp = h5py.File(filename,'r')
             time_str = fp.get('Time/RadacTimeString')
             
