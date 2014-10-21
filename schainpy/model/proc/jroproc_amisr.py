@@ -45,6 +45,7 @@ class BeamSelector(Operation):
     def __init__(self):
         
         self.profileIndex = 0
+        self.__isConfig = False
     
     def incIndex(self):
         self.profileIndex += 1
@@ -72,7 +73,12 @@ class BeamSelector(Operation):
     def run(self, dataOut, beam=None):
         
         dataOut.flagNoData = True
-        self.nProfiles = dataOut.nProfiles
+        
+        if not(self.__isConfig):
+            
+            self.nProfiles = dataOut.nProfiles
+            self.profileIndex = dataOut.profileIndex
+            self.__isConfig = True
 
         if beam != None:
             if self.isProfileInList(dataOut.beamRangeDict[beam]):

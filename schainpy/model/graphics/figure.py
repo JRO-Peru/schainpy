@@ -72,17 +72,22 @@ class Figure:
     
     def getTimeLim(self, x, xmin=None, xmax=None, timerange=None):
         
-        if self.xmin != None and self.xmax != None:
+        if xmin != None and xmax != None:
             if timerange == None:
-                timerange = self.xmax - self.xmin
-            xmin = self.xmin + timerange
-            xmax = self.xmax + timerange
+                timerange = xmax - xmin
+            xmin = xmin + timerange
+            xmax = xmax + timerange
             
             return xmin, xmax
         
         
-        if timerange != None and self.xmin == None and self.xmax == None:
+        if timerange != None and xmin == None and xmax == None:
             txmin = x[0] - x[0]%timerange
+        else:
+            txmin = numpy.min(x)
+            timerange = 60*60*2
+        
+        if xmin == None and xmax == None:
             thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
             thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
             xmin = (thisdatetime - thisdate).seconds/(60*60.)
@@ -90,7 +95,7 @@ class Figure:
             
         
         if timerange == None:
-            txmin = numpy.min(x)
+            
             thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
             thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         

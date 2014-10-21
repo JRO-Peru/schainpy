@@ -179,6 +179,7 @@ class AMISRReader(ProcessingUnit):
         print 'Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader)
         print '........................................'
         filter_filenameList = []
+        self.filenameList.sort()
         for i in range(len(self.filenameList)-1):
             filename = self.filenameList[i]
             fp = h5py.File(filename,'r')
@@ -341,7 +342,8 @@ class AMISRReader(ProcessingUnit):
         
         for i in range(len(self.beamCodeDict.values())):
             xx = numpy.where(just4record0==self.beamCodeDict.values()[i][0])
-            self.beamRangeDict[i] = xx[0]
+            indexPulseByBeam = self.linear_pulseCount[xx[0]]
+            self.beamRangeDict[i] = indexPulseByBeam
     
     def __getExpParameters(self):
         if not(self.status):
@@ -435,16 +437,16 @@ class AMISRReader(ProcessingUnit):
         
         self.__setNextFile()
         
-        first_beamcode = self.radacHeaderObj.beamCodeByPulse[0,0]
-        index = numpy.where(self.radacHeaderObj.beamCodeByPulse[0,:]!=first_beamcode)[0][0]
-        self.profileIndex_offset = self.radacHeaderObj.pulseCount[0,:][index]
+#         first_beamcode = self.radacHeaderObj.beamCodeByPulse[0,0]
+#         index = numpy.where(self.radacHeaderObj.beamCodeByPulse[0,:]!=first_beamcode)[0][0]
+        self.profileIndex_offset = self.radacHeaderObj.pulseCount[0,:][0]
         self.profileIndex = self.profileIndex_offset
     
     def readRanges(self):
         dataset = self.amisrFilePointer.get('Raw11/Data/Samples/Range')
-        #self.rangeFromFile = dataset.value
+        
         self.rangeFromFile = numpy.reshape(dataset.value,(-1))
-        return range
+        return self.rangeFromFile
     
     
     def readRadacTime(self,idrecord, range1, range2):
