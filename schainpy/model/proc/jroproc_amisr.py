@@ -103,6 +103,12 @@ class ProfileToChannels(Operation):
         self.__counter_chan = 0
         self.buffer = None
 
+    def isProfileInList(self, profileList):
+        
+        if self.profileIndex not in profileList:
+            return False
+        
+        return True
     
     def run(self, dataOut):
         
@@ -112,18 +118,17 @@ class ProfileToChannels(Operation):
             nchannels = len(dataOut.beamRangeDict.keys())
             nsamples = dataOut.nHeights
             self.buffer = numpy.zeros((nchannels, nsamples), dtype = 'complex128')
+            dataOut.beam.codeList = [dataOut.beamCodeDict[x][0] for x in range(nchannels)]
+            dataOut.beam.azimuthList = [dataOut.beamCodeDict[x][1] for x in range(nchannels)]
+            dataOut.beam.zenithList = [dataOut.beamCodeDict[x][2] for x in range(nchannels)]
             self.__isConfig = True
         
         for i in range(self.buffer.shape[0]):
             if dataOut.profileIndex in dataOut.beamRangeDict[i]:
                 self.buffer[i,:] = dataOut.data
-                if len(dataOut.beam.codeList) < self.buffer.shape[0]:
-                    beamInfo = dataOut.beamCodeDict[i]
-                    dataOut.beam.codeList.append(beamInfo[0])
-                    dataOut.beam.azimuthList.append(beamInfo[1])
-                    dataOut.beam.zenithList.append(beamInfo[2])
                 break
-            
+        
+        
         self.__counter_chan += 1
           
         if self.__counter_chan >= self.buffer.shape[0]:
