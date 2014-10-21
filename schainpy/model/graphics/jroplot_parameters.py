@@ -452,6 +452,7 @@ class WindProfilerPlot(Figure):
         tmax = None
  
         x = dataOut.getTimeRange1()
+#         y = dataOut.heightRange
         y = dataOut.heightRange
             
         z = dataOut.winds

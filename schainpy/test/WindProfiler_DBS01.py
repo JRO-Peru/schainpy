@@ -111,7 +111,7 @@ opObj21.addParameter(name='zmax', value='90', format='int')
      
 opObj22 = procUnitConfObj2.addOperation(name='WindProfiler', optype='other')
 opObj22.addParameter(name='technique', value='DBS', format='str')
-opObj22.addParameter(name='azimuth', value='51.06', format='float')
+opObj22.addParameter(name='correctAzimuth', value='51.06', format='float')
 opObj22.addParameter(name='correctFactor', value='-1', format='float') 
 opObj22.addParameter(name='dirCosx', value='0.041016, 0, -0.054688', format='floatlist') 
 opObj22.addParameter(name='dirCosy', value='-0.041016, 0.025391, -0.023438', format='floatlist')

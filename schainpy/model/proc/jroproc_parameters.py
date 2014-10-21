@@ -1127,6 +1127,19 @@ class WindProfiler(Operation):
     def __init__(self):    
         Operation.__init__(self)
     
+    def __calculateCosDir(self, elev, azim):
+        zen = (90 - elev)*numpy.pi/180
+        azim = azim*numpy.pi/180
+        cosDirX = numpy.sqrt((1-numpy.cos(zen)**2)/((1+numpy.tan(azim)**2))) 
+        cosDirY = numpy.sqrt(1-numpy.cos(zen)**2-cosDirX**2)
+        
+        signX = numpy.sign(numpy.cos(azim))
+        signY = numpy.sign(numpy.sin(azim))
+        
+        cosDirX = numpy.copysign(cosDirX, signX)
+        cosDirY = numpy.copysign(cosDirY, signY)
+        return cosDirX, cosDirY
+    
     def __calculateAngles(self, theta_x, theta_y, azimuth):
    
         dir_cosw = numpy.sqrt(1-theta_x**2-theta_y**2)
@@ -1423,9 +1436,14 @@ class WindProfiler(Operation):
         
         if technique == 'DBS':
             
-            theta_x = numpy.array(kwargs['dirCosx'])
-            theta_y = numpy.array(kwargs['dirCosy'])
-            azimuth = kwargs['azimuth']    
+            if kwargs.has_key('dirCosx') and kwargs.has_key('dirCosy'):
+                theta_x = numpy.array(kwargs['dirCosx'])
+                theta_y = numpy.array(kwargs['dirCosy'])
+            else:
+                elev = numpy.array(kwargs['elevation'])
+                azim = numpy.array(kwargs['azimuth'])
+                theta_x, theta_y = self.__calculateCosDir(elev, azim)
+            azimuth = kwargs['correctAzimuth']    
             if kwargs.has_key('horizontalOnly'):
                 horizontalOnly = kwargs['horizontalOnly']
             else:   horizontalOnly = False
