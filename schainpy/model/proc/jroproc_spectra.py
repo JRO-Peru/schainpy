@@ -1,4 +1,5 @@
 import numpy
+import math
 
 from jroproc_base import ProcessingUnit, Operation
 from model.data.jrodata import Spectra

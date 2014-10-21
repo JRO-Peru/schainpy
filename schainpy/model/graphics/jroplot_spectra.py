@@ -121,7 +121,7 @@ class SpectraPlot(Figure):
         z = dataOut.data_spc[channelIndexList,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
-        avg = numpy.nanmean(z, axis=1)
+        #avg = numpy.nanmean(z, axis=1)
         noise = dataOut.noise/factor
         
         zdB = 10*numpy.log10(z)

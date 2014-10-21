@@ -52,14 +52,15 @@ def setTitle(fig, title):
     
     fig.suptitle(title)
 
-def createAxes(fig, nrow, ncol, xpos, ypos, colspan, rowspan):
+def createAxes(fig, nrow, ncol, xpos, ypos, colspan, rowspan, polar=False):
     
     matplotlib.pyplot.ioff()
     matplotlib.pyplot.figure(fig.number)
     axes = matplotlib.pyplot.subplot2grid((nrow, ncol),
                                         (xpos, ypos),
                                         colspan=colspan,
-                                        rowspan=rowspan)
+                                        rowspan=rowspan,
+                                        polar=polar)
     
     matplotlib.pyplot.ion()
     return axes
@@ -374,6 +375,49 @@ def pmultilineyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
     for i in range(len(ax.lines)):
         line = ax.lines[i]
         line.set_data(x,y[i,:])
+
+def createPolar(ax, x, y,
+                xlabel='', ylabel='', title='', ticksize = 9,
+                 colormap='jet',cblabel='', cbsize="5%",
+                 XAxisAsTime=False):
+    
+    matplotlib.pyplot.ioff()
+    
+    ax.plot(x,y,'bo', markersize=5)
+#     ax.set_rmax(90)
+    ax.set_ylim(0,90)
+    ax.set_yticks(numpy.arange(0,90,20))
+    ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center' ,size='11')
+#     ax.text(100, 100, 'example', ha='left', va='center', rotation='vertical')
+    printLabels(ax, xlabel, '', title)
+    iplot = ax.lines[-1]
+    
+    if '0.' in matplotlib.__version__[0:2]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
+    if '1.0.' in matplotlib.__version__[0:4]:
+        print "The matplotlib version has to be updated to 1.1 or newer"
+        return iplot
+    
+#     if grid != None:
+#         ax.grid(b=True, which='major', axis=grid)
+    
+    matplotlib.pyplot.tight_layout()
+    
+    matplotlib.pyplot.ion()
+    
+        
+    return iplot
+
+def polar(iplot, x, y, xlabel='', ylabel='', title=''):
+    
+    ax = iplot.get_axes()
+    
+#     ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center',size='11')
+    printLabels(ax, xlabel, '', title)
+    
+    set_linedata(ax, x, y, idline=0)
     
 def draw(fig):
     

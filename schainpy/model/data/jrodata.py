@@ -743,4 +743,225 @@ class Fits:
     noise = property(getNoise, "I'm the 'nHeights' property.")
     datatime = property(getDatatime, "I'm the 'datatime' property")
     ltctime = property(getltctime, "I'm the 'ltctime' property")
+
+class Correlation(JROData):
     
+    noise = None
+    
+    SNR = None
+    
+    pairsAutoCorr = None    #Pairs of Autocorrelation
+    
+    #--------------------------------------------------
+    
+    data_corr = None
+    
+    data_volt = None
+    
+    lagT = None # each element value is a profileIndex
+    
+    lagR = None # each element value is in km
+    
+    pairsList = None
+    
+    calculateVelocity = None
+    
+    nPoints = None
+    
+    nAvg = None
+    
+    bufferSize = None
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        self.radarControllerHeaderObj = RadarControllerHeader()
+        
+        self.systemHeaderObj = SystemHeader()
+        
+        self.type = "Correlation"
+        
+        self.data = None
+        
+        self.dtype = None
+        
+        self.nProfiles = None
+        
+        self.heightList = None
+        
+        self.channelList = None
+        
+        self.flagNoData = True
+        
+        self.flagTimeBlock = False
+        
+        self.utctime = None
+        
+        self.timeZone = None
+        
+        self.dstFlag = None
+        
+        self.errorCount = None
+        
+        self.blocksize = None
+        
+        self.flagDecodeData = False #asumo q la data no esta decodificada
+        
+        self.flagDeflipData = False #asumo q la data no esta sin flip
+        
+        self.pairsList = None
+        
+        self.nPoints = None
+    
+    def getLagTRange(self, extrapoints=0):
+        
+        lagTRange = self.lagT
+        diff = lagTRange[1] - lagTRange[0]
+        extra = numpy.arange(1,extrapoints + 1)*diff + lagTRange[-1]
+        lagTRange = numpy.hstack((lagTRange, extra))
+        
+        return lagTRange
+    
+    def getLagRRange(self, extrapoints=0):
+        
+        return self.lagR
+    
+    def getPairsList(self):
+         
+        return self.pairsList
+     
+    def getCalculateVelocity(self):
+         
+        return self.calculateVelocity
+     
+    def getNPoints(self):
+         
+        return self.nPoints
+     
+    def getNAvg(self):
+         
+        return self.nAvg
+     
+    def getBufferSize(self):
+         
+        return self.bufferSize
+    
+    def getPairsAutoCorr(self):
+        pairsList = self.pairsList        
+        pairsAutoCorr = numpy.zeros(self.nChannels, dtype = 'int')*numpy.nan
+            
+        for l in range(len(pairsList)):    
+            firstChannel = pairsList[l][0]
+            secondChannel = pairsList[l][1]
+                
+            #Obteniendo pares de Autocorrelacion     
+            if firstChannel == secondChannel:
+                pairsAutoCorr[firstChannel] = int(l)
+             
+        pairsAutoCorr = pairsAutoCorr.astype(int)
+    
+        return pairsAutoCorr
+    
+    def getNoise(self, mode = 2):
+        
+        indR = numpy.where(self.lagR == 0)[0][0]
+        indT = numpy.where(self.lagT == 0)[0][0]
+        
+        jspectra0 = self.data_corr[:,:,indR,:]
+        jspectra = copy.copy(jspectra0)
+        
+        num_chan = jspectra.shape[0]
+        num_hei = jspectra.shape[2]
+             
+        freq_dc = jspectra.shape[1]/2
+        ind_vel = numpy.array([-2,-1,1,2]) + freq_dc 
+        
+        if ind_vel[0]<0:
+            ind_vel[range(0,1)] = ind_vel[range(0,1)] + self.num_prof
+        
+        if mode == 1:         
+            jspectra[:,freq_dc,:] = (jspectra[:,ind_vel[1],:] + jspectra[:,ind_vel[2],:])/2 #CORRECCION
+        
+        if mode == 2:
+            
+            vel = numpy.array([-2,-1,1,2])
+            xx = numpy.zeros([4,4])
+                
+            for fil in range(4):
+                xx[fil,:] = vel[fil]**numpy.asarray(range(4))
+                    
+            xx_inv = numpy.linalg.inv(xx)
+            xx_aux = xx_inv[0,:]
+                   
+            for ich in range(num_chan):
+                yy = jspectra[ich,ind_vel,:]
+                jspectra[ich,freq_dc,:] = numpy.dot(xx_aux,yy)
+
+                junkid = jspectra[ich,freq_dc,:]<=0
+                cjunkid = sum(junkid)
+            
+                if cjunkid.any():
+                    jspectra[ich,freq_dc,junkid.nonzero()] = (jspectra[ich,ind_vel[1],junkid] + jspectra[ich,ind_vel[2],junkid])/2
+ 
+        noise = jspectra0[:,freq_dc,:] - jspectra[:,freq_dc,:]
+        
+        return noise
+    
+#     pairsList = property(getPairsList, "I'm the 'pairsList' property.")
+#     nPoints = property(getNPoints, "I'm the 'nPoints' property.")
+    calculateVelocity = property(getCalculateVelocity, "I'm the 'calculateVelocity' property.")
+    nAvg = property(getNAvg, "I'm the 'nAvg' property.")
+    bufferSize = property(getBufferSize, "I'm the 'bufferSize' property.")
+    
+    
+class Parameters(JROData):
+
+    inputUnit = None        #Type of data to be processed
+    
+    operation = None        #Type of operation to parametrize
+    
+    data_param = None       #Parameters obtained
+    
+    data_pre = None         #Data Pre Parametrization
+    
+    heightRange = None      #Heights
+    
+    abscissaRange = None    #Abscissa, can be velocities, lags or time
+    
+    noise = None            #Noise Potency
+    
+    SNR = None              #Signal to Noise Ratio
+    
+    pairsList = None        #List of Pairs for Cross correlations or Cross spectrum
+    
+    initUtcTime = None      #Initial UTC time
+    
+    paramInterval = None    #Time interval to calculate Parameters in seconds
+    
+    windsInterval = None     #Time interval to calculate Winds in seconds
+    
+    normFactor = None       #Normalization Factor
+    
+    winds = None            #Wind estimations
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        self.radarControllerHeaderObj = RadarControllerHeader()
+    
+        self.systemHeaderObj = SystemHeader()
+        
+        self.type = "Parameters"
+        
+    def getTimeRange1(self):
+        
+        datatime = []
+        
+        datatime.append(self.initUtcTime)
+        datatime.append(self.initUtcTime + self.windsInterval - 1)
+        
+        datatime = numpy.array(datatime)
+        
+        return datatime

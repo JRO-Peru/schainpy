@@ -572,6 +572,23 @@ class Axes:
                                 ylabel=ylabel,
                                 title=title,
                                 colormap=colormap)
+    
+    def polar(self, x, y,
+               title='', xlabel='',ylabel='',**kwargs):
+        
+        if self.__firsttime:
+            self.plot = self.__driver.createPolar(self.ax, x, y, title = title, xlabel = xlabel, ylabel = ylabel)
+            self.__firsttime = False
+            self.x_buffer = x
+            self.y_buffer = y
+            return
+        
+        self.x_buffer = numpy.hstack((self.x_buffer,x))
+        self.y_buffer = numpy.hstack((self.y_buffer,y))
+        self.__driver.polar(self.plot, self.x_buffer, self.y_buffer, xlabel=xlabel,
+                                            ylabel=ylabel,
+                                            title=title)
+    
     def __fillGaps(self, x_buffer, y_buffer, z_buffer):
         
         deltas = x_buffer[1:] - x_buffer[0:-1]
