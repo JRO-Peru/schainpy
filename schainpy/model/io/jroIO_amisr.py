@@ -42,11 +42,12 @@ class RadacHeader():
         #range1 = numpy.arange(startPulseCountId,self.npulses,1)
         #range2 = numpy.arange(0,startPulseCountId,1)
         #return range1, range2
-    
-        looking_zeros_index = numpy.where(self.pulseCount.value[idrecord,:]==0)[0]
-        getLastIndexZero = looking_zeros_index[-1]
-        index_data = numpy.arange(0,getLastIndexZero,1)
-        index_buffer = numpy.arange(getLastIndexZero,self.npulses,1)
+        zero = 0
+        npulse = max(self.pulseCount[0,:]+1)-1
+        looking_index = numpy.where(self.pulseCount.value[idrecord,:]==npulse)[0]
+        getLastIndex = looking_index[-1]
+        index_data = numpy.arange(0,getLastIndex+1,1)
+        index_buffer = numpy.arange(getLastIndex+1,self.npulses,1)
         return index_data, index_buffer
     
 class AMISRReader(ProcessingUnit):
@@ -115,14 +116,17 @@ class AMISRReader(ProcessingUnit):
         self.npulseByFrame = None
         self.profileIndex_offset = None
         self.timezone = 'ut'
-                
+        
+        self.__waitForNewFile = 20
+        self.__filename_online = None 
+        
     def __createObjByDefault(self):
         
         dataObj = AMISR()
         
         return dataObj
     
-    def __setParameters(self,path,startDate,endDate,startTime,endTime,walk):
+    def __setParameters(self,path='', startDate='',endDate='',startTime='', endTime='', walk=''):
         self.path = path
         self.startDate = startDate
         self.endDate = endDate
@@ -151,7 +155,7 @@ class AMISRReader(ProcessingUnit):
         except:
             return None
     
-    def __findDataForDates(self):
+    def __findDataForDates(self,online=False):
         
         
         
@@ -162,8 +166,9 @@ class AMISRReader(ProcessingUnit):
         dirnameList = [re.search(pat,x) for x in os.listdir(self.path)]
         dirnameList = filter(lambda x:x!=None,dirnameList)
         dirnameList = [x.string for x in dirnameList]
-        dirnameList = [self.__selDates(x) for x in dirnameList]
-        dirnameList = filter(lambda x:x!=None,dirnameList)
+        if not(online):
+            dirnameList = [self.__selDates(x) for x in dirnameList]
+            dirnameList = filter(lambda x:x!=None,dirnameList)
         if len(dirnameList)>0:
             self.status = 1
             self.dirnameList = dirnameList
@@ -222,7 +227,7 @@ class AMISRReader(ProcessingUnit):
                 self.filenameList.append(filename)
     
     
-    def __selectDataForTimes(self):
+    def __selectDataForTimes(self, online=False):
         #aun no esta implementado el filtro for tiempo
         if not(self.status):
             return None
@@ -232,17 +237,41 @@ class AMISRReader(ProcessingUnit):
         fileListInKeys = [self.__filterByGlob1(x) for x in dirList]
         
         self.__getFilenameList(fileListInKeys, dirList)
-        #filtro por tiempo
-        if not(self.all):
-            self.__getTimeFromData()
+        if not(online):
+            #filtro por tiempo
+            if not(self.all):
+                self.__getTimeFromData()
 
-
-        if len(self.filenameList)>0:
-            self.status = 1
-            self.filenameList.sort()
+            if len(self.filenameList)>0:
+                self.status = 1
+                self.filenameList.sort()
+            else:
+                self.status = 0
+                return None
+            return 1
         else:
-            self.status = 0
-            return None
+            #get the last file - 1
+            self.filenameList = [self.filenameList[-2]]
+            return 1
+        
+    def __searchFilesOnline(self,
+                            path,
+                            walk=True):
+        
+        startDate = datetime.datetime.utcnow().date()
+        endDate = datetime.datetime.utcnow().date()
+        
+        self.__setParameters(path=path, startDate=startDate, endDate=endDate, walk=walk)
+        
+        self.__checkPath()
+        
+        self.__findDataForDates(online=True)
+        
+        self.dirnameList = [self.dirnameList[-1]]
+        
+        self.__selectDataForTimes(online=True)
+        
+        return
         
     
     def __searchFilesOffline(self,
@@ -291,6 +320,27 @@ class AMISRReader(ProcessingUnit):
         print "Setting the file: %s"%self.filename
 
         return 1
+    
+    
+    def __setNextFileOnline(self):
+        filename = self.filenameList[0]
+        if self.__filename_online != None:
+            self.__selectDataForTimes(online=True)
+            filename = self.filenameList[0]
+            while self.__filename_online == filename:
+                print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
+                time.sleep(self.__waitForNewFile)
+                self.__selectDataForTimes(online=True)
+                filename = self.filenameList[0]
+        
+        self.__filename_online = filename
+        
+        self.amisrFilePointer = h5py.File(filename,'r')
+        self.flagIsNewFile = 1
+        self.filename = filename
+        print "Setting the file: %s"%self.filename
+        return 1
+    
     
     def __readHeader(self):
         self.radacHeaderObj = RadacHeader(self.amisrFilePointer)
@@ -392,12 +442,16 @@ class AMISRReader(ProcessingUnit):
         self.readRanges()
         self.index_amisr_sample, self.index_amisr_buffer = self.radacHeaderObj.getIndexRangeToPulse(0)
         self.radacTimeByFrame = numpy.zeros(self.radacHeaderObj.npulses)
-        self.buffer_radactime = numpy.zeros_like(self.radacTimeByFrame)
+        if len(self.index_amisr_buffer) > 0:
+            self.buffer_radactime = numpy.zeros_like(self.radacTimeByFrame)
         
     
-    def __setNextFile(self):
+    def __setNextFile(self,online=False):
         
-        newFile = self.__setNextFileOffline()
+        if not(online):
+            newFile = self.__setNextFileOffline()
+        else:
+            newFile = self.__setNextFileOnline() 
         
         if not(newFile):
             return 0
@@ -419,12 +473,17 @@ class AMISRReader(ProcessingUnit):
                     endTime=datetime.time(23,59,59),
                     walk=True,
                     timezone='ut',
-                    all=0,):
+                    all=0,
+                    online=False):
         
         self.timezone = timezone
         self.all = all
-        #Busqueda de archivos offline
-        self.__searchFilesOffline(path, startDate, endDate, startTime, endTime, walk)
+        self.online = online
+        if not(online):
+            #Busqueda de archivos offline
+            self.__searchFilesOffline(path, startDate, endDate, startTime, endTime, walk)
+        else:
+            self.__searchFilesOnline(path, walk)
         
         if not(self.filenameList):
             print "There is no files into the folder: %s"%(path)
@@ -435,7 +494,7 @@ class AMISRReader(ProcessingUnit):
 
         self.fileIndex = -1
         
-        self.__setNextFile()
+        self.__setNextFile(online)
         
 #         first_beamcode = self.radacHeaderObj.beamCodeByPulse[0,0]
 #         index = numpy.where(self.radacHeaderObj.beamCodeByPulse[0,:]!=first_beamcode)[0][0]
@@ -497,20 +556,20 @@ class AMISRReader(ProcessingUnit):
             self.dataByFrame[self.index4_schain_datablock, : ,:] = self.dataset[0, self.index_amisr_sample,:,:]
             self.radacTimeByFrame[self.index4_schain_datablock] = self.radacHeaderObj.radacTime[0, self.index_amisr_sample]
             datablock = self.__setDataBlock()
-            
-            self.buffer = self.dataset[0, self.index_amisr_buffer,:,:]
-            self.buffer_radactime = self.radacHeaderObj.radacTime[0, self.index_amisr_buffer]
+            if len(self.index_amisr_buffer) > 0:
+                self.buffer = self.dataset[0, self.index_amisr_buffer,:,:]
+                self.buffer_radactime = self.radacHeaderObj.radacTime[0, self.index_amisr_buffer]
             
             return datablock
-                
-        self.dataByFrame[self.index4_buffer,:,:] = self.buffer.copy()
-        self.radacTimeByFrame[self.index4_buffer] = self.buffer_radactime.copy()
+        if len(self.index_amisr_buffer) > 0:
+            self.dataByFrame[self.index4_buffer,:,:] = self.buffer.copy()
+            self.radacTimeByFrame[self.index4_buffer] = self.buffer_radactime.copy()
         self.dataByFrame[self.index4_schain_datablock,:,:] = self.dataset[idrecord, self.index_amisr_sample,:,:]
         self.radacTimeByFrame[self.index4_schain_datablock] = self.radacHeaderObj.radacTime[idrecord, self.index_amisr_sample]
         datablock = self.__setDataBlock()
-        
-        self.buffer = self.dataset[idrecord, self.index_amisr_buffer, :, :]
-        self.buffer_radactime = self.radacHeaderObj.radacTime[idrecord, self.index_amisr_buffer]
+        if len(self.index_amisr_buffer) > 0:
+            self.buffer = self.dataset[idrecord, self.index_amisr_buffer, :, :]
+            self.buffer_radactime = self.radacHeaderObj.radacTime[idrecord, self.index_amisr_buffer]    
         
         return datablock
         
@@ -550,7 +609,7 @@ class AMISRReader(ProcessingUnit):
         self.readDataBlock()
         
         if self.flagIsNewFile:
-            self.__setNextFile()
+            self.__setNextFile(self.online)
         pass
     
     def __hasNotDataInBuffer(self):
