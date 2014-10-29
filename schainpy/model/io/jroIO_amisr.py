@@ -248,11 +248,19 @@ class AMISRReader(ProcessingUnit):
             else:
                 self.status = 0
                 return None
-            return 1
+            
         else:
             #get the last file - 1
             self.filenameList = [self.filenameList[-2]]
-            return 1
+        
+        new_dirnameList = []
+        for dirname in self.dirnameList:
+            junk = numpy.array([dirname in x for x in self.filenameList])
+            junk_sum = junk.sum()
+            if junk_sum > 0:
+                new_dirnameList.append(dirname)
+        self.dirnameList = new_dirnameList
+        return 1
         
     def __searchFilesOnline(self,
                             path,
