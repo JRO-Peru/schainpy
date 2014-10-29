@@ -406,7 +406,7 @@ class CrossSpectraPlot(Figure):
 
 class RTIPlot(Figure):
     
-    isConfig = None
+    __isConfig = None
     __nsubplots = None
     
     WIDTHPROF = None
@@ -416,7 +416,7 @@ class RTIPlot(Figure):
     def __init__(self):
         
         self.timerange = 2*60*60
-        self.isConfig = False
+        self.__isConfig = False
         self.__nsubplots = 1
         
         self.WIDTH = 800
@@ -533,7 +533,7 @@ class RTIPlot(Figure):
         xlabel = ""
         ylabel = "Range (Km)"
         
-        if not self.isConfig:
+        if not self.__isConfig:
             
             nplots = len(channelIndexList)
             
@@ -562,7 +562,7 @@ class RTIPlot(Figure):
             self.PLOT_POS = plot_pos
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.isConfig = True
+            self.__isConfig = True
             self.figfile = figfile
         
         self.setWinTitle(title)
@@ -589,12 +589,7 @@ class RTIPlot(Figure):
                         ytick_visible=False,
                         grid='x')
             
-        self.draw()
-        
-        if x[1] >= self.axesList[0].xmax:
-            self.counter_imagwr = wr_period
-            self.__isConfig = False
-        
+        self.draw()      
         
         if self.figfile == None:
             str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
@@ -612,7 +607,11 @@ class RTIPlot(Figure):
                 self.saveFigure(figpath, ftp_filename)
                 
                 self.counter_imagwr = 0
-
+        
+        if x[1] >= self.axesList[0].xmax:
+            self.counter_imagwr = wr_period
+            self.__isConfig = False
+            self.figfile = None
 
 class CoherenceMap(Figure):
     isConfig = None

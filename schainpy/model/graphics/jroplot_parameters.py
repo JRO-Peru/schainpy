@@ -360,7 +360,7 @@ class WindProfilerPlot(Figure):
     def __init__(self):
          
         self.timerange = 2*60*60
-        self.isConfig = False
+        self.__isConfig = False
         self.__nsubplots = 1
         
         self.WIDTH = 800
@@ -483,9 +483,7 @@ class WindProfilerPlot(Figure):
         ylabel = "Range (Km)"
          
         if not self.__isConfig:
-             
-             
-             
+            
             self.setup(id=id,
                        nplots=nplots,
                        wintitle=wintitle,
@@ -554,18 +552,13 @@ class WindProfilerPlot(Figure):
                         ticksize=9, cblabel='', cbsize="1%", colormap="jet")
                            
         self.draw()
-         
-        if x[1] >= self.axesList[0].xmax:
-            self.counter_imagwr = wr_period
-            self.__isConfig = False
-         
-         
+        
         if self.figfile == None:
             str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.figfile = self.getFilename(name = str_datetime)
-         
+        
         if figpath != '':
-             
+            
             self.counter_imagwr += 1
             if (self.counter_imagwr>=wr_period):
                 # store png plot to local folder
@@ -574,7 +567,10 @@ class WindProfilerPlot(Figure):
                 name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
                 ftp_filename = os.path.join(figpath, name)
                 self.saveFigure(figpath, ftp_filename)
-                 
+                
                 self.counter_imagwr = 0
                  
-           
+        if x[1] >= self.axesList[0].xmax:
+            self.counter_imagwr = wr_period
+            self.__isConfig = False
+            self.figfile = None
