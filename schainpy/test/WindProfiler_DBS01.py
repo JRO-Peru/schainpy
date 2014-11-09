@@ -28,8 +28,8 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 #2014051    20 Feb 2014
 path = '/home/soporte/Data/MST/DBS/d2014051'
 pathFigure = '/home/soporte/workspace/Graficos/DBS/prueba1/'
-xmin = '0.0'
-xmax = '8.0'
+xmin = '0'
+xmax = '7.5'
 startTime = '00:00:00'
 filehdf5 = "DBS_2014051.hdf5"
 
@@ -108,6 +108,17 @@ opObj21.addParameter(name='save', value='1', format='bool')
 opObj21.addParameter(name='figpath', value=pathFigure, format='str')
 opObj21.addParameter(name='zmin', value='5', format='int')
 opObj21.addParameter(name='zmax', value='90', format='int')
+
+opObj21 = procUnitConfObj2.addOperation(name='RadialVelocityPlot', optype='other')
+opObj21.addParameter(name='id', value='5', format='int')
+opObj21.addParameter(name='wintitle', value='Radial Velocity Plot', format='str')
+opObj21.addParameter(name='save', value='1', format='bool')
+opObj21.addParameter(name='figpath', value=pathFigure, format='str')
+opObj21.addParameter(name='SNRmin', value='-10', format='int')
+opObj21.addParameter(name='SNRmax', value='60', format='int')
+opObj21.addParameter(name='SNRthresh', value='0', format='float')
+opObj21.addParameter(name='xmin', value=xmin, format='float')
+opObj21.addParameter(name='xmax', value=xmax, format='float')
      
 opObj22 = procUnitConfObj2.addOperation(name='WindProfiler', optype='other')
 opObj22.addParameter(name='technique', value='DBS', format='str')

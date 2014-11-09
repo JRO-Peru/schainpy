@@ -19,20 +19,20 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 #Experimentos
 
 #2014050    19 Feb 2014
-# path = '/home/soporte/Documents/MST_Data/SA/d2014050'
-#  pathFigure = '/home/soporte/workspace/Graficos/SA/d2014050_prueba/'
-# xmin = '15.5'
-# xmax = '23.99999999'
-# startTime = '15:30:00'
-# filehdf5 = "SA_2014050.hdf5"
+path = '/home/soporte/Data/MST/SA/d2014050'
+pathFigure = '/home/soporte/workspace/Graficos/SA/new1/'
+xmin = '15.5'
+xmax = '24'
+startTime = '15:30:00'
+filehdf5 = "SA_2014050.hdf5"
 
 #2014051    20 Feb 2014
-path = '/home/soporte/Data/MST/SA/d2014051'
-pathFigure = '/home/soporte/workspace/Graficos/SA/prueba1/'
-xmin = '0.0'
-xmax = '8.0'
-startTime = '06:00:00'
-filehdf5 = "SA_2014051.hdf5"
+# path = '/home/soporte/Data/MST/SA/d2014051'
+# pathFigure = '/home/soporte/workspace/Graficos/SA/new/'
+# xmin = '0.0'
+# xmax = '8.0'
+# startTime = '00:00:00'
+# filehdf5 = "SA_2014051.hdf5"
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
@@ -63,7 +63,7 @@ opObj11.addParameter(name='maxIndex', value='60', format='float')
 #---------------------------------------------------------------------------------------------------
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='CorrelationProc', inputId=procUnitConfObj0.getId())
 # procUnitConfObj1.addParameter(name='pairsList', value='(0,0),(1,1),(2,2),(3,3),(1,0),(2,3)', format='pairsList')
-procUnitConfObj1.addParameter(name='pairsList', value='(0,0),(1,1),(2,2),(3,3),(0,3),(0,2),(1,3),(1,2)', format='pairsList')
+procUnitConfObj1.addParameter(name='pairsList', value='(0,0),(1,1),(2,2),(3,3),(0,3),(0,2),(1,3),(1,2),(0,1),(2,3)', format='pairsList')
 procUnitConfObj1.addParameter(name='fullT', value='1', format='bool')
 procUnitConfObj1.addParameter(name='removeDC', value='1', format='bool')
 #procUnitConfObj1.addParameter(name='lagT', value='0,1,2,3', format='intlist')
@@ -98,7 +98,7 @@ opObj21.addParameter(name='technique', value='SA', format='str')
 opObj21.addParameter(name='positionX', value='36,0,36,0', format='floatlist')
 opObj21.addParameter(name='positionY', value='36,0,0,36', format='floatlist')
 opObj21.addParameter(name='azimuth', value='51.06', format='float')
-opObj21.addParameter(name='crosspairsList', value='(0,3),(0,2),(1,3),(1,2)', format='pairsList')#COrregir
+opObj21.addParameter(name='crosspairsList', value='(0,3),(0,2),(1,3),(1,2),(0,1),(2,3)', format='pairsList')#COrregir
 # 
 opObj22 = procUnitConfObj2.addOperation(name='WindProfilerPlot', optype='other')
 opObj22.addParameter(name='id', value='4', format='int')

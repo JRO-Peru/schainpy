@@ -455,7 +455,7 @@ class WindProfilerPlot(Figure):
 #         y = dataOut.heightRange
         y = dataOut.heightRange
             
-        z = dataOut.winds
+        z = dataOut.winds.copy()
         nplots = z.shape[0]    #Number of wind dimensions estimated
         nplotsw = nplots
          
@@ -570,6 +570,223 @@ class WindProfilerPlot(Figure):
                 
                 self.counter_imagwr = 0
                  
+        if x[1] >= self.axesList[0].xmax:
+            self.counter_imagwr = wr_period
+            self.__isConfig = False
+            self.figfile = None
+            
+            
+class RadialVelocityPlot(Figure):
+    
+    __isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'rti'
+    
+    def __init__(self):
+        
+        self.timerange = 2*60*60
+        self.__isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 800
+        self.HEIGHT = 150
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.counter_imagwr = 0
+        
+        self.PLOT_CODE = 0
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        self.tmin = None 
+        self.tmax = None
+        
+        self.xmin = None
+        self.xmax = None
+        
+        self.figfile = None
+        
+    def getSubplots(self):
+        
+        ncol = 1
+        nrow = self.nplots
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
+               
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+            
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+                
+                if counter >= self.nplots:
+                    break
+                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+                
+                if showprofile:
+                    self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
+                    
+                counter += 1
+    
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,timerange=None, 
+            SNRmin = None, SNRmax = None, SNRthresh = None, paramIndex = None,
+            save=False, figpath='', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+        
+        """
+        
+        Input:
+            dataOut         :
+            id        :
+            wintitle        :
+            channelList     :
+            showProfile     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+            zmin            :    None,
+            zmax            :    None
+        """
+        
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+        
+        if timerange != None:
+            self.timerange = timerange
+        
+        #tmin = None
+        #tmax = None
+        if paramIndex == None:
+            paramIndex = 1
+        x = dataOut.getTimeRange1()
+        y = dataOut.heightRange
+        z = dataOut.data_param[channelIndexList,paramIndex,:].copy()
+        
+        zRange = dataOut.abscissaRange
+        nplots = z.shape[0]    #Number of wind dimensions estimated
+        nplotsw = nplots
+        
+        if dataOut.SNR != None:
+            nplots += 1
+            SNR = dataOut.SNR
+            SNRavg = numpy.average(SNR, axis=0)
+             
+            SNRdB = 10*numpy.log10(SNR)
+            SNRavgdB = 10*numpy.log10(SNRavg)
+             
+            if SNRthresh == None: SNRthresh = -5.0
+            ind = numpy.where(SNRavg < 10**(SNRthresh/10))[0]
+         
+            for i in range(nplotsw):
+                z[i,ind] = numpy.nan
+#        thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Radial Velocity" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = ""
+        ylabel = "Height (Km)"
+        
+        if not self.__isConfig:
+           
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile,
+                       show=show)
+            
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
+            
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            if zmin == None: zmin = numpy.nanmin(zRange)
+            if zmax == None: zmax = numpy.nanmax(zRange)
+            if dataOut.SNR != None:
+                if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
+                if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.__isConfig = True
+            self.figfile = figfile
+        
+        self.setWinTitle(title)
+        
+        if ((self.xmax - x[1]) < (x[1]-x[0])):
+            x[1] = self.xmax
+        
+        for i in range(nplotsw):
+            title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
+            axes = self.axesList[i*self.__nsubplots]
+            z1 = z[i,:].reshape((1,-1))
+            axes.pcolorbuffer(x, y, z1,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap="RdBu_r",
+                        ticksize=9, cblabel='', cbsize="1%")
+            
+        if dataOut.SNR != None:
+            i += 1              
+            title = "Signal Noise Ratio (SNR): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            axes = self.axesList[i*self.__nsubplots]
+             
+            SNRavgdB = SNRavgdB.reshape((1,-1))                
+             
+            axes.pcolorbuffer(x, y, SNRavgdB,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                        ticksize=9, cblabel='', cbsize="1%", colormap="jet")
+            
+        self.draw()      
+        
+        if self.figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
+            
+            self.counter_imagwr += 1
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
+                self.saveFigure(figpath, self.figfile)
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)
+                
+                self.counter_imagwr = 0
+        
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False

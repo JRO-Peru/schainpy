@@ -91,6 +91,7 @@ class ParametersProc(ProcessingUnit):
                 self.buffer = None
                 self.firstdatatime = None
                 self.profIndex = 0
+                return
         
         #----------------------    Spectra Data    ---------------------------
         
@@ -99,11 +100,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.abscissaRange = self.dataIn.getVelRange(1)
             self.dataOut.noise = self.dataIn.getNoise()
             self.dataOut.normFactor = self.dataIn.normFactor
-            
-            self.__updateObjFromInput()
-            self.dataOut.flagNoData = False
-            self.firstdatatime = None
-            
+                        
         #----------------------    Correlation Data    ---------------------------
         
         if self.dataIn.type == "Correlation":
@@ -117,9 +114,12 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.SNR = self.dataIn.SNR
             self.dataOut.pairsList = self.dataIn.pairsList
             
-            self.__updateObjFromInput()
-            self.dataOut.flagNoData = False
-            self.firstdatatime = None
+            
+        self.__updateObjFromInput()
+        self.dataOut.flagNoData = False
+        self.firstdatatime = None
+        self.dataOut.initUtcTime = self.dataIn.ltctime
+        self.dataOut.windsInterval = self.dataIn.timeInterval
             
     #-------------------    Get Moments    ----------------------------------
     def GetMoments(self, channelList = None):
@@ -143,12 +143,14 @@ class ParametersProc(ProcessingUnit):
         
         data_param = numpy.zeros((data.shape[0], 4, data.shape[2]))
         
-        if channelList== None:  channelList = self.dataOut.channelList
+        if channelList== None:  
+            channelList = self.dataIn.channelList
+        self.dataOut.channelList = channelList
         
         for ind in channelList:
             data_param[ind,:,:] = self.__calculateMoments(data[ind,:,:], absc, noise[ind])
-     
-        self.dataOut.data_param = data_param[:,1:]
+        
+        self.dataOut.data_param = data_param[:,1:,:]
         self.dataOut.SNR = data_param[:,0]
         return
     
@@ -1461,8 +1463,6 @@ class WindProfiler(Operation):
             
             velRadial0 = param[:,1,:] #Radial velocity
             dataOut.winds, dataOut.heightRange, dataOut.SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightRange, SNR) #DBS Function
-            dataOut.initUtcTime = dataOut.ltctime
-            dataOut.windsInterval = dataOut.timeInterval
             
         elif technique == 'SA':
         
