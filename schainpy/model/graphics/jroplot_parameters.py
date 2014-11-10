@@ -576,14 +576,14 @@ class WindProfilerPlot(Figure):
             self.figfile = None
             
             
-class RadialVelocityPlot(Figure):
+class ParametersPlot(Figure):
     
     __isConfig = None
     __nsubplots = None
     
     WIDTHPROF = None
     HEIGHTPROF = None
-    PREFIX = 'rti'
+    PREFIX = 'prm'
     
     def __init__(self):
         
@@ -649,7 +649,8 @@ class RadialVelocityPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,timerange=None, 
-            SNRmin = None, SNRmax = None, SNRthresh = None, paramIndex = None,
+            SNRmin = None, SNRmax = None, SNRthresh = None, paramIndex = None, onlyPositive = False,
+            zlabel = "", parameterName = "",
             save=False, figpath='', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
@@ -692,26 +693,16 @@ class RadialVelocityPlot(Figure):
         
         zRange = dataOut.abscissaRange
         nplots = z.shape[0]    #Number of wind dimensions estimated
-        nplotsw = nplots
-        
-        if dataOut.SNR != None:
-            nplots += 1
-            SNR = dataOut.SNR
-            SNRavg = numpy.average(SNR, axis=0)
-             
-            SNRdB = 10*numpy.log10(SNR)
-            SNRavgdB = 10*numpy.log10(SNRavg)
-             
-            if SNRthresh == None: SNRthresh = -5.0
-            ind = numpy.where(SNRavg < 10**(SNRthresh/10))[0]
-         
-            for i in range(nplotsw):
-                z[i,ind] = numpy.nan
 #        thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
-        title = wintitle + " Radial Velocity" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = wintitle + " Parameters Plot" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
-        ylabel = "Height (Km)"
+        ylabel = "Range (Km)"
+        
+        if onlyPositive:
+            colormap = "jet"
+            zmin = 0 
+        else: colormap = "RdBu_r"
         
         if not self.__isConfig:
            
@@ -727,6 +718,7 @@ class RadialVelocityPlot(Figure):
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = numpy.nanmin(zRange)
             if zmax == None: zmax = numpy.nanmax(zRange)
+                           
             if dataOut.SNR != None:
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
@@ -745,29 +737,18 @@ class RadialVelocityPlot(Figure):
         if ((self.xmax - x[1]) < (x[1]-x[0])):
             x[1] = self.xmax
         
-        for i in range(nplotsw):
-            title = "Channel %d: %s" %(dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+        for i in range(nplots):
+            title = "%s Channel %d: %s" %(parameterName, dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            
             if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
                 title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
             axes = self.axesList[i*self.__nsubplots]
             z1 = z[i,:].reshape((1,-1))
             axes.pcolorbuffer(x, y, z1,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
-                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap="RdBu_r",
-                        ticksize=9, cblabel='', cbsize="1%")
-            
-        if dataOut.SNR != None:
-            i += 1              
-            title = "Signal Noise Ratio (SNR): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
-            axes = self.axesList[i*self.__nsubplots]
-             
-            SNRavgdB = SNRavgdB.reshape((1,-1))                
-             
-            axes.pcolorbuffer(x, y, SNRavgdB,
-                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
-                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', cbsize="1%", colormap="jet")
-            
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap=colormap,
+                        ticksize=9, cblabel=zlabel, cbsize="1%")
+
         self.draw()      
         
         if self.figfile == None:
