@@ -917,9 +917,17 @@ class Correlation(JROData):
     
 class Parameters(JROData):
 
+    #Information from previous data
+    
     inputUnit = None        #Type of data to be processed
     
     operation = None        #Type of operation to parametrize
+    
+    normFactor = None       #Normalization Factor
+    
+    groupList = None        #List of Pairs, Groups, etc
+    
+    #Parameters
     
     data_param = None       #Parameters obtained
     
@@ -933,17 +941,25 @@ class Parameters(JROData):
     
     SNR = None              #Signal to Noise Ratio
     
-    pairsList = None        #List of Pairs for Cross correlations or Cross spectrum
-    
     initUtcTime = None      #Initial UTC time
     
     paramInterval = None    #Time interval to calculate Parameters in seconds
     
-    windsInterval = None     #Time interval to calculate Winds in seconds
+    #Fitting
     
-    normFactor = None       #Normalization Factor
+    constants = None
     
-    winds = None            #Wind estimations
+    error = None 
+    
+    library = None
+    
+    #Output signal
+    
+    outputInterval = None     #Time interval to calculate output signal in seconds
+    
+    data_output = None       #Out signal
+    
+    
     
     def __init__(self):
         '''
@@ -960,7 +976,7 @@ class Parameters(JROData):
         datatime = []
         
         datatime.append(self.initUtcTime)
-        datatime.append(self.initUtcTime + self.windsInterval - 1)
+        datatime.append(self.initUtcTime + self.outputInterval - 1)
         
         datatime = numpy.array(datatime)
         

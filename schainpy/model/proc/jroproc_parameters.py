@@ -7,7 +7,9 @@ from scipy import stats
 import re
 import datetime
 import copy
-
+import sys
+import importlib
+import itertools
 
 from jroproc_base import ProcessingUnit, Operation
 from model.data.jrodata import Parameters
@@ -60,7 +62,7 @@ class ParametersProc(ProcessingUnit):
         
     def run(self, nSeconds = None, nProfiles = None):
         
-        self.dataOut.flagNoData = True
+        
         
         if self.firstdatatime == None:
             self.firstdatatime = self.dataIn.utctime
@@ -68,6 +70,7 @@ class ParametersProc(ProcessingUnit):
         #----------------------    Voltage Data    ---------------------------
         
         if self.dataIn.type == "Voltage":
+            self.dataOut.flagNoData = True
             if nSeconds != None:
                 self.nSeconds = nSeconds
                 self.nProfiles= int(numpy.floor(nSeconds/(self.dataIn.ippSeconds*self.dataIn.nCohInt)))
@@ -100,6 +103,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.abscissaRange = self.dataIn.getVelRange(1)
             self.dataOut.noise = self.dataIn.getNoise()
             self.dataOut.normFactor = self.dataIn.normFactor
+            self.dataOut.flagNoData = False
                         
         #----------------------    Correlation Data    ---------------------------
         
@@ -112,14 +116,14 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.noise = self.dataIn.noise
             self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.SNR = self.dataIn.SNR
-            self.dataOut.pairsList = self.dataIn.pairsList
+            self.dataOut.groupList = self.dataIn.pairsList
+            self.dataOut.flagNoData = False
             
             
         self.__updateObjFromInput()
-        self.dataOut.flagNoData = False
         self.firstdatatime = None
         self.dataOut.initUtcTime = self.dataIn.ltctime
-        self.dataOut.windsInterval = self.dataIn.timeInterval
+        self.dataOut.outputInterval = self.dataIn.timeInterval
             
     #-------------------    Get Moments    ----------------------------------
     def GetMoments(self, channelList = None):
@@ -238,7 +242,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.noise
             self.dataOut.normFactor
             self.dataOut.SNR
-            self.dataOut.pairsList
+            self.dataOut.groupList
             self.dataOut.nChannels
             
         Affected:
@@ -251,7 +255,7 @@ class ParametersProc(ProcessingUnit):
         absc = self.dataOut.abscissaRange[:-1]
         noise = self.dataOut.noise
         SNR = self.dataOut.SNR
-        pairsList = self.dataOut.pairsList
+        pairsList = self.dataOut.groupList
         nChannels = self.dataOut.nChannels
         pairsAutoCorr, pairsCrossCorr = self.__getPairsAutoCorr(pairsList, nChannels)
         self.dataOut.data_param = numpy.zeros((len(pairsCrossCorr)*2 + 1, nHeights))
@@ -1109,6 +1113,137 @@ class ParametersProc(ProcessingUnit):
         
         return heights, error
     
+    def SpectralFitting(self, getSNR = True, path=None, file=None, groupList=None):
+        
+        '''
+        Function GetMoments()
+        
+        Input:
+        Output:
+        Variables modified:
+        '''
+        if path != None:
+            sys.path.append(path)
+        self.dataOut.library = importlib.import_module(file)
+        
+        #To be inserted as a parameter
+        groupArray = numpy.array(groupList)
+#         groupArray = numpy.array([[0,1],[2,3]]) 
+        self.dataOut.groupList = groupArray
+        
+        nGroups = groupArray.shape[0]
+        nChannels = self.dataIn.nChannels
+        nHeights=self.dataIn.heightList.size
+        
+        #Parameters Array
+        self.dataOut.data_param = None
+        
+        #Set constants
+        constants = self.dataOut.library.setConstants(self.dataIn)
+        self.dataOut.constants = constants
+        M = self.dataIn.normFactor
+        N = self.dataIn.nFFTPoints
+        ippSeconds = self.dataIn.ippSeconds
+        K = self.dataIn.nIncohInt
+        pairsArray = numpy.array(self.dataIn.pairsList)
+        
+        #List of possible combinations
+        listComb = itertools.combinations(numpy.arange(groupArray.shape[1]),2)
+        indCross = numpy.zeros(len(list(listComb)), dtype = 'int')
+        
+        if getSNR:
+            listChannels = groupArray.reshape((groupArray.size))
+            listChannels.sort()
+            noise = self.dataIn.getNoise()
+            self.dataOut.SNR = self.__getSNR(self.dataIn.data_spc[listChannels,:,:], noise[listChannels])
+        
+        for i in range(nGroups): 
+            coord = groupArray[i,:]
+            
+            #Input data array
+            data = self.dataIn.data_spc[coord,:,:]/(M*N)
+            data = data.reshape((data.shape[0]*data.shape[1],data.shape[2]))
+            
+            #Cross Spectra data array for Covariance Matrixes
+            ind = 0
+            for pairs in listComb:
+                pairsSel = numpy.array([coord[x],coord[y]])
+                indCross[ind] = int(numpy.where(numpy.all(pairsArray == pairsSel, axis = 1))[0][0])
+                ind += 1
+            dataCross = self.dataIn.data_cspc[indCross,:,:]/(M*N)
+            dataCross = dataCross**2/K
+            
+            for h in range(nHeights):
+#                 print self.dataOut.heightList[h]
+                
+                #Input
+                d = data[:,h]
+
+                #Covariance Matrix
+                D = numpy.diag(d**2/K)
+                ind = 0
+                for pairs in listComb:
+                    #Coordinates in Covariance Matrix
+                    x = pairs[0]    
+                    y = pairs[1]
+                    #Channel Index
+                    S12 = dataCross[ind,:,h]
+                    D12 = numpy.diag(S12)
+                    #Completing Covariance Matrix with Cross Spectras
+                    D[x*N:(x+1)*N,y*N:(y+1)*N] = D12
+                    D[y*N:(y+1)*N,x*N:(x+1)*N] = D12
+                    ind += 1
+                Dinv=numpy.linalg.inv(D)
+                L=numpy.linalg.cholesky(Dinv)
+                LT=L.T
+
+                dp = numpy.dot(LT,d)
+                
+                #Initial values
+                data_spc = self.dataIn.data_spc[coord,:,h]
+                p0 = self.dataOut.library.initialValuesFunction(data_spc, constants)
+                
+                #Least Squares
+                minp,covp,infodict,mesg,ier = optimize.leastsq(self.__residFunction,p0,args=(dp,LT,constants),full_output=True)
+#                 minp,covp = optimize.leastsq(self.__residFunction,p0,args=(dp,LT,constants))
+                #Chi square error
+                error0 = numpy.sum(infodict['fvec']**2)/(2*N)
+#                 error0 = 0
+                #Error with Jacobian
+                error1 = self.dataOut.library.errorFunction(minp,constants,LT)
+                #Save
+                if self.dataOut.data_param == None:
+                    self.dataOut.data_param = numpy.zeros((nGroups, minp.size, nHeights))*numpy.nan
+                    self.dataOut.error = numpy.zeros((nGroups, error1.size + 1, nHeights))*numpy.nan
+                
+                self.dataOut.error[i,:,h] = numpy.hstack((error0,error1))
+                self.dataOut.data_param[i,:,h] = minp
+        return
+    
+   
+    def __residFunction(self, p, dp, LT, constants):
+
+        fm = self.dataOut.library.modelFunction(p, constants)
+        fmp=numpy.dot(LT,fm)
+                    
+        return  dp-fmp
+
+    def __getSNR(self, z, noise):
+        
+        avg = numpy.average(z, axis=1)
+        SNR = (avg.T-noise)/noise
+        SNR = SNR.T
+        return SNR
+    
+    def __chisq(p,chindex,hindex):
+        #similar to Resid but calculates CHI**2
+        [LT,d,fm]=setupLTdfm(p,chindex,hindex)
+        dp=numpy.dot(LT,d)
+        fmp=numpy.dot(LT,fm)
+        chisq=numpy.dot((dp-fmp).T,(dp-fmp))
+        return chisq
+        
+    
         
 class WindProfiler(Operation):
        
@@ -1359,12 +1494,12 @@ class WindProfiler(Operation):
         winds = correctFactor*winds
         return winds
     
-    def __checkTime(self, currentTime, paramInterval, windsInterval):
+    def __checkTime(self, currentTime, paramInterval, outputInterval):
         
         dataTime = currentTime + paramInterval
         deltaTime = dataTime - self.__initime
         
-        if deltaTime >= windsInterval or deltaTime < 0:
+        if deltaTime >= outputInterval or deltaTime < 0:
             self.__dataReady = True
         return 
     
@@ -1462,7 +1597,7 @@ class WindProfiler(Operation):
                 theta_y = theta_y[arrayChannel]
             
             velRadial0 = param[:,1,:] #Radial velocity
-            dataOut.winds, dataOut.heightRange, dataOut.SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightRange, SNR) #DBS Function
+            dataOut.data_output, dataOut.heightRange, dataOut.SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightRange, SNR) #DBS Function
             
         elif technique == 'SA':
         
@@ -1483,12 +1618,12 @@ class WindProfiler(Operation):
         
             tau = dataOut.data_param
             _lambda = dataOut.C/dataOut.frequency
-            pairsList = dataOut.pairsList
+            pairsList = dataOut.groupList
             nChannels = dataOut.nChannels
 
-            dataOut.winds = self.techniqueSA(pairs, pairsList, nChannels, tau, azimuth, _lambda, position_x, position_y, absc, correctFactor)
+            dataOut.data_output = self.techniqueSA(pairs, pairsList, nChannels, tau, azimuth, _lambda, position_x, position_y, absc, correctFactor)
             dataOut.initUtcTime = dataOut.ltctime
-            dataOut.windsInterval = dataOut.timeInterval
+            dataOut.outputInterval = dataOut.timeInterval
             
         elif technique == 'Meteors':        
             dataOut.flagNoData = True
@@ -1511,7 +1646,7 @@ class WindProfiler(Operation):
                 hmax = kwargs['hmax']
             else:   hmax = 110
                      
-            dataOut.windsInterval = nHours*3600
+            dataOut.outputInterval = nHours*3600
             
             if self.__isConfig == False:
 #                 self.__initime = dataOut.datatime.replace(minute = 0, second = 0, microsecond = 03)
@@ -1526,14 +1661,89 @@ class WindProfiler(Operation):
             else:
                 self.__buffer = numpy.vstack((self.__buffer, dataOut.data_param))
             
-            self.__checkTime(dataOut.ltctime, dataOut.paramInterval, dataOut.windsInterval) #Check if the buffer is ready
+            self.__checkTime(dataOut.ltctime, dataOut.paramInterval, dataOut.outputInterval) #Check if the buffer is ready
             
             if self.__dataReady:
                 dataOut.initUtcTime = self.__initime
-                self.__initime = self.__initime + dataOut.windsInterval #to erase time offset
+                self.__initime = self.__initime + dataOut.outputInterval #to erase time offset
                 
-                dataOut.winds, dataOut.heightRange = self.techniqueMeteors(self.__buffer, meteorThresh, hmin, hmax)
+                dataOut.data_output, dataOut.heightRange = self.techniqueMeteors(self.__buffer, meteorThresh, hmin, hmax)
                 dataOut.flagNoData = False
                 self.__buffer = None
 
         return
+    
+class EWDriftsEstimation(Operation):
+       
+    
+    def __init__(self):    
+        Operation.__init__(self)    
+    
+    def __correctValues(self, heiRang, phi, velRadial, SNR):
+        listPhi = phi.tolist()
+        maxid = listPhi.index(max(listPhi))
+        minid = listPhi.index(min(listPhi))
+        
+        rango = range(len(phi))       
+   #     rango = numpy.delete(rango,maxid)
+        
+        heiRang1 = heiRang*math.cos(phi[maxid])
+        heiRangAux = heiRang*math.cos(phi[minid])
+        indOut = (heiRang1 < heiRangAux[0]).nonzero()
+        heiRang1 = numpy.delete(heiRang1,indOut)
+        
+        velRadial1 = numpy.zeros([len(phi),len(heiRang1)])
+        SNR1 = numpy.zeros([len(phi),len(heiRang1)])
+        
+        for i in rango:
+            x = heiRang*math.cos(phi[i])
+            y1 = velRadial[i,:]
+            f1 = interpolate.interp1d(x,y1,kind = 'cubic')
+            
+            x1 = heiRang1
+            y11 = f1(x1)
+            
+            y2 = SNR[i,:]
+            f2 = interpolate.interp1d(x,y2,kind = 'cubic')
+            y21 = f2(x1)
+            
+            velRadial1[i,:] = y11
+            SNR1[i,:] = y21
+             
+        return heiRang1, velRadial1, SNR1
+
+    def run(self, dataOut, zenith, zenithCorrection):
+        heiRang = dataOut.heightList
+        velRadial = dataOut.data_param[:,3,:]
+        SNR = dataOut.SNR
+        
+        zenith = numpy.array(zenith)
+        zenith -= zenithCorrection 
+        zenith *= numpy.pi/180
+        
+        heiRang1, velRadial1, SNR1 = self.__correctValues(heiRang, numpy.abs(zenith), velRadial, SNR)
+ 
+        alp = zenith[0]
+        bet = zenith[1]
+        
+        w_w = velRadial1[0,:]
+        w_e = velRadial1[1,:]
+        
+        w = (w_w*numpy.sin(bet) - w_e*numpy.sin(alp))/(numpy.cos(alp)*numpy.sin(bet) - numpy.cos(bet)*numpy.sin(alp))   
+        u = (w_w*numpy.cos(bet) - w_e*numpy.cos(alp))/(numpy.sin(alp)*numpy.cos(bet) - numpy.sin(bet)*numpy.cos(alp))   
+        
+        winds = numpy.vstack((u,w))
+        
+        dataOut.heightList = heiRang1
+        dataOut.data_output = winds
+        dataOut.SNR = SNR1
+        
+        dataOut.initUtcTime = dataOut.ltctime
+        dataOut.outputInterval = dataOut.timeInterval
+        return
+        
+
+        
+    
+    
+    
