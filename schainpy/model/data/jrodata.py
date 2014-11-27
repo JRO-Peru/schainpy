@@ -933,13 +933,13 @@ class Parameters(JROData):
     
     data_pre = None         #Data Pre Parametrization
     
+    data_SNR = None         #Signal to Noise Ratio
+    
     heightRange = None      #Heights
     
     abscissaRange = None    #Abscissa, can be velocities, lags or time
     
     noise = None            #Noise Potency
-    
-    SNR = None              #Signal to Noise Ratio
     
     initUtcTime = None      #Initial UTC time
     
@@ -947,9 +947,9 @@ class Parameters(JROData):
     
     #Fitting
     
-    constants = None
-    
-    error = None 
+    data_error = None       #Error of the estimation
+        
+    constants = None 
     
     library = None
     

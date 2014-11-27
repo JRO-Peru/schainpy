@@ -9,6 +9,8 @@ from xml.dom import minidom
 import datetime
 from model import *
 
+import ast
+
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
     """
@@ -88,6 +90,14 @@ class ParameterConf():
                 pairList.append((intList[i*2], intList[i*2 + 1]))
             
             return pairList
+        
+        if self.format == 'multiList':
+            """
+            Example:
+                value = (0,1,2),(3,4,5)
+            """
+            multiList = ast.literal_eval(value)
+            return multiList
         
         func = eval(self.format)
         

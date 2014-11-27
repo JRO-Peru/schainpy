@@ -460,9 +460,9 @@ class WindProfilerPlot(Figure):
         nplotsw = nplots
          
         #If there is a SNR function defined
-        if dataOut.SNR != None:
+        if dataOut.data_SNR != None:
             nplots += 1
-            SNR = dataOut.SNR
+            SNR = dataOut.data_SNR
             SNRavg = numpy.average(SNR, axis=0)
              
             SNRdB = 10*numpy.log10(SNR)
@@ -503,7 +503,7 @@ class WindProfilerPlot(Figure):
                 if zmax_ver == None: zmax_ver = numpy.nanmax(abs(z[2,:]))
                 if zmin_ver == None: zmin_ver = -zmax_ver
              
-            if dataOut.SNR != None:
+            if dataOut.data_SNR != None:
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
              
@@ -539,7 +539,7 @@ class WindProfilerPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel=strCb[i], cbsize="1%", colormap="RdBu_r" )
                      
-        if dataOut.SNR != None:
+        if dataOut.data_SNR != None:
             i += 1              
             title = "Signal Noise Ratio (SNR): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
@@ -719,7 +719,7 @@ class ParametersPlot(Figure):
             if zmin == None: zmin = numpy.nanmin(zRange)
             if zmax == None: zmax = numpy.nanmax(zRange)
                            
-            if dataOut.SNR != None:
+            if dataOut.data_SNR != None:
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
             
@@ -1061,9 +1061,9 @@ class EWDriftsPlot(Figure):
         nplotsw = nplots
          
         #If there is a SNR function defined
-        if dataOut.SNR != None:
+        if dataOut.data_SNR != None:
             nplots += 1
-            SNR = dataOut.SNR
+            SNR = dataOut.data_SNR
             
             if SNR_1:
                 SNR += 1
@@ -1104,7 +1104,7 @@ class EWDriftsPlot(Figure):
             if zmaxVertical == None: zmaxVertical = numpy.nanmax(abs(z[1,:]))
             if zminVertical == None: zminVertical = -zmaxVertical
             
-            if dataOut.SNR != None:
+            if dataOut.data_SNR != None:
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
              
@@ -1139,7 +1139,7 @@ class EWDriftsPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel=strCb, cbsize="1%", colormap="RdBu_r")
                      
-        if dataOut.SNR != None:
+        if dataOut.data_SNR != None:
             i += 1                 
             if SNR_1:
                 title = "Signal Noise Ratio + 1 (SNR+1): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))

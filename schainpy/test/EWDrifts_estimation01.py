@@ -23,14 +23,15 @@ pathFigure = '/home/propietario/workspace/Graficos/drifts'
 
 path = "/home/soporte/Data/drifts"
 pathFigure = '/home/soporte/workspace/Graficos/drifts/prueba'
+pathFile = '/home/soporte/Data/drifts/HDF5'
 
-xmin = 11.75
-xmax = 14.75
+xmin = 0
+xmax = 24
 #------------------------------------------------------------------------------------------------
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
-                                            startDate='2012/01/01',
-                                            endDate='2012/12/31',
+                                            startDate='2012/09/06',
+                                            endDate='2012/09/06',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=0,
@@ -105,6 +106,10 @@ opObj11.addParameter(name='cutHeight', value='350', format='int')
 opObj11.addParameter(name='fit', value='1', format='int')#1--True/include fit
 opObj11.addParameter(name='save', value='1', format='bool')
 opObj11.addParameter(name='figpath', value = pathFigure, format='str')
+
+opObj12 = procUnitConfObj2.addOperation(name='HDF5Writer', optype='other')
+opObj12.addParameter(name='path', value=pathFile)
+opObj12.addParameter(name='blocksPerFile', value='3', format='int')
 
 opObj11 = procUnitConfObj2.addOperation(name='EWDriftsEstimation', optype='other')
 opObj11.addParameter(name='zenith', value='-3.80208,3.10658', format='floatlist')

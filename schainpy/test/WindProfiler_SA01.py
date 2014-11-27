@@ -20,7 +20,7 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 
 #2014050    19 Feb 2014
 path = '/home/soporte/Data/MST/SA/d2014050'
-pathFigure = '/home/soporte/workspace/Graficos/SA/new1/'
+pathFigure = '/home/soporte/workspace/Graficos/SA/prueba1/'
 xmin = '15.5'
 xmax = '24'
 startTime = '15:30:00'

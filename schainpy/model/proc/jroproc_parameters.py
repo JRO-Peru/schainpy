@@ -115,7 +115,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.abscissaRange = self.dataIn.getLagTRange(1)
             self.dataOut.noise = self.dataIn.noise
             self.dataOut.normFactor = self.dataIn.normFactor
-            self.dataOut.SNR = self.dataIn.SNR
+            self.dataOut.data_SNR = self.dataIn.SNR
             self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
             
@@ -138,7 +138,7 @@ class ParametersProc(ProcessingUnit):
             
         Affected:
             self.dataOut.data_param
-            self.dataOut.SNR
+            self.dataOut.data_SNR
             
         '''
         data = self.dataOut.data_pre
@@ -155,7 +155,7 @@ class ParametersProc(ProcessingUnit):
             data_param[ind,:,:] = self.__calculateMoments(data[ind,:,:], absc, noise[ind])
         
         self.dataOut.data_param = data_param[:,1:,:]
-        self.dataOut.SNR = data_param[:,0]
+        self.dataOut.data_SNR = data_param[:,0]
         return
     
     def __calculateMoments(self, oldspec, oldfreq, n0, nicoh = None, graph = None, smooth = None, type1 = None, fwindow = None, snrth = None, dc = None, aliasing = None, oldfd = None, wwauto = None):
@@ -241,7 +241,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.abscissaRange
             self.dataOut.noise
             self.dataOut.normFactor
-            self.dataOut.SNR
+            self.dataOut.data_SNR
             self.dataOut.groupList
             self.dataOut.nChannels
             
@@ -254,7 +254,7 @@ class ParametersProc(ProcessingUnit):
         nHeights = self.dataOut.nHeights
         absc = self.dataOut.abscissaRange[:-1]
         noise = self.dataOut.noise
-        SNR = self.dataOut.SNR
+        SNR = self.dataOut.data_SNR
         pairsList = self.dataOut.groupList
         nChannels = self.dataOut.nChannels
         pairsAutoCorr, pairsCrossCorr = self.__getPairsAutoCorr(pairsList, nChannels)
@@ -1155,7 +1155,7 @@ class ParametersProc(ProcessingUnit):
             listChannels = groupArray.reshape((groupArray.size))
             listChannels.sort()
             noise = self.dataIn.getNoise()
-            self.dataOut.SNR = self.__getSNR(self.dataIn.data_spc[listChannels,:,:], noise[listChannels])
+            self.dataOut.data_SNR = self.__getSNR(self.dataIn.data_spc[listChannels,:,:], noise[listChannels])
         
         for i in range(nGroups): 
             coord = groupArray[i,:]
@@ -1201,22 +1201,27 @@ class ParametersProc(ProcessingUnit):
                 
                 #Initial values
                 data_spc = self.dataIn.data_spc[coord,:,h]
-                p0 = self.dataOut.library.initialValuesFunction(data_spc, constants)
+                p0 = numpy.array(self.dataOut.library.initialValuesFunction(data_spc, constants))
                 
-                #Least Squares
-                minp,covp,infodict,mesg,ier = optimize.leastsq(self.__residFunction,p0,args=(dp,LT,constants),full_output=True)
-#                 minp,covp = optimize.leastsq(self.__residFunction,p0,args=(dp,LT,constants))
-                #Chi square error
-                error0 = numpy.sum(infodict['fvec']**2)/(2*N)
-#                 error0 = 0
-                #Error with Jacobian
-                error1 = self.dataOut.library.errorFunction(minp,constants,LT)
+                try:
+                    #Least Squares
+                    minp,covp,infodict,mesg,ier = optimize.leastsq(self.__residFunction,p0,args=(dp,LT,constants),full_output=True)
+#                   minp,covp = optimize.leastsq(self.__residFunction,p0,args=(dp,LT,constants))
+                    #Chi square error
+                    error0 = numpy.sum(infodict['fvec']**2)/(2*N)
+                    #Error with Jacobian
+                    error1 = self.dataOut.library.errorFunction(minp,constants,LT)
+                except:
+                    minp = p0*numpy.nan
+                    error0 = numpy.nan
+                    error1 = p0*numpy.nan
+                                         
                 #Save
                 if self.dataOut.data_param == None:
-                    self.dataOut.data_param = numpy.zeros((nGroups, minp.size, nHeights))*numpy.nan
-                    self.dataOut.error = numpy.zeros((nGroups, error1.size + 1, nHeights))*numpy.nan
+                    self.dataOut.data_param = numpy.zeros((nGroups, p0.size, nHeights))*numpy.nan
+                    self.dataOut.data_error = numpy.zeros((nGroups, p0.size + 1, nHeights))*numpy.nan
                 
-                self.dataOut.error[i,:,h] = numpy.hstack((error0,error1))
+                self.dataOut.data_error[i,:,h] = numpy.hstack((error0,error1))
                 self.dataOut.data_param[i,:,h] = minp
         return
     
@@ -1569,7 +1574,7 @@ class WindProfiler(Operation):
             absc = dataOut.abscissaRange[:-1]
         noise = dataOut.noise
         heightRange = dataOut.getHeiRange()
-        SNR = dataOut.SNR
+        SNR = dataOut.data_SNR
         
         if technique == 'DBS':
             
@@ -1597,7 +1602,7 @@ class WindProfiler(Operation):
                 theta_y = theta_y[arrayChannel]
             
             velRadial0 = param[:,1,:] #Radial velocity
-            dataOut.data_output, dataOut.heightRange, dataOut.SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightRange, SNR) #DBS Function
+            dataOut.data_output, dataOut.heightRange, dataOut.data_SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightRange, SNR) #DBS Function
             
         elif technique == 'SA':
         
@@ -1715,7 +1720,7 @@ class EWDriftsEstimation(Operation):
     def run(self, dataOut, zenith, zenithCorrection):
         heiRang = dataOut.heightList
         velRadial = dataOut.data_param[:,3,:]
-        SNR = dataOut.SNR
+        SNR = dataOut.data_SNR
         
         zenith = numpy.array(zenith)
         zenith -= zenithCorrection 
@@ -1736,7 +1741,7 @@ class EWDriftsEstimation(Operation):
         
         dataOut.heightList = heiRang1
         dataOut.data_output = winds
-        dataOut.SNR = SNR1
+        dataOut.data_SNR = SNR1
         
         dataOut.initUtcTime = dataOut.ltctime
         dataOut.outputInterval = dataOut.timeInterval
