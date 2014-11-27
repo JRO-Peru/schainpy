@@ -414,6 +414,10 @@ class HDF5Writer(Operation):
     
     dataDim = None
     
+    tableDim = None
+    
+    dtype = [('arrayName', 'S10'),('nChannels', 'i'), ('nPoints', 'i'), ('nSamples', 'i')]
+    
     def __init__(self):
         
         Operation.__init__(self)
@@ -437,11 +441,17 @@ class HDF5Writer(Operation):
         
         self.dataOut = dataOut
         
-        self.metadataList = ['inputUnit','abscissaRange','heightRange']
+        self.metadataList = ['type','inputUnit','abscissaRange','heightRange']
          
         self.dataList = ['data_param', 'data_error', 'data_SNR']
         
         self.dataDim = numpy.zeros((len(self.dataList),3))
+        
+        #Data types
+        
+        dtype0 = self.dtype
+        
+        tableList = []
         
         for i in range(len(self.dataList)):
             
@@ -450,9 +460,14 @@ class HDF5Writer(Operation):
             if len(dataDim) == 3:
                 self.dataDim[i,:] = numpy.array(dataDim)
             else:
-                self.dataDim[i,:-1] = numpy.array(dataDim)
-                self.dataDim[i,-1] = numpy.nan
-    
+                self.dataDim[i,0] = numpy.array(dataDim)[0]
+                self.dataDim[i,2] = numpy.array(dataDim)[1]
+                self.dataDim[i,1] = 1
+                
+            table = numpy.array((self.dataList[i],) + tuple(self.dataDim[i,:]),dtype = dtype0)
+            tableList.append(table)
+            
+        self.tableDim = numpy.array(tableList, dtype = dtype0)        
         self.blockIndex = 0
         
         return
@@ -509,6 +524,7 @@ class HDF5Writer(Operation):
     def writeMetadata(self, fp): 
         
         grp = fp.create_group("Metadata")
+        grp.create_dataset('array dimensions', data = self.tableDim, dtype = self.dtype)
         
         for i in range(len(self.metadataList)):
             grp.create_dataset(self.metadataList[i], data=getattr(self.dataOut, self.metadataList[i]))
@@ -560,7 +576,7 @@ class HDF5Writer(Operation):
         grp = fp.create_group("Data")
         grp.attrs['metadata'] = self.metaFile
         
-        
+        grp['blocksPerFile'] = 0
         
         ds = []
         data = []
@@ -572,7 +588,7 @@ class HDF5Writer(Operation):
             for j in range(int(self.dataDim[i,0])):
                 tableName = "channel" + str(j)
                 
-                if not(numpy.isnan(self.dataDim[i,2])):
+                if not(self.dataDim[i,1] == 1):
                     ds0 = grp0.create_dataset(tableName, (1,1,1) , chunks = True)
                 else:
                     ds0 = grp0.create_dataset(tableName, (1,1) , chunks = True)
@@ -605,7 +621,10 @@ class HDF5Writer(Operation):
         return
     
     def setBlock(self):
-         
+        '''
+        data Array configured
+        
+        '''
         #Creating Arrays
         data = self.data
         ind = 0
@@ -614,7 +633,8 @@ class HDF5Writer(Operation):
             
             for j in range(int(self.dataDim[i,0])):
                 data[ind] = dataAux[j,:]
-                if not(numpy.isnan(self.dataDim[i,2])):
+                
+                if not(self.dataDim[i,1] == 1):
                     data[ind] = data[ind].reshape((data[ind].shape[0],data[ind].shape[1],1))
                     if not self.firsttime:
                         data[ind] = numpy.dstack((self.ds[ind][:], data[ind]))
@@ -632,14 +652,16 @@ class HDF5Writer(Operation):
         return
     
     def writeBlock(self):
-        
+        '''
+        Saves the block in the HDF5 file
+        '''
         for i in range(len(self.ds)):
             self.ds[i].shape = self.data[i].shape 
             self.ds[i][:] = self.data[i]     
         
         self.blockIndex += 1
         
-        self.grp['blocksPerFile'] = self.blockIndex
+        self.grp.attrs.modify('blocksPerFile', self.blockIndex)
         
         self.firsttime = False
         return
