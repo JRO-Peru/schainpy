@@ -4,9 +4,10 @@
 import os
 import glob
 import ftplib
+import multiprocessing
 from model.proc.jroproc_base import ProcessingUnit, Operation
 
-class FTP():
+class FTP(object):
     """
     Ftp is a public class used to define custom File Transfer Protocol from "ftplib" python module
     
@@ -305,31 +306,31 @@ class SendByFTP(Operation):
         print ValueError, 'Error FTP'
         print "don't worry the program is running..."
     
-    def connect(self, server, username, password, remotefolder):
-        if not(self.status):
-            return
-        try:
-            self.ftpObj = FTP(server, username, password, remotefolder)
-        except:
-            self.error_print(ValueError)
-            self.status = 0
-    
-    def put(self):
-        if not(self.status):
-            return
+    def worker_ftp(self, server, username, password, remotefolder, filenameList):
         
-        try:
-            for filename in self.filenameList:
-                self.ftpObj.upload(filename)
-        except:
-            self.error_print(ValueError)
-            self.status = 0
-    
-    def close(self):
-        if not(self.status):
-            return
-        
+        self.ftpObj = FTP(server, username, password, remotefolder)
+        for filename in filenameList:
+            self.ftpObj.upload(filename)
         self.ftpObj.close()
+    
+    def ftp_thread(self, server, username, password, remotefolder):
+        if not(self.status):
+            return
+        
+        p = multiprocessing.Process(target=self.worker_ftp, args=(server, username, password, remotefolder, self.filenameList,))
+        p.start()
+        
+        p.join(3)
+        
+        if p.is_alive():
+            p.terminate()
+            p.join()
+            print 'killing ftp process...'
+            self.status = 0
+            return
+        
+        self.status = 1
+        return
     
     def filterByExt(self, ext, localfolder):
         fnameList = glob.glob1(localfolder,ext)
@@ -344,11 +345,9 @@ class SendByFTP(Operation):
         if self.counter >= period:
             self.filterByExt(ext, localfolder)
             
-            self.connect(server, username, password, remotefolder)
-            
-            self.put()
-            
-            self.close()
-            
+            self.ftp_thread(server, username, password, remotefolder)
+
             self.counter = 0
+        
+        self.status = 1
         
