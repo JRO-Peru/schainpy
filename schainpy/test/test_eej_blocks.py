@@ -24,7 +24,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             endDate='2014/05/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
-                                            online=0,
+                                            online=1,
                                             delay=10,
                                             walk=0,
                                             getblock=1)

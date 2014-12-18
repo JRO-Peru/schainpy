@@ -24,7 +24,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             endDate='2014/05/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
-                                            online=0,
+                                            online=1,
                                             delay=10,
                                             walk=0,
                                             getblock=1)
@@ -82,7 +82,7 @@ opObj11.addParameter(name='showprofile', value='0', format='int')
 # # opObj11.addParameter(name='zmax', value='60', format='int')
 # # opObj11.addParameter(name='save', value='1', format='int')
 opObj11.addParameter(name='figpath', value=figpath, format='str')
-opObj11.addParameter(name='wr_period', value='5', format='int')
+opObj11.addParameter(name='wr_period', value='2', format='int')
 # # opObj11.addParameter(name='ftp', value='1', format='int')
 # # opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
 # # opObj11.addParameter(name='folder', value='/home/wmaster/graficos', format='str')
@@ -100,7 +100,7 @@ opObj11.addParameter(name='remotefolder', value='/home/wmaster/graficos', format
 opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
 opObj11.addParameter(name='username', value='wmaster', format='str')
 opObj11.addParameter(name='password', value='mst2010vhf', format='str')
-opObj11.addParameter(name='period', value='5', format='int')
+opObj11.addParameter(name='period', value='2', format='int')
 
 print "Escribiendo el archivo XML"
 controllerObj.writeXml(filename)

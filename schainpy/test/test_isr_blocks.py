@@ -24,7 +24,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             endDate='2014/05/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
-                                            online=0,
+                                            online=1,
                                             delay=10,
                                             walk=0,
                                             getblock=1)
@@ -81,7 +81,7 @@ opObj11.addParameter(name='id', value='301', format='int')
 opObj11.addParameter(name='wintitle', value='ISR', format='str')
 opObj11.addParameter(name='showprofile', value='0', format='int')
 opObj11.addParameter(name='figpath', value=figpath, format='str')
-opObj11.addParameter(name='wr_period', value='5', format='int')
+opObj11.addParameter(name='wr_period', value='2', format='int')
 opObj11.addParameter(name='exp_code', value='20', format='int')
 
 
