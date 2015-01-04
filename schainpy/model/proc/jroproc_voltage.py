@@ -594,7 +594,7 @@ class Decoder(Operation):
             dataOut.radarControllerHeaderObj.code = self.code
             dataOut.radarControllerHeaderObj.nCode = self.nCode
             dataOut.radarControllerHeaderObj.nBaud = self.nBaud
-            self.__setValues = True
+            #self.__setValues = True
         
         dataOut.data = datadec
         
