@@ -174,7 +174,7 @@ class JROData(GenericData):
     
 #     ippSeconds = None
     
-    timeInterval = None
+#     timeInterval = None
     
     nCohInt = None
     
@@ -292,6 +292,10 @@ class JROData(GenericData):
         '''
         
         self.datatype = getDataTypeCode(numpyDtype)
+    
+#     def getTimeInterval(self):
+#         
+#         raise IOError, "This method should be implemented inside each Class"
         
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
     channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
@@ -301,6 +305,7 @@ class JROData(GenericData):
     ltctime = property(getltctime, "I'm the 'ltctime' property")
     ippSeconds = property(get_ippSeconds, set_ippSeconds)
     dtype = property(get_dtype, set_dtype)
+#     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
     
 class Voltage(JROData):
     
@@ -356,6 +361,7 @@ class Voltage(JROData):
         
         self.flagShiftFFT = False
     
+        self.flagDataAsBlock = False    #Asumo que la data es leida perfil a perfil
     
     def getNoisebyHildebrand(self):
         """
@@ -380,8 +386,15 @@ class Voltage(JROData):
             
         return 10*numpy.log10(noise)
     
-    noise = property(getNoise, "I'm the 'nHeights' property.")
+    def getTimeInterval(self):
         
+        timeInterval = self.ippSeconds * self.nCohInt
+        
+        return timeInterval
+    
+    noise = property(getNoise, "I'm the 'nHeights' property.")
+    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
+    
 class Spectra(JROData):
     
     #data es un numpy array de 2 dmensiones (canales, perfiles, alturas)
@@ -535,13 +548,20 @@ class Spectra(JROData):
             
         return False
     
+    def getTimeInterval(self):
+        
+        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles
+        
+        return timeInterval
+    
     nPairs = property(getNPairs, "I'm the 'nPairs' property.")
     pairsIndexList = property(getPairsIndexList, "I'm the 'pairsIndexList' property.")
     normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
     flag_cspc = property(getFlagCspc)
     flag_dc = property(getFlagDc)
     noise = property(getNoise, "I'm the 'nHeights' property.")
-        
+    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
+    
 class SpectraHeis(Spectra):
     
     data_spc = None
@@ -599,7 +619,14 @@ class SpectraHeis(Spectra):
         
         return normFactor
     
+    def getTimeInterval(self):
+        
+        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
+        
+        return timeInterval
+    
     normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
+    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
 
 class Fits:
     
@@ -619,7 +646,7 @@ class Fits:
     
 #     ippSeconds = None
     
-    timeInterval = None
+#     timeInterval = None
     
     nCohInt = None
     
@@ -736,6 +763,10 @@ class Fits:
         
         return noise
     
+    def getTimeInterval(self):
+        
+        raise ValueError, "This method is not implemented yet"
+    
     datatime = property(getDatatime, "I'm the 'datatime' property")
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
@@ -743,7 +774,8 @@ class Fits:
     noise = property(getNoise, "I'm the 'nHeights' property.")
     datatime = property(getDatatime, "I'm the 'datatime' property")
     ltctime = property(getltctime, "I'm the 'ltctime' property")
-
+    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
+    
 class Correlation(JROData):
     
     noise = None
