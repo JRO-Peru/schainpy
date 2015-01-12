@@ -302,7 +302,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         
 #         self.dataOut.ippSeconds = self.ippSeconds
         
-        self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.processingHeaderObj.profilesPerBlock
+#         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.processingHeaderObj.profilesPerBlock
 
         self.dataOut.dtype = self.dtype
         

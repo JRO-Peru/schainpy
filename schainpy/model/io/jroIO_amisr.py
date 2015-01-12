@@ -631,12 +631,13 @@ class AMISRReader(ProcessingUnit):
         print ''
     
     def setObjProperties(self):
+        
         self.dataOut.heightList = self.rangeFromFile/1000.0 #km
         self.dataOut.nProfiles = self.radacHeaderObj.npulses
         self.dataOut.nRecords = self.radacHeaderObj.nrecords
         self.dataOut.nBeams = self.radacHeaderObj.nbeams
         self.dataOut.ippSeconds = self.ippSeconds_fromfile
-        self.dataOut.timeInterval = self.dataOut.ippSeconds * self.dataOut.nCohInt
+#         self.dataOut.timeInterval = self.dataOut.ippSeconds * self.dataOut.nCohInt
         self.dataOut.frequency = self.frequency_h5file
         self.dataOut.npulseByFrame = self.npulseByFrame
         self.dataOut.nBaud = None

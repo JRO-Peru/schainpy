@@ -338,7 +338,7 @@ class FitsReader(ProcessingUnit):
         self.dataBlocksPerFile = headerObj.header['NBLOCK']
         self.timeZone = headerObj.header['TIMEZONE']
         
-        self.timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
+#         self.timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
         
         if 'COMMENT' in headerObj.header.keys():
             self.comments = headerObj.header['COMMENT']

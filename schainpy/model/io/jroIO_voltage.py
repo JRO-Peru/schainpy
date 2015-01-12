@@ -237,7 +237,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         
 #         self.dataOut.ippSeconds = self.ippSeconds
 
-        self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
+#         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
 
         if self.radarControllerHeaderObj.code != None:
             
@@ -269,15 +269,29 @@ class VoltageReader(JRODataReader, ProcessingUnit):
     
     def getData(self):
         """
-        getData obtiene una unidad de datos del buffer de lectura y la copia a la clase "Voltage"
-        con todos los parametros asociados a este (metadata). cuando no hay datos en el buffer de
-        lectura es necesario hacer una nueva lectura de los bloques de datos usando "readNextBlock"
+        getData obtiene una unidad de datos del buffer de lectura, un perfil,  y la copia al objeto self.dataOut
+        del tipo "Voltage" con todos los parametros asociados a este (metadata). cuando no hay datos
+        en el buffer de lectura es necesario hacer una nueva lectura de los bloques de datos usando
+        "readNextBlock"
         
-        Ademas incrementa el contador del buffer en 1.
+        Ademas incrementa el contador del buffer "self.profileIndex" en 1.
         
         Return:
-            data    :    retorna un perfil de voltages (alturas * canales) copiados desde el
-                         buffer. Si no hay mas archivos a leer retorna None.
+        
+            Si el flag self.getByBlock ha sido seteado el bloque completo es copiado a self.dataOut y el self.profileIndex
+            es igual al total de perfiles leidos desde el archivo.
+        
+            Si self.getByBlock == False:
+            
+                self.dataOut.data = buffer[:, thisProfile, :]
+                
+                shape = [nChannels, nHeis]
+                    
+            Si self.getByBlock == True:
+            
+                self.dataOut.data = buffer[:, :, :]
+                
+                shape = [nChannels, nProfiles, nHeis]
             
         Variables afectadas:
             self.dataOut
@@ -309,10 +323,12 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.dataOut.flagNoData = True
             return 0
         
-        if self.getblock:
+        if self.getByBlock:
+            self.dataOut.flagDataAsBlock = True
             self.dataOut.data = self.datablock
             self.profileIndex = self.processingHeaderObj.profilesPerBlock
         else:
+            self.dataOut.flagDataAsBlock = False
             self.dataOut.data = self.datablock[:,self.profileIndex,:]
             self.profileIndex += 1
         
