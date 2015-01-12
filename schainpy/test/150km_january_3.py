@@ -14,7 +14,7 @@ controllerObj = Project()
 
 controllerObj.setup(id = '191', name='test01', description=desc)
 
-path = '/home/operaciones/150km_jicamarca_january/RAW_EXP/2015_ISR'
+path = '/Volumes/DATA/RAW_EXP/2015_ISR'
 
 figpath = '/home/operaciones/Pictures/150km_jicamarca_january'
 
@@ -22,9 +22,9 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
                                             startDate='2015/01/13',
                                             endDate='2015/01/30',
-                                            startTime='08:55:00',
+                                            startTime='15:00:00',
                                             endTime='23:59:59',
-                                            online=1,
+                                            online=0,
                                             delay=10,
                                             walk=1,
                                             getblock=1)
@@ -72,7 +72,9 @@ opObj11.addParameter(name='mode', value='3', format='int')
 opObj11.addParameter(name='times', value='20', format='int') 
 opObj11.addParameter(name='osamp', value='1', format='int')
 
- 
+opObj11 = procUnitConfObj0.addOperation(name='deFlip')
+opObj11.addParameter(name='channelList', value='1,3,5,7', format='intlist')
+
 # cod7barker="1,1,1,-1,-1,1,-1"
 # opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
 # opObj11.addParameter(name='code', value=cod7barker, format='intlist')
@@ -95,7 +97,8 @@ opObj11.addParameter(name='osamp', value='1', format='int')
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='SpectraProc', inputId=procUnitConfObj0.getId())
 procUnitConfObj1.addParameter(name='nFFTPoints', value='80', format='int')
 procUnitConfObj1.addParameter(name='nProfiles', value='80', format='int')
-# 
+procUnitConfObj1.addParameter(name='pairsList', value='(0,1),(2,3),(4,5),(6,7)', format='pairsList')
+
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='timeInterval', value='10', format='float')
 # 
@@ -105,15 +108,15 @@ opObj11.addParameter(name='wintitle', value='150km_Jicamarca_ShortPulse', format
 #opObj11.addParameter(name='channelList', value='0,1,2,3,45', format='intlist')
 #opObj11.addParameter(name='zmin', value='15', format='int')
 #  opObj11.addParameter(name='zmax', value='45', format='int')
-opObj11.addParameter(name='figpath', value=figpath, format='str')
-opObj11.addParameter(name='exp_code', value='13', format='int')
+# opObj11.addParameter(name='figpath', value=figpath, format='str')
+# opObj11.addParameter(name='exp_code', value='13', format='int')
 
 
 opObj11 = procUnitConfObj1.addOperation(name='CrossSpectraPlot', optype='other')
 opObj11.addParameter(name='id', value='2005', format='int')
 opObj11.addParameter(name='wintitle', value='CrossSpectraPlot_ShortPulse', format='str')
-opObj11.addParameter(name='figpath', value=figpath, format='str')
-opObj11.addParameter(name='exp_code', value='13', format='int')
+# opObj11.addParameter(name='figpath', value=figpath, format='str')
+# opObj11.addParameter(name='exp_code', value='13', format='int')
 
 
   
@@ -127,8 +130,8 @@ opObj11.addParameter(name='wintitle', value='150km_Jicamarca_ShortPulse', format
 #opObj11.addParameter(name='channelList', value='0,1,2,3', format='intlist')
 #opObj11.addParameter(name='channelList', value='0,1,2,3,4,5,6,7', format='intlist')
 opObj11.addParameter(name='showprofile', value='0', format='int')
-opObj11.addParameter(name='figpath', value=figpath, format='str')
-opObj11.addParameter(name='exp_code', value='13', format='int')
+# opObj11.addParameter(name='figpath', value=figpath, format='str')
+# opObj11.addParameter(name='exp_code', value='13', format='int')
 
 
 
