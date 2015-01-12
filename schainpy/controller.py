@@ -25,7 +25,7 @@ class ParameterConf():
     value = None
     format = None
     
-    __value = None
+    __formated_value = None
     
     ELEMENTNAME = 'Parameter'
     
@@ -39,37 +39,52 @@ class ParameterConf():
     
     def getValue(self):
         
-        if self.__value != None:
+        if self.__formated_value != None:
             
-            return self.__value
+            return self.__formated_value
             
         value = self.value
         
         if self.format == 'list':
             strList = value.split(',')
-            return strList
+            
+            self.__formated_value = strList
+            
+            return self.__formated_value
         
         if self.format == 'intlist':
             strList = value.split(',')
             intList = [int(x) for x in strList]
-            return intList
+            
+            self.__formated_value = intList
+            
+            return self.__formated_value
         
         if self.format == 'floatlist':
             strList = value.split(',')
             floatList = [float(x) for x in strList]
-            return floatList
+            
+            self.__formated_value = floatList
+            
+            return self.__formated_value
         
         if self.format == 'date':
             strList = value.split('/')
             intList = [int(x) for x in strList]
             date = datetime.date(intList[0], intList[1], intList[2])
-            return date
+            
+            self.__formated_value = date
+            
+            return self.__formated_value
         
         if self.format == 'time':
             strList = value.split(':')
             intList = [int(x) for x in strList]
             time = datetime.time(intList[0], intList[1], intList[2])
-            return time
+            
+            self.__formated_value = time
+            
+            return self.__formated_value
         
         if self.format == 'bool':
             value = int(value)
@@ -89,7 +104,9 @@ class ParameterConf():
             for i in range(len(intList)/2):
                 pairList.append((intList[i*2], intList[i*2 + 1]))
             
-            return pairList
+            self.__formated_value = pairList
+            
+            return self.__formated_value
         
         if self.format == 'multiList':
             """
@@ -97,13 +114,16 @@ class ParameterConf():
                 value = (0,1,2),(3,4,5)
             """
             multiList = ast.literal_eval(value)
-            return multiList
+            
+            self.__formated_value = multiList
+            
+            return self.__formated_value
         
-        func = eval(self.format)
+        format_func = eval(self.format)
         
-        self.__value = func(value)
+        self.__formated_value = format_func(value)
         
-        return self.__value
+        return self.__formated_value
         
     def setup(self, id, name, value, format='str'):
         
