@@ -740,19 +740,23 @@ class ProfileSelector(Operation):
         
         
 class Reshaper(Operation):
+    
     def __init__(self):
+        
         Operation.__init__(self)
-        self.updateNewHeights = False
+        self.updateNewHeights = True
     
     def run(self, dataOut, shape):
+        
         shape_tuple = tuple(shape)
         dataOut.data = numpy.reshape(dataOut.data, shape_tuple)
         dataOut.flagNoData = False
         
-        if not(self.updateNewHeights):
+        if self.updateNewHeights:
+            
             old_nheights = dataOut.nHeights
             new_nheights = dataOut.data.shape[2]
-            factor = new_nheights / old_nheights  
+            factor = 1.0*new_nheights / old_nheights  
             deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]  
             xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * factor
             dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight)
