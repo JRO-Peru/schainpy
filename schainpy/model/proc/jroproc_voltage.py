@@ -2,7 +2,7 @@ import numpy
 
 from jroproc_base import ProcessingUnit, Operation
 from model.data.jrodata import Voltage
-from Carbon.Fonts import times
+
 
 class VoltageProc(ProcessingUnit):
     
@@ -191,7 +191,7 @@ class VoltageProc(ProcessingUnit):
 #         nHeights = maxIndex - minIndex + 1
 
         #voltage
-        if dataOut.flagDataAsBlock:
+        if self.dataOut.flagDataAsBlock:
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
