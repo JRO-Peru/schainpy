@@ -307,7 +307,7 @@ class CrossSpectraPlot(Figure):
         z = dataOut.data_spc[:,:,:]/factor
 #        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.abs(numpy.average(z, axis=1))
-        noise = dataOut.noise()/factor
+        noise = dataOut.noise/factor
         
         zdB = 10*numpy.log10(z)
         avgdB = 10*numpy.log10(avg)
@@ -1053,7 +1053,7 @@ class Noise(Figure):
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         factor = dataOut.normFactor
-        noise = dataOut.noise()/factor
+        noise = dataOut.noise/factor
         noisedB = 10*numpy.log10(noise)
         
         #thisDatetime = dataOut.datatime
