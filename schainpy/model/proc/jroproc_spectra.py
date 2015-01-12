@@ -47,7 +47,7 @@ class SpectraProc(ProcessingUnit):
 #         self.dataOut.ippSeconds = self.dataIn.ippSeconds
         self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         
-        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
+#         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
         self.dataOut.frequency = self.dataIn.frequency
         self.dataOut.realtime = self.dataIn.realtime
         
@@ -931,5 +931,5 @@ class IncohInt(Operation):
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             #dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
-            dataOut.timeInterval = self.__timeInterval*self.n
+#             dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False

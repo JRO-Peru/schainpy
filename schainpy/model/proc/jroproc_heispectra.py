@@ -334,6 +334,6 @@ class IncohInt4SpectraHeis(Operation):
             dataOut.nIncohInt *= self.n
 #            dataOut.nCohInt *= self.n
             dataOut.utctime = avgdatatime
-            dataOut.timeInterval = dataOut.ippSeconds * dataOut.nIncohInt
+#             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nIncohInt
 #            dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False
