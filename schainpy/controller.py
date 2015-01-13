@@ -45,6 +45,9 @@ class ParameterConf():
             
         value = self.value
         
+        if self.format == 'bool':
+            value = int(value)
+            
         if self.format == 'list':
             strList = value.split(',')
             
@@ -53,6 +56,10 @@ class ParameterConf():
             return self.__formated_value
         
         if self.format == 'intlist':
+            """
+            Example:
+                value = (0,1,2)
+            """
             strList = value.split(',')
             intList = [int(x) for x in strList]
             
@@ -61,6 +68,10 @@ class ParameterConf():
             return self.__formated_value
         
         if self.format == 'floatlist':
+            """
+            Example:
+                value = (0.5, 1.4, 2.7)
+            """
             strList = value.split(',')
             floatList = [float(x) for x in strList]
             
@@ -86,10 +97,7 @@ class ParameterConf():
             
             return self.__formated_value
         
-        if self.format == 'bool':
-            value = int(value)
-        
-        if self.format == 'pairsList':
+        if self.format == 'pairslist':
             """
             Example:
                 value = (0,1),(1,2)
@@ -108,7 +116,7 @@ class ParameterConf():
             
             return self.__formated_value
         
-        if self.format == 'multiList':
+        if self.format == 'multilist':
             """
             Example:
                 value = (0,1,2),(3,4,5)
@@ -130,7 +138,7 @@ class ParameterConf():
         self.id = id
         self.name = name
         self.value = str(value)
-        self.format = format
+        self.format = str.lower(format)
     
     def makeXml(self, opElement):
         
