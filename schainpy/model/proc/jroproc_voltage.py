@@ -185,7 +185,7 @@ class VoltageProc(ProcessingUnit):
             raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
         
         if (maxIndex >= self.dataOut.nHeights):
-            maxIndex = self.dataOut.nHeights-1
+            maxIndex = self.dataOut.nHeights
 #            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
         
 #         nHeights = maxIndex - minIndex + 1
@@ -195,14 +195,14 @@ class VoltageProc(ProcessingUnit):
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
-            data = self.dataOut.data[:,minIndex:maxIndex+1,:]
+            data = self.dataOut.data[:,minIndex:maxIndex,:]
         else:
-            data = self.dataOut.data[:,minIndex:maxIndex+1]
+            data = self.dataOut.data[:,minIndex:maxIndex]
 
 #         firstHeight = self.dataOut.heightList[minIndex]
 
         self.dataOut.data = data
-        self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex+1]
+        self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex]
         
         return 1
     
@@ -539,7 +539,7 @@ class Decoder(Operation):
         
         if dataOut.flagDataAsBlock:
             
-            self.ndatadec = self.__nHeis - self.nBaud + 1
+            self.ndatadec = self.__nHeis #- self.nBaud + 1
             
             self.datadecTime = numpy.zeros((self.__nChannels, self.__nProfiles, self.ndatadec), dtype=numpy.complex)
         
@@ -551,7 +551,7 @@ class Decoder(Operation):
             
             self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
             
-            self.ndatadec = self.__nHeis - self.nBaud + 1
+            self.ndatadec = self.__nHeis #- self.nBaud + 1
             
             self.datadecTime = numpy.zeros((self.__nChannels, self.ndatadec), dtype=numpy.complex)     
          
@@ -565,7 +565,7 @@ class Decoder(Operation):
         
         data = numpy.fft.ifft(conv,axis=1)
         
-        datadec = data[:,:-self.nBaud+1]
+        datadec = data#[:,:]
         
         return datadec
         
@@ -575,7 +575,7 @@ class Decoder(Operation):
         
         data = cfunctions.decoder(fft_code, data)
         
-        datadec = data[:,:-self.nBaud+1]
+        datadec = data#[:,:]
         
         return datadec
     
@@ -584,7 +584,7 @@ class Decoder(Operation):
         code = self.code[self.__profIndex]
         
         for i in range(self.__nChannels):
-            self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='valid')
+            self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='same')
         
         return self.datadecTime
     
@@ -598,7 +598,7 @@ class Decoder(Operation):
         
         for i in range(self.__nChannels):
             for j in range(self.__nProfiles):
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='valid')
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='same')
         
         return self.datadecTime
     
@@ -674,14 +674,14 @@ class ProfileConcat(Operation):
     
     def setup(self, data, m, n=1):
         self.buffer = numpy.zeros((data.shape[0],data.shape[1]*m),dtype=type(data[0,0]))
-        self.profiles = data.shape[1]
+        self.nHeights = data.nHeights
         self.start_index = 0
         self.times = 1
     
     def concat(self, data):
         
         self.buffer[:,self.start_index:self.profiles*self.times] = data.copy()
-        self.start_index = self.start_index + self.profiles 
+        self.start_index = self.start_index + self.nHeights 
         
     def run(self, dataOut, m):
         
@@ -693,7 +693,7 @@ class ProfileConcat(Operation):
             
         if dataOut.flagDataAsBlock:
             
-            raise ValueError, "ProfileConcat can only be used when voltage have been read profile by profiel, getBlock = False"
+            raise ValueError, "ProfileConcat can only be used when voltage have been read profile by profile, getBlock = False"
         
         else:
             self.concat(dataOut.data)
@@ -704,8 +704,9 @@ class ProfileConcat(Operation):
                 dataOut.flagNoData = False
                 # se deben actualizar mas propiedades del header y del objeto dataOut, por ejemplo, las alturas
                 deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]  
-                xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * 5
+                xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * m
                 dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight) 
+                dataOut.ippSeconds *= m
 
 class ProfileSelector(Operation):
     
@@ -719,32 +720,40 @@ class ProfileSelector(Operation):
         self.profileIndex = 0
     
     def incIndex(self):
+        
         self.profileIndex += 1
         
         if self.profileIndex >= self.nProfiles:
             self.profileIndex = 0
     
-    def isProfileInRange(self, minIndex, maxIndex):
+    def isThisProfileInRange(self, profileIndex, minIndex, maxIndex):
         
-        if self.profileIndex < minIndex:
+        if profileIndex < minIndex:
             return False
         
-        if self.profileIndex > maxIndex:
-            return False
-        
-        return True
-    
-    def isProfileInList(self, profileList):
-        
-        if self.profileIndex not in profileList:
+        if profileIndex > maxIndex:
             return False
         
         return True
     
-    def run(self, dataOut, profileList=None, profileRangeList=None, beam=None, byblock=False):
+    def isThisProfileInList(self, profileIndex, profileList):
+        
+        if profileIndex not in profileList:
+            return False
+        
+        return True
+    
+    def run(self, dataOut, profileList=None, profileRangeList=None, beam=None, byblock=False, rangeList = None):
 
         """
         ProfileSelector:
+        
+        Inputs:
+            profileList        :    Index of profiles selected. Example: profileList = (0,1,2,7,8)     
+            
+            profileRangeList    :    Minimum and maximum profile indexes. Example: profileRangeList = (4, 30)
+            
+            rangeList            :    List of profile ranges. Example: rangeList = ((4, 30), (32, 64), (128, 256))
         
         """
                     
@@ -758,15 +767,16 @@ class ProfileSelector(Operation):
             if profileList != None:
                 dataOut.data = dataOut.data[:,profileList,:]
                 dataOut.nProfiles = len(profileList)
+                dataOut.profileIndex = dataOut.nProfiles - 1
             else:
-                pmin = profileRangeList[0]
-                pmax = profileRangeList[1]
-                dataOut.data = dataOut.data[:,pmin:pmax+1,:]
-                dataOut.nProfiles = pmax - pmin + 1
-            
+                minIndex = profileRangeList[0]
+                maxIndex = profileRangeList[1]
+                
+                dataOut.data = dataOut.data[:,minIndex:maxIndex+1,:]
+                dataOut.nProfiles = maxIndex - minIndex + 1
+                dataOut.profileIndex = dataOut.nProfiles - 1
             
             dataOut.flagNoData = False
-            self.profileIndex = 0
             
             return True
     
@@ -777,28 +787,65 @@ class ProfileSelector(Operation):
             """
             if profileList != None:
                 
-                if self.isProfileInList(profileList):
+                dataOut.nProfiles = len(profileList)
+                
+                if self.isThisProfileInList(dataOut.profileIndex, profileList):
                     dataOut.flagNoData = False
+                    dataOut.profileIndex = self.profileIndex
                     
-                self.incIndex()
-                return 1
+                    self.incIndex()
+                return True
     
             
             if profileRangeList != None:
                 
                 minIndex = profileRangeList[0]
                 maxIndex = profileRangeList[1]
-                if self.isProfileInRange(minIndex, maxIndex):
+                
+                dataOut.nProfiles = maxIndex - minIndex + 1
+                
+                if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
                     dataOut.flagNoData = False
+                    dataOut.profileIndex = self.profileIndex
                     
-                self.incIndex()
-                return 1
+                    self.incIndex()
+                return True
             
-            if beam != None: #beam is only for AMISR data
-                if self.isProfileInList(dataOut.beamRangeDict[beam]):
-                    dataOut.flagNoData = False
+            if rangeList != None:
+                
+                nProfiles = 0
+                
+                for thisRange in rangeList:
+                    minIndex = thisRange[0]
+                    maxIndex = thisRange[1]
+                
+                    nProfiles += maxIndex - minIndex + 1
+                
+                dataOut.nProfiles = nProfiles
+                
+                for thisRange in rangeList:
                     
-                self.incIndex()
+                    minIndex = thisRange[0]
+                    maxIndex = thisRange[1]
+                
+                    if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
+                        
+#                         print "profileIndex = ", dataOut.profileIndex
+                        
+                        dataOut.flagNoData = False
+                        dataOut.profileIndex = self.profileIndex
+                        
+                        self.incIndex()
+                        break
+                return True
+                    
+                
+            if beam != None: #beam is only for AMISR data
+                if self.isThisProfileInList(dataOut.profileIndex, dataOut.beamRangeDict[beam]):
+                    dataOut.flagNoData = False
+                    dataOut.profileIndex = self.profileIndex
+                    
+                    self.incIndex()
                 return 1
         
         raise ValueError, "ProfileSelector needs profileList or profileRangeList"
@@ -839,3 +886,5 @@ class Reshaper(Operation):
             dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight)
             
             dataOut.nProfiles = dataOut.data.shape[1]
+            
+            dataOut.ippSeconds *= factor

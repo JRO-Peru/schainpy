@@ -378,6 +378,10 @@ class JRODataReader(JRODataIO):
     
     profileIndex = None
     
+    nTxs = 1
+    
+    txIndex = None
+    
     def __init__(self):
         
         """
@@ -937,7 +941,8 @@ class JRODataReader(JRODataIO):
                 online = False,
                 delay = 60,
                 walk = True,
-                getblock = False):
+                getblock = False,
+                nTxs = 1):
 
         if path == None:
             raise ValueError, "The path is not valid"
@@ -995,6 +1000,7 @@ class JRODataReader(JRODataIO):
         ext = ext.lower()
         self.ext = ext
         self.getByBlock = getblock
+        self.nTxs = int(nTxs)
         
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):

@@ -153,6 +153,10 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.blocksize = 0
         
         self.dataOut = self.createObjByDefault()
+        
+        self.nTxs = 1
+        
+        self.txIndex = 0
     
     def createObjByDefault(self):
         
@@ -161,8 +165,10 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         return dataObj
     
     def __hasNotDataInBuffer(self):
+        
         if self.profileIndex >= self.processingHeaderObj.profilesPerBlock:
             return 1
+        
         return 0
 
 
@@ -235,7 +241,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         
         self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
         
-#         self.dataOut.ippSeconds = self.ippSeconds
+        if self.nTxs > 1:
+            self.dataOut.radarControllerHeaderObj.ippSeconds /= self.nTxs
 
 #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
 
@@ -249,9 +256,12 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             
         self.dataOut.dtype = self.dtype
             
-        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
         
-        xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
+        if self.processingHeaderObj.nHeights % self.nTxs != 0:
+            raise ValueError, "nTxs (%d) should be a multiple of nHeights (%d)" %(self.nTxs, self.processingHeaderObj.nHeights)
+        
+        xf = self.processingHeaderObj.firstHeight + int(self.processingHeaderObj.nHeights/self.nTxs)*self.processingHeaderObj.deltaHeight
 
         self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
         
@@ -323,20 +333,51 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.dataOut.flagNoData = True
             return 0
         
-        if self.getByBlock:
+        if not self.getByBlock:
+
+            """
+            Return profile by profile
+            
+            If nTxs > 1 then one profile is divided by nTxs and number of total
+            blocks is increased by nTxs (nProfiles *= nTxs)
+            """
+            if self.nTxs == 1:
+                self.dataOut.flagDataAsBlock = False
+                self.dataOut.data = self.datablock[:,self.profileIndex,:]
+                self.dataOut.profileIndex = self.profileIndex
+                
+                self.profileIndex += 1
+                
+            else:
+                self.dataOut.flagDataAsBlock = False
+                
+                iniHei_ForThisTx = (self.txIndex)*int(self.processingHeaderObj.nHeights/self.nTxs)
+                endHei_ForThisTx = (self.txIndex+1)*int(self.processingHeaderObj.nHeights/self.nTxs)
+                
+#                 print iniHei_ForThisTx, endHei_ForThisTx
+                
+                self.dataOut.data = self.datablock[:, self.profileIndex, iniHei_ForThisTx:endHei_ForThisTx]
+                self.dataOut.profileIndex = self.profileIndex*self.nTxs + self.txIndex
+                
+                self.txIndex += 1
+                
+                if self.txIndex == self.nTxs:
+                    self.txIndex = 0
+                    self.profileIndex += 1
+                
+        else:
+            """
+            Return all block
+            """
             self.dataOut.flagDataAsBlock = True
             self.dataOut.data = self.datablock
-            self.profileIndex = self.processingHeaderObj.profilesPerBlock
-        else:
-            self.dataOut.flagDataAsBlock = False
-            self.dataOut.data = self.datablock[:,self.profileIndex,:]
-            self.profileIndex += 1
+            self.dataOut.profileIndex = self.processingHeaderObj.profilesPerBlock - 1
+            
+            self.profileIndex = self.processingHeaderObj.profilesPerBlock - 1
         
         self.dataOut.flagNoData = False
         
         self.getBasicHeader()
-        
-        
         
         self.dataOut.realtime = self.online
         

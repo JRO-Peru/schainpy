@@ -201,6 +201,8 @@ class JROData(GenericData):
     
     beam = Beam()
     
+    profileIndex = None
+    
     def __init__(self):
         
         raise ValueError, "This class has not been implemented"
@@ -363,6 +365,8 @@ class Voltage(JROData):
     
         self.flagDataAsBlock = False    #Asumo que la data es leida perfil a perfil
     
+        self.profileIndex = 0
+        
     def getNoisebyHildebrand(self):
         """
         Determino el nivel de ruido usando el metodo Hildebrand-Sekhon
@@ -419,6 +423,8 @@ class Spectra(JROData):
     nCohInt = None #se requiere para determinar el valor de timeInterval
     
     ippFactor = None
+    
+    profileIndex = 0
     
     def __init__(self):
         '''
@@ -609,6 +615,8 @@ class SpectraHeis(Spectra):
         self.utctime = None
         
         self.blocksize = None
+        
+        self.profileIndex = 0
     
     def getNormFactor(self):
         pwcode = 1
@@ -685,6 +693,8 @@ class Fits:
         self.nIncohInt = None
         
         self.useLocalTime = True
+        
+        self.profileIndex = 0
         
 #         self.utctime = None
 #         self.timeZone = None
