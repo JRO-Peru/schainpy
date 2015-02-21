@@ -15,7 +15,11 @@ controllerObj = Project()
 controllerObj.setup(id = '191', name='test01', description=desc)
 
 
-path='/media/APOLLO/HF_rawdata/d2015026/0/cspec'
+#path='/media/APOLLO/HF_rawdata/d2015026/0/cspec'
+path='/media/APOLLO/HF_rawdata/cspec'
+#path='/media/APOLLO/HF_rawdata/test'
+figpath='/home/alex/Pictures/hf2_16'
+
 #path='/home/alex/Downloads/ICA_LAST_TEST'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='HFReader',
@@ -26,36 +30,46 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='HFReader',
                                             endTime='23:59:59',
                                             online=0,
                                             delay=10,
-                                            walk=1)
+                                            walk=1,
+                                            timezone=-5*3600)
 
 
 procUnitConfObj0 = controllerObj.addProcUnit(datatype='VoltageProc', inputId=readUnitConfObj.getId())
 
-opObj12 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
-opObj12.addParameter(name='n', value='10', format='int')
-    
+#opObj12 = procUnitConfObj0.addOperation(name='selectChannels',optype='self')
+#opObj12.addParameter(name='channelList', value='0', format='intList')
+
+# 
+# opObj12 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
+# opObj12.addParameter(name='n', value='10', format='int')
+#     
 # opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='other')
 # opObj11.addParameter(name='id', value='10', format='int')
 # opObj11.addParameter(name='wintitle', value='Voltage', format='str')
 # opObj11.addParameter(name='ymin', value='-1e-8', format='float')
 # opObj11.addParameter(name='ymax', value='1e-8', format='float')
-
+# # 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='SpectraProc', inputId=procUnitConfObj0.getId())
-procUnitConfObj1.addParameter(name='nFFTPoints', value='10', format='int')
-procUnitConfObj1.addParameter(name='nProfiles', value='10', format='int')
+procUnitConfObj1.addParameter(name='nFFTPoints', value='50', format='int')
+procUnitConfObj1.addParameter(name='nProfiles', value='50', format='int')
 
-
-opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
-opObj11.addParameter(name='id', value='2001', format='int')
-opObj11.addParameter(name='wintitle', value='HF_Jicamarca', format='str')
-opObj11.addParameter(name='zmin', value='-120', format='float')
-opObj11.addParameter(name='zmax', value='-70', format='float')
- 
+#  
+# opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+# opObj11.addParameter(name='id', value='2001', format='int')
+# opObj11.addParameter(name='wintitle', value='HF_Jicamarca', format='str')
+# opObj11.addParameter(name='zmin', value='-120', format='float')
+# opObj11.addParameter(name='zmax', value='-70', format='float')
+  
 opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
 opObj11.addParameter(name='id', value='3002', format='int')
 opObj11.addParameter(name='wintitle', value='HF_Jicamarca', format='str')
-opObj11.addParameter(name='zmin', value='-120', format='float')
-opObj11.addParameter(name='zmax', value='70', format='float')
+opObj11.addParameter(name='channelList', value='0', format='intlist') 
+opObj11.addParameter(name='xmin', value='0', format='float')
+opObj11.addParameter(name='xmax', value='24', format='float')
+opObj11.addParameter(name='zmin', value='-110', format='float')
+opObj11.addParameter(name='zmax', value='-70', format='float')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value=figpath, format='str')
 
 print "Escribiendo el archivo XML"
 controllerObj.writeXml(filename)
