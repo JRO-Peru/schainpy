@@ -4,14 +4,15 @@ Created on Jul 3, 2014
 @author: roj-com0419 
 '''
 
-import os
+import os,sys
 import time,datetime
-import os
 import h5py
+import numpy
 import re
 import stuffr
 
-from model.data.jrodata import *
+from model.data.jroheaderIO import RadarControllerHeader, SystemHeader
+from model.data.jrodata import Voltage
 from model.proc.jroproc_base import ProcessingUnit, Operation
         
 class HFReader(ProcessingUnit):
@@ -95,8 +96,9 @@ class HFReader(ProcessingUnit):
         self.__firstHeigth=0
         self.__nSamples=1000
         self.__deltaHeigth=1.5
-        self.__sample_rate=10e5
-        self.__frequency=2.72e6
+        self.__sample_rate=1e5
+        #self.__frequency=2.72e6
+        self.__frequency=3.64e6
         self.__online = False
         
     
@@ -121,6 +123,7 @@ class HFReader(ProcessingUnit):
             dir_hf_filename= self.path+"/"+hf_dirname_format
             fp= h5py.File(dir_hf_filename,'r')
             hipoc=fp['t'].value
+            fp.close()
             date_time=stuffr.unix2datestr(hipoc)
             year =int(date_time[0:4])
             month=int(date_time[5:7])
@@ -163,6 +166,7 @@ class HFReader(ProcessingUnit):
             fp= h5py.File(dir_hf_filename,'r')
             hipoc=fp['t'].value
             date_time=stuffr.unix2datestr(hipoc)
+            fp.close()
             year =int(date_time[0:4])
             month=int(date_time[5:7])
             dom  =int(date_time[8:10])
@@ -183,7 +187,7 @@ class HFReader(ProcessingUnit):
     def __selectDataForTimes(self, online=False):
         
         if not(self.status):
-            return none
+            return None
         self.__getFilenameList()
         if not(online):
             if not(self.all):
@@ -265,6 +269,7 @@ class HFReader(ProcessingUnit):
         self.filename = filename
 
         self.hfFilePointer = hfFilePointer
+        hfFilePointer.close()
         self.__t0=epoc
 
 
@@ -297,9 +302,7 @@ class HFReader(ProcessingUnit):
     
     def __getExpParameters(self):
         if not(self.status):
-            return None
-        
-        fp=self.hfFilePointer     
+            return None           
     
     def setup(self, path = None,
                startDate = None,
@@ -310,7 +313,7 @@ class HFReader(ProcessingUnit):
                expLabel = "",
                ext = None,
                all=0,
-               timezone='ut',
+               timezone=0,
                online = False, 
                delay = 60,
                walk = True):
@@ -366,6 +369,7 @@ class HFReader(ProcessingUnit):
             
     def __setHeaderDO(self):
                
+        
         self.dataOut.radarControllerHeaderObj = RadarControllerHeader()
     
         self.dataOut.systemHeaderObj = SystemHeader()
@@ -380,9 +384,9 @@ class HFReader(ProcessingUnit):
         
         self.dataOut.heightList = self.__firstHeigth + numpy.arange(self.__nSamples, dtype = numpy.float)*self.__deltaHeigth
         
-        self.dataOut.channelList = numpy.arange(self.nChannels)
-        
-#        self.dataOut.channelIndexList = None
+        self.dataOut.channelList = range(self.nChannels)
+     
+        #self.dataOut.channelIndexList = None
         
         self.dataOut.flagNoData = True
         
@@ -397,7 +401,7 @@ class HFReader(ProcessingUnit):
         
         self.dataOut.errorCount = 0
         
-        self.dataOut.nCohInt = 10
+        self.dataOut.nCohInt = 1
         
         self.dataOut.blocksize = self.dataOut.getNChannels() * self.dataOut.getNHeights()
         
@@ -451,9 +455,11 @@ class HFReader(ProcessingUnit):
 
     
     def readBlock(self):
-        fp=self.hfFilePointer               #Puntero que apunta al archivo hdf5 
+        fp=h5py.File(self.filename,'r')
+                      #Puntero que apunta al archivo hdf5 
         ch0=(fp['ch0']).value    #Primer canal (100,1000)--(perfiles,alturas)
         ch1=(fp['ch1']).value    #Segundo canal (100,1000)--(perfiles,alturas)
+        fp.close()
         ch0= ch0.swapaxes(0,1)   #Primer canal (100,1000)--(alturas,perfiles)
         ch1= ch1.swapaxes(0,1)   #Segundo canal (100,1000)--(alturas,perfiles)
         self.datablock = numpy.array([ch0,ch1])
@@ -477,7 +483,7 @@ class HFReader(ProcessingUnit):
         ##############################
         ##############################
         self.dataOut.data = self.datablock[:,:,self.profileIndex]
-        self.dataOut.utctime= self.__t0 + self.dataOut.ippSeconds*self.profileIndex
+        self.dataOut.utctime= self.__t0 + self.dataOut.ippSeconds*self.profileIndex+self.timezone
         self.dataOut.profileIndex= self.profileIndex
         self.dataOut.flagNoData=False
         self.profileIndex +=1 
