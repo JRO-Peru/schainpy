@@ -17,38 +17,59 @@ class HDF5Reader(ProcessingUnit):
     
     timezone = None
     
+    secStart = None
+    
+    secEnd = None
+        
     fileIndex = None
     
     blockIndex = None
     
+    blocksPerFile = None
+    
     path = None
+    
+    #List of Files
+    
+    filenameList = None
+    
+    datetimeList = None
     
     #Hdf5 File
     
     fpMetadata = None
     
+    pathMeta = None
+    
     listMetaname = None
     
-    listMetadata = None
+    listMeta = None
+    
+    listDataname = None
+    
+    listData = None
+    
+    listShapes = None
     
     fp = None
     
     #dataOut reconstruction
     
-    
     dataOut = None
     
-    nChannels = None    #Dimension 0
-    
-    nPoints = None      #Dimension 1, number of Points or Parameters
-    
-    nSamples = None     #Dimension 2, number of samples or ranges
+    nRecords = None
     
     
     def __init__(self):
-        
+        self.dataOut = self.__createObjByDefault()
         return
+    
+    def __createObjByDefault(self):
         
+        dataObj = Parameters()
+        
+        return dataObj
+    
     def setup(self,path=None,
                     startDate=None, 
                     endDate=None, 
@@ -66,11 +87,18 @@ class HDF5Reader(ProcessingUnit):
 #         self.all = all
 #         self.online = online
         self.path = path
-                
+        
+        startDateTime = datetime.datetime.combine(startDate,startTime)
+        endDateTime = datetime.datetime.combine(endDate,endTime)
+        secStart = (startDateTime-datetime.datetime(1970,1,1)).total_seconds()
+        secEnd = (endDateTime-datetime.datetime(1970,1,1)).total_seconds()
+        
+        self.secStart = secStart
+        self.secEnd = secEnd      
                 
         if not(online):
             #Busqueda de archivos offline
-            self.__searchFilesOffline(path, startDate, endDate, ext, startTime, endTime, walk)
+            self.__searchFilesOffline(path, startDate, endDate, ext, startTime, endTime, secStart, secEnd, walk)
         else:
             self.__searchFilesOnline(path, walk)
         
@@ -97,6 +125,8 @@ class HDF5Reader(ProcessingUnit):
                             ext,
                             startTime=datetime.time(0,0,0),
                             endTime=datetime.time(23,59,59),
+                            secStart = 0,
+                            secEnd = numpy.inf,
                             walk=True):
         
 #         self.__setParameters(path, startDate, endDate, startTime, endTime, walk)
@@ -181,7 +211,7 @@ class HDF5Reader(ProcessingUnit):
             for file in fileList:
                 
                 filename = os.path.join(thisPath,file)
-                thisDatetime = self.__isFileinThisTime(filename, startTime, endTime)
+                thisDatetime = self.__isFileinThisTime(filename, secStart, secEnd)
                 
                 if not(thisDatetime):
                     continue
@@ -204,7 +234,7 @@ class HDF5Reader(ProcessingUnit):
         
         return pathList, filenameList
 
-    def __isFileinThisTime(self, filename, startTime, endTime):
+    def __isFileinThisTime(self, filename, startSeconds, endSeconds):
         """
         Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
         
@@ -224,8 +254,7 @@ class HDF5Reader(ProcessingUnit):
             Si la cabecera no puede ser leida.
             
         """
-        
-        
+
         try:
             fp = fp = h5py.File(filename,'r')
         except IOError:
@@ -233,21 +262,20 @@ class HDF5Reader(ProcessingUnit):
             raise IOError, "The file %s can't be opened" %(filename)
         
         grp = fp['Data']
-        time = grp['time']
-        time0 = time[:][0]
+        timeAux = grp['time']
+        time0 = timeAux[:][0].astype(numpy.float)   #Time Vector
         
         fp.close()
         
-        thisDatetime = datetime.datetime.utcfromtimestamp(time0)
-        
         if self.timezone == 'lt':
-            thisDatetime = thisDatetime - datetime.timedelta(minutes = 300)
-    
-        thisTime = thisDatetime.time()
-            
-        if not ((startTime <= thisTime) and (endTime > thisTime)):
+            time0 -= 5*3600
+           
+        boolTimer = numpy.logical_and(time0 >= startSeconds,time0 < endSeconds)
+
+        if not (numpy.any(boolTimer)):
             return None
         
+        thisDatetime = datetime.datetime.utcfromtimestamp(time0[0])
         return thisDatetime
      
     def __checkPath(self):
@@ -264,7 +292,6 @@ class HDF5Reader(ProcessingUnit):
         idFile += 1
         
         if not(idFile < len(self.filenameList)):
-            self.flagNoMoreFiles = 1
             print "No more Files"
             return 0
 
@@ -281,12 +308,57 @@ class HDF5Reader(ProcessingUnit):
         print "Setting the file: %s"%self.filename
         
         self.__readMetadata()
-        
+        self.__setBlockList()
+#         self.nRecords = self.fp['Data'].attrs['blocksPerFile']
+        self.nRecords = self.fp['Data'].attrs['nRecords']
+        self.blockIndex = 0
         return 1
     
+    def __setBlockList(self):
+        '''
+        self.fp
+        self.startDateTime
+        self.endDateTime
+        
+        self.blockList
+        self.blocksPerFile
+        
+        '''
+        filePointer = self.fp
+        secStart = self.secStart
+        secEnd = self.secEnd
+        
+        grp = filePointer['Data']
+        timeVector = grp['time'].value.astype(numpy.float)[0]
+        
+        if self.timezone == 'lt':
+            timeVector -= 5*3600
+        
+        ind = numpy.where(numpy.logical_and(timeVector >= secStart , timeVector < secEnd))[0]
+        
+        self.blockList = ind
+        self.blocksPerFile = len(ind)
+        
+        return
+    
     def __readMetadata(self):
+        '''
+        self.pathMeta 
+        
+        self.listShapes
+        self.listMetaname
+        self.listMeta
+        
+        '''
+        
         grp = self.fp['Data']
-        self.pathMeta = os.path.join(self.path, grp.attrs['metadata'])
+        pathMeta = os.path.join(self.path, grp.attrs['metadata'])
+        
+        if pathMeta == self.pathMeta:
+            return
+        else:
+            self.pathMeta = pathMeta
+        
         filePointer = h5py.File(self.pathMeta,'r')
         groupPointer = filePointer['Metadata']
         
@@ -295,81 +367,172 @@ class HDF5Reader(ProcessingUnit):
         for item in groupPointer.items():
             name = item[0]
             
-            if name=='data shape':
-                self.nSamples = 1
-                self.nPoints = 1
-                self.nChannels = 1
+            if name=='array dimensions':
+                table = groupPointer[name][:]
+                listShapes = {}
+                for shapes in table:
+                    listShapes[shapes[0]] = numpy.array([shapes[1],shapes[2],shapes[3],shapes[4]])
             else:
-                data = groupPointer[name][:]
+                data = groupPointer[name].value
                 listMetaname.append(name)
                 listMetadata.append(data)
                 
                 if name=='type':
-                    self.__initDataOut(name)
+                    self.__initDataOut(data)
                     
         filePointer.close()
         
-        self.listMetadata = listMetaname
-        self.listMetadata = listMetadata
+        self.listShapes = listShapes
+        self.listMetaname = listMetaname
+        self.listMeta = listMetadata
         
         return
     
+    def __readData(self):
+        grp = self.fp['Data']
+        listdataname = []
+        listdata = []
+        
+        for item in grp.items():
+            name = item[0]
+            
+            if name == 'time':
+                listdataname.append('utctime')
+                timeAux = grp[name].value.astype(numpy.float)[0]
+                listdata.append(timeAux)
+                continue
+            
+            listdataname.append(name)
+            array = self.__setDataArray(self.nRecords, grp[name],self.listShapes[name])
+            listdata.append(array)
+        
+        self.listDataname = listdataname
+        self.listData = listdata
+        return
+    
+    def __setDataArray(self, nRecords, dataset, shapes):
+                
+        nChannels = shapes[0]    #Dimension 0
+    
+        nPoints = shapes[1]      #Dimension 1, number of Points or Parameters
+    
+        nSamples = shapes[2]     #Dimension 2, number of samples or ranges
+        
+        mode = shapes[3]
+        
+#         if nPoints>1:
+#             arrayData = numpy.zeros((nRecords,nChannels,nPoints,nSamples))
+#         else:
+#             arrayData = numpy.zeros((nRecords,nChannels,nSamples))
+#         
+#         chn = 'channel'
+#         
+#         for i in range(nChannels):
+#             
+#             data = dataset[chn + str(i)].value
+#             
+#             if nPoints>1:
+#                 data = numpy.rollaxis(data,2)
+#     
+#             arrayData[:,i,:] = data
+        
+        arrayData = numpy.zeros((nRecords,nChannels,nPoints,nSamples))
+        doSqueeze = False
+        if mode == 0:
+            strds = 'channel'
+            nDatas = nChannels
+            newShapes = (nRecords,nPoints,nSamples)
+            if nPoints == 1:
+                doSqueeze = True
+                axisSqueeze = 2
+        else:
+            strds = 'param'
+            nDatas = nPoints
+            newShapes = (nRecords,nChannels,nSamples)
+            if nChannels == 1:
+                doSqueeze = True
+                axisSqueeze = 1
+                
+        for i in range(nDatas):
+            
+            data = dataset[strds + str(i)].value
+            data = data.reshape(newShapes)
+            
+            if mode == 0:
+                arrayData[:,i,:,:] = data
+            else:
+                arrayData[:,:,i,:] = data
+        
+        if doSqueeze:
+                arrayData = numpy.squeeze(arrayData, axis=axisSqueeze)
+            
+        return arrayData
+    
     def __initDataOut(self, type):
         
-        if 'type'=='Parameters':
-            self.dataOut = Parameters()
-        elif 'type'=='Spectra':
-            self.dataOut = Spectra()
-        elif 'type'=='Voltage':
-            self.dataOut = Voltage()
-        elif 'type'=='Correlation':
-            self.dataOut = Correlation()
+#         if type =='Parameters':
+#             self.dataOut = Parameters()
+#         elif type =='Spectra':
+#             self.dataOut = Spectra()
+#         elif type =='Voltage':
+#             self.dataOut = Voltage()
+#         elif type =='Correlation':
+#             self.dataOut = Correlation()
             
         return
     
     def __setDataOut(self):
-        listMetadata = self.listMetadata
+        listMeta = self.listMeta
         listMetaname = self.listMetaname
         listDataname = self.listDataname
         listData = self.listData
         
         blockIndex = self.blockIndex
+        blockList = self.blockList
         
-        for i in range(len(listMetadata)):
-            setattr(self.dataOut,listMetaname[i],listMetadata[i])
+        for i in range(len(listMeta)):
+            setattr(self.dataOut,listMetaname[i],listMeta[i])
         
         for j in range(len(listData)):
-            setattr(self.dataOut,listDataname[j][blockIndex,:],listData[j][blockIndex,:])
+            if listDataname[j]=='utctime':
+#                 setattr(self.dataOut,listDataname[j],listData[j][blockList[blockIndex]])
+                setattr(self.dataOut,'utctimeInit',listData[j][blockList[blockIndex]])
+                continue
+            
+            setattr(self.dataOut,listDataname[j],listData[j][blockList[blockIndex],:])
         
-        return
+        return self.dataOut.data_param
     
     def getData(self):
         
-        if self.flagNoMoreFiles:
-            self.dataOut.flagNoData = True
-            print 'Process finished'
-            return 0
+#         if self.flagNoMoreFiles:
+#             self.dataOut.flagNoData = True
+#             print 'Process finished'
+#             return 0
+#         
+        if self.blockIndex==self.blocksPerFile:
+             if not( self.__setNextFileOffline() ):
+                self.dataOut.flagNoData = True
+                return 0
+    
+#         
+#         if self.datablock == None: # setear esta condicion cuando no hayan datos por leers
+#             self.dataOut.flagNoData = True 
+#             return 0
         
-        if self.__hasNotDataInBuffer():
-            self.__setNextFile()
-
-        
-        if self.datablock == None: # setear esta condicion cuando no hayan datos por leers
-            self.dataOut.flagNoData = True 
-            return 0
-        
+        self.__readData()
         self.__setDataOut()
         self.dataOut.flagNoData = False
         
         self.blockIndex += 1
         
-        return self.dataOut.data
+        return
     
     def run(self, **kwargs):
         
         if not(self.isConfig):
             self.setup(**kwargs)
-            self.setObjProperties()
+#             self.setObjProperties()
             self.isConfig = True
         
         self.getData()
@@ -412,11 +575,19 @@ class HDF5Writer(Operation):
     
     metadataList = None
     
-    dataDim = None
+    arrayDim = None
     
     tableDim = None
     
-    dtype = [('arrayName', 'S10'),('nChannels', 'i'), ('nPoints', 'i'), ('nSamples', 'i')]
+#     dtype = [('arrayName', 'S20'),('nChannels', 'i'), ('nPoints', 'i'), ('nSamples', 'i'),('mode', 'b')]
+    
+    dtype = [('arrayName', 'S20'),('nDimensions', 'i'), ('dim2', 'i'), ('dim1', 'i'),('dim0', 'i'),('mode', 'b')]
+    
+    mode = None
+    
+    nDatas = None    #Number of datasets to be stored per array
+    
+    nDims = None  #Number Dimensions in each dataset
     
     def __init__(self):
         
@@ -431,23 +602,31 @@ class HDF5Writer(Operation):
         
         if kwargs.has_key('ext'):    
             self.ext = kwargs['ext']
-        else:                         
-            self.blocksPerFile = 10
-        
+
         if kwargs.has_key('blocksPerFile'):    
             self.blocksPerFile = kwargs['blocksPerFile']
         else:                         
             self.blocksPerFile = 10
         
+        self.metadataList = kwargs['metadataList']
+         
+        self.dataList = kwargs['dataList']
+        
         self.dataOut = dataOut
         
-        self.metadataList = ['type','inputUnit','abscissaRange','heightRange']
-         
-        self.dataList = ['data_param', 'data_error', 'data_SNR']
+        if kwargs.has_key('mode'):
+            mode = kwargs['mode']
+            
+            if type(mode) == int:
+                mode = numpy.zeros(len(self.dataList)) + mode
+        else:
+            mode = numpy.zeros(len(self.dataList))
         
-        self.dataDim = numpy.zeros((len(self.dataList),3))
+        self.mode = mode
         
-        #Data types
+        arrayDim = numpy.zeros((len(self.dataList),5))
+        
+        #Table dimensions 
         
         dtype0 = self.dtype
         
@@ -455,18 +634,29 @@ class HDF5Writer(Operation):
         
         for i in range(len(self.dataList)):
             
-            dataDim = getattr(self.dataOut, self.dataList[i]).shape
+            dataAux = getattr(self.dataOut, self.dataList[i])
             
-            if len(dataDim) == 3:
-                self.dataDim[i,:] = numpy.array(dataDim)
+            if type(dataAux)==float or type(dataAux)==int:
+                arrayDim[i,0] = 1
             else:
-                self.dataDim[i,0] = numpy.array(dataDim)[0]
-                self.dataDim[i,2] = numpy.array(dataDim)[1]
-                self.dataDim[i,1] = 1
+                arrayDim0 = dataAux.shape
+                arrayDim[i,0] = len(arrayDim0)
+                arrayDim[i,4] = mode[i]
                 
-            table = numpy.array((self.dataList[i],) + tuple(self.dataDim[i,:]),dtype = dtype0)
+                if len(arrayDim0) == 3:
+                    arrayDim[i,1:-1] = numpy.array(arrayDim0)
+                elif len(arrayDim0) == 2:
+                    arrayDim[i,2:-1] = numpy.array(arrayDim0) #nHeights
+                elif len(arrayDim0) == 1:
+                    arrayDim[i,3] = arrayDim0
+                elif len(arrayDim0) == 0:
+                    arrayDim[i,0] = 1
+                    arrayDim[i,3] = 1
+                
+            table = numpy.array((self.dataList[i],) + tuple(arrayDim[i,:]),dtype = dtype0)
             tableList.append(table)
-            
+        
+        self.arrayDim = arrayDim 
         self.tableDim = numpy.array(tableList, dtype = dtype0)        
         self.blockIndex = 0
         
@@ -535,6 +725,7 @@ class HDF5Writer(Operation):
         ext = self.ext
         path = self.path
         setFile = self.setFile
+        mode = self.mode
         
         if self.fp != None:
             self.fp.close()
@@ -576,29 +767,48 @@ class HDF5Writer(Operation):
         grp = fp.create_group("Data")
         grp.attrs['metadata'] = self.metaFile
         
-        grp['blocksPerFile'] = 0
+#         grp.attrs['blocksPerFile'] = 0
         
         ds = []
         data = []
         
-        for i in range(len(self.dataList)):
+        nDatas = numpy.zeros(len(self.dataList))
+        nDims = self.arrayDim[:,0]
+        
+        for i in range(len(self.dataList)):           
             
-            grp0 = grp.create_group(self.dataList[i])
-                
-            for j in range(int(self.dataDim[i,0])):
-                tableName = "channel" + str(j)
-                
-                if not(self.dataDim[i,1] == 1):
-                    ds0 = grp0.create_dataset(tableName, (1,1,1) , chunks = True)
-                else:
-                    ds0 = grp0.create_dataset(tableName, (1,1) , chunks = True)
-                
+            if nDims[i]==1:
+                ds0 = grp.create_dataset(self.dataList[i], (1,1), maxshape=(1,None) , chunks = True, dtype='S20')
                 ds.append(ds0)
                 data.append([])
-    
-        ds0 = grp.create_dataset("time", (1,) , chunks = True)
-        ds.append(ds0)
-        data.append([])
+            
+            else:
+                
+                if mode[i]==0:
+                    strMode = "channel"
+                    nDatas[i] = self.arrayDim[i,1]
+                else:
+                    strMode = "param"
+                    nDatas[i] = self.arrayDim[i,2]
+                    
+                if nDims[i]==2:
+                    nDatas[i] = self.arrayDim[i,2]
+                    
+                grp0 = grp.create_group(self.dataList[i])
+            
+                for j in range(int(nDatas[i])):
+                    tableName = strMode + str(j)
+                    
+                    if nDims[i] == 3:
+                        ds0 = grp0.create_dataset(tableName, (1,1,1) , maxshape=(None,None,None), chunks=True)
+                    else:
+                        ds0 = grp0.create_dataset(tableName, (1,1) , maxshape=(None,None), chunks=True)
+                    
+                    ds.append(ds0)
+                    data.append([])
+        
+        self.nDatas = nDatas
+        self.nDims = nDims
         
         #Saving variables        
         print 'Writing the file: %s'%filename
@@ -624,31 +834,46 @@ class HDF5Writer(Operation):
         '''
         data Array configured
         
+        
+        self.data
         '''
         #Creating Arrays
         data = self.data
+        nDatas = self.nDatas
+        nDims = self.nDims
+        mode = self.mode
         ind = 0
+        
         for i in range(len(self.dataList)):
             dataAux = getattr(self.dataOut,self.dataList[i])
             
-            for j in range(int(self.dataDim[i,0])):
-                data[ind] = dataAux[j,:]
-                
-                if not(self.dataDim[i,1] == 1):
-                    data[ind] = data[ind].reshape((data[ind].shape[0],data[ind].shape[1],1))
-                    if not self.firsttime:
-                        data[ind] = numpy.dstack((self.ds[ind][:], data[ind]))
-                else:
-                    data[ind] = data[ind].reshape((1,data[ind].shape[0]))
-                    if not self.firsttime:
-                        data[ind] = numpy.vstack((self.ds[ind][:], data[ind]))                    
+            if nDims[i] == 1:
+                data[ind] = numpy.array([str(dataAux)]).reshape((1,1))
+                if not self.firsttime:
+                    data[ind] = numpy.hstack((self.ds[ind][:], self.data[ind]))
                 ind += 1
             
-        data[ind] = numpy.array([self.dataOut.utctime])
-        if not self.firsttime:
-            self.data[ind] = numpy.hstack((self.ds[ind][:], self.data[ind]))
+            else:     
+                for j in range(int(nDatas[i])):
+                    if (mode[i] == 0) or (nDims[i] == 2):       #In case division per channel or Dimensions is only 1
+                        data[ind] = dataAux[j,:]
+                    else:
+                        data[ind] = dataAux[:,j,:]
+                    
+                    if nDims[i] == 3:
+                        data[ind] = data[ind].reshape((data[ind].shape[0],data[ind].shape[1],1))
+                        
+                        if not self.firsttime:
+                            data[ind] = numpy.dstack((self.ds[ind][:], data[ind]))
+                            
+                    else:
+                        data[ind] = data[ind].reshape((1,data[ind].shape[0]))
+                        
+                        if not self.firsttime:
+                            data[ind] = numpy.vstack((self.ds[ind][:], data[ind]))                             
+                    ind += 1
+            
         self.data = data
-        
         return
     
     def writeBlock(self):
@@ -656,12 +881,12 @@ class HDF5Writer(Operation):
         Saves the block in the HDF5 file
         '''
         for i in range(len(self.ds)):
-            self.ds[i].shape = self.data[i].shape 
+            self.ds[i].resize(self.data[i].shape)  
             self.ds[i][:] = self.data[i]     
         
         self.blockIndex += 1
         
-        self.grp.attrs.modify('blocksPerFile', self.blockIndex)
+        self.grp.attrs.modify('nRecords', self.blockIndex)
         
         self.firsttime = False
         return

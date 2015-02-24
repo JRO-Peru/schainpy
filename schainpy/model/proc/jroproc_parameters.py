@@ -22,7 +22,7 @@ class ParametersProc(ProcessingUnit):
     def __init__(self):
         ProcessingUnit.__init__(self)
         
-        self.objectDict = {}
+#         self.objectDict = {}
         self.buffer = None
         self.firstdatatime = None
         self.profIndex = 0
@@ -57,7 +57,7 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
 #        self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         self.dataOut.timeInterval = self.dataIn.timeInterval
-        self.dataOut.heightRange = self.dataIn.getHeiRange()   
+        self.dataOut.heightList = self.dataIn.getHeiRange()   
         self.dataOut.frequency = self.dataIn.frequency
         
     def run(self, nSeconds = None, nProfiles = None):
@@ -100,7 +100,7 @@ class ParametersProc(ProcessingUnit):
         
         if self.dataIn.type == "Spectra":
             self.dataOut.data_pre = self.dataIn.data_spc.copy()
-            self.dataOut.abscissaRange = self.dataIn.getVelRange(1)
+            self.dataOut.abscissaList = self.dataIn.getVelRange(1)
             self.dataOut.noise = self.dataIn.getNoise()
             self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.flagNoData = False
@@ -112,17 +112,24 @@ class ParametersProc(ProcessingUnit):
             indR = numpy.where(lagRRange == 0)[0][0]
             
             self.dataOut.data_pre = self.dataIn.data_corr.copy()[:,:,indR,:]
-            self.dataOut.abscissaRange = self.dataIn.getLagTRange(1)
+            self.dataOut.abscissaList = self.dataIn.getLagTRange(1)
             self.dataOut.noise = self.dataIn.noise
             self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.data_SNR = self.dataIn.SNR
             self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
+        
+                #----------------------    Correlation Data    ---------------------------
+        
+        if self.dataIn.type == "Parameters":
+            self.dataOut.copy(self.dataIn)
+            self.dataOut.flagNoData = False
             
+            return True
             
         self.__updateObjFromInput()
         self.firstdatatime = None
-        self.dataOut.initUtcTime = self.dataIn.ltctime
+        self.dataOut.utctimeInit = self.dataIn.utctime
         self.dataOut.outputInterval = self.dataIn.timeInterval
             
     #-------------------    Get Moments    ----------------------------------
@@ -133,7 +140,7 @@ class ParametersProc(ProcessingUnit):
         Input:
             channelList    :    simple channel list to select e.g. [2,3,7] 
             self.dataOut.data_pre
-            self.dataOut.abscissaRange
+            self.dataOut.abscissaList
             self.dataOut.noise
             
         Affected:
@@ -142,7 +149,7 @@ class ParametersProc(ProcessingUnit):
             
         '''
         data = self.dataOut.data_pre
-        absc = self.dataOut.abscissaRange[:-1]
+        absc = self.dataOut.abscissaList[:-1]
         noise = self.dataOut.noise
         
         data_param = numpy.zeros((data.shape[0], 4, data.shape[2]))
@@ -238,7 +245,7 @@ class ParametersProc(ProcessingUnit):
 
         Input:
             self.dataOut.data_pre
-            self.dataOut.abscissaRange
+            self.dataOut.abscissaList
             self.dataOut.noise
             self.dataOut.normFactor
             self.dataOut.data_SNR
@@ -252,7 +259,7 @@ class ParametersProc(ProcessingUnit):
         data = self.dataOut.data_pre
         normFactor = self.dataOut.normFactor
         nHeights = self.dataOut.nHeights
-        absc = self.dataOut.abscissaRange[:-1]
+        absc = self.dataOut.abscissaList[:-1]
         noise = self.dataOut.noise
         SNR = self.dataOut.data_SNR
         pairsList = self.dataOut.groupList
@@ -1201,7 +1208,11 @@ class ParametersProc(ProcessingUnit):
                 
                 #Initial values
                 data_spc = self.dataIn.data_spc[coord,:,h]
-                p0 = numpy.array(self.dataOut.library.initialValuesFunction(data_spc, constants))
+                
+                if (h>0)and(error1[3]<5):
+                    p0 = self.dataOut.data_param[i,:,h-1]
+                else:
+                    p0 = numpy.array(self.dataOut.library.initialValuesFunction(data_spc, constants, i))
                 
                 try:
                     #Least Squares
@@ -1570,10 +1581,10 @@ class WindProfiler(Operation):
     def run(self, dataOut, technique, **kwargs):
         
         param = dataOut.data_param
-        if dataOut.abscissaRange != None:
-            absc = dataOut.abscissaRange[:-1]
+        if dataOut.abscissaList != None:
+            absc = dataOut.abscissaList[:-1]
         noise = dataOut.noise
-        heightRange = dataOut.getHeiRange()
+        heightList = dataOut.getHeiRange()
         SNR = dataOut.data_SNR
         
         if technique == 'DBS':
@@ -1602,7 +1613,9 @@ class WindProfiler(Operation):
                 theta_y = theta_y[arrayChannel]
             
             velRadial0 = param[:,1,:] #Radial velocity
-            dataOut.data_output, dataOut.heightRange, dataOut.data_SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightRange, SNR) #DBS Function
+            dataOut.data_output, dataOut.heightList, dataOut.data_SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightList, SNR) #DBS Function
+            dataOut.utctimeInit = dataOut.utctime
+            dataOut.outputInterval = dataOut.timeInterval
             
         elif technique == 'SA':
         
@@ -1627,7 +1640,7 @@ class WindProfiler(Operation):
             nChannels = dataOut.nChannels
 
             dataOut.data_output = self.techniqueSA(pairs, pairsList, nChannels, tau, azimuth, _lambda, position_x, position_y, absc, correctFactor)
-            dataOut.initUtcTime = dataOut.ltctime
+            dataOut.utctimeInit = dataOut.utctime
             dataOut.outputInterval = dataOut.timeInterval
             
         elif technique == 'Meteors':        
@@ -1656,7 +1669,9 @@ class WindProfiler(Operation):
             if self.__isConfig == False:
 #                 self.__initime = dataOut.datatime.replace(minute = 0, second = 0, microsecond = 03)
                 #Get Initial LTC time
-                self.__initime = (dataOut.datatime.replace(minute = 0, second = 0, microsecond = 0) - datetime.datetime(1970, 1, 1)).total_seconds()
+                self.__initime = datetime.datetime.utcfromtimestamp(self.dataOut.utctime)
+                self.__initime = (self.__initime.replace(minute = 0, second = 0, microsecond = 0) - datetime.datetime(1970, 1, 1)).total_seconds()
+
                 self.__isConfig = True
                 
             if self.__buffer == None:
@@ -1666,13 +1681,14 @@ class WindProfiler(Operation):
             else:
                 self.__buffer = numpy.vstack((self.__buffer, dataOut.data_param))
             
-            self.__checkTime(dataOut.ltctime, dataOut.paramInterval, dataOut.outputInterval) #Check if the buffer is ready
+            self.__checkTime(dataOut.utctime, dataOut.paramInterval, dataOut.outputInterval) #Check if the buffer is ready
             
             if self.__dataReady:
-                dataOut.initUtcTime = self.__initime
-                self.__initime = self.__initime + dataOut.outputInterval #to erase time offset
+                dataOut.utctimeInit = self.__initime
                 
-                dataOut.data_output, dataOut.heightRange = self.techniqueMeteors(self.__buffer, meteorThresh, hmin, hmax)
+                self.__initime += dataOut.outputInterval #to erase time offset
+                
+                dataOut.data_output, dataOut.heightList = self.techniqueMeteors(self.__buffer, meteorThresh, hmin, hmax)
                 dataOut.flagNoData = False
                 self.__buffer = None
 
@@ -1743,7 +1759,7 @@ class EWDriftsEstimation(Operation):
         dataOut.data_output = winds
         dataOut.data_SNR = SNR1
         
-        dataOut.initUtcTime = dataOut.ltctime
+        dataOut.utctimeInit = dataOut.utctime
         dataOut.outputInterval = dataOut.timeInterval
         return
         

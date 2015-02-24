@@ -111,8 +111,8 @@ class MomentsPlot(Figure):
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
         factor = dataOut.normFactor
-        x = dataOut.abscissaRange
-        y = dataOut.heightRange
+        x = dataOut.abscissaList
+        y = dataOut.heightList
         
         z = dataOut.data_pre[channelIndexList,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
@@ -452,8 +452,8 @@ class WindProfilerPlot(Figure):
         tmax = None
  
         x = dataOut.getTimeRange1()
-#         y = dataOut.heightRange
-        y = dataOut.heightRange
+#         y = dataOut.heightList
+        y = dataOut.heightList
             
         z = dataOut.data_output.copy()
         nplots = z.shape[0]    #Number of wind dimensions estimated
@@ -649,8 +649,8 @@ class ParametersPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,timerange=None, 
-            SNRmin = None, SNRmax = None, SNRthresh = None, paramIndex = None, onlyPositive = False,
-            zlabel = "", parameterName = "",
+            parameterIndex = None, onlyPositive = False,
+            zlabel = "", parameterName = "", parameterObject = "data_param",
             save=False, figpath='', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
@@ -671,27 +671,25 @@ class ParametersPlot(Figure):
             zmax            :    None
         """
         
-        if channelList == None:
-            channelIndexList = dataOut.channelIndexList
-        else:
-            channelIndexList = []
-            for channel in channelList:
-                if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
-                channelIndexList.append(dataOut.channelList.index(channel))
+        data_param = getattr(dataOut, parameterObject)
         
+        if channelList == None:
+            channelIndexList = numpy.arange(data_param.shape[0])
+        else:
+            channelIndexList = numpy.array(channelIndexList)
+
         if timerange != None:
             self.timerange = timerange
         
         #tmin = None
         #tmax = None
-        if paramIndex == None:
-            paramIndex = 1
+        if parameterIndex == None:
+            parameterIndex = 1
         x = dataOut.getTimeRange1()
-        y = dataOut.heightRange
-        z = dataOut.data_param[channelIndexList,paramIndex,:].copy()
+        y = dataOut.heightList
+        z = data_param[channelIndexList,parameterIndex,:].copy()
         
-        zRange = dataOut.abscissaRange
+        zRange = dataOut.abscissaList
         nplots = z.shape[0]    #Number of wind dimensions estimated
 #        thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
@@ -718,10 +716,6 @@ class ParametersPlot(Figure):
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = numpy.nanmin(zRange)
             if zmax == None: zmax = numpy.nanmax(zRange)
-                           
-            if dataOut.data_SNR != None:
-                if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
-                if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
             
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
@@ -862,7 +856,7 @@ class SpectralFittingPlot(Figure):
         cutHeight = dataOut.heightList[heightindex]
             
         factor = dataOut.normFactor
-        x = dataOut.abscissaRange[:-1]
+        x = dataOut.abscissaList[:-1]
         #y = dataOut.getHeiRange()
         
         z = dataOut.data_pre[:,:,heightindex]/factor
@@ -1037,15 +1031,6 @@ class EWDriftsPlot(Figure):
             zmax            :    None
         """
          
-        if channelList == None:
-            channelIndexList = dataOut.channelIndexList
-        else:
-            channelIndexList = []
-            for channel in channelList:
-                if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
-                channelIndexList.append(dataOut.channelList.index(channel))
-         
         if timerange != None:
             self.timerange = timerange
          
@@ -1053,7 +1038,7 @@ class EWDriftsPlot(Figure):
         tmax = None
  
         x = dataOut.getTimeRange1()
-#         y = dataOut.heightRange
+#         y = dataOut.heightList
         y = dataOut.heightList
             
         z = dataOut.data_output
@@ -1081,7 +1066,7 @@ class EWDriftsPlot(Figure):
  
         showprofile = False 
 #        thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(x[1])
         title = wintitle + " EW Drifts"
         xlabel = ""
         ylabel = "Height (Km)"
