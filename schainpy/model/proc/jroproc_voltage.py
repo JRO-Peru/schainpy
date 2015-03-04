@@ -634,12 +634,12 @@ class Decoder(Operation):
             if mode == 2:
                 datadec = self.convolutionInFreqOpt(dataOut.data)
         
-        dataOut.code = code
-        dataOut.nCode = nCode
-        dataOut.nBaud = nBaud
-        dataOut.radarControllerHeaderObj.code = code
-        dataOut.radarControllerHeaderObj.nCode = nCode
-        dataOut.radarControllerHeaderObj.nBaud = nBaud
+        dataOut.code = self.code
+        dataOut.nCode = self.nCode
+        dataOut.nBaud = self.nBaud
+        dataOut.radarControllerHeaderObj.code = self.code
+        dataOut.radarControllerHeaderObj.nCode = self.nCode
+        dataOut.radarControllerHeaderObj.nBaud = self.nBaud
         
         dataOut.data = datadec
         
