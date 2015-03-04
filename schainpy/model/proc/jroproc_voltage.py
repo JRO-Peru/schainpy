@@ -98,7 +98,7 @@ class VoltageProc(ProcessingUnit):
                 raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
         
 #         nChannels = len(channelIndexList)
-        if dataOut.flagDataAsBlock:
+        if self.dataOut.flagDataAsBlock:
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
@@ -217,7 +217,7 @@ class VoltageProc(ProcessingUnit):
         newdelta = deltaHeight * window
         r = self.dataOut.nHeights % window
         
-        if dataOut.flagDataAsBlock:
+        if self.dataOut.flagDataAsBlock:
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
