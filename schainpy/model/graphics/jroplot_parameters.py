@@ -650,6 +650,8 @@ class ParametersPlot(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,timerange=None, 
             parameterIndex = None, onlyPositive = False,
+            SNRthresh = -numpy.inf, SNR = True, SNRmin = None, SNRmax = None,
+            
             zlabel = "", parameterName = "", parameterObject = "data_param",
             save=False, figpath='', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
@@ -678,6 +680,8 @@ class ParametersPlot(Figure):
         else:
             channelIndexList = numpy.array(channelIndexList)
 
+        nchan = len(channelIndexList) #Number of channels being plotted
+        
         if timerange != None:
             self.timerange = timerange
         
@@ -692,10 +696,20 @@ class ParametersPlot(Figure):
         zRange = dataOut.abscissaList
         nplots = z.shape[0]    #Number of wind dimensions estimated
 #        thisDatetime = dataOut.datatime
+
+        if dataOut.data_SNR != None:
+            SNRarray = dataOut.data_SNR
+            SNRdB = 10*numpy.log10(SNRarray)
+#             SNRavgdB = 10*numpy.log10(SNRavg)
+            ind = numpy.where(SNRdB < 10**(SNRthresh/10))
+            z[ind] = numpy.nan
+
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
         title = wintitle + " Parameters Plot" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
+        
+        if SNR: nplots = 2*nplots
         
         if onlyPositive:
             colormap = "jet"
@@ -717,6 +731,10 @@ class ParametersPlot(Figure):
             if zmin == None: zmin = numpy.nanmin(zRange)
             if zmax == None: zmax = numpy.nanmax(zRange)
             
+            if SNR != None:
+                if SNRmin == None:  SNRmin = numpy.nanmin(SNRdB)
+                if SNRmax == None:  SNRmax = numpy.nanmax(SNRdB) 
+            
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
             self.SUB_EXP_CODE = sub_exp_code
@@ -730,18 +748,32 @@ class ParametersPlot(Figure):
         
         if ((self.xmax - x[1]) < (x[1]-x[0])):
             x[1] = self.xmax
-        
-        for i in range(nplots):
-            title = "%s Channel %d: %s" %(parameterName, dataOut.channelList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+                
+        for i in range(nchan):
+            if SNR: j = 2*i
+            else: j = i
+            
+            title = "%s Channel %d: %s" %(parameterName, channelIndexList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             
             if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
                 title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
-            axes = self.axesList[i*self.__nsubplots]
+            axes = self.axesList[j*self.__nsubplots]
             z1 = z[i,:].reshape((1,-1))
             axes.pcolorbuffer(x, y, z1,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap=colormap,
                         ticksize=9, cblabel=zlabel, cbsize="1%")
+            
+            if SNR:
+                title = "Channel %d Signal Noise Ratio (SNR): %s" %(channelIndexList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+                axes = self.axesList[(j + 1)*self.__nsubplots]
+                z1 = SNRdB[i,:].reshape((1,-1))
+                axes.pcolorbuffer(x, y, z1,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap="jet",
+                        ticksize=9, cblabel=zlabel, cbsize="1%")
+            
+                
 
         self.draw()      
         
