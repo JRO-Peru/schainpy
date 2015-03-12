@@ -103,6 +103,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.abscissaList = self.dataIn.getVelRange(1)
             self.dataOut.noise = self.dataIn.getNoise()
             self.dataOut.normFactor = self.dataIn.normFactor
+            self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
                         
         #----------------------    Correlation Data    ---------------------------
@@ -237,6 +238,14 @@ class ParametersProc(ProcessingUnit):
         moments = numpy.vstack((vec_snr, vec_power, vec_fd, vec_w))
         return moments
     
+    #------------------    Get SA Parameters    --------------------------
+    def GetSAParameters(self):
+        data = self.dataOut.data_pre
+        crossdata = self.dataIn.data_cspc
+        a = 1
+    
+    
+    
     #-------------------    Get Lags    ----------------------------------
     
     def GetLags(self):
@@ -256,6 +265,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.data_param
         
         '''
+        
         data = self.dataOut.data_pre
         normFactor = self.dataOut.normFactor
         nHeights = self.dataOut.nHeights
