@@ -678,7 +678,7 @@ class ParametersPlot(Figure):
         if channelList == None:
             channelIndexList = numpy.arange(data_param.shape[0])
         else:
-            channelIndexList = numpy.array(channelIndexList)
+            channelIndexList = numpy.array(channelList)
 
         nchan = len(channelIndexList) #Number of channels being plotted
         
@@ -698,7 +698,7 @@ class ParametersPlot(Figure):
 #        thisDatetime = dataOut.datatime
 
         if dataOut.data_SNR != None:
-            SNRarray = dataOut.data_SNR
+            SNRarray = dataOut.data_SNR[channelIndexList,:]
             SNRdB = 10*numpy.log10(SNRarray)
 #             SNRavgdB = 10*numpy.log10(SNRavg)
             ind = numpy.where(SNRdB < 10**(SNRthresh/10))

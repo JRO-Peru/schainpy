@@ -983,7 +983,7 @@ class Parameters(JROData):
     
     noise = None            #Noise Potency
     
-    initUtcTime = None      #Initial UTC time
+    utctimeInit = None      #Initial UTC time
     
     paramInterval = None    #Time interval to calculate Parameters in seconds
     
@@ -1017,8 +1017,8 @@ class Parameters(JROData):
         
         datatime = []
         
-        datatime.append(self.initUtcTime)
-        datatime.append(self.initUtcTime + self.outputInterval - 1)
+        datatime.append(self.utctimeInit)
+        datatime.append(self.utctimeInit + self.outputInterval - 1)
         
         datatime = numpy.array(datatime)
         
