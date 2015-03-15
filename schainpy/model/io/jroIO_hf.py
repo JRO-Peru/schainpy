@@ -8,6 +8,7 @@ import os,sys
 import time,datetime
 import h5py
 import numpy
+import fnmatch
 import re
 import stuffr
 
@@ -55,13 +56,13 @@ def getFileFromSet(path, ext, set):
             continue
         
         validFilelist.append(thisFile)
-    myfile = fnmatch.filter(validFilelist,'*%6.6d*'%(number))
+    myfile = fnmatch.filter(validFilelist,'*%6.6d*'%(set))
     #myfile = fnmatch.filter(validFilelist,'*%4.4d%3.3d%3.3d*'%(year,doy,set))
     
     if len(myfile)!= 0:
         return myfile[0]
     else:
-        filename = '*%6.6d%s'%(number,ext.lower())
+        filename = '*%6.6d%s'%(set,ext.lower())
         print 'the filename %s does not exist'%filename
         print '...going to the last file: '
         
@@ -150,6 +151,8 @@ class HFReader(ProcessingUnit):
         
         self.datablock = None
         
+        self.filename_current=None
+        
         self.utc = 0
         
         self.ext='.hdf5'
@@ -171,7 +174,7 @@ class HFReader(ProcessingUnit):
         
         self.flagNoMoreFiles= False
         
-        self.__waitForNewFile = 3
+        self.__waitForNewFile = 1
 
                       
         #--------------------------------------------------
@@ -215,6 +218,7 @@ class HFReader(ProcessingUnit):
         #self.__frequency=3.64e6
         self.__frequency=None
         self.__online = False
+        self.filename_next_set=None
         
         #print "Frequency of Operation:", self.__frequency 
         
@@ -307,6 +311,8 @@ class HFReader(ProcessingUnit):
         #print self.dirnameList
         dirList = [os.path.join(self.path,x) for x in self.dirnameList]
         self.filenameList= dirList 
+        #print self.filenameList
+        #print "pase",len(self.filenameList)
         
     def __selectDataForTimes(self, online=False):
         
@@ -325,14 +331,42 @@ class HFReader(ProcessingUnit):
                 self.status=0
                 return None
         else:
-            #if self.set== None:
-            self.filenameList=[self.filenameList[-1]]
-            #else:
-            #    try:
-            #        filename=getFileFromSet(self.path,self.ext,self.set)
-            #        self.filenameList=self.path+"/"+filename
-            #    except:
-            #        self.filenameList=[self.filenameList[-1]]
+            if self.set== None:
+                filename =getlastFileFromPath(self.path,self.ext)
+                
+                if self.flag_nextfile==True:
+                    self.dirnameList=[filename]
+                    fullfilename=self.path+"/"+filename
+                    self.filenameList=[self.filenameList[-1]]
+                    self.filename_next_set=int(filename[4:10])+1
+                    
+                    self.flag_nextfile=False
+                else:
+                    if self.filename_next_set== int(filename[4:10]):
+                        self.dirnameList=[filename]
+                        fullfilename=self.path+"/"+filename
+                        self.filenameList=[self.filenameList[-1]]
+                        self.filename_next_set=int(filename[4:10])+1
+                        
+                    else:
+                        set=self.filename_next_set
+                        filename=getFileFromSet(self.path,self.ext,set=set)
+                        self.filename_next_set=int(filename[4:10])+1
+                        if filename==None:
+                            filename =getlastFileFromPath(self.path,self.ext)
+                            self.filename_next_set=int(filename[4:10])
+                        self.dirnameList=[filename]                        
+                        fullfilename=self.path+"/"+filename
+                        self.filenameList=[self.filenameList[-1]]
+                   
+            else:
+                try:
+                    filename=getFileFromSet(self.path,self.ext,self.set)
+                    self.dirnameList=[filename]
+                    fullfilename=self.path+"/"+filename
+                    self.filenameList=[fullfilename]
+                except:
+                    self.filenameList=[self.filenameList[-1]]
 
                     
     def __searchFilesOffline(self,
@@ -372,26 +406,27 @@ class HFReader(ProcessingUnit):
         endDate = datetime.datetime.utcnow().date()
         
         self.__setParameters(path=path,startDate=startDate,endDate=endDate,walk=walk)
-
+        
         self.__checkPath()
         
-#         fullpath=path
-#         
-#         print "%s folder was found: " %(fullpath )
-#         
-#         if set == None:
-#             filename =getlastFileFromPath(fullpath,ext)
-#             startDate= datetime.datetime.utcnow().date
-#             endDate= datetime.datetime.utcnow().date()
+        fullpath=path        
+        print "%s folder was found: " %(fullpath )
+         
+        if set == None:
+            self.set=None
+            filename =getlastFileFromPath(fullpath,ext)
+            startDate= datetime.datetime.utcnow().date
+            endDate= datetime.datetime.utcnow().date()
 #             
-#         else:
-#             filename= getFileFromSet(fullpath,ext,set)
-#             startDate=None
-#             endDate=None
+        else:
+            filename= getFileFromSet(fullpath,ext,set)
+            startDate=None
+            endDate=None
 #         
-#         if not (filename):
-#             return None,None,None,None,None
-#         print "%s file was found" %(filename)
+        if not (filename):
+            return None,None,None,None,None
+        #print "%s file was found" %(filename)     
+        
 #         
 #         dir_hf_filename= self.path+"/"+filename
 #         fp= h5py.File(dir_hf_filename,'r')
@@ -405,10 +440,15 @@ class HFReader(ProcessingUnit):
 #         set= int(filename[4:10])
 #         self.set=set-1
         #self.dirnameList=[filename]
-        self.__findDataForDates(online=True)
-        self.dirnameList=[self.dirnameList[-1]]
+        filenameList= fullpath+"/"+filename
+        self.dirnameList=[filename]
+        self.filenameList=[filenameList]
+        self.flag_nextfile=True
+
+        #self.__findDataForDates(online=True)
+        #self.dirnameList=[self.dirnameList[-1]]
         #print self.dirnameList
-        self.__selectDataForTimes(online=True)
+        #self.__selectDataForTimes(online=True)
         #return fullpath,filename,year,month,dom,set
         return
     
@@ -454,20 +494,45 @@ class HFReader(ProcessingUnit):
     
     def __setNextFileOnline(self):
         """
-        """       
-        filename = self.filenameList[0]
+        """     
+        if self.set==None:
+            pass
+        else:
+            self.set +=1
+          
+        filename = self.filenameList[0]#fullfilename
         if self.filename_online != None:
             self.__selectDataForTimes(online=True)
             filename = self.filenameList[0]
             while self.filename_online == filename:
                 print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
                 time.sleep(self.__waitForNewFile)
-                self.__findDataForDates(True)
+                #self.__findDataForDates(online=True)
                 self.__selectDataForTimes(online=True)
                 filename = self.filenameList[0]
-                print filename
+                sizeoffile=os.path.getsize(filename)
+                
+        #print filename
+        sizeoffile=os.path.getsize(filename)
+        if sizeoffile<1650240:
+            print "%s is not the rigth  size"%filename
+            delay=2
+            print 'waiting %d seconds for delay...'%(delay)
+            time.sleep(delay) 
+        sizeoffile=os.path.getsize(filename)
+        if sizeoffile<1650240:
+            delay
+            print 'waiting %d  more seconds for delay...'%(delay)
+            time.sleep(delay) 
+            
+               
         
-        hfFilePointer=h5py.File(filename,'r')
+        try:        
+            hfFilePointer=h5py.File(filename,'r')
+            
+        except:
+            print "Error reading file %s"%filename
+            
         self.filename_online=filename
         epoc=hfFilePointer['t'].value
       
@@ -513,15 +578,20 @@ class HFReader(ProcessingUnit):
         self.timezone= timezone
         self.online= online
         self.all=all
-
-        
+        #if set==None:
+            
+        #print set
         if not(online):
             print "Searching files in offline mode..."
 
             self.__searchFilesOffline(path, startDate, endDate, ext, startTime, endTime, walk)
         else:
             print "Searching files in online mode..."
-            self.__searchFilesOnline(path, walk)
+            self.__searchFilesOnline(path, walk,ext,set=set)
+            if set==None:
+                pass
+            else:
+                self.set=set-1
             
 #             for nTries in range(self.nTries):
 #             
@@ -541,6 +611,7 @@ class HFReader(ProcessingUnit):
             sys.exit(-1)
             
         self.__getExpParameters()
+        
         
         self.fileIndex = -1
         
