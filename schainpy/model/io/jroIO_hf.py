@@ -649,11 +649,45 @@ class HFReader(ProcessingUnit):
     
         self.dataOut.systemHeaderObj = SystemHeader()
         
+        
+        #---------------------------------------------------------
+        self.dataOut.systemHeaderObj.nProfiles=100
+        self.dataOut.systemHeaderObj.nSamples=1000
+        
+        
+        SAMPLING_STRUCTURE=[('h0', '<f4'), ('dh', '<f4'), ('nsa', '<u4')]
+        self.dataOut.radarControllerHeaderObj.samplingWindow=numpy.zeros((1,),SAMPLING_STRUCTURE)
+        self.dataOut.radarControllerHeaderObj.samplingWindow['h0']=0
+        self.dataOut.radarControllerHeaderObj.samplingWindow['dh']=1.5
+        self.dataOut.radarControllerHeaderObj.samplingWindow['nsa']=1000
+        self.dataOut.radarControllerHeaderObj.nHeights=int(self.dataOut.radarControllerHeaderObj.samplingWindow['nsa'])
+        self.dataOut.radarControllerHeaderObj.firstHeight = self.dataOut.radarControllerHeaderObj.samplingWindow['h0']
+        self.dataOut.radarControllerHeaderObj.deltaHeight = self.dataOut.radarControllerHeaderObj.samplingWindow['dh']
+        self.dataOut.radarControllerHeaderObj.samplesWin = self.dataOut.radarControllerHeaderObj.samplingWindow['nsa']
+        
+        self.dataOut.radarControllerHeaderObj.nWindows=1
+        self.dataOut.radarControllerHeaderObj.codetype=0
+        self.dataOut.radarControllerHeaderObj.numTaus=0
+        #self.dataOut.radarControllerHeaderObj.Taus = numpy.zeros((1,),'<f4')
+        
+        
+        #self.dataOut.radarControllerHeaderObj.nCode=numpy.zeros((1,), '<u4')
+        #self.dataOut.radarControllerHeaderObj.nBaud=numpy.zeros((1,), '<u4')
+        #self.dataOut.radarControllerHeaderObj.code=numpy.zeros(0)
+        
+        self.dataOut.radarControllerHeaderObj.code_size=0
+        self.dataOut.nBaud=0
+        self.dataOut.nCode=0
+        self.dataOut.nPairs=0
+        
+        
+        #---------------------------------------------------------
+        
         self.dataOut.type = "Voltage"
         
         self.dataOut.data = None
         
-        self.dataOut.dtype = numpy.dtype([('real','<i8'),('imag','<i8')])
+        self.dataOut.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])
                
         self.dataOut.nProfiles = 1
         
