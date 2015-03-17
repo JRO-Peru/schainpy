@@ -355,26 +355,27 @@ class RadarControllerHeader(Header):
         if self.numTaus > 0:
             self.Taus.tofile(fp)
         
-        nCode = numpy.array(self.nCode, '<u4')
-        nCode.tofile(fp)
-        nBaud = numpy.array(self.nBaud, '<u4')
-        nBaud.tofile(fp)
-        code1 = (self.code + 1.0)/2.
-        
-        for ic in range(self.nCode):
-            tempx = numpy.zeros(numpy.ceil(self.nBaud/32.))
-            start = 0
-            end = 32
-            for i in range(len(tempx)):
-                code_selected = code1[ic,start:end]
-                for j in range(len(code_selected)-1,-1,-1):
-                    if code_selected[j] == 1:
-                        tempx[i] = tempx[i] + 2**(len(code_selected)-1-j)
-                start = start + 32
-                end = end + 32
+        if self.codeType !=0:
+            nCode = numpy.array(self.nCode, '<u4')
+            nCode.tofile(fp)
+            nBaud = numpy.array(self.nBaud, '<u4')
+            nBaud.tofile(fp)
+            code1 = (self.code + 1.0)/2.
             
-            tempx = tempx.astype('u4')
-            tempx.tofile(fp)
+            for ic in range(self.nCode):
+                tempx = numpy.zeros(numpy.ceil(self.nBaud/32.))
+                start = 0
+                end = 32
+                for i in range(len(tempx)):
+                    code_selected = code1[ic,start:end]
+                    for j in range(len(code_selected)-1,-1,-1):
+                        if code_selected[j] == 1:
+                            tempx[i] = tempx[i] + 2**(len(code_selected)-1-j)
+                    start = start + 32
+                    end = end + 32
+                
+                tempx = tempx.astype('u4')
+                tempx.tofile(fp)
             
         if self.line5Function == RCfunction.FLIP:
             self.flip1.tofile(fp)
