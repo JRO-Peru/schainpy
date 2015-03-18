@@ -45,7 +45,7 @@ def getFileFromSet(path, ext, set):
     
     for thisFile in fileList:
         try:
-            number= int(thisFile[4:10])
+            number= int(thisFile[6:16])
             
      #       year = int(thisFile[1:5])
      #       doy  = int(thisFile[5:8])
@@ -56,13 +56,13 @@ def getFileFromSet(path, ext, set):
             continue
         
         validFilelist.append(thisFile)
-    myfile = fnmatch.filter(validFilelist,'*%6.6d*'%(set))
+    myfile = fnmatch.filter(validFilelist,'*%10.10d*'%(set))
     #myfile = fnmatch.filter(validFilelist,'*%4.4d%3.3d%3.3d*'%(year,doy,set))
     
     if len(myfile)!= 0:
         return myfile[0]
     else:
-        filename = '*%6.6d%s'%(set,ext.lower())
+        filename = '*%10.10d%s'%(set,ext.lower())
         print 'the filename %s does not exist'%filename
         print '...going to the last file: '
         
@@ -93,7 +93,7 @@ Depura el fileList dejando solo los que cumplan el formato de "res-xxxxxx.ext"
     for thisFile in fileList:
         
         try:
-            number= int(thisFile[4:10])
+            number= int(thisFile[6:16])
         except:
             print "There is a file or folder with different format"
         if not isNumber(number):
@@ -338,23 +338,23 @@ class HFReader(ProcessingUnit):
                     self.dirnameList=[filename]
                     fullfilename=self.path+"/"+filename
                     self.filenameList=[self.filenameList[-1]]
-                    self.filename_next_set=int(filename[4:10])+1
+                    self.filename_next_set=int(filename[6:16])+10
                     
                     self.flag_nextfile=False
                 else:
-                    if self.filename_next_set== int(filename[4:10]):
+                    if self.filename_next_set== int(filename[6:16]):
                         self.dirnameList=[filename]
                         fullfilename=self.path+"/"+filename
                         self.filenameList=[self.filenameList[-1]]
-                        self.filename_next_set=int(filename[4:10])+1
+                        self.filename_next_set=int(filename[6:16])+10
                         
                     else:
                         set=self.filename_next_set
                         filename=getFileFromSet(self.path,self.ext,set=set)
-                        self.filename_next_set=int(filename[4:10])+1
+                        self.filename_next_set=int(filename[6:16])+10
                         if filename==None:
                             filename =getlastFileFromPath(self.path,self.ext)
-                            self.filename_next_set=int(filename[4:10])
+                            self.filename_next_set=int(filename[6:16])
                         self.dirnameList=[filename]                        
                         fullfilename=self.path+"/"+filename
                         self.filenameList=[self.filenameList[-1]]
@@ -498,7 +498,7 @@ class HFReader(ProcessingUnit):
         if self.set==None:
             pass
         else:
-            self.set +=1
+            self.set +=10
           
         filename = self.filenameList[0]#fullfilename
         if self.filename_online != None:
@@ -514,13 +514,13 @@ class HFReader(ProcessingUnit):
                 
         #print filename
         sizeoffile=os.path.getsize(filename)
-        if sizeoffile<1650240:
+        if sizeoffile<1670240:
             print "%s is not the rigth  size"%filename
             delay=2
             print 'waiting %d seconds for delay...'%(delay)
             time.sleep(delay) 
         sizeoffile=os.path.getsize(filename)
-        if sizeoffile<1650240:
+        if sizeoffile<1670240:
             delay
             print 'waiting %d  more seconds for delay...'%(delay)
             time.sleep(delay) 
@@ -591,7 +591,7 @@ class HFReader(ProcessingUnit):
             if set==None:
                 pass
             else:
-                self.set=set-1
+                self.set=set-10
             
 #             for nTries in range(self.nTries):
 #             
