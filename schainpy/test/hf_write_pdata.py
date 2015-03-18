@@ -32,7 +32,8 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 #path='/media/APOLLO/HF_rawdata/cspec'
 #path="/media/APOLLO/HF_rawdata/d2015059/sp01_f0" #f0=2.72e6
 #path="/media/APOLLO/HF_rawdata/d2015059/sp01_f1" #f0=3.64e6
-path='/media/APOLLO/HF_rawdata/test'
+#path='/media/APOLLO/HF_rawdata/test'
+path='/media/APOLLO/HF_rawdata/HFT_miercoles/sp01_f0'
 #---------------------------------------------------------#
 
 #---------------------PATH-FIGURE------------------------#
@@ -74,7 +75,7 @@ opObj12.addParameter(name='n', value='4', format='int')
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='SpectraProc', inputId=procUnitConfObj0.getId())
 procUnitConfObj1.addParameter(name='nFFTPoints', value='25', format='int')
 procUnitConfObj1.addParameter(name='nProfiles', value='25', format='int')
-#procUnitConfObj1.addParameter(name='pairsList', value='(0,1)', format='pairsList')
+procUnitConfObj1.addParameter(name='pairsList', value='(0,1)', format='pairsList')
 
 
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
