@@ -34,12 +34,12 @@ pathFigure='/home/alex/Pictures/hf2_16/last_data'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='SpectraReader',
                                             path=path,
-                                            startDate='2013/02/12',
+                                            startDate='2015/01/12',
                                             endDate='2015/05/13',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=0,
-                                            #set=8000,
+                                            #set=1426485881,
                                             delay=10,
                                             walk=1
                                             #timezone=-5*3600
@@ -48,7 +48,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='SpectraReader',
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='SpectraProc', inputId=readUnitConfObj.getId())
 
 opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
-opObj11.addParameter(name='id', value='2001', format='int')
+opObj11.addParameter(name='id', value='1000', format='int')
 opObj11.addParameter(name='wintitle', value='HF_Jicamarca_Spc', format='str')
 #opObj11.addParameter(name='channelList', value='0', format='intlist') 
 opObj11.addParameter(name='zmin', value='-120', format='float')
@@ -64,10 +64,10 @@ opObj11.addParameter(name='figpath', value=figpath, format='str')
 
 
 
-# figfile_power_name="jro_power_image"+freq2+date+ext_img
-# print figfile_power_name
+# # figfile_power_name="jro_power_image"+freq2+date+ext_img
+# # print figfile_power_name
 opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-opObj11.addParameter(name='id', value='3002', format='int')
+opObj11.addParameter(name='id', value='2000', format='int')
 opObj11.addParameter(name='wintitle', value='HF_Jicamarca', format='str')
 opObj11.addParameter(name='showprofile', value='0', format='int')
 #opObj11.addParameter(name='channelList', value='0', format='intlist') 
@@ -93,7 +93,7 @@ opObj11.addParameter(name='figpath', value=figpath, format='str')
 # # figfile_phase_name="jro_phase_image"+freq1+date+ext_img
 # # print figfile_phase_name
 opObj11 = procUnitConfObj1.addOperation(name='CoherenceMap', optype='other')
-opObj11.addParameter(name='id', value='3', format='int')
+opObj11.addParameter(name='id', value='3000', format='int')
 opObj11.addParameter(name='wintitle', value='HF_Jicamarca', format='str')
 opObj11.addParameter(name='showprofile', value='1', format='int')
 opObj11.addParameter(name='xmin', value='0', format='float')
@@ -132,7 +132,7 @@ opObj20 = procUnitConfObj2.addOperation(name='GetMoments')
 # opObj21.addParameter(name='zmax', value='90', format='int')
 #    
 opObj21 = procUnitConfObj2.addOperation(name='ParametersPlot', optype='other')
-opObj21.addParameter(name='id', value='1', format='int')
+opObj21.addParameter(name='id', value='4000', format='int')
 opObj21.addParameter(name='wintitle', value='Radial Velocity Plot0', format='str')
 opObj21.addParameter(name='channelList', value='0', format='intlist') 
 opObj21.addParameter(name='save', value='1', format='bool')
@@ -144,10 +144,10 @@ opObj21.addParameter(name='SNRthresh', value='0', format='float')
 opObj21.addParameter(name='xmin', value=0, format='float')
 opObj21.addParameter(name='xmax', value=24, format='float')
 #opObj21.addParameter(name='parameterIndex', value=, format='int')
-   
+    
 #   
 opObj21 = procUnitConfObj2.addOperation(name='ParametersPlot', optype='other')
-opObj21.addParameter(name='id', value='2', format='int')
+opObj21.addParameter(name='id', value='5000', format='int')
 opObj21.addParameter(name='wintitle', value='Radial Velocity Plot1', format='str')
 opObj21.addParameter(name='channelList', value='1', format='intlist') 
 opObj21.addParameter(name='save', value='1', format='bool')
