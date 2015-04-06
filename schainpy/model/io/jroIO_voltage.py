@@ -242,7 +242,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
         
         if self.nTxs > 1:
-            self.dataOut.radarControllerHeaderObj.ippSeconds /= self.nTxs
+            self.dataOut.radarControllerHeaderObj.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
 
 #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
 
