@@ -207,7 +207,7 @@ class VoltageProc(ProcessingUnit):
         return 1
     
  
-    def filterByHeights(self, window, axis=1):
+    def filterByHeights(self, window, axis=2):
         
         deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
         
@@ -222,7 +222,7 @@ class VoltageProc(ProcessingUnit):
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
             buffer = self.dataOut.data[:, :, 0:self.dataOut.nHeights-r]
-            buffer = buffer.reshape(self.dataOut.nChannels,self.dataOut.nHeights,self.dataOut.nHeights/window,window)
+            buffer = buffer.reshape(self.dataOut.nChannels,self.dataOut.nProfiles,self.dataOut.nHeights/window,window)
             buffer = numpy.sum(buffer,3)
         
         else:
