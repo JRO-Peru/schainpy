@@ -1031,6 +1031,11 @@ class JRODataReader(JRODataIO):
         
         self.dataOut.useLocalTime = self.basicHeaderObj.useLocalTime
         
+        self.dataOut.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
+        
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
+        
+        
     def getFirstHeader(self):
         
         raise ValueError, "This method has not been implemented"
