@@ -70,7 +70,7 @@ class Figure:
         
         return widthscreen, heightscreen
     
-    def getTimeLim(self, x, xmin=None, xmax=None, timerange=None):
+    def getTimeLim(self, x, xmin=None, xmax=None, timerange=None, timezone=0):
         
         if self.xmin != None and self.xmax != None:
             if timerange == None:
@@ -94,10 +94,10 @@ class Figure:
             
         
         
-        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
+        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=timezone)
         xmin_sec = time.mktime(mindt.timetuple())
         
-        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
+        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=timezone)
         xmax_sec = time.mktime(maxdt.timetuple())
 
         return xmin_sec, xmax_sec
