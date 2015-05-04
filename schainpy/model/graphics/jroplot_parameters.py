@@ -490,7 +490,7 @@ class WindProfilerPlot(Figure):
                        showprofile=showprofile,
                        show=show)
              
-            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange, timezone = dataOut.timezone)
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
  
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
@@ -724,7 +724,7 @@ class ParametersPlot(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange, timezone = dataOut.timezone)
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
             
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
@@ -1111,7 +1111,7 @@ class EWDriftsPlot(Figure):
                        showprofile=showprofile,
                        show=show)
              
-            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange, timezone = dataOut.timezone)
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
  
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)

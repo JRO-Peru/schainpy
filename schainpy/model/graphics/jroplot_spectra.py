@@ -547,7 +547,7 @@ class RTIPlot(Figure):
             
 #             if timerange != None:
 #                 self.timerange = timerange
-#                 self.xmin, self.tmax = self.getTimeLim(x, xmin, xmax, timerange, timezone = dataOut.timezone)
+#                 self.xmin, self.tmax = self.getTimeLim(x, xmin, xmax, timerange)
             
             
             
@@ -720,9 +720,9 @@ class CoherenceMap(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            #tmin, tmax = self.getTimeLim(x, xmin, xmax, timezone = dataOut.timezone)
+            #tmin, tmax = self.getTimeLim(x, xmin, xmax)
             
-            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange, timezone = dataOut.timezone)
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
             
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
@@ -1072,7 +1072,7 @@ class Noise(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            tmin, tmax = self.getTimeLim(x, xmin, xmax, timezone = dataOut.timezone)
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(noisedB) - 10.0
             if ymax == None: ymax = numpy.nanmax(noisedB) + 10.0
             
@@ -1284,7 +1284,7 @@ class BeaconPhase(Figure):
                        showprofile=showprofile,
                        show=show)
              
-            tmin, tmax = self.getTimeLim(x, xmin, xmax, timezone = dataOut.timezone)
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(phase_beacon) - 10.0
             if ymax == None: ymax = numpy.nanmax(phase_beacon) + 10.0
              

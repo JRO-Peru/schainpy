@@ -269,7 +269,7 @@ class RTIfromSpectraHeis(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            tmin, tmax = self.getTimeLim(x, xmin, xmax, timezone = dataOut.timezone)
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
             if ymin == None: ymin = numpy.nanmin(datadB)
             if ymax == None: ymax = numpy.nanmax(datadB)
             
