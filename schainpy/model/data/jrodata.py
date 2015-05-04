@@ -249,7 +249,7 @@ class JROData(GenericData):
         datatime = []
         
         datatime.append(self.ltctime)
-        datatime.append(self.ltctime + self.timeInterval)
+        datatime.append(self.ltctime + self.timeInterval+60)
         
         datatime = numpy.array(datatime)
         
@@ -318,6 +318,8 @@ class Voltage(JROData):
         '''
         Constructor
         '''
+        
+        self.useLocalTime = True
         
         self.radarControllerHeaderObj = RadarControllerHeader()
     
@@ -430,6 +432,8 @@ class Spectra(JROData):
         '''
         Constructor
         '''
+        
+        self.useLocalTime = True
         
         self.radarControllerHeaderObj = RadarControllerHeader()
     

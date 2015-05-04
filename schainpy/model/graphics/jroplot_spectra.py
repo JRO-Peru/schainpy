@@ -543,7 +543,7 @@ class RTIPlot(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange, timezone = dataOut.timezone)
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
             
 #             if timerange != None:
 #                 self.timerange = timerange

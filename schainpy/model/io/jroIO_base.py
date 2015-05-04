@@ -467,6 +467,9 @@ class JRODataReader(JRODataIO):
             thisPath = pathList[i]
             
             fileList = glob.glob1(thisPath, "*%s" %ext)
+            if len(fileList) < 1:
+                continue
+            
             fileList.sort()
             pathDict.setdefault(fileList[0])
             pathDict[fileList[0]] = i

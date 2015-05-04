@@ -86,18 +86,18 @@ class Figure:
         else:
             txmin = numpy.min(x)
             timerange = self.timerange
+            
         thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
+        
         if xmin == None and xmax == None:
             xmin = (thisdatetime - thisdate).seconds/(60*60.)
             xmax = xmin + timerange/(60*60.)
-            
         
-        
-        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=timezone)
+        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
         xmin_sec = time.mktime(mindt.timetuple())
         
-        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=timezone)
+        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
         xmax_sec = time.mktime(maxdt.timetuple())
 
         return xmin_sec, xmax_sec

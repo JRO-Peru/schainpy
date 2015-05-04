@@ -14,19 +14,20 @@ if __name__ == '__main__':
     
     controllerObj.setup(id = '191', name='test01', description=desc)
     
-    readUnitConfObj = controllerObj.addReadUnit(datatype='Spectra',
-                                                path='/remote/datos/IMAGING/IMAGING2',
-                                                startDate='2012/12/18',
-                                                endDate='2012/12/22',
+    readUnitConfObj = controllerObj.addReadUnit(datatype='SpectraReader',
+                                                path='/remote/puma/JULIA_EW_IMAGING/JULIA_EW/D2015',
+                                                startDate='2015/01/18',
+                                                endDate='2015/01/22',
                                                 startTime='00:00:00',
                                                 endTime='23:59:59',
                                                 online=0,
                                                 walk=1,
-                                                expLabel='')
+                                                expLabel='ESF_EW')
     
-#    opObj00 = readUnitConfObj.addOperation(name='printInfo')
+    opObj00 = readUnitConfObj.addOperation(name='printInfo')
+    opObj00 = readUnitConfObj.addOperation(name='printNumberOfBlock')
     
-#    procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
+    procUnitConfObj1 = controllerObj.addProcUnit(datatype='SpectraProc', inputId=readUnitConfObj.getId())
     
 #    opObj10 = procUnitConfObj0.addOperation(name='selectChannels')
 #    opObj10.addParameter(name='channelList', value='3,4,5', format='intlist')
@@ -43,14 +44,14 @@ if __name__ == '__main__':
 #    procUnitConfObj1.addParameter(name='pairList', value='(0,1),(0,2),(1,2)', format='')
     
     
-#    opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
-#    opObj11.addParameter(name='idfigure', value='1', format='int')
-#    opObj11.addParameter(name='wintitle', value='SpectraPlot0', format='str')
-##    opObj11.addParameter(name='zmin', value='30', format='int')
-##    opObj11.addParameter(name='zmax', value='70', format='int')
-#    opObj11.addParameter(name='showprofile', value='1', format='int')  
-#    opObj11.addParameter(name='save', value='1', format='int')
-#    opObj11.addParameter(name='figpath', value='/home/roj-idl71/tmp/graphs')
+    opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+    opObj11.addParameter(name='id', value='1', format='int')
+    opObj11.addParameter(name='wintitle', value='SpectraPlot0', format='str')
+#    opObj11.addParameter(name='zmin', value='30', format='int')
+#    opObj11.addParameter(name='zmax', value='70', format='int')
+    opObj11.addParameter(name='showprofile', value='1', format='int')  
+#     opObj11.addParameter(name='save', value='1', format='int')
+#     opObj11.addParameter(name='figpath', value='/home/roj-idl71/tmp/graphs')
 ##
 #    opObj11 = procUnitConfObj1.addOperation(name='CrossSpectraPlot', optype='other')
 #    opObj11.addParameter(name='idfigure', value='2', format='int')
@@ -60,12 +61,12 @@ if __name__ == '__main__':
 #    opObj11.addParameter(name='save', value='1', format='int')
 #    opObj11.addParameter(name='figpath', value='/home/roj-idl71/tmp/graphs')
     
-#            
-#    opObj11 = procUnitConfObj1.addOperation(name='CoherenceMap', optype='other')
-#    opObj11.addParameter(name='idfigure', value='3', format='int')
-#    opObj11.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
-#    opObj11.addParameter(name='zmin', value='40', format='int')
-#    opObj11.addParameter(name='zmax', value='90', format='int') 
+            
+#     opObj11 = procUnitConfObj1.addOperation(name='CoherenceMap', optype='other')
+#     opObj11.addParameter(name='idfigure', value='3', format='int')
+#     opObj11.addParameter(name='wintitle', value='CrossSpectraPlot', format='str')
+#     opObj11.addParameter(name='zmin', value='40', format='int')
+#     opObj11.addParameter(name='zmax', value='90', format='int') 
     
 #    procUnitConfObj2 = controllerObj.addProcUnit(datatype='Voltage', inputId=procUnitConfObj0.getId())
 #  
@@ -83,15 +84,15 @@ if __name__ == '__main__':
 #    opObj11.addParameter(name='zmax', value='90', format='int')
 #    opObj11.addParameter(name='showprofile', value='1', format='int') 
 
-#    opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-#    opObj11.addParameter(name='idfigure', value='10', format='int')
-#    opObj11.addParameter(name='wintitle', value='RTI', format='str')
-##    opObj11.addParameter(name='xmin', value='21', format='float')
-##    opObj11.addParameter(name='xmax', value='22', format='float')
-#    opObj11.addParameter(name='zmin', value='40', format='int')
-#    opObj11.addParameter(name='zmax', value='90', format='int')
-#    opObj11.addParameter(name='showprofile', value='1', format='int')
-#    opObj11.addParameter(name='timerange', value=str(60), format='int')
+    opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
+    opObj11.addParameter(name='id', value='10', format='int')
+    opObj11.addParameter(name='wintitle', value='RTI', format='str')
+#     opObj11.addParameter(name='xmin', value='0', format='float')
+#     opObj11.addParameter(name='xmax', value='10', format='float')
+#     opObj11.addParameter(name='zmin', value='40', format='int')
+#     opObj11.addParameter(name='zmax', value='90', format='int')
+    opObj11.addParameter(name='showprofile', value='1', format='int')
+    opObj11.addParameter(name='timerange', value=str(2*60*60), format='int')
     
 #    opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
 #    opObj10.addParameter(name='channelList', value='0,2,4,6', format='intlist')
