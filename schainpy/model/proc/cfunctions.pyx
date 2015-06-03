@@ -1,4 +1,4 @@
-import numpy
+# import numpy
 cimport numpy
  
 def decoder(numpy.ndarray[numpy.complex_t, ndim=2] fft_code, numpy.ndarray[numpy.complex_t, ndim=2] data):

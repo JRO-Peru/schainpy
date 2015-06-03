@@ -1,5 +1,7 @@
 '''
+Created on Jul 3, 2014
 
+@author: roj-idl71
 '''
 
 import os, sys
@@ -9,15 +11,84 @@ import fnmatch
 import glob
 
 try:
+    from gevent import sleep
+except:
+    from time import sleep
+
+try:
     import pyfits
 except:
     """
     """
-
+    
 from xml.etree.ElementTree import ElementTree
 
 from jroIO_base import isDoyFolder, isNumber
-from model.proc.jroproc_base import Operation, ProcessingUnit
+from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
+        
+class Fits: 
+    name=None
+    format=None
+    array =None
+    data =None
+    thdulist=None
+    prihdr=None
+    hdu=None
+    
+    def __init__(self):
+        
+        pass
+    
+    def setColF(self,name,format,array):
+        self.name=name
+        self.format=format
+        self.array=array
+        a1=numpy.array([self.array],dtype=numpy.float32)
+        self.col1 = pyfits.Column(name=self.name, format=self.format, array=a1)
+        return self.col1
+            
+#    def setColP(self,name,format,data):
+#        self.name=name
+#        self.format=format
+#        self.data=data
+#        a2=numpy.array([self.data],dtype=numpy.float32)
+#        self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
+#        return self.col2
+    
+
+    def writeData(self,name,format,data):
+        self.name=name
+        self.format=format
+        self.data=data
+        a2=numpy.array([self.data],dtype=numpy.float32)
+        self.col2 = pyfits.Column(name=self.name, format=self.format, array=a2)
+        return self.col2
+    
+    def cFImage(self,idblock,year,month,day,hour,minute,second):
+        self.hdu= pyfits.PrimaryHDU(idblock)
+        self.hdu.header.set("Year",year)
+        self.hdu.header.set("Month",month)
+        self.hdu.header.set("Day",day)
+        self.hdu.header.set("Hour",hour)
+        self.hdu.header.set("Minute",minute)
+        self.hdu.header.set("Second",second)
+        return self.hdu 
+
+
+    def Ctable(self,colList):
+        self.cols=pyfits.ColDefs(colList)
+        self.tbhdu = pyfits.new_table(self.cols)
+        return self.tbhdu
+    
+  
+    def CFile(self,hdu,tbhdu):
+        self.thdulist=pyfits.HDUList([hdu,tbhdu])
+               
+    def wFile(self,filename):
+        if os.path.isfile(filename):
+            os.remove(filename)
+        self.thdulist.writeto(filename) 
+
 
 class ParameterConf:
     ELEMENTNAME = 'Parameter'
@@ -165,13 +236,13 @@ class FitsWriter(Operation):
         setFile = self.setFile
         setFile += 1
                 
-        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
+        thisFile = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
                                         timeTuple.tm_year,
                                         timeTuple.tm_yday,
                                         setFile,
                                         ext )
 
-        filename = os.path.join( path, subfolder, file )
+        filename = os.path.join( path, subfolder, thisFile )
         
         self.blockIndex = 0
         self.filename = filename
@@ -242,7 +313,7 @@ class FitsReader(ProcessingUnit):
         self.setFile = 0
         self.flagNoMoreFiles = 0
         self.flagIsNewFile = 1
-        self.flagTimeBlock = None
+        self.flagDiscontinuousBlock = None
         self.fileIndex = None
         self.filename = None
         self.fileSize = None
@@ -432,9 +503,9 @@ class FitsReader(ProcessingUnit):
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
             
-            for file in fileList:
+            for thisFile in fileList:
                 
-                filename = os.path.join(thisPath,file)
+                filename = os.path.join(thisPath,thisFile)
                 thisDatetime = self.isFileinThisTime(filename, startTime, endTime)
                 
                 if not(thisDatetime):
@@ -558,7 +629,7 @@ class FitsReader(ProcessingUnit):
                 return 1
             
             print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
-            time.sleep( self.delay )
+            sleep( self.delay )
             
         
         return 0
@@ -585,10 +656,10 @@ class FitsReader(ProcessingUnit):
         
         deltaTime = self.utc - self.lastUTTime 
         
-        self.flagTimeBlock = 0
+        self.flagDiscontinuousBlock = 0
 
         if deltaTime > self.maxTimeStep:
-            self.flagTimeBlock = 1
+            self.flagDiscontinuousBlock = 1
 
         return 1
     
@@ -610,7 +681,7 @@ class FitsReader(ProcessingUnit):
             print 'Process finished'
             return 0
         
-        self.flagTimeBlock = 0
+        self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
 
         if not(self.readNextBlock()):
@@ -653,7 +724,7 @@ class SpectraHeisWriter(Operation):
     subfolder = None
     
     def __init__(self):
-        self.wrObj = FITS()
+        self.wrObj = Fits()
 #        self.dataOut = dataOut 
         self.nTotalBlocks=0
 #        self.set = None
@@ -709,9 +780,9 @@ class SpectraHeisWriter(Operation):
 #            self.setFile = 0
         
         #make the filename
-        file = 'D%4.4d%3.3d_%3.3d%s' % (name.tm_year,name.tm_yday,self.setFile,ext) 
+        thisFile = 'D%4.4d%3.3d_%3.3d%s' % (name.tm_year,name.tm_yday,self.setFile,ext) 
 
-        filename = os.path.join(self.wrpath,self.subfolder, file) 
+        filename = os.path.join(self.wrpath,self.subfolder, thisFile) 
         
         idblock = numpy.array([self.idblock],dtype="int64")
         header=self.wrObj.cFImage(idblock=idblock, 

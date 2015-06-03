@@ -1,12 +1,15 @@
 '''
+Created on Jul 2, 2014
 
+@author: roj-idl71
 '''
+
 import numpy
 
 from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
-from model.proc.jroproc_base import ProcessingUnit, Operation
-from model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
-from model.data.jrodata import Voltage
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
+from schainpy.model.data.jrodata import Voltage
 
 class VoltageReader(JRODataReader, ProcessingUnit):
     """
@@ -144,7 +147,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
     
 #         self.ippSeconds = 0
     
-        self.flagTimeBlock = 0    
+        self.flagDiscontinuousBlock = 0    
     
         self.flagIsNewBlock = 0
         
@@ -245,14 +248,14 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.dataOut.radarControllerHeaderObj.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
 
 #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
-
-        if self.radarControllerHeaderObj.code != None:
-            
-            self.dataOut.nCode = self.radarControllerHeaderObj.nCode
-            
-            self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
-            
-            self.dataOut.code = self.radarControllerHeaderObj.code
+# 
+#         if self.radarControllerHeaderObj.code != None:
+#             
+#             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
+#             
+#             self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
+#             
+#             self.dataOut.code = self.radarControllerHeaderObj.code
             
         self.dataOut.dtype = self.dtype
             
@@ -310,7 +313,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         Affected:
             self.dataOut
             self.profileIndex
-            self.flagTimeBlock
+            self.flagDiscontinuousBlock
             self.flagIsNewBlock
         """
         
@@ -319,7 +322,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             print 'Process finished'
             return 0
         
-        self.flagTimeBlock = 0
+        self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
         
         if self.__hasNotDataInBuffer():
@@ -462,7 +465,6 @@ class VoltageWriter(JRODataWriter, Operation):
                                      self.processingHeaderObj.profilesPerBlock,
                                      self.processingHeaderObj.nHeights),
                                      dtype=numpy.dtype('complex64'))
-
         
     def writeBlock(self):
         """
@@ -497,6 +499,8 @@ class VoltageWriter(JRODataWriter, Operation):
         self.blockIndex += 1
         self.nTotalBlocks += 1
         
+        print "[Writing] Block = ", self.blockIndex
+        
     def putData(self):
         """
         Setea un bloque de datos y luego los escribe en un file 
@@ -514,8 +518,7 @@ class VoltageWriter(JRODataWriter, Operation):
         
         self.flagIsNewBlock = 0
         
-        if self.dataOut.flagTimeBlock:
-            
+        if self.dataOut.flagDiscontinuousBlock:
             self.datablock.fill(0)
             self.profileIndex = 0
             self.setNextFile()

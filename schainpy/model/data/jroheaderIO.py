@@ -86,7 +86,7 @@ class Header(object):
         print "#"*100
         for key in self.__dict__.keys():
             print "%s = %s" %(key, self.__dict__[key])
-        
+
 class BasicHeader(Header):
     
     size = None
@@ -168,15 +168,17 @@ class SystemHeader(Header):
     adcResolution = None
     pciDioBusWidth = None
         
-    def __init__(self):
+    def __init__(self, nSamples=0, nProfiles=0, nChannels=0, adcResolution=14, pciDioBusWith=0):
+        
         self.size = 24 
-        self.nSamples = 0
-        self.nProfiles = 0
-        self.nChannels = 0
-        self.adcResolution = 0
-        self.pciDioBusWidth = 0
-
+        self.nSamples = nSamples
+        self.nProfiles = nProfiles
+        self.nChannels = nChannels
+        self.adcResolution = adcResolution
+        self.pciDioBusWidth = pciDioBusWith
+        
     def read(self, fp):
+        
         try:
             header = numpy.fromfile(fp,SYSTEM_STRUCTURE,1)
             self.size = header['nSize'][0]
@@ -222,41 +224,49 @@ class RadarControllerHeader(Header):
     
     __C = 3e8
         
-    def __init__(self):
+    def __init__(self, expType=2, nTx=1,
+                 ippKm=None, txA=0, txB=0,
+                 nWindows=None, nHeights=None, firstHeight=None, deltaHeight=None,
+                 numTaus=0, line6Function=0, line5Function=0, fClock=0,
+                 prePulseBefore=0, prePulseAfter=0,
+                 codeType=0, nCode=0, nBaud=0, code=None,
+                 flip1=0, flip2=0):
+        
         self.size = 116
-        self.expType = 0
-        self.nTx = 0
-        self.ipp = 0
-        self.txA = 0
-        self.txB = 0
-        self.nWindows = 0
-        self.numTaus = 0
-        self.codeType = 0
-        self.line6Function = 0
-        self.line5Function = 0
-        self.fClock = 0
-        self.prePulseBefore = 0
-        self.prePulserAfter = 0
-        self.rangeIpp = 0
-        self.rangeTxA = 0
-        self.rangeTxB = 0
+        self.expType = expType
+        self.nTx = nTx
+        self.ipp = ippKm
+        self.txA = txA
+        self.txB = txB
+        self.rangeIpp = ippKm
+        self.rangeTxA = txA
+        self.rangeTxB = txB
         
-        self.samplingWindow = None
-        self.nHeights = None
-        self.firstHeight = None
-        self.deltaHeight = None
-        self.samplesWin = None
+        self.nWindows = nWindows
+        self.numTaus = numTaus
+        self.codeType = codeType
+        self.line6Function = line6Function
+        self.line5Function = line5Function
+        self.fClock = fClock
+        self.prePulseBefore = prePulseBefore
+        self.prePulserAfter = prePulseAfter
         
-        self.nCode = None
-        self.nBaud = None
-        self.code = None
-        self.flip1 = None
-        self.flip2 = None
+        self.nHeights = nHeights
+        self.firstHeight = firstHeight
+        self.deltaHeight = deltaHeight
+        self.samplesWin = nHeights
+        
+        self.nCode = nCode
+        self.nBaud = nBaud
+        self.code = code
+        self.flip1 = flip1
+        self.flip2 = flip2
         
 #         self.dynamic = numpy.array([],numpy.dtype('byte'))
         
 
     def read(self, fp):
+        
         try:
             startFp = fp.tell()
             header = numpy.fromfile(fp,RADAR_STRUCTURE,1)
@@ -285,20 +295,20 @@ class RadarControllerHeader(Header):
 #             backFp = fp.tell() - jumpFp
 #             fp.seek(backFp)
             
-            self.samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
+            samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
             
-            self.nHeights = int(numpy.sum(self.samplingWindow['nsa']))
-            self.firstHeight = self.samplingWindow['h0']
-            self.deltaHeight = self.samplingWindow['dh']
-            self.samplesWin = self.samplingWindow['nsa']
+            self.nHeights = int(numpy.sum(samplingWindow['nsa']))
+            self.firstHeight = samplingWindow['h0']
+            self.deltaHeight = samplingWindow['dh']
+            self.samplesWin = samplingWindow['nsa']
             
             self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
     
             if self.codeType != 0:
                 self.nCode = int(numpy.fromfile(fp,'<u4',1))
                 self.nBaud = int(numpy.fromfile(fp,'<u4',1))
-                self.code = numpy.empty([self.nCode,self.nBaud],dtype='u1')
-                
+                self.code = numpy.empty([self.nCode,self.nBaud],dtype='i1')
+                 
                 for ic in range(self.nCode):
                     temp = numpy.fromfile(fp,'u4',int(numpy.ceil(self.nBaud/32.)))
                     for ib in range(self.nBaud-1,-1,-1):
@@ -349,7 +359,8 @@ class RadarControllerHeader(Header):
         #dynamic = self.dynamic
         #dynamic.tofile(fp)
         
-        samplingWindow = self.samplingWindow
+        sampleWindowTuple = (self.firstHeight,self.deltaHeight,self.samplesWin)
+        samplingWindow = numpy.array(sampleWindowTuple,SAMPLING_STRUCTURE)
         samplingWindow.tofile(fp)
         
         if self.numTaus > 0:
@@ -419,6 +430,7 @@ class ProcessingHeader(Header):
     flag_cspc = None
         
     def __init__(self):
+        
         self.size = 0
         self.dtype = 0
         self.blockSize = 0
@@ -429,8 +441,6 @@ class ProcessingHeader(Header):
         self.nCohInt = 0
         self.nIncohInt = 0
         self.totalSpectra = 0
-        
-        self.samplingWindow = 0
         
         self.nHeights = 0
         self.firstHeight = 0
@@ -458,12 +468,12 @@ class ProcessingHeader(Header):
         self.nIncohInt = int(header['nIncoherentIntegrations'][0])
         self.totalSpectra = int(header['nTotalSpectra'][0])
         
-        self.samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
+        samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
         
-        self.nHeights = int(numpy.sum(self.samplingWindow['nsa']))
-        self.firstHeight = float(self.samplingWindow['h0'][0])
-        self.deltaHeight = float(self.samplingWindow['dh'][0])
-        self.samplesWin = self.samplingWindow['nsa'][0]
+        self.nHeights = int(numpy.sum(samplingWindow['nsa']))
+        self.firstHeight = float(samplingWindow['h0'][0])
+        self.deltaHeight = float(samplingWindow['dh'][0])
+        self.samplesWin = samplingWindow['nsa'][0]
         self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
         
 #        if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
@@ -501,6 +511,7 @@ class ProcessingHeader(Header):
         return 1
     
     def write(self, fp):
+        
         headerTuple = (self.size,
                        self.dtype,
                        self.blockSize,

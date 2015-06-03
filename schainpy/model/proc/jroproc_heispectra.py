@@ -1,7 +1,7 @@
 import numpy
 
 from jroproc_base import ProcessingUnit, Operation
-from model.data.jrodata import SpectraHeis
+from schainpy.model.data.jrodata import SpectraHeis
 
 class SpectraHeisProc(ProcessingUnit):
     
@@ -37,7 +37,7 @@ class SpectraHeisProc(ProcessingUnit):
         self.dataOut.nFFTPoints = self.dataIn.nHeights
 #        self.dataOut.channelIndexList = self.dataIn.channelIndexList
 #        self.dataOut.flagNoData = self.dataIn.flagNoData
-        self.dataOut.flagTimeBlock = self.dataIn.flagTimeBlock
+        self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
         self.dataOut.utctime = self.dataIn.utctime
 #        self.dataOut.utctime = self.firstdatatime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada

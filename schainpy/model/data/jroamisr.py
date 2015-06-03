@@ -1,4 +1,5 @@
 import numpy
+import copy
 
 class Beam:
     def __init__(self):
@@ -25,7 +26,7 @@ class AMISR:
         self.channelList = [0]#self.dataIn.channelList esto solo aplica para el caso de AMISR
         self.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])
         
-        self.flagTimeBlock = None#self.dataIn.flagTimeBlock
+        self.flagDiscontinuousBlock = None#self.dataIn.flagDiscontinuousBlock
         #self.utctime = #self.firstdatatime
         self.flagDecodeData = None#self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.flagDeflipData = None#self.dataIn.flagDeflipData #asumo q la data esta sin flip

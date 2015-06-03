@@ -1,12 +1,14 @@
 '''
-'''
+Created on Jul 2, 2014
 
+@author: roj-idl71
+'''
 import numpy
 
 from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
-from model.proc.jroproc_base import ProcessingUnit, Operation
-from model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
-from model.data.jrodata import Spectra
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
+from schainpy.model.data.jrodata import Spectra
 
 class SpectraReader(JRODataReader, ProcessingUnit):
     """ 
@@ -158,7 +160,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
     
 #         self.ippSeconds = 0
     
-        self.flagTimeBlock = 0    
+        self.flagDiscontinuousBlock = 0    
     
         self.flagIsNewBlock = 0
         
@@ -328,15 +330,15 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         
         self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
     
-        self.dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+        self.dataOut.flagDeflipData = False #asumo q la data esta sin flip
         
         if self.radarControllerHeaderObj.code != None:
             
-            self.dataOut.nCode = self.radarControllerHeaderObj.nCode
-            
-            self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
-            
-            self.dataOut.code = self.radarControllerHeaderObj.code
+#             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
+#             
+#             self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
+#             
+#             self.dataOut.code = self.radarControllerHeaderObj.code
             
             self.dataOut.flagDecodeData = True
         
@@ -355,7 +357,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         Affected:
             self.dataOut
             
-            self.flagTimeBlock
+            self.flagDiscontinuousBlock
             self.flagIsNewBlock
         """
 
@@ -364,7 +366,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
             print 'Process finished'
             return 0
          
-        self.flagTimeBlock = 0
+        self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
         
         if self.__hasNotDataInBuffer():            
@@ -555,6 +557,7 @@ class SpectraWriter(JRODataWriter, Operation):
         self.nWriteBlocks += 1
         self.blockIndex += 1
         
+        print "[Writing] Block = ", self.blockIndex
         
     def putData(self):
         """
@@ -575,7 +578,7 @@ class SpectraWriter(JRODataWriter, Operation):
         
         self.flagIsNewBlock = 0
         
-        if self.dataOut.flagTimeBlock:
+        if self.dataOut.flagDiscontinuousBlock:
             self.data_spc.fill(0)
             self.data_cspc.fill(0)
             self.data_dc.fill(0)

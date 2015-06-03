@@ -21,10 +21,6 @@ class Reader(ProcessingUnit):
         
         ProcessingUnit.__init__(self)
         
-#         self.dataIn = None
-#         
-#         self.isConfig = False
-        
         #Is really necessary create the output object in the initializer
         self.dataOut = Voltage()
         
@@ -44,6 +40,10 @@ class Reader(ProcessingUnit):
         
         '''
         
+        '''
+        Add code
+        '''
+        
         self.isConfig = True
         
     def run(self, **kwargs):
@@ -53,6 +53,10 @@ class Reader(ProcessingUnit):
         
         if not self.isConfig:
             self.setup(**kwargs)
+            
+        '''
+        Add code
+        '''
             
 class Writer(Operation):
     '''

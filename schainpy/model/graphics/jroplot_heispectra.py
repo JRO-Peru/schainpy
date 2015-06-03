@@ -1,8 +1,8 @@
 '''
+Created on Jul 9, 2014
 
-@author: Daniel Suarez
+@author: roj-idl71
 '''
-
 import os
 import datetime
 import numpy
@@ -75,7 +75,7 @@ class SpectraHeisScope(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='', figfile=None, ftp=False, wr_period=1, show=True,
+            figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None):
         
         """
@@ -120,7 +120,7 @@ class SpectraHeisScope(Figure):
         y = datadB
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = ""
         #para 1Mhz descomentar la siguiente linea
@@ -155,12 +155,13 @@ class SpectraHeisScope(Figure):
         
         
         self.draw()
-
-        if figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            figfile = self.getFilename(name = str_datetime)
         
-        if figpath != '':
+        if save:
+
+            if figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                figfile = self.getFilename(name = str_datetime)
+                
             self.counter_imagwr += 1
             if (self.counter_imagwr>=wr_period):
                 # store png plot to local folder
@@ -223,7 +224,7 @@ class RTIfromSpectraHeis(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='', figfile=None, ftp=False, wr_period=1, show=True,
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None):
         
         if channelList == None:
@@ -254,7 +255,7 @@ class RTIfromSpectraHeis(Figure):
 #        noisedB = 10*numpy.log10(noise)
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " RTI: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Local Time"
         ylabel = "Intensity (dB)"
@@ -310,11 +311,12 @@ class RTIfromSpectraHeis(Figure):
             del self.ydata
             self.__isConfig = False
         
-        if self.figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
+        if save:
+            
+            if self.figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                self.figfile = self.getFilename(name = str_datetime)
+                
             self.counter_imagwr += 1
             if (self.counter_imagwr>=wr_period):
                 # store png plot to local folder

@@ -4,9 +4,9 @@ import os
 import h5py
 import re
 
-from model.data.jrodata import *
-from model.proc.jroproc_base import ProcessingUnit, Operation
-from model.io.jroIO_base import *
+from schainpy.model.data.jrodata import *
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.io.jroIO_base import *
 
 
 class HDF5Reader(ProcessingUnit):

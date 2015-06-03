@@ -12,8 +12,8 @@ import re
 import h5py
 import numpy
 
-from model.proc.jroproc_base import ProcessingUnit, Operation
-from model.data.jroamisr import AMISR
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.data.jroamisr import AMISR
 
 class RadacHeader():
     def __init__(self, fp):

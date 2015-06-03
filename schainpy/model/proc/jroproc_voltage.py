@@ -1,8 +1,7 @@
 import numpy
 
 from jroproc_base import ProcessingUnit, Operation
-from model.data.jrodata import Voltage
-
+from schainpy.model.data.jrodata import Voltage
 
 class VoltageProc(ProcessingUnit):
     
@@ -207,7 +206,7 @@ class VoltageProc(ProcessingUnit):
         return 1
     
  
-    def filterByHeights(self, window, axis=2):
+    def filterByHeights(self, window):
         
         deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
         
@@ -233,8 +232,17 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data = buffer.copy()
         self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*(self.dataOut.nHeights-r)/window,newdelta)
         self.dataOut.windowOfFilter = window
+
+    def setH0(self, h0, deltaHeight = None):
         
-        return 1
+        if not deltaHeight:
+            deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+        
+        nHeights = self.dataOut.nHeights
+        
+        newHeiRange = h0 + numpy.arange(nHeights)*deltaHeight
+        
+        self.dataOut.heightList = newHeiRange
         
     def deFlip(self, channelList = []):
         
@@ -267,8 +275,6 @@ class VoltageProc(ProcessingUnit):
             
         self.dataOut.data = data
         
-        
-
     def setRadarFrequency(self, frequency=None):
         
         if frequency != None:
@@ -571,13 +577,15 @@ class Decoder(Operation):
         
     def convolutionInFreqOpt(self, data):
         
-        fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
-        
-        data = cfunctions.decoder(fft_code, data)
-        
-        datadec = data#[:,:]
-        
-        return datadec
+        raise NotImplementedError
+    
+#         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
+#         
+#         data = cfunctions.decoder(fft_code, data)
+#         
+#         datadec = data#[:,:]
+#         
+#         return datadec
     
     def convolutionInTime(self, data):
         
@@ -888,3 +896,139 @@ class Reshaper(Operation):
             dataOut.nProfiles = dataOut.data.shape[1]
             
             dataOut.ippSeconds *= factor
+            
+import collections
+from scipy.stats import mode
+
+class Synchronize(Operation):
+    
+    isConfig = False
+    __profIndex = 0
+    
+    def __init__(self):
+        
+        Operation.__init__(self)
+#         self.isConfig = False
+        self.__powBuffer = None
+        self.__startIndex = 0
+        self.__pulseFound = False
+    
+    def __findTxPulse(self, dataOut, channel=0, pulse_with = None):
+        
+        #Read data
+        
+        powerdB = dataOut.getPower(channel = channel)
+        noisedB = dataOut.getNoise(channel = channel)[0]
+        
+        self.__powBuffer.extend(powerdB.flatten())
+        
+        dataArray = numpy.array(self.__powBuffer)
+        
+        filteredPower = numpy.correlate(dataArray, dataArray[0:self.__nSamples], "same")
+        
+        maxValue = numpy.nanmax(filteredPower)
+        
+        if maxValue < noisedB + 10:
+            #No se encuentra ningun pulso de transmision
+            return None
+        
+        maxValuesIndex = numpy.where(filteredPower > maxValue - 0.1*abs(maxValue))[0]
+        
+        if len(maxValuesIndex) < 2:
+            #Solo se encontro un solo pulso de transmision de un baudio, esperando por el siguiente TX
+            return None
+        
+        phasedMaxValuesIndex = maxValuesIndex - self.__nSamples
+        
+        #Seleccionar solo valores con un espaciamiento de nSamples
+        pulseIndex = numpy.intersect1d(maxValuesIndex, phasedMaxValuesIndex)
+        
+        if len(pulseIndex) < 2:
+            #Solo se encontro un pulso de transmision con ancho mayor a 1
+            return None
+        
+        spacing = pulseIndex[1:] - pulseIndex[:-1]
+        
+        #remover senales que se distancien menos de 10 unidades o muestras
+        #(No deberian existir IPP menor a 10 unidades)
+        
+        realIndex = numpy.where(spacing > 10 )[0]
+        
+        if len(realIndex) < 2:
+            #Solo se encontro un pulso de transmision con ancho mayor a 1
+            return None
+        
+        #Eliminar pulsos anchos (deja solo la diferencia entre IPPs)
+        realPulseIndex = pulseIndex[realIndex]
+        
+        period = mode(realPulseIndex[1:] - realPulseIndex[:-1])[0][0]
+        
+        print "IPP = %d samples" %period
+        
+        self.__newNSamples = dataOut.nHeights #int(period)
+        self.__startIndex = int(realPulseIndex[0])
+        
+        return 1
+        
+    
+    def setup(self, nSamples, nChannels, buffer_size = 4):
+        
+        self.__powBuffer = collections.deque(numpy.zeros( buffer_size*nSamples,dtype=numpy.float),
+                                          maxlen = buffer_size*nSamples)
+        
+        bufferList = []
+        
+        for i in range(nChannels):
+            bufferByChannel = collections.deque(numpy.zeros( buffer_size*nSamples, dtype=numpy.complex) +  numpy.NAN,
+                                          maxlen = buffer_size*nSamples)
+            
+            bufferList.append(bufferByChannel)
+            
+        self.__nSamples = nSamples
+        self.__nChannels = nChannels
+        self.__bufferList = bufferList
+    
+    def run(self, dataOut, channel = 0):
+            
+        if not self.isConfig:
+            nSamples = dataOut.nHeights
+            nChannels = dataOut.nChannels
+            self.setup(nSamples, nChannels)
+            self.isConfig = True
+        
+        #Append new data to internal buffer
+        for thisChannel in range(self.__nChannels):
+            bufferByChannel = self.__bufferList[thisChannel]
+            bufferByChannel.extend(dataOut.data[thisChannel])
+            
+        if self.__pulseFound:
+            self.__startIndex -= self.__nSamples
+        
+        #Finding Tx Pulse
+        if not self.__pulseFound:
+            indexFound = self.__findTxPulse(dataOut, channel)
+            
+            if indexFound == None:
+                dataOut.flagNoData = True
+                return
+            
+            self.__arrayBuffer = numpy.zeros((self.__nChannels, self.__newNSamples), dtype = numpy.complex)
+            self.__pulseFound = True
+            self.__startIndex = indexFound
+        
+        #If pulse was found ...
+        for thisChannel in range(self.__nChannels):
+            bufferByChannel = self.__bufferList[thisChannel]
+            #print self.__startIndex 
+            x = numpy.array(bufferByChannel)
+            self.__arrayBuffer[thisChannel] = x[self.__startIndex:self.__startIndex+self.__newNSamples]
+        
+        deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
+        dataOut.heightList = numpy.arange(self.__newNSamples)*deltaHeight
+#             dataOut.ippSeconds = (self.__newNSamples / deltaHeight)/1e6
+        
+        dataOut.data = self.__arrayBuffer
+        
+        self.__startIndex += self.__newNSamples
+            
+        return

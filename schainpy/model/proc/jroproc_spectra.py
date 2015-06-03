@@ -2,8 +2,8 @@ import numpy
 import math
 
 from jroproc_base import ProcessingUnit, Operation
-from model.data.jrodata import Spectra
-from model.data.jrodata import hildebrand_sekhon
+from schainpy.model.data.jrodata import Spectra
+from schainpy.model.data.jrodata import hildebrand_sekhon
 
 class SpectraProc(ProcessingUnit):
     
@@ -37,7 +37,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.code = self.dataIn.code
         self.dataOut.nProfiles = self.dataOut.nFFTPoints
 #        self.dataOut.channelIndexList = self.dataIn.channelIndexList
-        self.dataOut.flagTimeBlock = self.dataIn.flagTimeBlock
+        self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
         self.dataOut.utctime = self.firstdatatime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
@@ -114,7 +114,8 @@ class SpectraProc(ProcessingUnit):
                 raise ValueError, "This SpectraProc.run() need nFFTPoints input variable"
             
             if nProfiles == None:
-                raise ValueError, "This SpectraProc.run() need nProfiles input variable"
+                nProfiles = nFFTPoints
+#                 raise ValueError, "This SpectraProc.run() need nProfiles input variable"
 
             
             if ippFactor == None:

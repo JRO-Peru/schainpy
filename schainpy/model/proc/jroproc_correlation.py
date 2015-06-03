@@ -1,7 +1,7 @@
 import numpy
 
 from jroproc_base import ProcessingUnit, Operation
-from model.data.jrodata import Correlation
+from schainpy.model.data.jrodata import Correlation
 
 class CorrelationProc(ProcessingUnit):
     
@@ -33,7 +33,7 @@ class CorrelationProc(ProcessingUnit):
         self.dataOut.nCode = self.dataIn.nCode
         self.dataOut.code = self.dataIn.code
 #        self.dataOut.nProfiles = self.dataOut.nFFTPoints
-        self.dataOut.flagTimeBlock = self.dataIn.flagTimeBlock
+        self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
         self.dataOut.utctime = self.firstdatatime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip

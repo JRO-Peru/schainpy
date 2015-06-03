@@ -1,5 +1,7 @@
 '''
+Created on Jul 2, 2014
 
+@author: roj-idl71
 '''
 import os
 import sys
@@ -11,24 +13,16 @@ import time, datetime
 #import h5py
 import traceback
 
-#try:
-#    import pyfits
-#except:
-#    print "pyfits module has not been imported, it should be installed to save files in fits format"
+try:
+    from gevent import sleep
+except:
+    from time import sleep
+    
+from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 
-#from jrodata import *
-#from jroheaderIO import *
-#from jroprocessing import *
+LOCALTIME = True
 
-#import re
-#from xml.etree.ElementTree import Element, SubElement, ElementTree
-
-
-LOCALTIME = True #-18000
-
-from model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
-
-def isNumber(str):
+def isNumber(cad):
     """
     Chequea si el conjunto de caracteres que componen un string puede ser convertidos a un numero.
 
@@ -42,7 +36,7 @@ def isNumber(str):
         False   :    no es un string numerico
     """
     try:
-        float( str )
+        float( cad )
         return True
     except:
         return False
@@ -308,7 +302,7 @@ class JRODataIO:
     
     flagIsNewFile = 1
     
-    flagTimeBlock = 0
+    flagDiscontinuousBlock = 0
     
     flagIsNewBlock = 0
     
@@ -469,7 +463,6 @@ class JRODataReader(JRODataIO):
             fileList = glob.glob1(thisPath, "*%s" %ext)
             if len(fileList) < 1:
                 continue
-            
             fileList.sort()
             pathDict.setdefault(fileList[0])
             pathDict[fileList[0]] = i
@@ -658,7 +651,7 @@ class JRODataReader(JRODataIO):
                 for nTries in range( tries ): 
                     if firstTime_flag:
                         print "\tWaiting %0.2f sec for the file \"%s\" , try %03d ..." % ( self.delay, filename, nTries+1 ) 
-                        time.sleep( self.delay )
+                        sleep( self.delay )
                     else:
                         print "\tSearching next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext)
                     
@@ -748,8 +741,8 @@ class JRODataReader(JRODataIO):
 #                self.flagEoF = True
                 return 0
             
-            print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
-            time.sleep( self.delay )
+            print "[Reading] Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+            sleep( self.delay )
             
         
         return 0        
@@ -771,8 +764,8 @@ class JRODataReader(JRODataIO):
             if ( currentSize >= neededSize ):
                 return 1
             
-            print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
-            time.sleep( self.delay )
+            print "[Reading] Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+            sleep( self.delay )
         
         return 0
 
@@ -836,10 +829,10 @@ class JRODataReader(JRODataIO):
 
         deltaTime = self.basicHeaderObj.utc - self.lastUTTime #
         
-        self.flagTimeBlock = 0
+        self.flagDiscontinuousBlock = 0
 
         if deltaTime > self.maxTimeStep:
-            self.flagTimeBlock = 1
+            self.flagDiscontinuousBlock = 1
 
         return 1
 
@@ -892,7 +885,7 @@ class JRODataReader(JRODataIO):
         except IOError:
             traceback.print_exc()
             if msgFlag:
-                print "The file %s can't be opened" % (filename)
+                print "[Reading] The file %s can't be opened" % (filename)
             return False
 
         neededSize = self.processingHeaderObj.blockSize + self.firstHeaderSize
@@ -915,12 +908,12 @@ class JRODataReader(JRODataIO):
             except IOError:
                 traceback.print_exc()
                 if msgFlag:
-                    print "\tThe file %s is empty or it hasn't enough data" % filename
+                    print "[Reading] The file %s is empty or it hasn't enough data" % filename
 
                 fp.close()
                 return False
         else:
-            msg = "\tSkipping the file %s due to it hasn't enough data" %filename
+            msg = "[Reading] Skipping the file %s due to it hasn't enough data" %filename
 
         fp.close()
         fileSize = os.path.getsize(filename)
@@ -948,13 +941,13 @@ class JRODataReader(JRODataIO):
                 nTxs = 1):
 
         if path == None:
-            raise ValueError, "The path is not valid"
+            raise ValueError, "[Reading] The path is not valid"
 
         if ext == None:
             ext = self.ext
 
         if online:
-            print "Searching files in online mode..."  
+            print "[Reading] Searching files in online mode..."  
                    
             for nTries in range( self.nTries ):
                 fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk, set=set)
@@ -962,11 +955,11 @@ class JRODataReader(JRODataIO):
                 if fullpath:
                     break
                 
-                print '\tWaiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
-                time.sleep( self.delay )
+                print '[Reading] Waiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
+                sleep( self.delay )
             
             if not(fullpath):
-                print "There 'isn't valied files in %s" % path
+                print "There 'isn't any valid file in %s" % path
                 return None
         
             self.year = year
@@ -977,14 +970,14 @@ class JRODataReader(JRODataIO):
             last_set = None
         
         else:
-            print "Searching files in offline mode ..."
+            print "[Reading] Searching files in offline mode ..."
             pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
                                                                startTime=startTime, endTime=endTime,
                                                                set=set, expLabel=expLabel, ext=ext,
                                                                walk=walk)
             
             if not(pathList):
-                print "No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
+                print "[Reading] No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
                                                         datetime.datetime.combine(startDate,startTime).ctime(),
                                                         datetime.datetime.combine(endDate,endTime).ctime())
                 
@@ -1007,11 +1000,11 @@ class JRODataReader(JRODataIO):
         
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):
-                print "No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
+                print "[Reading] No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
             elif startDate != None:
-                print "No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime())
+                print "[Reading] No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime())
             else:
-                print "No files"
+                print "[Reading] No files"
 
             sys.exit(-1)
 
@@ -1024,7 +1017,7 @@ class JRODataReader(JRODataIO):
         
         self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond/1000. + self.profileIndex * self.radarControllerHeaderObj.ippSeconds
         
-        self.dataOut.flagTimeBlock = self.flagTimeBlock
+        self.dataOut.flagDiscontinuousBlock = self.flagDiscontinuousBlock
         
         self.dataOut.timeZone = self.basicHeaderObj.timeZone
     
@@ -1061,16 +1054,16 @@ class JRODataReader(JRODataIO):
     
     def printReadBlocks(self):
         
-        print "Number of read blocks per file %04d" %self.nReadBlocks
+        print "[Reading] Number of read blocks per file %04d" %self.nReadBlocks
     
     def printTotalBlocks(self):
         
-        print "Number of read blocks %04d" %self.nTotalBlocks
+        print "[Reading] Number of read blocks %04d" %self.nTotalBlocks
 
     def printNumberOfBlock(self):
         
         if self.flagIsNewBlock:
-            print "Block No. %04d, Total blocks %04d -> %s" %(self.basicHeaderObj.dataBlock, self.nTotalBlocks, self.dataOut.datatime.ctime())
+            print "[Reading] Block No. %04d, Total blocks %04d -> %s" %(self.basicHeaderObj.dataBlock, self.nTotalBlocks, self.dataOut.datatime.ctime())
             self.dataOut.blocknow = self.basicHeaderObj.dataBlock
 
     def printInfo(self):
@@ -1275,13 +1268,13 @@ class JRODataWriter(JRODataIO):
         setFile = self.setFile
         setFile += 1
                 
-        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
+        filen = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
                                         timeTuple.tm_year,
                                         timeTuple.tm_yday,
                                         setFile,
                                         ext )
 
-        filename = os.path.join( path, subfolder, file )
+        filename = os.path.join( path, subfolder, filen )
 
         fp = open( filename,'wb' )
         
@@ -1296,7 +1289,7 @@ class JRODataWriter(JRODataIO):
         
         self.setFirstHeader()
         
-        print 'Writing the file: %s'%self.filename
+        print '[Writing] file: %s'%self.filename
         
         self.__writeFirstHeader()
         
@@ -1334,7 +1327,7 @@ class JRODataWriter(JRODataIO):
         self.dataOut = dataOut
         
         if not(self.setNextFile()):
-            print "There isn't a next file"
+            print "[Writing] There isn't a next file"
             return 0
         
         self.setBlockDimension()

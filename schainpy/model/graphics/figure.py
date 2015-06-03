@@ -45,7 +45,7 @@ class Figure:
     
     def __del__(self):
         
-        self.__driver.closeFigure()
+        self.__driver.closeFigure(True)
     
     def getFilename(self, name, ext='.png'):
         
@@ -70,7 +70,7 @@ class Figure:
         
         return widthscreen, heightscreen
     
-    def getTimeLim(self, x, xmin=None, xmax=None, timerange=None, timezone=0):
+    def getTimeLim(self, x, xmin=None, xmax=None, timerange=None):
         
         if self.xmin != None and self.xmax != None:
             if timerange == None:
@@ -80,17 +80,18 @@ class Figure:
             
             return xmin, xmax
         
-        
-        if timerange != None and self.xmin == None and self.xmax == None:
-            txmin = x[0] - x[0]%timerange
+        if timerange == None and (xmin==None or xmax==None):
+            raise ValueError, "timerange or xmin+xmax should be defined"
+            
+        if timerange != None:
+            txmin = x[0] - x[0] % min(timerange/10, 10*60)
         else:
-            txmin = numpy.min(x)
-            timerange = self.timerange
+            txmin = x[0] - x[0] % 10*60
             
         thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
-        if xmin == None and xmax == None:
+        if timerange != None:
             xmin = (thisdatetime - thisdate).seconds/(60*60.)
             xmax = xmin + timerange/(60*60.)
         

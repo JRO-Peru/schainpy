@@ -1,7 +1,9 @@
 '''
-@author: Daniel Suarez
-'''
+Created on Jul 9, 2014
 
+@author: roj-idl71
+'''
+import os
 import datetime
 import numpy
 
@@ -111,7 +113,7 @@ class Scope(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
             figpath='./', figfile=None, show=True, wr_period=1,
-            server=None, folder=None, username=None, password=None, type='power'):
+            ftp=False, server=None, folder=None, username=None, password=None, type='power'):
         
         """
         
@@ -125,8 +127,6 @@ class Scope(Figure):
             ymin            :    None,
             ymax            :    None,
         """
-        if dataOut.flagNoData:
-            return None
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -141,7 +141,7 @@ class Scope(Figure):
         y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
         y = y.real
         
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         
         if type == "power":
             self.plot_power(dataOut.heightList, 

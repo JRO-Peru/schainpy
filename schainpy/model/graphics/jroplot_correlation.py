@@ -75,7 +75,7 @@ class CorrelationPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False):
         
@@ -127,7 +127,7 @@ class CorrelationPlot(Figure):
 #         noise = dataOut.noise/factor
   
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Correlation" 
         xlabel = "Lag T (s)"
         ylabel = "Range (Km)"
@@ -180,17 +180,19 @@ class CorrelationPlot(Figure):
             
         self.draw()
         
-        if figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
+        if save:
+            
+            if figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                figfile = self.getFilename(name = str_datetime)
+                
             self.counter_imagwr += 1
             if (self.counter_imagwr>=wr_period):
                 # store png plot to local folder
                 self.saveFigure(figpath, figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)                
+                # store png plot to FTP server according to RT-Web format
+                if ftp:
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    ftp_filename = os.path.join(figpath, name)
+                    self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0         

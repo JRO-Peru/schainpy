@@ -3,7 +3,7 @@
 '''
 import numpy
 from jroproc_base import ProcessingUnit, Operation
-from model.data.jroamisr import AMISR
+from schainpy.model.data.jroamisr import AMISR
 
 class AMISRProc(ProcessingUnit):
     def __init__(self):

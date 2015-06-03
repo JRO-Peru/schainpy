@@ -49,8 +49,19 @@ def getDataTypeCode(numpyDtype):
     return datatype
 
 def hildebrand_sekhon(data, navg):
+    """
+    This method is for the objective determination of the noise level in Doppler spectra. This 
+    implementation technique is based on the fact that the standard deviation of the spectral 
+    densities is equal to the mean spectral density for white Gaussian noise
     
-    data = data.copy()
+    Inputs:
+        Data    :    heights
+        navg    :    numbers of averages
+        
+    Return:
+        -1        :    any error
+        anoise    :    noise's level
+    """
     
     sortdata = numpy.sort(data,axis=None)
     lenOfData = len(sortdata)
@@ -146,7 +157,7 @@ class JROData(GenericData):
     
     channelList = None
     
-    flagTimeBlock = False
+    flagDiscontinuousBlock = False
     
     useLocalTime = False
     
@@ -160,11 +171,11 @@ class JROData(GenericData):
     
     blocksize = None
     
-    nCode = None
-    
-    nBaud = None
-    
-    code = None
+#     nCode = None
+#     
+#     nBaud = None
+#     
+#     code = None
     
     flagDecodeData = False #asumo q la data no esta decodificada
     
@@ -178,7 +189,7 @@ class JROData(GenericData):
     
     nCohInt = None
     
-    noise = None
+#     noise = None
     
     windowOfFilter = 1
     
@@ -294,7 +305,42 @@ class JROData(GenericData):
         '''
         
         self.datatype = getDataTypeCode(numpyDtype)
+
+    def get_code(self):
+        '''
+        '''
+        return self.radarControllerHeaderObj.code
     
+    def set_code(self, code):
+        '''
+        '''
+        self.radarControllerHeaderObj.code = code
+        
+        return
+
+    def get_ncode(self):
+        '''
+        '''
+        return self.radarControllerHeaderObj.nCode
+    
+    def set_ncode(self, nCode):
+        '''
+        '''
+        self.radarControllerHeaderObj.nCode = nCode
+        
+        return
+
+    def get_nbaud(self):
+        '''
+        '''
+        return self.radarControllerHeaderObj.nBaud
+    
+    def set_nbaud(self, nBaud):
+        '''
+        '''
+        self.radarControllerHeaderObj.nBaud = nBaud
+        
+        return
 #     def getTimeInterval(self):
 #         
 #         raise IOError, "This method should be implemented inside each Class"
@@ -308,6 +354,9 @@ class JROData(GenericData):
     ippSeconds = property(get_ippSeconds, set_ippSeconds)
     dtype = property(get_dtype, set_dtype)
 #     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
+    code = property(get_code, set_code)
+    nCode = property(get_ncode, set_ncode)
+    nBaud = property(get_nbaud, set_nbaud)
     
 class Voltage(JROData):
     
@@ -345,7 +394,7 @@ class Voltage(JROData):
         
         self.flagNoData = True
         
-        self.flagTimeBlock = False
+        self.flagDiscontinuousBlock = False
         
         self.utctime = None
         
@@ -366,10 +415,10 @@ class Voltage(JROData):
         self.flagShiftFFT = False
     
         self.flagDataAsBlock = False    #Asumo que la data es leida perfil a perfil
-    
+        
         self.profileIndex = 0
         
-    def getNoisebyHildebrand(self):
+    def getNoisebyHildebrand(self, channel = None):
         """
         Determino el nivel de ruido usando el metodo Hildebrand-Sekhon
         
@@ -377,21 +426,43 @@ class Voltage(JROData):
             noiselevel
         """
 
-        for channel in range(self.nChannels):
-            daux = self.data_spc[channel,:,:]
-            self.noise[channel] = hildebrand_sekhon(daux, self.nCohInt)
+        if channel != None:
+            data = self.data[channel]
+            nChannels = 1
+        else:
+            data = self.data
+            nChannels = self.nChannels
+            
+        noise = numpy.zeros(nChannels)
+        power = data * numpy.conjugate(data)
         
-        return self.noise
+        for thisChannel in range(nChannels):
+            if nChannels == 1:
+                daux = power[:].real
+            else:
+                daux = power[thisChannel,:].real
+            noise[thisChannel] = hildebrand_sekhon(daux, self.nCohInt)
+        
+        return noise
     
-    def getNoise(self, type = 1):
-        
-        self.noise = numpy.zeros(self.nChannels)
+    def getNoise(self, type = 1, channel = None):
         
         if type == 1:
-            noise = self.getNoisebyHildebrand()
+            noise = self.getNoisebyHildebrand(channel)
             
         return 10*numpy.log10(noise)
     
+    def getPower(self, channel = None):
+        
+        if channel != None:
+            data = self.data[channel]
+        else:
+            data = self.data
+            
+        power = data * numpy.conjugate(data)
+        
+        return 10*numpy.log10(power.real)
+       
     def getTimeInterval(self):
         
         timeInterval = self.ippSeconds * self.nCohInt
@@ -461,7 +532,7 @@ class Spectra(JROData):
         
         self.flagNoData = True
         
-        self.flagTimeBlock = False
+        self.flagDiscontinuousBlock = False
         
         self.utctime = None
         
@@ -490,7 +561,7 @@ class Spectra(JROData):
         self.noise_estimation = None
         
     
-    def getNoisebyHildebrand(self):
+    def getNoisebyHildebrand(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
         """
         Determino el nivel de ruido usando el metodo Hildebrand-Sekhon
         
@@ -499,17 +570,19 @@ class Spectra(JROData):
         """
         
         noise = numpy.zeros(self.nChannels)
+        
         for channel in range(self.nChannels):
-            daux = self.data_spc[channel,:,:]
+            daux = self.data_spc[channel,xmin_index:xmax_index,ymin_index:ymax_index]
             noise[channel] = hildebrand_sekhon(daux, self.nIncohInt)
         
         return noise 
         
-    def getNoise(self):
+    def getNoise(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
+        
         if self.noise_estimation != None:
             return self.noise_estimation #this was estimated by getNoise Operation defined in jroproc_spectra.py
         else:
-            noise = self.getNoisebyHildebrand()
+            noise = self.getNoisebyHildebrand(xmin_index, xmax_index, ymin_index, ymax_index)
             return noise
 
     
@@ -612,7 +685,7 @@ class SpectraHeis(Spectra):
         
         self.flagNoData = True
         
-        self.flagTimeBlock = False
+        self.flagDiscontinuousBlock = False
                 
 #         self.nPairs = 0
         
@@ -648,7 +721,7 @@ class Fits:
     
     flagNoData = True
     
-    flagTimeBlock = False
+    flagDiscontinuousBlock = False
     
     useLocalTime = False
     
@@ -764,7 +837,7 @@ class Fits:
     
     def getNoise(self, type = 1):
         
-        self.noise = numpy.zeros(self.nChannels)
+        #noise = numpy.zeros(self.nChannels)
         
         if type == 1:
             noise = self.getNoisebyHildebrand()
@@ -840,7 +913,7 @@ class Correlation(JROData):
         
         self.flagNoData = True
         
-        self.flagTimeBlock = False
+        self.flagDiscontinuousBlock = False
         
         self.utctime = None
         
@@ -987,7 +1060,7 @@ class Parameters(JROData):
     
     noise = None            #Noise Potency
     
-    utctimeInit = None      #Initial UTC time
+    initUtcTime = None      #Initial UTC time
     
     paramInterval = None    #Time interval to calculate Parameters in seconds
     
@@ -1021,8 +1094,8 @@ class Parameters(JROData):
         
         datatime = []
         
-        datatime.append(self.utctimeInit)
-        datatime.append(self.utctimeInit + self.outputInterval - 1)
+        datatime.append(self.initUtcTime)
+        datatime.append(self.initUtcTime + self.outputInterval - 1)
         
         datatime = numpy.array(datatime)
         

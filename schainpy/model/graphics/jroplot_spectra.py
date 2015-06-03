@@ -1,5 +1,7 @@
 '''
-@author: Daniel Suarez
+Created on Jul 9, 2014
+
+@author: roj-idl71
 '''
 import os
 import datetime
@@ -32,6 +34,9 @@ class SpectraPlot(Figure):
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
+        
+        self.__xfilter_ena = False
+        self.__yfilter_ena = False
         
     def getSubplots(self):
         
@@ -76,7 +81,7 @@ class SpectraPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=True,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False):
         
@@ -95,9 +100,6 @@ class SpectraPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
-        
-        if dataOut.flagNoData:
-            return None
         
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
@@ -120,16 +122,15 @@ class SpectraPlot(Figure):
         
         z = dataOut.data_spc[channelIndexList,:,:]/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
-        avg = numpy.average(z, axis=1)
-        #avg = numpy.nanmean(z, axis=1)
-        noise = dataOut.noise/factor
-        
         zdB = 10*numpy.log10(z)
+
+        avg = numpy.nanmean(z, axis=1)
         avgdB = 10*numpy.log10(avg)
+        
+        noise = dataOut.getNoise()/factor
         noisedB = 10*numpy.log10(noise)
         
-        #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Spectra" 
         if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
             title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
@@ -151,9 +152,9 @@ class SpectraPlot(Figure):
             if xmax == None: xmax = numpy.nanmax(x)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
-            if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
-            
+            if zmin == None: zmin = numpy.floor(numpy.nanmin(noisedB)) - 3
+            if zmax == None: zmax = numpy.ceil(numpy.nanmax(avgdB)) + 3
+                
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
             self.SUB_EXP_CODE = sub_exp_code
@@ -177,7 +178,7 @@ class SpectraPlot(Figure):
             
             if self.__showprofile:
                 axes = self.axesList[i*self.__nsubplots +1]
-                axes.pline(avgdB[i], y,
+                axes.pline(avgdB[i,:], y,
                         xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
                         xlabel='dB', ylabel='', title='',
                         ytick_visible=False,
@@ -187,24 +188,30 @@ class SpectraPlot(Figure):
                 axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
             
         self.draw()
-        
-        if figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            figfile = self.getFilename(name = str_datetime)
-            name = str_datetime
-            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
-                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith) 
-            figfile = self.getFilename(name)
-        if figpath != '':
+            
+        if save:
+            
+            if figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                figfile = self.getFilename(name = str_datetime)
+                name = str_datetime
+                if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                    name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith) 
+                figfile = self.getFilename(name)
+                
             self.counter_imagwr += 1
+            
             if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
+                # store png plot to local folder            
                 self.saveFigure(figpath, figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
+                
+                if ftp:
+                    # store png plot to FTP server according to RT-Web format 
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    ftp_filename = os.path.join(figpath, name)
+                    self.saveFigure(figpath, ftp_filename)                
+                    
 
 
 class CrossSpectraPlot(Figure):
@@ -266,7 +273,7 @@ class CrossSpectraPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", pairsList=None, 
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            save=False, figpath='', figfile=None, ftp=False, wr_period=1,
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
@@ -293,7 +300,7 @@ class CrossSpectraPlot(Figure):
             pairsIndexList = []
             for pair in pairsList:
                 if pair not in dataOut.pairsList:
-                    raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
+                    raise ValueError, "Pair %s is not in dataOut.pairsList" %str(pair)
                 pairsIndexList.append(dataOut.pairsList.index(pair))
         
         if pairsIndexList == []:
@@ -305,17 +312,16 @@ class CrossSpectraPlot(Figure):
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         z = dataOut.data_spc[:,:,:]/factor
-#        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
-        avg = numpy.abs(numpy.average(z, axis=1))
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        
         noise = dataOut.noise/factor
         
         zdB = 10*numpy.log10(z)
-        avgdB = 10*numpy.log10(avg)
         noisedB = 10*numpy.log10(noise)
         
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
@@ -330,12 +336,15 @@ class CrossSpectraPlot(Figure):
                        showprofile=False,
                        show=show)
             
+            avg = numpy.abs(numpy.average(z, axis=1))
+            avgdB = 10*numpy.log10(avg)
+            
             if xmin == None: xmin = numpy.nanmin(x)
             if xmax == None: xmax = numpy.nanmax(x)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
-            if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
+            if zmin == None: zmin = numpy.floor(numpy.nanmin(noisedB)) - 3
+            if zmax == None: zmax = numpy.ceil(numpy.nanmax(avgdB)) + 3
             
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
@@ -388,20 +397,24 @@ class CrossSpectraPlot(Figure):
             
         self.draw()
         
-        if figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
+        if save != '':
+            
+            if figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                figfile = self.getFilename(name = str_datetime)
+            
             self.counter_imagwr += 1
+            
             if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
+                # store png plot to local folder            
                 self.saveFigure(figpath, figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
+                
+                if ftp:
+                    # store png plot to FTP server according to RT-Web format 
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    ftp_filename = os.path.join(figpath, name)
+                    self.saveFigure(figpath, ftp_filename)
 
 
 class RTIPlot(Figure):
@@ -482,7 +495,7 @@ class RTIPlot(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
+            save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
@@ -511,8 +524,8 @@ class RTIPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
         
-        if timerange != None:
-            self.timerange = timerange
+#         if timerange != None:
+#             self.timerange = timerange
         
         #tmin = None
         #tmax = None
@@ -528,7 +541,7 @@ class RTIPlot(Figure):
 
         
 #        thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " RTI" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
@@ -543,18 +556,18 @@ class RTIPlot(Figure):
                        showprofile=showprofile,
                        show=show)
             
+            if timerange != None:
+                self.timerange = timerange
+            
             self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
             
-#             if timerange != None:
-#                 self.timerange = timerange
-#                 self.xmin, self.tmax = self.getTimeLim(x, xmin, xmax, timerange)
-            
-            
+            noise = dataOut.noise/factor
+            noisedB = 10*numpy.log10(noise)
             
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(avgdB)*0.9
-            if zmax == None: zmax = numpy.nanmax(avgdB)*0.9
+            if zmin == None: zmin = numpy.floor(numpy.nanmin(noisedB)) - 3
+            if zmax == None: zmax = numpy.ceil(numpy.nanmax(avgdB)) + 3
             
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
@@ -591,22 +604,24 @@ class RTIPlot(Figure):
             
         self.draw()      
         
-        if self.figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
+        if save:
+
+            if self.figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                self.figfile = self.getFilename(name = str_datetime)
             
             self.counter_imagwr += 1
+            
             if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
+                # store png plot to local folder            
                 self.saveFigure(figpath, self.figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)
-                
                 self.counter_imagwr = 0
+                
+                if ftp:
+                    # store png plot to FTP server according to RT-Web format 
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    ftp_filename = os.path.join(figpath, name)
+                    self.saveFigure(figpath, ftp_filename)
         
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
@@ -678,7 +693,7 @@ class CoherenceMap(Figure):
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             timerange=None,
-            save=False, figpath='', figfile=None, ftp=False, wr_period=1,
+            save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
             coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
@@ -692,9 +707,6 @@ class CoherenceMap(Figure):
                     raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
                 pairsIndexList.append(dataOut.pairsList.index(pair))
         
-        if timerange != None:
-            self.timerange = timerange
-        
         if pairsIndexList == []:
             return
         
@@ -707,7 +719,7 @@ class CoherenceMap(Figure):
         y = dataOut.getHeiRange()
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " CoherenceMap" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
@@ -720,7 +732,8 @@ class CoherenceMap(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            #tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if timerange != None:
+                self.timerange = timerange
             
             self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
             
@@ -803,22 +816,24 @@ class CoherenceMap(Figure):
             self.counter_imagwr = wr_period
             self.__isConfig = False
         
-        if figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
-            
-            self.counter_imagwr += 1
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
-                self.saveFigure(figpath, figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)
+        if save:
+
+            if figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                figfile = self.getFilename(name = str_datetime)
                 
+            self.counter_imagwr += 1
+            
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder            
+                self.saveFigure(figpath, figfile)
                 self.counter_imagwr = 0
+                
+                if ftp:
+                    # store png plot to FTP server according to RT-Web format 
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    ftp_filename = os.path.join(figpath, name)
+                    self.saveFigure(figpath, ftp_filename)
 
 class PowerProfile(Figure):
     isConfig = None
@@ -864,11 +879,10 @@ class PowerProfile(Figure):
     
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None,
-            save=False, figpath='', figfile=None, show=True, wr_period=1,
-            server=None, folder=None, username=None, password=None,):
+            save=False, figpath='./', figfile=None, show=True,
+            ftp=False, wr_period=1, server=None,
+            folder=None, username=None, password=None):
         
-        if dataOut.flagNoData:
-            return None
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -880,10 +894,7 @@ class PowerProfile(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
-        try:
-            factor = dataOut.normFactor
-        except:
-            factor = 1
+        factor = dataOut.normFactor
         
         y = dataOut.getHeiRange()
         
@@ -902,7 +913,7 @@ class PowerProfile(Figure):
         
         xdB = 10*numpy.log10(x)
         
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Power Profile %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "dB"
         ylabel = "Range (Km)"
@@ -919,7 +930,7 @@ class PowerProfile(Figure):
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
             if xmin == None: xmin = numpy.nanmin(xdB)*0.9
-            if xmax == None: xmax = numpy.nanmax(xdB)*0.9
+            if xmax == None: xmax = numpy.nanmax(xdB)*1.1
             
             self.__isConfig = True
         
@@ -937,22 +948,18 @@ class PowerProfile(Figure):
         
         self.draw()
         
-        if figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
+        if save:
+                
+            if figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                figfile = self.getFilename(name = str_datetime)
+            
             self.counter_imagwr += 1
+            
             if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
+                # store png plot to local folder            
                 self.saveFigure(figpath, figfile)
-                # store png plot to FTP server according to RT-Web format 
-                #name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                #ftp_filename = os.path.join(figpath, name)
-                #self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
-
-
 
 class Noise(Figure):
     
@@ -980,6 +987,9 @@ class Noise(Figure):
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
         self.figfile = None
+        
+        self.xmin = None
+        self.xmax = None
         
     def getSubplots(self):
         
@@ -1031,7 +1041,7 @@ class Noise(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
@@ -1045,19 +1055,14 @@ class Noise(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
         
-        if timerange != None:
-            self.timerange = timerange
-        
-        tmin = None
-        tmax = None
         x = dataOut.getTimeRange()
-        y = dataOut.getHeiRange()
+        #y = dataOut.getHeiRange()
         factor = dataOut.normFactor
         noise = dataOut.noise/factor
         noisedB = 10*numpy.log10(noise)
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Noise" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Intensity (dB)"
@@ -1072,8 +1077,12 @@ class Noise(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            tmin, tmax = self.getTimeLim(x, xmin, xmax)
-            if ymin == None: ymin = numpy.nanmin(noisedB) - 10.0
+            if timerange != None:
+                self.timerange = timerange
+            
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
+            
+            if ymin == None: ymin = numpy.floor(numpy.nanmin(noisedB)) - 10.0
             if ymax == None: ymax = numpy.nanmax(noisedB) + 10.0
             
             self.FTP_WEI = ftp_wei
@@ -1116,7 +1125,7 @@ class Noise(Figure):
         
         
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
-                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax,
                     xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
                     XAxisAsTime=True, grid='both'
                     )
@@ -1129,20 +1138,24 @@ class Noise(Figure):
             del self.ydata
             self.__isConfig = False
         
-        if self.figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
+        if save != '':
+            
+            if self.figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                self.figfile = self.getFilename(name = str_datetime)
+            
             self.counter_imagwr += 1
+            
             if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
+                # store png plot to local folder            
                 self.saveFigure(figpath, self.figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
+                
+                if ftp:
+                    # store png plot to FTP server according to RT-Web format 
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    ftp_filename = os.path.join(figpath, name)
+                    self.saveFigure(figpath, ftp_filename)
         
         
 class BeaconPhase(Figure):
@@ -1174,6 +1187,9 @@ class BeaconPhase(Figure):
         self.filename_phase = None
         
         self.figfile = None
+        
+        self.xmin = None
+        self.xmax = None
         
     def getSubplots(self):
         
@@ -1224,7 +1240,7 @@ class BeaconPhase(Figure):
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
@@ -1242,18 +1258,13 @@ class BeaconPhase(Figure):
         
 #         if len(pairsIndexList) > 4:
 #             pairsIndexList = pairsIndexList[0:4]
-
-        if timerange != None:
-            self.timerange = timerange
         
-        tmin = None
-        tmax = None
         x = dataOut.getTimeRange()
-        y = dataOut.getHeiRange()
+        #y = dataOut.getHeiRange()
 
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Phase of Beacon Signal" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Local Time"
         ylabel = "Phase"
@@ -1284,7 +1295,11 @@ class BeaconPhase(Figure):
                        showprofile=showprofile,
                        show=show)
              
-            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if timerange != None:
+                self.timerange = timerange
+            
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
+            
             if ymin == None: ymin = numpy.nanmin(phase_beacon) - 10.0
             if ymax == None: ymax = numpy.nanmax(phase_beacon) + 10.0
              
@@ -1327,7 +1342,7 @@ class BeaconPhase(Figure):
          
          
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
-                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax,
                     xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
                     XAxisAsTime=True, grid='both'
                     )
@@ -1340,17 +1355,21 @@ class BeaconPhase(Figure):
             del self.ydata
             self.__isConfig = False
         
-        if self.figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.figfile = self.getFilename(name = str_datetime)
-        
-        if figpath != '':
+        if save:
+            
+            if self.figfile == None:
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                self.figfile = self.getFilename(name = str_datetime)
+                
             self.counter_imagwr += 1
+            
             if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
+                # store png plot to local folder            
                 self.saveFigure(figpath, self.figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)                
                 self.counter_imagwr = 0
+                
+                if ftp:
+                    # store png plot to FTP server according to RT-Web format 
+                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                    ftp_filename = os.path.join(figpath, name)
+                    self.saveFigure(figpath, ftp_filename)

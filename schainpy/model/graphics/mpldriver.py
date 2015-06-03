@@ -216,11 +216,8 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
 def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     
     z = z.T
-    
     ax = imesh.get_axes()
-    
     printLabels(ax, xlabel, ylabel, title)
-    
     imesh.set_array(z.ravel())
 
 def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):

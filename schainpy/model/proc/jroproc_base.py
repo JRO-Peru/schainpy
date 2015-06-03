@@ -1,7 +1,10 @@
 '''
+
+$Author: murco $
+$Id: jroproc_base.py 1 2012-11-12 18:56:07Z murco $
 '''
 
-class ProcessingUnit:
+class ProcessingUnit(object):
     
     """
     Esta es la clase base para el procesamiento de datos.
@@ -78,6 +81,8 @@ class ProcessingUnit:
             **kwargs     :    diccionario con los nombres y valores de la funcion a ejecutar.
         
         """
+        
+        #Checking the inputs
         if name == 'run':
             
             if not self.checkInputs():
@@ -137,26 +142,35 @@ class ProcessingUnit:
     def call(self, opType, opName=None, opId=None, **kwargs):
         
         """
-        Return True si ejecuta la operacion "operationConf.name" con los
-        argumentos "**kwargs". False si la operacion no se ha ejecutado.
-        La operacion puede ser de dos tipos:
+        Return True si ejecuta la operacion interna nombrada "opName" o la operacion externa
+        identificada con el id "opId"; con los argumentos "**kwargs".
         
-            1. Un metodo propio de esta clase:
-                
-                operation.type = "self"
-            
-            2. El metodo "run" de un objeto del tipo Operation o de un derivado de ella:
-                operation.type = "other".
-                
-               Este objeto de tipo Operation debe de haber sido agregado antes con el metodo:
-               "addOperation" e identificado con el operation.id
-               
-            
-        con el id de la operacion.
+        False si la operacion no se ha ejecutado.
         
         Input:
         
-            Operation    :    Objeto del tipo operacion con los atributos: name, type y id.
+            opType    :    Puede ser "self" o "external"
+            
+                La operacion puede ser de dos tipos (callMethod or callObject):
+            
+                1. Un metodo propio de esta clase:
+                    
+                    opType = "self"
+                
+                2. El metodo "run" de un objeto del tipo Operation o de un derivado de ella:
+                
+                    opType = "other" or "external".
+            
+            opName    : Si la operacion es interna (opType = 'self'), entonces el "opName" sera
+                        usada para llamar a un metodo interno de la clase Processing
+            
+            opId    :    Si la operacion es externa (opType = 'other'), entonces el "opId" sera
+                        usada para llamar al metodo "run" de la clase Operation registrada con ese Id
+        
+        Exception:
+               Este objeto de tipo Operation debe de haber sido agregado antes con el metodo:
+               "addOperation" e identificado con el valor "opId"  = el id de la operacion.
+               De lo contrario retornara un error del tipo IOError
             
         """
         
@@ -205,7 +219,7 @@ class ProcessingUnit:
         
         raise ValueError, "Not implemented"
         
-class Operation():
+class Operation(object):
     
     """
     Clase base para definir las operaciones adicionales que se pueden agregar a la clase ProcessingUnit
@@ -233,7 +247,8 @@ class Operation():
     def run(self, dataIn, **kwargs):
         
         """
-        Realiza las operaciones necesarias sobre la dataIn.data y actualiza los atributos del objeto dataIn.
+        Realiza las operaciones necesarias sobre la dataIn.data y actualiza los
+        atributos del objeto dataIn.
         
         Input:
         

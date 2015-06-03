@@ -5,7 +5,7 @@ import os
 import glob
 import ftplib
 import multiprocessing
-from model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 
 class FTP(object):
     """

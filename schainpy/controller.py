@@ -2,11 +2,11 @@
 Created on September , 2012
 @author: 
 '''
-from xml.etree.ElementTree import Element, SubElement, ElementTree
+from xml.etree.ElementTree import Element, SubElement
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
 
-import datetime
+#import datetime
 from model import *
 
 import ast
@@ -153,8 +153,12 @@ class ParameterConf():
         self.id = parmElement.get('id')
         self.name = parmElement.get('name')
         self.value = parmElement.get('value')
-        self.format = parmElement.get('format')
+        self.format = str.lower(parmElement.get('format'))
     
+        #Compatible with old signal chain version
+        if self.format == 'int' and self.name == 'idfigure':
+            self.name = 'id'
+            
     def printattr(self):
         
         print "Parameter[%s]: name = %s, value = %s, format = %s" %(self.id, self.name, self.value, self.format)
@@ -172,10 +176,10 @@ class OperationConf():
     
     def __init__(self):
         
-        id = 0
-        name = None
-        priority = None
-        type = 'self'
+        self.id = 0
+        self.name = None
+        self.priority = None
+        self.type = 'self'
     
     
     def __getNewId(self):
@@ -228,6 +232,11 @@ class OperationConf():
         self.type = opElement.get('type')
         self.priority = opElement.get('priority')
         
+        #Compatible with old signal chain version
+        #Use of 'run' method instead 'init'
+        if self.type == 'self' and self.name == 'init':
+            self.name = 'run'
+            
         self.parmConfObjList = []
         
         parmElementList = opElement.getiterator(ParameterConf().getElementName())
@@ -235,8 +244,16 @@ class OperationConf():
         for parmElement in parmElementList:
             parmConfObj = ParameterConf()
             parmConfObj.readXml(parmElement)
-            self.parmConfObjList.append(parmConfObj)
+            
+            #Compatible with old signal chain version
+            #If an 'plot' OPERATION is found, changes name operation by the value of its type PARAMETER
+            if self.type != 'self' and self.name == 'Plot':
+                if parmConfObj.format == 'str' and parmConfObj.name == 'type':
+                    self.name = parmConfObj.value
+                    continue
     
+            self.parmConfObjList.append(parmConfObj)
+            
     def printattr(self):
         
         print "%s[%s]: name = %s, type = %s, priority = %s" %(self.ELEMENTNAME,
@@ -361,7 +378,16 @@ class ProcUnitConf():
         self.name = upElement.get('name')
         self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
-        
+    
+        #Compatible with old signal chain version
+        if self.ELEMENTNAME == ReadUnitConf().getElementName():
+            if 'Reader' not in self.name:
+                self.name += 'Reader'
+                
+        if self.ELEMENTNAME == ProcUnitConf().getElementName():
+            if 'Proc' not in self.name:
+                self.name += 'Proc'
+                
         self.opConfObjList = []
         
         opElementList = upElement.getiterator(OperationConf().getElementName())
@@ -509,10 +535,22 @@ class Project():
         self.name = name
         self.description = description
     
-    def addReadUnit(self, datatype, **kwargs):
+    def addReadUnit(self, datatype=None, name=None, **kwargs):
         
+        #Compatible with old signal chain version
+        if datatype==None and name==None:
+            raise ValueError, "datatype or name should be defined"
+        
+        if name==None:
+            if 'Reader' in datatype:
+                name = datatype
+            else:
+                name = '%sReader' %(datatype)
+        
+        if datatype==None:
+            datatype = name.replace('Reader','')
+            
         id = self.__getNewId()
-        name = '%s' %(datatype)
         
         readUnitConfObj = ReadUnitConf()
         readUnitConfObj.setup(id, name, datatype, **kwargs)
@@ -521,10 +559,22 @@ class Project():
         
         return readUnitConfObj
     
-    def addProcUnit(self, datatype, inputId):
+    def addProcUnit(self, inputId, datatype=None, name=None):
+        
+        #Compatible with old signal chain version
+        if datatype==None and name==None:
+            raise ValueError, "datatype or name should be defined"
+        
+        if name==None:
+            if 'Proc' in datatype:
+                name = datatype
+            else:
+                name = '%sProc' %(datatype)
+        
+        if datatype==None:
+            datatype = name.replace('Proc','')
         
         id = self.__getNewId()
-        name = '%s' %(datatype)
         
         procUnitConfObj = ProcUnitConf()
         procUnitConfObj.setup(id, name, datatype, inputId)
@@ -552,7 +602,7 @@ class Project():
         
         self.makeXml()
         
-        print prettify(self.projectElement)
+        #print prettify(self.projectElement)
         
         ElementTree(self.projectElement).write(filename, method='xml')
 
@@ -633,19 +683,29 @@ class Project():
         
 #        for readUnitConfObj in self.readUnitConfObjList:
 #            readUnitConfObj.run()
-
+        print
+        print "*"*40
+        print "   Starting SIGNAL CHAIN PROCESSING  "
+        print "*"*40
+        print
+        
+        keyList = self.procUnitConfObjDict.keys()
+        keyList.sort()
+            
         while(True):
             
             finalSts = False
             
-            for procUnitConfObj in self.procUnitConfObjDict.values():
-                #print "Running the '%s' process with %s" %(procUnitConfObj.name, procUnitConfObj.id)
+            for procKey in keyList:
+#                 print "Running the '%s' process with %s" %(procUnitConfObj.name, procUnitConfObj.id)
+                
+                procUnitConfObj = self.procUnitConfObjDict[procKey]
                 sts = procUnitConfObj.run()
                 finalSts = finalSts or sts
             
             #If every process unit finished so end process
             if not(finalSts):
-                print "Every process units have finished"
+                print "Every process unit have finished"
                 break
             
 if __name__ == '__main__':
