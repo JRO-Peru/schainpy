@@ -15,6 +15,7 @@ controllerObj = Project()
 controllerObj.setup(id = '191', name='test01', description=desc)
 
 path = '/home/operaciones/150km_jicamarca_january/RAW_EXP/2015_ISR'
+#path = '/media/DATOS/2015_ISR'
 #path = '/media/New Volume2/DATA/RAW_EXP/2015_ISR'
 
 figpath = '/home/operaciones/Pictures/150km_jicamarca_january'
