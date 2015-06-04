@@ -105,7 +105,7 @@ class USRPReaderAPI(USRPReader, threading.Thread):
     def run(self):
          
         '''
-        This method will be called many times so here you should put all your code
+        This method will be called once when start() is called
         '''
          
         if not self.isConfig:

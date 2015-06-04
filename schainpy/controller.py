@@ -378,15 +378,6 @@ class ProcUnitConf():
         self.name = upElement.get('name')
         self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
-    
-        #Compatible with old signal chain version
-        if self.ELEMENTNAME == ReadUnitConf().getElementName():
-            if 'Reader' not in self.name:
-                self.name += 'Reader'
-                
-        if self.ELEMENTNAME == ProcUnitConf().getElementName():
-            if 'Proc' not in self.name:
-                self.name += 'Proc'
                 
         self.opConfObjList = []
         
@@ -445,7 +436,13 @@ class ProcUnitConf():
             finalSts = finalSts or sts
         
         return finalSts
-            
+
+    def close(self):
+        
+        self.procUnitObj.close()
+        
+        return
+         
 class ReadUnitConf(ProcUnitConf):
     
     path = None
@@ -559,7 +556,7 @@ class Project():
         
         return readUnitConfObj
     
-    def addProcUnit(self, inputId, datatype=None, name=None):
+    def addProcUnit(self, inputId=0, datatype=None, name=None):
         
         #Compatible with old signal chain version
         if datatype==None and name==None:
@@ -707,7 +704,21 @@ class Project():
             if not(finalSts):
                 print "Every process unit have finished"
                 break
-            
+
+        #Closing every process
+        for procKey in keyList:
+            procUnitConfObj = self.procUnitConfObjDict[procKey]
+            procUnitConfObj.close()
+                
+    def start(self, filename):
+        
+        self.writeXml(filename)
+        self.readXml(filename)
+    
+        self.createObjects()
+        self.connectObjects()
+        self.run()
+    
 if __name__ == '__main__':
     
     desc = "Segundo Test"

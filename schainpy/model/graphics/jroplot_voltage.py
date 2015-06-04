@@ -172,15 +172,9 @@ class Scope(Figure):
         
         self.draw()
             
-        if save:
-            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            if figfile == None:
-                figfile = self.getFilename(name = date)
-            
-            self.saveFigure(figpath, figfile)
-            
-            self.counter_imagwr += 1
-            if (ftp and (self.counter_imagwr==wr_period)):
-                ftp_filename = os.path.join(figpath,figfile)
-                self.sendByFTP_Thread(ftp_filename, server, folder, username, password)
-                self.counter_imagwr = 0
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)

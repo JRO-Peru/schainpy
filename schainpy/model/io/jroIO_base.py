@@ -598,7 +598,7 @@ class JRODataReader(JRODataIO):
         self.fileSize = fileSize
         self.fp = fp
 
-        print "Setting the file: %s"%self.filename
+        print "[Reading] Setting the file: %s"%self.filename
 
         return 1
 
@@ -681,14 +681,14 @@ class JRODataReader(JRODataIO):
             if self.fp != None: self.fp.close() 
             self.fp = open(fullfilename, 'rb')
             self.flagNoMoreFiles = 0
-            print 'Setting the file: %s' % fullfilename
+            print '[Reading] Setting the file: %s' % fullfilename
         else:
             self.fileSize = 0
             self.filename = None
             self.flagIsNewFile = 0
             self.fp = None
             self.flagNoMoreFiles = 1
-            print 'No more Files'
+            print '[Reading] No more files to read'
 
         return fileOk_flag
     
@@ -959,7 +959,7 @@ class JRODataReader(JRODataIO):
                 sleep( self.delay )
             
             if not(fullpath):
-                print "There 'isn't any valid file in %s" % path
+                print "[Reading] There 'isn't any valid file in %s" % path
                 return None
         
             self.year = year

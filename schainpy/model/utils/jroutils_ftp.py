@@ -4,9 +4,565 @@
 import os
 import glob
 import ftplib
+
+try:
+    import paramiko
+    import scp
+except:
+    print "You should install paramiko if you will use SSH protocol to upload files to a server"
+
 import multiprocessing
+
+import time
+import threading
+
+
+try:
+    from gevent import sleep
+except:
+    from time import sleep
+    
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 
+class Remote(threading.Thread):
+    """
+    Remote is a parent class used to define the behaviour of FTP and SSH class. These clases are
+    used to upload or download files remotely.
+    
+    Non-standard Python modules used:
+        None
+    
+    Written by:
+    
+        "Miguel Urco":mailto:miguel.urco@jro.igp.gob.pe  Jun. 03, 2015
+        
+    """
+    
+    server = None
+    username = None
+    password = None
+    remotefolder = None
+    
+    period = 60
+    fileList = []
+    bussy = False
+        
+    def __init__(self, server, username, password, remotefolder, period=60):
+        
+        threading.Thread.__init__(self)
+        self._stop = threading.Event()
+        
+        self.status = 0
+
+        self.period = period
+        self.fileList = []
+        self.bussy = False
+        
+        self.stopFlag = False
+        
+        print "[Remote Server] Opening server: %s" %server
+        if self.open(server, username, password, remotefolder):
+            print "[Remote Server] %s server was opened successfully" %server
+
+    def stop(self):
+        
+        self.stopFlag = True
+    
+    def open(self):
+        """
+        Connect to server and create a connection class (FTP or SSH) to remote server.
+        """
+        raise NotImplementedError, "Implement this method in child class"
+    
+    def close(self):
+        """
+        Close connection to server
+        """
+        raise NotImplementedError, "Implement this method in child class"
+    
+    def mkdir(self, remotefolder):
+        """
+        Create a folder remotely
+        """
+        raise NotImplementedError, "Implement this method in child class"
+    
+    def cd(self, remotefolder):
+        """
+        Change working directory in remote server
+        """
+        raise NotImplementedError, "Implement this method in child class"
+    
+    def download(self, filename, localfolder=None):
+        """
+        Download a file from server to local host
+        """
+        raise NotImplementedError, "Implement this method in child class"
+    
+    def sendFile(self, fullfilename):
+        """
+        sendFile method is used to upload a local file to the current directory in remote server
+        
+        Inputs:
+            fullfilename        - full path name of local file to store in remote directory
+            
+        Returns:
+            0 in error case else 1
+        """
+        raise NotImplementedError, "Implement this method in child class"
+    
+    def upload(self, fullfilename, remotefolder=None):        
+        """
+        upload method is used to upload a local file to remote directory. This method changes
+        working directory before sending a file.
+        
+        Inputs:
+            fullfilename        - full path name of local file to store in remote directory
+            
+            remotefolder    - remote directory 
+            
+        Returns:
+            0 in error case else 1
+        """
+        print "[Remote Server] Uploading %s to %s:%s" %(fullfilename, self.server, self.remotefolder)
+        
+        if not self.status:
+            return 0
+        
+        if remotefolder == None:
+            remotefolder = self.remotefolder
+        
+        if not self.cd(remotefolder):
+            return 0
+        
+        if not self.sendFile(fullfilename):
+            print "[Remote Server] Error uploading file %s" %fullfilename
+            return 0
+        
+        print "[Remote Server] upload finished successfully"
+        
+        return 1
+    
+    def delete(self, filename):
+        """
+        Remove a file from remote server
+        """
+        pass
+    
+    def updateFileList(self, fileList):
+        """
+        Remove a file from remote server
+        """
+        
+        if fileList == self.fileList:
+            return 1
+        
+        init = time.time()
+        
+        while(self.bussy):
+            sleep(0.1)
+            if time.time() - init > 2*self.period:
+                return 0
+        
+        self.fileList = fileList
+        
+        return 1
+        
+    def run(self):
+        
+        if not self.cd(self.remotefolder):
+            raise ValueError, "It could not change to the new remote directory: %s" %remotefolder
+        
+        while True:
+            
+            sleep(self.period)
+            
+            self.bussy = True
+            
+            for thisFile in self.fileList:
+                self.upload(thisFile, self.remotefolder)
+            
+            self.bussy = False
+            
+            if self.stopFlag:
+                break
+            
+        print "[Remote Server] Thread stopped successfully"
+            
+class FTPClient(Remote):
+    
+    __ftpClientObj = None
+    
+    def __init__(self, server, username, password, remotefolder, period=60):
+        """
+        """
+        Remote.__init__(self, server, username, password, remotefolder, period)
+        
+    def open(self, server, username, password, remotefolder):
+        
+        """
+        This method is used to set FTP parameters and establish a connection to remote server
+        
+        Inputs:
+            server    - remote server IP Address 
+            
+            username    - remote server Username 
+            
+            password    - remote server password
+            
+            remotefolder    - remote server current working directory
+        
+        Return: void
+        
+        Affects: 
+            self.status        - in case of error or fail connection this parameter is set to 0 else 1
+
+        """
+              
+        if server == None:
+            raise ValueError, "FTP server should be defined"
+        
+        if username == None:
+            raise ValueError, "FTP username should be defined"
+        
+        if password == None:
+            raise ValueError, "FTP password should be defined"
+        
+        if remotefolder == None:
+            raise ValueError, "FTP remote folder should be defined"
+        
+        try:
+            ftpClientObj = ftplib.FTP(server)
+        except ftplib.all_errors:
+            print "FTP server connection fail: %s" %server
+            self.status = 0
+            return 0
+        
+        try:
+            ftpClientObj.login(username, password)
+        except ftplib.all_errors:
+            print "FTP username or password are incorrect"
+            self.status = 0
+            return 0
+        
+        if remotefolder == None:
+            remotefolder = ftpClientObj.pwd()
+        else:
+            try:
+                ftpClientObj.cwd(remotefolder)
+            except ftplib.all_errors:
+                print "FTP remote folder is invalid: %s" %remotefolder
+                remotefolder = ftpClientObj.pwd()
+                
+        self.server = server
+        self.username = username
+        self.password = password
+        self.remotefolder = remotefolder
+        self.__ftpClientObj = ftpClientObj
+        self.status = 1
+        
+        return 1
+    
+    def close(self):
+        """
+        Close connection to remote server
+        """
+        if not self.status:
+            return 0
+        
+        self.__ftpClientObj.close()
+        
+    def mkdir(self, remotefolder):
+        """
+        mkdir is used to make a new directory in remote server
+        
+        Input:
+            remotefolder    - directory name
+        
+        Return:
+            0 in error case else 1
+        """
+        if not self.status:
+            return 0
+        
+        try:
+            self.__ftpClientObj.mkd(dirname)
+        except ftplib.all_errors:
+            print "Error creating remote folder: %s" %remotefolder
+            return 0
+        
+        return 1
+    
+    def cd(self, remotefolder):
+        """
+        cd is used to change remote working directory on server
+        
+        Input:
+            remotefolder    - current working directory
+            
+        Affects:
+            self.remotefolder
+        
+        Return: 
+            0 in case of error else 1
+        """
+        if not self.status:
+            return 0
+        
+        if remotefolder == self.remotefolder:
+            return 1
+        
+        try:        
+            self.__ftpClientObj.cwd(remotefolder)        
+        except ftplib.all_errors:
+            print 'Error changing to %s' %remotefolder
+            print 'Trying to create remote folder'
+            
+            if not self.mkdir(remotefolder):
+                print 'Remote folder could not be created'
+                return 0
+            
+            try:        
+                self.__ftpClientObj.cwd(remotefolder) 
+            except ftplib.all_errors:
+                return 0
+            
+        self.remotefolder = remotefolder
+        
+        return 1
+    
+    def sendFile(self, fullfilename):
+
+        if not self.status:
+            return 0
+        
+        file = open(fullfilename, 'rb')
+        
+        filename = os.path.split(fullfilename)[-1]
+        
+        command = "STOR %s" %filename
+        
+        try:
+            self.__ftpClientObj.storbinary(command, file)
+        except ftplib.all_errors:
+            return 0
+        
+        try:
+            self.__ftpClientObj.sendcmd('SITE CHMOD 755 ' + filename)
+        except ftplib.all_errors, e:
+            print e
+        
+        file.close()
+        
+        return 1
+
+class SSHClient(Remote):
+    
+    __sshClientObj = None
+    __scpClientObj = None
+    
+    def __init__(self, server, username, password, remotefolder, period=60):
+        """
+        """
+        Remote.__init__(self, server, username, password, remotefolder, period)
+        
+    def open(self, server, username, password, remotefolder, port=22):
+        
+        """
+        This method is used to set SSH parameters and establish a connection to a remote server
+        
+        Inputs:
+            server    - remote server IP Address 
+            
+            username    - remote server Username 
+            
+            password    - remote server password
+            
+            remotefolder    - remote server current working directory
+        
+        Return: void
+        
+        Affects: 
+            self.status        - in case of error or fail connection this parameter is set to 0 else 1
+
+        """
+              
+        if server == None:
+            raise ValueError, "SSH server should be defined"
+        
+        if username == None:
+            raise ValueError, "SSH username should be defined"
+        
+        if password == None:
+            raise ValueError, "SSH password should be defined"
+        
+        if remotefolder == None:
+            raise ValueError, "SSH remote folder should be defined"
+        
+        try:
+            sshClientObj = paramiko.SSHClient()
+        except:
+            print "SSH server connection fail: %s" %server
+            self.status = 0
+            return 0
+            
+        sshClientObj.load_system_host_keys()
+        sshClientObj.set_missing_host_key_policy(paramiko.WarningPolicy())
+        
+        try:
+            sshClientObj.connect(server, username=username, password=password, port=port) 
+        except :
+            print "SSH username or password are incorrect: %s"
+            self.status = 0
+            return 0
+        
+        scpClientObj = scp.SCPClient(sshClientObj.get_transport(), socket_timeout=30)
+        
+        if remotefolder == None:
+            remotefolder = self.pwd()
+        
+        self.server = server
+        self.username = username
+        self.password = password
+        self.remotefolder = remotefolder
+        self.__sshClientObj = sshClientObj
+        self.__scpClientObj = scpClientObj
+        self.status = 1
+        
+        return 1
+    
+    def close(self):
+        """
+        Close connection to remote server
+        """
+        if not self.status:
+            return 0
+        
+        self.__sshObj.close()
+        
+    def mkdir(self, remotefolder):
+        """
+        mkdir is used to make a new directory in remote server
+        
+        Input:
+            remotefolder    - directory name
+        
+        Return:
+            0 in error case else 1
+        """
+        if not self.status:
+            return 0
+        
+        stdin, stdout, stderr = self.__sshClientObj.exec_command('mkdir %s' %remotefolder)
+        result = stderr.readlines()[0]
+        
+        if len(result) > 1:
+            return 0
+        
+        return 1
+    
+    def pwd(self):
+
+        if not self.status:
+            return None
+        
+        stdin, stdout, stderr = self.__sshClientObj.exec_command('pwd')
+        result = stdout.readlines()[0]
+        
+        if len(result) < 1:
+            return None
+        
+        return result[:-1]
+        
+    def cd(self, remotefolder):
+        """
+        cd is used to change remote working directory on server
+        
+        Input:
+            remotefolder    - current working directory
+            
+        Affects:
+            self.remotefolder
+        
+        Return: 
+            0 in case of error else 1
+        """
+        if not self.status:
+            return 0
+        
+        if remotefolder == self.remotefolder:
+            return 1
+            
+        self.remotefolder = remotefolder
+        
+        return 1
+    
+    def sendFile(self, fullfilename):
+
+        if not self.status:
+            return 0
+        
+        try:
+            self.__scpClientObj.put(fullfilename, remote_path=self.remotefolder)
+        except:
+            return 0
+        
+        return 1
+    
+class SendToServer(ProcessingUnit):
+    
+    def __init__(self):
+        
+        ProcessingUnit.__init__(self)
+        
+        self.isConfig = False
+        self.clientObj = None
+    
+    def setup(self, server, username, password, remotefolder, localfolder, ext='.png', period=60, protocol='ftp'):
+        
+        self.clientObj = None
+        self.localfolder = localfolder
+        self.ext = ext
+        self.period = period
+        
+        if str.lower(protocol) == 'ftp':
+            self.clientObj = FTPClient(server, username, password, remotefolder, period)
+        
+        if str.lower(protocol) == 'ssh':
+            self.clientObj = SSHClient(server, username, password, remotefolder, period)
+        
+        if not self.clientObj:
+            raise ValueError, "%s has been chosen as remote access protocol but it is not valid" %protocol
+        
+        self.clientObj.start()
+        
+    def findFiles(self):
+        
+        filenameList = glob.glob1(self.localfolder, '*%s' %self.ext)
+        
+        if len(filenameList) < 1:
+            return []
+            
+        fullfilenameList = [os.path.join(self.localfolder, thisFile) for thisFile in filenameList]
+        
+        return fullfilenameList
+    
+    def run(self, **kwargs):
+        
+        if not self.isConfig:
+            self.init = time.time()
+            self.setup(**kwargs)
+            self.isConfig = True
+        
+        if time.time() - self.init >= self.period:
+            fullfilenameList = self.findFiles()
+            self.clientObj.updateFileList(fullfilenameList)
+            self.init = time.time()
+    
+    def close(self):
+        print "[Remote Server] Stopping thread"
+        self.clientObj.stop()
+        
+        
 class FTP(object):
     """
     Ftp is a public class used to define custom File Transfer Protocol from "ftplib" python module
@@ -298,20 +854,23 @@ class FTP(object):
         self.ftp.close()
 
 class SendByFTP(Operation):
+    
     def __init__(self):
+        
         self.status = 1
         self.counter = 0
     
     def error_print(self, ValueError):
+        
         print ValueError, 'Error FTP'
         print "don't worry the program is running..."
     
     def worker_ftp(self, server, username, password, remotefolder, filenameList):
         
-        self.ftpObj = FTP(server, username, password, remotefolder)
+        self.ftpClientObj = FTP(server, username, password, remotefolder)
         for filename in filenameList:
-            self.ftpObj.upload(filename)
-        self.ftpObj.close()
+            self.ftpClientObj.upload(filename)
+        self.ftpClientObj.close()
     
     def ftp_thread(self, server, username, password, remotefolder):
         if not(self.status):

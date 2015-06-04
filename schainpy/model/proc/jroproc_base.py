@@ -32,7 +32,7 @@ class ProcessingUnit(object):
         self.dataIn = None
         self.dataInList = []
         
-        self.dataOut = {}
+        self.dataOut = None
         
         self.operations2RunDict = {}
         
@@ -108,7 +108,10 @@ class ProcessingUnit(object):
 #         
 #         if name != 'run':
 #             return True
-         
+        
+        if self.dataOut == None:
+            return False
+        
         if self.dataOut.isEmpty():
             return False
         
@@ -218,7 +221,11 @@ class ProcessingUnit(object):
     def run(self):
         
         raise ValueError, "Not implemented"
-        
+    
+    def close(self):
+        #Close every thread, queue or any other object here is it is neccesary.
+        return
+    
 class Operation(object):
     
     """

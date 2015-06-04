@@ -180,19 +180,9 @@ class CorrelationPlot(Figure):
             
         self.draw()
         
-        if save:
-            
-            if figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime)
-                
-            self.counter_imagwr += 1
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
-                self.saveFigure(figpath, figfile)
-                # store png plot to FTP server according to RT-Web format
-                if ftp:
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)                
-                self.counter_imagwr = 0         
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)     

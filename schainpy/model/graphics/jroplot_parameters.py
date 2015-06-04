@@ -3,6 +3,7 @@ import datetime
 import numpy
 
 from figure import Figure, isRealtime
+from plotting_codes import *
 
 class MomentsPlot(Figure):
     
@@ -24,7 +25,8 @@ class MomentsPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 1
+        self.PLOT_CODE = MOMENTS_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -179,23 +181,13 @@ class MomentsPlot(Figure):
                 axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
             
         self.draw()
-        
-        if save:
             
-            if figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime)
-            
-            self.counter_imagwr += 1
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
-                self.saveFigure(figpath, figfile)
-                self.counter_imagwr = 0
-                # store png plot to FTP server according to RT-Web format 
-                if ftp:
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
                                 
                 
 
@@ -221,7 +213,8 @@ class SkyMapPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 1
+        self.PLOT_CODE = SKYMAP_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -324,35 +317,13 @@ class SkyMapPlot(Figure):
                     ticksize=9, cblabel='')
         
         self.draw()
-        
-        if save:
             
-            self.counter_imagwr += 1
-            if (self.counter_imagwr==wr_period):
-                
-                if figfile == None:
-                    figfile = self.getFilename(name = self.name)
-                    
-                self.saveFigure(figpath, figfile)       
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    #provisionalmente envia archivos en el formato de la web en tiempo real
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    path = '%s%03d' %(self.PREFIX, self.id)
-                    ftp_file = os.path.join(path,'ftp','%s.png'%name)
-                    self.saveFigure(figpath, ftp_file)
-                    ftp_filename = os.path.join(figpath,ftp_file)
-                    
-                    
-                    try:
-                        self.sendByFTP(ftp_filename, server, folder, username, password)
-                    except:
-                        self.counter_imagwr = 0
-                        raise ValueError, 'Error FTP'
-                
-                
-               
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
                                 
 class WindProfilerPlot(Figure):
      
@@ -375,7 +346,8 @@ class WindProfilerPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 0
+        self.PLOT_CODE = WIND_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -559,31 +531,18 @@ class WindProfilerPlot(Figure):
                            
         self.draw()
         
-        if save:
-            
-            if self.figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                self.figfile = self.getFilename(name = str_datetime)
-                
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
-                self.saveFigure(figpath, self.figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
-                    
-                    
-                 
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False
             self.figfile = None
+            
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)
             
             
 class ParametersPlot(Figure):
@@ -607,7 +566,8 @@ class ParametersPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 0
+        self.PLOT_CODE = PARMS_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -786,31 +746,19 @@ class ParametersPlot(Figure):
 
         self.draw()
         
-        if save:
-            
-            if self.figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                self.figfile = self.getFilename(name = str_datetime)
-                
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder         
-                self.saveFigure(figpath, self.figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
-                    
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False
             self.figfile = None
             
-            
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)
+        
 class SpectralFittingPlot(Figure):
     
     __isConfig = None
@@ -827,6 +775,8 @@ class SpectralFittingPlot(Figure):
     def __init__(self):
         self.__isConfig = False
         self.__nsubplots = 1
+        
+        self.PLOT_CODE = SPECFIT_CODE
         
         self.WIDTH = 450
         self.HEIGHT = 250
@@ -977,13 +927,13 @@ class SpectralFittingPlot(Figure):
                             linestyle='solid', grid='both')
                 
         self.draw()
-        
-        if save:
-            date = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            if figfile == None:
-                figfile = self.getFilename(name = date)
-
-            self.saveFigure(figpath, figfile)
+            
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
             
             
 class EWDriftsPlot(Figure):
@@ -1007,7 +957,8 @@ class EWDriftsPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 0
+        self.PLOT_CODE = EWDRIFT_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -1183,26 +1134,15 @@ class EWDriftsPlot(Figure):
                            
         self.draw()
         
-        if save:
-            
-            if self.figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                self.figfile = self.getFilename(name = str_datetime)
-                
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder     
-                self.saveFigure(figpath, self.figfile)
-                self.counter_imagwr = 0
-                
-                if ftp: 
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
-        
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False
             self.figfile = None
+            
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)

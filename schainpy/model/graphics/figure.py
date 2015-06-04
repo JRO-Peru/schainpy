@@ -39,6 +39,10 @@ class Figure:
     xmin = None
     xmax = None
     
+    counter_imagwr = 0
+    
+    figfile = None
+    
     def __init__(self):
          
         raise ValueError, "This method is not implemented"
@@ -175,6 +179,7 @@ class Figure:
                                               show=show)
         
         self.axesObjList = []
+        self.counter_imagwr = 0
 
     
     def setDriver(self, driver=mpldriver):
@@ -224,8 +229,45 @@ class Figure:
         
         self.__driver.saveFigure(self.fig, filename, *args)
     
-
-    
+    def save(self, figpath, figfile=None, save=True, ftp=False, wr_period=1, thisDatetime=None, update_figfile=True):
+        
+        if not save:
+            return
+        
+        if figfile == None:
+            
+            if not thisDatetime:
+                raise ValueError, "Saving figure: figfile or thisDatetime should be defined"
+                return
+            
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            figfile = self.getFilename(name = str_datetime)
+        
+        if self.figfile == None:
+            self.figfile = figfile
+            
+        if update_figfile:
+            self.figfile = figfile
+            
+        self.counter_imagwr += 1
+        
+        if self.counter_imagwr<wr_period:
+            return
+        
+        # store png plot to local folder            
+        self.saveFigure(figpath, self.figfile)
+        self.counter_imagwr = 0
+            
+        if not ftp:
+            return
+        
+        if not thisDatetime:
+            return
+        
+        # store png plot to FTP server according to RT-Web format 
+        name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+        ftp_filename = os.path.join(figpath, name)
+        self.saveFigure(figpath, ftp_filename)  
     
     def getNameToFtp(self, thisDatetime, FTP_WEI, EXP_CODE, SUB_EXP_CODE, PLOT_CODE, PLOT_POS):
         YEAR_STR = '%4.4d'%thisDatetime.timetuple().tm_year  

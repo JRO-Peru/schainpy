@@ -8,6 +8,7 @@ import datetime
 import numpy
 
 from figure import Figure, isRealtime
+from plotting_codes import *
 
 class SpectraPlot(Figure):
     
@@ -29,7 +30,8 @@ class SpectraPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 1
+        self.PLOT_CODE = SPEC_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -188,31 +190,20 @@ class SpectraPlot(Figure):
                 axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
             
         self.draw()
-            
-        if save:
-            
-            if figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime)
-                name = str_datetime
-                if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
-                    name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith) 
-                figfile = self.getFilename(name)
+        
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            name = str_datetime
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith) 
+            figfile = self.getFilename(name)
                 
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder            
-                self.saveFigure(figpath, figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)                
-                    
-
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
 
 class CrossSpectraPlot(Figure):
     
@@ -235,7 +226,7 @@ class CrossSpectraPlot(Figure):
         self.WIDTHPROF = 0
         self.HEIGHTPROF = 0
         
-        self.PLOT_CODE = 1
+        self.PLOT_CODE = CROSS_CODE
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -397,24 +388,12 @@ class CrossSpectraPlot(Figure):
             
         self.draw()
         
-        if save != '':
-            
-            if figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime)
-            
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder            
-                self.saveFigure(figpath, figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)  
 
 
 class RTIPlot(Figure):
@@ -438,7 +417,8 @@ class RTIPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 0
+        self.PLOT_CODE = RTI_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -603,30 +583,19 @@ class RTIPlot(Figure):
                         grid='x')
             
         self.draw()      
-        
-        if save:
 
-            if self.figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                self.figfile = self.getFilename(name = str_datetime)
-            
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder            
-                self.saveFigure(figpath, self.figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
-        
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False
             self.figfile = None
+            
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)
 
 class CoherenceMap(Figure):
     isConfig = None
@@ -647,7 +616,8 @@ class CoherenceMap(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = 3
+        self.PLOT_CODE = COH_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -815,27 +785,18 @@ class CoherenceMap(Figure):
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False
-        
-        if save:
-
-            if figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime)
-                
-            self.counter_imagwr += 1
+            self.figfile = None
             
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder            
-                self.saveFigure(figpath, figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)
 
 class PowerProfile(Figure):
+    
     isConfig = None
     __nsubplots = None
     
@@ -846,6 +807,8 @@ class PowerProfile(Figure):
     def __init__(self):
         self.isConfig = False
         self.__nsubplots = 1
+        
+        self.PLOT_CODE = POWER_CODE
         
         self.WIDTH = 300
         self.HEIGHT = 500
@@ -948,18 +911,12 @@ class PowerProfile(Figure):
         
         self.draw()
         
-        if save:
-                
-            if figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime)
-            
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder            
-                self.saveFigure(figpath, figfile)
-                self.counter_imagwr = 0
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
 
 class Noise(Figure):
     
@@ -981,7 +938,8 @@ class Noise(Figure):
         self.xdata = None
         self.ydata = None
         
-        self.PLOT_CODE = 17
+        self.PLOT_CODE = NOISE_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -1137,25 +1095,15 @@ class Noise(Figure):
             del self.xdata
             del self.ydata
             self.__isConfig = False
-        
-        if save != '':
+            self.figfile = None
             
-            if self.figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                self.figfile = self.getFilename(name = str_datetime)
-            
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder            
-                self.saveFigure(figpath, self.figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)
         
         
 class BeaconPhase(Figure):
@@ -1178,7 +1126,8 @@ class BeaconPhase(Figure):
         self.xdata = None
         self.ydata = None
         
-        self.PLOT_CODE = 18
+        self.PLOT_CODE = BEACON_CODE
+        
         self.FTP_WEI = None
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
@@ -1354,22 +1303,12 @@ class BeaconPhase(Figure):
             del self.xdata
             del self.ydata
             self.__isConfig = False
-        
-        if save:
+            self.figfile = None
             
-            if self.figfile == None:
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                self.figfile = self.getFilename(name = str_datetime)
-                
-            self.counter_imagwr += 1
-            
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder            
-                self.saveFigure(figpath, self.figfile)
-                self.counter_imagwr = 0
-                
-                if ftp:
-                    # store png plot to FTP server according to RT-Web format 
-                    name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                    ftp_filename = os.path.join(figpath, name)
-                    self.saveFigure(figpath, ftp_filename)
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)
