@@ -1,11 +1,11 @@
 import os, sys
-#import timeit
-import datetime
-
+import numpy
 path = os.path.split(os.getcwd())[0]
+path = os.path.split(path)[0]
+
 sys.path.append(path)
 
-from controller import *
+from schainpy.controller import Project
 
 desc = "150 km Jicamarca January 2015"
 filename = "150km_jicamarca.xml"
@@ -14,11 +14,13 @@ controllerObj = Project()
 
 controllerObj.setup(id = '191', name='test01', description=desc)
 
-path = '/home/operaciones/150km_jicamarca_january/RAW_EXP/2015_ISR'
-#path = '/media/DATOS/2015_ISR'
+#path = '/home/operaciones/150km_jicamarca_january/RAW_EXP/2015_ISR'
+path = '/media/DATOS/2015_ISR'
 #path = '/media/New Volume2/DATA/RAW_EXP/2015_ISR'
 
 figpath = '/home/operaciones/Pictures/150km_jicamarca_january'
+
+remotefolder = "/home/wmaster/graficos"
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
@@ -26,7 +28,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             endDate='2015/01/30',
                                             startTime='07:40:00',
                                             endTime='23:59:59',
-                                            online=1,
+                                            online=0,
                                             delay=10,
                                             walk=1,
                                             nTxs=4)
@@ -95,20 +97,23 @@ opObj11.addParameter(name='phase_cmap', value='jet', format='str')
 # opObj11.addParameter(name='ymax', value='105', format='int')
 opObj11.addParameter(name='zmin', value='15', format='int')
 opObj11.addParameter(name='zmax', value='45', format='int')
-opObj11.addParameter(name='figpath', value=figpath, format='str')
-opObj11.addParameter(name='exp_code', value='13', format='int')
+opObj11.addParameter(name='exp_code', value='14', format='int')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value=figpath)
+opObj11.addParameter(name='ftp', value='1', format='int')
 
 # 
 opObj11 = procUnitConfObj1.addOperation(name='CoherenceMap', optype='other')
 opObj11.addParameter(name='id', value='102', format='int')
 opObj11.addParameter(name='wintitle', value='Coherence', format='str')
 opObj11.addParameter(name='phase_cmap', value='jet', format='str')
- 
-# 
 opObj11.addParameter(name='xmin', value='0', format='int')
 opObj11.addParameter(name='xmax', value='24', format='int')
-opObj11.addParameter(name='figpath', value=figpath, format='str')
-# opObj11.addParameter(name='wr_period', value='2', format='int')
+opObj11.addParameter(name='wr_period', value='2', format='int')
+opObj11.addParameter(name='exp_code', value='14', format='int')
+opObj11.addParameter(name='save', value='1', format='int')
+opObj11.addParameter(name='figpath', value=figpath)
+opObj11.addParameter(name='ftp', value='1', format='int')
 
   
 # opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
@@ -123,6 +128,16 @@ opObj11.addParameter(name='figpath', value=figpath, format='str')
 # opObj11.addParameter(name='showprofile', value='0', format='int')
 # opObj11.addParameter(name='figpath', value=figpath, format='str')
 # opObj11.addParameter(name='exp_code', value='13', format='int')
+
+procUnitConfObj2 = controllerObj.addProcUnit(name='SendToServer')
+procUnitConfObj2.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
+procUnitConfObj2.addParameter(name='username', value='wmaster', format='str')
+procUnitConfObj2.addParameter(name='password', value='mst2010vhf', format='str')
+procUnitConfObj2.addParameter(name='localfolder', value=figpath, format='str')
+procUnitConfObj2.addParameter(name='remotefolder', value=remotefolder, format='str')
+procUnitConfObj2.addParameter(name='ext', value='.png', format='str')
+procUnitConfObj2.addParameter(name='period', value=60, format='int')
+procUnitConfObj2.addParameter(name='protocol', value='ftp', format='str')
 
 print "Escribiendo el archivo XML"
 controllerObj.writeXml(filename)
