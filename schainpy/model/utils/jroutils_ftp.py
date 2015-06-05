@@ -170,7 +170,7 @@ class Remote(threading.Thread):
     def run(self):
         
         if not self.cd(self.remotefolder):
-            raise ValueError, "It could not change to the new remote directory: %s" %remotefolder
+            raise ValueError, "Could not access to the new remote directory: %s" %self.remotefolder
         
         while True:
             
@@ -423,11 +423,16 @@ class SSHClient(Remote):
         self.server = server
         self.username = username
         self.password = password
-        self.remotefolder = remotefolder
         self.__sshClientObj = sshClientObj
         self.__scpClientObj = scpClientObj
         self.status = 1
         
+        if not self.cd(remotefolder):
+            raise ValueError, "Could not access to remote folder: %s" %remotefolder
+            return 0
+        
+        self.remotefolder = remotefolder
+                
         return 1
     
     def close(self):
@@ -438,7 +443,32 @@ class SSHClient(Remote):
             return 0
         
         self.__sshObj.close()
+
+    def __execute(self, command):
+        """
+        __execute a command on remote server
         
+        Input:
+            command    - Exmaple 'ls -l'
+        
+        Return:
+            0 in error case else 1
+        """
+        if not self.status:
+            return 0
+
+        stdin, stdout, stderr = self.__sshClientObj.exec_command(command)
+        
+        result = stderr.readlines()
+        if len(result) > 1:
+            return 0
+
+        result = stdout.readlines()
+        if len(result) > 1:
+            return result[0][:-1]
+        
+        return 1
+       
     def mkdir(self, remotefolder):
         """
         mkdir is used to make a new directory in remote server
@@ -449,29 +479,16 @@ class SSHClient(Remote):
         Return:
             0 in error case else 1
         """
-        if not self.status:
-            return 0
         
-        stdin, stdout, stderr = self.__sshClientObj.exec_command('mkdir %s' %remotefolder)
-        result = stderr.readlines()[0]
+        command = 'mkdir %s' %remotefolder
         
-        if len(result) > 1:
-            return 0
-        
-        return 1
+        return self.__execute(command)
     
     def pwd(self):
 
-        if not self.status:
-            return None
+        command = 'pwd'
         
-        stdin, stdout, stderr = self.__sshClientObj.exec_command('pwd')
-        result = stdout.readlines()[0]
-        
-        if len(result) < 1:
-            return None
-        
-        return result[:-1]
+        return self.__execute(command)
         
     def cd(self, remotefolder):
         """
@@ -488,9 +505,17 @@ class SSHClient(Remote):
         """
         if not self.status:
             return 0
-        
+
         if remotefolder == self.remotefolder:
             return 1
+        
+        chk_command = "cd %s; pwd" %remotefolder
+        mkdir_command = "mkdir %s" %remotefolder
+        
+        if not self.__execute(chk_command):
+            if not self.__execute(mkdir_command):
+                self.remotefolder = None
+                return 0
             
         self.remotefolder = remotefolder
         
@@ -506,7 +531,10 @@ class SSHClient(Remote):
         except:
             return 0
         
-        return 1
+        remotefile = os.path.join(self.remotefolder, os.path.split(fullfilename)[-1])
+        command = 'chmod 775 %s' %remotefile
+        
+        return self.__execute(command)
     
 class SendToServer(ProcessingUnit):
     
