@@ -42,7 +42,7 @@ class Ui_InitWindow(object):
         self.verticalLayout_4.addWidget(self.line_2)
         self.label_4 = QtGui.QLabel(Dialog)
         self.label_4.setText(_fromUtf8(""))
-        self.label_4.setPixmap(QtGui.QPixmap(_fromUtf8("figure/w.jpg")))
+        self.label_4.setPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/w.jpg")))
         self.label_4.setScaledContents(True)
         self.label_4.setObjectName(_fromUtf8("label_4"))
         self.verticalLayout_4.addWidget(self.label_4)

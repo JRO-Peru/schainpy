@@ -1,20 +1,52 @@
 import os
 import numpy
 import time, datetime
-import mpldriver
+import mpldriver_gui
+from customftp import *
+import Queue
+import threading
 
-from schainpy.model.proc.jroproc_base import Operation
+class FTP_Thread (threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.exitFlag = 0
+        self.queueLock = threading.Lock()
+        self.workQueue = Queue.Queue()
+        
+    def run(self):
+        self.send_data()
 
-def isRealtime(utcdatatime):
-    utcnow = time.mktime(time.localtime())
-    delta = abs(utcnow - utcdatatime) # abs
-    if delta >= 30.:
-        return False
-    return True
+    def fin(self):
+        self.exitFlag = 1
 
-class Figure(Operation):
+    def put_data(self, data):
+        # Fill the queue
+        self.queueLock.acquire()
+        self.workQueue.put(data)
+        self.queueLock.release()         
+            
+    def send_data(self):
+        while not self.exitFlag:
+            if self.workQueue.qsize():
+                
+                data = self.workQueue.get(True)
+                
+                try:
+                    ftpObj = Ftp(host=data['server'], 
+                                 username=data['username'], 
+                                 passw=data['password'], 
+                                 remotefolder=data['folder'])
+                    
+                    ftpObj.upload(data['figfilename'])
+                    ftpObj.close()
+                except:
+                    print ValueError, 'Error FTP'
+                    print "don't worry still running the program"
+
+
+class Figure():
     
-    __driver = mpldriver
+    __driver = mpldriver_gui
     __isConfigThread = False
     fig = None
     
@@ -31,130 +63,40 @@ class Figure(Operation):
     HEIGHT = None
     PREFIX = 'fig'
     
-    xmin = None
-    xmax = None
+    FTP_WEI = None #(WW)
+    EXP_CODE = None #(EXP)
+    SUB_EXP_CODE = None #(SS)
+    PLOT_CODE = None #(TT)
+    PLOT_POS = None #(NN)
     
-    counter_imagwr = 0
     
-    figfile = None
     
     def __init__(self):
          
         raise ValueError, "This method is not implemented"
     
-    def __del__(self):
+    def getSubplots(self):
         
-        self.__driver.closeFigure()
+        raise ValueError, "Abstract method: This method should be defined"
     
-    def getFilename(self, name, ext='.png'):
-        
-        path = '%s%03d' %(self.PREFIX, self.id)
-        filename = '%s_%s%s' %(self.PREFIX, name, ext)
-        return os.path.join(path, filename)
-        
     def getAxesObjList(self):
         
         return self.axesObjList
     
-    def getSubplots(self):
-        
-        raise ValueError, "Abstract method: This method should be defined"
-        
     def getScreenDim(self, widthplot, heightplot):
         
         nrow, ncol = self.getSubplots()
-        
         widthscreen = widthplot*ncol
         heightscreen = heightplot*nrow
         
         return widthscreen, heightscreen
-    
-    def getTimeLim(self, x, xmin=None, xmax=None, timerange=None):
-        
-        if self.xmin != None and self.xmax != None:
-            if timerange == None:
-                timerange = self.xmax - self.xmin
-            xmin = self.xmin + timerange
-            xmax = self.xmax + timerange
-            
-            return xmin, xmax
-        
-        if timerange == None and (xmin==None or xmax==None):
-            timerange = 14400   #seconds
-            #raise ValueError, "(timerange) or (xmin & xmax) should be defined"
-            
-        if timerange != None:
-            txmin = x[0] - x[0] % min(timerange/10, 10*60)
-        else:
-            txmin = x[0] - x[0] % 10*60
-            
-        thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
-        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
-        
-        if timerange != None:
-            xmin = (thisdatetime - thisdate).seconds/(60*60.)
-            xmax = xmin + timerange/(60*60.)
-        
-        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
-        xmin_sec = time.mktime(mindt.timetuple())
-        
-        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
-        xmax_sec = time.mktime(maxdt.timetuple())
 
-        return xmin_sec, xmax_sec
-        
-        
-        
-        
-        
-#         if timerange != None:
-#             txmin = x[0] - x[0]%timerange
-#         else:
-#             txmin = numpy.min(x)
-#         
-#         thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
-#         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
-#         
-#         ####################################################
-#         #If the x is out of xrange
-#         if xmax != None:
-#             if xmax < (thisdatetime - thisdate).seconds/(60*60.):
-#                 xmin = None
-#                 xmax = None
-#         
-#         if xmin == None:
-#             td = thisdatetime - thisdate
-#             xmin = td.seconds/(60*60.)
-#             
-#         if xmax == None:
-#             xmax = xmin + self.timerange/(60*60.)
-#         
-#         mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
-#         tmin = time.mktime(mindt.timetuple())
-#         
-#         maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
-#         tmax = time.mktime(maxdt.timetuple())
-#         
-#         #self.timerange = tmax - tmin
-#         
-#         return tmin, tmax
+    def getFilename(self, name, ext='.png'):
+        path = '%s%03d' %(self.PREFIX, self.id)
+        filename = '%s_%s%s' %(self.PREFIX, name, ext)
+        return os.path.join(path, filename)
     
-    def init(self, id, nplots, wintitle):
-    
-        raise ValueError, "This method has been replaced with createFigure"
-    
-    def createFigure(self, id, wintitle, widthplot=None, heightplot=None, show=True):
-        
-        """
-        Crea la figura de acuerdo al driver y parametros seleccionados seleccionados.
-        Las dimensiones de la pantalla es calculada a partir de los atributos self.WIDTH
-        y self.HEIGHT y el numero de subplots (nrow, ncol)
-            
-        Input:
-            id    :    Los parametros necesarios son 
-            wintitle    :    
-        
-        """
+    def createFigure(self, id, wintitle, widthplot=None, heightplot=None):
         
         if widthplot == None:
             widthplot = self.WIDTH
@@ -171,41 +113,16 @@ class Figure(Operation):
         self.fig = self.__driver.createFigure(id=self.id,
                                               wintitle=self.wintitle,
                                               width=self.widthscreen,
-                                              height=self.heightscreen,
-                                              show=show)
+                                              height=self.heightscreen)
         
         self.axesObjList = []
-        self.counter_imagwr = 0
-
+        
+        return self.fig
     
-    def setDriver(self, driver=mpldriver):
-        
-        self.__driver = driver
-        
-    def setTitle(self, title):
-        
-        self.__driver.setTitle(self.fig, title)
+    def clearAxes(self):
+        self.axesObjList = []
     
-    def setWinTitle(self, title):
-        
-        self.__driver.setWinTitle(self.fig, title=title)
-    
-    def setTextFromAxes(self, text):
-        
-        raise ValueError, "Este metodo ha sido reemplazaado con el metodo setText de la clase Axes"
-    
-    def makeAxes(self, nrow, ncol, xpos, ypos, colspan, rowspan):
-        
-        raise ValueError, "Este metodo ha sido reemplazaado con el metodo addAxes"
-        
     def addAxes(self, *args):
-        """
-        
-        Input:
-            *args    :    Los parametros necesarios son
-                          nrow, ncol, xpos, ypos, colspan, rowspan
-        """
-        
         axesObj = Axes(self.fig, *args)
         self.axesObjList.append(axesObj)
     
@@ -225,45 +142,55 @@ class Figure(Operation):
         
         self.__driver.saveFigure(self.fig, filename, *args)
     
-    def save(self, figpath, figfile=None, save=True, ftp=False, wr_period=1, thisDatetime=None, update_figfile=True):
+    def getTimeLim(self, x, xmin, xmax):
         
-        self.counter_imagwr += 1
-        if self.counter_imagwr < wr_period:
-            return
+        if self.timerange != None:
+            txmin = x[0] - x[0]%self.timerange
+        else:
+            txmin = numpy.min(x)
         
-        self.counter_imagwr = 0
+        thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
+        thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
         
-        if save:
+        ####################################################
+        #If the x is out of xrange
+        if xmax < (thisdatetime - thisdate).seconds/(60*60.):
+            xmin = None
+            xmax = None
         
-            if figfile == None:
-                
-                if not thisDatetime:
-                    raise ValueError, "Saving figure: figfile or thisDatetime should be defined"
-                    return
-                
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime)
+        if xmin == None:
+            td = thisdatetime - thisdate
+            xmin = td.seconds/(60*60.)
             
-            if self.figfile == None:
-                self.figfile = figfile
-                
-            if update_figfile:
-                self.figfile = figfile
-            
-            # store png plot to local folder            
-            self.saveFigure(figpath, self.figfile)
-            
-            
-        if not ftp:
-            return
+        if xmax == None:
+            xmax = xmin + self.timerange/(60*60.)
         
-        if not thisDatetime:
-            return
+        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
+        tmin = time.mktime(mindt.timetuple())
         
-        # store png plot to FTP server according to RT-Web format 
-        name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-        ftp_filename = os.path.join(figpath, name)
-        self.saveFigure(figpath, ftp_filename)  
+        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
+        tmax = time.mktime(maxdt.timetuple())
+        
+        self.timerange = tmax - tmin
+        
+        return tmin, tmax
+    
+    def sendByFTP(self, figfilename, server, folder, username, password):
+        ftpObj = Ftp(host=server, username=username, passw=password, remotefolder=folder)
+        ftpObj.upload(figfilename)
+        ftpObj.close()
+    
+    def sendByFTP_Thread(self, figfilename, server, folder, username, password):
+        data = {'figfilename':figfilename,'server':server,'folder':folder,'username':username,'password':password}
+
+        if not(self.__isConfigThread):
+            
+            self.thread = FTP_Thread()
+            self.thread.start()
+            self.__isConfigThread = True
+        
+        self.thread.put_data(data)
+
     
     def getNameToFtp(self, thisDatetime, FTP_WEI, EXP_CODE, SUB_EXP_CODE, PLOT_CODE, PLOT_POS):
         YEAR_STR = '%4.4d'%thisDatetime.timetuple().tm_year  
@@ -277,23 +204,13 @@ class Figure(Operation):
         return name
     
     def draw(self):
-        
         self.__driver.draw(self.fig)
     
-    def run(self):
-        
-        raise ValueError, "This method is not implemented"
-    
-    def close(self):
-        
-        self.__driver.closeFigure()
-        
     axesList = property(getAxesObjList)
-            
 
 class Axes:
     
-    __driver = mpldriver
+    __driver = mpldriver_gui
     fig = None
     ax = None
     plot = None
@@ -315,8 +232,8 @@ class Axes:
     decimationx = None
     decimationy = None
     
-    __MAXNUMX = 300
-    __MAXNUMY = 150
+    __MAXNUMX = 1000.
+    __MAXNUMY = 500.
     
     def __init__(self, *args):
         
@@ -337,135 +254,7 @@ class Axes:
         
         self.x_buffer = numpy.array([])
         self.z_buffer = numpy.array([])
-        
-    def setText(self, text):
-        
-        self.__driver.setAxesText(self.ax, text)
     
-    def setXAxisAsTime(self):
-        pass
-    
-    def pline(self, x, y,
-               xmin=None, xmax=None,
-               ymin=None, ymax=None,
-               xlabel='', ylabel='',
-               title='',
-               **kwargs):
-        
-        """
-        
-        Input:
-            x        :    
-            y        :  
-            xmin    :
-            xmax    :
-            ymin    :
-            ymax    :  
-            xlabel    :
-            ylabel    :
-            title    :
-            **kwargs :    Los parametros aceptados son
-                          
-                          ticksize
-                          ytick_visible
-        """
-        
-        if self.__firsttime:
-            
-            if xmin == None: xmin = numpy.nanmin(x)
-            if xmax == None: xmax = numpy.nanmax(x)
-            if ymin == None: ymin = numpy.nanmin(y)
-            if ymax == None: ymax = numpy.nanmax(y)
-    
-            self.plot = self.__driver.createPline(self.ax, x, y,
-                                                  xmin, xmax,
-                                                  ymin, ymax,
-                                                  xlabel=xlabel,
-                                                    ylabel=ylabel,
-                                                    title=title,
-                                                  **kwargs)
-
-            self.idlineList.append(0)
-            self.__firsttime = False
-            return
-                    
-        self.__driver.pline(self.plot, x, y, xlabel=xlabel,
-                                                    ylabel=ylabel,
-                                                    title=title)
-
-    def addpline(self, x, y, idline, **kwargs):
-        lines = self.ax.lines
-        
-        if idline in self.idlineList:
-            self.__driver.set_linedata(self.ax, x, y, idline)
-        
-        if  idline not in(self.idlineList):
-            self.__driver.addpline(self.ax, x, y, **kwargs)
-            self.idlineList.append(idline)
-
-        return
-        
-    def pmultiline(self, x, y,
-                   xmin=None, xmax=None,
-                   ymin=None, ymax=None,
-                   xlabel='', ylabel='',
-                   title='',
-                   **kwargs):
-        
-        if self.__firsttime:
-            
-            if xmin == None: xmin = numpy.nanmin(x)
-            if xmax == None: xmax = numpy.nanmax(x)
-            if ymin == None: ymin = numpy.nanmin(y)
-            if ymax == None: ymax = numpy.nanmax(y)
-    
-            self.plot = self.__driver.createPmultiline(self.ax, x, y,
-                                                  xmin, xmax,
-                                                  ymin, ymax,
-                                                  xlabel=xlabel,
-                                                  ylabel=ylabel,
-                                                  title=title,
-                                                  **kwargs)
-            self.__firsttime = False
-            return
-                    
-        self.__driver.pmultiline(self.plot, x, y, xlabel=xlabel,
-                                                    ylabel=ylabel,
-                                                    title=title)
-    
-    def pmultilineyaxis(self, x, y,
-                   xmin=None, xmax=None,
-                   ymin=None, ymax=None,
-                   xlabel='', ylabel='',
-                   title='',
-                   **kwargs):
-        
-        if self.__firsttime:
-            
-            if xmin == None: xmin = numpy.nanmin(x)
-            if xmax == None: xmax = numpy.nanmax(x)
-            if ymin == None: ymin = numpy.nanmin(y)
-            if ymax == None: ymax = numpy.nanmax(y)
-    
-            self.plot = self.__driver.createPmultilineYAxis(self.ax, x, y,
-                                                  xmin, xmax,
-                                                  ymin, ymax,
-                                                  xlabel=xlabel,
-                                                  ylabel=ylabel,
-                                                  title=title,
-                                                  **kwargs)
-            if self.xmin == None: self.xmin = xmin
-            if self.xmax == None: self.xmax = xmax
-            if self.ymin == None: self.ymin = ymin
-            if self.ymax == None: self.ymax = ymax
-            
-            self.__firsttime = False
-            return
-                    
-        self.__driver.pmultilineyaxis(self.plot, x, y, xlabel=xlabel,
-                                                    ylabel=ylabel,
-                                                    title=title)
-            
     def pcolor(self, x, y, z,
                xmin=None, xmax=None,
                ymin=None, ymax=None,
@@ -536,6 +325,128 @@ class Axes:
                              xlabel=xlabel,
                              ylabel=ylabel,
                              title=title)
+
+
+    def pline(self, x, y,
+               xmin=None, xmax=None,
+               ymin=None, ymax=None,
+               xlabel='', ylabel='',
+               title='',
+               **kwargs):
+        
+        """
+        
+        Input:
+            x        :    
+            y        :  
+            xmin    :
+            xmax    :
+            ymin    :
+            ymax    :  
+            xlabel    :
+            ylabel    :
+            title    :
+            **kwargs :    Los parametros aceptados son
+                          
+                          ticksize
+                          ytick_visible
+        """
+        
+        if self.__firsttime:
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+    
+            self.plot = self.__driver.createPline(self.ax, x, y,
+                                                  xmin, xmax,
+                                                  ymin, ymax,
+                                                  xlabel=xlabel,
+                                                    ylabel=ylabel,
+                                                    title=title,
+                                                  **kwargs)
+
+            self.idlineList.append(0)
+            self.__firsttime = False
+            return
+                    
+        self.__driver.pline(self.plot, x, y, xlabel=xlabel,
+                                                    ylabel=ylabel,
+                                                    title=title)
+    
+    def pmultiline(self, x, y,
+                   xmin=None, xmax=None,
+                   ymin=None, ymax=None,
+                   xlabel='', ylabel='',
+                   title='',
+                   **kwargs):
+        
+        if self.__firsttime:
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+    
+            self.plot = self.__driver.createPmultiline(self.ax, x, y,
+                                                  xmin, xmax,
+                                                  ymin, ymax,
+                                                  xlabel=xlabel,
+                                                  ylabel=ylabel,
+                                                  title=title,
+                                                  **kwargs)
+            self.__firsttime = False
+            return
+                    
+        self.__driver.pmultiline(self.plot, x, y, xlabel=xlabel,
+                                                    ylabel=ylabel,
+                                                    title=title)
+    
+    def pmultilineyaxis(self, x, y,
+                   xmin=None, xmax=None,
+                   ymin=None, ymax=None,
+                   xlabel='', ylabel='',
+                   title='',
+                   **kwargs):
+        
+        if self.__firsttime:
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+    
+            self.plot = self.__driver.createPmultilineYAxis(self.ax, x, y,
+                                                  xmin, xmax,
+                                                  ymin, ymax,
+                                                  xlabel=xlabel,
+                                                  ylabel=ylabel,
+                                                  title=title,
+                                                  **kwargs)
+            if self.xmin == None: self.xmin = xmin
+            if self.xmax == None: self.xmax = xmax
+            if self.ymin == None: self.ymin = ymin
+            if self.ymax == None: self.ymax = ymax
+            
+            self.__firsttime = False
+            return
+                    
+        self.__driver.pmultilineyaxis(self.plot, x, y, xlabel=xlabel,
+                                                    ylabel=ylabel,
+                                                    title=title)
+    
+    def addpline(self, x, y, idline, **kwargs):
+        lines = self.ax.lines
+        
+        if idline in self.idlineList:
+            self.__driver.set_linedata(self.ax, x, y, idline)
+        
+        if  idline not in(self.idlineList):
+            self.__driver.addpline(self.ax, x, y, **kwargs)
+            self.idlineList.append(idline)
+
+        return
     
     def pcolorbuffer(self, x, y, z,
                xmin=None, xmax=None,
@@ -611,23 +522,6 @@ class Axes:
                                 ylabel=ylabel,
                                 title=title,
                                 colormap=colormap)
-    
-    def polar(self, x, y,
-               title='', xlabel='',ylabel='',**kwargs):
-        
-        if self.__firsttime:
-            self.plot = self.__driver.createPolar(self.ax, x, y, title = title, xlabel = xlabel, ylabel = ylabel)
-            self.__firsttime = False
-            self.x_buffer = x
-            self.y_buffer = y
-            return
-        
-        self.x_buffer = numpy.hstack((self.x_buffer,x))
-        self.y_buffer = numpy.hstack((self.y_buffer,y))
-        self.__driver.polar(self.plot, self.x_buffer, self.y_buffer, xlabel=xlabel,
-                                            ylabel=ylabel,
-                                            title=title)
-    
     def __fillGaps(self, x_buffer, y_buffer, z_buffer):
         
         deltas = x_buffer[1:] - x_buffer[0:-1]
@@ -640,7 +534,5 @@ class Axes:
             z_buffer = numpy.ma.masked_inside(z_buffer,0.99*self.__missing,1.01*self.__missing)
 
         return x_buffer, y_buffer, z_buffer
-        
-        
-        
-        
+    
+    

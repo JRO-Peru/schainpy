@@ -7,7 +7,7 @@ Module implementing MainWindow.
 from PyQt4.QtGui import QMainWindow
 from PyQt4.QtCore import pyqtSignature
 
-from viewer.ui_unitprocess import Ui_UnitProcess
+from schainpy.gui.viewer.ui_unitprocess import Ui_UnitProcess
 
 class UnitProcess(QMainWindow, Ui_UnitProcess):
     """

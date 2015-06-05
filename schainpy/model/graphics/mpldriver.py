@@ -7,8 +7,8 @@ if 'linux' in sys.platform:
     matplotlib.use("TKAgg")
     
 if 'darwin' in sys.platform:
-    matplotlib.use("TKAgg")
-    
+    matplotlib.use("WXAgg")
+#Qt4Agg', 'GTK', 'GTKAgg', 'ps', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'template', 'TkAgg', 'GTK3Cairo', 'GTK3Agg', 'svg', 'WebAgg', 'CocoaAgg', 'emf', 'gdk', 'WX'
 import matplotlib.pyplot
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -30,12 +30,13 @@ def createFigure(id, wintitle, width, height, facecolor="w", show=True):
     
     return fig
 
-def closeFigure(show=True):
+def closeFigure(show=False):
     
     matplotlib.pyplot.ioff()
     if show:
         matplotlib.pyplot.show()
-    
+        
+    matplotlib.pyplot.close()
     return
 
 def saveFigure(fig, filename):

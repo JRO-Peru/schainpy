@@ -1,10 +1,7 @@
 import os, sys
 import getopt
-path = os.path.split(os.getcwd())[0]
-#path="C://Users//alex//workspace//gui_14_03_13"
-sys.path.append(path)
 
-from controller  import *
+from schainpy.controller  import Project
 
 class scProcessController():
     def __init__(self):

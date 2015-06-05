@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 from PyQt4 import QtCore
+import itertools
 
 HORIZONTAL_HEADERS = ("Property","Value " )
     
@@ -7,94 +9,123 @@ HORIZONTAL = ("RAMA :",)
 class treeModel(QtCore.QAbstractItemModel):
     '''
     a model to display a few names, ordered by encabezado
+    
     '''
-    name=None
-    directorio=None 
-    workspace=None
-    remode=None
-    dataformat=None
-    date=None
-    initTime=None
-    endTime=None
-    timezone=None
-    Summary=None
-    
-    description=None
-    
     def __init__(self ,parent=None):
         super(treeModel, self).__init__(parent)
         self.people = []
+        self.initProjectProperties()
+        self.initPUVoltageProperties()
+        self.initPUSpectraProperties()
+        self.initPUSpectraHeisProperties()
         
+    def initProjectProperties(self):
+
+        name=None
+        directorio=None 
+        workspace=None
+        remode=None
+        dataformat=None
+        startDate=None
+        endDate=None
+        startTime=None
+        endTime=None
+        delay=None
+        set= None
+        walk=None
+        timezone=None
+        Summary=None        
+        description=None
         
-    def properties_projecto(self,description):
-        self.caracteristica="Project_Properties"
-        self.principal     ="Name"
-        self.description =description
-        exam_project=person_class(self.caracteristica,self.principal,self.description)
-        return exam_project
+    def initPUVoltageProperties(self):
+        type=None
+        channel=None
+        heights=None
+        filter=None
+        profile=None
+        code=None
+        mode=None
+        coherentintegration=None
         
+    def initPUSpectraProperties(self):
+        type =None
+        nFFTpoints =None
+        ippFactor = None
+        pairsList =None
+        channel =None
+        heights =None
+        incoherentintegration =None
+        removeDC = None
+        removeInterference =None
+        getNoise = None
+        operationSpecPlot=None
+        operationCrossSpecPlot = None
+        operationRTIPlot = None
+        operationCohermap = None
+        operationPowProfilePlot = None
         
-        
-    def arbol(self):     
-            for caracteristica,principal, descripcion in   (("Properties","Name",self.name), 
-                                                            ("Properties","Data Path",self.directorio),
-                                                            ("Properties","Workspace",self.workspace),
-                                                            ("Parameters", "Read Mode     ",self.remode),
-                                                            ("Parameters", "DataType    ",self.dataformat),
-                                                            ("Parameters", "Date          ",self.date),
-                                                            ("Parameters", "Init Time     ",self.initTime),
-                                                            ("Parameters", "Final Time    ",self.endTime),
-                                                            ("Parameters", " Time zone    ",self.timezone),
-                                                            ("Parameters", "Profiles      ","1"),
-                                                            ("Description", "Summary      ", self.Summary),
-                                                            ):
-                person = person_class(caracteristica, principal, descripcion)
-                self.people.append(person)
-    def addProjectproperties(self,person):
-         self.people.append(person)
-                
-       
-    #def veamos(self):
-    #    self.update= MainWindow(self)
-    #    self.update.dataProyectTxt.text()
-    #    return self.update.dataProyectTxt.text()
+    def initPUSpectraHeisProperties(self):
+        type =None
+        incoherentintegration =None
+        operationSpecHeisPlot=None
+        operationRTIHeisPlot = None
+
+    def initProjectView(self):
+        """
+        Reemplazo del método showtree
+        """
+        HORIZONTAL_HEADERS = ("Property","Value " )
+        HORIZONTAL = ("RAMA :",)
+        self.rootItem = TreeItem(None, "ALL", None)
+        self.parents = {0 : self.rootItem}
+        self.setupModelData()
     
-    def showtree(self):
+    def initPUVoltageView(self):
+        HORIZONTAL_HEADERS = ("Operation"," Parameter Value " )
+        HORIZONTAL = ("RAMA :",)
         self.rootItem = TreeItem(None, "ALL", None)
         self.parents = {0 : self.rootItem}
         self.setupModelData()
         
-    def setParams(self,name,directorio,workspace,remode,dataformat,date,initTime,endTime,timezone,Summary):
-        self.name=name
-        self.workspace=workspace
-        self.directorio= directorio
-        self.remode=remode
-        self.dataformat=dataformat
-        self.date=date
-        self.initTime=initTime
-        self.endTime=endTime
-        self.timezone=timezone
-        self.Summary=Summary
+    def showProjectParms(self,caracteristicaList,principalList,descripcionList):
+        """
+        set2Obje
+        """   
+        for caracteristica,principal, descripcion in  itertools.izip(caracteristicaList,principalList,descripcionList):     
+            person = person_class(caracteristica, principal, descripcion)
+            self.people.append(person)
+        self.rootItem = TreeItem(None, "ALL", None)
+        self.parents = {0 : self.rootItem}
+        self.setupModelData()
+    
+    def showPUVoltageParms(self,caracteristicaList,principalList,descripcionList):
+
+        for caracteristica,principal, descripcion in itertools.izip(caracteristicaList,principalList,descripcionList):
+            person = person_class(caracteristica, principal, descripcion)
+            self.people.append(person)
+        self.rootItem = TreeItem(None, "ALL", None)
+        self.parents = {0 : self.rootItem}
+        self.setupModelData()
+            
         
-        
-        for caracteristica,principal, descripcion in   (("Properties","Name",self.name), 
-                                                            ("Properties","Data Path",self.directorio),
-                                                            ("Properties","Workspace",self.workspace),
-                                                            ("Parameters", "Read Mode     ",self.remode),
-                                                            ("Parameters", "DataType    ",self.dataformat),
-                                                            ("Parameters", "Date          ",self.date),
-                                                            ("Parameters", "Init Time     ",self.initTime),
-                                                            ("Parameters", "Final Time    ",self.endTime),
-                                                            ("Parameters", " Time zone    ",self.timezone),
-                                                            ("Parameters", "Profiles      ","1"),
-                                                            ("Description", "Summary      ", self.Summary),
-                                                            ):
-                person = person_class(caracteristica, principal, descripcion)
-                self.people.append(person)
+    def showPUSpectraParms(self,caracteristicaList,principalList,descripcionList):
+
+        for caracteristica,principal, descripcion in itertools.izip(caracteristicaList,principalList,descripcionList):
+            person = person_class(caracteristica, principal, descripcion)
+            self.people.append(person)
         self.rootItem = TreeItem(None, "ALL", None)
         self.parents = {0 : self.rootItem}
         self.setupModelData()
         
+    def showPUSpectraHeisParms(self,caracteristicaList,principalList,descripcionList):
+
+        for caracteristica,principal, descripcion in itertools.izip(caracteristicaList,principalList,descripcionList):
+            person = person_class(caracteristica, principal, descripcion)
+            self.people.append(person)
+        self.rootItem = TreeItem(None, "ALL", None)
+        self.parents = {0 : self.rootItem}
+        self.setupModelData()
+
     
     def columnCount(self, parent=None):
         if parent and parent.isValid():
@@ -211,12 +242,7 @@ class treeModel(QtCore.QAbstractItemModel):
         if app != None:
             index = self.searchModel(app)
             return (True, index)            
-        return (False, None)
-
-    
-    
-    
-    
+        return (False, None)  
 
 
 class person_class(object):

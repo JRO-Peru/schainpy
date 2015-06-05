@@ -139,6 +139,12 @@ class ParameterConf():
         self.name = name
         self.value = str(value)
         self.format = str.lower(format)
+        
+    def update(self, name, value, format='str'):
+        
+        self.name = name
+        self.value = str(value)
+        self.format = format
     
     def makeXml(self, opElement):
         
@@ -194,6 +200,34 @@ class OperationConf():
         
         return self.parmConfObjList
     
+    def getParameterObj(self, parameterName):
+        
+        for parmConfObj in self.parmConfObjList:
+            
+            if parmConfObj.name != parameterName:
+                continue
+            
+            return parmConfObj
+        
+        return None
+
+    def getParameterObjfromValue(self,parameterValue):
+        for parmConfObj in self.parmConfObjList:
+             
+            if parmConfObj.getValue() != parameterValue:
+                continue
+             
+            return parmConfObj.getValue()
+         
+        return None
+    
+    def getParameterValue(self, parameterName):
+        
+        parameterObj = self.getParameterObj(parameterName)
+        value = parameterObj.getValue()
+        
+        return value
+        
     def setup(self, id, name, priority, type):
         
         self.id = id
@@ -201,6 +235,13 @@ class OperationConf():
         self.type = type
         self.priority = priority
         
+        self.parmConfObjList = []
+    
+    def removeParameters(self):
+        
+        for obj in self.parmConfObjList:
+            del obj
+            
         self.parmConfObjList = []
         
     def addParameter(self, name, value, format='str'):
@@ -211,6 +252,13 @@ class OperationConf():
         parmConfObj.setup(id, name, value, format)
         
         self.parmConfObjList.append(parmConfObj)
+        
+        return parmConfObj
+    
+    def changeParameter(self, name, value, format='str'):
+        
+        parmConfObj = self.getParameterObj(name)
+        parmConfObj.update(name, value, format)
         
         return parmConfObj
     
@@ -282,6 +330,7 @@ class ProcUnitConf():
     name = None
     datatype = None
     inputId = None
+    parentId = None
     
     opConfObjList = []
     
@@ -326,21 +375,49 @@ class ProcUnitConf():
         
         return self.opConfObjList
     
+    def getOperationObj(self, name=None):
+        
+        for opConfObj in self.opConfObjList:
+            
+            if opConfObj.name != name:
+                continue
+            
+            return opConfObj
+        
+        return None
+    
+    def getOpObjfromParamValue(self,value=None):
+        
+        for opConfObj in self.opConfObjList:
+            if opConfObj.getParameterObjfromValue(parameterValue=value) != value:
+                continue
+            return opConfObj
+        return None
+    
     def getProcUnitObj(self):
         
         return self.procUnitObj
     
-    def setup(self, id, name, datatype, inputId):
+    def setup(self, id, name, datatype, inputId, parentId=None):
         
         self.id = id
         self.name = name
         self.datatype = datatype
         self.inputId = inputId
+        self.parentId = parentId
         
         self.opConfObjList = []
         
         self.addOperation(name='run', optype='self')
     
+    def removeOperations(self):
+        
+        for obj in self.opConfObjList:
+            del obj
+            
+        self.opConfObjList = []
+        self.addOperation(name='run')
+        
     def addParameter(self, **kwargs):
         
         opObj = self.opConfObjList[0]
@@ -426,6 +503,9 @@ class ProcUnitConf():
             
             kwargs = {}
             for parmConfObj in opConfObj.getParameterObjList():
+                if opConfObj.name == 'run' and parmConfObj.name == 'datatype':
+                    continue
+                    
                 kwargs[parmConfObj.name] = parmConfObj.getValue()
             
             #print "\tRunning the '%s' operation with %s" %(opConfObj.name, opConfObj.id)
@@ -439,8 +519,15 @@ class ProcUnitConf():
 
     def close(self):
         
-        self.procUnitObj.close()
+        for opConfObj in self.opConfObjList:
+            if opConfObj.type == 'self':
+                continue
+            
+            opObj = self.procUnitObj.getOperationObj(opConfObj.id)
+            opObj.close()
         
+        self.procUnitObj.close()
+                
         return
          
 class ReadUnitConf(ProcUnitConf):
@@ -467,7 +554,7 @@ class ReadUnitConf(ProcUnitConf):
         
         return self.ELEMENTNAME
         
-    def setup(self, id, name, datatype, path="", startDate="", endDate="", startTime="", endTime="", **kwargs):
+    def setup(self, id, name, datatype, path, startDate="", endDate="", startTime="", endTime="", parentId=None, **kwargs):
         
         self.id = id
         self.name = name
@@ -480,11 +567,23 @@ class ReadUnitConf(ProcUnitConf):
         self.endTime = endTime
         
         self.addRunOperation(**kwargs)
-    
+        
+    def update(self, datatype, path, startDate, endDate, startTime, endTime, parentId=None, **kwargs):
+        
+        self.datatype = datatype
+        self.path = path
+        self.startDate = startDate
+        self.endDate = endDate
+        self.startTime = startTime
+        self.endTime = endTime
+        
+        self.updateRunOperation(**kwargs)
+        
     def addRunOperation(self, **kwargs):
         
         opObj = self.addOperation(name = 'run', optype = 'self')
         
+        opObj.addParameter(name='datatype' , value=self.datatype, format='str')
         opObj.addParameter(name='path'     , value=self.path, format='str')
         opObj.addParameter(name='startDate' , value=self.startDate, format='date')
         opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
@@ -496,6 +595,22 @@ class ReadUnitConf(ProcUnitConf):
             
         return opObj
     
+    def updateRunOperation(self, **kwargs):
+        
+        opObj = self.getOperationObj(name = 'run')
+        opObj.removeParameters()
+        
+        opObj.addParameter(name='datatype' , value=self.datatype, format='str')
+        opObj.addParameter(name='path'     , value=self.path, format='str')
+        opObj.addParameter(name='startDate' , value=self.startDate, format='date')
+        opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
+        opObj.addParameter(name='startTime' , value=self.startTime, format='time')
+        opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
+        
+        for key, value in kwargs.items():
+            opObj.addParameter(name=key, value=value, format=type(value).__name__)
+            
+        return opObj
     
 class Project():
     
@@ -507,14 +622,23 @@ class Project():
     
     ELEMENTNAME = 'Project'
     
-    def __init__(self):
+    def __init__(self, control=None, dataq=None):
         
         self.id = None
         self.name = None
         self.description = None
-        
-#        self.readUnitConfObjList = []
+
         self.procUnitConfObjDict = {}
+        
+        #global data_q
+        #data_q = dataq
+        
+        if control==None:
+            control = {}
+            control['stop'] = False
+            control['pause'] = False
+        
+        self.control = control
         
     def __getNewId(self):
         
@@ -525,13 +649,22 @@ class Project():
     def getElementName(self):
         
         return self.ELEMENTNAME
+
+    def getId(self):
+        
+        return self.id
     
     def setup(self, id, name, description):
         
         self.id = id
         self.name = name
         self.description = description
-    
+
+    def update(self, name, description):
+        
+        self.name = name
+        self.description = description
+        
     def addReadUnit(self, datatype=None, name=None, **kwargs):
         
         #Compatible with old signal chain version
@@ -550,7 +683,7 @@ class Project():
         id = self.__getNewId()
         
         readUnitConfObj = ReadUnitConf()
-        readUnitConfObj.setup(id, name, datatype, **kwargs)
+        readUnitConfObj.setup(id, name, datatype, parentId=self.id, **kwargs)
         
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
@@ -574,11 +707,29 @@ class Project():
         id = self.__getNewId()
         
         procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(id, name, datatype, inputId)
+        procUnitConfObj.setup(id, name, datatype, inputId, parentId=self.id)
         
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
         
         return procUnitConfObj
+    
+    def getReadUnitId(self):
+        
+        readUnitConfObj = self.getReadUnitObj()
+        
+        return readUnitConfObj.id
+    
+    def getReadUnitObj(self):
+        
+        for obj in self.procUnitConfObjDict.values():
+            if obj.getElementName() == "ReadUnit":
+                return obj
+               
+        return None
+    
+    def getProcUnitObj(self, id):
+        
+        return self.procUnitConfObjDict[id]
     
     def makeXml(self):    
         
@@ -705,10 +856,28 @@ class Project():
                 print "Every process unit have finished"
                 break
 
+            if self.control['pause']:
+                print "Pause..."
+                
+                while True:    
+                    time.sleep(0.1)
+                    
+                    if not self.control['pause']:
+                        break
+                    
+                    if self.control['stop']:
+                        break
+            
+            if self.control['stop']:
+                print "Stopping process"
+                break
+                
         #Closing every process
         for procKey in keyList:
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             procUnitConfObj.close()
+            
+        print "Process stopped"
                 
     def start(self, filename):
         

@@ -407,7 +407,7 @@ class RTIPlot(Figure):
     
     def __init__(self):
         
-        self.timerange = 2*60*60
+        self.timerange = None
         self.__isConfig = False
         self.__nsubplots = 1
         
@@ -795,7 +795,7 @@ class CoherenceMap(Figure):
                   thisDatetime=thisDatetime,
                   update_figfile=False)
 
-class PowerProfile(Figure):
+class PowerProfilePlot(Figure):
     
     isConfig = None
     __nsubplots = None
@@ -957,6 +957,11 @@ class Noise(Figure):
         return nrow, ncol
     
     def openfile(self, filename):
+        dirname = os.path.dirname(filename)
+        
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+        
         f = open(filename,'w+') 
         f.write('\n\n')
         f.write('JICAMARCA RADIO OBSERVATORY - Noise \n')
@@ -972,7 +977,12 @@ class Noise(Figure):
         hour = str(timetuple_data.tm_hour)
         minute = str(timetuple_data.tm_min)
         second = str(timetuple_data.tm_sec)
-        f.write(day+' '+month+' '+year+'  '+hour+' '+minute+' '+second+'   '+str(data[0])+'   '+str(data[1])+'   '+str(data[2])+'   '+str(data[3])+'\n')
+        
+        data_msg = ''
+        for i in range(len(data)):
+            data_msg += str(data[i]) + '  '
+        
+        f.write(day+' '+month+' '+year+'  '+hour+' '+minute+' '+second+'   ' + data_msg + '\n')
         f.close()
 
     
@@ -1059,11 +1069,13 @@ class Noise(Figure):
             path = '%s%03d' %(self.PREFIX, self.id)
             noise_file = os.path.join(path,'%s.txt'%self.name)
             self.filename_noise = os.path.join(figpath,noise_file)
-            self.openfile(self.filename_noise)
+            if save:
+                self.openfile(self.filename_noise)
          
         
         #store data beacon phase
-        self.save_data(self.filename_noise, noisedB, thisDatetime)
+        if save:
+            self.save_data(self.filename_noise, noisedB, thisDatetime)
             
         
         self.setWinTitle(title)

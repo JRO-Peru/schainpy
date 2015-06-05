@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+from os.path import  expanduser
+
 from PyQt4.QtGui import QDialog
 from PyQt4.QtCore import pyqtSignature
 from PyQt4.QtCore import pyqtSignal
 from PyQt4 import QtGui, QtCore
-from viewer.ui_workspace import Ui_Workspace
-from os.path import  expanduser
+
+from schainpy.gui.viewer.ui_workspace import Ui_Workspace
 
 class Workspace(QDialog, Ui_Workspace):
     """
@@ -20,7 +22,7 @@ class Workspace(QDialog, Ui_Workspace):
         self.dirList=[]
         self.setupUi(self)
         self.setWindowTitle("ROJ-Signal Chain")
-        self.setWindowIcon(QtGui.QIcon("figure/adn.jpg"))
+        self.setWindowIcon(QtGui.QIcon("schainpy/gui/figure/adn.jpg"))
         #*#######   DIRECTORIO DE TRABAJO  #########*#
         #self.dirCmbBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "C:\WorkSpaceGui", None, QtGui.QApplication.UnicodeUTF8))
         home=expanduser("~")

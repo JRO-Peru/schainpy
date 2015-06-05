@@ -57,6 +57,13 @@ class ProcessingUnit(object):
         
         return objId
     
+    def getOperationObj(self, objId):
+        
+        if objId not in self.operations2RunDict.keys():
+            return None
+        
+        return self.operations2RunDict[objId]
+    
     def operation(self, **kwargs):
         
         """
@@ -273,3 +280,7 @@ class Operation(object):
             self.setup(**kwargs)
             
         raise ValueError, "ImplementedError"
+    
+    def close(self):
+        
+        pass

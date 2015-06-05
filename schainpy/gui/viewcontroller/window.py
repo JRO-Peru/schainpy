@@ -10,13 +10,13 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from timeconversions import  Doy2Date
 from modelProperties import treeModel
-from viewer.ui_unitprocess import Ui_UnitProcess
-from viewer.ui_window import Ui_window
-from viewer.ui_mainwindow import Ui_MainWindow
-from viewer.ui_workspace import Ui_Workspace
-from viewer.ui_initwindow import Ui_InitWindow
+from schainpy.gui.viewer.ui_unitprocess import Ui_UnitProcess
+from schainpy.gui.viewer.ui_window import Ui_window
+from schainpy.gui.viewer.ui_mainwindow import Ui_MainWindow
+from schainpy.gui.viewer.ui_workspace import Ui_Workspace
+from schainpy.gui.viewer.ui_initwindow import Ui_InitWindow
 
-from controller import Project,ReadUnitConf,ProcUnitConf,OperationConf,ParameterConf
+from schainpy.controller import Project,ReadUnitConf,ProcUnitConf,OperationConf,ParameterConf
 import os
 
 HORIZONTAL_HEADERS = ("ITEM :"," DATOS  :  " )
