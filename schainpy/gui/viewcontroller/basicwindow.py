@@ -21,7 +21,7 @@ from schainpy.controller  import Project
 from modelProperties  import treeModel
 from collections import OrderedDict
 from os.path import  expanduser
-from CodeWarrior.Standard_Suite import file
+#from CodeWarrior.Standard_Suite import file
 from comm import *
 
 def isRadarFile(file):
@@ -5235,7 +5235,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         desc = str(self.proDescription.toPlainText())
         datatype = str(self.proComDataType.currentText())
         data_path = str(self.proDataPath.text())
-        if not os.path.exists(path):
+        if not os.path.exists(data_path):
             self.proOk.setEnabled(False)
             self.console.clear()
             self.console.append("Write a correct a path")

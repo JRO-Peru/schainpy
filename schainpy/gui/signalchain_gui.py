@@ -3,6 +3,11 @@ import os, sys
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QApplication
 
+path = os.path.dirname(os.getcwd())
+path = os.path.dirname(path)
+
+sys.path.insert(0, path)
+
 from schainpy.gui.viewcontroller.initwindow import InitWindow
 from schainpy.gui.viewcontroller.basicwindow import BasicWindow
 from schainpy.gui.viewcontroller.workspace import Workspace
