@@ -419,7 +419,9 @@ class ProcUnitConf():
         self.addOperation(name='run')
         
     def addParameter(self, **kwargs):
-        
+        '''
+        Add parameters to "run" operation
+        '''
         opObj = self.opConfObjList[0]
         
         opObj.addParameter(**kwargs)

@@ -8,6 +8,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
+from windows import *
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -24,9 +25,12 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 class Ui_MainWindow(object):
+    
     def setupUi(self, MainWindow):
+        
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(1203, 711)
+        
         self.centralWidget = QtGui.QWidget(MainWindow)
         self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
         self.gridLayout_16 = QtGui.QGridLayout(self.centralWidget)
@@ -43,6 +47,8 @@ class Ui_MainWindow(object):
         self.tabWidgetProject.setMinimumSize(QtCore.QSize(0, 278))
         self.tabWidgetProject.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.tabWidgetProject.setObjectName(_fromUtf8("tabWidgetProject"))
+        
+        
         self.tabProject = QtGui.QWidget()
         self.tabProject.setObjectName(_fromUtf8("tabProject"))
         self.gridLayout_15 = QtGui.QGridLayout(self.tabProject)
@@ -53,6 +59,7 @@ class Ui_MainWindow(object):
         self.frame.setObjectName(_fromUtf8("frame"))
         self.gridLayout_2 = QtGui.QGridLayout(self.frame)
         self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
+        
         self.label = QtGui.QLabel(self.frame)
         self.label.setObjectName(_fromUtf8("label"))
         self.gridLayout_2.addWidget(self.label, 0, 0, 1, 1)
@@ -904,6 +911,8 @@ class Ui_MainWindow(object):
         self.tabWidget_2.addTab(self.tabopCorrelation1, _fromUtf8(""))
         self.gridLayout_13.addWidget(self.tabWidget_2, 0, 0, 1, 1)
         self.tabWidgetProject.addTab(self.tabCorrelation, _fromUtf8(""))
+        
+        
         self.tabConsole = QtGui.QTabWidget(self.splitter)
         self.tabConsole.setMinimumSize(QtCore.QSize(0, 0))
         self.tabConsole.setObjectName(_fromUtf8("tabConsole"))
@@ -943,58 +952,70 @@ class Ui_MainWindow(object):
         self.menuHelp.setObjectName(_fromUtf8("menuHelp"))
         MainWindow.setMenuBar(self.menuBar)
         self.actionOpen = QtGui.QAction(MainWindow)
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/open.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionOpen.setIcon(icon)
+
+        iconOpen = QtGui.QIcon()
+        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/open.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        iconCreate = QtGui.QIcon()
+        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/project.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        iconSave = QtGui.QIcon()
+        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/saveicon.jpeg")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        iconStart = QtGui.QIcon()
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/startServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        iconStop = QtGui.QIcon()
+        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/stopServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        iconPause = QtGui.QIcon()
+        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        iconAddPU = QtGui.QIcon()
+        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/add_PU.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        self.actionOpen.setIcon(iconOpen)
         self.actionOpen.setObjectName(_fromUtf8("actionOpen"))
         self.actionCreate = QtGui.QAction(MainWindow)
-        icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/project.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionCreate.setIcon(icon1)
+        self.actionCreate.setIcon(iconCreate)
         self.actionCreate.setObjectName(_fromUtf8("actionCreate"))
         self.actionSave = QtGui.QAction(MainWindow)
-        icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/saveicon.jpeg")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionSave.setIcon(icon2)
+        self.actionSave.setIcon(iconSave)
         self.actionSave.setObjectName(_fromUtf8("actionSave"))
         self.actionClose = QtGui.QAction(MainWindow)
         self.actionClose.setObjectName(_fromUtf8("actionClose"))
         self.actionStart = QtGui.QAction(MainWindow)
-        icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/startServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionStart.setIcon(icon3)
+        self.actionStart.setIcon(iconStart)
         self.actionStart.setObjectName(_fromUtf8("actionStart"))
         self.actionPause = QtGui.QAction(MainWindow)
+        self.actionPause.setIcon(iconPause)
         self.actionPause.setObjectName(_fromUtf8("actionPause"))
+        self.actionStop = QtGui.QAction(MainWindow)
+        self.actionStop.setIcon(iconStop)
+        self.actionStop.setObjectName(_fromUtf8("actionStop"))
         self.actionAbout = QtGui.QAction(MainWindow)
         self.actionAbout.setObjectName(_fromUtf8("actionAbout"))
         self.actionOpenToolbar = QtGui.QAction(MainWindow)
-        self.actionOpenToolbar.setIcon(icon)
+        self.actionOpenToolbar.setIcon(iconOpen)
         self.actionOpenToolbar.setObjectName(_fromUtf8("actionOpenToolbar"))
         self.actionCreateToolbar = QtGui.QAction(MainWindow)
-        self.actionCreateToolbar.setIcon(icon1)
+        self.actionCreateToolbar.setIcon(iconCreate)
         self.actionCreateToolbar.setObjectName(_fromUtf8("actionCreateToolbar"))
         self.actionSaveToolbar = QtGui.QAction(MainWindow)
-        self.actionSaveToolbar.setIcon(icon2)
+        self.actionSaveToolbar.setIcon(iconSave)
         self.actionSaveToolbar.setObjectName(_fromUtf8("actionSaveToolbar"))
         self.actionStarToolbar = QtGui.QAction(MainWindow)
-        self.actionStarToolbar.setIcon(icon3)
+        self.actionStarToolbar.setIcon(iconStart)
         self.actionStarToolbar.setObjectName(_fromUtf8("actionStarToolbar"))
         self.actionStopToolbar = QtGui.QAction(MainWindow)
-        icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/stopServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionStopToolbar.setIcon(icon4)
+        self.actionStopToolbar.setIcon(iconStop)
         self.actionStopToolbar.setObjectName(_fromUtf8("actionStopToolbar"))
         self.actionPauseToolbar = QtGui.QAction(MainWindow)
-        icon5 = QtGui.QIcon()
-        icon5.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionPause.setIcon(icon5)
-        self.actionPauseToolbar.setIcon(icon5)
+        self.actionPause.setIcon(iconPause)
+        self.actionPauseToolbar.setIcon(iconPause)
         self.actionPauseToolbar.setObjectName(_fromUtf8("actionPauseToolbar"))
         self.actionAddPU = QtGui.QAction(MainWindow)
-        icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/add_PU.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionAddPU.setIcon(icon6)
+        self.actionAddPU.setIcon(iconAddPU)  
         self.actionAddPU.setObjectName(_fromUtf8("actionAddPU"))
         self.actionFTP = QtGui.QAction(MainWindow)
         self.actionFTP.setObjectName(_fromUtf8("actionFTP"))
@@ -1022,6 +1043,7 @@ class Ui_MainWindow(object):
         self.menuProject.addAction(self.actionClose)
         self.menuRun.addAction(self.actionStart)
         self.menuRun.addAction(self.actionPause)
+        self.menuRun.addAction(self.actionStop)
         self.menuOptions.addAction(self.actionFTP)
         self.menuHelp.addAction(self.actionAbout)
         self.menuBar.addAction(self.menuProject.menuAction())
@@ -1040,20 +1062,22 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def changeIcon(self):
+        
          if self.a==1:
-            icon6 = QtGui.QIcon()
-            icon6.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pausered.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-            self.actionPauseToolbar.setIcon(icon6)
+            iconPauseRed = QtGui.QIcon()
+            iconPauseRed.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pausered.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.actionPauseToolbar.setIcon(iconPauseRed)
             self.a+=1
             return 0
          if self.a==2:
-             icon5 = QtGui.QIcon()
-             icon5.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-             self.actionPauseToolbar.setIcon(icon5)
+             iconPause = QtGui.QIcon()
+             iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+             self.actionPauseToolbar.setIcon(iconPause)
              self.a-=1
              return 0
          
     def retranslateUi(self, MainWindow):
+        
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
         self.label.setText(_translate("MainWindow", "Project Name :", None))
         self.label_11.setText(_translate("MainWindow", "DataType :", None))
@@ -1214,7 +1238,10 @@ class Ui_MainWindow(object):
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tabopCorrelation), _translate("MainWindow", "Operation", None))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tabopCorrelation1), _translate("MainWindow", "Graphics", None))
         self.tabWidgetProject.setTabText(self.tabWidgetProject.indexOf(self.tabCorrelation), _translate("MainWindow", "Correlation", None))
+        
+        
         self.tabConsole.setTabText(self.tabConsole.indexOf(self.tab_5), _translate("MainWindow", "Console", None))
+        
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabProjectProperty), _translate("MainWindow", "Project Property", None))
         self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar", None))
         self.menuProject.setTitle(_translate("MainWindow", "Project", None))
@@ -1227,6 +1254,7 @@ class Ui_MainWindow(object):
         self.actionClose.setText(_translate("MainWindow", "Close", None))
         self.actionStart.setText(_translate("MainWindow", "Start", None))
         self.actionPause.setText(_translate("MainWindow", "Pause", None))
+        self.actionStop.setText(_translate("MainWindow", "Stop", None))
         self.actionAbout.setText(_translate("MainWindow", "About", None))
         self.actionOpenToolbar.setText(_translate("MainWindow", "openToolbar", None))
         self.actionOpenToolbar.setToolTip(_translate("MainWindow", "Open Project", None))
@@ -1244,17 +1272,242 @@ class Ui_MainWindow(object):
         self.actionFTP.setText(_translate("MainWindow", "FTP", None))
 
 
-class Ui_BasicWindow(Ui_MainWindow):
-    
-    def setupUi(self, BasicWindow):
+class Ui_EnvWindow(object):
+
+    def changeIcon(self):
         
-        Ui_MainWindow.setupUi(self, BasicWindow)
-    
-    def retranslateUi(self,BasicWindow):
+         if self.a==1:
+            iconPauseRed = QtGui.QIcon()
+            iconPauseRed.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pausered.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            self.actionPauseToolbar.setIcon(iconPauseRed)
+            self.a+=1
+            return 0
+         if self.a==2:
+             iconPause = QtGui.QIcon()
+             iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+             self.actionPauseToolbar.setIcon(iconPause)
+             self.a-=1
+             return 0
+         
+    def setupUi(self, MainWindow):
         
-        Ui_MainWindow.retranslateUi(self,BasicWindow)
-       
-       
+        MainWindow.setObjectName(_fromUtf8("MainWindow"))
+        MainWindow.resize(1203, 711)
+        
+        self.centralWidget = QtGui.QWidget(MainWindow)
+        self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
+        self.gridLayout_16 = QtGui.QGridLayout(self.centralWidget)
+        self.gridLayout_16.setObjectName(_fromUtf8("gridLayout_16"))
+        self.splitter_2 = QtGui.QSplitter(self.centralWidget)
+        self.splitter_2.setOrientation(QtCore.Qt.Horizontal)
+        self.splitter_2.setObjectName(_fromUtf8("splitter_2"))
+        self.projectExplorerTree = QtGui.QTreeView(self.splitter_2)
+        self.projectExplorerTree.setObjectName(_fromUtf8("projectExplorerTree"))
+        self.splitter = QtGui.QSplitter(self.splitter_2)
+        self.splitter.setOrientation(QtCore.Qt.Vertical)
+        self.splitter.setObjectName(_fromUtf8("splitter"))
+        self.tabWidgetProject = QtGui.QTabWidget(self.splitter)
+        self.tabWidgetProject.setMinimumSize(QtCore.QSize(0, 278))
+        self.tabWidgetProject.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.tabWidgetProject.setObjectName(_fromUtf8("tabWidgetProject"))
+        
+        self.tabConsole = QtGui.QTabWidget(self.splitter)
+        self.tabConsole.setMinimumSize(QtCore.QSize(0, 0))
+        self.tabConsole.setObjectName(_fromUtf8("tabConsole"))
+        self.tab_5 = QtGui.QWidget()
+        self.tab_5.setObjectName(_fromUtf8("tab_5"))
+        self.gridLayout_4 = QtGui.QGridLayout(self.tab_5)
+        self.gridLayout_4.setObjectName(_fromUtf8("gridLayout_4"))
+        self.console = QtGui.QTextEdit(self.tab_5)
+        self.console.setObjectName(_fromUtf8("console"))
+        self.gridLayout_4.addWidget(self.console, 0, 0, 1, 1)
+        self.tabConsole.addTab(self.tab_5, _fromUtf8(""))
+        self.tabWidget = QtGui.QTabWidget(self.splitter_2)
+        self.tabWidget.setObjectName(_fromUtf8("tabWidget"))
+        self.tabProjectProperty = QtGui.QWidget()
+        self.tabProjectProperty.setObjectName(_fromUtf8("tabProjectProperty"))
+        self.gridLayout_8 = QtGui.QGridLayout(self.tabProjectProperty)
+        self.gridLayout_8.setObjectName(_fromUtf8("gridLayout_8"))
+        self.treeProjectProperties = QtGui.QTreeView(self.tabProjectProperty)
+        self.treeProjectProperties.setObjectName(_fromUtf8("treeProjectProperties"))
+        self.gridLayout_8.addWidget(self.treeProjectProperties, 0, 0, 1, 1)
+        self.tabWidget.addTab(self.tabProjectProperty, _fromUtf8(""))
+        self.gridLayout_16.addWidget(self.splitter_2, 1, 0, 1, 1)
+        
+        MainWindow.setCentralWidget(self.centralWidget)
+        self.toolBar = QtGui.QToolBar(MainWindow)
+        self.toolBar.setObjectName(_fromUtf8("toolBar"))
+        MainWindow.addToolBar(QtCore.Qt.TopToolBarArea, self.toolBar)
+        
+        self.menuBar = QtGui.QMenuBar(MainWindow)
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1065, 25))
+        self.menuBar.setObjectName(_fromUtf8("menuBar"))
+        self.menuProject = QtGui.QMenu(self.menuBar)
+        self.menuProject.setObjectName(_fromUtf8("menuProject"))
+        self.menuRun = QtGui.QMenu(self.menuBar)
+        self.menuRun.setObjectName(_fromUtf8("menuRun"))
+        self.menuOptions = QtGui.QMenu(self.menuBar)
+        self.menuOptions.setObjectName(_fromUtf8("menuOptions"))
+        self.menuHelp = QtGui.QMenu(self.menuBar)
+        self.menuHelp.setObjectName(_fromUtf8("menuHelp"))
+        MainWindow.setMenuBar(self.menuBar)
+
+        iconOpen = QtGui.QIcon()
+        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/open.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconCreate = QtGui.QIcon()
+        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/project.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconSave = QtGui.QIcon()
+        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/saveicon.jpeg")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStart = QtGui.QIcon()
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/startServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStop = QtGui.QIcon()
+        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/stopServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconPause = QtGui.QIcon()
+        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconAddPU = QtGui.QIcon()
+        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/add_PU.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        
+        self.actionOpen = QtGui.QAction(MainWindow)
+        self.actionOpen.setIcon(iconOpen)
+        self.actionOpen.setObjectName(_fromUtf8("actionOpen"))
+        self.actionCreate = QtGui.QAction(MainWindow)
+        self.actionCreate.setIcon(iconCreate)
+        self.actionCreate.setObjectName(_fromUtf8("actionCreate"))
+        self.actionSave = QtGui.QAction(MainWindow)
+        self.actionSave.setIcon(iconSave)
+        self.actionSave.setObjectName(_fromUtf8("actionSave"))
+        self.actionClose = QtGui.QAction(MainWindow)
+        self.actionClose.setObjectName(_fromUtf8("actionClose"))
+        self.actionStart = QtGui.QAction(MainWindow)
+        self.actionStart.setIcon(iconStart)
+        self.actionStart.setObjectName(_fromUtf8("actionStart"))
+        self.actionPause = QtGui.QAction(MainWindow)
+        self.actionPause.setIcon(iconPause)
+        self.actionPause.setObjectName(_fromUtf8("actionPause"))
+        self.actionStop = QtGui.QAction(MainWindow)
+        self.actionStop.setIcon(iconStop)
+        self.actionStop.setObjectName(_fromUtf8("actionStop"))
+        self.actionAbout = QtGui.QAction(MainWindow)
+        self.actionAbout.setObjectName(_fromUtf8("actionAbout"))
+        self.actionOpenToolbar = QtGui.QAction(MainWindow)
+        self.actionOpenToolbar.setIcon(iconOpen)
+        self.actionOpenToolbar.setObjectName(_fromUtf8("actionOpenToolbar"))
+        self.actionCreateToolbar = QtGui.QAction(MainWindow)
+        self.actionCreateToolbar.setIcon(iconCreate)
+        self.actionCreateToolbar.setObjectName(_fromUtf8("actionCreateToolbar"))
+        self.actionSaveToolbar = QtGui.QAction(MainWindow)
+        self.actionSaveToolbar.setIcon(iconSave)
+        self.actionSaveToolbar.setObjectName(_fromUtf8("actionSaveToolbar"))
+        self.actionStarToolbar = QtGui.QAction(MainWindow)
+        self.actionStarToolbar.setIcon(iconStart)
+        self.actionStarToolbar.setObjectName(_fromUtf8("actionStarToolbar"))
+        self.actionStopToolbar = QtGui.QAction(MainWindow)
+        self.actionStopToolbar.setIcon(iconStop)
+        self.actionStopToolbar.setObjectName(_fromUtf8("actionStopToolbar"))
+        self.actionPauseToolbar = QtGui.QAction(MainWindow)
+        self.actionPause.setIcon(iconPause)
+        self.actionPauseToolbar.setIcon(iconPause)
+        self.actionPauseToolbar.setObjectName(_fromUtf8("actionPauseToolbar"))
+        self.actionAddPU = QtGui.QAction(MainWindow)
+        self.actionAddPU.setIcon(iconAddPU)  
+        self.actionAddPU.setObjectName(_fromUtf8("actionAddPU"))
+        self.actionFTP = QtGui.QAction(MainWindow)
+        self.actionFTP.setObjectName(_fromUtf8("actionFTP"))
+        self.toolBar.addAction(self.actionOpenToolbar)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.actionCreateToolbar)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.actionAddPU)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.actionSaveToolbar)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.actionStarToolbar)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.actionPauseToolbar)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.actionStopToolbar)
+        self.toolBar.addSeparator()
+        self.a=1
+        self.actionPauseToolbar.triggered.connect(self.changeIcon)
+        
+        self.menuProject.addAction(self.actionOpen)
+        self.menuProject.addAction(self.actionCreate)
+        self.menuProject.addAction(self.actionSave)
+        self.menuProject.addAction(self.actionClose)
+        self.menuRun.addAction(self.actionStart)
+        self.menuRun.addAction(self.actionPause)
+        self.menuRun.addAction(self.actionStop)
+        self.menuOptions.addAction(self.actionFTP)
+        self.menuHelp.addAction(self.actionAbout)
+        self.menuBar.addAction(self.menuProject.menuAction())
+        self.menuBar.addAction(self.menuRun.menuAction())
+        self.menuBar.addAction(self.menuOptions.menuAction())
+        self.menuBar.addAction(self.menuHelp.menuAction())
+        
+        self.tabConsole.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(0)
+        
+    def retranslateUi(self, MainWindow):
+        
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        
+        self.tabConsole.setTabText(self.tabConsole.indexOf(self.tab_5), _translate("MainWindow", "Console", None))
+        
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabProjectProperty), _translate("MainWindow", "Project Property", None))
+        self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar", None))
+        self.menuProject.setTitle(_translate("MainWindow", "Project", None))
+        self.menuRun.setTitle(_translate("MainWindow", "Run", None))
+        self.menuOptions.setTitle(_translate("MainWindow", "Options", None))
+        self.menuHelp.setTitle(_translate("MainWindow", "Help", None))
+        self.actionOpen.setText(_translate("MainWindow", "Open", None))
+        self.actionCreate.setText(_translate("MainWindow", "Create", None))
+        self.actionSave.setText(_translate("MainWindow", "Save", None))
+        self.actionClose.setText(_translate("MainWindow", "Close", None))
+        self.actionStart.setText(_translate("MainWindow", "Start", None))
+        self.actionPause.setText(_translate("MainWindow", "Pause", None))
+        self.actionStop.setText(_translate("MainWindow", "Stop", None))
+        self.actionAbout.setText(_translate("MainWindow", "About", None))
+        self.actionOpenToolbar.setText(_translate("MainWindow", "openToolbar", None))
+        self.actionOpenToolbar.setToolTip(_translate("MainWindow", "Open Project", None))
+        self.actionCreateToolbar.setText(_translate("MainWindow", "createToolbar", None))
+        self.actionCreateToolbar.setToolTip(_translate("MainWindow", "Create Ṕroject", None))
+        self.actionSaveToolbar.setText(_translate("MainWindow", "saveToolbar", None))
+        self.actionSaveToolbar.setToolTip(_translate("MainWindow", "Save Project", None))
+        self.actionStarToolbar.setText(_translate("MainWindow", "starToolbar", None))
+        self.actionStarToolbar.setToolTip(_translate("MainWindow", "Start ", None))
+        self.actionStopToolbar.setText(_translate("MainWindow", "stopToolbar", None))
+        self.actionStopToolbar.setToolTip(_translate("MainWindow", "Stop", None))
+        self.actionPauseToolbar.setText(_translate("MainWindow", "pauseToolbar", None))
+        self.actionPauseToolbar.setToolTip(_translate("MainWindow", "Pause", None))
+        self.actionAddPU.setText(_translate("MainWindow", "Add Processing Unit", None))
+        self.actionFTP.setText(_translate("MainWindow", "FTP", None))
+           
+class Ui_BasicWindow(Ui_EnvWindow, Ui_ProjectTab, Ui_VoltageTab, Ui_SpectraTab, Ui_SpectraHeisTab, Ui_CorrelationTab):
+    
+    def setupUi(self, MainWindow):
+        
+        Ui_EnvWindow.setupUi(self, MainWindow)
+        
+        Ui_ProjectTab.setupUi(self)
+        Ui_VoltageTab.setupUi(self)
+        Ui_SpectraTab.setupUi(self)
+        Ui_SpectraHeisTab.setupUi(self)
+        Ui_CorrelationTab.setupUi(self)
+    
+        self.retranslateUi(MainWindow)
+        
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        
+    def retranslateUi(self, MainWindow):
+        
+        Ui_EnvWindow.retranslateUi(self, MainWindow)
+        
+        Ui_ProjectTab.retranslateUi(self)
+        Ui_VoltageTab.retranslateUi(self)
+        Ui_SpectraTab.retranslateUi(self)
+        Ui_SpectraHeisTab.retranslateUi(self)
+        Ui_CorrelationTab.retranslateUi(self)
+        
         
 class Ui_AdvancedWindow(Ui_MainWindow):
     
@@ -1272,7 +1525,7 @@ if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    ui = Ui_MainWindow()
+    ui = Ui_BasicWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())

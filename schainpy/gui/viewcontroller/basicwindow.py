@@ -47,58 +47,61 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     """
     """
     def __init__(self, parent=None):
-         """
-         
-         """
-         QMainWindow.__init__(self, parent)
-         self.setupUi(self)
-         self.__puObjDict = {}
-         self.__itemTreeDict = {}
-         self.readUnitConfObjList = []
-         self.operObjList = []
-         self.projecObjView = None
-         self.idProject = 0
-         # self.idImag = 0
-         
-         self.idImagscope = 0
-         self.idImagspectra = 0
-         self.idImagcross = 0
-         self.idImagrti = 0
-         self.idImagcoherence = 0
-         self.idImagpower = 0
-         self.idImagrtinoise = 0
-         self.idImagspectraHeis = 0
-         self.idImagrtiHeis = 0
-         
-         self.online = 0
-         self.walk = 0
-         self.create = False
-         self.selectedItemTree = None
-         self.commCtrlPThread = None
-         self.setParameter()
-         self.create_comm() 
-         self.create_timers()
-         self.create_figure()
-         self.temporalFTP = ftpBuffer()
-         self.projectProperCaracteristica = []
-         self.projectProperPrincipal = []
-         self.projectProperDescripcion = []
-         self.volProperCaracteristica = []
-         self.volProperPrincipal = []
-         self.volProperDescripcion = []
-         self.specProperCaracteristica = []
-         self.specProperPrincipal = []
-         self.specProperDescripcion = []
-         
-         self.specHeisProperCaracteristica = []
-         self.specHeisProperPrincipal = []
-         self.specHeisProperDescripcion = []
-         
+        """
+        
+        """
+        QMainWindow.__init__(self, parent)
+        self.setupUi(self)
+        self.__puObjDict = {}
+        self.__itemTreeDict = {}
+        self.readUnitConfObjList = []
+        self.operObjList = []
+        self.projecObjView = None
+        self.idProject = 0
+        # self.idImag = 0
+        
+        self.idImagscope = 0
+        self.idImagspectra = 0
+        self.idImagcross = 0
+        self.idImagrti = 0
+        self.idImagcoherence = 0
+        self.idImagpower = 0
+        self.idImagrtinoise = 0
+        self.idImagspectraHeis = 0
+        self.idImagrtiHeis = 0
+        
+        self.online = 0
+        self.walk = 0
+        self.create = False
+        self.selectedItemTree = None
+        self.commCtrlPThread = None
+        self.setParameter()
+        self.create_comm() 
+#         self.create_timers()
+#         self.create_figure()
+        self.temporalFTP = ftpBuffer()
+        self.projectProperCaracteristica = []
+        self.projectProperPrincipal = []
+        self.projectProperDescripcion = []
+        self.volProperCaracteristica = []
+        self.volProperPrincipal = []
+        self.volProperDescripcion = []
+        self.specProperCaracteristica = []
+        self.specProperPrincipal = []
+        self.specProperDescripcion = []
+        
+        self.specHeisProperCaracteristica = []
+        self.specHeisProperPrincipal = []
+        self.specHeisProperDescripcion = []
+        
         # self.pathWorkSpace = './'
-         
-         self.__projectObjDict = {}
-         self.__operationObjDict = {}
+        
+        self.__projectObjDict = {}
+        self.__operationObjDict = {}
 
+        self.__ftpProcUnitAdded = False
+        self.__ftpProcUnitId = None
+        
     @pyqtSignature("")
     def on_actionCreate_triggered(self):
         """
@@ -120,13 +123,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         Slot documentation goes here.
         """ 
         self.close() 
-    
-    @pyqtSignature("")    
-    def on_actionPauseToolbar_triggered(self):
-        self.actionStarToolbar.setEnabled(False)
-        self.actionPauseToolbar.setEnabled(True)
-        self.actionStopToolbar.setEnabled(True)
-        self.pauseProject()
      
     @pyqtSignature("")   
     def on_actionStart_triggered(self):
@@ -134,7 +130,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         self.playProject()
     
-    
+    @pyqtSignature("")   
+    def on_actionPause_triggered(self):
+        """
+        """
+        self.pauseProject()
+        
+    @pyqtSignature("")   
+    def on_actionStop_triggered(self):
+        """
+        """
+        self.stopProject()
+            
     @pyqtSignature("")     
     def on_actionFTP_triggered(self):
         """
@@ -172,7 +179,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         try:
             projectObjLoad.readXml(filename)  
         except:
+            self.console.clear()
+            self.console.append("The selected xml file could not be loaded ...")
             return 0
+        
         project_name, description = projectObjLoad.name, projectObjLoad.description
         id = projectObjLoad.id
         self.__projectObjDict[id] = projectObjLoad
@@ -188,18 +198,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specOpippFactor.setEnabled(True)
         elif datatype == "Spectra":            
             ext = '.pdata'
+            self.specOpProfiles.setEnabled(False)
+            self.specOpippFactor.setEnabled(False)
         elif datatype == "Fits":
             ext = '.fits'
-
             
         if online == 0:    
             self.loadDays(data_path, ext, walk)
         else:
-                self.proComStartDate.setEnabled(False)
-                self.proComEndDate.setEnabled(False)
-                self.proStartTime.setEnabled(False)
-                self.proEndTime.setEnabled(False)
-                self.frame_2.setEnabled(True)
+            self.proComStartDate.setEnabled(False)
+            self.proComEndDate.setEnabled(False)
+            self.proStartTime.setEnabled(False)
+            self.proEndTime.setEnabled(False)
+            self.frame_2.setEnabled(True)
             
         self.tabWidgetProject.setEnabled(True)
         self.tabWidgetProject.setCurrentWidget(self.tabProject) 
@@ -228,7 +239,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.refreshPUWindow(puObj.datatype, puObj)
                 self.showPUSpectraHeisProperties(puObj)
                 self.showtabPUCreated(datatype=puObj.datatype)
-
+            
+            if puObj.name == "SendToServer":
+                self.__ftpProcUnitAdded = True
+                self.__ftpProcUnitId = puObj.getId()
+                
+        self.console.clear()
+        self.console.append("The selected xml file has been loaded successfully")
         # self.refreshPUWindow(datatype=datatype,puObj=puObj)
                 
     @pyqtSignature("")
@@ -268,18 +285,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         Slot documentation goes here.
         """
         self.playProject()
-        self.actionStarToolbar.setEnabled(False)
-        self.actionPauseToolbar.setEnabled(True)
-        self.actionStopToolbar.setEnabled(True)
-    
+
+    @pyqtSignature("")    
+    def on_actionPauseToolbar_triggered(self):
+        
+        self.pauseProject()
+        
     @pyqtSignature("")
     def on_actionStopToolbar_triggered(self):
         """
         Slot documentation goes here.
         """
-        self.actionStarToolbar.setEnabled(True)
-        self.actionPauseToolbar.setEnabled(False)
-        self.actionStopToolbar.setEnabled(False)
         self.stopProject()
         
     @pyqtSignature("int")
@@ -539,6 +555,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         BUSCA EN LA LISTA DE OPERACIONES DEL TIPO VOLTAJE Y LES A�ADE EL PARAMETRO ADECUADO ESPERANDO LA ACEPTACION DEL USUARIO
         PARA AGREGARLO AL ARCHIVO DE CONFIGURACION XML
         """   
+        
+        checkPath = False
+        
+        self.actionSaveToolbar.setEnabled(False)
+        self.actionStarToolbar.setEnabled(False)
+        
         puObj = self.getSelectedPUObj()
         puObj.removeOperations()
         
@@ -682,7 +704,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name=name_parameter2, value=value2, format=format2)
                 opObj.addParameter(name=name_parameter3, value=value3, format=format3)  
                 opObj.addParameter(name=name_parameter4, value=value4, format=format4)  
-                    
+
+        if self.volOpCebFlip.isChecked():
+            name_operation = 'deFlip'
+            optype = 'self'
+            value = self.volOpFlip.text()
+            name_parameter = 'channelList'
+            format = 'intList'
+            
+            opObj = puObj.addOperation(name=name_operation, optype=optype)
+            opObj.addParameter(name=name_parameter, value=value, format=format) 
+                               
         if self.volOpCebCohInt.isChecked():
             name_operation = 'CohInt'
             optype = 'other'
@@ -690,11 +722,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             name_parameter = 'n'
             format = 'float'
             
-            opObj = puObj.addOperation(name='CohInt', optype='other')
+            opObj = puObj.addOperation(name=name_operation, optype=optype)
             opObj.addParameter(name=name_parameter, value=value, format=format) 
 
         if self.volGraphCebshow.isChecked():    
-            name_operation = 'Plot'
+            name_operation = 'Scope'
             optype = 'other'
             name_parameter = 'type'
             value = 'Scope' 
@@ -709,7 +741,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'str'
      
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+#             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)
             
             channelList = self.volGraphChannelList.text()
@@ -745,6 +777,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                opObj.addParameter(name='ymax', value=yvalueList[1], format='int')
                    
             if self.volGraphCebSave.isChecked():
+                checkPath = True
                 opObj.addParameter(name='save', value='1', format='int')
                 opObj.addParameter(name='figpath', value=self.volGraphPath.text(), format='str')
                 value = self.volGraphPrefix.text()
@@ -756,35 +789,44 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                        self.console.append("Please Write prefix")
                        return 0    
                    opObj.addParameter(name='figfile', value=self.volGraphPrefix.text(), format='str')
-                
+
+        localfolder = None
+        if checkPath:
+            localfolder = str(self.specGraphPath.text())
+            if localfolder == '':
+                self.console.clear()
+                self.console.append("Graphic path should be defined")
+                return 0
+            
         # if something happend 
         parms_ok, output_path, blocksperfile, profilesperblock = self.checkInputsPUSave(datatype='Voltage')
-        name_operation = 'VoltageWriter'
-        optype = 'other'
-        name_parameter1 = 'path'
-        name_parameter2 = 'blocksPerFile'
-        name_parameter3 = 'profilesPerBlock'
-        value1 = output_path
-        value2 = blocksperfile
-        value3 = profilesperblock
-        format = "int"
         if parms_ok:
+            name_operation = 'VoltageWriter'
+            optype = 'other'
+            name_parameter1 = 'path'
+            name_parameter2 = 'blocksPerFile'
+            name_parameter3 = 'profilesPerBlock'
+            value1 = output_path
+            value2 = blocksperfile
+            value3 = profilesperblock
+            format = "int"
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             opObj.addParameter(name=name_parameter1, value=value1)
             opObj.addParameter(name=name_parameter2, value=value2, format=format)
             opObj.addParameter(name=name_parameter3, value=value3, format=format)
-        
-            
 
         #---------NEW VOLTAGE PROPERTIES
         self.showPUVoltageProperties(puObj)
-        
 
         self.console.clear()
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
-                 
-      
+        
+        self.actionSaveToolbar.setEnabled(True)
+        self.actionStarToolbar.setEnabled(True)
+        
+        return 1
+    
     """
     Voltage Graph
     """
@@ -915,7 +957,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specOpgetNoise.setEnabled(False) 
 
     def refreshID(self, puObj):
-        opObj = puObj.getOpObjfromParamValue(value="Scope")
+        opObj = puObj.getOperationObj(name='Scope')
+#         opObj = puObj.getOpObjfromParamValue(value="Scope")
         if opObj == None:
             pass
         else:
@@ -928,7 +971,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            value1 = int(self.idImagscope)
            opObj.changeParameter(name=name_parameter1, value=value1, format=format1)
         
-        opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
+        opObj = puObj.getOperationObj(name='SpectraPlot')
+#         opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
         if opObj == None:
             pass
         else:
@@ -941,8 +985,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            value1 = int(self.idImagspectra)
            opObj.changeParameter(name=name_parameter1, value=value1, format=format1)
         
-                        
-        opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
+        opObj = puObj.getOperationObj(name='CrossSpectraPlot')
+#         opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
         if opObj == None:
             pass
         else:
@@ -954,8 +998,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                self.idImagcross = self.idImagcross + 1
             value1 = int(self.idImagcross)
             opObj.changeParameter(name=name_parameter1, value=value1, format=format1)      
-                                                        
-        opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
+        
+        opObj = puObj.getOperationObj(name='RTIPlot')             
+#         opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
         if opObj == None:
             pass
         else:
@@ -967,8 +1012,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                self.idImagrti = self.idImagrti + 1
             value1 = int(self.idImagrti)
             opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-            
-        opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
+        
+        opObj = puObj.getOperationObj(name='CoherenceMap')
+#         opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
         if opObj == None:
             pass
         else:
@@ -981,7 +1027,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             value1 = int(self.idImagcoherence)
             opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
         
-        opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
+        opObj = puObj.getOperationObj(name='PowerProfilePlot')
+#         opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
         if opObj == None:
             pass
         else:
@@ -993,8 +1040,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                self.idImagpower = self.idImagpower + 1
             value1 = int(self.idImagpower)
             opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-            
-        opObj = puObj.getOpObjfromParamValue(value="Noise")
+        
+        opObj = puObj.getOperationObj(name='Noise')
+#         opObj = puObj.getOpObjfromParamValue(value="Noise")
         if opObj == None:
             pass
         else:
@@ -1006,8 +1054,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                self.idImagrtinoise = self.idImagrtinoise + 1
             value1 = int(self.idImagrtinoise)
             opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-            
-        opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
+        
+        opObj = puObj.getOperationObj(name='SpectraHeisScope')
+#         opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
         if opObj == None:
             pass
         else:
@@ -1019,8 +1068,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                self.idImagspectraHeis = self.idImagspectraHeis + 1
             value1 = int(self.idImagspectraHeis)
             opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-            
-        opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
+        
+        opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')
+#         opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
         if opObj == None:
             pass
         else:
@@ -1038,6 +1088,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         AÑADE OPERACION SPECTRA
         """
+        
+        addFTP = False
+        checkPath = False
+
+        self.actionSaveToolbar.setEnabled(False)
+        self.actionStarToolbar.setEnabled(False)
+        
         puObj = self.getSelectedPUObj()
         puObj.removeOperations()
         
@@ -1229,7 +1286,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                       
         #-----Spectra Plot-----
         if self.specGraphCebSpectraplot.isChecked():   
-            name_operation = 'Plot'
+            name_operation = 'SpectraPlot'
             optype = 'other'
             name_parameter = 'type'
             value = 'SpectraPlot'
@@ -1249,7 +1306,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             yvalue = self.specGgraphHeight.text()
             zvalue = self.specGgraphDbsrange.text()               
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+#             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)      
             
             if not channelList == '':
@@ -1301,6 +1358,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name='zmax', value=zvalueList[1], format=format)      
 
             if self.specGraphSaveSpectra.isChecked():
+                checkPath = True
                 name_parameter1 = 'save'
                 name_parameter2 = 'figpath'
                 name_parameter3 = 'figfile'
@@ -1311,27 +1369,20 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 format2 = 'str'
                 opObj.addParameter(name=name_parameter1, value=value1 , format=format1)
                 opObj.addParameter(name=name_parameter2, value=value2, format=format2)
-                if not value3 == "":
-                   try:
-                       value3 = str(self.specGraphPrefix.text())
-                   except:
-                       self.console.clear()
-                       self.console.append("Please Write prefix")
-                       return 0    
-                   opObj.addParameter(name='figfile', value=self.specGraphPrefix.text(), format='str')
+                opObj.addParameter(name=name_parameter3, value=value3, format=format2) 
                 
-             #   opObj.addParameter(name=name_parameter3, value=value3, format=format2) 
              #   opObj.addParameter(name='wr_period', value='5',format='int')
                         
             if self.specGraphftpSpectra.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConfiguration(puObj, opObj)
+               self.addFTPConf2Operation(puObj, opObj)
+               addFTP = True
                
         if self.specGraphCebCrossSpectraplot.isChecked():
-            name_operation = 'Plot'
+            name_operation = 'CrossSpectraPlot'
             optype = 'other'
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name='type', value="CrossSpectraPlot", format='str') 
+#             opObj.addParameter(name='type', value="CrossSpectraPlot", format='str') 
             opObj.addParameter(name='power_cmap', value='jet', format='str')
             opObj.addParameter(name='coherence_cmap', value='jet', format='str')
             opObj.addParameter(name='phase_cmap', value='RdBu_r', format='str') 
@@ -1385,6 +1436,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     opObj.addParameter(name='zmax', value=zvalueList[1], format='float')
  
             if self.specGraphSaveCross.isChecked():
+                checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
                 opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
                 value = self.specGraphPrefix.text()
@@ -1399,10 +1451,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 # opObj.addParameter(name='figfile', value=self.specGraphPrefix.text(), format='str') 
             if self.specGraphftpCross.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConfiguration(puObj, opObj)
+               self.addFTPConf2Operation(puObj, opObj)
+               addFTP = True
                      
         if self.specGraphCebRTIplot.isChecked():
-            name_operation = 'Plot'
+            name_operation = 'RTIPlot'
             optype = 'other'
             name_parameter = 'type'
             value = 'RTIPlot'
@@ -1420,7 +1473,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'str'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+#             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)
 
             channelList = self.specGgraphChannelList.text()
@@ -1475,25 +1528,27 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name='zmax', value=zvalueList[1], format=format)     
                 
             if self.specGraphSaveRTIplot.isChecked():
-               opObj.addParameter(name='save', value='1', format='bool')
-               opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
-               value = self.specGraphPrefix.text()
-               if not value == "":
-                  try:
-                      value = str(self.specGraphPrefix.text())
-                  except:
-                       self.console.clear()
-                       self.console.append("Please Write prefix")
-                       return 0    
-                  opObj.addParameter(name='figfile', value=value, format='str')                
+                checkPath = True
+                opObj.addParameter(name='save', value='1', format='bool')
+                opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
+                value = self.specGraphPrefix.text()
+                if not value == "":
+                   try:
+                       value = str(self.specGraphPrefix.text())
+                   except:
+                        self.console.clear()
+                        self.console.append("Please Write prefix")
+                        return 0    
+                   opObj.addParameter(name='figfile', value=value, format='str')                
                
             # test_ftp
             if self.specGraphftpRTIplot.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConfiguration(puObj, opObj)
+               self.addFTPConf2Operation(puObj, opObj)
+               addFTP = True
                                  
         if self.specGraphCebCoherencmap.isChecked():
-            name_operation = 'Plot'
+            name_operation = 'CoherenceMap'
             optype = 'other'
             name_parameter = 'type'
             value = 'CoherenceMap'
@@ -1508,7 +1563,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format1 = 'int'
            
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+#             opObj.addParameter(name=name_parameter, value=value, format=format)
             # opObj.addParameter(name='coherence_cmap', value='jet', format='str')
             # opObj.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)
@@ -1562,6 +1617,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name='zmax', value=zvalueList[1], format='float')
     
             if self.specGraphSaveCoherencemap.isChecked():
+                checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
                 opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
                 value = self.specGraphPrefix.text()
@@ -1577,10 +1633,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
              # test_ftp
             if self.specGraphftpCoherencemap.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConfiguration(puObj, opObj)           
+               self.addFTPConf2Operation(puObj, opObj)       
+               addFTP = True    
            
         if self.specGraphPowerprofile.isChecked():
-           name_operation = 'Plot'
+           name_operation = 'PowerProfilePlot'
            optype = 'other'
            name_parameter = 'type'
            value = 'PowerProfilePlot'
@@ -1592,7 +1649,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.idImagpower = self.idImagpower + 1
            value1 = int(self.idImagpower)
            opObj = puObj.addOperation(name=name_operation, optype=optype)
-           opObj.addParameter(name=name_parameter, value=value, format='str') 
+#            opObj.addParameter(name=name_parameter, value=value, format='str') 
            opObj.addParameter(name='id', value=value1, format='int')
     
            channelList = self.specGgraphChannelList.text()
@@ -1625,6 +1682,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            
  
            if self.specGraphSavePowerprofile.isChecked():
+               checkPath = True
                opObj.addParameter(name='save', value='1', format='bool')
                opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
                value = self.specGraphPrefix.text()
@@ -1640,11 +1698,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
            if self.specGraphftpPowerprofile.isChecked():
               opObj.addParameter(name='ftp', value='1', format='int')
-              self.addFTPConfiguration(puObj, opObj)
+              self.addFTPConf2Operation(puObj, opObj)
+              addFTP = True
            # rti noise
               
         if self.specGraphCebRTInoise.isChecked():
-            name_operation = 'Plot'
+            name_operation = 'Noise'
             optype = 'other'
             name_parameter = 'type'
             value = 'Noise'
@@ -1661,7 +1720,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'str'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+#             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)
 
             channelList = self.specGgraphChannelList.text()
@@ -1704,37 +1763,57 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name='ymax', value=yvalueList[1], format=format)      
                 
             if self.specGraphSaveRTInoise.isChecked():
-               opObj.addParameter(name='save', value='1', format='bool')
-               opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
-               value = self.specGraphPrefix.text()
-               if not value == "":
-                  try:
-                      value = str(self.specGraphPrefix.text())
-                  except:
-                       self.console.clear()
-                       self.console.append("Please Write prefix")
-                       return 0    
-                  opObj.addParameter(name='figfile', value=value, format='str')                
+                checkPath = True
+                opObj.addParameter(name='save', value='1', format='bool')
+                opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
+                value = self.specGraphPrefix.text()
+                if not value == "":
+                   try:
+                       value = str(self.specGraphPrefix.text())
+                   except:
+                        self.console.clear()
+                        self.console.append("Please Write prefix")
+                        return 0    
+                   opObj.addParameter(name='figfile', value=value, format='str')                
                
             # test_ftp
             if self.specGraphftpRTInoise.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConfiguration(puObj, opObj)      
-              
-               
-
+               self.addFTPConf2Operation(puObj, opObj)    
+               addFTP = True  
+        
+        localfolder = None
+        if checkPath:
+            localfolder = str(self.specGraphPath.text())
+            if localfolder == '':
+                self.console.clear()
+                self.console.append("Graphic path should be defined")
+                return 0
+                
+        if addFTP:
+            if not localfolder:
+                self.console.clear()
+                self.console.append("You have to save the plots before sending them to FTP Server")
+                return 0
+            
+            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
+            self.createFTPProcUnitView(server, username, password, remotefolder, localfolder)
+        else:
+            self.removeFTPProcUnitView()
+            
 #      if something happend 
         parms_ok, output_path, blocksperfile, profilesperblock = self.checkInputsPUSave(datatype='Spectra')
-        name_operation = 'SpectraWriter'
-        optype = 'other'
-        name_parameter1 = 'path'
-        name_parameter2 = 'blocksPerFile'
-        name_parameter3 = 'profilesPerBlock'
-        value1 = output_path
-        value2 = blocksperfile
-        value3 = profilesperblock
-        format = "int"
         if parms_ok:
+            name_operation = 'SpectraWriter'
+            optype = 'other'
+            name_parameter1 = 'path'
+            name_parameter2 = 'blocksPerFile'
+            name_parameter3 = 'profilesPerBlock'
+            value1 = output_path
+            value2 = blocksperfile
+            value3 = profilesperblock
+            format = "int"
+            
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             opObj.addParameter(name=name_parameter1, value=value1)
             opObj.addParameter(name=name_parameter2, value=value2, format=format)
@@ -1745,7 +1824,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.clear()
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
-            
+
+        self.actionSaveToolbar.setEnabled(True)
+        self.actionStarToolbar.setEnabled(True)
+        
+        return 1
+    
     """
     Spectra  Graph
     """
@@ -1983,6 +2067,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         AÑADE OPERACION SPECTRAHEIS
         """
+        addFTP = False
+        checkPath = False
+
+        self.actionSaveToolbar.setEnabled(False)
+        self.actionStarToolbar.setEnabled(False)
+        
         puObj = self.getSelectedPUObj()
         puObj.removeOperations()
         
@@ -1998,7 +2088,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
         # ---- Spectra Plot-----
         if self.specHeisGraphCebSpectraplot.isChecked():   
-            name_operation = 'Plot'
+            name_operation = 'SpectraHeisScope'
             optype = 'other'
             name_parameter = 'type'
             value = 'SpectraHeisScope'
@@ -2017,7 +2107,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             xvalue = self.specHeisGgraphXminXmax.text() 
             yvalue = self.specHeisGgraphYminYmax.text()            
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+#             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)      
             
             if not channelList == '':
@@ -2056,6 +2146,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                   opObj.addParameter(name=name2, value=value2, format=format) 
             
             if self.specHeisGraphSaveSpectra.isChecked():
+                checkPath = True
                 name_parameter1 = 'save'
                 name_parameter2 = 'figpath'
                 name_parameter3 = 'figfile'
@@ -2080,10 +2171,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                         
             if self.specHeisGraphftpSpectra.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConfiguration(puObj, opObj)
+               self.addFTPConf2Operation(puObj, opObj)
+               addFTP = True
                
         if self.specHeisGraphCebRTIplot.isChecked():
-            name_operation = 'Plot'
+            name_operation = 'RTIfromSpectraHeis'
             optype = 'other'
             name_parameter = 'type'
             value = 'RTIfromSpectraHeis'
@@ -2101,7 +2193,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'str'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+#             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)
 
             channelList = self.specHeisGgraphChannelList.text()
@@ -2144,36 +2236,57 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name='ymax', value=yvalueList[1], format=format)   
                         
             if self.specHeisGraphSaveRTIplot.isChecked():
-               opObj.addParameter(name='save', value='1', format='bool')
-               opObj.addParameter(name='figpath', value=self.specHeisGraphPath.text(), format='str')
-               value = self.specHeisGraphPrefix.text()
-               if not value == "":
-                  try:
-                      value = str(self.specHeisGraphPrefix.text())
-                  except:
-                       self.console.clear()
-                       self.console.append("Please Write prefix")
-                       return 0    
-                  opObj.addParameter(name='figfile', value=value, format='str')                
+                checkPath = True
+                opObj.addParameter(name='save', value='1', format='bool')
+                opObj.addParameter(name='figpath', value=self.specHeisGraphPath.text(), format='str')
+                value = self.specHeisGraphPrefix.text()
+                if not value == "":
+                   try:
+                       value = str(self.specHeisGraphPrefix.text())
+                   except:
+                        self.console.clear()
+                        self.console.append("Please Write prefix")
+                        return 0    
+                   opObj.addParameter(name='figfile', value=value, format='str')                
                
             # test_ftp
             if self.specHeisGraphftpRTIplot.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConfiguration(puObj, opObj)
-               
+               self.addFTPConf2Operation(puObj, opObj)
+               addFTP = True
+
+        localfolder = None
+        if checkPath:
+            localfolder = str(self.specGraphPath.text())
+            if localfolder == '':
+                self.console.clear()
+                self.console.append("Graphic path should be defined")
+                return 0
+                
+        if addFTP:
+            if not localfolder:
+                self.console.clear()
+                self.console.append("You have to save the plots before sending them to FTP Server")
+                return 0
+            
+            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
+            self.createFTPProcUnitView(server, username, password, remotefolder, localfolder)
+        else:
+            self.removeFTPProcUnitView()
+            
         # if something happened
         parms_ok, output_path, blocksperfile, metada = self.checkInputsPUSave(datatype='SpectraHeis')
-        name_operation = 'FitsWriter'
-        optype = 'other'
-        name_parameter1 = 'path'
-        name_parameter2 = 'dataBlocksPerFile'
-        name_parameter3 = 'metadatafile'
-        value1 = output_path
-        value2 = blocksperfile
-        value3 = metada
-        format2 = "int"
-        format3 = "str"
         if parms_ok:
+            name_operation = 'FitsWriter'
+            optype = 'other'
+            name_parameter1 = 'path'
+            name_parameter2 = 'dataBlocksPerFile'
+            name_parameter3 = 'metadatafile'
+            value1 = output_path
+            value2 = blocksperfile
+            value3 = metada
+            format2 = "int"
+            format3 = "str"
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             opObj.addParameter(name=name_parameter1, value=value1)
             opObj.addParameter(name=name_parameter2, value=value2, format=format2)
@@ -2182,11 +2295,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.showPUSpectraHeisProperties(puObj)
             
         self.console.clear()
-        self.console.append("If you want to save your project")
-        self.console.append("click on your project name in the Tree Project Explorer")
-            
+        self.console.append("Click on save icon ff you want to save your project")
         
-
+        self.actionSaveToolbar.setEnabled(True)
+        self.actionStarToolbar.setEnabled(True)
+        
+        return 1
     @pyqtSignature("int")
     def on_specHeisGraphCebSpectraplot_stateChanged(self, p0):
         
@@ -2309,7 +2423,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if len(puObj.getOperationObjList()) == 1:
                 self.setInputsPU_View(datatype)
                 
-                opObj = puObj.getOperationObj(name="init")   
+                opObj = puObj.getOperationObj(name="run")   
                 if opObj == None:
                     self.specOpnFFTpoints.clear()
                     self.specOpProfiles.clear()
@@ -2336,7 +2450,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                         value = opObj.getParameterValue(parameterName='ippFactor')
                         self.specOpippFactor.setText(str(value))
                 
-                opObj = puObj.getOperationObj(name="init")  
+                opObj = puObj.getOperationObj(name="run")  
                 if opObj == None:
                     self.specOppairsList.clear()
                     self.specOpCebCrossSpectra.setCheckState(0)
@@ -2594,7 +2708,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.volOpCohInt.setEnabled(True)
                 self.volOpCebCohInt.setCheckState(QtCore.Qt.Checked)
             
-            opObj = puObj.getOperationObj(name='Plot')
+            opObj = puObj.getOperationObj(name='Scope')
             if opObj == None:
                 self.volGraphCebshow.setCheckState(0)
             else:
@@ -2679,7 +2793,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.specOpRadarfrequency.setEnabled(True)
                 self.specOpCebRadarfrequency.setCheckState(QtCore.Qt.Checked)
             
-            opObj = puObj.getOperationObj(name="init")   
+            opObj = puObj.getOperationObj(name="run")   
             if opObj == None:
                 self.specOpnFFTpoints.clear()
                 self.specOpProfiles.clear()   
@@ -2709,7 +2823,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     value = opObj.getParameterValue(parameterName='ippFactor')
                     self.specOpippFactor.setText(str(value))
                                 
-            opObj = puObj.getOperationObj(name="init")  
+            opObj = puObj.getOperationObj(name="run")  
             if opObj == None:
                 self.specOppairsList.clear()
                 self.specOpCebCrossSpectra.setCheckState(0)
@@ -2833,8 +2947,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                                     self.specOpgetNoise.setText(value)
                                     self.specOpgetNoise.setEnabled(True)
                         
-            opObj = puObj.getOperationObj(name='Plot')
-            opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
+            opObj = puObj.getOperationObj(name='SpectraPlot')
+#             opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
             if opObj == None:
                 self.specGraphCebSpectraplot.setCheckState(0)
                 self.specGraphSaveSpectra.setCheckState(0)
@@ -2908,7 +3022,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                             value = " "
                         self.specGgraphftpratio.setText(str(value))
                         
-            opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
+            opObj = puObj.getOperationObj(name='CrossSpectraPlot')   
+#             opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
             if opObj == None:
                 self.specGraphCebCrossSpectraplot.setCheckState(0)
                 self.specGraphSaveCross.setCheckState(0)
@@ -2971,8 +3086,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                         except:
                             value = " "
                         self.specGgraphftpratio.setText(str(value))
-                
-            opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
+            
+            opObj = puObj.getOperationObj(name='RTIPlot')
+#             opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
             if opObj == None:
                 self.specGraphCebRTIplot.setCheckState(0)
                 self.specGraphSaveRTIplot.setCheckState(0)
@@ -3052,8 +3168,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                             value = " "
                         self.specGgraphftpratio.setText(str(value))
                         
-                
-            opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
+            opObj = puObj.getOperationObj(name='CoherenceMap')
+#             opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
             if opObj == None:
                 self.specGraphCebCoherencmap.setCheckState(0)
                 self.specGraphSaveCoherencemap.setCheckState(0)
@@ -3126,8 +3242,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                             value = " "
                         self.specGgraphftpratio.setText(str(value))
                         
-
-            opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
+            opObj = puObj.getOperationObj(name='PowerProfilePlot')
+#             opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
             if opObj == None:
                 self.specGraphPowerprofile.setCheckState(0)
                 self.specGraphSavePowerprofile.setCheckState(0)
@@ -3181,7 +3297,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                         value = " "
                     self.specGgraphftpratio.setText(str(value))
             # -noise
-            opObj = puObj.getOpObjfromParamValue(value="Noise")
+            opObj = puObj.getOperationObj(name='Noise')
+#             opObj = puObj.getOpObjfromParamValue(value="Noise")
             if opObj == None:
                 self.specGraphCebRTInoise.setCheckState(0)
                 self.specGraphSaveRTInoise.setCheckState(0)
@@ -3293,9 +3410,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                        self.specHeisOpIncoherent.setEnabled(True)
                        self.specHeisOpCebIncoherent.setCheckState(QtCore.Qt.Checked)
                        self.specHeisOpCobIncInt.setCurrentIndex(0)
-            # SpectraHeis Graph           
-            opObj = puObj.getOperationObj(name='Plot')
-            opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
+            
+            # SpectraHeis Graph
+            opObj = puObj.getOperationObj(name='SpectraHeisScope')
+#             opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
             if opObj == None:
                 self.specHeisGraphCebSpectraplot.setCheckState(0)
                 self.specHeisGraphSaveSpectra.setCheckState(0)
@@ -3356,8 +3474,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                             value = " "
                         self.specHeisGgraphftpratio.setText(str(value))
                                     
-                                                
-            opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
+            opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')                           
+#             opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
             if opObj == None:
                 self.specHeisGraphCebRTIplot.setCheckState(0)
                 self.specHeisGraphSaveRTIplot.setCheckState(0)
@@ -3644,54 +3762,81 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.showPUinitView()   
         
-    def addFTPparmXML(self, obj, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos):
-        obj.addParameter(name='server', value=server, format='str')
-        obj.addParameter(name='folder', value=folder, format='str')
-        obj.addParameter(name='username', value=username, format='str')
-        obj.addParameter(name='password', value=password, format='str')
-        if ftp_wei == None:
-            pass
-        else:
-            obj.addParameter(name='ftp_wei', value=int(ftp_wei), format='int')
-        if exp_code == None:
-            pass
-        else:
-            obj.addParameter(name='exp_code', value=int(exp_code), format='int')
-        if sub_exp_code == None:
-            pass
-        else:
-            obj.addParameter(name='sub_exp_code', value=int(sub_exp_code), format='int')
-        if plot_pos == None:
-            pass
-        else:
-            obj.addParameter(name='plot_pos', value=int(plot_pos), format='int')    
-        
-    def addFTPConfiguration(self, puObj, opObj):
+    def addFTPConf2Operation(self, puObj, opObj):
+
         if self.temporalFTP.create:
-           server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-           self.addFTPparmXML(opObj, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos)
+            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
         else:
             self.temporalFTP.setwithoutconfiguration()
-            server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-            self.addFTPparmXML(opObj, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos)
-   
+            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
+
+        opObj.addParameter(name='server', value=server, format='str')
+        opObj.addParameter(name='folder', value=remotefolder, format='str')
+        opObj.addParameter(name='username', value=username, format='str')
+        opObj.addParameter(name='password', value=password, format='str')
+        
+        if ftp_wei:
+            opObj.addParameter(name='ftp_wei', value=int(ftp_wei), format='int')
+        if exp_code:
+            opObj.addParameter(name='exp_code', value=int(exp_code), format='int')
+        if sub_exp_code:
+            opObj.addParameter(name='sub_exp_code', value=int(sub_exp_code), format='int')
+        if plot_pos:
+            opObj.addParameter(name='plot_pos', value=int(plot_pos), format='int')    
+            
         if puObj.datatype == "Spectra":
             value = self.specGgraphftpratio.text()
         if puObj.datatype == "SpectraHeis":
              value = self.specHeisGgraphftpratio.text()
+             
         if not value == "":
             try:
-                if puObj.datatype == "Spectra":
-                    value = int(self.specGgraphftpratio.text())
-                if puObj.datatype == "SpectraHeis":
-                    value = int(self.specHeisGgraphftpratio.text())
+                value = int(value)
             except:
-                   self.console.clear()
-                   self.console.append("Please Write the Ratio")
-                   return 0
+               self.console.clear()
+               self.console.append("Please fill Ratio on the textbox")
+               return 0
+           
             opObj.addParameter(name='wr_period', value=value, format='int')   
-     
+        
+    def createFTPProcUnitView(self, server, username, password, remotefolder, localfolder='./', extension='.png', period='60', protocol='ftp'):
+        
+        if self.__ftpProcUnitAdded:
+            procUnitConfObj = self.__puObjDict[self.__ftpProcUnitId]
+            procUnitConfObj.removeOperations()
+        else:
+            projectObj = self.getSelectedProjectObj()
+            procUnitConfObj = projectObj.addProcUnit(name="SendToServer")
+            
+        procUnitConfObj.addParameter(name='server', value=server, format='str')
+        procUnitConfObj.addParameter(name='username', value=username, format='str')
+        procUnitConfObj.addParameter(name='password', value=password, format='str')
+        procUnitConfObj.addParameter(name='localfolder', value=localfolder, format='str')
+        procUnitConfObj.addParameter(name='remotefolder', value=remotefolder, format='str')
+        procUnitConfObj.addParameter(name='ext', value=extension, format='str')
+        procUnitConfObj.addParameter(name='period', value=period, format='int')
+        procUnitConfObj.addParameter(name='protocol', value=protocol, format='str')
+        
+        self.__puObjDict[procUnitConfObj.getId()] = procUnitConfObj
+        
+        self.__ftpProcUnitAdded = True
+        self.__ftpProcUnitId = procUnitConfObj.getId()
+
+    def removeFTPProcUnitView(self):
+        
+        if not self.__ftpProcUnitAdded:
+            return
+        
+        procUnitConfObj = self.__puObjDict[self.__ftpProcUnitId]
+        procUnitConfObj.removeOperations()
+        
+        self.__puObjDict.pop(procUnitConfObj.getId())
+        
+        self.__ftpProcUnitAdded = False
+        self.__ftpProcUnitId = None
+             
     def bufferProject(self, caracteristica, principal, description):
+        
         self.projectProperCaracteristica.append(caracteristica)
         self.projectProperPrincipal.append(principal)
         self.projectProperDescripcion.append(description)
@@ -3905,7 +4050,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.bufferVoltage("Decodification", "Mode", mode)
 
         # graph
-        opObj = puObj.getOperationObj(name='Plot')
+#         opObj = puObj.getOperationObj(name='Plot')
+        opObj = puObj.getOperationObj(name='Scope')
         if opObj == None:
             self.volGraphCebshow.setCheckState(0)
             operation = "Disabled"
@@ -4030,7 +4176,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.bufferSpectra("Processing Unit", "Radar Frequency", radarfrequency)
         
 
-        opObj = puObj.getOperationObj(name="init")   
+        opObj = puObj.getOperationObj(name="run")   
         if opObj == None:
             self.specOpnFFTpoints.clear()
             self.specOpProfiles.clear()
@@ -4061,7 +4207,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.bufferSpectra("Processing Unit", "Ipp Factor", ippFactor)
 
 
-        opObj = puObj.getOperationObj(name="init")  
+        opObj = puObj.getOperationObj(name="run")  
         if opObj == None:
             pairsList = None
         else:
@@ -4167,8 +4313,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                             getNoise = value
                             self.bufferSpectra("Processing Unit", "Get Noise", getNoise)
 
-            
-        opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
+        opObj = puObj.getOperationObj(name='SpectraPlot')
+#         opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
+        
         if opObj == None:
             operationSpectraPlot = "Disabled"
             freq_vel = None
@@ -4249,8 +4396,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     self.bufferSpectra("Spectra Plot", "FTP", status)
                     self.showWr_Period(puObj, opObj, nameplotop="Spectra Plot")
                     self.saveFTPvalues(opObj)
-             
-        opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
+        
+        opObj = puObj.getOperationObj(name='CrossSpectraPlot')
+#         opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
         if opObj == None:
             self.specGraphCebCrossSpectraplot.setCheckState(0)
             operationCrossSpectraPlot = "Disabled"
@@ -4326,8 +4474,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     self.showWr_Period(puObj, opObj, nameplotop="Cross Spectra Plot")
                     self.saveFTPvalues(opObj)
             
-            
-        opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
+        opObj = puObj.getOperationObj(name='RTIPlot')
+#         opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
         if opObj == None:
             self.specGraphCebRTIplot.setCheckState(0)
             operationRTIPlot = "Disabled"
@@ -4419,8 +4567,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.showWr_Period(puObj, opObj, nameplotop="RTI Plot")
                 self.saveFTPvalues(opObj)
             
-            
-        opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
+        opObj = puObj.getOperationObj(name='CoherenceMap')
+#         opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
         if opObj == None:
             self.specGraphCebCoherencmap.setCheckState(0)
             operationCoherenceMap = "Disabled"
@@ -4513,8 +4661,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.saveFTPvalues(opObj)
     
             
-        
-        opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
+        opObj = puObj.getOperationObj(name='PowerProfilePlot')
+#         opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
         if opObj == None:
             self.specGraphPowerprofile.setCheckState(0)
             operationPowerProfilePlot = "Disabled"
@@ -4584,7 +4732,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.saveFTPvalues(opObj)
                 
         # noise
-        opObj = puObj.getOpObjfromParamValue(value="Noise")
+        opObj = puObj.getOperationObj(name='Noise')
+#         opObj = puObj.getOpObjfromParamValue(value="Noise")
         if opObj == None:
             self.specGraphCebRTInoise.setCheckState(0)
             operationRTINoise = "Disabled"
@@ -4666,7 +4815,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.bufferSpectra("FTP", "Server", self.temporalFTP.server)
             self.bufferSpectra("FTP", "Folder", self.temporalFTP.folder)
             self.bufferSpectra("FTP", "Username", self.temporalFTP.username)
-            self.bufferSpectra("FTP", "Password", self.temporalFTP.password)
+            self.bufferSpectra("FTP", "Password", '*'*len(self.temporalFTP.password))
             self.bufferSpectra("FTP", "Ftp_wei", self.temporalFTP.ftp_wei)
             self.bufferSpectra("FTP", "Exp_code", self.temporalFTP.exp_code)
             self.bufferSpectra("FTP", "Sub_exp_code", self.temporalFTP.sub_exp_code)
@@ -4678,7 +4827,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.bufferSpectra("FTP", "Server", self.temporalFTP.server)
             self.bufferSpectra("FTP", "Folder", self.temporalFTP.folder)
             self.bufferSpectra("FTP", "Username", self.temporalFTP.username)
-            self.bufferSpectra("FTP", "Password", self.temporalFTP.password)
+            self.bufferSpectra("FTP", "Password", '*'*len(self.temporalFTP.password))
             self.bufferSpectra("FTP", "Ftp_wei", self.temporalFTP.ftp_wei)
             self.bufferSpectra("FTP", "Exp_code", self.temporalFTP.exp_code)
             self.bufferSpectra("FTP", "Sub_exp_code", self.temporalFTP.sub_exp_code)
@@ -4753,7 +4902,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             incoherentintegration = str(value)
             self.bufferSpectraHeis("Processing Unit", "Incoherent Integration", incoherentintegration)  
         # spectraheis graph
-        opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
+        opObj = puObj.getOperationObj(name='SpectraHeisScope')
+#         opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
         if opObj == None:
             self.specHeisGraphCebSpectraplot.setCheckState(0)
             operationSpectraHeisPlot = "Disabled"
@@ -4821,7 +4971,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     self.showWr_Period(puObj, opObj, nameplotop="SpectraHeis Plot")
                     self.saveFTPvalues(opObj)
                     
-        opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
+        opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')
+#         opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
         if opObj == None:
             self.specHeisGraphCebRTIplot.setCheckState(0)
             operationRTIPlot = "Disabled"
@@ -5116,18 +5267,28 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         return None
       
     def playProject(self, ext=".xml"):
+            
+            
+        self.actionStarToolbar.setEnabled(False)
+        self.actionPauseToolbar.setEnabled(True)
+        self.actionStopToolbar.setEnabled(True)
         
-            projectObj = self.getSelectedProjectObj()
-            
-            filename = os.path.join(str(self.pathWorkSpace),
-                                    "%s_%s%s" %(str(projectObj.name), str(projectObj.id), ext)
-                                    )
-            
-            self.console.clear()
-            projectObj.writeXml(filename)  
-            self.console.append("Please Wait...")
+        projectObj = self.getSelectedProjectObj()
+        
+        filename = os.path.join(str(self.pathWorkSpace),
+                                "%s%s%s" %(str(projectObj.name), str(projectObj.id), ext)
+                                )
+        
+        self.console.clear()
+        filename = self.saveProject()
+#         projectObj.writeXml(filename)  
+        if filename == None:
+            self.console.append("Process did not initialize.")
+            return 
+        
+        self.console.append("Please Wait...")
 #             try:
-            self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, filename))
+        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, filename))
 # #  
 #             except:
 #                 self.console.append("Error............................................!")
@@ -5141,21 +5302,35 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
     def stopProject(self):
         stop = True
+        self.actionStarToolbar.setEnabled(True)
+        self.actionPauseToolbar.setEnabled(stop)
+        self.actionStopToolbar.setEnabled(stop)
+        
         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, stop))
     
     def pauseProject(self):
+        
+        self.actionStarToolbar.setEnabled(False)
+        self.actionPauseToolbar.setEnabled(True)
+        self.actionStopToolbar.setEnabled(True)
+        
         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
 
                           
     def saveProject(self):
         
+        sts = True
         puObj = self.getSelectedPUObj() 
         if puObj.name == 'VoltageProc':
-            self.on_volOpOk_clicked()   
+            sts = self.on_volOpOk_clicked()   
         if puObj.name == 'SpectraProc':
-            self.on_specOpOk_clicked()   
+            sts = self.on_specOpOk_clicked()   
         if puObj.name == 'SpectraHeisProc':
-            self.on_specHeisOpOk_clicked()
+            sts = self.on_specHeisOpOk_clicked()
+        
+        if not sts:
+            return None
+        
         projectObj = self.getSelectedProjectObj()  
         puObjorderList = OrderedDict(sorted(projectObj.procUnitConfObjDict.items(), key=lambda x: x[0]))
         
@@ -5163,17 +5338,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             # print puObj.datatype, puObj.inputId,puObj.getId(),puObj.parentId
                 
             if puObj.name == "VoltageProc":
-                self.refreshID(puObj) 
-            
+                self.refreshID(puObj)
             if puObj.name == "SpectraProc":            
                 self.refreshID(puObj)   
             if puObj.name == "SpectraHeisProc":
                 self.refreshID(puObj)   
           
-        filename = self.pathWorkSpace + "/" + str(projectObj.name) + str(projectObj.id) + ".xml"
+        filename = os.path.join(str(self.pathWorkSpace),
+                        "%s%s%s" %(str(projectObj.name), str(projectObj.id), '.xml')
+                        )
         projectObj.writeXml(filename)     
-        self.console.append("Now,  you can push the icon Start in the toolbar or push start in menu run")
-
+        self.console.append("Now,  you can press the Start Icon on the toolbar")
+        
+        return filename
         
     def deleteProjectorPU(self):
         """
@@ -5466,6 +5643,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def searchData(self, data_path, ext, walk, expLabel=''):
         dateList = []
         fileList = []
+        
+        if not os.path.exists(data_path):
+            return None
         
         if walk == 0:
             files = os.listdir(data_path)
@@ -5765,8 +5945,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.tabCorrelation.setEnabled(False)
         self.frame_2.setEnabled(False)
         
-        self.actionCreate.setShortcut('Ctrl+P')
-        self.actionStart.setShortcut('Ctrl+R')
+        self.actionCreate.setShortcut('Ctrl+N')
+        self.actionStart.setShortcut('Ctrl+P')
         self.actionSave.setShortcut('Ctrl+S')
         self.actionClose.setShortcut('Ctrl+Q')
         
@@ -5777,7 +5957,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proName.clear()
         self.proDataPath.setText('')
         self.console.setReadOnly(True)
-        self.console.append("Welcome to Signal Chain please Create a New Project")
+        self.console.append("Welcome to Signal Chain\nOpen a project or Create a new one")
         self.proStartTime.setDisplayFormat("hh:mm:ss")
         self.proDataType.setEnabled(False)
         self.time = QtCore.QTime()
@@ -5892,31 +6072,36 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         # tool tip gui volOp
         self.volOpChannel.setToolTip('Example: 1,2,3,4,5')    
         self.volOpHeights.setToolTip('Example: 90,180')
-        self.volOpFilter.setToolTip('Example: 3')
-        self.volOpProfile.setToolTip('Example:0,125 ')
-        self.volOpCohInt.setToolTip('Example: 100')
-        self.volOpOk.setToolTip('If you have finish, please Ok ')
+        self.volOpFilter.setToolTip('Example: 2')
+        self.volOpProfile.setToolTip('Example:0,127')
+        self.volOpCohInt.setToolTip('Example: 128')
+        self.volOpFlip.setToolTip('ChannelList where flip will be applied. Example: 0,2,3')
+        self.volOpOk.setToolTip('If you have finished, please Ok ')
         # tool tip gui volGraph
-        self.volGraphfreqrange.setToolTip('Example: 10,150')
+        self.volGraphfreqrange.setToolTip('Example: -30,30')
         self.volGraphHeightrange.setToolTip('Example: 20,180')
         # tool tip gui specOp
-        self.specOpnFFTpoints.setToolTip('Example: 100')
-        self.specOpProfiles.setToolTip('Example: 100')
-        self.specOpippFactor.setToolTip('Example:1')
-        self.specOpIncoherent.setToolTip('Example: 150')
+        self.specOpnFFTpoints.setToolTip('Example: 128')
+        self.specOpProfiles.setToolTip('Example: 128')
+        self.specOpippFactor.setToolTip('Example:1.0')
+        self.specOpIncoherent.setToolTip('Example: 10')
         self.specOpgetNoise.setToolTip('Example:20,180,30,120 (minHei,maxHei,minVel,maxVel)')
         
-        self.specOpChannel.setToolTip('Example: 1,2,3,4,5')
+        self.specOpChannel.setToolTip('Example: 0,1,2,3')
         self.specOpHeights.setToolTip('Example: 90,180')
         self.specOppairsList.setToolTip('Example: (0,1),(2,3)')
         # tool tip gui specGraph
         
-        self.specGgraphChannelList.setToolTip('Example: Myplot')
-        self.specGgraphFreq.setToolTip('Example: 10,150')
-        self.specGgraphHeight.setToolTip('Example: 20,160')
+        self.specGgraphChannelList.setToolTip('Example: 0,3,4')
+        self.specGgraphFreq.setToolTip('Example: -20,20')
+        self.specGgraphHeight.setToolTip('Example: 100,400')
         self.specGgraphDbsrange.setToolTip('Example: 30,170')
 
-        self.specGraphPrefix.setToolTip('Example: figure')   
+        self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
+        
+    def closeEvent(self, event):
+        self.closed.emit()
+        event.accept()
         
 class UnitProcessWindow(QMainWindow, Ui_UnitProcess):
     """
@@ -6029,8 +6214,8 @@ class Ftp(QMainWindow, Ui_Ftp):
         self.setWindowTitle("ROJ-Signal Chain")
         self.serverFTP.setToolTip('Example: jro-app.igp.gob.pe')    
         self.folderFTP.setToolTip('Example: /home/wmaster/graficos')
-        self.usernameFTP.setToolTip('Example: operator')
-        self.passwordFTP.setToolTip('Example: mst2010vhf ')
+        self.usernameFTP.setToolTip('Example: myusername')
+        self.passwordFTP.setToolTip('Example: mypass ')
         self.weightFTP.setToolTip('Example: 0')
         self.expcodeFTP.setToolTip('Example: 0')
         self.subexpFTP.setToolTip('Example: 0')
@@ -6156,9 +6341,14 @@ class ftpBuffer():
     create = False
     withoutconfig = False
     createforView = False
-    
+    localfolder = None
+    extension = None
+    period = None
+    protocol = None
     
     def __init__(self):
+        
+        self.create = False
         self.server = None
         self.folder = None
         self.username = None
@@ -6168,19 +6358,30 @@ class ftpBuffer():
         self.sub_exp_code = None
         self.plot_pos = None
         # self.create = False
+        self.localfolder = None
+        self.extension = None
+        self.period = None
+        self.protocol = None
         
     def setwithoutconfiguration(self):
+        
+        self.create = False
         self.server = "jro-app.igp.gob.pe"
         self.folder = "/home/wmaster/graficos"
-        self.username = "operator"
+        self.username = "wmaster"
         self.password = "mst2010vhf"
         self.ftp_wei = "0"
         self.exp_code = "0"
         self.sub_exp_code = "0"
         self.plot_pos = "0"
         self.withoutconfig = True
+        self.localfolder = './'
+        self.extension = '.png'
+        self.period = '60'
+        self.protocol = 'ftp'
         
-    def save(self, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos):
+    def save(self, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos, localfolder='./', extension='.png', period='60', protocol='ftp'):
+        
         self.server = server
         self.folder = folder
         self.username = username
@@ -6192,9 +6393,11 @@ class ftpBuffer():
         self.create = True
         self.withoutconfig = False 
         self.createforView = True 
+        self.localfolder = localfolder
            
         
     def recover(self):
+        
         return self.server, self.folder, self.username, self.password, self.ftp_wei, self.exp_code, self.sub_exp_code, self.plot_pos  
 
 class ShowMeConsole(QtCore.QObject):

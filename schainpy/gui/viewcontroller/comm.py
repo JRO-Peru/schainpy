@@ -7,7 +7,7 @@ from schainpy.controller  import Project
 from command import *
 
 class ControllerThread(threading.Thread):
-    def __init__(self, filename, data_q):
+    def __init__(self, filename, data_q=None):
         super(ControllerThread, self).__init__()
         self.filename = filename
         self.data_q = data_q
@@ -36,12 +36,14 @@ class CommCtrlProcessThread(threading.Thread):
     def __init__(self, cmd_q=Queue.Queue(), reply_q=Queue.Queue()):
         super(CommCtrlProcessThread, self).__init__()
         self.cmd_q = cmd_q
-        self.reply_q = reply_q
+#         self.reply_q = reply_q
         
 #         self.print_q = Queue.Queue()
-        self.data_q = Queue.Queue()
+#         self.data_q = Queue.Queue()
+        
         
         self.alive = threading.Event()
+        self.setDaemon(True)
         self.alive.set()
         self.socket = None
 
@@ -58,6 +60,7 @@ class CommCtrlProcessThread(threading.Thread):
         }
     
     def run(self):
+        
         while self.alive.isSet():
             try:
                 cmd = self.cmd_q.get(True, 0.1)                
@@ -68,7 +71,7 @@ class CommCtrlProcessThread(threading.Thread):
     
     def _handle_ioPROCESSTHREAD(self, cmd):
         filename = cmd.data
-        self.controllerObj = ControllerThread(filename=filename, data_q=self.data_q)
+        self.controllerObj = ControllerThread(filename=filename)
         self.controllerObj.start()
     
     def _handle_ioPAUSE(self, cmd):

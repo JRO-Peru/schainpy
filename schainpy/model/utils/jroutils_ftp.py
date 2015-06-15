@@ -169,8 +169,14 @@ class Remote(threading.Thread):
         
     def run(self):
         
+        if not self.status:
+            print "Finishing FTP service"
+            return
+            
         if not self.cd(self.remotefolder):
             raise ValueError, "Could not access to the new remote directory: %s" %self.remotefolder
+        
+        sts = True
         
         while True:
             
@@ -179,8 +185,11 @@ class Remote(threading.Thread):
             self.bussy = True
             
             for thisFile in self.fileList:
-                self.upload(thisFile, self.remotefolder)
+                sts = self.upload(thisFile, self.remotefolder)
+                if not sts: break
             
+            if not sts: break
+              
             self.bussy = False
             
             if self.stopFlag:
