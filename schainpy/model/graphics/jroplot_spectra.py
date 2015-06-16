@@ -126,7 +126,7 @@ class SpectraPlot(Figure):
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         zdB = 10*numpy.log10(z)
 
-        avg = numpy.nanmean(z, axis=1)
+        avg = numpy.average(z, axis=1)
         avgdB = 10*numpy.log10(avg)
         
         noise = dataOut.getNoise()/factor

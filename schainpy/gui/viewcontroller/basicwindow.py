@@ -24,6 +24,10 @@ from os.path import  expanduser
 #from CodeWarrior.Standard_Suite import file
 from comm import *
 
+from schainpy.gui.figures import tools
+
+FIGURES_PATH = tools.get_path()
+
 def isRadarFile(file):
         try:
             year = int(file[1:5])
@@ -5975,7 +5979,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def setParameter(self):
         
         self.setWindowTitle("ROJ-Signal Chain")
-        self.setWindowIcon(QtGui.QIcon("schainpy/gui/figure/adn.jpg"))
+        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
         sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
         # sys.stderr = ShowMeConsole(textWritten=self.normalOutputWritten)
         self.tabWidgetProject.setEnabled(False)

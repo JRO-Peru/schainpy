@@ -1,0 +1,23 @@
+Prerequisites:
+
+	-numpy 1.8.0
+	-
+
+Signal Chain Installation:
+
+	1. Install numpy, matplotlib, TKAgg
+	2. Install digital_rf_hdf5 module (developed by Haystack Observatory) if you will use USRP data
+	3. untar schainpy-x.x.x.tar.gz
+	4. cd schainpy-x.x.x
+	5. execute:
+			[hostname]$ sudo pyhon setup.py install
+	6. testing gui: 
+			[hostname]$ schainGUI (enter)
+
+If you want to use serialization and zerorpc you will need to install the next packages:
+
+	1. zerorpc
+		[hostname]$ sudo port install zerorpc
+		
+	2. cPickle, msgpack and msgpack_numpy
+		[hostname]$ sudo port install cPickle msgpack mspack_numpy

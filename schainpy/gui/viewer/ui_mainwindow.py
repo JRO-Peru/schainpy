@@ -24,6 +24,11 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
+import os
+from schainpy.gui.figures import tools
+
+FIGURES_PATH = tools.get_path()
+
 class Ui_MainWindow(object):
     
     def setupUi(self, MainWindow):
@@ -954,25 +959,25 @@ class Ui_MainWindow(object):
         self.actionOpen = QtGui.QAction(MainWindow)
 
         iconOpen = QtGui.QIcon()
-        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/open.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"open.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         iconCreate = QtGui.QIcon()
-        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/project.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"project.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         iconSave = QtGui.QIcon()
-        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/saveicon.jpeg")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"saveicon.jpeg") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         iconStart = QtGui.QIcon()
-        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/startServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"startServer.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         iconStop = QtGui.QIcon()
-        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/stopServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"stopServer.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         iconPause = QtGui.QIcon()
-        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         iconAddPU = QtGui.QIcon()
-        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/add_PU.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"add_PU.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         self.actionOpen.setIcon(iconOpen)
         self.actionOpen.setObjectName(_fromUtf8("actionOpen"))
@@ -1065,13 +1070,13 @@ class Ui_MainWindow(object):
         
          if self.a==1:
             iconPauseRed = QtGui.QIcon()
-            iconPauseRed.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pausered.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            iconPauseRed.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pausered.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
             self.actionPauseToolbar.setIcon(iconPauseRed)
             self.a+=1
             return 0
          if self.a==2:
              iconPause = QtGui.QIcon()
-             iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+             iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
              self.actionPauseToolbar.setIcon(iconPause)
              self.a-=1
              return 0
@@ -1278,13 +1283,13 @@ class Ui_EnvWindow(object):
         
          if self.a==1:
             iconPauseRed = QtGui.QIcon()
-            iconPauseRed.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pausered.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            iconPauseRed.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pausered.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
             self.actionPauseToolbar.setIcon(iconPauseRed)
             self.a+=1
             return 0
          if self.a==2:
              iconPause = QtGui.QIcon()
-             iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+             iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
              self.actionPauseToolbar.setIcon(iconPause)
              self.a-=1
              return 0
@@ -1353,19 +1358,19 @@ class Ui_EnvWindow(object):
         MainWindow.setMenuBar(self.menuBar)
 
         iconOpen = QtGui.QIcon()
-        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/open.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"open.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconCreate = QtGui.QIcon()
-        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/project.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"project.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconSave = QtGui.QIcon()
-        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/saveicon.jpeg")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"saveicon.jpeg") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconStart = QtGui.QIcon()
-        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/startServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"startServer.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconStop = QtGui.QIcon()
-        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/stopServer.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"stopServer.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconPause = QtGui.QIcon()
-        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/pause.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconAddPU = QtGui.QIcon()
-        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8("schainpy/gui/figure/add_PU.gif")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"add_PU.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
         self.actionOpen = QtGui.QAction(MainWindow)
         self.actionOpen.setIcon(iconOpen)

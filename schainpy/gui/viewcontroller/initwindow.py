@@ -3,6 +3,7 @@
 """
 Module implementing InitWindow.
 """
+import os
 
 from PyQt4.QtGui import QDialog
 from PyQt4.QtCore import pyqtSignature
@@ -10,6 +11,9 @@ from PyQt4                 import QtCore
 from PyQt4                 import QtGui
 
 from schainpy.gui.viewer.ui_initwindow import Ui_InitWindow
+from schainpy.gui.figures import tools
+
+FIGURES_PATH = tools.get_path()
 
 class InitWindow(QDialog, Ui_InitWindow):
     """
@@ -22,7 +26,7 @@ class InitWindow(QDialog, Ui_InitWindow):
         QDialog.__init__(self, parent)
         self.setupUi(self)
         self.setWindowTitle("ROJ-Signal Chain")
-        self.setWindowIcon(QtGui.QIcon("schainpy/gui/figure/adn.jpg"))
+        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
     
     @pyqtSignature("")
     def on_ExitBtn_clicked(self):

@@ -8,6 +8,9 @@ from PyQt4.QtCore import pyqtSignal
 from PyQt4 import QtGui, QtCore
 
 from schainpy.gui.viewer.ui_workspace import Ui_Workspace
+from schainpy.gui.figures import tools
+
+FIGURES_PATH = tools.get_path()
 
 class Workspace(QDialog, Ui_Workspace):
     """
@@ -22,7 +25,7 @@ class Workspace(QDialog, Ui_Workspace):
         self.dirList=[]
         self.setupUi(self)
         self.setWindowTitle("ROJ-Signal Chain")
-        self.setWindowIcon(QtGui.QIcon("schainpy/gui/figure/adn.jpg"))
+        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
         #*#######   DIRECTORIO DE TRABAJO  #########*#
         #self.dirCmbBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "C:\WorkSpaceGui", None, QtGui.QApplication.UnicodeUTF8))
         home=expanduser("~")
