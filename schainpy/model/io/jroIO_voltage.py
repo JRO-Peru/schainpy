@@ -499,7 +499,7 @@ class VoltageWriter(JRODataWriter, Operation):
         self.blockIndex += 1
         self.nTotalBlocks += 1
         
-        print "[Writing] Block = ", self.blockIndex
+#         print "[Writing] Block = %04d" %self.blockIndex
         
     def putData(self):
         """
