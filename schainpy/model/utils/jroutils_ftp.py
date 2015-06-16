@@ -554,7 +554,7 @@ class SendToServer(ProcessingUnit):
         self.isConfig = False
         self.clientObj = None
     
-    def setup(self, server, username, password, remotefolder, localfolder, ext='.png', period=60, protocol='ftp'):
+    def setup(self, server, username, password, remotefolder, localfolder, ext='.png', period=60, protocol='ftp', **kwargs):
         
         self.clientObj = None
         self.localfolder = localfolder

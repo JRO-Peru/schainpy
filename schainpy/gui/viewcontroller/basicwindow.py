@@ -244,6 +244,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.__ftpProcUnitAdded = True
                 self.__ftpProcUnitId = puObj.getId()
                 
+                opObj = puObj.getOperationObj(name="run")
+                self.saveFTPvalues(opObj)
+                
         self.console.clear()
         self.console.append("The selected xml file has been loaded successfully")
         # self.refreshPUWindow(datatype=datatype,puObj=puObj)
@@ -1796,8 +1799,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.console.append("You have to save the plots before sending them to FTP Server")
                 return 0
             
+            if not self.temporalFTP.create:
+                self.temporalFTP.setwithoutconfiguration()
+                
             server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-            self.createFTPProcUnitView(server, username, password, remotefolder, localfolder)
+            self.createFTPProcUnitView(server, username, password, remotefolder,
+                                       ftp_wei, exp_code, sub_exp_code, plot_pos,
+                                       localfolder=localfolder)
         else:
             self.removeFTPProcUnitView()
             
@@ -2269,8 +2277,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.console.append("You have to save the plots before sending them to FTP Server")
                 return 0
             
+            if not self.temporalFTP.create:
+                self.temporalFTP.setwithoutconfiguration()
+                
             server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-            self.createFTPProcUnitView(server, username, password, remotefolder, localfolder)
+            self.createFTPProcUnitView(server, username, password, remotefolder,
+                                       ftp_wei, exp_code, sub_exp_code, plot_pos,
+                                       localfolder=localfolder)
         else:
             self.removeFTPProcUnitView()
             
@@ -3770,10 +3783,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.temporalFTP.setwithoutconfiguration()
             server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
 
-        opObj.addParameter(name='server', value=server, format='str')
-        opObj.addParameter(name='folder', value=remotefolder, format='str')
-        opObj.addParameter(name='username', value=username, format='str')
-        opObj.addParameter(name='password', value=password, format='str')
+#         opObj.addParameter(name='server', value=server, format='str')
+#         opObj.addParameter(name='folder', value=remotefolder, format='str')
+#         opObj.addParameter(name='username', value=username, format='str')
+#         opObj.addParameter(name='password', value=password, format='str')
         
         if ftp_wei:
             opObj.addParameter(name='ftp_wei', value=int(ftp_wei), format='int')
@@ -3799,14 +3812,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            
             opObj.addParameter(name='wr_period', value=value, format='int')   
         
-    def createFTPProcUnitView(self, server, username, password, remotefolder, localfolder='./', extension='.png', period='60', protocol='ftp'):
+    def createFTPProcUnitView(self, server, username, password, remotefolder,
+                              ftp_wei, exp_code, sub_exp_code, plot_pos,
+                              localfolder='./', extension='.png', period='60', protocol='ftp'):
         
-        if self.__ftpProcUnitAdded:
-            procUnitConfObj = self.__puObjDict[self.__ftpProcUnitId]
-            procUnitConfObj.removeOperations()
-        else:
-            projectObj = self.getSelectedProjectObj()
+        projectObj = self.getSelectedProjectObj() 
+        procUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
+        
+        if not procUnitConfObj:
             procUnitConfObj = projectObj.addProcUnit(name="SendToServer")
+        else:
+            procUnitConfObj.removeOperations()
             
         procUnitConfObj.addParameter(name='server', value=server, format='str')
         procUnitConfObj.addParameter(name='username', value=username, format='str')
@@ -3817,6 +3833,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         procUnitConfObj.addParameter(name='period', value=period, format='int')
         procUnitConfObj.addParameter(name='protocol', value=protocol, format='str')
         
+        procUnitConfObj.addParameter(name='ftp_wei', value=ftp_wei, format='str')
+        procUnitConfObj.addParameter(name='exp_code', value=exp_code, format='str')
+        procUnitConfObj.addParameter(name='sub_exp_code', value=sub_exp_code, format='str')
+        procUnitConfObj.addParameter(name='plot_pos', value=plot_pos, format='str')
+            
         self.__puObjDict[procUnitConfObj.getId()] = procUnitConfObj
         
         self.__ftpProcUnitAdded = True
@@ -3824,16 +3845,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
     def removeFTPProcUnitView(self):
         
-        if not self.__ftpProcUnitAdded:
+        projectObj = self.getSelectedProjectObj() 
+        procUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
+
+        self.__ftpProcUnitAdded = False
+        self.__ftpProcUnitId = None
+        
+        if not procUnitConfObj:
             return
         
-        procUnitConfObj = self.__puObjDict[self.__ftpProcUnitId]
         procUnitConfObj.removeOperations()
         
         self.__puObjDict.pop(procUnitConfObj.getId())
-        
-        self.__ftpProcUnitAdded = False
-        self.__ftpProcUnitId = None
              
     def bufferProject(self, caracteristica, principal, description):
         
@@ -4395,7 +4418,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     status = 'enable'
                     self.bufferSpectra("Spectra Plot", "FTP", status)
                     self.showWr_Period(puObj, opObj, nameplotop="Spectra Plot")
-                    self.saveFTPvalues(opObj)
+#                     self.saveFTPvalues(opObj)
         
         opObj = puObj.getOperationObj(name='CrossSpectraPlot')
 #         opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
@@ -4472,7 +4495,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     status = 'enable'
                     self.bufferSpectra("Cross Spectra Plot", "FTP", status)
                     self.showWr_Period(puObj, opObj, nameplotop="Cross Spectra Plot")
-                    self.saveFTPvalues(opObj)
+#                     self.saveFTPvalues(opObj)
             
         opObj = puObj.getOperationObj(name='RTIPlot')
 #         opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
@@ -4565,7 +4588,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 status = 'enable'
                 self.bufferSpectra("RTI Plot", "FTP", status)
                 self.showWr_Period(puObj, opObj, nameplotop="RTI Plot")
-                self.saveFTPvalues(opObj)
+#                 self.saveFTPvalues(opObj)
             
         opObj = puObj.getOperationObj(name='CoherenceMap')
 #         opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
@@ -4658,7 +4681,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 status = 'enable'
                 self.bufferSpectra("Coherence Map Plot", "FTP", status)
                 self.showWr_Period(puObj, opObj, nameplotop="Coherence Map Plot")
-                self.saveFTPvalues(opObj)
+#                 self.saveFTPvalues(opObj)
     
             
         opObj = puObj.getOperationObj(name='PowerProfilePlot')
@@ -4729,7 +4752,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 status = 'enable'
                 self.bufferSpectra("PowerProfile Plot", "FTP", status)
                 self.showWr_Period(puObj, opObj, nameplotop="PowerProfile Plot")
-                self.saveFTPvalues(opObj)
+#                 self.saveFTPvalues(opObj)
                 
         # noise
         opObj = puObj.getOperationObj(name='Noise')
@@ -4809,33 +4832,34 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     status = 'enable'
                     self.bufferSpectra("Noise Plot", "FTP", status)
                     self.showWr_Period(puObj, opObj, nameplotop="Noise Plot")
-                    self.saveFTPvalues(opObj)
+#                     self.saveFTPvalues(opObj)
+
+        projectObj = self.getSelectedProjectObj() 
+        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
         
-        if self.temporalFTP.create:
-            self.bufferSpectra("FTP", "Server", self.temporalFTP.server)
-            self.bufferSpectra("FTP", "Folder", self.temporalFTP.folder)
-            self.bufferSpectra("FTP", "Username", self.temporalFTP.username)
-            self.bufferSpectra("FTP", "Password", '*'*len(self.temporalFTP.password))
-            self.bufferSpectra("FTP", "Ftp_wei", self.temporalFTP.ftp_wei)
-            self.bufferSpectra("FTP", "Exp_code", self.temporalFTP.exp_code)
-            self.bufferSpectra("FTP", "Sub_exp_code", self.temporalFTP.sub_exp_code)
-            self.bufferSpectra("FTP", "Plot_pos", self.temporalFTP.plot_pos)  
-            # self.temporalFTP.create=False
-            self.temporalFTP.withoutconfig = False      
-        
-        if self.temporalFTP.withoutconfig:        
-            self.bufferSpectra("FTP", "Server", self.temporalFTP.server)
-            self.bufferSpectra("FTP", "Folder", self.temporalFTP.folder)
-            self.bufferSpectra("FTP", "Username", self.temporalFTP.username)
-            self.bufferSpectra("FTP", "Password", '*'*len(self.temporalFTP.password))
-            self.bufferSpectra("FTP", "Ftp_wei", self.temporalFTP.ftp_wei)
-            self.bufferSpectra("FTP", "Exp_code", self.temporalFTP.exp_code)
-            self.bufferSpectra("FTP", "Sub_exp_code", self.temporalFTP.sub_exp_code)
-            self.bufferSpectra("FTP", "Plot_pos", self.temporalFTP.plot_pos)
-            self.temporalFTP.withoutconfig = False
+        if ftpProcUnitConfObj:
             
-            ####
-            self.temporalFTP.create = False
+            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
+            
+            server = opObj.getParameterValue(parameterName='server')
+            folder = opObj.getParameterValue(parameterName='remotefolder')
+            username = opObj.getParameterValue(parameterName='username')
+            password = opObj.getParameterValue(parameterName='password')
+            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
+            exp_code = opObj.getParameterValue(parameterName='exp_code')
+            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
+            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
+            localfolder = opObj.getParameterValue(parameterName='localfolder')
+            
+            self.bufferSpectra("FTP", "Server", server)
+            self.bufferSpectra("FTP", "Remote folder", folder)
+            self.bufferSpectra("FTP", "Local folder", localfolder)  
+            self.bufferSpectra("FTP", "Username", username)
+            self.bufferSpectra("FTP", "Password", '*'*len(password))
+            self.bufferSpectra("FTP", "Ftp_wei", ftp_wei)
+            self.bufferSpectra("FTP", "Exp_code", exp_code)
+            self.bufferSpectra("FTP", "Sub_exp_code", sub_exp_code)
+            self.bufferSpectra("FTP", "Plot_pos", plot_pos)
 
         # outputSpectraWrite
         opObj = puObj.getOperationObj(name='SpectraWriter')
@@ -4969,7 +4993,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     status = 'enable'
                     self.bufferSpectraHeis("SpectraHeis Plot", "FTP", status)
                     self.showWr_Period(puObj, opObj, nameplotop="SpectraHeis Plot")
-                    self.saveFTPvalues(opObj)
+#                     self.saveFTPvalues(opObj)
                     
         opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')
 #         opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
@@ -5046,33 +5070,34 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 status = 'enable'
                 self.bufferSpectraHeis("RTIHeis Plot", "FTP", status)
                 self.showWr_Period(puObj, opObj, nameplotop="RTIHeis Plot")
-                self.saveFTPvalues(opObj)
+#                 self.saveFTPvalues(opObj)
                 
-        if self.temporalFTP.create:
-            self.bufferSpectraHeis("FTP", "Server", self.temporalFTP.server)
-            self.bufferSpectraHeis("FTP", "Folder", self.temporalFTP.folder)
-            self.bufferSpectraHeis("FTP", "Username", self.temporalFTP.username)
-            self.bufferSpectraHeis("FTP", "Password", self.temporalFTP.password)
-            self.bufferSpectraHeis("FTP", "Ftp_wei", self.temporalFTP.ftp_wei)
-            self.bufferSpectraHeis("FTP", "Exp_code", self.temporalFTP.exp_code)
-            self.bufferSpectraHeis("FTP", "Sub_exp_code", self.temporalFTP.sub_exp_code)
-            self.bufferSpectraHeis("FTP", "Plot_pos", self.temporalFTP.plot_pos)  
-            # self.temporalFTP.create=False
-            self.temporalFTP.withoutconfig = False      
+        projectObj = self.getSelectedProjectObj() 
+        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
         
-        if self.temporalFTP.withoutconfig:        
-            self.bufferSpectraHeis("FTP", "Server", self.temporalFTP.server)
-            self.bufferSpectraHeis("FTP", "Folder", self.temporalFTP.folder)
-            self.bufferSpectraHeis("FTP", "Username", self.temporalFTP.username)
-            self.bufferSpectraHeis("FTP", "Password", self.temporalFTP.password)
-            self.bufferSpectraHeis("FTP", "Ftp_wei", self.temporalFTP.ftp_wei)
-            self.bufferSpectraHeis("FTP", "Exp_code", self.temporalFTP.exp_code)
-            self.bufferSpectraHeis("FTP", "Sub_exp_code", self.temporalFTP.sub_exp_code)
-            self.bufferSpectraHeis("FTP", "Plot_pos", self.temporalFTP.plot_pos)
-            self.temporalFTP.withoutconfig = False
+        if ftpProcUnitConfObj:
             
-            ####
-            self.temporalFTP.create = False
+            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
+            
+            server = opObj.getParameterValue(parameterName='server')
+            folder = opObj.getParameterValue(parameterName='folder')
+            username = opObj.getParameterValue(parameterName='username')
+            password = opObj.getParameterValue(parameterName='password')
+            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
+            exp_code = opObj.getParameterValue(parameterName='exp_code')
+            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
+            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
+            localfolder = opObj.getParameterValue(parameterName='localfolder')
+            
+            self.bufferSpectraHeis("FTP", "Server", server)
+            self.bufferSpectraHeis("FTP", "Remote folder", folder)
+            self.bufferSpectraHeis("FTP", "Local folder", localfolder)  
+            self.bufferSpectraHeis("FTP", "Username", username)
+            self.bufferSpectraHeis("FTP", "Password", '*'*len(password))
+            self.bufferSpectraHeis("FTP", "Ftp_wei", ftp_wei)
+            self.bufferSpectraHeis("FTP", "Exp_code", exp_code)
+            self.bufferSpectraHeis("FTP", "Sub_exp_code", sub_exp_code)
+            self.bufferSpectraHeis("FTP", "Plot_pos", plot_pos)
 
         # outputSpectraHeisWrite
         opObj = puObj.getOperationObj(name='FitsWriter')
@@ -5132,6 +5157,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.bufferSpectraHeis(nameplotop, "wr_period", wr_period)
            
     def saveFTPvalues(self, opObj):
+        
         parmObj = opObj.getParameterObj(parameterName="server")
         if parmObj == None:
             server = 'jro-app.igp.gob.pe'                      
@@ -5177,10 +5203,24 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         parmObj = opObj.getParameterObj(parameterName="plot_pos")
         if parmObj == None:
             plot_pos = '0'
-            self.temporalFTP.setwithoutconfiguration()
         else:
             plot_pos = opObj.getParameterValue(parameterName='plot_pos')
-            self.temporalFTP.save(server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos)
+
+        parmObj = opObj.getParameterObj(parameterName="localfolder")
+        if parmObj == None:
+            localfolder = None
+        else:
+            localfolder = opObj.getParameterValue(parameterName='localfolder')
+
+        parmObj = opObj.getParameterObj(parameterName="extension")
+        if parmObj == None:
+            extension = None
+        else:
+            extension = opObj.getParameterValue(parameterName='extension')
+                            
+        self.temporalFTP.save(server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos,
+                              localfolder=localfolder,
+                              extension=extension)
 
     def addProject2ProjectExplorer(self, id, name):
         
@@ -6099,9 +6139,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
         
-    def closeEvent(self, event):
-        self.closed.emit()
-        event.accept()
         
 class UnitProcessWindow(QMainWindow, Ui_UnitProcess):
     """
@@ -6379,6 +6416,7 @@ class ftpBuffer():
         self.extension = '.png'
         self.period = '60'
         self.protocol = 'ftp'
+        self.createforView = True
         
     def save(self, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos, localfolder='./', extension='.png', period='60', protocol='ftp'):
         

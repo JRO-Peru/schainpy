@@ -732,7 +732,15 @@ class Project():
     def getProcUnitObj(self, id):
         
         return self.procUnitConfObjDict[id]
-    
+
+    def getProcUnitObjByName(self, name):
+        
+        for obj in self.procUnitConfObjDict.values():
+            if obj.name == name:
+                return obj
+               
+        return None
+     
     def makeXml(self):    
         
         projectElement = Element('Project')
