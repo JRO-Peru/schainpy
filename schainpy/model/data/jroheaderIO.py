@@ -262,6 +262,7 @@ class RadarControllerHeader(Header):
         self.flip1 = flip1
         self.flip2 = flip2
         
+        self.code_size = int(numpy.ceil(self.nBaud/32.))*self.nCode*4
 #         self.dynamic = numpy.array([],numpy.dtype('byte'))
         
 
@@ -303,7 +304,8 @@ class RadarControllerHeader(Header):
             self.samplesWin = samplingWindow['nsa']
             
             self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
-    
+            
+            self.code_size = 0
             if self.codeType != 0:
                 self.nCode = int(numpy.fromfile(fp,'<u4',1))
                 self.nBaud = int(numpy.fromfile(fp,'<u4',1))

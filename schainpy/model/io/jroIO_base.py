@@ -580,7 +580,7 @@ class JRODataReader(JRODataIO):
             idFile += 1
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-                print "No more Files"
+#                 print "[Reading] No more Files"
                 return 0
 
             filename = self.filenameList[idFile]
@@ -598,7 +598,7 @@ class JRODataReader(JRODataIO):
         self.fileSize = fileSize
         self.fp = fp
 
-        print "[Reading] Setting the file: %s"%self.filename
+#         print "[Reading] Setting the file: %s"%self.filename
 
         return 1
 
@@ -650,10 +650,10 @@ class JRODataReader(JRODataIO):
                     
                 for nTries in range( tries ): 
                     if firstTime_flag:
-                        print "\tWaiting %0.2f sec for the file \"%s\" , try %03d ..." % ( self.delay, filename, nTries+1 ) 
+                        print "\t[Reading] Waiting %0.2f sec for the file \"%s\" , try %03d ..." % ( self.delay, filename, nTries+1 ) 
                         sleep( self.delay )
                     else:
-                        print "\tSearching next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext)
+                        print "\t[Reading] Searching the next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext)
                     
                     fullfilename, filename = checkForRealPath( self.path, self.foldercounter, self.year, self.doy, self.set, self.ext )
                     if fullfilename:
@@ -666,7 +666,7 @@ class JRODataReader(JRODataIO):
 
                 firstTime_flag = False
 
-                print "\tSkipping the file \"%s\" due to this file doesn't exist" % filename
+                print "\t[Reading] Skipping the file \"%s\" due to this file doesn't exist" % filename
                 self.set += 1
                     
                 if nFiles == (self.nFiles-1): #si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
@@ -681,14 +681,14 @@ class JRODataReader(JRODataIO):
             if self.fp != None: self.fp.close() 
             self.fp = open(fullfilename, 'rb')
             self.flagNoMoreFiles = 0
-            print '[Reading] Setting the file: %s' % fullfilename
+#             print '[Reading] Setting the file: %s' % fullfilename
         else:
             self.fileSize = 0
             self.filename = None
             self.flagIsNewFile = 0
             self.fp = None
             self.flagNoMoreFiles = 1
-            print '[Reading] No more files to read'
+#             print '[Reading] No more files to read'
 
         return fileOk_flag
     
@@ -702,8 +702,11 @@ class JRODataReader(JRODataIO):
             newFile = self.__setNextFileOffline()
 
         if not(newFile):
+            print '[Reading] No more files to read'
             return 0
 
+        print '[Reading] Setting the file: %s' % self.filename
+        
         self.__readFirstHeader()
         self.nReadBlocks = 0
         return 1

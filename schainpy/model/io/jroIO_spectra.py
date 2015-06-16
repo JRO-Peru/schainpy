@@ -557,7 +557,7 @@ class SpectraWriter(JRODataWriter, Operation):
         self.nWriteBlocks += 1
         self.blockIndex += 1
         
-        print "[Writing] Block = ", self.blockIndex
+#         print "[Writing] Block = %d04" %self.blockIndex
         
     def putData(self):
         """
