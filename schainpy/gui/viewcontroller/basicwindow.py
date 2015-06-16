@@ -5307,11 +5307,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         return None
       
     def playProject(self, ext=".xml"):
-            
-            
-        self.actionStarToolbar.setEnabled(False)
-        self.actionPauseToolbar.setEnabled(True)
-        self.actionStopToolbar.setEnabled(True)
         
         projectObj = self.getSelectedProjectObj()
         
@@ -5325,6 +5320,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if filename == None:
             self.console.append("Process did not initialize.")
             return 
+        
+        self.actionStarToolbar.setEnabled(False)
+        self.actionPauseToolbar.setEnabled(True)
+        self.actionStopToolbar.setEnabled(True)
         
         self.console.append("Please Wait...")
 #             try:
@@ -5341,7 +5340,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, data))
         
     def stopProject(self):
-        stop = True
+        stop = False
         self.actionStarToolbar.setEnabled(True)
         self.actionPauseToolbar.setEnabled(stop)
         self.actionStopToolbar.setEnabled(stop)
