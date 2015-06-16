@@ -25,6 +25,7 @@ from os.path import  expanduser
 from comm import *
 
 from schainpy.gui.figures import tools
+import numpy
 
 FIGURES_PATH = tools.get_path()
 
@@ -105,7 +106,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         self.__ftpProcUnitAdded = False
         self.__ftpProcUnitId = None
-        
+
+    @pyqtSignature("")
+    def on_actionOpen_triggered(self):
+        """
+        Slot documentation goes here.
+        """ 
+        self.openProject()  
+              
     @pyqtSignature("")
     def on_actionCreate_triggered(self):
         """
@@ -172,88 +180,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         Slot documentation goes here.
         """
-        self.create = False
-        self.frame_2.setEnabled(True)
-        home = expanduser("~")
-        self.dir = os.path.join(home, 'schain_workspace')
-        # print self.dir
-        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open text file", self.dir, self.tr("Text Files (*.xml)")))
-        self.console.clear()
-        projectObjLoad = Project()
-        try:
-            projectObjLoad.readXml(filename)  
-        except:
-            self.console.clear()
-            self.console.append("The selected xml file could not be loaded ...")
-            return 0
-        
-        project_name, description = projectObjLoad.name, projectObjLoad.description
-        id = projectObjLoad.id
-        self.__projectObjDict[id] = projectObjLoad
-        # Project Properties
-        datatype, data_path, startDate, endDate, startTime, endTime , online , delay, walk, set = self.showProjectProperties(projectObjLoad)        
-        # show ProjectView
-        self.addProject2ProjectExplorer(id=id, name=project_name)
-        self.refreshProjectWindow(project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, set)      
-        
-        if datatype == "Voltage":
-            ext = '.r'
-            self.specOpProfiles.setEnabled(True)
-            self.specOpippFactor.setEnabled(True)
-        elif datatype == "Spectra":            
-            ext = '.pdata'
-            self.specOpProfiles.setEnabled(False)
-            self.specOpippFactor.setEnabled(False)
-        elif datatype == "Fits":
-            ext = '.fits'
-            
-        if online == 0:    
-            self.loadDays(data_path, ext, walk)
-        else:
-            self.proComStartDate.setEnabled(False)
-            self.proComEndDate.setEnabled(False)
-            self.proStartTime.setEnabled(False)
-            self.proEndTime.setEnabled(False)
-            self.frame_2.setEnabled(True)
-            
-        self.tabWidgetProject.setEnabled(True)
-        self.tabWidgetProject.setCurrentWidget(self.tabProject) 
-        # Disable tabProject after finish the creation
-        self.tabProject.setEnabled(True)   
-        puObjorderList = OrderedDict(sorted(projectObjLoad.procUnitConfObjDict.items(), key=lambda x: x[0]))
-        
-        for inputId, puObj in puObjorderList.items():
-            # print puObj.datatype, puObj.inputId,puObj.getId(),puObj.parentId
-            self.__puObjDict[puObj.getId()] = puObj
-            
-            if puObj.inputId != "0":
-                self.addPU2PELoadXML(id=puObj.getId() , name=puObj.datatype , idParent=puObj.inputId)
-                
-            if puObj.datatype == "Voltage":
-                self.refreshPUWindow(puObj.datatype, puObj)
-                self.showPUVoltageProperties(puObj)
-                self.showtabPUCreated(datatype=puObj.datatype)
-            
-            if puObj.datatype == "Spectra":
-                self.refreshPUWindow(puObj.datatype, puObj)
-                self.showPUSpectraProperties(puObj)
-                self.showtabPUCreated(datatype=puObj.datatype)
-                
-            if puObj.datatype == "SpectraHeis":
-                self.refreshPUWindow(puObj.datatype, puObj)
-                self.showPUSpectraHeisProperties(puObj)
-                self.showtabPUCreated(datatype=puObj.datatype)
-            
-            if puObj.name == "SendToServer":
-                self.__ftpProcUnitAdded = True
-                self.__ftpProcUnitId = puObj.getId()
-                
-                opObj = puObj.getOperationObj(name="run")
-                self.saveFTPvalues(opObj)
-                
-        self.console.clear()
-        self.console.append("The selected xml file has been loaded successfully")
-        # self.refreshPUWindow(datatype=datatype,puObj=puObj)
+        self.openProject()
                 
     @pyqtSignature("")
     def on_actionCreateToolbar_triggered(self):
@@ -511,7 +438,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if  p0 == 0:
             self.volOpComCode.setEnabled(False)
             self.volOpComMode.setEnabled(False)
-                
+
+    @pyqtSignature("int")
+    def on_volOpCebFlip_stateChanged(self, p0):
+        """
+        Check Box habilita ingresode del numero de Integraciones a realizar
+        """
+        if  p0 == 2:
+            self.volOpFlip.setEnabled(True)
+        if  p0 == 0:
+            self.volOpFlip.setEnabled(False)
+            self.volOpFlip.clear()
+                          
     @pyqtSignature("int")
     def on_volOpCebCohInt_stateChanged(self, p0):
         """
@@ -658,7 +596,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value2 = '1'
                 value3 = '4'
             if self.volOpComCode.currentIndex() == 2:
-                value1 = '1,1,1,−1,1'
+                value1 = '1,1,1,-1,1'
                 value2 = '1'
                 value3 = '5'
             if self.volOpComCode.currentIndex() == 3:
@@ -717,7 +655,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             optype = 'self'
             value = self.volOpFlip.text()
             name_parameter = 'channelList'
-            format = 'intList'
+            format = 'intlist'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             opObj.addParameter(name=name_parameter, value=value, format=format) 
@@ -2714,7 +2652,23 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 else:
                     self.volOpComCode.setCurrentIndex(12)   
                 self.volOpCebDecodification.setCheckState(QtCore.Qt.Checked)
-            
+
+            opObj = puObj.getOperationObj(name="deFlip")   
+            if opObj == None:
+                self.volOpFlip.clear()
+                self.volOpFlip.setEnabled(False)
+                self.volOpCebFlip.setCheckState(0)
+            else:
+                try:
+                    value = opObj.getParameterValue(parameterName='channelList')
+                    value = str(value)[1:-1]
+                except:
+                    value = ""
+                    
+                self.volOpFlip.setText(value)
+                self.volOpFlip.setEnabled(True)
+                self.volOpCebFlip.setCheckState(QtCore.Qt.Checked)
+                
             opObj = puObj.getOperationObj(name="CohInt")   
             if opObj == None:
                 self.volOpCohInt.clear()
@@ -3977,7 +3931,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             channel = None
         else:
             value = opObj.getParameterValue(parameterName='channelList')             
-            value = str(value)[1:-1]
+            value = str(value)#[1:-1]
             channel = value
             self.bufferVoltage("Processing Unit", "Select Channel", channel)
             
@@ -4013,24 +3967,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            for parmObj in opObj.getParameterObjList():
                if parmObj.name == "profileRangeList":
                    value = opObj.getParameterValue(parameterName='profileRangeList')             
-                   value = str(value)[1:-1]
+                   value = str(value)#[1:-1]
                    profile = value
                    self.bufferVoltage("Processing Unit", "Select Profile", profile)
 
                if parmObj.name == "profileList":
                    value = opObj.getParameterValue(parameterName='profileList')             
-                   value = str(value)[1:-1]
+                   value = str(value)#[1:-1]
                    profile = value
                    self.bufferVoltage("Processing Unit", "Select Profile", profile)
-        
-        opObj = puObj.getOperationObj(name="CohInt")   
-        if opObj == None:
-            coherentintegration = None
-        else:
-            value = opObj.getParameterValue(parameterName='n')
-            coherentintegration = value
-            self.bufferVoltage("Processing Unit", "Coherente Integration", coherentintegration)
-
         
                      
         opObj = puObj.getOperationObj(name="Decoder")
@@ -4041,40 +3986,45 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         else:
             self.volOpCebDecodification.setCheckState(QtCore.Qt.Checked)
             try:
-                valueBaud = opObj.getParameterValue(parameterName='nBaud')
+                code = opObj.getParameterValue(parameterName='code')
+                nBaud = opObj.getParameterValue(parameterName='nBaud')
+                nCode = opObj.getParameterValue(parameterName='nCode')
+                code = numpy.array(code).reshape(nCode,nBaud)
             except:
-                status = "off"
-            try:
-                valueCode = opObj.getParameterValue(parameterName='nCode')
-                status = "on"
-            except:
-                status = "off"
-            
-            if not status == "off":
-                if int(valueCode) == 1:
-                   Comp = ""              
-                else:
-                   Comp = "+" + "Comp."
-                code = "Barker" + str(valueBaud) + str(Comp)
-            else:
                 code = "Default" 
-            self.bufferVoltage("Decodification", "Code", code)
+                
+            self.bufferVoltage("Processing Unit", "Code", str(code).replace('\n',''))
             
             try:
                 value = opObj.getParameterValue(parameterName='mode')
-                status = "on"
-            except:    
-                 status = "off"  
-             
-            if not status == "off":     
-                self.volOpComMode.setCurrentIndex(value)
                 if int(value) == 0:
                    mode = "Time"
                 else:
                    mode = "freq" + str(value)
-            else:
+            except:
                 mode = "Default"
-            self.bufferVoltage("Decodification", "Mode", mode)
+            self.bufferVoltage("Processing Unit", "Decoder mode", mode)
+
+        opObj = puObj.getOperationObj(name="deFlip")   
+        if opObj == None:
+            value = None
+        else:
+            try:
+                value = opObj.getParameterValue(parameterName='channelList')
+                value = str(value)
+            except:
+                value = "All channels"
+                
+            self.bufferVoltage("Processing Unit", "Flip", value)
+            
+        opObj = puObj.getOperationObj(name="CohInt")   
+        if opObj == None:
+            coherentintegration = None
+        else:
+            value = opObj.getParameterValue(parameterName='n')
+            coherentintegration = value
+            self.bufferVoltage("Processing Unit", "Coh Int", coherentintegration)
+
 
         # graph
 #         opObj = puObj.getOperationObj(name='Plot')
@@ -4838,33 +4788,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     self.showWr_Period(puObj, opObj, nameplotop="Noise Plot")
 #                     self.saveFTPvalues(opObj)
 
-        projectObj = self.getSelectedProjectObj() 
-        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
-        
-        if ftpProcUnitConfObj:
-            
-            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
-            
-            server = opObj.getParameterValue(parameterName='server')
-            folder = opObj.getParameterValue(parameterName='remotefolder')
-            username = opObj.getParameterValue(parameterName='username')
-            password = opObj.getParameterValue(parameterName='password')
-            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
-            exp_code = opObj.getParameterValue(parameterName='exp_code')
-            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
-            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
-            localfolder = opObj.getParameterValue(parameterName='localfolder')
-            
-            self.bufferSpectra("FTP", "Server", server)
-            self.bufferSpectra("FTP", "Remote folder", folder)
-            self.bufferSpectra("FTP", "Local folder", localfolder)  
-            self.bufferSpectra("FTP", "Username", username)
-            self.bufferSpectra("FTP", "Password", '*'*len(password))
-            self.bufferSpectra("FTP", "Ftp_wei", ftp_wei)
-            self.bufferSpectra("FTP", "Exp_code", exp_code)
-            self.bufferSpectra("FTP", "Sub_exp_code", sub_exp_code)
-            self.bufferSpectra("FTP", "Plot_pos", plot_pos)
-
         # outputSpectraWrite
         opObj = puObj.getOperationObj(name='SpectraWriter')
         if opObj == None:
@@ -4893,6 +4816,33 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value = opObj.getParameterValue(parameterName='profilesPerBlock')
                 profilesPerBlock = str(value)
                 self.bufferSpectra("Output", "ProfilesPerBlock", profilesPerBlock)
+                
+        projectObj = self.getSelectedProjectObj() 
+        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
+        
+        if ftpProcUnitConfObj:
+            
+            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
+            
+            server = opObj.getParameterValue(parameterName='server')
+            folder = opObj.getParameterValue(parameterName='remotefolder')
+            username = opObj.getParameterValue(parameterName='username')
+            password = opObj.getParameterValue(parameterName='password')
+            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
+            exp_code = opObj.getParameterValue(parameterName='exp_code')
+            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
+            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
+            localfolder = opObj.getParameterValue(parameterName='localfolder')
+            
+            self.bufferSpectra("FTP", "Server", server)
+            self.bufferSpectra("FTP", "Remote folder", folder)
+            self.bufferSpectra("FTP", "Local folder", localfolder)  
+            self.bufferSpectra("FTP", "Username", username)
+            self.bufferSpectra("FTP", "Password", '*'*len(password))
+            self.bufferSpectra("FTP", "Ftp_wei", ftp_wei)
+            self.bufferSpectra("FTP", "Exp_code", exp_code)
+            self.bufferSpectra("FTP", "Sub_exp_code", sub_exp_code)
+            self.bufferSpectra("FTP", "Plot_pos", plot_pos)
         
 # set model PU Properties
         
@@ -5075,33 +5025,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.bufferSpectraHeis("RTIHeis Plot", "FTP", status)
                 self.showWr_Period(puObj, opObj, nameplotop="RTIHeis Plot")
 #                 self.saveFTPvalues(opObj)
-                
-        projectObj = self.getSelectedProjectObj() 
-        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
-        
-        if ftpProcUnitConfObj:
-            
-            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
-            
-            server = opObj.getParameterValue(parameterName='server')
-            folder = opObj.getParameterValue(parameterName='folder')
-            username = opObj.getParameterValue(parameterName='username')
-            password = opObj.getParameterValue(parameterName='password')
-            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
-            exp_code = opObj.getParameterValue(parameterName='exp_code')
-            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
-            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
-            localfolder = opObj.getParameterValue(parameterName='localfolder')
-            
-            self.bufferSpectraHeis("FTP", "Server", server)
-            self.bufferSpectraHeis("FTP", "Remote folder", folder)
-            self.bufferSpectraHeis("FTP", "Local folder", localfolder)  
-            self.bufferSpectraHeis("FTP", "Username", username)
-            self.bufferSpectraHeis("FTP", "Password", '*'*len(password))
-            self.bufferSpectraHeis("FTP", "Ftp_wei", ftp_wei)
-            self.bufferSpectraHeis("FTP", "Exp_code", exp_code)
-            self.bufferSpectraHeis("FTP", "Sub_exp_code", sub_exp_code)
-            self.bufferSpectraHeis("FTP", "Plot_pos", plot_pos)
 
         # outputSpectraHeisWrite
         opObj = puObj.getOperationObj(name='FitsWriter')
@@ -5131,6 +5054,33 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value = opObj.getParameterValue(parameterName='metadatafile')
                 metadata = str(value)
                 self.bufferSpectraHeis("Output", "Metadata", metadata)
+                         
+        projectObj = self.getSelectedProjectObj() 
+        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
+        
+        if ftpProcUnitConfObj:
+            
+            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
+            
+            server = opObj.getParameterValue(parameterName='server')
+            folder = opObj.getParameterValue(parameterName='folder')
+            username = opObj.getParameterValue(parameterName='username')
+            password = opObj.getParameterValue(parameterName='password')
+            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
+            exp_code = opObj.getParameterValue(parameterName='exp_code')
+            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
+            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
+            localfolder = opObj.getParameterValue(parameterName='localfolder')
+            
+            self.bufferSpectraHeis("FTP", "Server", server)
+            self.bufferSpectraHeis("FTP", "Remote folder", folder)
+            self.bufferSpectraHeis("FTP", "Local folder", localfolder)  
+            self.bufferSpectraHeis("FTP", "Username", username)
+            self.bufferSpectraHeis("FTP", "Password", '*'*len(password))
+            self.bufferSpectraHeis("FTP", "Ftp_wei", ftp_wei)
+            self.bufferSpectraHeis("FTP", "Exp_code", exp_code)
+            self.bufferSpectraHeis("FTP", "Sub_exp_code", sub_exp_code)
+            self.bufferSpectraHeis("FTP", "Plot_pos", plot_pos)
         
 # set model PU Properties
         
@@ -5309,7 +5259,92 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.showWarning()
         
         return None
-      
+    
+    def openProject(self):
+        
+        self.create = False
+        self.frame_2.setEnabled(True)
+        home = expanduser("~")
+        self.dir = os.path.join(home, 'schain_workspace')
+        # print self.dir
+        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open text file", self.dir, self.tr("Text Files (*.xml)")))
+        self.console.clear()
+        projectObjLoad = Project()
+        try:
+            projectObjLoad.readXml(filename)  
+        except:
+            self.console.clear()
+            self.console.append("The selected xml file could not be loaded ...")
+            return 0
+        
+        project_name, description = projectObjLoad.name, projectObjLoad.description
+        id = projectObjLoad.id
+        self.__projectObjDict[id] = projectObjLoad
+        # Project Properties
+        datatype, data_path, startDate, endDate, startTime, endTime , online , delay, walk, set = self.showProjectProperties(projectObjLoad)        
+        # show ProjectView
+        self.addProject2ProjectExplorer(id=id, name=project_name)
+        self.refreshProjectWindow(project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, set)      
+        
+        if datatype == "Voltage":
+            ext = '.r'
+            self.specOpProfiles.setEnabled(True)
+            self.specOpippFactor.setEnabled(True)
+        elif datatype == "Spectra":            
+            ext = '.pdata'
+            self.specOpProfiles.setEnabled(False)
+            self.specOpippFactor.setEnabled(False)
+        elif datatype == "Fits":
+            ext = '.fits'
+            
+        if online == 0:    
+            self.loadDays(data_path, ext, walk)
+        else:
+            self.proComStartDate.setEnabled(False)
+            self.proComEndDate.setEnabled(False)
+            self.proStartTime.setEnabled(False)
+            self.proEndTime.setEnabled(False)
+            self.frame_2.setEnabled(True)
+            
+        self.tabWidgetProject.setEnabled(True)
+        self.tabWidgetProject.setCurrentWidget(self.tabProject) 
+        # Disable tabProject after finish the creation
+        self.tabProject.setEnabled(True)   
+        puObjorderList = OrderedDict(sorted(projectObjLoad.procUnitConfObjDict.items(), key=lambda x: x[0]))
+        
+        for inputId, puObj in puObjorderList.items():
+            # print puObj.datatype, puObj.inputId,puObj.getId(),puObj.parentId
+            self.__puObjDict[puObj.getId()] = puObj
+            
+            if puObj.inputId != "0":
+                self.addPU2PELoadXML(id=puObj.getId() , name=puObj.datatype , idParent=puObj.inputId)
+                
+            if puObj.datatype == "Voltage":
+                self.refreshPUWindow(puObj.datatype, puObj)
+                self.showPUVoltageProperties(puObj)
+                self.showtabPUCreated(datatype=puObj.datatype)
+            
+            if puObj.datatype == "Spectra":
+                self.refreshPUWindow(puObj.datatype, puObj)
+                self.showPUSpectraProperties(puObj)
+                self.showtabPUCreated(datatype=puObj.datatype)
+                
+            if puObj.datatype == "SpectraHeis":
+                self.refreshPUWindow(puObj.datatype, puObj)
+                self.showPUSpectraHeisProperties(puObj)
+                self.showtabPUCreated(datatype=puObj.datatype)
+            
+            if puObj.name == "SendToServer":
+                self.__ftpProcUnitAdded = True
+                self.__ftpProcUnitId = puObj.getId()
+                
+                opObj = puObj.getOperationObj(name="run")
+                self.saveFTPvalues(opObj)
+                
+        self.console.clear()
+        self.console.append("The selected xml file has been loaded successfully")
+        # self.refreshPUWindow(datatype=datatype,puObj=puObj)
+        
     def playProject(self, ext=".xml"):
         
         projectObj = self.getSelectedProjectObj()
@@ -5324,6 +5359,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if filename == None:
             self.console.append("Process did not initialize.")
             return 
+
+        self.actionStart.setEnabled(False)
+        self.actionPause.setEnabled(True)
+        self.actionStop.setEnabled(True)
         
         self.actionStarToolbar.setEnabled(False)
         self.actionPauseToolbar.setEnabled(True)
@@ -5344,35 +5383,49 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, data))
         
     def stopProject(self):
-        stop = False
-        self.actionStarToolbar.setEnabled(True)
-        self.actionPauseToolbar.setEnabled(stop)
-        self.actionStopToolbar.setEnabled(stop)
         
-        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, stop))
-    
+        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, True))
+        
+        self.actionStart.setEnabled(True)
+        self.actionPause.setEnabled(False)
+        self.actionStop.setEnabled(False)
+        
+        self.actionStarToolbar.setEnabled(True)
+        self.actionPauseToolbar.setEnabled(False)
+        self.actionStopToolbar.setEnabled(False)
+        
+        self.restorePauseIcon()
+     
     def pauseProject(self):
+        
+        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
+
+        self.actionStart.setEnabled(False)
+        self.actionPause.setEnabled(True)
+        self.actionStop.setEnabled(True)
         
         self.actionStarToolbar.setEnabled(False)
         self.actionPauseToolbar.setEnabled(True)
         self.actionStopToolbar.setEnabled(True)
-        
-        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
-
-                          
+               
     def saveProject(self):
+        
+        self.actionStart.setEnabled(False)
+        self.actionStarToolbar.setEnabled(False)
         
         sts = True
         puObj = self.getSelectedPUObj() 
-        if puObj.name == 'VoltageProc':
-            sts = self.on_volOpOk_clicked()   
-        if puObj.name == 'SpectraProc':
-            sts = self.on_specOpOk_clicked()   
-        if puObj.name == 'SpectraHeisProc':
-            sts = self.on_specHeisOpOk_clicked()
         
-        if not sts:
-            return None
+        if puObj != None:
+            if puObj.name == 'VoltageProc':
+                sts = self.on_volOpOk_clicked()   
+            if puObj.name == 'SpectraProc':
+                sts = self.on_specOpOk_clicked()   
+            if puObj.name == 'SpectraHeisProc':
+                sts = self.on_specHeisOpOk_clicked()
+            
+            if not sts:
+                return None
         
         projectObj = self.getSelectedProjectObj()  
         puObjorderList = OrderedDict(sorted(projectObj.procUnitConfObjDict.items(), key=lambda x: x[0]))
@@ -5392,6 +5445,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                         )
         projectObj.writeXml(filename)     
         self.console.append("Now,  you can press the Start Icon on the toolbar")
+        
+        self.actionStart.setEnabled(True)
+        self.actionStarToolbar.setEnabled(True)
         
         return filename
         
@@ -5989,11 +6045,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.frame_2.setEnabled(False)
         
         self.actionCreate.setShortcut('Ctrl+N')
-        self.actionStart.setShortcut('Ctrl+P')
+        self.actionOpen.setShortcut('Ctrl+O')
         self.actionSave.setShortcut('Ctrl+S')
-        self.actionClose.setShortcut('Ctrl+Q')
+        self.actionClose.setShortcut('Ctrl+X')
         
-        self.actionStarToolbar.setEnabled(True)
+        self.actionStart.setShortcut('Ctrl+1')
+        self.actionPause.setShortcut('Ctrl+2')
+        self.actionStop.setShortcut('Ctrl+3')
+        
+        self.actionFTP.setShortcut('Ctrl+F')
+        
+        self.actionStarToolbar.setEnabled(False)
         self.actionPauseToolbar.setEnabled(False)
         self.actionStopToolbar.setEnabled(False)
         
@@ -6047,6 +6109,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.volOpFilter.setEnabled(False)
         self.volOpComProfile.setEnabled(False)
         self.volOpComCode.setEnabled(False)
+        self.volOpFlip.setEnabled(False)
         self.volOpCohInt.setEnabled(False)
         self.volOpRadarfrequency.setEnabled(False)
         

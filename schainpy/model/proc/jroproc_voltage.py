@@ -67,6 +67,9 @@ class VoltageProc(ProcessingUnit):
         channelIndexList = []
         
         for channel in channelList:
+            if channel not in self.dataOut.channelList:
+                continue
+                    
             index = self.dataOut.channelList.index(channel)
             channelIndexList.append(index)
         
@@ -258,6 +261,9 @@ class VoltageProc(ProcessingUnit):
                     flip *= -1.0
             else:
                 for thisChannel in channelList:
+                    if thisChannel not in self.dataOut.channelList:
+                        continue
+                    
                     for thisProfile in profileList:
                         data[thisChannel,thisProfile,:] = data[thisChannel,thisProfile,:]*flip
                         flip *= -1.0
@@ -269,6 +275,9 @@ class VoltageProc(ProcessingUnit):
                 data[:,:] = data[:,:]*self.flip
             else:
                 for thisChannel in channelList:
+                    if thisChannel not in self.dataOut.channelList:
+                        continue
+                    
                     data[thisChannel,:] = data[thisChannel,:]*self.flip
             
             self.flip *= -1.

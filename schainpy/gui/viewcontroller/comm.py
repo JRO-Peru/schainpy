@@ -1,7 +1,6 @@
 import threading
 import Queue
-import pickle
-import numpy, os, sys
+from time import sleep
 
 from schainpy.controller  import Project
 from command import *
@@ -66,6 +65,7 @@ class CommCtrlProcessThread(threading.Thread):
                 cmd = self.cmd_q.get(True, 0.1)                
                 self.handlers[cmd.type](cmd)
             except Queue.Empty as e:
+                sleep(0.1)
                 continue
     
     

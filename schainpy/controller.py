@@ -60,6 +60,12 @@ class ParameterConf():
             Example:
                 value = (0,1,2)
             """
+            value = value.replace('(', '')
+            value = value.replace(')', '')
+            
+            value = value.replace('[', '')
+            value = value.replace(']', '')
+            
             strList = value.split(',')
             intList = [int(x) for x in strList]
             
@@ -72,6 +78,13 @@ class ParameterConf():
             Example:
                 value = (0.5, 1.4, 2.7)
             """
+            
+            value = value.replace('(', '')
+            value = value.replace(')', '')
+            
+            value = value.replace('[', '')
+            value = value.replace(']', '')
+            
             strList = value.split(',')
             floatList = [float(x) for x in strList]
             
@@ -105,6 +118,9 @@ class ParameterConf():
 
             value = value.replace('(', '')
             value = value.replace(')', '')
+            
+            value = value.replace('[', '')
+            value = value.replace(']', '')
             
             strList = value.split(',')
             intList = [int(item) for item in strList]
@@ -867,7 +883,7 @@ class Project():
                 break
 
             if self.control['pause']:
-                print "Pause..."
+                print "Process suspended"
                 
                 while True:    
                     time.sleep(0.1)
@@ -877,6 +893,7 @@ class Project():
                     
                     if self.control['stop']:
                         break
+                print "Process reinitialized"
             
             if self.control['stop']:
                 print "Stopping process"

@@ -173,6 +173,8 @@ class SpectraProc(ProcessingUnit):
         channelIndexList = []
         
         for channel in channelList:
+            if channel not in self.dataOut.channelList:
+                continue
             index = self.dataOut.channelList.index(channel)
             channelIndexList.append(index)
         
