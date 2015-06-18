@@ -294,11 +294,12 @@ class CrossSpectraPlot(Figure):
                     raise ValueError, "Pair %s is not in dataOut.pairsList" %str(pair)
                 pairsIndexList.append(dataOut.pairsList.index(pair))
         
-        if pairsIndexList == []:
+        if not pairsIndexList:
             return
         
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
+            
         factor = dataOut.normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()

@@ -14,7 +14,7 @@ class SpectraHeisProc(ProcessingUnit):
 #        self.profIndex = 0
         self.dataOut = SpectraHeis()
 
-    def __updateObjFromInput(self):
+    def __updateObjFromVoltage(self):
         
         self.dataOut.timeZone = self.dataIn.timeZone
         self.dataOut.dstFlag = self.dataIn.dstFlag
@@ -48,19 +48,23 @@ class SpectraHeisProc(ProcessingUnit):
 #         self.dataOut.ippSeconds= self.dataIn.ippSeconds
         self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         
-        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nIncohInt
+#         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nIncohInt
 #        self.dataOut.set=self.dataIn.set
 #        self.dataOut.deltaHeight=self.dataIn.deltaHeight
 
 
     def __updateObjFromFits(self):
+        
         self.dataOut.utctime = self.dataIn.utctime
         self.dataOut.channelIndexList = self.dataIn.channelIndexList
         
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.data_spc = self.dataIn.data
-        self.dataOut.timeInterval = self.dataIn.timeInterval
+        self.dataOut.ippSeconds = self.dataIn.ippSeconds
+        self.dataOut.nCohInt = self.dataIn.nCohInt
+        self.dataOut.nIncohInt = self.dataIn.nIncohInt
+#         self.dataOut.timeInterval = self.dataIn.timeInterval
         self.dataOut.timeZone = self.dataIn.timeZone
         self.dataOut.useLocalTime = True
 #         self.dataOut.
@@ -87,7 +91,7 @@ class SpectraHeisProc(ProcessingUnit):
             return
         
         if self.dataIn.type == "Voltage":
-            self.__updateObjFromInput()
+            self.__updateObjFromVoltage()
             self.__getFft()
             self.dataOut.flagNoData = False
                             

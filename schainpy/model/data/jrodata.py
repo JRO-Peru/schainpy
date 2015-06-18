@@ -659,6 +659,8 @@ class SpectraHeis(Spectra):
     
     pairsList = None
     
+    nCohInt = None
+    
     nIncohInt = None
     
     def __init__(self):
@@ -694,6 +696,10 @@ class SpectraHeis(Spectra):
         self.blocksize = None
         
         self.profileIndex = 0
+        
+        self.nCohInt = 1
+        
+        self.nIncohInt = 1
     
     def getNormFactor(self):
         pwcode = 1
@@ -713,7 +719,7 @@ class SpectraHeis(Spectra):
     normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
 
-class Fits:
+class Fits(JROData):
     
     heightList = None
     
@@ -765,9 +771,9 @@ class Fits:
         
         self.utctime = None
         
-        self.nCohInt = None
+        self.nCohInt = 1
         
-        self.nIncohInt = None
+        self.nIncohInt = 1
         
         self.useLocalTime = True
         
@@ -852,7 +858,9 @@ class Fits:
     
     def getTimeInterval(self):
         
-        raise ValueError, "This method is not implemented yet"
+        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
+        
+        return timeInterval
     
     datatime = property(getDatatime, "I'm the 'datatime' property")
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")
@@ -1026,7 +1034,14 @@ class Correlation(JROData):
         noise = jspectra0[:,freq_dc,:] - jspectra[:,freq_dc,:]
         
         return noise
+
+    def getTimeInterval(self):
+        
+        timeInterval = self.ippSeconds * self.nCohInt * self.nPoints
+        
+        return timeInterval
     
+    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
 #     pairsList = property(getPairsList, "I'm the 'pairsList' property.")
 #     nPoints = property(getNPoints, "I'm the 'nPoints' property.")
     calculateVelocity = property(getCalculateVelocity, "I'm the 'calculateVelocity' property.")
@@ -1060,7 +1075,7 @@ class Parameters(JROData):
     
     noise = None            #Noise Potency
     
-    initUtcTime = None      #Initial UTC time
+#     initUtcTime = None      #Initial UTC time
     
     paramInterval = None    #Time interval to calculate Parameters in seconds
     
@@ -1078,8 +1093,6 @@ class Parameters(JROData):
     
     data_output = None       #Out signal
     
-    
-    
     def __init__(self):
         '''
         Constructor
@@ -1089,13 +1102,13 @@ class Parameters(JROData):
         self.systemHeaderObj = SystemHeader()
         
         self.type = "Parameters"
-        
+    
     def getTimeRange1(self):
         
         datatime = []
         
-        datatime.append(self.initUtcTime)
-        datatime.append(self.initUtcTime + self.outputInterval - 1)
+        datatime.append(self.ltctime)
+        datatime.append(self.ltctime + self.outputInterval - 1)
         
         datatime = numpy.array(datatime)
         

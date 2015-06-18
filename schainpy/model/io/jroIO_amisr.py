@@ -15,6 +15,11 @@ import numpy
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroamisr import AMISR
 
+try:
+    from gevent import sleep
+except:
+    from time import sleep
+    
 class RadacHeader():
     def __init__(self, fp):
         header = 'Raw11/Data/RadacHeader'
@@ -337,7 +342,7 @@ class AMISRReader(ProcessingUnit):
             filename = self.filenameList[0]
             while self.__filename_online == filename:
                 print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
-                time.sleep(self.__waitForNewFile)
+                sleep(self.__waitForNewFile)
                 self.__selectDataForTimes(online=True)
                 filename = self.filenameList[0]
         

@@ -79,5 +79,12 @@ class AMISR:
     def isEmpty(self):
         
         return self.flagNoData
+
+    def getTimeInterval(self):
+        
+        timeInterval = self.ippSeconds * self.nCohInt
+        
+        return timeInterval
     
+    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")

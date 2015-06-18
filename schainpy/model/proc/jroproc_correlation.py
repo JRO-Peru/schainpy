@@ -15,7 +15,7 @@ class CorrelationProc(ProcessingUnit):
         self.profIndex = 0
         self.dataOut = Correlation()
     
-    def __updateObjFromInput(self):
+    def __updateObjFromVoltage(self):
         
         self.dataOut.timeZone = self.dataIn.timeZone
         self.dataOut.dstFlag = self.dataIn.dstFlag
@@ -42,7 +42,7 @@ class CorrelationProc(ProcessingUnit):
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
 #        self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         
-        self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nPoints
+#         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nPoints
         
         
     def removeDC(self, jspectra):
@@ -189,7 +189,7 @@ class CorrelationProc(ProcessingUnit):
                     self.buffer = self.removeDC(self.buffer)
                 #---------------------------------------------
                 self.dataOut.data_volts = self.buffer  
-                self.__updateObjFromInput()
+                self.__updateObjFromVoltage()
                 self.dataOut.data_corr = numpy.zeros((len(pairsList),                                                
                                                  len(lagT),len(lagR),
                                                  self.dataIn.nHeights),

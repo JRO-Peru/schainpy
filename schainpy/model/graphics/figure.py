@@ -102,42 +102,6 @@ class Figure(Operation):
         xmax_sec = time.mktime(maxdt.timetuple())
 
         return xmin_sec, xmax_sec
-        
-        
-        
-        
-        
-#         if timerange != None:
-#             txmin = x[0] - x[0]%timerange
-#         else:
-#             txmin = numpy.min(x)
-#         
-#         thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
-#         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))
-#         
-#         ####################################################
-#         #If the x is out of xrange
-#         if xmax != None:
-#             if xmax < (thisdatetime - thisdate).seconds/(60*60.):
-#                 xmin = None
-#                 xmax = None
-#         
-#         if xmin == None:
-#             td = thisdatetime - thisdate
-#             xmin = td.seconds/(60*60.)
-#             
-#         if xmax == None:
-#             xmax = xmin + self.timerange/(60*60.)
-#         
-#         mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
-#         tmin = time.mktime(mindt.timetuple())
-#         
-#         maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
-#         tmax = time.mktime(maxdt.timetuple())
-#         
-#         #self.timerange = tmax - tmin
-#         
-#         return tmin, tmax
     
     def init(self, id, nplots, wintitle):
     
@@ -284,9 +248,9 @@ class Figure(Operation):
         
         raise ValueError, "This method is not implemented"
     
-    def close(self):
+    def close(self, show=False):
         
-        self.__driver.closeFigure()
+        self.__driver.closeFigure(show=show, fig=self.fig)
         
     axesList = property(getAxesObjList)
             

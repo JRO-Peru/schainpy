@@ -34,7 +34,7 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data = self.dataIn.data
         self.dataOut.utctime = self.dataIn.utctime
         self.dataOut.channelList = self.dataIn.channelList
-        self.dataOut.timeInterval = self.dataIn.timeInterval
+#         self.dataOut.timeInterval = self.dataIn.timeInterval
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.nProfiles = self.dataIn.nProfiles
         
@@ -68,7 +68,7 @@ class VoltageProc(ProcessingUnit):
         
         for channel in channelList:
             if channel not in self.dataOut.channelList:
-                continue
+                raise ValueError, "Channel %d is not in %s" %(channel, str(self.dataOut.channelList))
                     
             index = self.dataOut.channelList.index(channel)
             channelIndexList.append(index)
@@ -255,7 +255,7 @@ class VoltageProc(ProcessingUnit):
             flip = self.flip
             profileList = range(self.dataOut.nProfiles)
             
-            if channelList == []:
+            if not channelList:
                 for thisProfile in profileList:
                     data[:,thisProfile,:] = data[:,thisProfile,:]*flip
                     flip *= -1.0
@@ -271,7 +271,7 @@ class VoltageProc(ProcessingUnit):
             self.flip = flip
             
         else:
-            if channelList == []:
+            if not channelList:
                 data[:,:] = data[:,:]*self.flip
             else:
                 for thisChannel in channelList:

@@ -16,6 +16,10 @@ from model.data.jroheaderIO import RadarControllerHeader, SystemHeader
 from model.data.jrodata import Voltage
 from model.proc.jroproc_base import ProcessingUnit, Operation
 
+try:
+    from gevent import sleep
+except:
+    from time import sleep
 
 def isNumber(str):
     """
@@ -506,7 +510,7 @@ class HFReader(ProcessingUnit):
             filename = self.filenameList[0]
             while self.filename_online == filename:
                 print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
-                time.sleep(self.__waitForNewFile)
+                sleep(self.__waitForNewFile)
                 #self.__findDataForDates(online=True)
                 self.__selectDataForTimes(online=True)
                 filename = self.filenameList[0]
@@ -518,12 +522,12 @@ class HFReader(ProcessingUnit):
             print "%s is not the rigth  size"%filename
             delay=2
             print 'waiting %d seconds for delay...'%(delay)
-            time.sleep(delay) 
+            sleep(delay) 
         sizeoffile=os.path.getsize(filename)
         if sizeoffile<1670240:
             delay
             print 'waiting %d  more seconds for delay...'%(delay)
-            time.sleep(delay) 
+            sleep(delay) 
             
                
         

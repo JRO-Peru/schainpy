@@ -384,6 +384,21 @@ class FitsReader(ProcessingUnit):
 
         return 1
     
+    def __setValuesFromHeader(self):
+        
+        self.dataOut.header = self.header_dict 
+        self.dataOut.expName = self.expName
+        self.dataOut.nChannels = self.nChannels
+        self.dataOut.timeZone = self.timeZone
+        self.dataOut.dataBlocksPerFile = self.dataBlocksPerFile
+        self.dataOut.comments = self.comments 
+#         self.dataOut.timeInterval = self.timeInterval
+        self.dataOut.channelList = self.channelList
+        self.dataOut.heightList = self.heightList
+        
+        self.dataOut.nCohInt = self.nCohInt
+        self.dataOut.nIncohInt = self.nIncohInt
+        
     def readHeader(self):
         headerObj = self.fitsObj[0]
         
@@ -438,7 +453,7 @@ class FitsReader(ProcessingUnit):
             return 0
         
         self.readHeader()
-        
+        self.__setValuesFromHeader()
         self.nReadBlocks = 0
 #         self.blockIndex = 1
         return 1
@@ -695,15 +710,15 @@ class FitsReader(ProcessingUnit):
         self.dataOut.data_header = self.data_header_dict
         self.dataOut.utctime = self.utc
         
-        self.dataOut.header = self.header_dict 
-        self.dataOut.expName = self.expName
-        self.dataOut.nChannels = self.nChannels
-        self.dataOut.timeZone = self.timeZone
-        self.dataOut.dataBlocksPerFile = self.dataBlocksPerFile
-        self.dataOut.comments = self.comments 
-        self.dataOut.timeInterval = self.timeInterval
-        self.dataOut.channelList = self.channelList
-        self.dataOut.heightList = self.heightList
+#         self.dataOut.header = self.header_dict 
+#         self.dataOut.expName = self.expName
+#         self.dataOut.nChannels = self.nChannels
+#         self.dataOut.timeZone = self.timeZone
+#         self.dataOut.dataBlocksPerFile = self.dataBlocksPerFile
+#         self.dataOut.comments = self.comments 
+# #         self.dataOut.timeInterval = self.timeInterval
+#         self.dataOut.channelList = self.channelList
+#         self.dataOut.heightList = self.heightList
         self.dataOut.flagNoData = False
         
         return self.dataOut.data

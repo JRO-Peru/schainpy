@@ -1,6 +1,9 @@
 import threading
 import Queue
-from time import sleep
+try:
+    from gevent import sleep
+except:
+    from time import sleep
 
 from schainpy.controller  import Project
 from command import *
@@ -49,6 +52,7 @@ class CommCtrlProcessThread(threading.Thread):
         self.socketIO = None
         self.mySocket = None
 
+        self.controllerObj = None
         
         self.handlers = {
             ProcessCommand.PROCESS: self._handle_ioPROCESSTHREAD,
@@ -68,7 +72,16 @@ class CommCtrlProcessThread(threading.Thread):
                 sleep(0.1)
                 continue
     
-    
+    def isRunning(self):
+        
+        if self.controllerObj == None:
+            return False
+        
+        if self.controllerObj.isAlive():
+            return True
+        
+        return False
+        
     def _handle_ioPROCESSTHREAD(self, cmd):
         filename = cmd.data
         self.controllerObj = ControllerThread(filename=filename)
@@ -79,6 +92,8 @@ class CommCtrlProcessThread(threading.Thread):
     
     def _handle_ioSTOP(self, cmd):
         self.controllerObj.stop()
+        self.controllerObj.join()
+#         print "Process thread finished"
 
     def _handle_ioDATA(self, cmd):
         self.reply_q.put(self._success_reply_data(data=cmd.data))

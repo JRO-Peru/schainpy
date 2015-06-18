@@ -1327,6 +1327,7 @@ class WindProfiler(Operation):
         return A1
 
     def __correctValues(self, heiRang, phi, velRadial, SNR):
+        
         listPhi = phi.tolist()
         maxid = listPhi.index(max(listPhi))
         minid = listPhi.index(min(listPhi))
@@ -1615,14 +1616,19 @@ class WindProfiler(Operation):
             else:   correctFactor = 1
             if kwargs.has_key('channelList'):
                 channelList = kwargs['channelList']
-                if len(channelList) == 2:
-                    horizontalOnly = True
                 arrayChannel = numpy.array(channelList)
                 param = param[arrayChannel,:,:]
                 theta_x = theta_x[arrayChannel]
                 theta_y = theta_y[arrayChannel]
             
             velRadial0 = param[:,1,:] #Radial velocity
+            
+            if velRadial0.shape[0] != theta_x.shape[0] or velRadial0.shape[0] != theta_y.shape[0]:
+                raise ValueError, "The max number of channels is %d, and the length of cosine director is %d. Please check: dirCosX, dirCosY, elevation or azimuth arguments" %(velRadial0.shape[0], theta_x.shape[0])
+            
+            if theta_x.shape[0] == 2:
+                    horizontalOnly = True
+                    
             dataOut.data_output, dataOut.heightList, dataOut.data_SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightList, SNR) #DBS Function
             dataOut.utctimeInit = dataOut.utctime
             dataOut.outputInterval = dataOut.timeInterval

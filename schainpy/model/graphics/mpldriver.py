@@ -30,13 +30,23 @@ def createFigure(id, wintitle, width, height, facecolor="w", show=True):
     
     return fig
 
-def closeFigure(show=False):
+def closeFigure(show=False, fig=None):
     
     matplotlib.pyplot.ioff()
+    matplotlib.pyplot.pause(0.1)
+    
     if show:
         matplotlib.pyplot.show()
-        
-    matplotlib.pyplot.close()
+    
+    if fig != None:
+        matplotlib.pyplot.close(fig)
+        matplotlib.pyplot.pause(0.1)
+        matplotlib.pyplot.ion()
+        return
+    
+    matplotlib.pyplot.close("all")
+    matplotlib.pyplot.pause(0.1)
+    matplotlib.pyplot.ion()
     return
 
 def saveFigure(fig, filename):
@@ -420,6 +430,6 @@ def polar(iplot, x, y, xlabel='', ylabel='', title=''):
 def draw(fig):
     
     if type(fig) == 'int':
-        raise ValueError, "This parameter should be of tpye matplotlib figure"
+        raise ValueError, "Error drawing: Fig parameter should be a matplotlib figure object figure"
     
     fig.canvas.draw()

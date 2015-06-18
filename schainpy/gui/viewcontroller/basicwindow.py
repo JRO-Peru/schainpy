@@ -24,6 +24,11 @@ from os.path import  expanduser
 #from CodeWarrior.Standard_Suite import file
 from comm import *
 
+try:
+    from gevent import sleep
+except:
+    from time import sleep
+    
 from schainpy.gui.figures import tools
 import numpy
 
@@ -80,9 +85,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.create = False
         self.selectedItemTree = None
         self.commCtrlPThread = None
-        self.setParameter()
-        self.create_comm() 
-#         self.create_timers()
 #         self.create_figure()
         self.temporalFTP = ftpBuffer()
         self.projectProperCaracteristica = []
@@ -106,7 +108,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         self.__ftpProcUnitAdded = False
         self.__ftpProcUnitId = None
-
+        self.__initialized = False
+        
+        self.create_comm() 
+        self.create_updating_timer()
+        self.setParameter()
+        
     @pyqtSignature("")
     def on_actionOpen_triggered(self):
         """
@@ -527,7 +534,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     
         
         if self.volOpCebChannels.isChecked():
-            value = self.volOpChannel.text()
+            value = str(self.volOpChannel.text())
+            
+            if value == "":
+                print "Please fill channel list"
+                return 0
+            
             format = 'intlist'
             if self.volOpComChannels.currentIndex() == 0:            
                 name_operation = "selectChannels"
@@ -540,7 +552,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter, value=value, format=format)
             
         if self.volOpCebHeights.isChecked():
-           value = self.volOpHeights.text()
+           value = str(self.volOpHeights.text())
+           
+           if value == "":
+                print "Please fill height range"
+                return 0
+            
            valueList = value.split(',')
            format = 'float'
            if  self.volOpComHeights.currentIndex() == 0:
@@ -551,12 +568,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                name_operation = 'selectHeightsByIndex'   
                name_parameter1 = 'minIndex'
                name_parameter2 = 'maxIndex'
+               
            opObj = puObj.addOperation(name=name_operation)
            opObj.addParameter(name=name_parameter1, value=valueList[0], format=format)
            opObj.addParameter(name=name_parameter2, value=valueList[1], format=format)
            
         if self.volOpCebFilter.isChecked():
-           value = self.volOpFilter.text()
+           value = str(self.volOpFilter.text())
+           if value == "":
+                print "Please fill filter value"
+                return 0
+            
            format = 'int'
            name_operation = 'filterByHeights'
            name_parameter = 'window'
@@ -564,7 +586,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            opObj.addParameter(name=name_parameter, value=value, format=format)  
 
         if self.volOpCebProfile.isChecked():
-            value = self.volOpProfile.text()
+            value = str(self.volOpProfile.text())
+            
+            if value == "":
+                print "Please fill profile value"
+                return 0
+            
             format = 'intlist'
             optype = 'other'
             name_operation = 'ProfileSelector'
@@ -1097,7 +1124,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             puObj.addParameter(name=name_parameter, value=value2, format=format)
                                 
         if self.specOpCebHeights.isChecked():
-            value = self.specOpHeights.text()
+            value = str(self.specOpHeights.text())
+            
+            if value == "":
+                print "Please fill height range"
+                return 0
+            
             valueList = value.split(',')
             format = 'float'
             value0 = valueList[0]
@@ -1116,7 +1148,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter2, value=value1, format=format) 
           
         if self.specOpCebChannel.isChecked():
-            value = self.specOpChannel.text()
+            value = str(self.specOpChannel.text())
+            
+            if value == "":
+                print "Please fill channel list"
+                return 0
+            
             format = 'intlist'
             if self.specOpComChannel.currentIndex() == 0:
                 name_operation = "selectChannels"
@@ -1124,11 +1161,16 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             else:
                 name_operation = "selectChannelsByIndex" 
                 name_parameter = 'channelIndexList'
-            opObj = puObj.addOperation(name="selectChannels")
+            opObj = puObj.addOperation(name=name_operation)
             opObj.addParameter(name=name_parameter, value=value, format=format)
             
         if self.specOpCebIncoherent.isChecked():
-            value = self.specOpIncoherent.text()   
+            value = str(self.specOpIncoherent.text())
+            
+            if value == "":
+                print "Please fill Incoherent integration value"
+                return 0
+               
             name_operation = 'IncohInt'
             optype = 'other'
             if self.specOpCobIncInt.currentIndex() == 0:
@@ -2300,8 +2342,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specHeisGraphPath.setEnabled(True)
             self.specHeisGraphPrefix.setEnabled(True)
             self.specHeisGraphToolPath.setEnabled(True)
-            
-   #-------ftp-----#        
+             
     @pyqtSignature("int")
     def on_specHeisGraphftpSpectra_stateChanged(self, p0):
         """
@@ -2445,10 +2486,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def on_right_click(self, pos):
         
         self.menu = QtGui.QMenu()
-        quitAction0 = self.menu.addAction("NewProject")
-        quitAction1 = self.menu.addAction("NewProcessingUnit")
-        quitAction2 = self.menu.addAction("Delete")
-        quitAction3 = self.menu.addAction("Exit")
+        quitAction0 = self.menu.addAction("Create a new project")
+        quitAction1 = self.menu.addAction("Create a new processing unit")
+        quitAction2 = self.menu.addAction("Delete selected unit")
+        quitAction3 = self.menu.addAction("Quit")
         
         if len(self.__itemTreeDict) == 0:
             quitAction2.setEnabled(False)
@@ -2493,7 +2534,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             #     print i.row()
 
         if action == quitAction3:
-            return
+            self.close()
+            return 0
     
     def refreshProjectWindow(self, project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, set):
         
@@ -2545,18 +2587,36 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             
             opObj = puObj.getOperationObj(name="selectChannels")
+            
+            if opObj == None:
+                opObj = puObj.getOperationObj(name="selectChannelsByIndex")
+            
             if opObj == None:
                 self.volOpChannel.clear()
                 self.volOpCebChannels.setCheckState(0)
-            
             else:
-                value = opObj.getParameterValue(parameterName='channelList')             
-                value = str(value)[1:-1]
-                self.volOpChannel.setText(value)
-                self.volOpChannel.setEnabled(True)
-                self.volOpCebChannels.setCheckState(QtCore.Qt.Checked)
-
-                                
+                channelEnabled = False
+                try:
+                    value = opObj.getParameterValue(parameterName='channelList')             
+                    value = str(value)[1:-1]
+                    channelEnabled = True
+                    channelMode = 0
+                except:
+                    pass
+                try:
+                    value = opObj.getParameterValue(parameterName='channelIndexList')             
+                    value = str(value)[1:-1]
+                    channelEnabled = True
+                    channelMode = 1
+                except:
+                    pass
+                
+                if channelEnabled:
+                    self.volOpChannel.setText(value)
+                    self.volOpChannel.setEnabled(True)
+                    self.volOpCebChannels.setCheckState(QtCore.Qt.Checked)
+                    self.VOLOpComChannel.setCurrentIndex(channelMode)
+                        
             opObj = puObj.getOperationObj(name="selectHeights")
             if opObj == None:
                 self.volOpHeights.clear()
@@ -2811,15 +2871,35 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     self.specOpCebCrossSpectra.setCheckState(QtCore.Qt.Checked)
                 
             opObj = puObj.getOperationObj(name="selectChannels")
+            
+            if opObj == None:
+                opObj = puObj.getOperationObj(name="selectChannelsByIndex")
+                
             if opObj == None:
                 self.specOpChannel.clear()
                 self.specOpCebChannel.setCheckState(0)
-            else:   
-               value = opObj.getParameterValue(parameterName='channelList')             
-               value = str(value)[1:-1]
-               self.specOpChannel.setText(value)
-               self.specOpChannel.setEnabled(True)
-               self.specOpCebChannel.setCheckState(QtCore.Qt.Checked)
+            else:
+                channelEnabled = False
+                try:
+                    value = opObj.getParameterValue(parameterName='channelList')             
+                    value = str(value)[1:-1]
+                    channelEnabled = True
+                    channelMode = 0
+                except:
+                    pass
+                try:
+                    value = opObj.getParameterValue(parameterName='channelIndexList')             
+                    value = str(value)[1:-1]
+                    channelEnabled = True
+                    channelMode = 1
+                except:
+                    pass
+                
+                if channelEnabled:
+                    self.specOpChannel.setText(value)
+                    self.specOpChannel.setEnabled(True)
+                    self.specOpCebChannel.setCheckState(QtCore.Qt.Checked)
+                    self.specOpComChannel.setCurrentIndex(channelMode)
                 
             opObj = puObj.getOperationObj(name="selectHeights")
             if opObj == None:
@@ -3556,13 +3636,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specGgraphChannelList.clear()
 
     def create_comm(self):
+        
         self.commCtrlPThread = CommCtrlProcessThread()
         self.commCtrlPThread.start()
     
-    def create_timers(self):
+    def create_updating_timer(self):
         self.comm_data_timer = QtCore.QTimer(self)
-        self.comm_data_timer.timeout.connect(self.on_comm_data_timer)
-        self.comm_data_timer.start(10)
+        self.comm_data_timer.timeout.connect(self.on_comm_updating_timer)
+        self.comm_data_timer.start(1000)
     
     def create_figure(self):
         self.queue_plot = Queue.Queue()
@@ -3580,15 +3661,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not self.running:
             app.quit()
 
-    def on_comm_data_timer(self):
-        # lee el data_queue y la coloca en el queue de ploteo
-        try:
-            reply = self.commCtrlPThread.data_q.get(block=False)
-            self.queue_plot.put(reply.data)
-            
-        except Queue.Empty:
-            pass
-
+#     def on_comm_data_timer(self):
+#         # lee el data_queue y la coloca en el queue de ploteo
+#         try:
+#             reply = self.commCtrlPThread.data_q.get(block=False)
+#             self.queue_plot.put(reply.data)
+#             
+#         except Queue.Empty:
+#             pass
+        
     def createProjectView(self, id):
         
         self.create = False
@@ -3812,7 +3893,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not procUnitConfObj:
             return
         
-        procUnitConfObj.removeOperations()
+        projectObj.removeProcUnit(procUnitConfObj.getId())
+        
+        if procUnitConfObj.getId() not in self.__puObjDict.keys():
+            return
         
         self.__puObjDict.pop(procUnitConfObj.getId())
              
@@ -3935,8 +4019,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             channel = value
             self.bufferVoltage("Processing Unit", "Select Channel", channel)
             
-            
-                            
+        opObj = puObj.getOperationObj(name="selectChannelsByIndex")
+        if opObj == None:
+            channel = None
+        else:
+            value = opObj.getParameterValue(parameterName='channelIndexList')             
+            value = str(value)#[1:-1]
+            channel = value
+            self.bufferVoltage("Processing Unit", "Select Channel by Index", channel)
+               
         opObj = puObj.getOperationObj(name="selectHeights")
         if opObj == None:
             heights = None
@@ -4201,11 +4292,23 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         opObj = puObj.getOperationObj(name="selectChannels")
         if opObj == None:
             channel = None
-        else:   
-           value = opObj.getParameterValue(parameterName='channelList')             
-           value = str(value)[1:-1]
-           channel = value
-           self.bufferSpectra("Processing Unit", "Channel", channel)
+        else:
+            try:
+                value = opObj.getParameterValue(parameterName='channelList')             
+                value = str(value)[1:-1]
+                channel = value
+                
+                self.bufferSpectra("Processing Unit", "Channel List", channel)
+            except:
+                pass
+            try:
+                value = opObj.getParameterValue(parameterName='channelIndexList')             
+                value = str(value)[1:-1]
+                channel = value
+                
+                self.bufferSpectra("Processing Unit", "Channel Index List", channel)
+            except:
+                pass
                     
         opObj = puObj.getOperationObj(name="selectHeights")
         if opObj == None:
@@ -5262,6 +5365,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def openProject(self):
         
+        self.actionStart.setEnabled(False)
+        self.actionStarToolbar.setEnabled(False)
+        
         self.create = False
         self.frame_2.setEnabled(True)
         home = expanduser("~")
@@ -5345,6 +5451,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.append("The selected xml file has been loaded successfully")
         # self.refreshPUWindow(datatype=datatype,puObj=puObj)
         
+        self.actionStart.setEnabled(True)
+        self.actionStarToolbar.setEnabled(True)
+        
+    def on_comm_updating_timer(self):
+        # Verifica si algun proceso ha sido inicializado y sigue ejecutandose
+        
+        if not self.__initialized:
+            return
+        
+        if not self.commCtrlPThread.isRunning():
+            self.stopProject()
+        
     def playProject(self, ext=".xml"):
         
         projectObj = self.getSelectedProjectObj()
@@ -5369,20 +5487,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStopToolbar.setEnabled(True)
         
         self.console.append("Please Wait...")
-#             try:
         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, filename))
-# #  
-#             except:
-#                 self.console.append("Error............................................!")
-#                 self.actionStarToolbar.setEnabled(True)
-#                 self.actionPauseToolbar.setEnabled(False)
-#                 self.actionStopToolbar.setEnabled(False)
-            
-#         filename = '/home/dsuarez/workspace_signalchain/schain_guiJune04/test/ewdrifts3.xml'
-#         data = filename
-#         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, data))
+        sleep(0.5)
+        self.__initialized = True
         
     def stopProject(self):
+        
+        self.__initialized = False
         
         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, True))
         
@@ -6029,15 +6140,23 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         sys.stderr = sys.__stderr__
         
     def normalOutputWritten(self, text):
-        self.console.append(text)        
+        color_black = QtGui.QColor(0,0,0)
+        self.console.setTextColor(color_black)
+        self.console.append(text)   
         
-                
+    def errorOutputWritten(self, text):
+        color_red = QtGui.QColor(255,0,0)
+        color_black = QtGui.QColor(0,0,0)
+        
+        self.console.setTextColor(color_red)
+        self.console.append(text)   
+        self.console.setTextColor(color_black)
+        
     def setParameter(self):
         
         self.setWindowTitle("ROJ-Signal Chain")
         self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
-        sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
-        # sys.stderr = ShowMeConsole(textWritten=self.normalOutputWritten)
+        
         self.tabWidgetProject.setEnabled(False)
         self.tabVoltage.setEnabled(False)
         self.tabSpectra.setEnabled(False)
@@ -6204,6 +6323,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specGgraphDbsrange.setToolTip('Example: 30,170')
 
         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
+
+        sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
+        sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
         
         
 class UnitProcessWindow(QMainWindow, Ui_UnitProcess):

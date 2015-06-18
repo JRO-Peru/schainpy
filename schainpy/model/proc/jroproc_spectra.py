@@ -90,6 +90,11 @@ class SpectraProc(ProcessingUnit):
             #calculo de cross-spectra
             cspc = numpy.zeros((self.dataOut.nPairs, self.dataOut.nFFTPoints, self.dataOut.nHeights), dtype='complex')
             for pair in self.dataOut.pairsList:
+                if pair[0] not in self.dataOut.channelList:
+                    raise ValueError, "Error getting CrossSpectra: pair 0 of (%s) is not in channelList=%s" %(str(pair), str(self.dataOut.channelList))
+                if pair[1] not in self.dataOut.channelList:
+                    raise ValueError, "Error getting CrossSpectra: pair 1 of (%s) is not in channelList=%s" %(str(pair), str(self.dataOut.channelList))
+                
                 cspc[pairIndex,:,:] = fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:])
                 pairIndex += 1
             blocksize += cspc.size
@@ -166,7 +171,33 @@ class SpectraProc(ProcessingUnit):
             
             return True
         
-        raise ValueError, "The type object %s is not valid"%(self.dataIn.type)
+        raise ValueError, "The type of input object '%s' is not valid"%(self.dataIn.type)
+    
+    def __selectPairs(self, channelList=None):
+        
+        if channelList == None:
+            return
+    
+        pairsIndexListSelected = []
+        for pairIndex in self.dataOut.pairsIndexList:
+            #First pair
+            if self.dataOut.pairsList[pairIndex][0] not in channelList:
+                continue
+            #Second pair
+            if self.dataOut.pairsList[pairIndex][1] not in channelList:
+                continue
+            
+            pairsIndexListSelected.append(pairIndex)
+        
+        if not pairsIndexListSelected:
+            self.dataOut.data_cspc = None
+            self.dataOut.pairsList = []
+            return
+            
+        self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndexListSelected]
+        self.dataOut.pairsList = self.dataOut.pairsList[pairsIndexListSelected]
+            
+        return
     
     def selectChannels(self, channelList):
         
@@ -174,7 +205,8 @@ class SpectraProc(ProcessingUnit):
         
         for channel in channelList:
             if channel not in self.dataOut.channelList:
-                continue
+                raise ValueError, "Error selecting channels: The value %d in channelList is not valid.\nAvailable channels = %s" %(channel, str(self.dataOut.channelList))
+            
             index = self.dataOut.channelList.index(channel)
             channelIndexList.append(index)
         
@@ -198,16 +230,20 @@ class SpectraProc(ProcessingUnit):
 
         for channelIndex in channelIndexList:
             if channelIndex not in self.dataOut.channelIndexList:
-                print channelIndexList
-                raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
+                raise ValueError, "Error selecting channels: The value %d in channelIndexList is not valid.\nAvailable channel indexes = " %(channelIndex, self.dataOut.channelIndexList)
         
 #         nChannels = len(channelIndexList)
             
         data_spc = self.dataOut.data_spc[channelIndexList,:]
+        data_dc = self.dataOut.data_dc[channelIndexList,:]
         
         self.dataOut.data_spc = data_spc
+        self.dataOut.data_dc = data_dc
+        
         self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
 #        self.dataOut.nChannels = nChannels
+        
+        self.__selectPairs(self.dataOut.channelList)
         
         return 1
 
@@ -226,8 +262,12 @@ class SpectraProc(ProcessingUnit):
         Return:
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
-        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
-            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
+        
+        if (minHei > maxHei):
+            raise ValueError, "Error selecting heights: Height range (%d,%d) is not valid" % (minHei, maxHei)
+        
+        if (minHei < self.dataOut.heightList[0]):
+            minHei = self.dataOut.heightList[0]
         
         if (maxHei > self.dataOut.heightList[-1]):
             maxHei = self.dataOut.heightList[-1]
@@ -314,7 +354,7 @@ class SpectraProc(ProcessingUnit):
         """
         
         if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+            raise ValueError, "Error selecting heights by index: Index range in (%d,%d) is not valid" % (minIndex, maxIndex)
         
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights-1

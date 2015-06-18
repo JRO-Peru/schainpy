@@ -9,6 +9,11 @@ from xml.dom import minidom
 #import datetime
 from model import *
 
+try:
+    from gevent import sleep
+except:
+    from time import sleep
+    
 import ast
 
 def prettify(elem):
@@ -42,7 +47,7 @@ class ParameterConf():
         if self.__formated_value != None:
             
             return self.__formated_value
-            
+        
         value = self.value
         
         if self.format == 'bool':
@@ -731,6 +736,11 @@ class Project():
         
         return procUnitConfObj
     
+    def removeProcUnit(self, id):
+        
+        if id in self.procUnitConfObjDict.keys():
+            self.procUnitConfObjDict.pop(id)
+        
     def getReadUnitId(self):
         
         readUnitConfObj = self.getReadUnitObj()
@@ -886,7 +896,7 @@ class Project():
                 print "Process suspended"
                 
                 while True:    
-                    time.sleep(0.1)
+                    sleep(0.1)
                     
                     if not self.control['pause']:
                         break
@@ -896,7 +906,7 @@ class Project():
                 print "Process reinitialized"
             
             if self.control['stop']:
-                print "Stopping process"
+                print "Process stopped"
                 break
                 
         #Closing every process
@@ -904,7 +914,7 @@ class Project():
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             procUnitConfObj.close()
             
-        print "Process stopped"
+        print "Process finished"
                 
     def start(self, filename):
         
