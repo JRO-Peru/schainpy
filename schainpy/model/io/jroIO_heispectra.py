@@ -23,7 +23,7 @@ except:
     
 from xml.etree.ElementTree import ElementTree
 
-from jroIO_base import isDoyFolder, isNumber
+from jroIO_base import isRadarFolder, isNumber
 from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
         
 class Fits: 
@@ -479,7 +479,7 @@ class FitsReader(ProcessingUnit):
             for thisPath in os.listdir(path):
                 if not os.path.isdir(os.path.join(path,thisPath)):
                     continue
-                if not isDoyFolder(thisPath):
+                if not isRadarFolder(thisPath):
                     continue
                 
                 dirList.append(thisPath)

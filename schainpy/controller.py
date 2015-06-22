@@ -203,7 +203,7 @@ class OperationConf():
     
     def __init__(self):
         
-        self.id = 0
+        self.id = '0'
         self.name = None
         self.priority = None
         self.type = 'self'
@@ -386,11 +386,11 @@ class ProcUnitConf():
     
     def getId(self):
         
-        return str(self.id)
+        return self.id
     
     def getInputId(self):
         
-        return str(self.inputId)
+        return self.inputId
     
     def getOperationObjList(self):
         
@@ -478,7 +478,10 @@ class ProcUnitConf():
         self.name = upElement.get('name')
         self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
-                
+        
+        if self.inputId == 'None':
+            self.inputId = '0'
+            
         self.opConfObjList = []
         
         opElementList = upElement.getiterator(OperationConf().getElementName())
@@ -568,7 +571,9 @@ class ReadUnitConf(ProcUnitConf):
         self.id = None
         self.datatype = None
         self.name = None
-        self.inputId = 0
+        self.inputId = None
+        
+        self.parentId = None
         
         self.opConfObjList = []
         self.opObjList = []
@@ -589,16 +594,32 @@ class ReadUnitConf(ProcUnitConf):
         self.startTime = startTime
         self.endTime = endTime
         
+        self.inputId = '0'
+        self.parentId = parentId
+        
         self.addRunOperation(**kwargs)
         
-    def update(self, datatype, path, startDate, endDate, startTime, endTime, parentId=None, **kwargs):
+    def update(self, datatype, path, startDate, endDate, startTime, endTime, parentId=None, name=None, **kwargs):
+
+        if name==None:
+            if 'Reader' in datatype:
+                name = datatype
+            else:
+                name = '%sReader' %(datatype)
         
+        if datatype==None:
+            datatype = name.replace('Reader','')
+            
         self.datatype = datatype
+        self.name = name
         self.path = path
         self.startDate = startDate
         self.endDate = endDate
         self.startTime = startTime
         self.endTime = endTime
+        
+        self.inputId = None
+        self.parentId = parentId
         
         self.updateRunOperation(**kwargs)
         
@@ -703,16 +724,16 @@ class Project():
         if datatype==None:
             datatype = name.replace('Reader','')
             
-        id = self.__getNewId()
+        idReadUnit = self.__getNewId()
         
         readUnitConfObj = ReadUnitConf()
-        readUnitConfObj.setup(id, name, datatype, parentId=self.id, **kwargs)
+        readUnitConfObj.setup(idReadUnit, name, datatype, parentId=self.id, **kwargs)
         
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
         return readUnitConfObj
     
-    def addProcUnit(self, inputId=0, datatype=None, name=None):
+    def addProcUnit(self, inputId='0', datatype=None, name=None):
         
         #Compatible with old signal chain version
         if datatype==None and name==None:
@@ -727,10 +748,10 @@ class Project():
         if datatype==None:
             datatype = name.replace('Proc','')
         
-        id = self.__getNewId()
+        idProcUnit = self.__getNewId()
         
         procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(id, name, datatype, inputId, parentId=self.id)
+        procUnitConfObj.setup(idProcUnit, name, datatype, inputId, parentId=self.id)
         
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
         
@@ -811,6 +832,9 @@ class Project():
             readUnitConfObj = ReadUnitConf()
             readUnitConfObj.readXml(readUnitElement)
             
+            if readUnitConfObj.parentId == None:
+                readUnitConfObj.parentId = self.id
+            
             self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
         procUnitElementList = self.projectElement.getiterator(ProcUnitConf().getElementName())
@@ -819,6 +843,9 @@ class Project():
             procUnitConfObj = ProcUnitConf()
             procUnitConfObj.readXml(procUnitElement)
             
+            if procUnitConfObj.parentId == None:
+                procUnitConfObj.parentId = self.id
+                
             self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
                
     def printattr(self):

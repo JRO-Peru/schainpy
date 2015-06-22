@@ -119,7 +119,57 @@ class USRPReader(ProcessingUnit):
         self.dataOut.frequency = self.__frequency
         
         self.dataOut.realtime = self.__online
+    
+    def findDatafiles(self, path, startDate=None, endDate=None):
         
+        try:
+            digitalReadObj = digital_rf_hdf5.read_hdf5(path, load_all_metadata=True)
+        except:
+            digitalReadObj = digital_rf_hdf5.read_hdf5(path)
+        
+        channelNameList = digitalReadObj.get_channels()
+        
+        metadata_dict = digitalReadObj.get_rf_file_metadata(channelNameList[0])
+        
+        sample_rate = metadata_dict['sample_rate'][0]
+
+        this_metadata_file = digitalReadObj.get_metadata(channelNameList[0])
+        
+        try:
+            timezone = this_metadata_file['timezone'].value
+        except:
+            timezone = 0
+            
+        startUTCSecond, endUTCSecond = digitalReadObj.get_bounds(channelNameList[0])/sample_rate - timezone
+        
+        startDatetime = datetime.datetime.utcfromtimestamp(startUTCSecond)
+        endDatatime = datetime.datetime.utcfromtimestamp(endUTCSecond)
+        
+        if not startDate:
+            startDate = startDatetime.date()
+            
+        if not endDate:
+            endDate = endDatatime.date()
+            
+        dateList = []
+        
+        thisDatetime = startDatetime
+        
+        while(thisDatetime<=endDatatime):
+            
+            thisDate = thisDatetime.date()
+            
+            if thisDate < startDate:
+                continue
+            
+            if thisDate > endDate:
+                break
+            
+            dateList.append(thisDate)
+            thisDatetime += datetime.timedelta(1)
+        
+        return dateList
+    
     def setup(self, path = None,
                     startDate = None, 
                     endDate = None, 
@@ -127,10 +177,12 @@ class USRPReader(ProcessingUnit):
                     endTime = datetime.time(23,59,59), 
                     channelList = None, 
                     nSamples = None, 
-                    ippKm = None,
+                    ippKm = 60,
                     online = False,
-                    wait = 60,
-                    nbuffer = 1024*4):
+                    delay = 60,
+                    buffer_size = None,
+                    nbuffer = 1024,
+                    **kwargs):
         '''
         In this method we should set all initial parameters.
         
@@ -144,8 +196,12 @@ class USRPReader(ProcessingUnit):
             expLabel
             ext
             online
-            wait
+            delay
         '''
+        
+        if not buffer_size:
+            buffer_size = nbuffer
+            
         try:
             self.digitalReadObj = digital_rf_hdf5.read_hdf5(path, load_all_metadata=True)
         except:
@@ -241,6 +297,7 @@ class USRPReader(ProcessingUnit):
         
         self.profileIndex = 0
         
+        self.__delay = delay
         self.__ippKm = ippKm
         self.__codeType = codeType
         self.__nCode = nCode
@@ -253,7 +310,7 @@ class USRPReader(ProcessingUnit):
         self.__channelNameList = channelNameListFiltered
         self.__channelBoundList = channelBoundList
         self.__nSamples = nSamples
-        self.__samples_to_read = nbuffer*nSamples
+        self.__samples_to_read = buffer_size*nSamples
         self.__nChannels = len(self.__channelList)
         
         self.__startUTCSecond = startUTCSecond
@@ -292,7 +349,10 @@ class USRPReader(ProcessingUnit):
 #                                           )
         print "[Reading] reloading metadata ..."
         
-        self.digitalReadObj.reload(complete_update=True)
+        try:
+            self.digitalReadObj.reload(complete_update=True)
+        except:
+            self.digitalReadObj.reload()
         
         start_index, end_index = self.digitalReadObj.get_bounds(self.__channelNameList[self.__channelList[0]])
         
@@ -458,7 +518,7 @@ class USRPReader(ProcessingUnit):
         if not self.isConfig:
             self.setup(**kwargs)
         
-        self.getData()
+        self.getData(seconds=self.__delay)
         
         return
                 

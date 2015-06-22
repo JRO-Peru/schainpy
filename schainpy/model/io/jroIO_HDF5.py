@@ -156,7 +156,7 @@ class HDF5Reader(ProcessingUnit):
                 for thisPath in os.listdir(single_path):
                     if not os.path.isdir(os.path.join(single_path,thisPath)):
                         continue
-                    if not isDoyFolder(thisPath):
+                    if not isRadarFolder(thisPath):
                         continue
                 
                     dirList.append(thisPath)

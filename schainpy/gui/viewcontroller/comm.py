@@ -9,8 +9,12 @@ from schainpy.controller  import Project
 from command import *
 
 class ControllerThread(threading.Thread):
+    
     def __init__(self, filename, data_q=None):
+        
         super(ControllerThread, self).__init__()
+        self.setDaemon(True)
+        
         self.filename = filename
         self.data_q = data_q
         self.control = {'stop':False,'pause':False}
@@ -69,7 +73,6 @@ class CommCtrlProcessThread(threading.Thread):
                 cmd = self.cmd_q.get(True, 0.1)                
                 self.handlers[cmd.type](cmd)
             except Queue.Empty as e:
-                sleep(0.1)
                 continue
     
     def isRunning(self):
@@ -92,6 +95,13 @@ class CommCtrlProcessThread(threading.Thread):
     
     def _handle_ioSTOP(self, cmd):
         self.controllerObj.stop()
+        
+        while self.controllerObj.isAlive():
+            self.console.clear()
+            self.console.append("Close graphics before continue...")
+            sleep(0.1)
+            
+        
         self.controllerObj.join()
 #         print "Process thread finished"
 

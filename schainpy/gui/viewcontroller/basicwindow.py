@@ -6,7 +6,13 @@ Module implementing MainWindow.
 """
 import os, sys, time
 import datetime
+import numpy
 import Queue
+
+from collections import OrderedDict
+from os.path import  expanduser
+from time import sleep
+
 from PyQt4.QtGui           import QMainWindow 
 from PyQt4.QtCore          import pyqtSignature
 from PyQt4.QtCore          import pyqtSignal
@@ -18,19 +24,11 @@ from schainpy.gui.viewer.ui_ftp      import Ui_Ftp
 from schainpy.gui.viewer.ui_mainwindow  import Ui_BasicWindow
 from schainpy.controller  import Project
 
-from modelProperties  import treeModel
-from collections import OrderedDict
-from os.path import  expanduser
-#from CodeWarrior.Standard_Suite import file
-from comm import *
+from propertiesViewModel  import TreeModel, PropertyBuffer
+from parametersModel import ProjectParms
 
-try:
-    from gevent import sleep
-except:
-    from time import sleep
-    
 from schainpy.gui.figures import tools
-import numpy
+from schainpy.gui.viewcontroller.comm import ControllerThread
 
 FIGURES_PATH = tools.get_path()
 
@@ -52,7 +50,7 @@ def isRadarPath(path):
             return 0
     
         return 1
-    
+        
 class BasicWindow(QMainWindow, Ui_BasicWindow):
     """
     """
@@ -84,7 +82,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.walk = 0
         self.create = False
         self.selectedItemTree = None
-        self.commCtrlPThread = None
+        self.controllerObj = None
+#         self.commCtrlPThread = None
 #         self.create_figure()
         self.temporalFTP = ftpBuffer()
         self.projectProperCaracteristica = []
@@ -110,7 +109,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.__ftpProcUnitId = None
         self.__initialized = False
         
-        self.create_comm() 
+#         self.create_comm() 
         self.create_updating_timer()
         self.setParameter()
         
@@ -263,13 +262,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         Voltage or Spectra
         """
         if index == 0:
-           self.datatype = '.r'
+           extension = '.r'
         elif index == 1:
-            self.datatype = '.pdata'
+            extension = '.pdata'
         elif index == 2:
-            self.datatype = '.fits'
-
-        self.proDataType.setText(self.datatype)
+            extension = '.fits'
+        elif index == 3:
+            extension = '.hdf5'
+            
+        self.proDataType.setText(extension)
         self.console.clear()
 
     @pyqtSignature("int")
@@ -304,30 +305,36 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
           
     @pyqtSignature("")
     def on_proLoadButton_clicked(self):             
+        
         self.console.clear()
-        parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk , set = self.checkInputsProject()
-        if read_mode == "Offline":
-            if parms_ok:   
-                self.proComStartDate.clear()
-                self.proComEndDate.clear()
-                self.loadDays(data_path, ext, walk)
-                self.proComStartDate.setEnabled(True)
-                self.proComEndDate.setEnabled(True)
-                self.proStartTime.setEnabled(True)
-                self.proEndTime.setEnabled(True)
-                self.frame_2.setEnabled(True)
+        
+        parameter_list = self.checkInputsProject()
+        
+        if not parameter_list[0]:
             return
+        
+        parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set = parameter_list
+        
+        if read_mode == "Offline":
+            self.proComStartDate.clear()
+            self.proComEndDate.clear()
+            self.proComStartDate.setEnabled(True)
+            self.proComEndDate.setEnabled(True)
+            self.proStartTime.setEnabled(True)
+            self.proEndTime.setEnabled(True)
+            self.frame_2.setEnabled(True)
+                
         if read_mode == "Online":
-            if parms_ok:
-                self.proComStartDate.addItem("2010/01/30")
-                self.proComEndDate.addItem("2013/12/30")
-                self.loadDays(data_path, ext, walk)
-                self.proComStartDate.setEnabled(False)
-                self.proComEndDate.setEnabled(False)
-                self.proStartTime.setEnabled(False)
-                self.proEndTime.setEnabled(False)
-                self.frame_2.setEnabled(True)
-    
+            self.proComStartDate.addItem("2000/01/30")
+            self.proComEndDate.addItem("2016/12/31")
+            self.proComStartDate.setEnabled(False)
+            self.proComEndDate.setEnabled(False)
+            self.proStartTime.setEnabled(False)
+            self.proEndTime.setEnabled(False)
+            self.frame_2.setEnabled(True)
+        
+        self.loadDays(data_path, ext, walk)
+        
     @pyqtSignature("int")
     def on_proComStartDate_activated(self, index):
         """
@@ -371,7 +378,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             self.__itemTreeDict[projectId].setText(projectObjView.name)
         # Project Properties
-        self.showProjectProperties(projectObjView)
+        self.refreshProjectProperties(projectObjView)
         # Disable tabProject after finish the creation
         self.tabProject.setEnabled(True)
         
@@ -496,9 +503,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     @pyqtSignature("")     
     def on_specHeisOutputMetadaToolPath_clicked(self):
-        home = expanduser("~")
-        self.dir = os.path.join(home, 'schain_workspace')
-        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open text file", self.dir, self.tr("Text Files (*.xml)")))
+        
+        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open text file", self.pathWorkSpace, self.tr("Text Files (*.xml)")))
         self.specHeisOutputMetada.setText(filename)
         
     @pyqtSignature("")
@@ -513,11 +519,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
-        puObj = self.getSelectedPUObj()
+        puObj = self.getSelectedItemObj()
         puObj.removeOperations()
         
         if self.volOpCebRadarfrequency.isChecked():
-            value = self.volOpRadarfrequency.text()
+            value = str(self.volOpRadarfrequency.text())
             format = 'float'
             name_operation = 'setRadarFrequency'
             name_parameter = 'frequency'
@@ -530,8 +536,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     return 0
                 opObj = puObj.addOperation(name=name_operation)
                 opObj.addParameter(name=name_parameter, value=radarfreq, format=format)
-                    
-                    
         
         if self.volOpCebChannels.isChecked():
             value = str(self.volOpChannel.text())
@@ -680,17 +684,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if self.volOpCebFlip.isChecked():
             name_operation = 'deFlip'
             optype = 'self'
-            value = self.volOpFlip.text()
+            value = str(self.volOpFlip.text())
             name_parameter = 'channelList'
             format = 'intlist'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format) 
+            if value:
+                opObj.addParameter(name=name_parameter, value=value, format=format) 
                                
         if self.volOpCebCohInt.isChecked():
             name_operation = 'CohInt'
             optype = 'other'
-            value = self.volOpCohInt.text()
+            value = str(self.volOpCohInt.text())
             name_parameter = 'n'
             format = 'float'
             
@@ -716,9 +721,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=value1, format=format1)
             
-            channelList = self.volGraphChannelList.text()
-            xvalue = self.volGraphfreqrange.text() 
-            yvalue = self.volGraphHeightrange.text()
+            channelList = str(self.volGraphChannelList.text())
+            xvalue = str(self.volGraphfreqrange.text())
+            yvalue = str(self.volGraphHeightrange.text())
 
             if self.volGraphChannelList.isModified():
                 try:    
@@ -752,7 +757,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='int')
                 opObj.addParameter(name='figpath', value=self.volGraphPath.text(), format='str')
-                value = self.volGraphPrefix.text()
+                value = str(self.volGraphPrefix.text())
                 if not value == "":
                    try:
                        value = str(self.volGraphPrefix.text())
@@ -788,7 +793,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter3, value=value3, format=format)
 
         #---------NEW VOLTAGE PROPERTIES
-        self.showPUVoltageProperties(puObj)
+        self.refreshPUProperties(puObj)
 
         self.console.clear()
         self.console.append("If you want to save your project")
@@ -1067,7 +1072,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
-        puObj = self.getSelectedPUObj()
+        projectObj = self.getSelectedProjectObj() 
+        puObj = self.getSelectedItemObj()
+        
         puObj.removeOperations()
         
         if self.specOpCebRadarfrequency.isChecked():
@@ -1085,37 +1092,31 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj = puObj.addOperation(name=name_operation)
                 opObj.addParameter(name=name_parameter, value=radarfreq, format=format)
         
-
-        if self.proComDataType.currentText() == 'Voltage':
-            name_parameter = 'nFFTPoints'
-            value = self.specOpnFFTpoints.text()
-            name_parameter1 = 'nProfiles'
-            value1 = self.specOpProfiles.text()
-            name_parameter2 = 'ippFactor'
-            value2 = self.specOpippFactor.text()
-            format = 'int'
+        inputId = puObj.getInputId()
+        inputPuObj = projectObj.getProcUnitObj(inputId)
+        
+        if inputPuObj.datatype == 'Voltage' or inputPuObj.datatype == 'USRP':
+            
             try:
                 value = int(self.specOpnFFTpoints.text())
+                puObj.addParameter(name='nFFTPoints', value=value, format='int')
             except:
                 self.console.clear()
-                self.console.append("Please Write the number of FFT")
+                self.console.append("Please write the number of FFT")
                 return 0
-            puObj.addParameter(name=name_parameter, value=value, format=format)
-            if not value1 == "":
-                try:
-                    value1 = int(self.specOpProfiles.text())
-                except:
-                    self.console.clear()
-                    self.console.append("Please Write the number of Profiles")
-                    return 0
-                puObj.addParameter(name=name_parameter1, value=value1, format=format)
-            if not value2 == "":
-                try:
-                    value2 = int(self.specOpippFactor.text())
-                except:
-                    self.console.clear()
-                    self.console.append("Please Write the Number of IppFactor")
-                puObj.addParameter(name=name_parameter2 , value=value2 , format=format)
+            
+            try:
+                value1 = int(self.specOpProfiles.text())
+                puObj.addParameter(name='nProfiles', value=value1, format='int')
+            except:
+                self.console.append("Please Write the number of Profiles")
+                
+            try:
+                value2 = int(self.specOpippFactor.text())
+                puObj.addParameter(name='ippFactor' , value=value2 , format='int')
+            except:
+                self.console.append("Please Write the Number of IppFactor")
+            
                     
         if self.specOpCebCrossSpectra.isChecked():
             name_parameter = 'pairsList'
@@ -1811,7 +1812,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter2, value=value2, format=format)
             opObj.addParameter(name=name_parameter3, value=value3, format=format)
 
-        self.showPUSpectraProperties(puObj)
+        self.refreshPUProperties(puObj)
             
         self.console.clear()
         self.console.append("If you want to save your project")
@@ -2065,7 +2066,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
-        puObj = self.getSelectedPUObj()
+        puObj = self.getSelectedItemObj()
         puObj.removeOperations()
         
         if self.specHeisOpCebIncoherent.isChecked():
@@ -2289,7 +2290,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter2, value=value2, format=format2)
             opObj.addParameter(name=name_parameter3, value=value3, format=format3)
 
-        self.showPUSpectraHeisProperties(puObj)
+        self.refreshPUProperties(puObj)
             
         self.console.clear()
         self.console.append("Click on save icon ff you want to save your project")
@@ -2361,63 +2362,341 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     @pyqtSignature("")
     def on_specHeisGraphClear_clicked(self):
         pass
+    
+    def __getParmsFromProjectWindow(self):
+        """
+        Check Inputs Project:
+        - project_name
+        - datatype
+        - ext
+        - data_path
+        - readmode
+        - delay
+        - set
+        - walk
+        """
+        parms_ok = True
+        
+        project_name = str(self.proName.text())
+        
+        if project_name == '' or project_name == None:
+            outputstr = "Enter a project Name"
+            self.console.append(outputstr)
+            parms_ok = False
+            project_name = None
+        
+        datatype = str(self.proComDataType.currentText())
+        ext = str(self.proDataType.text())
+        
+        dpath = str(self.proDataPath.text())
+
+        if dpath == '':
+            outputstr = 'Datapath is empty'
+            self.console.append(outputstr)
+            parms_ok = False
+            dpath = None
+        
+        if dpath != None: 
+            if not os.path.isdir(dpath):
+                outputstr = 'Datapath (%s) does not exist' % dpath
+                self.console.append(outputstr)
+                parms_ok = False
+                dpath = None
+        
+        online = str(self.proComReadMode.currentIndex())
+        
+        delay = None
+        if online==1:
+            try:
+                delay = int(str(self.proDelay.text()))
+            except:
+                outputstr = 'Delay value (%s) must be a integer number' %str(self.proName.text())
+                self.console.append(outputstr)
+                parms_ok = False
+                
+        
+        set = None
+        ippKm = None
+        
+        value = str(self.proSet.text())
+        
+        if datatype.lower() == "usrp":
+            try:
+                ippKm = float(value)
+            except:
+                outputstr = 'IPP value (%s) must be a float number' % str(self.proName.text())
+                self.console.append(outputstr)
+                parms_ok = False
+        else:
+            try:
+                set = int(value)
+            except:
+                pass
+        
+        walk = self.proComWalk.currentIndex()
+        
+        starDate = str(self.proComStartDate.currentText())
+        endDate = str(self.proComEndDate.currentText())
+        
+#         startDateList = starDate.split("/")
+#         endDateList = endDate.split("/")
+#         
+#         starDate = datetime.date(int(startDateList[0]), int(startDateList[1]), int(startDateList[2]))
+#         endDate = datetime.date(int(endDateList[0]), int(endDateList[1]), int(endDateList[2]))
+        
+        startTime = self.proStartTime.time()
+        endTime = self.proEndTime.time()
+        
+        startTime = startTime.strftime("%H:%M:%S")
+        endTime = endTime.strftime("%H:%M:%S")
+
+        projectParms = ProjectParms()
+        
+        projectParms.project_name = project_name
+        projectParms.datatype = datatype
+        projectParms.ext = ext
+        projectParms.dpath = dpath
+        projectParms.online = online
+        projectParms.startDate = startDate
+        projectParms.endDate = endDate
+        projectParms.startTime = startTime
+        projectParms.endTime = endTime
+        projectParms.delay=delay
+        projectParms.walk=walk
+        projectParms.set=set
+        projectParms.ippKm=ippKm
+        projectParms.parmsOk=parms_ok
+        
+        return projectParms
+        
+    
+    def __getParmsFromProjectObj(self, projectObjView):
+        
+        parms_ok = True
+        
+        project_name, description = projectObjView.name, projectObjView.description
+        
+        readUnitObj = projectObjView.getReadUnitObj()
+        datatype = readUnitObj.datatype
+        
+        operationObj = readUnitObj.getOperationObj(name='run')
             
+        dpath = operationObj.getParameterValue(parameterName='path')
+        startDate = operationObj.getParameterValue(parameterName='startDate')
+        endDate = operationObj.getParameterValue(parameterName='endDate')
+        
+        startDate = startDate.strftime("%Y/%m/%d")
+        endDate = endDate.strftime("%Y/%m/%d")
+        
+        startTime = operationObj.getParameterValue(parameterName='startTime')
+        endTime = operationObj.getParameterValue(parameterName='endTime')
+
+        startTime = startTime.strftime("%H:%M:%S")
+        endTime = endTime.strftime("%H:%M:%S")
+        
+        online = 0
+        try:
+            online = operationObj.getParameterValue(parameterName='online')
+        except:
+            pass
+        
+        delay = ''
+        try:
+            delay = operationObj.getParameterValue(parameterName='delay')
+        except:
+            pass
+        
+        walk = 0
+        try:
+            walk = operationObj.getParameterValue(parameterName='walk')
+        except:
+            pass
+            
+        set = ''
+        try:
+            set = operationObj.getParameterValue(parameterName='set')
+        except:
+            pass
+        
+        ippKm = ''
+        if datatype.lower() == 'usrp':
+            try:
+                ippKm = operationObj.getParameterValue(parameterName='ippKm')
+            except:
+                pass
+            
+        projectParms = ProjectParms()
+        
+        projectParms.project_name = project_name
+        projectParms.datatype = datatype
+        projectParms.ext = None
+        projectParms.dpath = dpath
+        projectParms.online = online
+        projectParms.startDate = startDate
+        projectParms.endDate = endDate
+        projectParms.startTime = startTime
+        projectParms.endTime = endTime
+        projectParms.delay=delay
+        projectParms.walk=walk
+        projectParms.set=set
+        projectParms.ippKm=ippKm
+        projectParms.parmsOk=parms_ok
+        
+        return projectParms
+    
+    def refreshProjectWindow2(self, projectObjView):
+        
+        projectParms = self.__getParmsFromProjectObj(projectObjView)            
+
+        index = projectParms.getDatatypeIndex()
+        
+        self.proName.setText(projectObjView.name)
+        self.proDescription.clear()
+        self.proDescription.append(projectObjView.description)
+        
+        self.on_proComDataType_activated(index=index)
+        self.proDataType.setText(projectParms.getExt())
+        self.proDataPath.setText(projectParms.dpath)
+        self.proComDataType.setCurrentIndex(index)
+        self.proComReadMode.setCurrentIndex(projectParms.online)
+        self.proDelay.setText(str(projectParms.delay))
+        self.proSet.setText(str(projectParms.set))
+        
+        dateList = self.loadDays(data_path = projectParms.dpath,
+                                 ext = projectParms.getExt(),
+                                 walk = projectParms.walk,
+                                 expLabel = projectParms.expLabel)
+        
+        try:
+            startDateIndex = dateList.index(projectParms.startDate)
+        except:
+            startDateIndex = 0
+        
+        try:
+            endDateIndex = dateList.index(projectParms.endDate)
+        except:
+            endDateIndex = -1
+        
+        self.proComStartDate.setCurrentIndex(startDateIndex)
+        self.proComEndDate.setCurrentIndex(endDateIndex)
+        
+        startlist = projectParms.startTime.split(":")
+        endlist = projectParms.endTime.split(":")
+        
+        self.time.setHMS(int(startlist[0]), int(startlist[1]), int(startlist[2])) 
+        self.time.setHMS(int(endlist[0]), int(endlist[1]), int(endlist[2]))
+         
+        self.proStartTime.setTime(self.time)
+        self.proEndTime.setTime(self.time)
+        
+    def refreshProjectProperties(self, projectObjView):
+        
+        propertyBuffObj = PropertyBuffer()
+        name = projectObjView.name
+        
+        propertyBuffObj.append("Properties", "Name", projectObjView.name),
+        propertyBuffObj.append("Properties", "Description", projectObjView.description)
+        propertyBuffObj.append("Properties", "Workspace", self.pathWorkSpace)
+        
+        readUnitObj = projectObjView.getReadUnitObj()
+        runOperationObj = readUnitObj.getOperationObj(name='run')
+        
+        for thisParmObj in runOperationObj.getParameterObjList():
+            propertyBuffObj.append("Reading parms", thisParmObj.name, str(thisParmObj.getValue()))
+             
+        propertiesModel = propertyBuffObj.getPropertyModel()
+        
+        self.treeProjectProperties.setModel(propertiesModel)
+        self.treeProjectProperties.expandAll()  
+        self.treeProjectProperties.resizeColumnToContents(0)
+        self.treeProjectProperties.resizeColumnToContents(1)
+        
+    def refreshPUProperties(self, puObjView):
+        
+        propertyBuffObj = PropertyBuffer()
+        
+        for thisOp in puObjView.getOperationObjList():
+            
+            operationName = thisOp.name
+            if operationName == 'run':
+                operationName = 'Properties'  
+            else:
+                if not thisOp.getParameterObjList():
+                    propertyBuffObj.append(operationName, '--', '--')
+            
+            for thisParmObj in thisOp.getParameterObjList():
+                    
+                propertyBuffObj.append(operationName, thisParmObj.name, str(thisParmObj.getValue()))
+             
+        propertiesModel = propertyBuffObj.getPropertyModel()
+        
+        self.treeProjectProperties.setModel(propertiesModel)
+        self.treeProjectProperties.expandAll()  
+        self.treeProjectProperties.resizeColumnToContents(0)
+        self.treeProjectProperties.resizeColumnToContents(1)
+        
     def on_click(self, index):
         
         self.selectedItemTree = self.projectExplorerModel.itemFromIndex(index)
-        if self.getSelectedProjectObj():
-            projectObjView = self.getSelectedProjectObj()
-            project_name, description = projectObjView.name, projectObjView.description
-            id = int(projectObjView.id)
-            idReadUnit = projectObjView.getReadUnitId()
-            readUnitObj = projectObjView.getProcUnitObj(idReadUnit)
-            datatype, data_path, startDate, endDate, startTime, endTime , online , delay, walk , set = self.showProjectProperties(projectObjView)        
-            # show ProjectView           
-            self.refreshProjectWindow(project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, set)
-            if datatype == 'Voltage':
-                ext = '.r'
-            elif datatype == 'Spectra':
-                ext = '.pdata'
-            elif datatype == 'Fits':
-                ext = '.fits'
-            if online == 0:
-                self.proComStartDate.clear()
-                self.proComEndDate.clear()
-                self.loadDays(data_path, ext, walk)
+        
+        projectObjView = self.getSelectedProjectObj()
+        
+        if not projectObjView:
+            return
+        
+        #A project has been selected
+        if projectObjView == self.getSelectedItemObj():
+            
+            self.refreshProjectWindow2(projectObjView)
+            self.refreshProjectProperties(projectObjView)
+            
             self.tabProject.setEnabled(True)
             self.tabVoltage.setEnabled(False)
             self.tabSpectra.setEnabled(False)
             self.tabCorrelation.setEnabled(False)
             self.tabSpectraHeis.setEnabled(False)
-            self.tabWidgetProject.setCurrentWidget(self.tabProject)            
-                                    
+            self.tabWidgetProject.setCurrentWidget(self.tabProject)  
+            
+            return    
+        
+        #A processing unit has been selected
+        voltEnable = False
+        specEnable = False
+        corrEnable = False
+        specHeisEnable = False
+        tabSelected = self.tabProject
+        
+        puObj = self.getSelectedItemObj()
+        inputId = puObj.getInputId()
+        inputPUObj = projectObjView.getProcUnitObj(inputId)
+        
         if  self.selectedItemTree.text() == 'Voltage':
             datatype = 'Voltage'
-            puObj = self.getSelectedPUObj()  
-            self.showtabPUCreated(datatype=datatype)
+            
             if len(puObj.getOperationObjList()) == 1:
-                self.setInputsPU_View(datatype)
+                self.clearPUWindow(datatype)
             else:
                 self.refreshPUWindow(datatype=datatype, puObj=puObj)
-            self.showPUVoltageProperties(puObj)
+            self.refreshPUProperties(puObj)
+            
+            voltEnable = True
+            tabSelected = self.tabVoltage
                 
         if self.selectedItemTree.text() == 'Spectra':
             
             datatype = 'Spectra'
-            puObj = self.getSelectedPUObj() 
-            self.showtabPUCreated(datatype=datatype)
-            if readUnitObj.datatype == 'Spectra':
+
+            if inputPUObj.datatype == 'Spectra':
                 self.specOpnFFTpoints.setEnabled(False)
                 self.specOpProfiles.setEnabled(False)
                 self.specOpippFactor.setEnabled(False)
-                
             else:
                 self.specOpnFFTpoints.setEnabled(True)
                 self.specOpProfiles.setEnabled(True)
                 self.specOpippFactor.setEnabled(True)
                 
             if len(puObj.getOperationObjList()) == 1:
-                self.setInputsPU_View(datatype)
+                self.clearPUWindow(datatype)
                 
                 opObj = puObj.getOperationObj(name="run")   
                 if opObj == None:
@@ -2464,31 +2743,41 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
             else:
                 self.refreshPUWindow(datatype=datatype, puObj=puObj)   
-            self.showPUSpectraProperties(puObj)                         
+            self.refreshPUProperties(puObj) 
+            
+            specEnable = True
+            tabSelected = self.tabSpectra                       
 
         if self.selectedItemTree.text() == 'Correlation':
-            self.tabCorrelation.setEnabled(True) 
-            self.tabVoltage.setEnabled(False)
-            self.tabSpectra.setEnabled(False)
-            self.tabWidgetProject.setCurrentWidget(self.tabCorrelation) 
+
+            corrEnable = True
+            tabSelected = self.tabCorrelation
         
         if self.selectedItemTree.text() == 'SpectraHeis':
             datatype = 'SpectraHeis'
-            puObj = self.getSelectedPUObj() 
-            self.showtabPUCreated(datatype=datatype)
+            
             if len(puObj.getOperationObjList()) == 1:
-                self.setInputsPU_View(datatype)
+                self.clearPUWindow(datatype)
             else:
                 self.refreshPUWindow(datatype=datatype, puObj=puObj)
-            self.showPUSpectraHeisProperties(puObj)
+            self.refreshPUProperties(puObj)
             
+            specHeisEnable = False
+            tabSelected = self.tabSpectraHeis
+
+        self.tabProject.setEnabled(False)
+        self.tabVoltage.setEnabled(voltEnable)
+        self.tabSpectra.setEnabled(specEnable)
+        self.tabCorrelation.setEnabled(corrEnable)
+        self.tabSpectraHeis.setEnabled(specHeisEnable)
+        self.tabWidgetProject.setCurrentWidget(tabSelected)  
                   
     def on_right_click(self, pos):
         
         self.menu = QtGui.QMenu()
-        quitAction0 = self.menu.addAction("Create a new project")
-        quitAction1 = self.menu.addAction("Create a new processing unit")
-        quitAction2 = self.menu.addAction("Delete selected unit")
+        quitAction0 = self.menu.addAction("Create a New Project")
+        quitAction1 = self.menu.addAction("Create a New Processing Unit")
+        quitAction2 = self.menu.addAction("Delete Item")
         quitAction3 = self.menu.addAction("Quit")
         
         if len(self.__itemTreeDict) == 0:
@@ -2504,7 +2793,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            
         if action == quitAction1:
             if len(self.__projectObjDict) == 0:
-                outputstr = "First Create a Project then add Processing Unit"
+                outputstr = "You need to create a Project before adding a Processing Unit"
                 self.console.clear()
                 self.console.append(outputstr)
                 return 0
@@ -2512,23 +2801,23 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                self.addPUWindow()   
                self.console.clear()
                self.console.append("Please, Choose the type of Processing Unit")
-               self.console.append("If your Datatype is rawdata, you will start with processing unit Type Voltage")
-               self.console.append("If your Datatype is pdata, you will choose between processing unit Type Spectra or Correlation")
-               self.console.append("If your Datatype is fits, you will start with processing unit Type SpectraHeis")
+#                self.console.append("If your Datatype is rawdata, you will start with processing unit Type Voltage")
+#                self.console.append("If your Datatype is pdata, you will choose between processing unit Type Spectra or Correlation")
+#                self.console.append("If your Datatype is fits, you will start with processing unit Type SpectraHeis")
 
         if action == quitAction2:
             index = self.selectedItemTree
             try:
                 index.parent()
             except:
-                self.console.append('First left click on Project or Processing Unit')
+                self.console.append('Please first select a Project or Processing Unit')
                 return 0
             # print index.parent(),index
             if index.parent() == None:
                self.projectExplorerModel.removeRow(index.row())
             else:
                 index.parent().removeRow(index.row())
-            self.deleteProjectorPU()  
+            self.removeItemTreeFromProject()  
             self.console.clear()                
             # for i in self.projectExplorerTree.selectionModel().selection().indexes():
             #     print i.row()
@@ -2548,8 +2837,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             ext = '.pdata'
             value = 1
         elif datatype == 'Fits':
-            ext = 'fits'
+            ext = '.fits'
             value = 2
+        elif datatype == 'USRP':
+            ext = '.hdf5'
+            value = 3
+            
         self.proDataType.setText(ext)
         self.proDataPath.setText(str(data_path))
         self.proComDataType.setCurrentIndex(value)
@@ -2615,7 +2908,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     self.volOpChannel.setText(value)
                     self.volOpChannel.setEnabled(True)
                     self.volOpCebChannels.setCheckState(QtCore.Qt.Checked)
-                    self.VOLOpComChannel.setCurrentIndex(channelMode)
+                    self.volOpComChannels.setCurrentIndex(channelMode)
                         
             opObj = puObj.getOperationObj(name="selectHeights")
             if opObj == None:
@@ -3693,18 +3986,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
          
     def createReadUnitView(self, projectObjView):
         
-        project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, walk , set = self.getParmsFromProjectWindow()
-        if set == None:     
-            readUnitConfObj = projectObjView.addReadUnit(datatype=datatype,
-                                                    path=data_path,
-                                                    startDate=startDate,
-                                                    endDate=endDate,
-                                                    startTime=startTime,
-                                                    endTime=endTime,
-                                                    online=online,
-                                                    delay=delay,
-                                                    walk=walk)
-        else:
+        project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, walk, set = self.getParmsFromProjectWindow()
+        
+        if datatype == "Voltage" or datatype == "Spectra" or datatype == "Fits":
             readUnitConfObj = projectObjView.addReadUnit(datatype=datatype,
                                                             path=data_path,
                                                             startDate=startDate,
@@ -3714,8 +3998,20 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                                                             online=online,
                                                             delay=delay,
                                                             walk=walk,
-                                                            set=set)
-        
+                                                            set=set
+                                                            )
+
+        if datatype == "USRP":
+            readUnitConfObj = projectObjView.addReadUnit(datatype=datatype,
+                                                            path=data_path,
+                                                            startDate=startDate,
+                                                            endDate=endDate,
+                                                            startTime=startTime,
+                                                            endTime=endTime,
+                                                            online=online,
+                                                            delay=delay,
+                                                            ippKm=set
+                                                            ) 
         return readUnitConfObj
 
     def updateReadUnitView(self, projectObjView, idReadUnit):
@@ -3724,8 +4020,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         readUnitConfObj = projectObjView.getProcUnitObj(idReadUnit)
         
-        if set == None:
-        
+        if datatype == "Voltage" or datatype == "Spectra" or datatype == "Fits":
             readUnitConfObj.update(datatype=datatype,
                                     path=data_path,
                                     startDate=startDate,
@@ -3734,21 +4029,21 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                                     endTime=endTime,
                                     online=online,
                                     delay=delay,
-                                    walk=walk)
-                                    
-        else:
+                                    walk=walk,
+                                    set=set
+                                    )
+
+        if datatype == "USRP":
             readUnitConfObj.update(datatype=datatype,
-                        path=data_path,
-                        startDate=startDate,
-                        endDate=endDate,
-                        startTime=startTime,
-                        endTime=endTime,
-                        online=online,
-                        delay=delay,
-                        walk=walk,
-                        set=set)
-            
-            
+                                    path=data_path,
+                                    startDate=startDate,
+                                    endDate=endDate,
+                                    startTime=startTime,
+                                    endTime=endTime,
+                                    online=online,
+                                    delay=delay,
+                                    ippKm=set
+                                    ) 
         
         return readUnitConfObj
         
@@ -3770,7 +4065,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def addPUWindow(self):
         
         self.configUPWindowObj = UnitProcessWindow(self)
-        fatherObj = self.getSelectedPUObj()
+        fatherObj = self.getSelectedItemObj()
         try:
             fatherObj.getElementName()
         except:
@@ -3810,7 +4105,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.showtabPUCreated(datatype)
         
-        self.setInputsPU_View(datatype)
+        self.clearPUWindow(datatype)
         
         self.showPUinitView()   
         
@@ -3968,8 +4263,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.bufferProject("Parameters", "Time zone", "Local")
         self.bufferProject("Description", "Summary  ", description)
             
-        self.propertiesModel = treeModel()
-        self.propertiesModel.showProjectParms(self.projectProperCaracteristica, self.projectProperPrincipal, self.projectProperDescripcion)
+        self.propertiesModel = TreeModel()
+        self.propertiesModel.showProperties(self.projectProperCaracteristica, self.projectProperPrincipal, self.projectProperDescripcion)
         self.treeProjectProperties.setModel(self.propertiesModel)
         self.treeProjectProperties.expandAll()  
         self.treeProjectProperties.resizeColumnToContents(0)
@@ -3982,7 +4277,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         return datatype , dpath , startDate , endDate, startTime, endTime, online, delay, walk, set
                        
     def showPUinitView(self):
-        self.propertiesModel = treeModel()
+        self.propertiesModel = TreeModel()
         self.propertiesModel.initPUVoltageView()
         self.treeProjectProperties.setModel(self.propertiesModel)
         self.treeProjectProperties.expandAll()
@@ -4213,8 +4508,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                                  
       # set model PU Properties
         
-        self.propertiesModel = treeModel()
-        self.propertiesModel.showPUVoltageParms(self.volProperCaracteristica, self.volProperPrincipal, self.volProperDescripcion)
+        self.propertiesModel = TreeModel()
+        self.propertiesModel.showProperties(self.volProperCaracteristica, self.volProperPrincipal, self.volProperDescripcion)
         self.volProperCaracteristica = []
         self.volProperPrincipal = []
         self.volProperDescripcion = []
@@ -4949,8 +5244,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
 # set model PU Properties
         
-        self.propertiesModel = treeModel()
-        self.propertiesModel.showPUSpectraParms(self.specProperCaracteristica, self.specProperPrincipal, self.specProperDescripcion)
+        self.propertiesModel = TreeModel()
+        self.propertiesModel.showProperties(self.specProperCaracteristica, self.specProperPrincipal, self.specProperDescripcion)
                                                 
         self.treeProjectProperties.setModel(self.propertiesModel)
         self.treeProjectProperties.expandAll()
@@ -5187,8 +5482,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
 # set model PU Properties
         
-        self.propertiesModel = treeModel()
-        self.propertiesModel.showPUSpectraHeisParms(self.specHeisProperCaracteristica, self.specHeisProperPrincipal, self.specHeisProperDescripcion)
+        self.propertiesModel = TreeModel()
+        self.propertiesModel.showProperties(self.specHeisProperCaracteristica, self.specHeisProperPrincipal, self.specHeisProperDescripcion)
                                                 
         self.treeProjectProperties.setModel(self.propertiesModel)
         self.treeProjectProperties.expandAll()
@@ -5307,13 +5602,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                
         self.__itemTreeDict[id] = itemTree
          
-    def addPU2PELoadXML(self, id, name, idParent):
+    def addPU2PELoadXML(self, id, name, inputId):
         
         itemTree = QtGui.QStandardItem(QtCore.QString(str(name)))
-        if self.__itemTreeDict.has_key(idParent):
-            self.parentItem = self.__itemTreeDict[idParent]
+        
+        if self.__itemTreeDict.has_key(inputId):
+            self.parentItem = self.__itemTreeDict[inputId]
         else:
-            self.parentItem = self.selectedItemTree
+            self.parentItem = self.__itemTreeDict[inputId[0]]
+            
         self.parentItem.appendRow(itemTree)   
         self.projectExplorerTree.expandAll()
         self.parentItem = itemTree
@@ -5325,29 +5622,39 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         # print "stop"
     
     def getSelectedProjectObj(self):
+        """
+        Return the current project object selected. If a processing unit is 
+        actually selected this function returns associated project.
         
+        None if any project or processing unit is selected
+        """
         for key in self.__itemTreeDict.keys():
             if self.__itemTreeDict[key] != self.selectedItemTree:
                 continue
             
             if self.__projectObjDict.has_key(key):
                 projectObj = self.__projectObjDict[key]
+                return projectObj
+            
+            puObj = self.__puObjDict[key]
+            
+            if puObj.parentId == None:
+                projectId = puObj.getId()[0]
             else:
-                puObj = self.__puObjDict[key]
-                if puObj.parentId == None:
-                    id = puObj.getId()[0]
-                else:
-                    id = puObj.parentId
-                projectObj = self.__projectObjDict[id]
+                projectId = puObj.parentId
+                
+            projectObj = self.__projectObjDict[projectId]
             
             return projectObj
         
-        self.showWarning()
-        
         return None
 
-    def getSelectedPUObj(self):
+    def getSelectedItemObj(self):
+        """
+        Return the current project or processing unit object selected
         
+        None if any project or processing unit is selected
+        """
         for key in self.__itemTreeDict.keys():
             if self.__itemTreeDict[key] != self.selectedItemTree:
                 continue
@@ -5359,8 +5666,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     
             return fatherObj
         
-        self.showWarning()
-        
         return None
     
     def openProject(self):
@@ -5370,10 +5675,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.create = False
         self.frame_2.setEnabled(True)
-        home = expanduser("~")
-        self.dir = os.path.join(home, 'schain_workspace')
+        
         # print self.dir
-        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open text file", self.dir, self.tr("Text Files (*.xml)")))
+        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open text file", self.pathWorkSpace, self.tr("Text Files (*.xml)")))
         self.console.clear()
         projectObjLoad = Project()
         try:
@@ -5383,34 +5687,38 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.console.append("The selected xml file could not be loaded ...")
             return 0
         
-        project_name, description = projectObjLoad.name, projectObjLoad.description
+        self.refreshProjectWindow2(projectObjLoad)
+        self.refreshProjectProperties(projectObjLoad)
+#         project_name, description = projectObjLoad.name, projectObjLoad.description
         id = projectObjLoad.id
         self.__projectObjDict[id] = projectObjLoad
-        # Project Properties
-        datatype, data_path, startDate, endDate, startTime, endTime , online , delay, walk, set = self.showProjectProperties(projectObjLoad)        
-        # show ProjectView
-        self.addProject2ProjectExplorer(id=id, name=project_name)
-        self.refreshProjectWindow(project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, set)      
-        
-        if datatype == "Voltage":
-            ext = '.r'
-            self.specOpProfiles.setEnabled(True)
-            self.specOpippFactor.setEnabled(True)
-        elif datatype == "Spectra":            
-            ext = '.pdata'
-            self.specOpProfiles.setEnabled(False)
-            self.specOpippFactor.setEnabled(False)
-        elif datatype == "Fits":
-            ext = '.fits'
-            
-        if online == 0:    
-            self.loadDays(data_path, ext, walk)
-        else:
-            self.proComStartDate.setEnabled(False)
-            self.proComEndDate.setEnabled(False)
-            self.proStartTime.setEnabled(False)
-            self.proEndTime.setEnabled(False)
-            self.frame_2.setEnabled(True)
+#         # Project Properties
+#         datatype, data_path, startDate, endDate, startTime, endTime , online , delay, walk, set = self.showProjectProperties(projectObjLoad)        
+#         # show ProjectView
+        self.addProject2ProjectExplorer(id=id, name=projectObjLoad.name)
+#         self.refreshProjectWindow(project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, set)      
+#         
+#         if datatype == "Voltage":
+#             ext = '.r'
+#             self.specOpProfiles.setEnabled(True)
+#             self.specOpippFactor.setEnabled(True)
+#         elif datatype == "Spectra":            
+#             ext = '.pdata'
+#             self.specOpProfiles.setEnabled(False)
+#             self.specOpippFactor.setEnabled(False)
+#         elif datatype == "Fits":
+#             ext = '.fits'
+#         elif datatype == "USRP":
+#             ext = '.hdf5'
+#             
+#         if online == 0:    
+#             self.loadDays(data_path, ext, walk)
+#         else:
+#             self.proComStartDate.setEnabled(False)
+#             self.proComEndDate.setEnabled(False)
+#             self.proStartTime.setEnabled(False)
+#             self.proEndTime.setEnabled(False)
+#             self.frame_2.setEnabled(True)
             
         self.tabWidgetProject.setEnabled(True)
         self.tabWidgetProject.setCurrentWidget(self.tabProject) 
@@ -5418,26 +5726,28 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.tabProject.setEnabled(True)   
         puObjorderList = OrderedDict(sorted(projectObjLoad.procUnitConfObjDict.items(), key=lambda x: x[0]))
         
-        for inputId, puObj in puObjorderList.items():
-            # print puObj.datatype, puObj.inputId,puObj.getId(),puObj.parentId
-            self.__puObjDict[puObj.getId()] = puObj
+        for puId, puObj in puObjorderList.items():
             
-            if puObj.inputId != "0":
-                self.addPU2PELoadXML(id=puObj.getId() , name=puObj.datatype , idParent=puObj.inputId)
+#             print "%s %s %s %s %s" %(puObj.datatype, inputId, puObj.inputId, puObj.getId(), puObj.parentId)
+            
+            self.__puObjDict[puId] = puObj
+            
+            if puObj.inputId != '0':
+                self.addPU2PELoadXML(id=puId , name=puObj.datatype , inputId=puObj.inputId)
                 
             if puObj.datatype == "Voltage":
                 self.refreshPUWindow(puObj.datatype, puObj)
-                self.showPUVoltageProperties(puObj)
+                self.refreshPUProperties(puObj)
                 self.showtabPUCreated(datatype=puObj.datatype)
             
             if puObj.datatype == "Spectra":
                 self.refreshPUWindow(puObj.datatype, puObj)
-                self.showPUSpectraProperties(puObj)
+                self.refreshPUProperties(puObj)
                 self.showtabPUCreated(datatype=puObj.datatype)
                 
             if puObj.datatype == "SpectraHeis":
                 self.refreshPUWindow(puObj.datatype, puObj)
-                self.showPUSpectraHeisProperties(puObj)
+                self.refreshPUProperties(puObj)
                 self.showtabPUCreated(datatype=puObj.datatype)
             
             if puObj.name == "SendToServer":
@@ -5447,7 +5757,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj = puObj.getOperationObj(name="run")
                 self.saveFTPvalues(opObj)
                 
-        self.console.clear()
+#         self.console.clear()
         self.console.append("The selected xml file has been loaded successfully")
         # self.refreshPUWindow(datatype=datatype,puObj=puObj)
         
@@ -5460,12 +5770,16 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not self.__initialized:
             return
         
-        if not self.commCtrlPThread.isRunning():
+        if not self.controllerObj.isAlive():
             self.stopProject()
         
     def playProject(self, ext=".xml"):
         
         projectObj = self.getSelectedProjectObj()
+        
+        if not projectObj:
+            print "Please select a project before pressing PLAY"
+            return
         
         filename = os.path.join(str(self.pathWorkSpace),
                                 "%s%s%s" %(str(projectObj.name), str(projectObj.id), ext)
@@ -5487,7 +5801,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStopToolbar.setEnabled(True)
         
         self.console.append("Please Wait...")
-        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, filename))
+#         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, filename))
+        
+        self.controllerObj = ControllerThread(filename)
+        self.controllerObj.start()
         sleep(0.5)
         self.__initialized = True
         
@@ -5495,7 +5812,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.__initialized = False
         
-        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, True))
+#         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, True))
+        self.controllerObj.stop()
         
         self.actionStart.setEnabled(True)
         self.actionPause.setEnabled(False)
@@ -5509,8 +5827,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
      
     def pauseProject(self):
         
-        self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
-
+#         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
+        self.controllerObj.pause()
+        
         self.actionStart.setEnabled(False)
         self.actionPause.setEnabled(True)
         self.actionStop.setEnabled(True)
@@ -5525,7 +5844,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStarToolbar.setEnabled(False)
         
         sts = True
-        puObj = self.getSelectedPUObj() 
+        puObj = self.getSelectedItemObj() 
         
         if puObj != None:
             if puObj.name == 'VoltageProc':
@@ -5562,11 +5881,16 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         return filename
         
-    def deleteProjectorPU(self):
+    def removeItemTreeFromProject(self):
         """
         Metodo para eliminar el proyecto en el dictionario de proyectos y en el dictionario de vista de arbol
         """
         for key in self.__itemTreeDict.keys():
+            
+            #Check again because an item can delete multiple items (childs)
+            if key not in self.__itemTreeDict.keys():
+                continue
+            
             if self.__itemTreeDict[key] != self.selectedItemTree:
                 continue
             
@@ -5577,14 +5901,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
             else:
                 puObj = self.__puObjDict[key]
-                if puObj.parentId == None:
-                    id = puObj.getId()[0]
-                else:
-                    id = puObj.parentId
-                projectObj = self.__projectObjDict[id]
+                idProjectParent = puObj.parentId
+                projectObj = self.__projectObjDict[idProjectParent]
+                
                 del self.__puObjDict[key]
                 del self.__itemTreeDict[key]
                 del projectObj.procUnitConfObjDict[key]
+                
                 for key in projectObj.procUnitConfObjDict.keys():
                     if projectObj.procUnitConfObjDict[key].inputId != puObj.getId():
                         continue
@@ -5593,10 +5916,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     del projectObj.procUnitConfObjDict[key]
                 # print projectObj.procUnitConfObjDict
             # print self.__itemTreeDict,self.__projectObjDict,self.__puObjDict    
-        self.showWarning()
-
-    def showWarning(self):
-        pass
     
     def getParmsFromProjectWindow(self):
         """
@@ -5664,6 +5983,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
     
     def setInputsProject_View(self):
+        
         self.tabWidgetProject.setEnabled(True)
         self.tabWidgetProject.setCurrentWidget(self.tabProject)
         self.tabProject.setEnabled(True)
@@ -5678,6 +5998,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proComDataType.addItem("Voltage")
         self.proComDataType.addItem("Spectra")
         self.proComDataType.addItem("Fits")
+        self.proComDataType.addItem("USRP")
         
         self.proComStartDate.clear()
         self.proComEndDate.clear()
@@ -5699,10 +6020,16 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #         self.console.append("Introduce Project Parameters")DC
 #         self.console.append("Select data type Voltage( .rawdata)  or Spectra(.pdata)")
     
-    def setInputsPU_View(self, datatype):
+    def clearPUWindow(self, datatype):
+        
         projectObjView = self.getSelectedProjectObj()
-        idReadUnit = projectObjView.getReadUnitId()
-        readUnitObj = projectObjView.getProcUnitObj(idReadUnit)
+        
+        if not projectObjView:
+            return
+        
+        puObj = self.getSelectedItemObj()
+        inputId = puObj.getInputId()
+        inputPUObj = projectObjView.getProcUnitObj(inputId)
         
         if datatype == 'Voltage':
             self.volOpComChannels.setEnabled(False)
@@ -5732,7 +6059,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         if datatype == 'Spectra':
 
-            if readUnitObj.datatype == 'Spectra':
+            if inputPUObj.datatype == 'Spectra':
                 self.specOpnFFTpoints.setEnabled(False)
                 self.specOpProfiles.setEnabled(False)
                 self.specOpippFactor.setEnabled(False)
@@ -5849,93 +6176,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.tabSpectraHeis.setEnabled(True)
             self.tabWidgetProject.setCurrentWidget(self.tabSpectraHeis)
     
-            
-    def searchData(self, data_path, ext, walk, expLabel=''):
-        dateList = []
-        fileList = []
-        
-        if not os.path.exists(data_path):
-            return None
-        
-        if walk == 0:
-            files = os.listdir(data_path)
-            for thisFile in files:
-                thisExt = os.path.splitext(thisFile)[-1]
-                if thisExt == ext:
-                    fileList.append(thisFile)
-            
-            for thisFile in fileList:
-                try:
-                    year = int(thisFile[1:5])
-                    doy = int(thisFile[5:8])
-                    
-                    date = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
-                    dateformat = date.strftime("%Y/%m/%d")
-                    
-                    if dateformat not in dateList:
-                        dateList.append(dateformat)    
-                except:
-                    continue            
- # REVISION---------------------------------1               
-        if walk == 1:
-            
-            dirList = os.listdir(data_path)
-            
-            dirList.sort()     
-            
-            dateList = []
-            
-            for thisDir in dirList:
-                
-                if not isRadarPath(thisDir):
-                    self.console.clear()
-                    self.console.append("Please, Choose the Correct Path")
-                    self.proOk.setEnabled(False)
-                    continue
-                
-                doypath = os.path.join(data_path, thisDir, expLabel)
-                if not os.path.exists(doypath):
-                    self.console.clear()
-                    self.console.append("Please, Choose the Correct Path")
-                    return 
-                files = os.listdir(doypath)
-                fileList = []
-                
-                for thisFile in files:
-                    thisExt = os.path.splitext(thisFile)[-1]
-                    if thisExt != ext:
-                       self.console.clear()
-                       self.console.append("There is no datatype selected in the Path Directory")
-                       self.proOk.setEnabled(False)
-                       continue
-                    
-                    if not isRadarFile(thisFile):
-                        self.proOk.setEnabled(False)
-                        self.console.clear()
-                        self.console.append("Please, Choose the Correct Path")  
-                        continue
-                
-                    fileList.append(thisFile)
-                    break
-                
-                if fileList == []:
-                    continue
-                
-                year = int(thisDir[1:5])
-                doy = int(thisDir[5:8])
-                
-                date = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
-                dateformat = date.strftime("%Y/%m/%d")
-                dateList.append(dateformat)
-
-        if len(dateList) > 0:
-            self.proOk.setEnabled(True)
-            return dateList
-            
-        
-#         self.proOk.setEnabled(False)
-        return None
-    
     def checkInputsProject(self):
         """
         Check Inputs Project:
@@ -5957,15 +6197,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             project_name = None
         
         datatype = str(self.proComDataType.currentText())
-        if not(datatype in ['Voltage', 'Spectra', 'Fits']):
-            outputstr = 'datatype = %s, this must be either Voltage, Spectra or SpectraHeis' % datatype
+        if not(datatype in ['Voltage', 'Spectra', 'Fits', 'USRP']):
+            outputstr = 'datatype = %s, this must be either Voltage, Spectra, SpectraHeis or USRP' % datatype
             self.console.append(outputstr)
             parms_ok = False
             datatype = None
         
         ext = str(self.proDataType.text())
-        if not(ext in ['.r', '.pdata', '.fits']):
-            outputstr = "extension files must be .r , .pdata or .fits"
+        if not(ext in ['.r', '.pdata', '.fits', '.hdf5']):
+            outputstr = "extension files must be .r , .pdata, .fits or .hdf5"
             self.console.append(outputstr)
             parms_ok = False
             ext = None
@@ -5979,7 +6219,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             data_path = None
         
         if data_path != None: 
-            if not os.path.exists(data_path):
+            if not os.path.isdir(data_path):
                 outputstr = 'Datapath:%s does not exists' % data_path
                 self.console.append(outputstr)
                 parms_ok = False
@@ -6111,26 +6351,170 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
         if datatype == "SpectraHeis":    
             return parms_ok, output_path, blocksperfile, metada      
+
+    def searchData(self, data_path, ext, walk, expLabel=''):
+        dateList = []
+        fileList = []
+        
+        if not os.path.exists(data_path):
+            return None
+        
+        if walk == 0:
+            files = os.listdir(data_path)
+            for thisFile in files:
+                thisExt = os.path.splitext(thisFile)[-1]
+                if thisExt == ext:
+                    fileList.append(thisFile)
+            
+            for thisFile in fileList:
+                try:
+                    year = int(thisFile[1:5])
+                    doy = int(thisFile[5:8])
+                    
+                    date = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
+                    dateformat = date.strftime("%Y/%m/%d")
+                    
+                    if dateformat not in dateList:
+                        dateList.append(dateformat)    
+                except:
+                    continue            
+        # REVISION---------------------------------1               
+        if walk == 1:
+            
+            dirList = os.listdir(data_path)
+            
+            dirList.sort()     
+            
+            dateList = []
+            
+            for thisDir in dirList:
+                
+                if not isRadarPath(thisDir):
+                    self.console.clear()
+                    self.console.append("Please, Choose the Correct Path")
+                    self.proOk.setEnabled(False)
+                    continue
+                
+                doypath = os.path.join(data_path, thisDir, expLabel)
+                if not os.path.exists(doypath):
+                    self.console.clear()
+                    self.console.append("Please, Choose the Correct Path")
+                    return 
+                files = os.listdir(doypath)
+                fileList = []
+                
+                for thisFile in files:
+                    thisExt = os.path.splitext(thisFile)[-1]
+                    if thisExt != ext:
+                       self.console.clear()
+                       self.console.append("There is no datatype selected in the Path Directory")
+                       self.proOk.setEnabled(False)
+                       continue
+                    
+                    if not isRadarFile(thisFile):
+                        self.proOk.setEnabled(False)
+                        self.console.clear()
+                        self.console.append("Please, Choose the Correct Path")  
+                        continue
+                
+                    fileList.append(thisFile)
+                    break
+                
+                if fileList == []:
+                    continue
+                
+                year = int(thisDir[1:5])
+                doy = int(thisDir[5:8])
+                
+                date = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
+                dateformat = date.strftime("%Y/%m/%d")
+                dateList.append(dateformat)
+
+        if len(dateList) > 0:
+            self.proOk.setEnabled(True)
+            return dateList
+            
+        
+#         self.proOk.setEnabled(False)
+        return None
+        
+    def findDatafiles(self, data_path, ext, walk, expLabel=''):
+        
+        dateList = []
+        fileList = []
+        
+        if ext == ".r":
+            from schainpy.model.io.jroIO_base import JRODataReader
+            
+            readerObj = JRODataReader()
+            dateList = readerObj.findDatafiles(path=data_path,
+                                               expLabel=expLabel,
+                                               ext=ext,
+                                               walk=walk)
+
+        if ext == ".pdata":
+            from schainpy.model.io.jroIO_base import JRODataReader
+            
+            readerObj = JRODataReader()
+            dateList = readerObj.findDatafiles(path=data_path,
+                                               expLabel=expLabel,
+                                               ext=ext,
+                                               walk=walk)
+
+        if ext == ".fits":
+            from schainpy.model.io.jroIO_base import JRODataReader
+            
+            readerObj = JRODataReader()
+            dateList = readerObj.findDatafiles(path=data_path,
+                                               expLabel=expLabel,
+                                               ext=ext,
+                                               walk=walk)
+
+        if ext == ".hdf5":
+            from schainpy.model.io.jroIO_usrp import USRPReader
+            
+            readerObj = USRPReader()
+            dateList = readerObj.findDatafiles(path=data_path)
+            
+        return dateList
     
-    def loadDays(self, data_path, ext, walk):
+    def loadDays(self, data_path, ext, walk, expLabel=''):
         """
         Method to loads day
         """
-        dateList = self.searchData(data_path, ext, walk)
-        if dateList == None:
+        self.proOk.setEnabled(False)
+        self.dateList = []
+        
+        dateList = self.findDatafiles(data_path, ext=ext, walk=walk, expLabel=expLabel)
+        
+        if not dateList:
             self.console.clear()
             outputstr = "The path: %s is empty with file extension *%s" % (data_path, ext)
             self.console.append(outputstr)
             return
         
-        self.dateList = dateList
+        dateStrList = []
         for thisDate in dateList:
-            self.proComStartDate.addItem(thisDate)
-            self.proComEndDate.addItem(thisDate)
+            dateStr = thisDate.strftime("%Y/%m/%d")
+            
+            self.proComStartDate.addItem(dateStr)
+            self.proComEndDate.addItem(dateStr)
+            dateStrList.append(dateStr)
+            
         self.proComEndDate.setCurrentIndex(self.proComStartDate.count() - 1)
         
-    def setWorkSpaceGUI(self, pathWorkSpace):
-         self.pathWorkSpace = pathWorkSpace    
+        self.dateList = dateStrList
+        self.proOk.setEnabled(True)
+        
+        return self.dateList
+        
+    def setWorkSpaceGUI(self, pathWorkSpace=None):
+        
+        if pathWorkSpace == None:
+            home = os.path.expanduser("~")
+            pathWorkSpace = os.path.join(home,'schain_workspace')
+        
+        self.pathWorkSpace = pathWorkSpace    
    
     """
     Comandos Usados en Console
@@ -6173,7 +6557,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStop.setShortcut('Ctrl+3')
         
         self.actionFTP.setShortcut('Ctrl+F')
-        
+
+        self.actionStart.setEnabled(False)
+        self.actionPause.setEnabled(False)
+        self.actionStop.setEnabled(False)
+            
         self.actionStarToolbar.setEnabled(False)
         self.actionPauseToolbar.setEnabled(False)
         self.actionStopToolbar.setEnabled(False)
@@ -6210,7 +6598,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.projectExplorerTree.expandAll()
         # set model Project Properties
         
-        self.propertiesModel = treeModel()
+        self.propertiesModel = TreeModel()
         self.propertiesModel.initProjectView()
         self.treeProjectProperties.setModel(self.propertiesModel)
         self.treeProjectProperties.expandAll()
@@ -6325,7 +6713,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
 
         sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
-        sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
+#         sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
         
         
 class UnitProcessWindow(QMainWindow, Ui_UnitProcess):

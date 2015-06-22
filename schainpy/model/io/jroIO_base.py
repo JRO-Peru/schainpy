@@ -261,19 +261,36 @@ def checkForRealPath(path, foldercounter, year, doy, set, ext):
 
     return fullfilename, filename
 
-def isDoyFolder(folder):
+def isRadarFolder(folder):
     try:
         year = int(folder[1:5])
-    except:
-        return 0
-    
-    try:
         doy = int(folder[5:8])
     except:
         return 0
     
     return 1
 
+def isRadarFile(file):
+        try:
+            year = int(file[1:5])
+            doy = int(file[5:8])
+            set = int(file[8:11])
+        except:
+            return 0
+    
+        return 1
+
+def getDateFromRadarFile(file):
+        try:
+            year = int(file[1:5])
+            doy = int(file[5:8])
+            set = int(file[8:11])
+        except:
+            return None
+    
+        thisDate = datetime.date(year, 1, 1) + datetime.timedelta(doy-1)
+        return thisDate
+    
 class JRODataIO:
     
     c = 3E8
@@ -382,29 +399,32 @@ class JRODataReader(JRODataIO):
 
         """
         
-        raise ValueError, "This method has not been implemented"
+#         raise NotImplementedError, "This method has not been implemented"
     
 
     def createObjByDefault(self):
         """
 
         """
-        raise ValueError, "This method has not been implemented"
+        raise NotImplementedError, "This method has not been implemented"
 
     def getBlockDimension(self):
         
-        raise ValueError, "No implemented"
+        raise NotImplementedError, "No implemented"
 
     def __searchFilesOffLine(self,
                             path,
-                            startDate,
-                            endDate,
+                            startDate=None,
+                            endDate=None,
                             startTime=datetime.time(0,0,0),
                             endTime=datetime.time(23,59,59),
                             set=None,
                             expLabel='',
                             ext='.r',
                             walk=True):
+        
+        self.filenameList = []
+        self.datetimeList = []
         
         pathList = []
         
@@ -422,28 +442,32 @@ class JRODataReader(JRODataIO):
                 for thisPath in os.listdir(single_path):
                     if not os.path.isdir(os.path.join(single_path,thisPath)):
                         continue
-                    if not isDoyFolder(thisPath):
+                    if not isRadarFolder(thisPath):
                         continue
                 
                     dirList.append(thisPath)
     
                 if not(dirList):
                     return None, None
-            
-                thisDate = startDate
-            
-                while(thisDate <= endDate):
-                    year = thisDate.timetuple().tm_year
-                    doy = thisDate.timetuple().tm_yday
-                    
-                    matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
-                    if len(matchlist) == 0:
+                
+                if startDate and endDate:
+                    thisDate = startDate
+                
+                    while(thisDate <= endDate):
+                        year = thisDate.timetuple().tm_year
+                        doy = thisDate.timetuple().tm_yday
+                        
+                        matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
+                        if len(matchlist) == 0:
+                            thisDate += datetime.timedelta(1)
+                            continue
+                        for match in matchlist:
+                            pathList.append(os.path.join(single_path,match,expLabel))
+                        
                         thisDate += datetime.timedelta(1)
-                        continue
-                    for match in matchlist:
-                        pathList.append(os.path.join(single_path,match,expLabel))
-                    
-                    thisDate += datetime.timedelta(1)
+                else:
+                    for thiDir in dirList:
+                        pathList.append(os.path.join(single_path,thiDir,expLabel))
         
         if pathList == []:
             print "Any folder was found for the date range: %s-%s" %(startDate, endDate)
@@ -536,7 +560,7 @@ class JRODataReader(JRODataIO):
             for thisPath in os.listdir(path):
                 if not os.path.isdir(os.path.join(path,thisPath)):
                     continue
-                if not isDoyFolder(thisPath):
+                if not isRadarFolder(thisPath):
                     continue
                 
                 dirList.append(thisPath)
@@ -928,6 +952,85 @@ class JRODataReader(JRODataIO):
 
         return True
 
+    def findDatafiles(self, path, startDate=None, endDate=None, expLabel='', ext='.r', walk=True):
+        
+        dateList = []
+        pathList = []
+        
+        if not walk:
+            #pathList.append(path)
+            multi_path = path.split(',')
+            for single_path in multi_path:
+                
+                ok = False
+                fileList = glob.glob1(single_path, "*"+ext)
+                
+                for thisFile in fileList:
+                    
+                    if not os.path.isfile(os.path.join(single_path, thisFile)):
+                        continue
+                    
+                    if not isRadarFile(thisFile):
+                        continue
+                    
+                    ok = True
+                    thisDate = getDateFromRadarFile(thisFile)
+                    
+                    if thisDate not in dateList:
+                        dateList.append(thisDate)
+                
+                if ok:
+                    pathList.append(single_path)
+            
+            return dateList
+        
+        multi_path = path.split(',')
+        for single_path in multi_path:
+            
+            dirList = []
+            
+            for thisPath in os.listdir(single_path):
+                
+                if not os.path.isdir(os.path.join(single_path,thisPath)):
+                    continue
+                
+                if not isRadarFolder(thisPath):
+                    continue
+            
+                dirList.append(thisPath)
+
+            if not dirList:
+                return dateList
+            
+            if startDate and endDate:
+                thisDate = startDate
+            
+                while(thisDate <= endDate):
+                    year = thisDate.timetuple().tm_year
+                    doy = thisDate.timetuple().tm_yday
+                    
+                    matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
+                    if len(matchlist) == 0:
+                        thisDate += datetime.timedelta(1)
+                        continue
+                    
+                    for match in matchlist:
+                        pathList.append(os.path.join(single_path,match,expLabel))
+                        dateList.append(thisDate)
+                    
+                    thisDate += datetime.timedelta(1)
+            else:
+                for thiDir in dirList:
+                    year = int(folder[1:5])
+                    doy = int(folder[5:8])
+                    thisDate = datetime.date(year,1,1) + datetime.timedelta(doy-1)
+                    
+                    pathList.append(os.path.join(single_path,thiDir,expLabel))
+                    dateList.append(thisDate)
+            
+        return dateList
+        
+        
     def setup(self,
                 path=None,
                 startDate=None, 
