@@ -41,6 +41,7 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 
 #path = 'F:\CIRI Data\processed'
 path='/media/4B514E8903EBC487/CIRI Data/processed'
+#path='/home/alex/Desktop/ciri_data'
 #pathFigure = 'C:\Users\jdk5273\Documents\LiClipseWorkspace'
 pathFigure='/home/alex/Pictures/ciri'
 xmin = '16'
