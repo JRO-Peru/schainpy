@@ -5975,7 +5975,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not self.controllerObj.isAlive():
             self.stopProject()
         
-    def playProject(self, ext=".xml", save=0):
+    def playProject(self, ext=".xml", save=1):
         
 #         self.console.clear()
         projectObj = self.getSelectedProjectObj()
