@@ -59,7 +59,7 @@ class Ui_EnvWindow(object):
     def setupUi(self, MainWindow):
         
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(1203, 711)
+        MainWindow.resize(1200, 800)
         
         self.centralWidget = QtGui.QWidget(MainWindow)
         self.centralWidget.setObjectName(_fromUtf8("centralWidget"))

@@ -12,7 +12,8 @@ Classes to save parameters from Windows.
 class ProjectParms():
     
     parmsOk = False
-    project_name = None
+    name = None
+    description = None
     datatype = None
     ext = None
     dpath = None
@@ -30,23 +31,24 @@ class ProjectParms():
     def __init__(self):
         
         self.parmsOk = True
+        self.description = ''
         self.expLabel = ''
-        self.set = None
-        self.ippKm = None
+        self.set = ''
+        self.ippKm = ''
         self.walk = None
-        self.delay = None
+        self.delay = ''
     
     def getDatatypeIndex(self):
         
         indexDatatype = None
         
-        if self.datatype.lower() == 'voltage':
+        if 'voltage' in self.datatype.lower():
             indexDatatype = 0
-        if self.datatype.lower() == 'spectra':
+        if 'spectra' in self.datatype.lower():
             indexDatatype = 1
-        if self.datatype.lower() == 'fits':
+        if 'fits' in self.datatype.lower():
             indexDatatype = 2
-        if self.datatype.lower() == 'usrp':
+        if 'usrp' in self.datatype.lower():
             indexDatatype = 3
             
         return indexDatatype
@@ -70,7 +72,7 @@ class ProjectParms():
             startDate=None, endDate=None, startTime=None, endTime=None,
             delay=None, walk=None, set=None, ippKm=None, parmsOk=True):
         
-        project_name = project_name
+        name = project_name
         datatype = datatype
         ext = ext
         dpath = dpath
@@ -85,3 +87,7 @@ class ProjectParms():
         ippKm = ippKm 
         
         self.parmsOk = parmsOk
+    
+    def isValid(self):
+        
+        return self.parmsOk

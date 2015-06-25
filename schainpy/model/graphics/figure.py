@@ -225,8 +225,8 @@ class Figure(Operation):
             return
         
         # store png plot to FTP server according to RT-Web format 
-        name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-        ftp_filename = os.path.join(figpath, name)
+        ftp_filename = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+#         ftp_filename = os.path.join(figpath, name)
         self.saveFigure(figpath, ftp_filename)  
     
     def getNameToFtp(self, thisDatetime, FTP_WEI, EXP_CODE, SUB_EXP_CODE, PLOT_CODE, PLOT_POS):

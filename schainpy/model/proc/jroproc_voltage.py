@@ -206,6 +206,9 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data = data
         self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex]
         
+        if self.dataOut.nHeights <= 1:
+            raise ValueError, "selectHeights: Too few heights. Current number of heights is %d" %(self.dataOut.nHeights)
+        
         return 1
     
  
@@ -218,7 +221,11 @@ class VoltageProc(ProcessingUnit):
         
         newdelta = deltaHeight * window
         r = self.dataOut.nHeights % window
+        newheights = (self.dataOut.nHeights-r)/window
         
+        if newheights <= 1:
+            raise ValueError, "filterByHeights: Too few heights. Current number of heights is %d and window is %d" %(self.dataOut.nHeights, window)
+            
         if self.dataOut.flagDataAsBlock:
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
@@ -232,8 +239,8 @@ class VoltageProc(ProcessingUnit):
             buffer = buffer.reshape(self.dataOut.nChannels,self.dataOut.nHeights/window,window)
             buffer = numpy.sum(buffer,2)
 
-        self.dataOut.data = buffer.copy()
-        self.dataOut.heightList = numpy.arange(self.dataOut.heightList[0],newdelta*(self.dataOut.nHeights-r)/window,newdelta)
+        self.dataOut.data = buffer
+        self.dataOut.heightList = self.dataOut.heightList[0] + numpy.arange( newheights )*newdelta
         self.dataOut.windowOfFilter = window
 
     def setH0(self, h0, deltaHeight = None):
@@ -619,7 +626,7 @@ class Decoder(Operation):
         
         return self.datadecTime
     
-    def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, times=None, osamp=None):
+    def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None):
             
         if not self.isConfig:
             
@@ -654,9 +661,6 @@ class Decoder(Operation):
         dataOut.code = self.code
         dataOut.nCode = self.nCode
         dataOut.nBaud = self.nBaud
-        dataOut.radarControllerHeaderObj.code = self.code
-        dataOut.radarControllerHeaderObj.nCode = self.nCode
-        dataOut.radarControllerHeaderObj.nBaud = self.nBaud
         
         dataOut.data = datadec
         
@@ -785,13 +789,17 @@ class ProfileSelector(Operation):
                 dataOut.data = dataOut.data[:,profileList,:]
                 dataOut.nProfiles = len(profileList)
                 dataOut.profileIndex = dataOut.nProfiles - 1
-            else:
+                
+            if profileRangeList != None:
                 minIndex = profileRangeList[0]
                 maxIndex = profileRangeList[1]
-                
+            
                 dataOut.data = dataOut.data[:,minIndex:maxIndex+1,:]
                 dataOut.nProfiles = maxIndex - minIndex + 1
                 dataOut.profileIndex = dataOut.nProfiles - 1
+            
+            if rangeList != None:
+                raise ValueError, "Profile Selector: Not implemented for rangeList yet"
             
             dataOut.flagNoData = False
             
@@ -865,7 +873,7 @@ class ProfileSelector(Operation):
                     self.incIndex()
                 return 1
         
-        raise ValueError, "ProfileSelector needs profileList or profileRangeList"
+        raise ValueError, "ProfileSelector needs profileList, profileRangeList or rangeList parameter"
         
         return 0    
 

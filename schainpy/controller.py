@@ -50,6 +50,13 @@ class ParameterConf():
         
         value = self.value
         
+        if self.format == 'str':
+            self.__formated_value = str(value)
+            return self.__formated_value
+        
+        if value == '':
+            raise ValueError, "%s: This parameter value is empty" %self.name
+        
         if self.format == 'bool':
             value = int(value)
             
@@ -65,14 +72,7 @@ class ParameterConf():
             Example:
                 value = (0,1,2)
             """
-            value = value.replace('(', '')
-            value = value.replace(')', '')
-            
-            value = value.replace('[', '')
-            value = value.replace(']', '')
-            
-            strList = value.split(',')
-            intList = [int(x) for x in strList]
+            intList = ast.literal_eval(value)
             
             self.__formated_value = intList
             
@@ -84,14 +84,7 @@ class ParameterConf():
                 value = (0.5, 1.4, 2.7)
             """
             
-            value = value.replace('(', '')
-            value = value.replace(')', '')
-            
-            value = value.replace('[', '')
-            value = value.replace(']', '')
-            
-            strList = value.split(',')
-            floatList = [float(x) for x in strList]
+            floatList = ast.literal_eval(value)
             
             self.__formated_value = floatList
             
@@ -121,17 +114,7 @@ class ParameterConf():
                 value = (0,1),(1,2)
             """
 
-            value = value.replace('(', '')
-            value = value.replace(')', '')
-            
-            value = value.replace('[', '')
-            value = value.replace(']', '')
-            
-            strList = value.split(',')
-            intList = [int(item) for item in strList]
-            pairList = []
-            for i in range(len(intList)/2):
-                pairList.append((intList[i*2], intList[i*2 + 1]))
+            pairList = ast.literal_eval(value)
             
             self.__formated_value = pairList
             
@@ -153,10 +136,14 @@ class ParameterConf():
         self.__formated_value = format_func(value)
         
         return self.__formated_value
+
+    def updateId(self, new_id):
         
+        self.id = str(new_id)
+             
     def setup(self, id, name, value, format='str'):
         
-        self.id = id
+        self.id = str(id)
         self.name = name
         self.value = str(value)
         self.format = str.lower(format)
@@ -212,7 +199,19 @@ class OperationConf():
     def __getNewId(self):
         
         return int(self.id)*10 + len(self.parmConfObjList) + 1
-    
+
+    def updateId(self, new_id):
+        
+        self.id = str(new_id)
+        
+        n = 1
+        for parmObj in self.parmConfObjList:
+            
+            idParm = str(int(new_id)*10 + n)
+            parmObj.updateId(idParm)
+            
+            n += 1
+            
     def getElementName(self):
         
         return self.ELEMENTNAME
@@ -251,7 +250,7 @@ class OperationConf():
         
     def setup(self, id, name, priority, type):
         
-        self.id = id
+        self.id = str(id)
         self.name = name
         self.type = type
         self.priority = priority
@@ -387,7 +386,30 @@ class ProcUnitConf():
     def getId(self):
         
         return self.id
-    
+
+    def updateId(self, new_id, parentId=parentId):
+        
+        
+        new_id = int(parentId)*10 + (int(self.id) % 10)
+        new_inputId = int(parentId)*10 + (int(self.inputId) % 10)
+        
+        #If this proc unit has not inputs
+        if self.inputId == '0':
+            new_inputId = 0
+        
+        n = 1
+        for opConfObj in self.opConfObjList:
+            
+            idOp = str(int(new_id)*10 + n)
+            opConfObj.updateId(idOp)
+            
+            n += 1
+        
+        self.parentId = str(parentId)
+        self.id = str(new_id)
+        self.inputId = str(new_inputId)
+        
+            
     def getInputId(self):
         
         return self.inputId
@@ -420,8 +442,21 @@ class ProcUnitConf():
         return self.procUnitObj
     
     def setup(self, id, name, datatype, inputId, parentId=None):
+    
+        #Compatible with old signal chain version
+        if datatype==None and name==None:
+            raise ValueError, "datatype or name should be defined"
         
-        self.id = id
+        if name==None:
+            if 'Proc' in datatype:
+                name = datatype
+            else:
+                name = '%sProc' %(datatype)
+        
+        if datatype==None:
+            datatype = name.replace('Proc','')
+            
+        self.id = str(id)
         self.name = name
         self.datatype = datatype
         self.inputId = inputId
@@ -478,6 +513,12 @@ class ProcUnitConf():
         self.name = upElement.get('name')
         self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
+        
+        if self.ELEMENTNAME == "ReadUnit":
+            self.datatype = self.datatype.replace("Reader", "")
+        
+        if self.ELEMENTNAME == "ProcUnit":
+            self.datatype = self.datatype.replace("Proc", "")
         
         if self.inputId == 'None':
             self.inputId = '0'
@@ -583,7 +624,20 @@ class ReadUnitConf(ProcUnitConf):
         return self.ELEMENTNAME
         
     def setup(self, id, name, datatype, path, startDate="", endDate="", startTime="", endTime="", parentId=None, **kwargs):
+
+        #Compatible with old signal chain version
+        if datatype==None and name==None:
+            raise ValueError, "datatype or name should be defined"
         
+        if name==None:
+            if 'Reader' in datatype:
+                name = datatype
+            else:
+                name = '%sReader' %(datatype)
+        
+        if datatype==None:
+            datatype = name.replace('Reader','')
+            
         self.id = id
         self.name = name
         self.datatype = datatype
@@ -601,6 +655,10 @@ class ReadUnitConf(ProcUnitConf):
         
     def update(self, datatype, path, startDate, endDate, startTime, endTime, parentId=None, name=None, **kwargs):
 
+        #Compatible with old signal chain version
+        if datatype==None and name==None:
+            raise ValueError, "datatype or name should be defined"
+        
         if name==None:
             if 'Reader' in datatype:
                 name = datatype
@@ -618,7 +676,7 @@ class ReadUnitConf(ProcUnitConf):
         self.startTime = startTime
         self.endTime = endTime
         
-        self.inputId = None
+        self.inputId = '0'
         self.parentId = parentId
         
         self.updateRunOperation(**kwargs)
@@ -678,9 +736,7 @@ class Project():
         #data_q = dataq
         
         if control==None:
-            control = {}
-            control['stop'] = False
-            control['pause'] = False
+            control = {'stop':False,'pause':False}
         
         self.control = control
         
@@ -698,9 +754,30 @@ class Project():
         
         return self.id
     
+    def updateId(self, new_id):
+        
+        self.id = str(new_id)
+        
+        keyList = self.procUnitConfObjDict.keys()
+        keyList.sort()
+        
+        n = 1
+        newProcUnitConfObjDict = {}
+        
+        for procKey in keyList:
+            
+            procUnitConfObj = self.procUnitConfObjDict[procKey]
+            idProcUnit = str(int(self.id)*10 + n)
+            procUnitConfObj.updateId(idProcUnit, parentId = self.id)
+            
+            newProcUnitConfObjDict[idProcUnit] = procUnitConfObj
+            n += 1
+        
+        self.procUnitConfObjDict = newProcUnitConfObjDict
+        
     def setup(self, id, name, description):
         
-        self.id = id
+        self.id = str(id)
         self.name = name
         self.description = description
 
@@ -710,19 +787,6 @@ class Project():
         self.description = description
         
     def addReadUnit(self, datatype=None, name=None, **kwargs):
-        
-        #Compatible with old signal chain version
-        if datatype==None and name==None:
-            raise ValueError, "datatype or name should be defined"
-        
-        if name==None:
-            if 'Reader' in datatype:
-                name = datatype
-            else:
-                name = '%sReader' %(datatype)
-        
-        if datatype==None:
-            datatype = name.replace('Reader','')
             
         idReadUnit = self.__getNewId()
         
@@ -734,19 +798,6 @@ class Project():
         return readUnitConfObj
     
     def addProcUnit(self, inputId='0', datatype=None, name=None):
-        
-        #Compatible with old signal chain version
-        if datatype==None and name==None:
-            raise ValueError, "datatype or name should be defined"
-        
-        if name==None:
-            if 'Proc' in datatype:
-                name = datatype
-            else:
-                name = '%sProc' %(datatype)
-        
-        if datatype==None:
-            datatype = name.replace('Proc','')
         
         idProcUnit = self.__getNewId()
         
@@ -951,7 +1002,34 @@ class Project():
         self.createObjects()
         self.connectObjects()
         self.run()
+
+class ControllerThread(threading.Thread, Project):
     
+    def __init__(self, filename):
+        
+        threading.Thread.__init__(self)
+        Project.__init__(self)
+        
+        self.setDaemon(True)
+        
+        self.filename = filename
+        self.control = {'stop':False, 'pause':False}
+    
+    def stop(self):
+        self.control['stop'] = True
+        
+    def pause(self):
+        self.control['pause'] = not(self.control['pause'])
+
+    def run(self):
+        self.control['stop'] = False
+        self.control['pause'] = False
+        
+        self.readXml(self.filename)
+        self.createObjects()
+        self.connectObjects()
+        Project.run(self)
+        
 if __name__ == '__main__':
     
     desc = "Segundo Test"

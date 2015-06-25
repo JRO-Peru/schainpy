@@ -129,6 +129,9 @@ class USRPReader(ProcessingUnit):
         
         channelNameList = digitalReadObj.get_channels()
         
+        if not channelNameList:
+            return []
+        
         metadata_dict = digitalReadObj.get_rf_file_metadata(channelNameList[0])
         
         sample_rate = metadata_dict['sample_rate'][0]
