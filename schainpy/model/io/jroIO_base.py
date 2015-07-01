@@ -1020,12 +1020,12 @@ class JRODataReader(JRODataIO):
                     
                     thisDate += datetime.timedelta(1)
             else:
-                for thiDir in dirList:
-                    year = int(folder[1:5])
-                    doy = int(folder[5:8])
+                for thisDir in dirList:
+                    year = int(thisDir[1:5])
+                    doy = int(thisDir[5:8])
                     thisDate = datetime.date(year,1,1) + datetime.timedelta(doy-1)
                     
-                    pathList.append(os.path.join(single_path,thiDir,expLabel))
+                    pathList.append(os.path.join(single_path,thisDir,expLabel))
                     dateList.append(thisDate)
             
         return dateList
