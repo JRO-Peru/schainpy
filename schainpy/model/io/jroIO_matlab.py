@@ -29,12 +29,12 @@ class matoffReader(ProcessingUnit):
     def __setHeader(self, datastuff):
         
         self.dataOut.pairsList=[(0,1)]
-        self.dataOut.channelList = range(2)
-        self.dataOut.nProfiles = 25 #this!
-        self.dataOut.nIncohInt = 1
+        self.dataOut.channelList =  range(np.array(datastuff.get('power')).shape[1])
+        self.dataOut.nProfiles = len(np.array(datastuff.get('vel')).flatten())     #this!
+        self.dataOut.nIncohInt = 20
         self.dataOut.nCohInt = 1 #this!
         self.dataOut.ippSeconds = 0.004 #this!
-        self.dataOut.nFFTPoints = 25
+        self.dataOut.nFFTPoints = len(np.array(datastuff.get('vel')).flatten())    
         self.dataOut.timeZone = 0
         self.dataOut.heightList = np.array(datastuff.get('hts')).flatten()
     
@@ -118,6 +118,14 @@ class matoffReader(ProcessingUnit):
             print "No directories found"
             return []
         
+        #if self.online:
+        #    dirList= [dirList[-1]]
+         
+        if self.online:
+            currentdate = datetime.datetime.utcnow().date()
+            strsplit1=currentdate.strftime('%Y.%m.%d')
+            dirList = fnmatch.filter(dirList,strsplit1+'*')  
+        
         for thisDir in dirList:
             if not os.path.isdir(os.path.join(path, thisDir)):
                 continue
@@ -160,7 +168,7 @@ class matoffReader(ProcessingUnit):
                     
         return fileListFiltered
     
-    def __getNextOnlineFile(self, seconds = 30):
+    def __getNextOnlineFile(self, seconds = 40):
         
         filename = self.__getNextOfflineFile()
         
@@ -181,7 +189,7 @@ class matoffReader(ProcessingUnit):
                 break
             
             print "Waiting %d seconds ..." %seconds
-            time.sleep(30)
+            time.sleep(40)
         
         if not (len(filelist) > ncurrentfiles):
             return None
