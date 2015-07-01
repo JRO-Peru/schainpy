@@ -43,54 +43,69 @@ class ParameterConf():
         return self.ELEMENTNAME
     
     def getValue(self):
-        
+
+        value = self.value
+        format = self.format
+            
         if self.__formated_value != None:
             
             return self.__formated_value
         
-        value = self.value
-        
-        if self.format == 'str':
+        if format == 'str':
             self.__formated_value = str(value)
             return self.__formated_value
         
         if value == '':
             raise ValueError, "%s: This parameter value is empty" %self.name
         
-        if self.format == 'bool':
+        if format == 'bool':
             value = int(value)
             
-        if self.format == 'list':
+        if format == 'list':
             strList = value.split(',')
             
             self.__formated_value = strList
             
             return self.__formated_value
         
-        if self.format == 'intlist':
+        if format == 'intlist':
             """
             Example:
                 value = (0,1,2)
             """
-            intList = ast.literal_eval(value)
+            value = value.replace('(', '')
+            value = value.replace(')', '')
+            
+            value = value.replace('[', '')
+            value = value.replace(']', '')
+            
+            strList = value.split(',')
+            intList = [int(x) for x in strList]
             
             self.__formated_value = intList
             
             return self.__formated_value
         
-        if self.format == 'floatlist':
+        if format == 'floatlist':
             """
             Example:
                 value = (0.5, 1.4, 2.7)
             """
             
-            floatList = ast.literal_eval(value)
+            value = value.replace('(', '')
+            value = value.replace(')', '')
+            
+            value = value.replace('[', '')
+            value = value.replace(']', '')
+            
+            strList = value.split(',')
+            floatList = [float(x) for x in strList]
             
             self.__formated_value = floatList
             
             return self.__formated_value
         
-        if self.format == 'date':
+        if format == 'date':
             strList = value.split('/')
             intList = [int(x) for x in strList]
             date = datetime.date(intList[0], intList[1], intList[2])
@@ -99,7 +114,7 @@ class ParameterConf():
             
             return self.__formated_value
         
-        if self.format == 'time':
+        if format == 'time':
             strList = value.split(':')
             intList = [int(x) for x in strList]
             time = datetime.time(intList[0], intList[1], intList[2])
@@ -108,30 +123,43 @@ class ParameterConf():
             
             return self.__formated_value
         
-        if self.format == 'pairslist':
+        if format == 'pairslist':
             """
             Example:
                 value = (0,1),(1,2)
             """
 
-            pairList = ast.literal_eval(value)
+            value = value.replace('(', '')
+            value = value.replace(')', '')
+            
+            value = value.replace('[', '')
+            value = value.replace(']', '')
+            
+            strList = value.split(',')
+            intList = [int(item) for item in strList]
+            pairList = []
+            for i in range(len(intList)/2):
+                pairList.append((intList[i*2], intList[i*2 + 1]))
             
             self.__formated_value = pairList
             
             return self.__formated_value
         
-        if self.format == 'multilist':
+        if format == 'multilist':
             """
             Example:
                 value = (0,1,2),(3,4,5)
             """
             multiList = ast.literal_eval(value)
             
+            if type(multiList[0]) == int:
+                multiList = ast.literal_eval("(" + value + ")")
+                
             self.__formated_value = multiList
             
             return self.__formated_value
         
-        format_func = eval(self.format)
+        format_func = eval(format)
         
         self.__formated_value = format_func(value)
         

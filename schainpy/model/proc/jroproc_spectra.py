@@ -91,9 +91,9 @@ class SpectraProc(ProcessingUnit):
             cspc = numpy.zeros((self.dataOut.nPairs, self.dataOut.nFFTPoints, self.dataOut.nHeights), dtype='complex')
             for pair in self.dataOut.pairsList:
                 if pair[0] not in self.dataOut.channelList:
-                    raise ValueError, "Error getting CrossSpectra: pair 0 of (%s) is not in channelList=%s" %(str(pair), str(self.dataOut.channelList))
+                    raise ValueError, "Error getting CrossSpectra: pair 0 of %s is not in channelList = %s" %(str(pair), str(self.dataOut.channelList))
                 if pair[1] not in self.dataOut.channelList:
-                    raise ValueError, "Error getting CrossSpectra: pair 1 of (%s) is not in channelList=%s" %(str(pair), str(self.dataOut.channelList))
+                    raise ValueError, "Error getting CrossSpectra: pair 1 of %s is not in channelList = %s" %(str(pair), str(self.dataOut.channelList))
                 
                 cspc[pairIndex,:,:] = fft_volt[pair[0],:,:] * numpy.conjugate(fft_volt[pair[1],:,:])
                 pairIndex += 1

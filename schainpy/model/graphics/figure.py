@@ -199,7 +199,7 @@ class Figure(Operation):
         
         if save:
         
-            if figfile == None:
+            if not figfile:
                 
                 if not thisDatetime:
                     raise ValueError, "Saving figure: figfile or thisDatetime should be defined"

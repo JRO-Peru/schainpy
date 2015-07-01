@@ -53,6 +53,7 @@ class USRPReader(ProcessingUnit):
         '''
         In this method will be initialized every parameter of dataOut object (header, no data)
         '''
+        nProfiles = self.__sample_rate  #Number of profiles by second
         
         self.dataOut.radarControllerHeaderObj = RadarControllerHeader(ippKm=self.__ippKm,
                                                                       txA=0,
@@ -66,7 +67,7 @@ class USRPReader(ProcessingUnit):
                                                                       code = self.__code)
     
         self.dataOut.systemHeaderObj = SystemHeader(nSamples=self.__nSamples,
-                                                    nProfiles=1024,
+                                                    nProfiles=nProfiles,
                                                     nChannels=len(self.__channelList),
                                                     adcResolution=14)
         
@@ -80,7 +81,7 @@ class USRPReader(ProcessingUnit):
         
 #        self.dataOut.nHeights = 0
         
-        self.dataOut.nProfiles = 1
+        self.dataOut.nProfiles = nProfiles
         
         self.dataOut.heightList = self.__firstHeigth + numpy.arange(self.__nSamples, dtype = numpy.float)*self.__deltaHeigth
         

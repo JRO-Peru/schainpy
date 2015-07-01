@@ -264,6 +264,7 @@ class CrossSpectraPlot(Figure):
     
     def run(self, dataOut, id, wintitle="", pairsList=None, 
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            coh_min=None, coh_max=None, phase_min=None, phase_max=None,
             save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
@@ -311,7 +312,16 @@ class CrossSpectraPlot(Figure):
         zdB = 10*numpy.log10(z)
         noisedB = 10*numpy.log10(noise)
         
+        if coh_min == None:
+            coh_min = 0.0
+        if coh_max == None:
+            coh_max = 1.0
         
+        if phase_min == None:
+            phase_min = -180
+        if phase_max == None:
+            phase_max = 180
+            
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
@@ -374,14 +384,14 @@ class CrossSpectraPlot(Figure):
             title = "Coherence %d%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+2]
             axes0.pcolor(x, y, coherence,
-                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=0, zmax=1,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=coh_min, zmax=coh_max,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=coherence_cmap, cblabel='')
             
             title = "Phase %d%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+3]
             axes0.pcolor(x, y, phase,
-                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=phase_min, zmax=phase_max,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=phase_cmap, cblabel='')
 

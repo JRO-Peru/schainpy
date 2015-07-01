@@ -909,11 +909,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter1, value=value1)
             opObj.addParameter(name=name_parameter2, value=value2, format=format)
             opObj.addParameter(name=name_parameter3, value=value3, format=format)
-
-        #---------NEW VOLTAGE PROPERTIES
-        self.refreshPUProperties(puObj)
-
+            
         self.console.clear()
+        try:
+            self.refreshPUProperties(puObj)
+        except:
+            self.console.append("Check input parameters")
+            return 0
+        
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
         
@@ -1050,134 +1053,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         if  p0 == 0:
             self.specOpgetNoise.setEnabled(False) 
-
-    
-    def refreshID(self, puObj):
-        opObj = puObj.getOperationObj(name='Scope')
-#         opObj = puObj.getOpObjfromParamValue(value="Scope")
-        if opObj == None:
-            pass
-        else:
-           name_parameter1 = 'id'
-           format1 = 'int'
-           if self.idImagscope == 0:
-              self.idImagscope = 100
-           else:
-              self.idImagscope = self.idImagscope + 1
-           value1 = int(self.idImagscope)
-           opObj.changeParameter(name=name_parameter1, value=value1, format=format1)
-        
-        opObj = puObj.getOperationObj(name='SpectraPlot')
-#         opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
-        if opObj == None:
-            pass
-        else:
-           name_parameter1 = 'id'
-           format1 = 'int'
-           if self.idImagspectra == 0:
-              self.idImagspectra = 200
-           else:
-              self.idImagspectra = self.idImagspectra + 1
-           value1 = int(self.idImagspectra)
-           opObj.changeParameter(name=name_parameter1, value=value1, format=format1)
-        
-        opObj = puObj.getOperationObj(name='CrossSpectraPlot')
-#         opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
-        if opObj == None:
-            pass
-        else:
-            name_parameter1 = 'id'
-            format1 = 'int'
-            if self.idImagcross == 0:
-               self.idImagcross = 300
-            else:
-               self.idImagcross = self.idImagcross + 1
-            value1 = int(self.idImagcross)
-            opObj.changeParameter(name=name_parameter1, value=value1, format=format1)      
-        
-        opObj = puObj.getOperationObj(name='RTIPlot')             
-#         opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
-        if opObj == None:
-            pass
-        else:
-            name_parameter1 = 'id'
-            format1 = 'int'
-            if self.idImagrti == 0:
-               self.idImagrti = 400
-            else:
-               self.idImagrti = self.idImagrti + 1
-            value1 = int(self.idImagrti)
-            opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-        
-        opObj = puObj.getOperationObj(name='CoherenceMap')
-#         opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
-        if opObj == None:
-            pass
-        else:
-            name_parameter1 = 'id'
-            format1 = 'int'
-            if self.idImagcoherence == 0:
-               self.idImagcoherence = 500
-            else:
-               self.idImagcoherence = self.idImagcoherence + 1
-            value1 = int(self.idImagcoherence)
-            opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-        
-        opObj = puObj.getOperationObj(name='PowerProfilePlot')
-#         opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
-        if opObj == None:
-            pass
-        else:
-            name_parameter1 = 'id'
-            format1 = 'int'
-            if self.idImagpower == 0:
-               self.idImagpower = 600
-            else:
-               self.idImagpower = self.idImagpower + 1
-            value1 = int(self.idImagpower)
-            opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-        
-        opObj = puObj.getOperationObj(name='Noise')
-#         opObj = puObj.getOpObjfromParamValue(value="Noise")
-        if opObj == None:
-            pass
-        else:
-            name_parameter1 = 'id'
-            format1 = 'int'
-            if self.idImagrtinoise == 0:
-               self.idImagrtinoise = 700
-            else:
-               self.idImagrtinoise = self.idImagrtinoise + 1
-            value1 = int(self.idImagrtinoise)
-            opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-        
-        opObj = puObj.getOperationObj(name='SpectraHeisScope')
-#         opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
-        if opObj == None:
-            pass
-        else:
-            name_parameter1 = 'id'
-            format1 = 'int'
-            if self.idImagspectraHeis == 0:
-               self.idImagspectraHeis = 800
-            else:
-               self.idImagspectraHeis = self.idImagspectraHeis + 1
-            value1 = int(self.idImagspectraHeis)
-            opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
-        
-        opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')
-#         opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
-        if opObj == None:
-            pass
-        else:
-            name_parameter1 = 'id'
-            format1 = 'int'
-            if self.idImagrtiHeis == 0:
-               self.idImagrtiHeis = 900
-            else:
-               self.idImagrtiHeis = self.idImagrtiHeis + 1
-            value1 = int(self.idImagrtiHeis)
-            opObj.changeParameter(name=name_parameter1, value=value1, format=format1) 
             
     @pyqtSignature("")
     def on_specOpOk_clicked(self):
@@ -1286,6 +1161,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             else:
                 name_operation = "selectChannelsByIndex" 
                 name_parameter = 'channelIndexList'
+                
             opObj = puObj.addOperation(name=name_operation)
             opObj.addParameter(name=name_parameter, value=value, format=format)
             
@@ -1395,95 +1271,80 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                    self.console.clear()
                    self.console.append("Get Noise Operation only accepts  4 parameters")
                    return 0
-                      
+
+        channelList = str(self.specGgraphChannelList.text()).replace(" ","")
+        vel_range = str(self.specGgraphFreq.text()).replace(" ","")
+        hei_range = str(self.specGgraphHeight.text()).replace(" ","")
+        db_range = str(self.specGgraphDbsrange.text()).replace(" ","")
+        
+        trange = str(self.specGgraphTminTmax.text()).replace(" ","")
+        magrange = str(self.specGgraphmagnitud.text()).replace(" ","")
+        phaserange = str(self.specGgraphPhase.text()).replace(" ","")
+#         timerange = str(self.specGgraphTimeRange.text()).replace(" ","")
+        
+        figpath = str(self.specGraphPath.text())
+        figfile = str(self.specGraphPrefix.text()).replace(" ","")
+        try:
+            wrperiod = int(str(self.specGgraphftpratio.text()).replace(" ",""))
+        except:
+            wrperiod = None
+        
         #-----Spectra Plot-----
-        if self.specGraphCebSpectraplot.isChecked():   
-            name_operation = 'SpectraPlot'
-            optype = 'other'
-            name_parameter = 'type'
-            value = 'SpectraPlot'
-            format = 'str'
-            if self.idImagspectra == 0:
-                self.idImagspectra = 200
-            else:
-                self.idImagspectra = self.idImagspectra + 1
-            name_parameter1 = 'id'
-            value1 = int(self.idImagspectra)
-            format1 = 'int'
-            
-            format = 'str'
-            
-            channelList = self.specGgraphChannelList.text()
-            xvalue = self.specGgraphFreq.text() 
-            yvalue = self.specGgraphHeight.text()
-            zvalue = self.specGgraphDbsrange.text()               
-            opObj = puObj.addOperation(name=name_operation, optype=optype)
-#             opObj.addParameter(name=name_parameter, value=value, format=format)
-            opObj.addParameter(name=name_parameter1, value=opObj.id, format=format1)      
+        if self.specGraphCebSpectraplot.isChecked():
+                         
+            opObj = puObj.addOperation(name='SpectraPlot', optype='other')
+            opObj.addParameter(name='id', value=opObj.id, format='int')      
             
             if not channelList == '':
-               name_parameter = 'channelList'
-               format = 'intlist'
-               opObj.addParameter(name=name_parameter, value=channelList, format=format) 
+               opObj.addParameter(name='channelList', value=channelList, format='intlist') 
            
-            if not xvalue == '':
-               xvalueList = xvalue.split(',')
+            if not vel_range == '':
+               xvalueList = vel_range.split(',')
                try:
                    value1 = float(xvalueList[0])
                    value2 = float(xvalueList[1])
                except:
-                       self.console.clear()
-                       self.console.append("Please Write  corrects parameter freq")
-                       return 0
-               name1 = 'xmin'
-               name2 = 'xmax'
-               format = 'float'
-               opObj.addParameter(name=name1, value=value1, format=format)
-               opObj.addParameter(name=name2, value=value2, format=format)
-            #------specGgraphHeight---
-            if not yvalue == '':
-                  yvalueList = yvalue.split(",")
-                  try:
-                       value1 = float(yvalueList[0])
-                       value2 = float(yvalueList[1])
-                  except:
-                      self.console.clear()
-                      self.console.append("Please Write  corrects parameter Height")
-                      return 0 
-                  name1 = 'ymin'
-                  name2 = 'ymax'
-                  format = 'float'
-                  opObj.addParameter(name=name1, value=value1, format=format)
-                  opObj.addParameter(name=name2, value=value2, format=format) 
+                   self.console.clear()
+                   self.console.append("Invalid velocity/frequency range")
+                   return 0
+               
+               opObj.addParameter(name='xmin', value=value1, format='float')
+               opObj.addParameter(name='xmax', value=value2, format='float')
+               
+            if not hei_range == '':
+              yvalueList = hei_range.split(",")
+              try:
+                   value1 = float(yvalueList[0])
+                   value2 = float(yvalueList[1])
+              except:
+                  self.console.clear()
+                  self.console.append("Invalid height range")
+                  return 0
+              
+              opObj.addParameter(name='ymin', value=value1, format='float')
+              opObj.addParameter(name='ymax', value=value2, format='float') 
             
-            if not zvalue == '':
-                zvalueList = zvalue.split(",")
+            if not db_range == '':
+                zvalueList = db_range.split(",")
                 try:
-                       value = float(zvalueList[0])
-                       value = float(zvalueList[1])
+                   value1 = float(zvalueList[0])
+                   value2 = float(zvalueList[1])
                 except:
-                       self.console.clear()
-                       self.console.append("Please Write  corrects parameter Dbsrange")
-                       return 0    
-                format = 'float'
-                opObj.addParameter(name='zmin', value=zvalueList[0], format=format)
-                opObj.addParameter(name='zmax', value=zvalueList[1], format=format)      
+                   self.console.clear()
+                   self.console.append("Invalid db range")
+                   return 0
+               
+                opObj.addParameter(name='zmin', value=value1, format='float')
+                opObj.addParameter(name='zmax', value=value2, format='float')      
 
             if self.specGraphSaveSpectra.isChecked():
                 checkPath = True
-                name_parameter1 = 'save'
-                name_parameter2 = 'figpath'
-                name_parameter3 = 'figfile'
-                value1 = '1'
-                value2 = self.specGraphPath.text()
-                value3 = self.specGraphPrefix.text()
-                format1 = 'bool'
-                format2 = 'str'
-                opObj.addParameter(name=name_parameter1, value=value1 , format=format1)
-                opObj.addParameter(name=name_parameter2, value=value2, format=format2)
-                opObj.addParameter(name=name_parameter3, value=value3, format=format2) 
-                
-             #   opObj.addParameter(name='wr_period', value='5',format='int')
+                opObj.addParameter(name='save', value=1 , format='bool')
+                opObj.addParameter(name='figpath', value=figpath, format='str')
+                if figfile:
+                    opObj.addParameter(name='figfile', value=figfile, format='str') 
+                if wrperiod:
+                    opObj.addParameter(name='wr_period', value=wrperiod,format='int')
                         
             if self.specGraphftpSpectra.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
@@ -1491,322 +1352,289 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                addFTP = True
                
         if self.specGraphCebCrossSpectraplot.isChecked():
-            name_operation = 'CrossSpectraPlot'
-            optype = 'other'
-            opObj = puObj.addOperation(name=name_operation, optype=optype)
-#             opObj.addParameter(name='type', value="CrossSpectraPlot", format='str') 
-            opObj.addParameter(name='power_cmap', value='jet', format='str')
-            opObj.addParameter(name='coherence_cmap', value='jet', format='str')
-            opObj.addParameter(name='phase_cmap', value='RdBu_r', format='str') 
-                   
-            if self.idImagcross == 0:
-                self.idImagcross = 300
-            else:
-                self.idImagcross = self.idImagcross + 1
-            value1 = int(self.idImagcross)
-            channelList = self.specGgraphChannelList.text()
-            xvalue = self.specGgraphFreq.text()
-            yvalue = self.specGgraphHeight.text()
-            zvalue = self.specGgraphDbsrange.text() 
-                           
+            
+            opObj = puObj.addOperation(name='CrossSpectraPlot', optype='other')
+#             opObj.addParameter(name='power_cmap', value='jet', format='str')
+#             opObj.addParameter(name='coherence_cmap', value='jet', format='str')
+#             opObj.addParameter(name='phase_cmap', value='RdBu_r', format='str')
             opObj.addParameter(name='id', value=opObj.id, format='int')
-    
-            if self.specGgraphChannelList.isModified():
-                opObj.addParameter(name='channelList', value=channelList, format='intlist') 
+            
+            if not vel_range == '':
+                xvalueList = vel_range.split(',')
+                try:
+                    value1 = float(xvalueList[0])
+                    value2 = float(xvalueList[1])
+                except:
+                    self.console.clear()
+                    self.console.append("Invalid velocity/frequency range")
+                    return 0
+                 
+                opObj.addParameter(name='xmin', value=value1, format='float')
+                opObj.addParameter(name='xmax', value=value2, format='float')
 
-            if not xvalue == '':
-               xvalueList = xvalue.split(',')
-               try:
-                    value = float(xvalueList[0])
-                    value = float(xvalueList[1])
-               except:
-                    return 0 
-               format = 'float'
-               opObj.addParameter(name='xmin', value=xvalueList[0], format=format)
-               opObj.addParameter(name='xmax', value=xvalueList[1], format=format)
-               
-            if not yvalue == '':
-               yvalueList = yvalue.split(",")
-               try:
-                        value = float(yvalueList[0])
-                        value = float(yvalueList[1])
-               except:
-                            return 0
-               format = 'float'
-               opObj.addParameter(name='ymin', value=yvalueList[0], format=format)
-               opObj.addParameter(name='ymax', value=yvalueList[1], format=format)
-                        
+            if not hei_range == '':
+                yvalueList = hei_range.split(",")
+                try:
+                     value1 = float(yvalueList[0])
+                     value2 = float(yvalueList[1])
+                except:
+                    self.console.clear()
+                    self.console.append("Invalid height range")
+                    return 0
+                 
+                opObj.addParameter(name='ymin', value=value1, format='float')
+                opObj.addParameter(name='ymax', value=value2, format='float')
         
-            if not zvalue == '':
-                    zvalueList = zvalue.split(",")
-                    try:
-                        value = float(zvalueList[0])
-                        value = float(zvalueList[1])
-                    except:
-                            return 0
-                    opObj.addParameter(name='zmin', value=zvalueList[0], format='float')
-                    opObj.addParameter(name='zmax', value=zvalueList[1], format='float')
- 
+            if not db_range == '':
+                zvalueList = db_range.split(",")
+                try:
+                    value1 = float(zvalueList[0])
+                    value2 = float(zvalueList[1])
+                except:
+                    self.console.clear()
+                    self.console.append("Invalid db range")
+                    return 0
+                
+                opObj.addParameter(name='zmin', value=value1, format='float')
+                opObj.addParameter(name='zmax', value=value2, format='float')
+
+            if not magrange == '':
+                zvalueList = magrange.split(",")
+                try:
+                    value1 = float(zvalueList[0])
+                    value2 = float(zvalueList[1])
+                except:
+                    self.console.clear()
+                    self.console.append("Invalid magnitude range")
+                    return 0
+                
+                opObj.addParameter(name='coh_min', value=value1, format='float')
+                opObj.addParameter(name='coh_max', value=value2, format='float')
+                
+            if not phaserange == '':
+                zvalueList = phaserange.split(",")
+                try:
+                    value1 = float(zvalueList[0])
+                    value2 = float(zvalueList[1])
+                except:
+                    self.console.clear()
+                    self.console.append("Invalid phase range")
+                    return 0
+                
+                opObj.addParameter(name='phase_min', value=value1, format='float')
+                opObj.addParameter(name='phase_max', value=value2, format='float')
+                 
             if self.specGraphSaveCross.isChecked():
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
-                opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
-                value = self.specGraphPrefix.text()
-                if not value == "":
-                   try:
-                       value = str(self.specGraphPrefix.text())
-                   except:
-                       self.console.clear()
-                       self.console.append("Please Write prefix")
-                       return 0    
-                   opObj.addParameter(name='figfile', value=value, format='str')                
-                # opObj.addParameter(name='figfile', value=self.specGraphPrefix.text(), format='str') 
+                opObj.addParameter(name='figpath', value=figpath, format='str')
+                if figfile:
+                   opObj.addParameter(name='figfile', value=figfile, format='str')
+                if wrperiod:
+                    opObj.addParameter(name='wr_period', value=wrperiod,format='int')
+                    
             if self.specGraphftpCross.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
                self.addFTPConf2Operation(puObj, opObj)
                addFTP = True
                      
         if self.specGraphCebRTIplot.isChecked():
-            name_operation = 'RTIPlot'
-            optype = 'other'
-            name_parameter = 'type'
-            value = 'RTIPlot'
-            format = 'str'
-          
-            if self.idImagrti == 0:
-                self.idImagrti = 400
-            else:
-                self.idImagrti = self.idImagrti + 1
             
-            name_parameter1 = 'id'
-            value1 = int(self.idImagrti)
-            format1 = 'int'
-            
-            format = 'str'
-            
-            opObj = puObj.addOperation(name=name_operation, optype=optype)
-#             opObj.addParameter(name=name_parameter, value=value, format=format)
-            opObj.addParameter(name=name_parameter1, value=opObj.id, format=format1)
-
-            channelList = self.specGgraphChannelList.text()
-            xvalue = self.specGgraphTminTmax.text()     
-            yvalue = self.specGgraphHeight.text()
-            zvalue = self.specGgraphDbsrange.text()
-            timerange = self.specGgraphTimeRange.text()
+            opObj = puObj.addOperation(name='RTIPlot', optype='other')
+            opObj.addParameter(name='id', value=opObj.id, format='int')
             
             if not channelList == '':
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
             
-            if not xvalue == '':
-                xvalueList = xvalue.split(',')
+            if not trange == '':
+                xvalueList = trange.split(',')
                 try:
-                    value = float(xvalueList[0])
-                    value = float(xvalueList[1])
+                    value1 = float(xvalueList[0])
+                    value2 = float(xvalueList[1])
                 except:
-                        return 0  
-                format = 'float'
-                opObj.addParameter(name='xmin', value=xvalueList[0], format=format)
-                opObj.addParameter(name='xmax', value=xvalueList[1], format=format)
-            
-            if not timerange == '':
-                format = 'int'
-                try:
-                    timerange = int(timerange)
-                except:
+                    self.console.clear()
+                    self.console.append("Invalid time range")
                     return 0
-                opObj.addParameter(name='timerange', value=timerange, format=format)
-
+                    
+                opObj.addParameter(name='xmin', value=value1, format='float')
+                opObj.addParameter(name='xmax', value=value2, format='float')
+            
+#             if not timerange == '':
+#                 try:
+#                     timerange = float(timerange)
+#                 except:
+#                     self.console.clear()
+#                     self.console.append("Invalid time range")
+#                     return 0
+#                 
+#                 opObj.addParameter(name='timerange', value=timerange, format='float')
                 
-            if not yvalue == '':
-                yvalueList = yvalue.split(",")
+            if not hei_range == '':
+                yvalueList = hei_range.split(",")
                 try:
-                    value = float(yvalueList[0])
-                    value = float(yvalueList[1])
+                    value1 = float(yvalueList[0])
+                    value2 = float(yvalueList[1])
                 except:
-                        return 0
-                format = 'float'
-                opObj.addParameter(name='ymin', value=yvalueList[0], format=format)
-                opObj.addParameter(name='ymax', value=yvalueList[1], format=format)   
+                    self.console.clear()
+                    self.console.append("Invalid height range")
+                    return 0
+                    
+                opObj.addParameter(name='ymin', value=value1, format='float')
+                opObj.addParameter(name='ymax', value=value2, format='float')   
                         
-            if not zvalue == '':
-                zvalueList = zvalue.split(",")
+            if not db_range == '':
+                zvalueList = db_range.split(",")
                 try:
-                    value = float(zvalueList[0])
-                    value = float(zvalueList[1])
+                    value1 = float(zvalueList[0])
+                    value2 = float(zvalueList[1])
                 except:
-                    return 0 
-                format = 'float'
-                opObj.addParameter(name='zmin', value=zvalueList[0], format=format)
-                opObj.addParameter(name='zmax', value=zvalueList[1], format=format)     
+                    self.console.clear()
+                    self.console.append("Invalid db range")
+                    return 0
+                
+                opObj.addParameter(name='zmin', value=value1, format='float')
+                opObj.addParameter(name='zmax', value=value2, format='float')     
                 
             if self.specGraphSaveRTIplot.isChecked():
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
-                opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
-                value = self.specGraphPrefix.text()
-                if not value == "":
-                   try:
-                       value = str(self.specGraphPrefix.text())
-                   except:
-                        self.console.clear()
-                        self.console.append("Please Write prefix")
-                        return 0    
+                opObj.addParameter(name='figpath', value=figpath, format='str')
+                if figfile:
                    opObj.addParameter(name='figfile', value=value, format='str')                
-               
-            # test_ftp
+                if wrperiod:
+                    opObj.addParameter(name='wr_period', value=wrperiod,format='int')
+                    
             if self.specGraphftpRTIplot.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
                self.addFTPConf2Operation(puObj, opObj)
                addFTP = True
                                  
         if self.specGraphCebCoherencmap.isChecked():
-            name_operation = 'CoherenceMap'
-            optype = 'other'
-            name_parameter = 'type'
-            value = 'CoherenceMap'
-            format = 'str'
-            if self.idImagcoherence == 0:
-                self.idImagcoherence = 500
-            else:
-                self.idImagcoherence = self.idImagcoherence + 1
-            
-            name_parameter1 = 'id'
-            value1 = int(self.idImagcoherence)
-            format1 = 'int'
            
-            opObj = puObj.addOperation(name=name_operation, optype=optype)
+            opObj = puObj.addOperation(name='CoherenceMap', optype='other')
 #             opObj.addParameter(name=name_parameter, value=value, format=format)
             # opObj.addParameter(name='coherence_cmap', value='jet', format='str')
             # opObj.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
-            opObj.addParameter(name=name_parameter1, value=opObj.id, format=format1)
-       
-            channelList = self.specGgraphChannelList.text()
-            if not channelList == '':
-                opObj.addParameter(name='channelList', value=channelList, format='intlist') 
+            opObj.addParameter(name='id', value=opObj.id, format='int')
             
-            timerange = self.specGgraphTimeRange.text()
-            if not timerange == '':
+#             if not timerange == '':
+#                 try:
+#                     timerange = int(timerange)
+#                 except:
+#                     self.console.clear()
+#                     self.console.append("Invalid time range")
+#                     return 0
+#                 
+#                 opObj.addParameter(name='timerange', value=timerange, format='int')
+                
+            if not trange == '':
+                xvalueList = trange.split(',')
                 try:
-                    timerange = int(timerange)
+                    value1 = float(xvalueList[0])
+                    value2 = float(xvalueList[1])
                 except:
+                    self.console.clear()
+                    self.console.append("Invalid time range")
                     return 0
-                format = 'int'
-                opObj.addParameter(name='timerange', value=timerange, format=format)
-
-            xvalue = self.specGgraphTminTmax.text() 
-            if not xvalue == '':
-                xvalueList = xvalue.split(',')
-                try:
-                    value = float(xvalueList[0])
-                    value = float(xvalueList[1])
-                except:
-                       return 0
-                format = 'float'
-                opObj.addParameter(name='xmin', value=xvalueList[0], format=format)
-                opObj.addParameter(name='xmax', value=xvalueList[1], format=format)  
+                
+                opObj.addParameter(name='xmin', value=value1, format='float')
+                opObj.addParameter(name='xmax', value=value2, format='float')  
             
-            yvalue = self.specGgraphHeight.text()
-            if not yvalue == '':
-                yvalueList = yvalue.split(",")
+            if not hei_range == '':
+                yvalueList = hei_range.split(",")
                 try:
-                    value = float(yvalueList[0])
-                    value = float(yvalueList[1])
+                    value1 = float(yvalueList[0])
+                    value2 = float(yvalueList[1])
                 except:
-                       return 0
-                format = 'float'
-                opObj.addParameter(name='ymin', value=yvalueList[0], format=format)
-                opObj.addParameter(name='ymax', value=yvalueList[1], format=format)   
-              
-            zvalue = self.specGgraphmagnitud.text()               
-            if not zvalue == '':
-                zvalueList = zvalue.split(",")
+                    self.console.clear()
+                    self.console.append("Invalid height range")
+                    return 0
+                   
+                opObj.addParameter(name='ymin', value=value1, format='float')
+                opObj.addParameter(name='ymax', value=value2, format='float')   
+                          
+            if not magrange == '':
+                zvalueList = magrange.split(",")
                 try:
-                    value = float(zvalueList[0])
-                    value = float(zvalueList[1])
+                    value1 = float(zvalueList[0])
+                    value2 = float(zvalueList[1])
                 except:
-                       return 0
-                opObj.addParameter(name='zmin', value=zvalueList[0], format='float')
-                opObj.addParameter(name='zmax', value=zvalueList[1], format='float')
-    
+                    self.console.clear()
+                    self.console.append("Invalid magnitude range")
+                    return 0
+                
+                opObj.addParameter(name='zmin', value=value1, format='float')
+                opObj.addParameter(name='zmax', value=value2, format='float')
+            
+            if not phaserange == '':
+                zvalueList = phaserange.split(",")
+                try:
+                    value1 = float(zvalueList[0])
+                    value2 = float(zvalueList[1])
+                except:
+                    self.console.clear()
+                    self.console.append("Invalid phase range")
+                    return 0
+                
+                opObj.addParameter(name='phase_min', value=value1, format='float')
+                opObj.addParameter(name='phase_max', value=value2, format='float')
+                
             if self.specGraphSaveCoherencemap.isChecked():
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
-                opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
-                value = self.specGraphPrefix.text()
-                if not value == "":
-                   try:
-                      value = str(self.specGraphPrefix.text())
-                   except:
-                       self.console.clear()
-                       self.console.append("Please Write prefix")
-                       return 0    
+                opObj.addParameter(name='figpath', value=figpath, format='str')
+                if figfile:
                    opObj.addParameter(name='figfile', value=value, format='str')
-           
-             # test_ftp
+                if wrperiod:
+                    opObj.addParameter(name='wr_period', value=wrperiod,format='int')
+                    
             if self.specGraphftpCoherencemap.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
                self.addFTPConf2Operation(puObj, opObj)       
                addFTP = True    
            
         if self.specGraphPowerprofile.isChecked():
-           name_operation = 'PowerProfilePlot'
-           optype = 'other'
-           name_parameter = 'type'
-           value = 'PowerProfilePlot'
-           format = 'str'
-
-           if self.idImagpower == 0:
-                self.idImagpower = 600
-           else:
-                self.idImagpower = self.idImagpower + 1
-           value1 = int(self.idImagpower)
-           opObj = puObj.addOperation(name=name_operation, optype=optype)
-#            opObj.addParameter(name=name_parameter, value=value, format='str') 
+            
+           opObj = puObj.addOperation(name='PowerProfilePlot', optype='other')
            opObj.addParameter(name='id', value=opObj.id, format='int')
-    
-           channelList = self.specGgraphChannelList.text()
+           
            if not channelList == '':
                opObj.addParameter(name='channelList', value=channelList, format='intlist') 
            
-           xvalue = self.specGgraphDbsrange.text() 
-           if not xvalue == '':
-               xvalueList = xvalue.split(',')
+           if not db_range == '':
+               xvalueList = db_range.split(',')
                try:
-                    value = float(xvalueList[0])
-                    value = float(xvalueList[1])
+                    value1 = float(xvalueList[0])
+                    value2 = float(xvalueList[1])
                except:
+                    self.console.clear()
+                    self.console.append("Invalid db range")
                     return 0
-               format = 'float'
-               opObj.addParameter(name='xmin', value=xvalueList[0], format=format)
-               opObj.addParameter(name='xmax', value=xvalueList[1], format=format)     
+                
+               opObj.addParameter(name='xmin', value=value1, format='float')
+               opObj.addParameter(name='xmax', value=value2, format='float')     
   
-           yvalue = self.specGgraphHeight.text()
-           if not yvalue == '':
-               yvalueList = yvalue.split(",")
-               try:
-                    value = float(yvalueList[0])
-                    value = float(yvalueList[1])
-               except:
-                    return 0  
-               format = 'float'
-               opObj.addParameter(name='ymin', value=yvalueList[0], format=format)
-               opObj.addParameter(name='ymax', value=yvalueList[1], format=format)   
-           
+           if not hei_range == '':
+                yvalueList = hei_range.split(",")
+                try:
+                     value1 = float(yvalueList[0])
+                     value2 = float(yvalueList[1])
+                except:
+                     self.console.clear()
+                     self.console.append("Invalid height range")
+                     return 0
+                
+                opObj.addParameter(name='ymin', value=value1, format='float')
+                opObj.addParameter(name='ymax', value=value2, format='float')
  
            if self.specGraphSavePowerprofile.isChecked():
-               checkPath = True
-               opObj.addParameter(name='save', value='1', format='bool')
-               opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
-               value = self.specGraphPrefix.text()
-               if not value == "":
-                  try:
-                      value = str(self.specGraphPrefix.text())
-                  except:
-                       self.console.clear()
-                       self.console.append("Please Write prefix")
-                       return 0    
-                  opObj.addParameter(name='figfile', value=value, format='str')
-                
+                checkPath = True
+                opObj.addParameter(name='save', value='1', format='bool')
+                opObj.addParameter(name='figpath', value=figpath, format='str')
+                if figfile:
+                   opObj.addParameter(name='figfile', value=value, format='str')
+                if wrperiod:
+                    opObj.addParameter(name='wr_period', value=wrperiod,format='int')
                 
            if self.specGraphftpPowerprofile.isChecked():
               opObj.addParameter(name='ftp', value='1', format='int')
@@ -1815,95 +1643,72 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            # rti noise
               
         if self.specGraphCebRTInoise.isChecked():
-            name_operation = 'Noise'
-            optype = 'other'
-            name_parameter = 'type'
-            value = 'Noise'
-            format = 'str'
-          
-            if self.idImagrtinoise == 0:
-                self.idImagrtinoise = 700
-            else:
-                self.idImagrtinoise = self.idImagrtinoise + 1
             
-            name_parameter1 = 'id'
-            value1 = int(self.idImagrtinoise)
-            format1 = 'int'
-            format = 'str'
-            
-            opObj = puObj.addOperation(name=name_operation, optype=optype)
-#             opObj.addParameter(name=name_parameter, value=value, format=format)
-            opObj.addParameter(name=name_parameter1, value=opObj.id, format=format1)
-
-            channelList = self.specGgraphChannelList.text()
-            xvalue = self.specGgraphTminTmax.text()     
-            yvalue = self.specGgraphDbsrange.text()
-            timerange = self.specGgraphTimeRange.text()     
-
+            opObj = puObj.addOperation(name='Noise', optype='other')
+            opObj.addParameter(name='id', value=opObj.id, format='int')
             
             if not channelList == '':
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
             
-            if not timerange == '':
-                format = 'int'
-                try:
-                    timerange = int(timerange)
-                except:
-                    return 0
-                opObj.addParameter(name='timerange', value=timerange, format=format)
+#             if not timerange == '':
+#                 try:
+#                     timerange = float(timerange)
+#                 except:
+#                     self.console.clear()
+#                     self.console.append("Invalid time range")
+#                     return 0
+#                 
+#                 opObj.addParameter(name='timerange', value=timerange, format='float')
                 
-            if not xvalue == '':
-                xvalueList = xvalue.split(',')
+            if not trange == '':
+                xvalueList = trange.split(',')
                 try:
-                    value = float(xvalueList[0])
-                    value = float(xvalueList[1])
+                    value1 = float(xvalueList[0])
+                    value2 = float(xvalueList[1])
                 except:
-                        return 0  
-                format = 'float'
-                opObj.addParameter(name='xmin', value=xvalueList[0], format=format)
-                opObj.addParameter(name='xmax', value=xvalueList[1], format=format)
+                    self.console.clear()
+                    self.console.append("Invalid time range")
+                    return 0
+                    
+                opObj.addParameter(name='xmin', value=value1, format='float')
+                opObj.addParameter(name='xmax', value=value2, format='float')
             
-            if not yvalue == '':
-                yvalueList = yvalue.split(",")
+            if not db_range == '':
+                yvalueList = db_range.split(",")
                 try:
-                    value = float(yvalueList[0])
-                    value = float(yvalueList[1])
+                    value1 = float(yvalueList[0])
+                    value2 = float(yvalueList[1])
                 except:
-                        return 0
-                format = 'float'
-                opObj.addParameter(name='ymin', value=yvalueList[0], format=format)
-                opObj.addParameter(name='ymax', value=yvalueList[1], format=format)      
+                    self.console.clear()
+                    self.console.append("Invalid db range")
+                    return 0
+                
+                opObj.addParameter(name='ymin', value=value1, format='float')
+                opObj.addParameter(name='ymax', value=value2, format='float')      
                 
             if self.specGraphSaveRTInoise.isChecked():
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
-                opObj.addParameter(name='figpath', value=self.specGraphPath.text(), format='str')
-                value = self.specGraphPrefix.text()
-                if not value == "":
-                   try:
-                       value = str(self.specGraphPrefix.text())
-                   except:
-                        self.console.clear()
-                        self.console.append("Please Write prefix")
-                        return 0    
+                opObj.addParameter(name='figpath', value=figpath, format='str')
+                if figfile:
                    opObj.addParameter(name='figfile', value=value, format='str')                
-               
+                if wrperiod:
+                    opObj.addParameter(name='wr_period', value=wrperiod,format='int')
+                    
             # test_ftp
             if self.specGraphftpRTInoise.isChecked():
                opObj.addParameter(name='ftp', value='1', format='int')
                self.addFTPConf2Operation(puObj, opObj)    
                addFTP = True  
         
-        localfolder = None
         if checkPath:
-            localfolder = str(self.specGraphPath.text())
-            if localfolder == '':
+            if not figpath:
                 self.console.clear()
                 self.console.append("Graphic path should be defined")
                 return 0
                 
         if addFTP:
-            if not localfolder:
+            if not figpath:
                 self.console.clear()
                 self.console.append("You have to save the plots before sending them to FTP Server")
                 return 0
@@ -1914,31 +1719,25 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
             self.addFTPProcUnitView(server, username, password, remotefolder,
                                        ftp_wei, exp_code, sub_exp_code, plot_pos,
-                                       localfolder=localfolder)
+                                       localfolder=figpath)
         else:
             self.removeFTPProcUnitView()
             
 #      if something happend 
         parms_ok, output_path, blocksperfile, profilesperblock = self.checkInputsPUSave(datatype='Spectra')
         if parms_ok:
-            name_operation = 'SpectraWriter'
-            optype = 'other'
-            name_parameter1 = 'path'
-            name_parameter2 = 'blocksPerFile'
-            name_parameter3 = 'profilesPerBlock'
-            value1 = output_path
-            value2 = blocksperfile
-            value3 = profilesperblock
-            format = "int"
-            
-            opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter1, value=value1)
-            opObj.addParameter(name=name_parameter2, value=value2, format=format)
-            opObj.addParameter(name=name_parameter3, value=value3, format=format)
-
-        self.refreshPUProperties(puObj)
-            
+            opObj = puObj.addOperation(name='SpectraWriter', optype='other')
+            opObj.addParameter(name='path', value=output_path)
+            opObj.addParameter(name='blocksPerFile', value=blocksperfile, format='int')
+            opObj.addParameter(name='profilesPerBlock', value=profilesperblock, format='int')
+        
         self.console.clear()
+        try:
+            self.refreshPUProperties(puObj)
+        except:
+            self.console.append("Check input parameters")
+            return 0
+        
         self.console.append("If you want to save your project")
         self.console.append("click on your project name in the Tree Project Explorer")
 
@@ -1953,187 +1752,103 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     @pyqtSignature("int")
     def on_specGraphCebSpectraplot_stateChanged(self, p0):
         
-        if  p0 == 2:
-            self.specGgraphChannelList.setEnabled(True)
-            self.specGgraphFreq.setEnabled(True)
-            self.specGgraphHeight.setEnabled(True)
-            self.specGgraphDbsrange.setEnabled(True)
-        if  p0 == 0:
-            self.specGgraphFreq.setEnabled(False)
-            self.specGgraphHeight.setEnabled(False)
-            self.specGgraphDbsrange.setEnabled(False)  
+        self.__checkSpecGraphFilters() 
             
             
     @pyqtSignature("int")
     def on_specGraphCebCrossSpectraplot_stateChanged(self, p0):
         
-        if  p0 == 2:
-            self.specGgraphFreq.setEnabled(True)
-            self.specGgraphHeight.setEnabled(True)
-            self.specGgraphDbsrange.setEnabled(True)
-        if  p0 == 0:
-            self.specGgraphFreq.setEnabled(False)
-            self.specGgraphHeight.setEnabled(False)
-            self.specGgraphDbsrange.setEnabled(False)  
+        self.__checkSpecGraphFilters()
             
     @pyqtSignature("int")
     def on_specGraphCebRTIplot_stateChanged(self, p0):
         
-        if  p0 == 2:
-            self.specGgraphChannelList.setEnabled(True)
-            self.specGgraphTminTmax.setEnabled(True)
-            self.specGgraphHeight.setEnabled(True)
-            self.specGgraphDbsrange.setEnabled(True)
-            self.specGgraphTimeRange.setEnabled(True)
-
-        if  p0 == 0:
-            self.specGgraphTminTmax.setEnabled(False)
-            self.specGgraphHeight.setEnabled(False)
-            self.specGgraphDbsrange.setEnabled(False)
-            self.specGgraphTimeRange.setEnabled(False)
+        self.__checkSpecGraphFilters()
 
     
     @pyqtSignature("int")
     def on_specGraphCebRTInoise_stateChanged(self, p0):
-        if  p0 == 2:
-            self.specGgraphChannelList.setEnabled(True)
-            self.specGgraphTminTmax.setEnabled(True)
-            self.specGgraphDbsrange.setEnabled(True)
-            self.specGgraphTimeRange.setEnabled(True)
-
-        if  p0 == 0:
-            self.specGgraphTminTmax.setEnabled(False)
-            self.specGgraphDbsrange.setEnabled(False)
-            self.specGgraphTimeRange.setEnabled(False)
-
-            
+        
+        self.__checkSpecGraphFilters()
             
              
     @pyqtSignature("int")
     def on_specGraphCebCoherencmap_stateChanged(self, p0):
         
-        if  p0 == 2:
-            self.specGgraphTminTmax.setEnabled(True)
-            self.specGgraphHeight.setEnabled(True)
-            self.specGgraphmagnitud.setEnabled(True)
-            self.specGgraphTimeRange.setEnabled(True)
-            
-        if  p0 == 0:
-            self.specGgraphTminTmax.setEnabled(False)
-            self.specGgraphHeight.setEnabled(False)
-            self.specGgraphmagnitud.setEnabled(False)
-            self.specGgraphTimeRange.setEnabled(False)
-
-
-
+        self.__checkSpecGraphFilters()
             
     @pyqtSignature("int")
     def on_specGraphPowerprofile_stateChanged(self, p0):
         
-        if  p0 == 2:
-    
-            self.specGgraphHeight.setEnabled(True)
-            self.specGgraphDbsrange.setEnabled(True)
-        if  p0 == 0:
-            self.specGgraphHeight.setEnabled(False)
-            self.specGgraphDbsrange.setEnabled(False)        
+        self.__checkSpecGraphFilters()   
     
     @pyqtSignature("int")
     def on_specGraphPhase_stateChanged(self, p0):
         
-        if  p0 == 2:
-            self.specGgraphTminTmax.setEnabled(True)
-            self.specGgraphPhaserange.setEnabled(True)
-
-        if  p0 == 0:
-            self.specGgraphTminTmax.setEnabled(False)
-            self.specGgraphPhaserange.setEnabled(False)
+        self.__checkSpecGraphFilters()
                
     @pyqtSignature("int")
     def on_specGraphSaveSpectra_stateChanged(self, p0):
         """
         """
-        if  p0 == 2:
-            self.specGraphPath.setEnabled(True)
-            self.specGraphPrefix.setEnabled(True)
-            self.specGraphToolPath.setEnabled(True)
-        if  p0 == 0:
-            self.specGraphPath.setEnabled(False)
-            self.specGraphPrefix.setEnabled(False)
-            self.specGraphToolPath.setEnabled(False)   
-            
-            
+        self.__checkSpecGraphSaving()
+        
     @pyqtSignature("int")
     def on_specGraphSaveCross_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGraphPath.setEnabled(True)
-            self.specGraphPrefix.setEnabled(True)
-            self.specGraphToolPath.setEnabled(True)
+        
+        self.__checkSpecGraphSaving()
         
     @pyqtSignature("int")
     def on_specGraphSaveRTIplot_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGraphPath.setEnabled(True)
-            self.specGraphPrefix.setEnabled(True)
-            self.specGraphToolPath.setEnabled(True)
+        
+        self.__checkSpecGraphSaving()
             
     @pyqtSignature("int")
     def on_specGraphSaveRTInoise_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGraphPath.setEnabled(True)
-            self.specGraphPrefix.setEnabled(True)
-            self.specGraphToolPath.setEnabled(True)
+        
+        self.__checkSpecGraphSaving()
             
     @pyqtSignature("int")
     def on_specGraphSaveCoherencemap_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGraphPath.setEnabled(True)
-            self.specGraphPrefix.setEnabled(True)
-            self.specGraphToolPath.setEnabled(True)
-            
+        
+        self.__checkSpecGraphSaving()
             
     @pyqtSignature("int")
     def on_specGraphSavePowerprofile_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGraphPath.setEnabled(True)
-            self.specGraphPrefix.setEnabled(True)
-            self.specGraphToolPath.setEnabled(True)
+        
+        self.__checkSpecGraphSaving()
     
     @pyqtSignature("int")
     def on_specGraphftpSpectra_stateChanged(self, p0):
         """
         """
-        if  p0 == 2:
-            self.specGgraphftpratio.setEnabled(True)
-
-        if  p0 == 0:
-            self.specGgraphftpratio.setEnabled(False)
+        self.__checkSpecGraphFTP()
             
             
     @pyqtSignature("int")
     def on_specGraphftpCross_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGgraphftpratio.setEnabled(True)
+        
+        self.__checkSpecGraphFTP()
         
     @pyqtSignature("int")
     def on_specGraphftpRTIplot_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGgraphftpratio.setEnabled(True)
+        
+        self.__checkSpecGraphFTP()
             
     @pyqtSignature("int")
     def on_specGraphftpRTInoise_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGgraphftpratio.setEnabled(True)
+        
+        self.__checkSpecGraphFTP()
             
     @pyqtSignature("int")
     def on_specGraphftpCoherencemap_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGgraphftpratio.setEnabled(True)
+        
+        self.__checkSpecGraphFTP()
             
     @pyqtSignature("int")
     def on_specGraphftpPowerprofile_stateChanged(self, p0):       
-        if  p0 == 2:
-            self.specGgraphftpratio.setEnabled(True)
+        
+        self.__checkSpecGraphFTP()
                
     @pyqtSignature("")
     def on_specGraphToolPath_clicked(self):        
@@ -2147,6 +1862,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             return 
         
     @pyqtSignature("")
+    def on_specGraphClear_clicked(self):
+        return
+    
+    @pyqtSignature("")
     def on_specHeisGraphToolPath_clicked(self):        
         """
         """
@@ -2155,11 +1874,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not os.path.exists(self.savePath):
             self.console.clear()
             self.console.append("Write a correct a path")
-            return 
-
-    @pyqtSignature("")
-    def on_specGraphClear_clicked(self):
-        self.clearspecGraph()
+            return
         
     @pyqtSignature("int")
     def on_specHeisOpCebIncoherent_stateChanged(self, p0):
@@ -2408,9 +2123,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter2, value=value2, format=format2)
             opObj.addParameter(name=name_parameter3, value=value3, format=format3)
 
-        self.refreshPUProperties(puObj)
-            
         self.console.clear()
+        try:
+            self.refreshPUProperties(puObj)
+        except:
+            self.console.append("Check input parameters")
+            return 0
+        
         self.console.append("Click on save icon ff you want to save your project")
         
         self.actionSaveToolbar.setEnabled(True)
@@ -2481,6 +2200,113 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def on_specHeisGraphClear_clicked(self):
         pass
     
+    def __checkSpecGraphSaving(self):
+        
+        enable = False
+            
+        if self.specGraphSaveSpectra.checkState():
+            enable = True
+        
+        if self.specGraphSaveCross.checkState():
+            enable = True
+        
+        if self.specGraphSaveRTIplot.checkState():
+            enable = True
+        
+        if self.specGraphSaveCoherencemap.checkState():
+            enable = True
+            
+        if self.specGraphSavePowerprofile.checkState():
+            enable = True
+        
+        if self.specGraphSaveRTInoise.checkState():
+            enable = True
+            
+        self.specGraphPath.setEnabled(enable)
+        self.specGraphPrefix.setEnabled(enable)
+        self.specGraphToolPath.setEnabled(enable)
+        
+        self.specGgraphftpratio.setEnabled(enable)
+        
+    def __checkSpecGraphFTP(self):
+        
+        enable = False
+        
+        if self.specGraphftpSpectra.checkState():
+            enable = True
+        
+        if self.specGraphftpCross.checkState():
+            enable = True
+        
+        if self.specGraphftpRTIplot.checkState():
+            enable = True
+        
+        if self.specGraphftpCoherencemap.checkState():
+            enable = True
+            
+        if self.specGraphftpPowerprofile.checkState():
+            enable = True
+        
+        if self.specGraphftpRTInoise.checkState():
+            enable = True
+            
+#         self.specGgraphftpratio.setEnabled(enable)
+        
+    def __checkSpecGraphFilters(self):
+        
+        freq = False
+        height = False
+        db = False
+        time = False
+        magnitud = False
+        phase = False
+        channelList = False
+        
+        if self.specGraphCebSpectraplot.checkState():
+            freq = True
+            height = True
+            db = True
+            channelList = True
+        
+        if self.specGraphCebCrossSpectraplot.checkState():
+            freq = True
+            height = True
+            db = True
+            magnitud = True
+            phase = True
+        
+        if self.specGraphCebRTIplot.checkState():
+            height = True
+            db = True
+            time = True
+            channelList = True
+        
+        if self.specGraphCebCoherencmap.checkState():
+            height = True
+            time = True
+            magnitud = True
+            phase = True
+            
+        if self.specGraphPowerprofile.checkState():
+            height = True
+            db = True
+            channelList = True
+        
+        if self.specGraphCebRTInoise.checkState():
+            db = True
+            time = True
+            channelList = True
+            
+        
+        self.specGgraphFreq.setEnabled(freq)
+        self.specGgraphHeight.setEnabled(height)
+        self.specGgraphDbsrange.setEnabled(db)
+        self.specGgraphTminTmax.setEnabled(time)
+        
+        self.specGgraphmagnitud.setEnabled(magnitud)
+        self.specGgraphPhase.setEnabled(phase)
+        self.specGgraphChannelList.setEnabled(channelList)
+        
     def __getParmsFromProjectWindow(self):
         """
         Check Inputs Project:
@@ -3003,7 +2829,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         return
         
     def __refreshSpectraWindow(self, puObj):
-
+        
+        inputId = puObj.getInputId()
+        inputPUObj = self.__puObjDict[inputId]
+        
+        if inputPUObj.datatype == 'Voltage':
+            self.specOpnFFTpoints.setEnabled(True)
+            self.specOpProfiles.setEnabled(True)
+            self.specOpippFactor.setEnabled(True)
+        else:
+            self.specOpnFFTpoints.setEnabled(False)
+            self.specOpProfiles.setEnabled(False)
+            self.specOpippFactor.setEnabled(False)
+        
         opObj = puObj.getOperationObj(name='setRadarFrequency')
         if opObj == None:
             self.specOpRadarfrequency.clear()
@@ -3156,52 +2994,51 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.specOpgetNoise.clear()
                 value1 = None
             else:
-                    value1 = opObj.getParameterValue(parameterName='minHei') 
-                    value1 = str(value1)
-                    parmObj = opObj.getParameterObj(parameterName='maxHei')
+                value1 = opObj.getParameterValue(parameterName='minHei') 
+                value1 = str(value1)
+                parmObj = opObj.getParameterObj(parameterName='maxHei')
+                if parmObj == None:
+                    value2 = None
+                    value = value1
+                    self.specOpgetNoise.setText(value)
+                    self.specOpgetNoise.setEnabled(True)
+                else:
+                    value2 = opObj.getParameterValue(parameterName='maxHei') 
+                    value2 = str(value2)
+                    parmObj = opObj.getParameterObj(parameterName='minVel')
                     if parmObj == None:
-                        value2 = None
-                        value = value1
+                        value3 = None
+                        value = value1 + "," + value2
                         self.specOpgetNoise.setText(value)
                         self.specOpgetNoise.setEnabled(True)
                     else:
-                        value2 = opObj.getParameterValue(parameterName='maxHei') 
-                        value2 = str(value2)
-                        parmObj = opObj.getParameterObj(parameterName='minVel')
+                        value3 = opObj.getParameterValue(parameterName='minVel') 
+                        value3 = str(value3)
+                        parmObj = opObj.getParameterObj(parameterName='maxVel')
                         if parmObj == None:
-                            value3 = None
-                            value = value1 + "," + value2
+                            value4 = None
+                            value = value1 + "," + value2 + "," + value3
                             self.specOpgetNoise.setText(value)
                             self.specOpgetNoise.setEnabled(True)
                         else:
-                            value3 = opObj.getParameterValue(parameterName='minVel') 
-                            value3 = str(value3)
-                            parmObj = opObj.getParameterObj(parameterName='maxVel')
-                            if parmObj == None:
-                                value4 = None
-                                value = value1 + "," + value2 + "," + value3
-                                self.specOpgetNoise.setText(value)
-                                self.specOpgetNoise.setEnabled(True)
-                            else:
-                                value4 = opObj.getParameterValue(parameterName='maxVel') 
-                                value4 = str(value4)
-                                value = value1 + "," + value2 + "," + value3 + ',' + value4
-                                self.specOpgetNoise.setText(value)
-                                self.specOpgetNoise.setEnabled(True)
+                            value4 = opObj.getParameterValue(parameterName='maxVel') 
+                            value4 = str(value4)
+                            value = value1 + "," + value2 + "," + value3 + ',' + value4
+                            self.specOpgetNoise.setText(value)
+                            self.specOpgetNoise.setEnabled(True)
                     
         opObj = puObj.getOperationObj(name='SpectraPlot')
-#             opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
+        
         if opObj == None:
             self.specGraphCebSpectraplot.setCheckState(0)
             self.specGraphSaveSpectra.setCheckState(0)
             self.specGraphftpSpectra.setCheckState(0)
-
         else:
             operationSpectraPlot = "Enable"
             self.specGraphCebSpectraplot.setCheckState(QtCore.Qt.Checked)
             parmObj = opObj.getParameterObj(parameterName='channelList')
             if parmObj == None:
-                   self.specGgraphChannelList.clear()
+                self.specGgraphChannelList.clear()
             else:
                 value = opObj.getParameterValue(parameterName='channelList')
                 channelListSpectraPlot = str(value)[1:-1]
@@ -3212,64 +3049,64 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specGgraphFreq.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphFreq.setText(value)
-                    self.specGgraphFreq.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphFreq.setText(value)
+                self.specGgraphFreq.setEnabled(True)
                                
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specGgraphHeight.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphHeight.setText(value)
-                    self.specGgraphHeight.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphHeight.setText(value)
+                self.specGgraphHeight.setEnabled(True)
 
             parmObj = opObj.getParameterObj(parameterName='zmin')
             if parmObj == None:
                 self.specGgraphDbsrange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='zmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='zmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphDbsrange.setText(value)
-                    self.specGgraphDbsrange.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='zmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='zmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphDbsrange.setText(value)
+                self.specGgraphDbsrange.setEnabled(True)
             
             
             parmObj = opObj.getParameterObj(parameterName="figpath")
             if parmObj == None:
-                    self.specGraphSaveSpectra.setCheckState(0)
+                self.specGraphSaveSpectra.setCheckState(0)
             else:
-                    self.specGraphSaveSpectra.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specGraphPath.setText(value)
+                self.specGraphSaveSpectra.setCheckState(QtCore.Qt.Checked)
+                value = opObj.getParameterValue(parameterName='figpath')
+                self.specGraphPath.setText(value)
                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
-                    self.specGraphftpSpectra.setCheckState(0)
+                self.specGraphftpSpectra.setCheckState(0)
             else:
-                    self.specGraphftpSpectra.setCheckState(QtCore.Qt.Checked)
-                    try:
-                        value = opObj.getParameterValue(parameterName='wr_period')
-                    except:
-                        value = " "
-                    self.specGgraphftpratio.setText(str(value))
+                self.specGraphftpSpectra.setCheckState(QtCore.Qt.Checked)
+                try:
+                    value = opObj.getParameterValue(parameterName='wr_period')
+                except:
+                    value = " "
+                self.specGgraphftpratio.setText(str(value))
                     
-        opObj = puObj.getOperationObj(name='CrossSpectraPlot')   
-#             opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
+        opObj = puObj.getOperationObj(name='CrossSpectraPlot')
+        
         if opObj == None:
             self.specGraphCebCrossSpectraplot.setCheckState(0)
             self.specGraphSaveCross.setCheckState(0)
-
+            self.specGraphftpCross.setCheckState(0)
         else:
             operationCrossSpectraPlot = "Enable"
             self.specGraphCebCrossSpectraplot.setCheckState(QtCore.Qt.Checked)
@@ -3277,57 +3114,81 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specGgraphFreq.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphFreq.setText(value)
-                    self.specGgraphFreq.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphFreq.setText(value)
+                self.specGgraphFreq.setEnabled(True)
                                
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specGgraphHeight.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphHeight.setText(value)
-                    self.specGgraphHeight.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphHeight.setText(value)
+                self.specGgraphHeight.setEnabled(True)
 
             parmObj = opObj.getParameterObj(parameterName='zmin')
             if parmObj == None:
                 self.specGgraphDbsrange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='zmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='zmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphDbsrange.setText(value)
-                    self.specGgraphDbsrange.setEnabled(True)
-            
+                value1 = opObj.getParameterValue(parameterName='zmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='zmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphDbsrange.setText(value)
+                self.specGgraphDbsrange.setEnabled(True)
+
+            parmObj = opObj.getParameterObj(parameterName='coh_min')
+            if parmObj == None:
+                self.specGgraphmagnitud.clear()
+            else:
+                value1 = opObj.getParameterValue(parameterName='coh_min') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='coh_max')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphmagnitud.setText(value)
+                self.specGgraphmagnitud.setEnabled(True)
+                
+            parmObj = opObj.getParameterObj(parameterName='phase_min')
+            if parmObj == None:
+                self.specGgraphPhase.clear()
+            else:
+                value1 = opObj.getParameterValue(parameterName='phase_min') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='phase_max')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphPhase.setText(value)
+                self.specGgraphPhase.setEnabled(True)
+                   
             parmObj = opObj.getParameterObj(parameterName="figpath")
             if parmObj == None:
                 self.specGraphSaveCross.setCheckState(0)
                 
             else:
-                    self.specGraphSaveCross.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specGraphPath.setText(value)
+                self.specGraphSaveCross.setCheckState(QtCore.Qt.Checked)
+                value = opObj.getParameterValue(parameterName='figpath')
+                self.specGraphPath.setText(value)
             
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
-                    self.specGraphftpCross.setCheckState(0)
+                self.specGraphftpCross.setCheckState(0)
             else:
-                    self.specGraphftpCross.setCheckState(QtCore.Qt.Checked)
-                    try:
-                        value = opObj.getParameterValue(parameterName='wr_period')
-                    except:
-                        value = " "
-                    self.specGgraphftpratio.setText(str(value))
+                self.specGraphftpCross.setCheckState(QtCore.Qt.Checked)
+                try:
+                    value = opObj.getParameterValue(parameterName='wr_period')
+                except:
+                    value = " "
+                self.specGgraphftpratio.setText(str(value))
         
         opObj = puObj.getOperationObj(name='RTIPlot')
 #             opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
@@ -3395,20 +3256,20 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specGraphSaveRTIplot.setCheckState(0)
             else:
-                    self.specGraphSaveRTIplot.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specGraphPath.setText(value)
+                self.specGraphSaveRTIplot.setCheckState(QtCore.Qt.Checked)
+                value = opObj.getParameterValue(parameterName='figpath')
+                self.specGraphPath.setText(value)
             
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specGraphftpRTIplot.setCheckState(0)
             else:
-                    self.specGraphftpRTIplot.setCheckState(QtCore.Qt.Checked)
-                    try:
-                        value = opObj.getParameterValue(parameterName='wr_period')
-                    except:
-                        value = " "
-                    self.specGgraphftpratio.setText(str(value))
+                self.specGraphftpRTIplot.setCheckState(QtCore.Qt.Checked)
+                try:
+                    value = opObj.getParameterValue(parameterName='wr_period')
+                except:
+                    value = " "
+                self.specGgraphftpratio.setText(str(value))
                     
         opObj = puObj.getOperationObj(name='CoherenceMap')
 #             opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
@@ -3416,7 +3277,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specGraphCebCoherencmap.setCheckState(0)
             self.specGraphSaveCoherencemap.setCheckState(0)
             self.specGraphftpCoherencemap.setCheckState(0)
-        
         else:
             operationCoherenceMap = "Enable"
             self.specGraphCebCoherencmap.setCheckState(QtCore.Qt.Checked)
@@ -3424,71 +3284,96 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specGgraphTminTmax.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphTminTmax.setText(value)
-                    self.specGgraphTminTmax.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphTminTmax.setText(value)
+                self.specGgraphTminTmax.setEnabled(True)
             
             parmObj = opObj.getParameterObj(parameterName='timerange')
             if parmObj == None:
                 self.specGgraphTimeRange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='timerange') 
-                    value1 = str(value1)
-                    self.specGgraphTimeRange.setText(value1)
-                    self.specGgraphTimeRange.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='timerange') 
+                value1 = str(value1)
+                self.specGgraphTimeRange.setText(value1)
+                self.specGgraphTimeRange.setEnabled(True)
                     
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specGgraphHeight.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphHeight.setText(value)
-                    self.specGgraphHeight.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphHeight.setText(value)
+                self.specGgraphHeight.setEnabled(True)
                     
             parmObj = opObj.getParameterObj(parameterName='zmin')
             if parmObj == None:
                 self.specGgraphmagnitud.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='zmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='zmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphmagnitud.setText(value)
-                    self.specGgraphmagnitud.setEnabled(True)
-                    
+                value1 = opObj.getParameterValue(parameterName='zmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='zmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphmagnitud.setText(value)
+                self.specGgraphmagnitud.setEnabled(True)
+
+            parmObj = opObj.getParameterObj(parameterName='coh_min')
+            if parmObj == None:
+                self.specGgraphmagnitud.clear()
+            else:
+                value1 = opObj.getParameterValue(parameterName='coh_min') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='coh_max')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphmagnitud.setText(value)
+                self.specGgraphmagnitud.setEnabled(True)
+                
+            parmObj = opObj.getParameterObj(parameterName='phase_min')
+            if parmObj == None:
+                self.specGgraphPhase.clear()
+            else:
+                value1 = opObj.getParameterValue(parameterName='phase_min') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='phase_max')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphPhase.setText(value)
+                self.specGgraphPhase.setEnabled(True)
+                
             parmObj = opObj.getParameterObj(parameterName="figpath")
             if parmObj == None:
                 self.specGraphSaveCoherencemap.setCheckState(0)
             else:
-                    self.specGraphSaveCoherencemap.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specGraphPath.setText(value)
+                self.specGraphSaveCoherencemap.setCheckState(QtCore.Qt.Checked)
+                value = opObj.getParameterValue(parameterName='figpath')
+                self.specGraphPath.setText(value)
                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specGraphftpCoherencemap.setCheckState(0)
             else:
-                    self.specGraphftpCoherencemap.setCheckState(QtCore.Qt.Checked)
-                    try:
-                        value = opObj.getParameterValue(parameterName='wr_period')
-                    except:
-                        value = " "
-                    self.specGgraphftpratio.setText(str(value))
+                self.specGraphftpCoherencemap.setCheckState(QtCore.Qt.Checked)
+                try:
+                    value = opObj.getParameterValue(parameterName='wr_period')
+                except:
+                    value = " "
+                self.specGgraphftpratio.setText(str(value))
                     
         opObj = puObj.getOperationObj(name='PowerProfilePlot')
 #             opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
         if opObj == None:
             self.specGraphPowerprofile.setCheckState(0)
             self.specGraphSavePowerprofile.setCheckState(0)
+            self.specGraphftpPowerprofile.setCheckState(0)
             operationPowerProfilePlot = "Disabled"
             channelList = None
             freq_vel = None
@@ -3822,15 +3707,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def __refreshCorrelationWindow(self, puObj):
         pass
     
-    def refreshPUWindow(self, datatype, puObj):
+    def refreshPUWindow(self, puObj):
         
-        if datatype == 'Voltage':
+        if puObj.datatype == 'Voltage':
             self.__refreshVoltageWindow(puObj)
 
-        if datatype == 'Spectra':
+        if puObj.datatype == 'Spectra':
             self.__refreshSpectraWindow(puObj)
             
-        if datatype == 'SpectraHeis':
+        if puObj.datatype == 'SpectraHeis':
             self.__refreshSpectraHeisWindow(puObj)
 
     def refreshProjectProperties(self, projectObjView):
@@ -3891,10 +3776,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     continue
                 
                 opObj.changeParameter(name='id', value=opObj.id, format='int')
-                    
+    
     def on_click(self, index):
-        
-        self.console.clear()
         
         self.selectedItemTree = self.projectExplorerModel.itemFromIndex(index)
         
@@ -3929,50 +3812,26 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         tabSelected = self.tabProject
         
         puObj = selectedObjView
-        inputId = puObj.getInputId()
-        inputPUObj = projectObjView.getProcUnitObj(inputId)
         
         if  self.selectedItemTree.text() == 'Voltage':
-            datatype = 'Voltage'
-            self.refreshPUWindow(datatype=datatype, puObj=puObj)
-            self.refreshPUProperties(puObj)
-            
             voltEnable = True
             tabSelected = self.tabVoltage
                 
         if self.selectedItemTree.text() == 'Spectra':
-            
-            datatype = 'Spectra'
-
-            if inputPUObj.datatype == 'Spectra':
-                self.specOpnFFTpoints.setEnabled(False)
-                self.specOpProfiles.setEnabled(False)
-                self.specOpippFactor.setEnabled(False)
-            else:
-                self.specOpnFFTpoints.setEnabled(True)
-                self.specOpProfiles.setEnabled(True)
-                self.specOpippFactor.setEnabled(True)
-            
-            self.refreshPUWindow(datatype=datatype, puObj=puObj)   
-            self.refreshPUProperties(puObj) 
-            
             specEnable = True
             tabSelected = self.tabSpectra                       
 
         if self.selectedItemTree.text() == 'Correlation':
-
             corrEnable = True
             tabSelected = self.tabCorrelation
         
         if self.selectedItemTree.text() == 'SpectraHeis':
-            datatype = 'SpectraHeis'
-            
-            self.refreshPUWindow(datatype=datatype, puObj=puObj)
-            self.refreshPUProperties(puObj)
-            
-            specHeisEnable = False
+            specHeisEnable = True
             tabSelected = self.tabSpectraHeis
-
+        
+        self.refreshPUWindow(puObj=puObj)
+        self.refreshPUProperties(puObj)
+            
         self.tabProject.setEnabled(False)
         self.tabVoltage.setEnabled(voltEnable)
         self.tabSpectra.setEnabled(specEnable)
@@ -4034,87 +3893,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.close()
             return 0
     
-    def refreshProjectWindow(self, project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, set):
-        
-        self.proName.setText(str(project_name))
-        
-        if datatype == 'Voltage':
-            ext = '.r'
-            value = 0
-        elif datatype == 'Spectra':
-            ext = '.pdata'
-            value = 1
-        elif datatype == 'Fits':
-            ext = '.fits'
-            value = 2
-        elif datatype == 'USRP':
-            ext = '.hdf5'
-            value = 3
-            
-        self.proDataType.setText(ext)
-        self.proDataPath.setText(str(data_path))
-        self.proComDataType.setCurrentIndex(value)
-        self.proComReadMode.setCurrentIndex(int(online))
-        self.proDelay.setText(str(delay))
-        self.proSet.setText(str(set))
-        self.proComStartDate.clear()
-        self.proComEndDate.clear()
-        self.proComStartDate.addItem(str(startDate))
-        self.proComEndDate.addItem(str(endDate))
-        starTime = str(startTime)
-        starlist = starTime.split(":")
-        endTime = str(endTime)
-        endlist = endTime.split(":")
-        self.time.setHMS(int(starlist[0]), int(starlist[1]), int(starlist[2])) 
-        self.proStartTime.setTime(self.time)
-        self.time.setHMS(int(endlist[0]), int(endlist[1]), int(endlist[2])) 
-        self.proEndTime.setTime(self.time)
-        self.proDescription.clear()
-        self.proDescription.append(description)
-
-          
-    def setspecGraph(self):
-
-        self.specGgraphChannelList.setEnabled(True)
-
-    def clearspecGraph(self):
-
-        self.specGgraphChannelList.clear()
-
-    def create_comm(self):
-        
-        self.commCtrlPThread = CommCtrlProcessThread()
-        self.commCtrlPThread.start()
-    
     def create_updating_timer(self):
         self.comm_data_timer = QtCore.QTimer(self)
         self.comm_data_timer.timeout.connect(self.on_comm_updating_timer)
         self.comm_data_timer.start(1000)
-    
-    def create_figure(self):
-        self.queue_plot = Queue.Queue()
-        self.plotmanager = PlotManager(self.queue_plot)
-        self.plot_timer = QtCore.QTimer()
-        QtCore.QObject.connect(self.plot_timer, QtCore.SIGNAL("timeout()"), self.periodicCall)
-        self.plot_timer.start(100)
-        self.running = 1
-
-    def periodicCall(self):
-        """
-        Check every 100 ms if there is something new in the queue.
-        """
-        self.plotmanager.processIncoming()
-        if not self.running:
-            app.quit()
-
-#     def on_comm_data_timer(self):
-#         # lee el data_queue y la coloca en el queue de ploteo
-#         try:
-#             reply = self.commCtrlPThread.data_q.get(block=False)
-#             self.queue_plot.put(reply.data)
-#             
-#         except Queue.Empty:
-#             pass
         
     def createProjectView(self, id):
         
@@ -4283,9 +4065,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             inputId = fatherObj.getId()
             projectObjView = self.getSelectedProjectObj()
         
-        #----------------------------
         puObj = self.createProcUnitView(projectObjView, datatype, inputId)
-        #----------------------------
+        
         self.addPU2ProjectExplorer(id=puObj.getId(), name=datatype)
         
         self.showtabPUCreated(datatype)
@@ -4324,12 +4105,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not value == "":
             try:
                 value = int(value)
+                opObj.addParameter(name='wr_period', value=value, format='int')
             except:
-               self.console.clear()
-               self.console.append("Please fill Ratio on the textbox")
-               return 0
-           
-            opObj.addParameter(name='wr_period', value=value, format='int')   
+               pass
+               
         
     def addFTPProcUnitView(self, server, username, password, remotefolder,
                               ftp_wei, exp_code, sub_exp_code, plot_pos,
@@ -4379,88 +4158,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             return
         
         self.__puObjDict.pop(procUnitConfObj.getId())
-             
-    def bufferProject(self, caracteristica, principal, description):
-        
-        self.projectProperCaracteristica.append(caracteristica)
-        self.projectProperPrincipal.append(principal)
-        self.projectProperDescripcion.append(description)
-        return self.projectProperCaracteristica, self.projectProperPrincipal, self.projectProperDescripcion
-        
-    
-    def showProjectProperties(self, projectObjView):
-        
-        project_name, description = projectObjView.name, projectObjView.description
-        
-        id = projectObjView.id
-        readUnitId = projectObjView.getReadUnitId()
-        readUnitObj = projectObjView.getProcUnitObj(readUnitId)
-        operationObj = readUnitObj.getOperationObj(name='run')
-        
-        
-        datatype = operationObj.getParameterValue(parameterName='datatype')
-        dpath = operationObj.getParameterValue(parameterName='path')
-        startDate = operationObj.getParameterValue(parameterName='startDate')
-        endDate = operationObj.getParameterValue(parameterName='endDate')
-        startDate = str(startDate)
-        endDate = str(endDate)
-        startDateList = startDate.split('-')
-        endDateList = endDate.split('-')
-        startDate = startDateList[0] + "/" + startDateList[1] + "/" + startDateList[2]
-        endDate = endDateList[0] + "/" + endDateList[1] + "/" + endDateList[2]
-        
-        startTime = operationObj.getParameterValue(parameterName='startTime')
-        endTime = operationObj.getParameterValue(parameterName='endTime')
-        online = operationObj.getParameterValue(parameterName='online')
-        walk = operationObj.getParameterValue(parameterName='walk')
-        delay = operationObj.getParameterValue(parameterName='delay')
-        try:
-            set = operationObj.getParameterValue(parameterName='set')
-        except:
-            set = " "
-        
-        if online == 0:
-            remode = "offline"
-        else:
-            remode = "online"
-        
-        if walk == 0:
-            walk_str = 'On Files'
-        else:
-            walk_str = 'On Folder'
-            
-        self.bufferProject("Properties", "Name", project_name),
-        self.bufferProject("Properties", "Data Path", dpath)
-        self.bufferProject("Properties", "Workspace", self.pathWorkSpace)
-        self.bufferProject("Parameters", "Read Mode ", remode)
-        self.bufferProject("Parameters", "DataType  ", datatype)
-        self.bufferProject("Parameters", "Start Date", str(startDate))
-        self.bufferProject("Parameters", "End Date   ", str(endDate))
-        self.bufferProject("Parameters", "Start Time", str(startTime))
-        self.bufferProject("Parameters", "End Time  ", str(endTime))
-        self.bufferProject("Parameters", "Delay  ", str(delay))
-        try:
-            set = operationObj.getParameterValue(parameterName='set')
-            self.bufferProject("Parameters", "Set  ", set)
-        except:
-            set = " "
-        self.bufferProject("Parameters", "Walk  ", str(walk_str))
-        self.bufferProject("Parameters", "Time zone", "Local")
-        self.bufferProject("Description", "Summary  ", description)
-            
-        self.propertiesModel = TreeModel()
-        self.propertiesModel.showProperties(self.projectProperCaracteristica, self.projectProperPrincipal, self.projectProperDescripcion)
-        self.treeProjectProperties.setModel(self.propertiesModel)
-        self.treeProjectProperties.expandAll()  
-        self.treeProjectProperties.resizeColumnToContents(0)
-        self.treeProjectProperties.resizeColumnToContents(1)
-        
-        self.projectProperCaracteristica = []
-        self.projectProperPrincipal = []
-        self.projectProperDescripcion = []
-        
-        return datatype , dpath , startDate , endDate, startTime, endTime, online, delay, walk, set
-                       
+
     def showPUinitView(self):
         self.propertiesModel = TreeModel()
         self.propertiesModel.initPUVoltageView()
@@ -4468,1231 +4166,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.treeProjectProperties.expandAll()
         self.treeProjectProperties.allColumnsShowFocus()
         self.treeProjectProperties.resizeColumnToContents(1)
-        
-    def bufferVoltage(self, caracteristica, principal, description):
-        self.volProperCaracteristica.append(caracteristica)
-        self.volProperPrincipal.append(principal)
-        self.volProperDescripcion.append(description)
-        return self.volProperCaracteristica, self.volProperPrincipal, self.volProperDescripcion
-        
-    def showPUVoltageProperties(self, puObj):
-       
-        
-        type = puObj.name
-        self.bufferVoltage("Processing Unit", "Type", type)
-        
-        opObj = puObj.getOperationObj(name="setRadarFrequency")
-        if opObj == None:
-            radarfrequency = None
-        else:
-            value = opObj.getParameterValue(parameterName='frequency')             
-            value = str(value)
-            radarfrequency = value
-            self.bufferVoltage("Processing Unit", "Radar Frequency", radarfrequency)
-        
-        opObj = puObj.getOperationObj(name="selectChannels")
-        if opObj == None:
-            channel = None
-        else:
-            value = opObj.getParameterValue(parameterName='channelList')             
-            value = str(value)#[1:-1]
-            channel = value
-            self.bufferVoltage("Processing Unit", "Select Channel", channel)
             
-        opObj = puObj.getOperationObj(name="selectChannelsByIndex")
-        if opObj == None:
-            channel = None
-        else:
-            value = opObj.getParameterValue(parameterName='channelIndexList')             
-            value = str(value)#[1:-1]
-            channel = value
-            self.bufferVoltage("Processing Unit", "Select Channel by Index", channel)
-               
-        opObj = puObj.getOperationObj(name="selectHeights")
-        if opObj == None:
-            heights = None
-        else:
-           value1 = int(opObj.getParameterValue(parameterName='minHei'))             
-           value1 = str(value1)
-           value2 = int(opObj.getParameterValue(parameterName='maxHei'))             
-           value2 = str(value2)
-           value = value1 + "," + value2
-           heights = value
-           self.bufferVoltage("Processing Unit", "Select Heights", heights)
-
-        
-        opObj = puObj.getOperationObj(name="filterByHeights")           
-        if opObj == None:
-            filter = None
-        else:
-            value = opObj.getParameterValue(parameterName='window')             
-            value = str(value)
-            filter = value
-            self.bufferVoltage("Processing Unit", "Filter", filter)
-
-
-        opObj = puObj.getOperationObj(name="ProfileSelector") 
-        if opObj == None:  
-            profile = None       
-        else: 
-           for parmObj in opObj.getParameterObjList():
-               if parmObj.name == "profileRangeList":
-                   value = opObj.getParameterValue(parameterName='profileRangeList')             
-                   value = str(value)#[1:-1]
-                   profile = value
-                   self.bufferVoltage("Processing Unit", "Select Profile", profile)
-
-               if parmObj.name == "profileList":
-                   value = opObj.getParameterValue(parameterName='profileList')             
-                   value = str(value)#[1:-1]
-                   profile = value
-                   self.bufferVoltage("Processing Unit", "Select Profile", profile)
-        
-                     
-        opObj = puObj.getOperationObj(name="Decoder")
-        if opObj == None:
-            self.volOpCebDecodification.setCheckState(0)
-            code = None
-            mode = None
-        else:
-            self.volOpCebDecodification.setCheckState(QtCore.Qt.Checked)
-            try:
-                code = opObj.getParameterValue(parameterName='code')
-                nBaud = opObj.getParameterValue(parameterName='nBaud')
-                nCode = opObj.getParameterValue(parameterName='nCode')
-                code = numpy.array(code).reshape(nCode,nBaud)
-            except:
-                code = "Default" 
-                
-            self.bufferVoltage("Processing Unit", "Code", str(code).replace('\n',''))
-            
-            try:
-                value = opObj.getParameterValue(parameterName='mode')
-                if int(value) == 0:
-                   mode = "Time"
-                else:
-                   mode = "freq" + str(value)
-            except:
-                mode = "Default"
-            self.bufferVoltage("Processing Unit", "Decoder mode", mode)
-
-        opObj = puObj.getOperationObj(name="deFlip")   
-        if opObj == None:
-            value = None
-        else:
-            try:
-                value = opObj.getParameterValue(parameterName='channelList')
-                value = str(value)
-            except:
-                value = "All channels"
-                
-            self.bufferVoltage("Processing Unit", "Flip", value)
-            
-        opObj = puObj.getOperationObj(name="CohInt")   
-        if opObj == None:
-            coherentintegration = None
-        else:
-            value = opObj.getParameterValue(parameterName='n')
-            coherentintegration = value
-            self.bufferVoltage("Processing Unit", "Coh Int", coherentintegration)
-
-
-        # graph
-#         opObj = puObj.getOperationObj(name='Plot')
-        opObj = puObj.getOperationObj(name='Scope')
-        if opObj == None:
-            self.volGraphCebshow.setCheckState(0)
-            operation = "Disabled"
-            channelList = None
-            freq_vel = None
-            heightsrange = None
-        else:
-            operation = 'Enabled'
-            self.bufferVoltage("Scope", "Operation", operation),
-            self.volGraphCebshow.setCheckState(QtCore.Qt.Checked)
-            value = opObj.getParameterObj(parameterName='channelList')
-            if value == None:
-                channelList = None
-            else:
-                 value = opObj.getParameterValue(parameterName='channelList')       
-                 value = str(value)[1:-1]
-                 channelList = value 
-                 self.bufferVoltage("Scope", "Channel List", channelList)
-
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                freq_vel = value
-                self.bufferVoltage("Scope", "Freq/Vel", freq_vel)
-
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                heightsrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fheightsrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                heightsrange = value
-                self.bufferVoltage("Scope", "Height Range", heightsrange)
-
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-                 self.volGraphCebSave.setCheckState(QtCore.Qt.Unchecked)
-                 figpath = None
-            else:
-                 self.volGraphCebSave.setCheckState(QtCore.Qt.Checked)
-                 value = opObj.getParameterValue(parameterName='figpath')
-                 figpath = value
-                 self.bufferVoltage("Scope", "Path", figpath)
-        # outputVoltageWrite
-        opObj = puObj.getOperationObj(name='VoltageWriter')
-        if opObj == None:
-            pass
-        else:
-            operation = 'Enabled'
-            self.bufferVoltage("Output", "Operation", operation)
-            value = opObj.getParameterObj(parameterName='path')
-            if value == None:
-                path = None
-            else:
-                value = opObj.getParameterValue(parameterName='path')
-                path = str(value)
-                self.bufferVoltage("Output", "Path", path)
-            value = opObj.getParameterObj(parameterName='blocksPerFile')
-            if value == None:
-                blocksperfile = None
-            else:
-                value = opObj.getParameterValue(parameterName='blocksPerFile')
-                blocksperfile = str(value)
-                self.bufferVoltage("Output", "BlocksPerFile", blocksperfile)
-            value = opObj.getParameterObj(parameterName='profilesPerBlock')
-            if value == None:
-                profilesPerBlock = None
-            else:
-                value = opObj.getParameterValue(parameterName='profilesPerBlock')
-                profilesPerBlock = str(value)
-                self.bufferVoltage("Output", "ProfilesPerBlock", profilesPerBlock)
-        
-                                 
-      # set model PU Properties
-        
-        self.propertiesModel = TreeModel()
-        self.propertiesModel.showProperties(self.volProperCaracteristica, self.volProperPrincipal, self.volProperDescripcion)
-        self.volProperCaracteristica = []
-        self.volProperPrincipal = []
-        self.volProperDescripcion = []
-        self.treeProjectProperties.setModel(self.propertiesModel)
-        self.treeProjectProperties.expandAll()
-        self.treeProjectProperties.allColumnsShowFocus()
-        self.treeProjectProperties.resizeColumnToContents(0)
-        self.treeProjectProperties.resizeColumnToContents(1)
-        
-    def bufferSpectra(self, caracteristica, principal, description):
-        self.specProperCaracteristica.append(caracteristica)
-        self.specProperPrincipal.append(principal)
-        self.specProperDescripcion.append(description)
-        return self.specProperCaracteristica, self.specProperPrincipal, self.specProperDescripcion
-        
-    def showPUSpectraProperties(self, puObj):
-        type = puObj.name
-        self.bufferSpectra("Processing Unit", "Type", type)
-        
-        opObj = puObj.getOperationObj(name="setRadarFrequency")
-        if opObj == None:
-            radarfrequency = None
-        else:
-            value = opObj.getParameterValue(parameterName='frequency')             
-            value = str(value)
-            radarfrequency = value
-            self.bufferSpectra("Processing Unit", "Radar Frequency", radarfrequency)
-        
-
-        opObj = puObj.getOperationObj(name="run")   
-        if opObj == None:
-            self.specOpnFFTpoints.clear()
-            self.specOpProfiles.clear()
-            self.specOpippFactor.clear()
-        else:
-            parmObj = opObj.getParameterObj(parameterName='nProfiles')
-            if parmObj == None:
-                nProfiles = None
-            else:
-                value = opObj.getParameterValue(parameterName='nProfiles')  
-                nProfiles = value
-                self.bufferSpectra("Processing Unit", "nProfiles", nProfiles)
-            
-            parmObj = opObj.getParameterObj(parameterName='nFFTPoints')
-            if parmObj == None:
-                nFFTPoints = None
-            else:
-                value = opObj.getParameterValue(parameterName='nFFTPoints')  
-                nFFTPoints = value
-                self.bufferSpectra("Processing Unit", "nFFTpoints", nFFTPoints)
-           
-            parmObj = opObj.getParameterObj(parameterName='ippFactor')
-            if parmObj == None:
-                ippFactor = None
-            else:
-                value = opObj.getParameterValue(parameterName='ippFactor')
-                ippFactor = value
-                self.bufferSpectra("Processing Unit", "Ipp Factor", ippFactor)
-
-
-        opObj = puObj.getOperationObj(name="run")  
-        if opObj == None:
-            pairsList = None
-        else:
-            parm = opObj.getParameterObj(parameterName='pairsList')  
-            if parm == None:
-                pairsList = None
-            else:              
-                value = opObj.getParameterValue(parameterName='pairsList')  
-                value = str(value)[1:-1]
-                pairsList = value
-                self.bufferSpectra("Processing Unit", "PairsList", pairsList)
-
-            
-        opObj = puObj.getOperationObj(name="selectChannels")
-        if opObj == None:
-            channel = None
-        else:
-            try:
-                value = opObj.getParameterValue(parameterName='channelList')             
-                value = str(value)[1:-1]
-                channel = value
-                
-                self.bufferSpectra("Processing Unit", "Channel List", channel)
-            except:
-                pass
-            try:
-                value = opObj.getParameterValue(parameterName='channelIndexList')             
-                value = str(value)[1:-1]
-                channel = value
-                
-                self.bufferSpectra("Processing Unit", "Channel Index List", channel)
-            except:
-                pass
-                    
-        opObj = puObj.getOperationObj(name="selectHeights")
-        if opObj == None:
-            heights = None
-        else:
-           value1 = int(opObj.getParameterValue(parameterName='minHei'))             
-           value1 = str(value1)
-           value2 = int(opObj.getParameterValue(parameterName='maxHei'))             
-           value2 = str(value2)
-           value = value1 + "," + value2
-           heights = value
-           self.bufferSpectra("Processing Unit", "Heights", heights)
-       
-        opObj = puObj.getOperationObj(name="IncohInt")                   
-        if opObj == None:
-            incoherentintegration = None
-        else:  
-            try:  
-                value = opObj.getParameterValue(parameterName='timeInterval')
-            except:
-                value = opObj.getParameterValue(parameterName='n')
-                
-            value = float(value)
-            incoherentintegration = str(value)
-            self.bufferSpectra("Processing Unit", "Incoherent Integration", incoherentintegration)     
-
-            
-        opObj = puObj.getOperationObj(name="removeDC") 
-        if opObj == None:
-            removeDC = None
-        else: 
-            value = opObj.getParameterValue(parameterName='mode')
-            self.bufferSpectra("Processing Unit", "Remove DC", value)
-            
-        opObj = puObj.getOperationObj(name="removeInterference") 
-        if opObj == None:
-            removeInterference = None
-        else:       
-            self.bufferSpectra("Processing Unit", "Remove Interference", "1")
-        
-        opObj = puObj.getOperationObj(name="getNoise") 
-        if opObj == None:
-            getNoise = None
-        else:
-            value1 = opObj.getParameterObj(parameterName='minHei') 
-            if value1 == None:
-                getNoise = None
-                getNoise = "Default"
-                self.bufferSpectra("Processing Unit", "Get Noise", getNoise)  
-                
-            else:
-                value1 = opObj.getParameterValue(parameterName='minHei')
-                value1 = str(value1)
-                value2 = opObj.getParameterObj(parameterName='maxHei')            
-                if value2 == None:
-                    getNoise = None
-                    value = value1 
-                    getNoise = value
-                    self.bufferSpectra("Processing Unit", "Get Noise", getNoise)     
-                else:  
-                    value2 = opObj.getParameterValue(parameterName='maxHei')
-                    value2 = str(value2)
-                    value3 = opObj.getParameterObj(parameterName='minVel')            
-                    if value3 == None:
-                        getNoise = None
-                        value = value1 + "," + value2
-                        getNoise = value
-                        self.bufferSpectra("Processing Unit", "Get Noise", getNoise)
-                    else:  
-                        value3 = opObj.getParameterValue(parameterName='minVel')
-                        value3 = str(value3)
-                        value4 = opObj.getParameterObj(parameterName='maxVel')            
-                        if value4 == None:
-                            getNoise = None
-                            value = value1 + "," + value2 + ',' + value3
-                            getNoise = value
-                            self.bufferSpectra("Processing Unit", "Get Noise", getNoise)
-                        else:
-                            value4 = opObj.getParameterValue(parameterName='maxVel')
-                            value4 = str(value4)
-                            value = value1 + "," + value2 + ',' + value3 + ',' + value4
-                            getNoise = value
-                            self.bufferSpectra("Processing Unit", "Get Noise", getNoise)
-
-        opObj = puObj.getOperationObj(name='SpectraPlot')
-#         opObj = puObj.getOpObjfromParamValue(value="SpectraPlot")
-        
-        if opObj == None:
-            operationSpectraPlot = "Disabled"
-            freq_vel = None
-            heightsrange = None
-            channelListSpectraPlot = None
-        else:
-            operationSpectraPlot = "Enable"
-            self.bufferSpectra("Spectra Plot", "Operation", operationSpectraPlot)
-            parmObj = opObj.getParameterObj(parameterName='channelList')
-            if parmObj == None:
-                channelListSpectraPlot = None
-            else:
-                value = opObj.getParameterValue(parameterName='channelList')
-                channelListSpectraPlot = str(value)[1:-1]
-                self.bufferSpectra("Spectra Plot", "Channel List", channelListSpectraPlot)
-            
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                freq_vel = value
-                self.bufferSpectra("Spectra Plot", "Freq/Vel", freq_vel)
-            
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                heightsrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fheightsrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                heightsrange = value
-                self.bufferSpectra("Spectra Plot", "Height Range", heightsrange)
-            
-            value1 = opObj.getParameterObj(parameterName='zmin') 
-            if value1 == None:
-                dBrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='zmin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='zmax')            
-            if value2 == None:
-                fdBrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='zmax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                dbrange = value
-                self.bufferSpectra("Spectra Plot", "dB Range", dbrange)
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectra("Spectra Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                    status = 'enable'
-                    self.bufferSpectra("Spectra Plot", "FTP", status)
-                    self.showWr_Period(puObj, opObj, nameplotop="Spectra Plot")
-#                     self.saveFTPvalues(opObj)
-        
-        opObj = puObj.getOperationObj(name='CrossSpectraPlot')
-#         opObj = puObj.getOpObjfromParamValue(value="CrossSpectraPlot")
-        if opObj == None:
-            self.specGraphCebCrossSpectraplot.setCheckState(0)
-            operationCrossSpectraPlot = "Disabled"
-            channelList = None
-            freq_vel = None
-            heightsrange = None
-        else:
-            operationCrossSpectraPlot = "Enable"
-            self.specGraphCebCrossSpectraplot.setCheckState(QtCore.Qt.Checked)
-            self.bufferSpectra("Cross Spectra Plot", "Operation", operationCrossSpectraPlot)         
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                freq_vel = value
-                self.bufferSpectra("Cross Spectra Plot", "Freq/Vel", freq_vel)
-             
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                heightsrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fheightsrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                heightsrange = value
-                self.bufferSpectra("Cross Spectra Plot", "Height Range", heightsrange)
-            
-            value1 = opObj.getParameterObj(parameterName='zmin') 
-            if value1 == None:
-                dBrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='zmin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='zmax')            
-            if value2 == None:
-                fdBrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='zmax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                dbrange = value
-                self.bufferSpectra("Cross Spectra Plot", "dB Range", dbrange)
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectra("Cross Spectra Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                    status = 'enable'
-                    self.bufferSpectra("Cross Spectra Plot", "FTP", status)
-                    self.showWr_Period(puObj, opObj, nameplotop="Cross Spectra Plot")
-#                     self.saveFTPvalues(opObj)
-            
-        opObj = puObj.getOperationObj(name='RTIPlot')
-#         opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
-        if opObj == None:
-            self.specGraphCebRTIplot.setCheckState(0)
-            operationRTIPlot = "Disabled"
-            channelList = None
-            freq_vel = None
-            heightsrange = None
-        else:
-            operationRTIPlot = "Enable"
-            self.specGraphCebRTIplot.setCheckState(QtCore.Qt.Checked)
-            self.bufferSpectra("RTI Plot", "Operation", operationRTIPlot)
-            parmObj = opObj.getParameterObj(parameterName='channelList')
-            if parmObj == None:
-                channelListRTIPlot = None
-            else:
-                value = opObj.getParameterValue(parameterName='channelList')
-                channelListRTIPlot = str(value)[1:-1]
-                self.bufferSpectra("RTI Plot", "Channel List", channelListRTIPlot)
-            
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                tmintmax = value
-                self.bufferSpectra("RTI Plot", "Tmin,Tmax", tmintmax)
-                
-            parmObj = opObj.getParameterObj(parameterName='timerange')
-            if parmObj == None:
-                timerange = None
-            else:
-                value = opObj.getParameterValue(parameterName='timerange')
-                timerange = str(value)
-                self.bufferSpectra("RTI Plot", "Time Range", timerange)
-            
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                heightsrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fheightsrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                heightsrange = value
-                self.bufferSpectra("RTI Plot", "Height Range", heightsrange)
-            
-            value1 = opObj.getParameterObj(parameterName='zmin') 
-            if value1 == None:
-                dBrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='zmin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='zmax')            
-            if value2 == None:
-                fdBrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='zmax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                dbrange = value
-                self.bufferSpectra("RTI Plot", "dB Range", dbrange)
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectra("RTI Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                status = 'enable'
-                self.bufferSpectra("RTI Plot", "FTP", status)
-                self.showWr_Period(puObj, opObj, nameplotop="RTI Plot")
-#                 self.saveFTPvalues(opObj)
-            
-        opObj = puObj.getOperationObj(name='CoherenceMap')
-#         opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
-        if opObj == None:
-            self.specGraphCebCoherencmap.setCheckState(0)
-            operationCoherenceMap = "Disabled"
-            channelList = None
-            freq_vel = None
-            heightsrange = None
-        else:
-            operationCoherenceMap = "Enable"
-            self.specGraphCebCoherencmap.setCheckState(QtCore.Qt.Checked)
-            self.bufferSpectra("Coherence Map Plot", "Operation", operationCoherenceMap)
-            parmObj = opObj.getParameterObj(parameterName='channelList')
-            if parmObj == None:
-                channelListRTIPlot = None
-            else:
-                value = opObj.getParameterValue(parameterName='channelList')
-                channelListRTIPlot = str(value)[1:-1]
-                self.bufferSpectra("Coherence Map Plot", "Channel List", channelListRTIPlot)
-            
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                tmintmax = value
-                self.bufferSpectra("Coherence Map Plot", "Tmin,Tmax", tmintmax)
-                
-            parmObj = opObj.getParameterObj(parameterName='timerange')
-            if parmObj == None:
-                timerange = None
-            else:
-                value = opObj.getParameterValue(parameterName='timerange')
-                timerange = str(value)
-                self.bufferSpectra("Coherence Map Plot", "Time Range", timerange)
-            
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                heightsrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fheightsrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                heightsrange = value
-                self.bufferSpectra("Coherence Map Plot", "Height Range", heightsrange)
-            
-            value1 = opObj.getParameterObj(parameterName='zmin') 
-            if value1 == None:
-                dBrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='zmin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='zmax')            
-            if value2 == None:
-                fdBrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='zmax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                dbrange = value
-                self.bufferSpectra("Coherence Map Plot", "Magnitud", dbrange)
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectra("Coherence Map Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                status = 'enable'
-                self.bufferSpectra("Coherence Map Plot", "FTP", status)
-                self.showWr_Period(puObj, opObj, nameplotop="Coherence Map Plot")
-#                 self.saveFTPvalues(opObj)
-    
-            
-        opObj = puObj.getOperationObj(name='PowerProfilePlot')
-#         opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
-        if opObj == None:
-            self.specGraphPowerprofile.setCheckState(0)
-            operationPowerProfilePlot = "Disabled"
-            channelList = None
-            freq_vel = None
-            heightsrange = None
-        else:
-            operationPowerProfilePlot = "Enable"
-            self.specGraphPowerprofile.setCheckState(QtCore.Qt.Checked)
-            self.bufferSpectra("PowerProfile Plot", "Operation", operationPowerProfilePlot)
-            parmObj = opObj.getParameterObj(parameterName='channelList')
-            if parmObj == None:
-                channelListSpectraPlot = None
-            else:
-                value = opObj.getParameterValue(parameterName='channelList')
-                channelListSpectraPlot = str(value)[1:-1]
-                self.bufferSpectra("PowerProfile Plot", "Channel List", channelListSpectraPlot)
-            
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                dbrange = value
-                self.bufferSpectra("PowerProfile Plot", "dbRange", dbrange)
-            
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                heightsrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fheightsrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                heightsrange = value
-                self.bufferSpectra("PowerProfile Plot", "Height Range", heightsrange)
-            
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectra("PowerProfile Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                status = 'enable'
-                self.bufferSpectra("PowerProfile Plot", "FTP", status)
-                self.showWr_Period(puObj, opObj, nameplotop="PowerProfile Plot")
-#                 self.saveFTPvalues(opObj)
-                
-        # noise
-        opObj = puObj.getOperationObj(name='Noise')
-#         opObj = puObj.getOpObjfromParamValue(value="Noise")
-        if opObj == None:
-            self.specGraphCebRTInoise.setCheckState(0)
-            operationRTINoise = "Disabled"
-            channelList = None
-            freq_vel = None
-            dbRange = None
-        else:
-            operationRTINoise = "Enable"
-            self.specGraphCebRTInoise.setCheckState(QtCore.Qt.Checked)
-            self.bufferSpectra("Noise Plot", "Operation", operationRTINoise)
-            parmObj = opObj.getParameterObj(parameterName='channelList')
-            if parmObj == None:
-                channelListRTINoise = None
-            else:
-                value = opObj.getParameterValue(parameterName='channelList')
-                channelListRTINoise = str(value)[1:-1]
-                self.bufferSpectra("Noise Plot", "Channel List", channelListRTINoise)
-            
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                tmintmax = value
-                self.bufferSpectra("Noise Plot", "Tmin,Tmax", tmintmax)
-            
-            parmObj = opObj.getParameterObj(parameterName='timerange')
-            if parmObj == None:
-                timerange = None
-            else:
-                value = opObj.getParameterValue(parameterName='timerange')
-                timerange = str(value)
-                self.bufferSpectra("Noise Plot", "Time Range", timerange)
-                
-                
-            
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                DBrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fdBrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                dBrange = value
-                self.bufferSpectra("Noise Plot", "dB Range", dBrange)
-                            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectra("Noise Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                    status = 'enable'
-                    self.bufferSpectra("Noise Plot", "FTP", status)
-                    self.showWr_Period(puObj, opObj, nameplotop="Noise Plot")
-#                     self.saveFTPvalues(opObj)
-
-        # outputSpectraWrite
-        opObj = puObj.getOperationObj(name='SpectraWriter')
-        if opObj == None:
-            pass
-        else:
-            operation = 'Enabled'
-            self.bufferSpectra("Output", "Operation", operation)
-            value = opObj.getParameterObj(parameterName='path')
-            if value == None:
-                path = None
-            else:
-                value = opObj.getParameterValue(parameterName='path')
-                path = str(value)
-                self.bufferSpectra("Output", "Path", path)
-            value = opObj.getParameterObj(parameterName='blocksPerFile')
-            if value == None:
-                blocksperfile = None
-            else:
-                value = opObj.getParameterValue(parameterName='blocksPerFile')
-                blocksperfile = str(value)
-                self.bufferSpectra("Output", "BlocksPerFile", blocksperfile)
-            value = opObj.getParameterObj(parameterName='profilesPerBlock')
-            if value == None:
-                profilesPerBlock = None
-            else:
-                value = opObj.getParameterValue(parameterName='profilesPerBlock')
-                profilesPerBlock = str(value)
-                self.bufferSpectra("Output", "ProfilesPerBlock", profilesPerBlock)
-                
-        projectObj = self.getSelectedProjectObj() 
-        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
-        
-        if ftpProcUnitConfObj:
-            
-            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
-            
-            server = opObj.getParameterValue(parameterName='server')
-            folder = opObj.getParameterValue(parameterName='remotefolder')
-            username = opObj.getParameterValue(parameterName='username')
-            password = opObj.getParameterValue(parameterName='password')
-            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
-            exp_code = opObj.getParameterValue(parameterName='exp_code')
-            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
-            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
-            localfolder = opObj.getParameterValue(parameterName='localfolder')
-            
-            self.bufferSpectra("FTP", "Server", server)
-            self.bufferSpectra("FTP", "Remote folder", folder)
-            self.bufferSpectra("FTP", "Local folder", localfolder)  
-            self.bufferSpectra("FTP", "Username", username)
-            self.bufferSpectra("FTP", "Password", '*'*len(password))
-            self.bufferSpectra("FTP", "Ftp_wei", ftp_wei)
-            self.bufferSpectra("FTP", "Exp_code", exp_code)
-            self.bufferSpectra("FTP", "Sub_exp_code", sub_exp_code)
-            self.bufferSpectra("FTP", "Plot_pos", plot_pos)
-        
-# set model PU Properties
-        
-        self.propertiesModel = TreeModel()
-        self.propertiesModel.showProperties(self.specProperCaracteristica, self.specProperPrincipal, self.specProperDescripcion)
-                                                
-        self.treeProjectProperties.setModel(self.propertiesModel)
-        self.treeProjectProperties.expandAll()
-        self.treeProjectProperties.allColumnsShowFocus()
-        self.treeProjectProperties.resizeColumnToContents(0)
-        self.treeProjectProperties.resizeColumnToContents(1)
-        
-        self.specProperCaracteristica = []
-        self.specProperDescripcion = []
-        self.specProperPrincipal = []
-        
-        
-    def bufferSpectraHeis(self, caracteristica, principal, description):
-        self.specHeisProperCaracteristica.append(caracteristica)
-        self.specHeisProperPrincipal.append(principal)
-        self.specHeisProperDescripcion.append(description)
-        return self.specHeisProperCaracteristica, self.specHeisProperPrincipal, self.specHeisProperDescripcion
-
-        
-    def showPUSpectraHeisProperties(self, puObj):
-        type = puObj.name
-        self.bufferSpectraHeis("Processing Unit", "Type", type)
-        
-        opObj = puObj.getOperationObj(name="IncohInt4SpectraHeis")                   
-        if opObj == None:
-            incoherentintegration = None
-        else:   
-            value = opObj.getParameterValue(parameterName='timeInterval')             
-            value = float(value)
-            incoherentintegration = str(value)
-            self.bufferSpectraHeis("Processing Unit", "Incoherent Integration", incoherentintegration)  
-        # spectraheis graph
-        opObj = puObj.getOperationObj(name='SpectraHeisScope')
-#         opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
-        if opObj == None:
-            self.specHeisGraphCebSpectraplot.setCheckState(0)
-            operationSpectraHeisPlot = "Disabled"
-            xmin_xmax = None
-            ymin_ymax = None
-            channelListSpectraPlot = None
-        else:
-            operationSpectraHeisPlot = "Enable"
-            self.specHeisGraphCebSpectraplot.setCheckState(QtCore.Qt.Checked)
-            self.bufferSpectraHeis("SpectraHeis Plot", "Operation", operationSpectraHeisPlot)
-            parmObj = opObj.getParameterObj(parameterName='channelList')
-            if parmObj == None:
-                channelListSpectraPlot = None
-            else:
-                value = opObj.getParameterValue(parameterName='channelList')
-                channelListSpectraPlot = str(value)[1:-1]
-                self.bufferSpectraHeis("SpectraHeis Plot", "Channel List", channelListSpectraPlot)
-            
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                xmin_xmax = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                xmin_xmax = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                xmin_xmax = value
-                self.bufferSpectraHeis("SpectraHeis Plot", "Xmin-Xmax", xmin_xmax)
-            
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                ymin_ymax = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                ymin_ymax = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                ymin_ymax = value
-                self.bufferSpectraHeis("SpectraHeis Plot", "Ymin-Ymax", ymin_ymax)
-                      
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectraHeis("SpectraHeis Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                    status = 'enable'
-                    self.bufferSpectraHeis("SpectraHeis Plot", "FTP", status)
-                    self.showWr_Period(puObj, opObj, nameplotop="SpectraHeis Plot")
-#                     self.saveFTPvalues(opObj)
-                    
-        opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')
-#         opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
-        if opObj == None:
-            self.specHeisGraphCebRTIplot.setCheckState(0)
-            operationRTIPlot = "Disabled"
-            channelList = None
-            freq_vel = None
-            heightsrange = None
-        else:
-            operationRTIPlot = "Enable"
-            self.specHeisGraphCebRTIplot.setCheckState(QtCore.Qt.Checked)
-            self.bufferSpectraHeis("RTIHeis Plot", "Operation", operationRTIPlot)
-            parmObj = opObj.getParameterObj(parameterName='channelList')
-            if parmObj == None:
-                channelListRTIPlot = None
-            else:
-                value = opObj.getParameterValue(parameterName='channelList')
-                channelListRTIPlot = str(value)[1:-1]
-                self.bufferSpectraHeis("RTIHeis Plot", "Channel List", channelListRTIPlot)
-            
-            
-            value1 = opObj.getParameterObj(parameterName='xmin') 
-            if value1 == None:
-                freq_vel = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='xmin')
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='xmax')            
-            if value2 == None:
-                freq_vel = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='xmax')
-                value2 = str(value2)
-                value = value1 + "," + value2
-                tmintmax = value
-                self.bufferSpectraHeis("RTIHeis Plot", "Tmin,Tmax", tmintmax)
-                
-            parmObj = opObj.getParameterObj(parameterName='timerange')
-            if parmObj == None:
-                timerange = None
-            else:
-                value = opObj.getParameterValue(parameterName='timerange')
-                timerange = str(value)
-                self.bufferSpectraHeis("RTIHeis Plot", "Time Range", timerange)
-            
-            value1 = opObj.getParameterObj(parameterName='ymin') 
-            if value1 == None:
-                heightsrange = None
-            else:
-                value1 = opObj.getParameterValue(parameterName='ymin') 
-                value1 = str(value1)
-            value2 = opObj.getParameterObj(parameterName='ymax')            
-            if value2 == None:
-                fheightsrange = None
-            else:  
-                value2 = opObj.getParameterValue(parameterName='ymax') 
-                value2 = str(value2)
-                value = value1 + "," + value2
-                heightsrange = value
-                self.bufferSpectraHeis("RTIHeis Plot", "Ymin-Ymax", heightsrange)
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-               path = None
-            else:
-               path = opObj.getParameterValue(parameterName='figpath')
-               self.bufferSpectraHeis("RTIHeis Plot", "Save Path", path)
-            
-            parmObj = opObj.getParameterObj(parameterName="ftp")
-            if parmObj == None:
-                    status = 'disable'
-            else:
-                status = 'enable'
-                self.bufferSpectraHeis("RTIHeis Plot", "FTP", status)
-                self.showWr_Period(puObj, opObj, nameplotop="RTIHeis Plot")
-#                 self.saveFTPvalues(opObj)
-
-        # outputSpectraHeisWrite
-        opObj = puObj.getOperationObj(name='FitsWriter')
-        if opObj == None:
-            pass
-        else:
-            operation = 'Enabled'
-            self.bufferSpectraHeis("Output", "Operation", operation)
-            value = opObj.getParameterObj(parameterName='path')
-            if value == None:
-                path = None
-            else:
-                value = opObj.getParameterValue(parameterName='path')
-                path = str(value)
-                self.bufferSpectraHeis("Output", "Path", path)
-            value = opObj.getParameterObj(parameterName='dataBlocksPerFile')
-            if value == None:
-                blocksperfile = None
-            else:
-                value = opObj.getParameterValue(parameterName='dataBlocksPerFile')
-                blocksperfile = str(value)
-                self.bufferSpectraHeis("Output", "BlocksPerFile", blocksperfile)
-            value = opObj.getParameterObj(parameterName='metadatafile')
-            if value == None:
-                metadata = None
-            else:
-                value = opObj.getParameterValue(parameterName='metadatafile')
-                metadata = str(value)
-                self.bufferSpectraHeis("Output", "Metadata", metadata)
-                         
-        projectObj = self.getSelectedProjectObj() 
-        ftpProcUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
-        
-        if ftpProcUnitConfObj:
-            
-            opObj = ftpProcUnitConfObj.getOperationObj(name='run')
-            
-            server = opObj.getParameterValue(parameterName='server')
-            folder = opObj.getParameterValue(parameterName='folder')
-            username = opObj.getParameterValue(parameterName='username')
-            password = opObj.getParameterValue(parameterName='password')
-            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
-            exp_code = opObj.getParameterValue(parameterName='exp_code')
-            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
-            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
-            localfolder = opObj.getParameterValue(parameterName='localfolder')
-            
-            self.bufferSpectraHeis("FTP", "Server", server)
-            self.bufferSpectraHeis("FTP", "Remote folder", folder)
-            self.bufferSpectraHeis("FTP", "Local folder", localfolder)  
-            self.bufferSpectraHeis("FTP", "Username", username)
-            self.bufferSpectraHeis("FTP", "Password", '*'*len(password))
-            self.bufferSpectraHeis("FTP", "Ftp_wei", ftp_wei)
-            self.bufferSpectraHeis("FTP", "Exp_code", exp_code)
-            self.bufferSpectraHeis("FTP", "Sub_exp_code", sub_exp_code)
-            self.bufferSpectraHeis("FTP", "Plot_pos", plot_pos)
-        
-# set model PU Properties
-        
-        self.propertiesModel = TreeModel()
-        self.propertiesModel.showProperties(self.specHeisProperCaracteristica, self.specHeisProperPrincipal, self.specHeisProperDescripcion)
-                                                
-        self.treeProjectProperties.setModel(self.propertiesModel)
-        self.treeProjectProperties.expandAll()
-        self.treeProjectProperties.allColumnsShowFocus()
-        self.treeProjectProperties.resizeColumnToContents(0)
-        self.treeProjectProperties.resizeColumnToContents(1)
-        
-        self.specHeisProperCaracteristica = []
-        self.specHeisProperDescripcion = []
-        self.specHeisProperPrincipal = []
-        
-        
-    def showWr_Period(self, puObj, opObj, nameplotop):
-        parmObj = opObj.getParameterObj(parameterName='wr_period')
-        if parmObj == None:
-            wr_period = None
-        else:
-            value = opObj.getParameterValue(parameterName='wr_period')
-            wr_period = str(value)
-            if puObj.datatype == "Spectra":
-                self.bufferSpectra(nameplotop, "wr_period", wr_period)
-            if puObj.datatype == "SpectraHeis":
-                self.bufferSpectraHeis(nameplotop, "wr_period", wr_period)
-           
     def saveFTPvalues(self, opObj):
         
         parmObj = opObj.getParameterObj(parameterName="server")
@@ -5955,7 +4429,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.addPU2PELoadXML(id=puId , name=puObj.datatype , inputId=puObj.inputId)
                 
             if puObj.datatype in ("Voltage", "Spectra", "SpectraHeis"):
-                self.refreshPUWindow(puObj.datatype, puObj)
+                self.refreshPUWindow(puObj)
                 self.refreshPUProperties(puObj)
                 self.showtabPUCreated(datatype=puObj.datatype)
 
@@ -6115,67 +4589,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     del projectObj.procUnitConfObjDict[key]
                 # print projectObj.procUnitConfObjDict
             # print self.__itemTreeDict,self.__projectObjDict,self.__puObjDict    
-    
-    def getParmsFromProjectWindow(self):
-        """
-        Return Inputs Project:
-        - id
-        - project_name
-        - datatype
-        - ext
-        - data_path
-        - readmode
-        - delay
-        - set
-        - walk
-        """
-        project_name = str(self.proName.text())
-        try:
-           name = str(self.proName.text())
-        except:
-            self.console.clear()
-            self.console.append("Please Write  a name")
-            return 0          
             
-        desc = str(self.proDescription.toPlainText())
-        datatype = str(self.proComDataType.currentText())
-        data_path = str(self.proDataPath.text())
-        if not os.path.exists(data_path):
-            self.proOk.setEnabled(False)
-            self.console.clear()
-            self.console.append("Write a correct a path")
-            return 
-
-        online = int(self.online)
-        if online == 0:
-            delay = 0
-            set = 0
-        else:
-            delay = self.proDelay.text()
-            try:
-                delay = int(self.proDelay.text())
-            except:
-                self.console.clear()
-                self.console.append("Please Write  a number for delay")
-                return 0
-            
-            set = self.proSet.text()
-            try:
-                set = int(self.proSet.text())
-            except:
-                set = None
-                
-        
-        walk = int(self.walk)
-        starDate = str(self.proComStartDate.currentText())
-        endDate = str(self.proComEndDate.currentText())
-        reloj1 = self.proStartTime.time()
-        reloj2 = self.proEndTime.time()
-        startTime = str(reloj1.hour()) + ":" + str(reloj1.minute()) + ":" + str(reloj1.second())
-        endTime = str(reloj2.hour()) + ":" + str(reloj2.minute()) + ":" + str(reloj2.second())
-        
-        return  project_name, desc, datatype, data_path, starDate, endDate, startTime, endTime, online, delay, walk , set 
-
     def removefromtree(self, row):
         self.parentItem.removeRow(row)
 
@@ -6556,92 +4970,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if datatype == "SpectraHeis":    
             return parms_ok, output_path, blocksperfile, metada      
 
-    def searchData(self, data_path, ext, walk, expLabel=''):
-        dateList = []
-        fileList = []
-        
-        if not os.path.exists(data_path):
-            return None
-        
-        if walk == 0:
-            files = os.listdir(data_path)
-            for thisFile in files:
-                thisExt = os.path.splitext(thisFile)[-1]
-                if thisExt == ext:
-                    fileList.append(thisFile)
-            
-            for thisFile in fileList:
-                try:
-                    year = int(thisFile[1:5])
-                    doy = int(thisFile[5:8])
-                    
-                    date = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
-                    dateformat = date.strftime("%Y/%m/%d")
-                    
-                    if dateformat not in dateList:
-                        dateList.append(dateformat)    
-                except:
-                    continue            
-        # REVISION---------------------------------1               
-        if walk == 1:
-            
-            dirList = os.listdir(data_path)
-            
-            dirList.sort()     
-            
-            dateList = []
-            
-            for thisDir in dirList:
-                
-                if not isRadarPath(thisDir):
-                    self.console.clear()
-                    self.console.append("Please, Choose the Correct Path")
-                    self.proOk.setEnabled(False)
-                    continue
-                
-                doypath = os.path.join(data_path, thisDir, expLabel)
-                if not os.path.exists(doypath):
-                    self.console.clear()
-                    self.console.append("Please, Choose the Correct Path")
-                    return 
-                files = os.listdir(doypath)
-                fileList = []
-                
-                for thisFile in files:
-                    thisExt = os.path.splitext(thisFile)[-1]
-                    if thisExt != ext:
-                       self.console.clear()
-                       self.console.append("There is no datatype selected in the Path Directory")
-                       self.proOk.setEnabled(False)
-                       continue
-                    
-                    if not isRadarFile(thisFile):
-                        self.proOk.setEnabled(False)
-                        self.console.clear()
-                        self.console.append("Please, Choose the Correct Path")  
-                        continue
-                
-                    fileList.append(thisFile)
-                    break
-                
-                if fileList == []:
-                    continue
-                
-                year = int(thisDir[1:5])
-                doy = int(thisDir[5:8])
-                
-                date = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
-                dateformat = date.strftime("%Y/%m/%d")
-                dateList.append(dateformat)
-
-        if len(dateList) > 0:
-            self.proOk.setEnabled(True)
-            return dateList
-            
-        
-#         self.proOk.setEnabled(False)
-        return None
-        
     def findDatafiles(self, data_path, ext, walk, expLabel=''):
         
         dateList = []
@@ -6921,7 +5249,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
 
         sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
-#         sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
+        sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
         
         
 class UnitProcessWindow(QMainWindow, Ui_UnitProcess):

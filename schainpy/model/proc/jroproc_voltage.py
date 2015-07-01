@@ -764,7 +764,7 @@ class ProfileSelector(Operation):
         
         return True
     
-    def run(self, dataOut, profileList=None, profileRangeList=None, beam=None, byblock=False, rangeList = None):
+    def run(self, dataOut, profileList=None, profileRangeList=None, beam=None, byblock=False, rangeList = None, nProfiles=None):
 
         """
         ProfileSelector:
@@ -779,7 +779,11 @@ class ProfileSelector(Operation):
         """
                     
         dataOut.flagNoData = True
-        self.nProfiles = dataOut.nProfiles
+        
+        if nProfiles:
+            self.nProfiles = dataOut.nProfiles
+        else:
+            self.nProfiles = nProfiles
         
         if dataOut.flagDataAsBlock:
             """
