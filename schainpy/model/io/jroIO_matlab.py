@@ -122,7 +122,7 @@ class matoffReader(ProcessingUnit):
         #    dirList= [dirList[-1]]
          
         if self.online:
-            currentdate = datetime.datetime.utcnow().date()
+            currentdate = datetime.datetime.now()
             strsplit1=currentdate.strftime('%Y.%m.%d')
             dirList = fnmatch.filter(dirList,strsplit1+'*')  
         
