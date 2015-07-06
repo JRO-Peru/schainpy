@@ -32,7 +32,7 @@ from schainpy.gui.figures import tools
 # from schainpy.gui.viewcontroller.comm import ControllerThread
 
 FIGURES_PATH = tools.get_path()
-TEMPORAL_FILE = "./.temp.xml"
+TEMPORAL_FILE = ".temp.xml"
 
 def isRadarFile(file):
         try:
@@ -4455,7 +4455,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         projectObj = self.getSelectedProjectObj()
         
         if not projectObj:
-            print "Please select a project before pressing PLAY"
+            print "Please select a project before pressing PLAY button"
             return
         
         if save:
@@ -4465,7 +4465,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 return
         else:
             filename = TEMPORAL_FILE
-            projectObj.writeXml(filename)
+            projectObj.writeXml( os.path.join(self.pathWorkSpace,filename) )
 
         self.actionStart.setEnabled(False)
         self.actionPause.setEnabled(True)
@@ -4476,7 +4476,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStopToolbar.setEnabled(True)
         
         self.console.append("Please Wait...")
-#         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PROCESS, filename))
         
         self.controllerObj = ControllerThread(filename)
         self.controllerObj.start()
@@ -4547,7 +4546,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             filename = os.path.join( str(self.pathWorkSpace), "%s%s" %(str(projectObj.name), '.xml') )
             
         projectObj.writeXml(filename)     
-        self.console.append("Now,  you can press Start Button on the toolbar")
+        self.console.append("Now,  you can press Start button")
         
         self.actionStart.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)

@@ -278,7 +278,7 @@ class Ui_VoltageTab(object):
         self.volOpCebChannels.setText(_translate("MainWindow", "Select Channels", None))
         self.volOpCebHeights.setText(_translate("MainWindow", "Select  Heights", None))
         self.volOpCebFilter.setText(_translate("MainWindow", "Filter", None))
-        self.volOpCebRadarfrequency.setText(_translate("MainWindow", "Radar Frequency", None))
+        self.volOpCebRadarfrequency.setText(_translate("MainWindow", "Radar wavelength", None))
         self.volLabCodeMode.setText(_translate("MainWindow", "Mode:", None))
         self.volLabCode.setText(_translate("MainWindow", "Code:", None))
         self.volOpComCode.setItemText(0, _translate("MainWindow", "Read from header", None))
