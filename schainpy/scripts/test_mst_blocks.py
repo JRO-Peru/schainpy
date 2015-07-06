@@ -3,10 +3,12 @@ import os, sys
 import datetime
 
 path = os.path.split(os.getcwd())[0]
+path = os.path.split(path)[0]
+
 sys.path.append(path)
 
-from controller import *
-dt1 = datetime.datetime.now()
+from schainpy.controller import Project
+
 desc = "MST-ISR-EEJ Experiment Test"
 filename = "mst_blocks.xml"
 
@@ -14,9 +16,10 @@ controllerObj = Project()
 
 controllerObj.setup(id = '191', name='test01', description=desc)
 
-path = '/media/signalchain/HD-PXU2/mst_isr_eej'
+#path = '/home/operaciones/mst_data/MST_ISR_EEJ/'
+path ='/home/operaciones/mst_data'
 
-figpath = '/home/signalchain/Pictures/mst_isr_eej/mst'
+figpath = '/home/operaciones/Pictures/mst_isr_eej/mst'
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
@@ -26,7 +29,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             endTime='23:59:59',
                                             online=1,
                                             delay=10,
-                                            walk=0,
+                                            walk=1,
                                             getblock=1)
 
 opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
@@ -55,10 +58,10 @@ opObj11 = procUnitConfObjMSTSpectra.addOperation(name='IncohInt', optype='other'
 opObj11.addParameter(name='n', value='2', format='float')
      
 opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SpectraPlot', optype='other')
-opObj11.addParameter(name='id', value='200', format='int')
+opObj11.addParameter(name='id', value='401', format='int')
 opObj11.addParameter(name='wintitle', value='MST', format='str')
-# # opObj11.addParameter(name='zmin', value='35', format='int')
-# # opObj11.addParameter(name='zmax', value='60', format='int')
+opObj11.addParameter(name='zmin', value='20', format='int')
+opObj11.addParameter(name='zmax', value='40', format='int')
 # # opObj11.addParameter(name='save', value='1', format='int')
 opObj11.addParameter(name='figpath', value=figpath, format='str')
 opObj11.addParameter(name='wr_period', value='5', format='int')
@@ -73,13 +76,13 @@ opObj11.addParameter(name='exp_code', value='19', format='int')
 # # opObj11.addParameter(name='plot_pos', value='0', format='int') 
 # #  
 opObj11 = procUnitConfObjMSTSpectra.addOperation(name='RTIPlot', optype='other')
-opObj11.addParameter(name='id', value='201', format='int')
+opObj11.addParameter(name='id', value='402', format='int')
 opObj11.addParameter(name='wintitle', value='MST', format='str')
 opObj11.addParameter(name='showprofile', value='0', format='int')
-# # opObj11.addParameter(name='xmin', value='0', format='int')
-# # opObj11.addParameter(name='xmax', value='24', format='int')
-# # opObj11.addParameter(name='zmin', value='35', format='int')
-# # opObj11.addParameter(name='zmax', value='60', format='int')
+opObj11.addParameter(name='xmin', value='0', format='int')
+opObj11.addParameter(name='xmax', value='24', format='int')
+opObj11.addParameter(name='zmin', value='20', format='int')
+opObj11.addParameter(name='zmax', value='40', format='int')
 # # opObj11.addParameter(name='save', value='1', format='int')
 opObj11.addParameter(name='figpath', value=figpath, format='str')
 opObj11.addParameter(name='wr_period', value='2', format='int')
@@ -97,7 +100,7 @@ opObj11 = procUnitConfObjMSTSpectra.addOperation(name='SendByFTP', optype='other
 opObj11.addParameter(name='ext', value='*.png', format='str')
 opObj11.addParameter(name='localfolder', value=figpath, format='str')
 opObj11.addParameter(name='remotefolder', value='/home/wmaster/graficos', format='str')
-opObj11.addParameter(name='server', value='jro-app.igp.gob.pe', format='str')
+opObj11.addParameter(name='server', value='10.10.120.125', format='str')
 opObj11.addParameter(name='username', value='wmaster', format='str')
 opObj11.addParameter(name='password', value='mst2010vhf', format='str')
 opObj11.addParameter(name='period', value='2', format='int')
@@ -114,8 +117,3 @@ controllerObj.connectObjects()
 
 controllerObj.run()
 #print fib(5)
-
-dt2 = datetime.datetime.now()
-print "======================="
-print dt2-dt1
-print "======================="
