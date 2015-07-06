@@ -86,8 +86,6 @@ def hildebrand_sekhon(data, navg):
         
         sumq += sortdata[j]**2
         
-        j += 1
-        
         if j > nums_min:
             rtest = float(j)/(j-1) + 1.0/navg
             if ((sumq*j) > (rtest*sump**2)):
@@ -95,7 +93,9 @@ def hildebrand_sekhon(data, navg):
                 sump  = sump - sortdata[j]
                 sumq =  sumq - sortdata[j]**2
                 cont = 0
-
+        
+        j += 1
+        
     lnoise = sump /j
     stdv = numpy.sqrt((sumq - lnoise**2)/(j - 1))
     return lnoise   

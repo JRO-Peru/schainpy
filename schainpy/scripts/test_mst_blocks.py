@@ -5,7 +5,7 @@ import datetime
 path = os.path.split(os.getcwd())[0]
 path = os.path.split(path)[0]
 
-sys.path.append(path)
+sys.path.insert(0, path)
 
 from schainpy.controller import Project
 

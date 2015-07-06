@@ -344,16 +344,15 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             If nTxs > 1 then one profile is divided by nTxs and number of total
             blocks is increased by nTxs (nProfiles *= nTxs)
             """
+            self.dataOut.flagDataAsBlock = False
+            
             if self.nTxs == 1:
-                self.dataOut.flagDataAsBlock = False
                 self.dataOut.data = self.datablock[:,self.profileIndex,:]
                 self.dataOut.profileIndex = self.profileIndex
                 
                 self.profileIndex += 1
                 
             else:
-                self.dataOut.flagDataAsBlock = False
-                
                 iniHei_ForThisTx = (self.txIndex)*int(self.processingHeaderObj.nHeights/self.nTxs)
                 endHei_ForThisTx = (self.txIndex+1)*int(self.processingHeaderObj.nHeights/self.nTxs)
                 
@@ -374,9 +373,9 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             """
             self.dataOut.flagDataAsBlock = True
             self.dataOut.data = self.datablock
-            self.dataOut.profileIndex = self.processingHeaderObj.profilesPerBlock - 1
+            self.dataOut.profileIndex = self.processingHeaderObj.profilesPerBlock
             
-            self.profileIndex = self.processingHeaderObj.profilesPerBlock - 1
+            self.profileIndex = self.processingHeaderObj.profilesPerBlock
         
         self.dataOut.flagNoData = False
         

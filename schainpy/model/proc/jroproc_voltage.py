@@ -626,7 +626,7 @@ class Decoder(Operation):
         
         return self.datadecTime
     
-    def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None):
+    def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
             
         if not self.isConfig:
             
