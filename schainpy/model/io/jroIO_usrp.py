@@ -3,6 +3,7 @@ Created on Jul 3, 2014
 
 @author: roj-idl71
 '''
+import os
 import datetime
 import numpy
 
@@ -123,6 +124,9 @@ class USRPReader(ProcessingUnit):
     
     def findDatafiles(self, path, startDate=None, endDate=None):
         
+        if not os.path.isdir(path):
+            return []
+        
         try:
             digitalReadObj = digital_rf_hdf5.read_hdf5(path, load_all_metadata=True)
         except:
@@ -205,7 +209,10 @@ class USRPReader(ProcessingUnit):
         
         if not buffer_size:
             buffer_size = nbuffer
-            
+        
+        if not os.path.isdir(path):
+            raise ValueError, "[Reading] This path %s does not exist" %path 
+                
         try:
             self.digitalReadObj = digital_rf_hdf5.read_hdf5(path, load_all_metadata=True)
         except:

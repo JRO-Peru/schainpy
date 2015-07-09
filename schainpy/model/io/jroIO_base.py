@@ -432,12 +432,20 @@ class JRODataReader(JRODataIO):
             #pathList.append(path)
             multi_path = path.split(',')
             for single_path in multi_path:
+                
+                if not os.path.isdir(single_path):
+                    continue
+                
                 pathList.append(single_path)
         
         else:
             #dirList = []
             multi_path = path.split(',')
             for single_path in multi_path:
+                
+                if not os.path.isdir(single_path):
+                    continue
+                
                 dirList = []
                 for thisPath in os.listdir(single_path):
                     if not os.path.isdir(os.path.join(single_path,thisPath)):
@@ -962,6 +970,9 @@ class JRODataReader(JRODataIO):
             multi_path = path.split(',')
             for single_path in multi_path:
                 
+                if not os.path.isdir(single_path):
+                    continue
+                
                 ok = False
                 fileList = glob.glob1(single_path, "*"+ext)
                 
@@ -987,6 +998,9 @@ class JRODataReader(JRODataIO):
         multi_path = path.split(',')
         for single_path in multi_path:
             
+            if not os.path.isdir(single_path):
+                continue
+                
             dirList = []
             
             for thisPath in os.listdir(single_path):

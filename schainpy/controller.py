@@ -274,8 +274,8 @@ class OperationConf():
         
         parameterObj = self.getParameterObj(parameterName)
         
-        if not parameterObj:
-            return None
+#         if not parameterObj:
+#             return None
         
         value = parameterObj.getValue()
         
