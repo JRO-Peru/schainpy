@@ -259,7 +259,8 @@ class OperationConf():
         
         return None
 
-    def getParameterObjfromValue(self,parameterValue):
+    def getParameterObjfromValue(self, parameterValue):
+        
         for parmConfObj in self.parmConfObjList:
              
             if parmConfObj.getValue() != parameterValue:
@@ -272,6 +273,10 @@ class OperationConf():
     def getParameterValue(self, parameterName):
         
         parameterObj = self.getParameterObj(parameterName)
+        
+        if not parameterObj:
+            return None
+        
         value = parameterObj.getValue()
         
         return value
@@ -457,7 +462,7 @@ class ProcUnitConf():
         
         return None
     
-    def getOpObjfromParamValue(self,value=None):
+    def getOpObjfromParamValue(self, value=None):
         
         for opConfObj in self.opConfObjList:
             if opConfObj.getParameterObjfromValue(parameterValue=value) != value:
@@ -855,10 +860,16 @@ class Project():
                
         return None
     
-    def getProcUnitObj(self, id):
+    def getProcUnitObj(self, id=None, name=None):
         
-        return self.procUnitConfObjDict[id]
-
+        if id != None:
+            return self.procUnitConfObjDict[id]
+        
+        if name != None:
+            return self.getProcUnitObjByName(name)
+        
+        return None
+        
     def getProcUnitObjByName(self, name):
         
         for obj in self.procUnitConfObjDict.values():
@@ -866,7 +877,11 @@ class Project():
                 return obj
                
         return None
-     
+    
+    def procUnitItems(self):
+        
+        return self.procUnitConfObjDict.items()
+        
     def makeXml(self):    
         
         projectElement = Element('Project')

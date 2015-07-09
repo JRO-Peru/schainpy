@@ -29,7 +29,6 @@ from propertiesViewModel  import TreeModel, PropertyBuffer
 from parametersModel import ProjectParms
 
 from schainpy.gui.figures import tools
-# from schainpy.gui.viewcontroller.comm import ControllerThread
 
 FIGURES_PATH = tools.get_path()
 TEMPORAL_FILE = ".temp.xml"
@@ -107,9 +106,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.__projectObjDict = {}
         self.__operationObjDict = {}
-
-        self.__ftpProcUnitAdded = False
-        self.__ftpProcUnitId = None
+        
+        self.__puLocalFolder2FTP = {}
         self.__initialized = False
         
 #         self.create_comm() 
@@ -168,10 +166,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         """
         self.configFTPWindowObj = Ftp(self)
-        # if self.temporalFTP.create:
-        if self.temporalFTP.createforView:
-            server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-            self.configFTPWindowObj.setParmsfromTemporal(server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos)
+        
+        if not self.temporalFTP.create:
+            self.temporalFTP.setwithoutconfiguration()
+            
+        self.configFTPWindowObj.setParmsfromTemporal(self.temporalFTP.server,
+                                                     self.temporalFTP.remotefolder,
+                                                     self.temporalFTP.username,
+                                                     self.temporalFTP.password,
+                                                     self.temporalFTP.ftp_wei,
+                                                     self.temporalFTP.exp_code,
+                                                     self.temporalFTP.sub_exp_code,
+                                                     self.temporalFTP.plot_pos)
+        
         self.configFTPWindowObj.show()
         self.configFTPWindowObj.closed.connect(self.createFTPConfig)
         
@@ -181,9 +188,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.console.clear()
             self.console.append("There is no FTP configuration")
             return
+        
         self.console.append("Push Ok in Spectra view to Add FTP Configuration")
-        server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.configFTPWindowObj.getParmsFromFtpWindow()
-        self.temporalFTP.save(server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos)  
+        
+        server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.configFTPWindowObj.getParmsFromFtpWindow()
+        self.temporalFTP.save(server=server,
+                              remotefolder=remotefolder,
+                              username=username,
+                              password=password,
+                              ftp_wei=ftp_wei,
+                              exp_code=exp_code,
+                              sub_exp_code=sub_exp_code,
+                              plot_pos=plot_pos)  
         
     @pyqtSignature("")
     def on_actionOpenToolbar_triggered(self):
@@ -681,7 +697,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             name_parameter = 'frequency'
             if not value == "":
                 try:
-                    radarfreq = float(self.volOpRadarfrequency.text())
+                    radarfreq = float(self.volOpRadarfrequency.text())*1e6
                 except:
                     self.console.clear()
                     self.console.append("Write the parameter Radar Frequency  type float")
@@ -1078,7 +1094,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             name_parameter = 'frequency'
             if not value == "":
                 try:
-                    radarfreq = float(self.specOpRadarfrequency.text())
+                    radarfreq = float(self.specOpRadarfrequency.text())*1e6
                 except:
                     self.console.clear()
                     self.console.append("Write the parameter Radar Frequency  type float")
@@ -1707,22 +1723,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.console.append("Graphic path should be defined")
                 return 0
                 
-        if addFTP:
-            if not figpath:
+        if addFTP and not figpath:
                 self.console.clear()
                 self.console.append("You have to save the plots before sending them to FTP Server")
                 return 0
-            
-            if not self.temporalFTP.create:
-                self.temporalFTP.setwithoutconfiguration()
-                
-            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-            self.addFTPProcUnitView(server, username, password, remotefolder,
-                                       ftp_wei, exp_code, sub_exp_code, plot_pos,
-                                       localfolder=figpath)
-        else:
-            self.removeFTPProcUnitView()
-            
+        
 #      if something happend 
         parms_ok, output_path, blocksperfile, profilesperblock = self.checkInputsPUSave(datatype='Spectra')
         if parms_ok:
@@ -2089,21 +2094,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.console.append("Graphic path should be defined")
                 return 0
                 
-        if addFTP:
-            if not localfolder:
+        if addFTP and not localfolder:
                 self.console.clear()
                 self.console.append("You have to save the plots before sending them to FTP Server")
                 return 0
-            
-            if not self.temporalFTP.create:
-                self.temporalFTP.setwithoutconfiguration()
-                
-            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-            self.addFTPProcUnitView(server, username, password, remotefolder,
-                                       ftp_wei, exp_code, sub_exp_code, plot_pos,
-                                       localfolder=localfolder)
-        else:
-            self.removeFTPProcUnitView()
             
         # if something happened
         parms_ok, output_path, blocksperfile, metada = self.checkInputsPUSave(datatype='SpectraHeis')
@@ -2548,7 +2542,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpCebRadarfrequency.setCheckState(0)
         else:
             value = opObj.getParameterValue(parameterName='frequency')
-            value = str(value)
+            value = str(float(value)/1e6)
             self.volOpRadarfrequency.setText(value)  
             self.volOpRadarfrequency.setEnabled(True)
             self.volOpCebRadarfrequency.setCheckState(QtCore.Qt.Checked)
@@ -2848,7 +2842,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specOpCebRadarfrequency.setCheckState(0)
         else:
             value = opObj.getParameterValue(parameterName='frequency')
-            value = str(value)
+            value = str(float(value)/1e6)
             self.specOpRadarfrequency.setText(value)  
             self.specOpRadarfrequency.setEnabled(True)
             self.specOpCebRadarfrequency.setCheckState(QtCore.Qt.Checked)
@@ -3026,7 +3020,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                             value = value1 + "," + value2 + "," + value3 + ',' + value4
                             self.specOpgetNoise.setText(value)
                             self.specOpgetNoise.setEnabled(True)
-                    
+        
+        self.specGraphPath.clear()
+        self.specGraphPrefix.clear()
+        self.specGgraphFreq.clear()
+        self.specGgraphHeight.clear()
+        self.specGgraphDbsrange.clear()
+        self.specGgraphmagnitud.clear()
+        self.specGgraphPhase.clear()
+        self.specGgraphChannelList.clear()
+        self.specGgraphTminTmax.clear()
+        self.specGgraphTimeRange.clear()
+        self.specGgraphftpratio.clear()
+        
         opObj = puObj.getOperationObj(name='SpectraPlot')
         
         if opObj == None:
@@ -3081,26 +3087,49 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.specGgraphDbsrange.setText(value)
                 self.specGgraphDbsrange.setEnabled(True)
             
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
+            parmObj = opObj.getParameterObj(parameterName="save")
             if parmObj == None:
                 self.specGraphSaveSpectra.setCheckState(0)
             else:
                 self.specGraphSaveSpectra.setCheckState(QtCore.Qt.Checked)
-                value = opObj.getParameterValue(parameterName='figpath')
-                self.specGraphPath.setText(value)
-                    
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specGraphftpSpectra.setCheckState(0)
             else:
                 self.specGraphftpSpectra.setCheckState(QtCore.Qt.Checked)
-                try:
-                    value = opObj.getParameterValue(parameterName='wr_period')
-                except:
-                    value = " "
+                
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specGraphPath.setText(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
                 self.specGgraphftpratio.setText(str(value))
-                    
+            
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
         opObj = puObj.getOperationObj(name='CrossSpectraPlot')
         
         if opObj == None:
@@ -3169,29 +3198,52 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value = value1 + "," + value2
                 self.specGgraphPhase.setText(value)
                 self.specGgraphPhase.setEnabled(True)
-                   
-            parmObj = opObj.getParameterObj(parameterName="figpath")
+                
+            parmObj = opObj.getParameterObj(parameterName="save")
             if parmObj == None:
                 self.specGraphSaveCross.setCheckState(0)
-                
             else:
                 self.specGraphSaveCross.setCheckState(QtCore.Qt.Checked)
-                value = opObj.getParameterValue(parameterName='figpath')
-                self.specGraphPath.setText(value)
-            
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specGraphftpCross.setCheckState(0)
             else:
                 self.specGraphftpCross.setCheckState(QtCore.Qt.Checked)
-                try:
-                    value = opObj.getParameterValue(parameterName='wr_period')
-                except:
-                    value = " "
+
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specGraphPath.setText(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
                 self.specGgraphftpratio.setText(str(value))
-        
+                
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
         opObj = puObj.getOperationObj(name='RTIPlot')
-#             opObj = puObj.getOpObjfromParamValue(value="RTIPlot")
+        
         if opObj == None:
             self.specGraphCebRTIplot.setCheckState(0)
             self.specGraphSaveRTIplot.setCheckState(0)
@@ -3200,7 +3252,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specGraphCebRTIplot.setCheckState(QtCore.Qt.Checked)
             parmObj = opObj.getParameterObj(parameterName='channelList')
             if parmObj == None:
-                   self.specGgraphChannelList.clear()
+                self.specGgraphChannelList.clear()
             else:
                 value = opObj.getParameterValue(parameterName='channelList')
                 channelListRTIPlot = str(value)[1:-1]
@@ -3211,68 +3263,92 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specGgraphTminTmax.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphTminTmax.setText(value)
-                    self.specGgraphTminTmax.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphTminTmax.setText(value)
+                self.specGgraphTminTmax.setEnabled(True)
                     
             parmObj = opObj.getParameterObj(parameterName='timerange')
             if parmObj == None:
                 self.specGgraphTimeRange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='timerange') 
-                    value1 = str(value1)
-                    self.specGgraphTimeRange.setText(value1)
-                    self.specGgraphTimeRange.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='timerange') 
+                value1 = str(value1)
+                self.specGgraphTimeRange.setText(value1)
+                self.specGgraphTimeRange.setEnabled(True)
                                
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specGgraphHeight.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphHeight.setText(value)
-                    self.specGgraphHeight.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphHeight.setText(value)
+                self.specGgraphHeight.setEnabled(True)
 
             parmObj = opObj.getParameterObj(parameterName='zmin')
             if parmObj == None:
                 self.specGgraphDbsrange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='zmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='zmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphDbsrange.setText(value)
-                    self.specGgraphDbsrange.setEnabled(True)
-                            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
+                value1 = opObj.getParameterValue(parameterName='zmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='zmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphDbsrange.setText(value)
+                self.specGgraphDbsrange.setEnabled(True)
+                
+            parmObj = opObj.getParameterObj(parameterName="save")
             if parmObj == None:
                 self.specGraphSaveRTIplot.setCheckState(0)
             else:
                 self.specGraphSaveRTIplot.setCheckState(QtCore.Qt.Checked)
-                value = opObj.getParameterValue(parameterName='figpath')
-                self.specGraphPath.setText(value)
-            
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specGraphftpRTIplot.setCheckState(0)
             else:
                 self.specGraphftpRTIplot.setCheckState(QtCore.Qt.Checked)
-                try:
-                    value = opObj.getParameterValue(parameterName='wr_period')
-                except:
-                    value = " "
+
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specGraphPath.setText(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
                 self.specGgraphftpratio.setText(str(value))
-                    
+            
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
         opObj = puObj.getOperationObj(name='CoherenceMap')
-#             opObj = puObj.getOpObjfromParamValue(value="CoherenceMap")
+        
         if opObj == None:
             self.specGraphCebCoherencmap.setCheckState(0)
             self.specGraphSaveCoherencemap.setCheckState(0)
@@ -3348,28 +3424,52 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value = value1 + "," + value2
                 self.specGgraphPhase.setText(value)
                 self.specGgraphPhase.setEnabled(True)
-                
-            parmObj = opObj.getParameterObj(parameterName="figpath")
+            
+            parmObj = opObj.getParameterObj(parameterName="save")
             if parmObj == None:
                 self.specGraphSaveCoherencemap.setCheckState(0)
             else:
                 self.specGraphSaveCoherencemap.setCheckState(QtCore.Qt.Checked)
-                value = opObj.getParameterValue(parameterName='figpath')
-                self.specGraphPath.setText(value)
-                    
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specGraphftpCoherencemap.setCheckState(0)
             else:
                 self.specGraphftpCoherencemap.setCheckState(QtCore.Qt.Checked)
-                try:
-                    value = opObj.getParameterValue(parameterName='wr_period')
-                except:
-                    value = " "
+
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specGraphPath.setText(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
                 self.specGgraphftpratio.setText(str(value))
-                    
+            
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
         opObj = puObj.getOperationObj(name='PowerProfilePlot')
-#             opObj = puObj.getOpObjfromParamValue(value="PowerProfilePlot")
+        
         if opObj == None:
             self.specGraphPowerprofile.setCheckState(0)
             self.specGraphSavePowerprofile.setCheckState(0)
@@ -3385,47 +3485,71 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specGgraphDbsrange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphDbsrange.setText(value)
-                    self.specGgraphDbsrange.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphDbsrange.setText(value)
+                self.specGgraphDbsrange.setEnabled(True)
                     
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specGgraphHeight.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphHeight.setText(value)
-                    self.specGgraphHeight.setEnabled(True)
-                    
-            parmObj = opObj.getParameterObj(parameterName="figpath")
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphHeight.setText(value)
+                self.specGgraphHeight.setEnabled(True)
+            
+            parmObj = opObj.getParameterObj(parameterName="save")
             if parmObj == None:
                 self.specGraphSavePowerprofile.setCheckState(0)
             else:
-                    self.specGraphSavePowerprofile.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specGraphPath.setText(value)
-            
+                self.specGraphSavePowerprofile.setCheckState(QtCore.Qt.Checked)
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
-               self.specGraphftpPowerprofile.setCheckState(0)
+                self.specGraphftpPowerprofile.setCheckState(0)
             else:
                 self.specGraphftpPowerprofile.setCheckState(QtCore.Qt.Checked)
-                try:
-                    value = opObj.getParameterValue(parameterName='wr_period')
-                except:
-                    value = " "
+
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specGraphPath.setText(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
                 self.specGgraphftpratio.setText(str(value))
-        # -noise
+            
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
         opObj = puObj.getOperationObj(name='Noise')
-#             opObj = puObj.getOpObjfromParamValue(value="Noise")
+        
         if opObj == None:
             self.specGraphCebRTInoise.setCheckState(0)
             self.specGraphSaveRTInoise.setCheckState(0)
@@ -3445,56 +3569,79 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specGgraphTminTmax.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphTminTmax.setText(value)
-                    self.specGgraphTminTmax.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphTminTmax.setText(value)
+                self.specGgraphTminTmax.setEnabled(True)
             
             parmObj = opObj.getParameterObj(parameterName='timerange')
             if parmObj == None:
                 self.specGgraphTimeRange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='timerange') 
-                    value1 = str(value1)
-                    self.specGgraphTimeRange.setText(value1)
-                    self.specGgraphTimeRange.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='timerange') 
+                value1 = str(value1)
+                self.specGgraphTimeRange.setText(value1)
+                self.specGgraphTimeRange.setEnabled(True)
             
                                
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specGgraphDbsrange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specGgraphDbsrange.setText(value)
-                    self.specGgraphDbsrange.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specGgraphDbsrange.setText(value)
+                self.specGgraphDbsrange.setEnabled(True)
                             
-            parmObj = opObj.getParameterObj(parameterName="figpath")
+            parmObj = opObj.getParameterObj(parameterName="save")
             if parmObj == None:
                 self.specGraphSaveRTInoise.setCheckState(0)
             else:
-                    self.specGraphSaveRTInoise.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specGraphPath.setText(value)
-            
+                self.specGraphSaveRTInoise.setCheckState(QtCore.Qt.Checked)
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specGraphftpRTInoise.setCheckState(0)
             else:
-                    self.specGraphftpRTInoise.setCheckState(QtCore.Qt.Checked)
-                    try:
-                        value = opObj.getParameterValue(parameterName='wr_period')
-                    except:
-                        value = " "
-                    self.specGgraphftpratio.setText(str(value))        
-               
-        # outputSpectraWrite
+                self.specGraphftpRTInoise.setCheckState(QtCore.Qt.Checked)
+
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specGraphPath.setText(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specGgraphftpratio.setText(str(value))
+            
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
         opObj = puObj.getOperationObj(name='SpectraWriter')
         if opObj == None:
             self.specOutputPath.clear()
@@ -3542,19 +3689,27 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                    self.specHeisOpCobIncInt.setCurrentIndex(0)
         
         # SpectraHeis Graph
+        
+        self.specHeisGgraphXminXmax.clear()
+        self.specHeisGgraphYminYmax.clear()
+        
+        self.specHeisGgraphChannelList.clear()
+        self.specHeisGgraphTminTmax.clear()
+        self.specHeisGgraphTimeRange.clear()
+        self.specHeisGgraphftpratio.clear()
+        
         opObj = puObj.getOperationObj(name='SpectraHeisScope')
-#             opObj = puObj.getOpObjfromParamValue(value="SpectraHeisScope")
         if opObj == None:
             self.specHeisGraphCebSpectraplot.setCheckState(0)
             self.specHeisGraphSaveSpectra.setCheckState(0)
             self.specHeisGraphftpSpectra.setCheckState(0)
-
         else:
             operationSpectraHeisScope = "Enable"
             self.specHeisGraphCebSpectraplot.setCheckState(QtCore.Qt.Checked)
+            
             parmObj = opObj.getParameterObj(parameterName='channelList')
             if parmObj == None:
-                   self.specHeisGgraphChannelList.clear()
+                self.specHeisGgraphChannelList.clear()
             else:
                 value = opObj.getParameterValue(parameterName='channelList')
                 channelListSpectraHeisScope = str(value)[1:-1]
@@ -3565,47 +3720,71 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specHeisGgraphXminXmax.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specHeisGgraphXminXmax.setText(value)
-                    self.specHeisGgraphXminXmax.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specHeisGgraphXminXmax.setText(value)
+                self.specHeisGgraphXminXmax.setEnabled(True)
                                
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specHeisGgraphYminYmax.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specHeisGgraphYminYmax.setText(value)
-                    self.specHeisGgraphYminYmax.setEnabled(True)            
-            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
-            if parmObj == None:
-                    self.specHeisGraphSaveSpectra.setCheckState(0)
-            else:
-                    self.specHeisGraphSaveSpectra.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specHeisGraphPath.setText(value)
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specHeisGgraphYminYmax.setText(value)
+                self.specHeisGgraphYminYmax.setEnabled(True)
                     
+            parmObj = opObj.getParameterObj(parameterName="save")
+            if parmObj == None:
+                self.specHeisGraphSaveSpectra.setCheckState(0)
+            else:
+                self.specHeisGraphSaveSpectra.setCheckState(QtCore.Qt.Checked)
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
-                    self.specHeisGraphftpSpectra.setCheckState(0)
+                self.specHeisGraphftpSpectra.setCheckState(0)
             else:
-                    self.specHeisGraphftpSpectra.setCheckState(QtCore.Qt.Checked)
-                    try:
-                        value = opObj.getParameterValue(parameterName='wr_period')
-                    except:
-                        value = " "
-                    self.specHeisGgraphftpratio.setText(str(value))
-                                
-        opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')                           
-#             opObj = puObj.getOpObjfromParamValue(value="RTIfromSpectraHeis")
+                self.specHeisGraphftpSpectra.setCheckState(QtCore.Qt.Checked)
+
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specHeisGraphPath.setText(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specHeisGgraphftpratio.setText(str(value))
+            
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
+        opObj = puObj.getOperationObj(name='RTIfromSpectraHeis')
+        
         if opObj == None:
             self.specHeisGraphCebRTIplot.setCheckState(0)
             self.specHeisGraphSaveRTIplot.setCheckState(0)
@@ -3614,7 +3793,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specHeisGraphCebRTIplot.setCheckState(QtCore.Qt.Checked)
             parmObj = opObj.getParameterObj(parameterName='channelList')
             if parmObj == None:
-                   self.specHeisGgraphChannelList.clear()
+                self.specHeisGgraphChannelList.clear()
             else:
                 value = opObj.getParameterValue(parameterName='channelList')
                 channelListRTIPlot = str(value)[1:-1]
@@ -3625,54 +3804,78 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if parmObj == None:
                 self.specHeisGgraphTminTmax.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='xmin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='xmax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specHeisGgraphTminTmax.setText(value)
-                    self.specHeisGgraphTminTmax.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='xmin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='xmax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specHeisGgraphTminTmax.setText(value)
+                self.specHeisGgraphTminTmax.setEnabled(True)
                     
             parmObj = opObj.getParameterObj(parameterName='timerange')
             if parmObj == None:
                 self.specGgraphTimeRange.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='timerange') 
-                    value1 = str(value1)
-                    self.specHeisGgraphTimeRange.setText(value1)
-                    self.specHeisGgraphTimeRange.setEnabled(True)
+                value1 = opObj.getParameterValue(parameterName='timerange') 
+                value1 = str(value1)
+                self.specHeisGgraphTimeRange.setText(value1)
+                self.specHeisGgraphTimeRange.setEnabled(True)
                                
             parmObj = opObj.getParameterObj(parameterName='ymin')
             if parmObj == None:
                 self.specHeisGgraphYminYmax.clear()
             else:
-                    value1 = opObj.getParameterValue(parameterName='ymin') 
-                    value1 = str(value1)
-                    value2 = opObj.getParameterValue(parameterName='ymax')            
-                    value2 = str(value2)
-                    value = value1 + "," + value2
-                    self.specHeisGgraphYminYmax.setText(value)
-                    self.specHeisGgraphYminYmax.setEnabled(True)
-                            
-            parmObj = opObj.getParameterObj(parameterName="figpath")
+                value1 = opObj.getParameterValue(parameterName='ymin') 
+                value1 = str(value1)
+                value2 = opObj.getParameterValue(parameterName='ymax')            
+                value2 = str(value2)
+                value = value1 + "," + value2
+                self.specHeisGgraphYminYmax.setText(value)
+                self.specHeisGgraphYminYmax.setEnabled(True)
+            
+            parmObj = opObj.getParameterObj(parameterName="save")
             if parmObj == None:
                 self.specHeisGraphSaveRTIplot.setCheckState(0)
             else:
-                    self.specHeisGraphSaveRTIplot.setCheckState(QtCore.Qt.Checked)
-                    value = opObj.getParameterValue(parameterName='figpath')
-                    self.specHeisGraphPath.setText(value)
-            
+                self.specHeisGraphSaveRTIplot.setCheckState(QtCore.Qt.Checked)
+                     
             parmObj = opObj.getParameterObj(parameterName="ftp")
             if parmObj == None:
                 self.specHeisGraphftpRTIplot.setCheckState(0)
             else:
-                    self.specHeisGraphftpRTIplot.setCheckState(QtCore.Qt.Checked)
-                    try:
-                        value = opObj.getParameterValue(parameterName='wr_period')
-                    except:
-                        value = " "
-                    self.specHeisGgraphftpratio.setText(str(value))
+                self.specHeisGraphftpRTIplot.setCheckState(QtCore.Qt.Checked)
+
+            parmObj = opObj.getParameterObj(parameterName="figpath")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specHeisGraphPath.setText(value)
             
+            parmObj = opObj.getParameterObj(parameterName="wr_period")
+            if parmObj:
+                value = parmObj.getValue()
+                self.specHeisGgraphftpratio.setText(str(value))
+            
+            ########################################################
+            parmObj = opObj.getParameterObj(parameterName="ftp_wei")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.ftp_wei = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.sub_exp_code = str(value)
+            
+            parmObj = opObj.getParameterObj(parameterName="plot_pos")
+            if parmObj:
+                value = parmObj.getValue()
+                self.temporalFTP.plot_pos = str(value)
+                
         # outputSpectraHeisWrite
         opObj = puObj.getOperationObj(name='FitsWriter')
         if opObj == None:
@@ -3742,21 +3945,35 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
     def refreshPUProperties(self, puObjView):
         
+        ############ FTP CONFIG ################################
+        if puObjView.id in self.__puLocalFolder2FTP.keys():
+            self.__puLocalFolder2FTP.pop(puObjView.id)
+        ########################################################
+        
         propertyBuffObj = PropertyBuffer()
         
         for thisOp in puObjView.getOperationObjList():
             
             operationName = thisOp.name
+            
             if operationName == 'run':
                 operationName = 'Properties'  
-            else:
-                if not thisOp.getParameterObjList():
-                    propertyBuffObj.append(operationName, '--', '--')
+            
+            if not thisOp.getParameterObjList():
+                propertyBuffObj.append(operationName, '--', '--')
+                continue
             
             for thisParmObj in thisOp.getParameterObjList():
-                    
                 propertyBuffObj.append(operationName, thisParmObj.name, str(thisParmObj.getValue()))
-             
+                
+                ############ FTP CONFIG ################################
+                if thisParmObj.name == 'ftp' and thisParmObj.getValue():
+                    figpath = thisOp.getParameterValue('figpath')
+                    if not figpath:
+                        continue
+                    self.__puLocalFolder2FTP[puObjView.id] = figpath
+                ########################################################
+        
         propertiesModel = propertyBuffObj.getPropertyModel()
         
         self.treeProjectProperties.setModel(propertiesModel)
@@ -3813,31 +4030,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         puObj = selectedObjView
         
-        if  self.selectedItemTree.text() == 'Voltage':
-            voltEnable = True
-            tabSelected = self.tabVoltage
-                
-        if self.selectedItemTree.text() == 'Spectra':
-            specEnable = True
-            tabSelected = self.tabSpectra                       
-
-        if self.selectedItemTree.text() == 'Correlation':
-            corrEnable = True
-            tabSelected = self.tabCorrelation
-        
-        if self.selectedItemTree.text() == 'SpectraHeis':
-            specHeisEnable = True
-            tabSelected = self.tabSpectraHeis
-        
-        self.refreshPUWindow(puObj=puObj)
+        self.refreshPUWindow(puObj)
         self.refreshPUProperties(puObj)
-            
-        self.tabProject.setEnabled(False)
-        self.tabVoltage.setEnabled(voltEnable)
-        self.tabSpectra.setEnabled(specEnable)
-        self.tabCorrelation.setEnabled(corrEnable)
-        self.tabSpectraHeis.setEnabled(specHeisEnable)
-        self.tabWidgetProject.setCurrentWidget(tabSelected)  
+        self.showtabPUCreated(puObj.datatype)
                   
     def on_right_click(self, pos):
         
@@ -4067,7 +4262,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         puObj = self.createProcUnitView(projectObjView, datatype, inputId)
         
-        self.addPU2ProjectExplorer(id=puObj.getId(), name=datatype)
+        self.addPU2ProjectExplorer(puObj)
         
         self.showtabPUCreated(datatype)
         
@@ -4077,89 +4272,135 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
     def addFTPConf2Operation(self, puObj, opObj):
 
-        if self.temporalFTP.create:
-            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-        else:
+        if not self.temporalFTP.create:
             self.temporalFTP.setwithoutconfiguration()
-            server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.temporalFTP.recover()
-
-#         opObj.addParameter(name='server', value=server, format='str')
-#         opObj.addParameter(name='folder', value=remotefolder, format='str')
-#         opObj.addParameter(name='username', value=username, format='str')
-#         opObj.addParameter(name='password', value=password, format='str')
-        
-        if ftp_wei:
-            opObj.addParameter(name='ftp_wei', value=int(ftp_wei), format='int')
-        if exp_code:
-            opObj.addParameter(name='exp_code', value=int(exp_code), format='int')
-        if sub_exp_code:
-            opObj.addParameter(name='sub_exp_code', value=int(sub_exp_code), format='int')
-        if plot_pos:
-            opObj.addParameter(name='plot_pos', value=int(plot_pos), format='int')    
             
-        if puObj.datatype == "Spectra":
-            value = self.specGgraphftpratio.text()
-        if puObj.datatype == "SpectraHeis":
-             value = self.specHeisGgraphftpratio.text()
-             
-        if not value == "":
-            try:
-                value = int(value)
-                opObj.addParameter(name='wr_period', value=value, format='int')
-            except:
-               pass
+#         opObj.addParameter(name='server', value=self.temporalFTP.server, format='str')
+#         opObj.addParameter(name='remotefolder', value=self.temporalFTP.remotefolder, format='str')
+#         opObj.addParameter(name='username', value=self.temporalFTP.username, format='str')
+#         opObj.addParameter(name='password', value=self.temporalFTP.password, format='str')
+        
+        if self.temporalFTP.ftp_wei:
+            opObj.addParameter(name='ftp_wei', value=int(self.temporalFTP.ftp_wei), format='int')
+        if self.temporalFTP.exp_code:
+            opObj.addParameter(name='exp_code', value=int(self.temporalFTP.exp_code), format='int')
+        if self.temporalFTP.sub_exp_code:
+            opObj.addParameter(name='sub_exp_code', value=int(self.temporalFTP.sub_exp_code), format='int')
+        if self.temporalFTP.plot_pos:
+            opObj.addParameter(name='plot_pos', value=int(self.temporalFTP.plot_pos), format='int')
                
+    def __checkFTPProcUnit(self, projectObj, localfolder):
         
-    def addFTPProcUnitView(self, server, username, password, remotefolder,
-                              ftp_wei, exp_code, sub_exp_code, plot_pos,
-                              localfolder='./', extension='.png', period='60', protocol='ftp'):
-        
-        projectObj = self.getSelectedProjectObj() 
-        procUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
-        
-        if not procUnitConfObj:
-            procUnitConfObj = projectObj.addProcUnit(name="SendToServer")
-        else:
-            procUnitConfObj.removeOperations()
+        puId = None
+        puObj = None
             
+        for thisPuId, thisPuObj in projectObj.procUnitItems():
+            
+            if not thisPuObj.name == "SendToServer":
+                continue
+            
+            opObj = thisPuObj.getOperationObj(name='run')
+            
+            parmObj = opObj.getParameterObj('localfolder')
+
+            #localfolder parameter should always be set, if it is not set then ProcUnit should be removed
+            if not parmObj:
+                projectObj.removeProcUnit(thisPuId)
+                continue
+            
+            thisLocalfolder = parmObj.getValue()
+            
+            if localfolder != thisLocalfolder:
+                continue
+            
+            puId = thisPuId
+            puObj = thisPuObj
+            break
+        
+        return puObj
+    
+    def __addFTPProcUnitFrom(self, operationObj):
+        
+        if operationObj.name != "SendByFTP":
+            return 
+        
+        projectObj = self.getSelectedProjectObj()
+        
+        self.removeAllFTPProcUnitView(projectObj)
+                
+        procUnitConfObj = projectObj.addProcUnit(name="SendToServer")
+        
+        server = operationObj.getParameterValue("server")
+        username = operationObj.getParameterValue("username")
+        password = operationObj.getParameterValue("pasword")
+        localfolder = operationObj.getParameterValue("localfolder")
+        remotefolder = operationObj.getParameterValue("remotefolder")
+        ext = operationObj.getParameterValue("ext")
+        period = operationObj.getParameterValue("period")
+        
         procUnitConfObj.addParameter(name='server', value=server, format='str')
         procUnitConfObj.addParameter(name='username', value=username, format='str')
         procUnitConfObj.addParameter(name='password', value=password, format='str')
-        procUnitConfObj.addParameter(name='localfolder', value=localfolder, format='str')
+        procUnitConfObj.addParameter(name='localfolder', value=localfolder, format='list')
         procUnitConfObj.addParameter(name='remotefolder', value=remotefolder, format='str')
-        procUnitConfObj.addParameter(name='ext', value=extension, format='str')
+        procUnitConfObj.addParameter(name='ext', value=ext, format='str')
         procUnitConfObj.addParameter(name='period', value=period, format='int')
-        procUnitConfObj.addParameter(name='protocol', value=protocol, format='str')
-        
-        procUnitConfObj.addParameter(name='ftp_wei', value=ftp_wei, format='str')
-        procUnitConfObj.addParameter(name='exp_code', value=exp_code, format='str')
-        procUnitConfObj.addParameter(name='sub_exp_code', value=sub_exp_code, format='str')
-        procUnitConfObj.addParameter(name='plot_pos', value=plot_pos, format='str')
             
         self.__puObjDict[procUnitConfObj.getId()] = procUnitConfObj
         
-        self.__ftpProcUnitAdded = True
-        self.__ftpProcUnitId = procUnitConfObj.getId()
-
-    def removeFTPProcUnitView(self):
+        return procUnitConfObj
+    
+    def addFTPProcUnitView(self):
         
-        projectObj = self.getSelectedProjectObj() 
-        procUnitConfObj = projectObj.getProcUnitObjByName(name="SendToServer")
-
-        self.__ftpProcUnitAdded = False
-        self.__ftpProcUnitId = None
+        if not self.temporalFTP.create:
+            self.temporalFTP.setwithoutconfiguration()
         
-        if not procUnitConfObj:
+        projectObj = self.getSelectedProjectObj()
+        
+        self.removeAllFTPProcUnitView(projectObj)
+            
+        if not self.__puLocalFolder2FTP:
             return
         
-        projectObj.removeProcUnit(procUnitConfObj.getId())
+        folderList = ""
         
-        if procUnitConfObj.getId() not in self.__puObjDict.keys():
-            return
+        for localfolder in self.__puLocalFolder2FTP.values():
+            folderList += str(localfolder) + ","
+                
+        procUnitConfObj = projectObj.addProcUnit(name="SendToServer")
+            
+        procUnitConfObj.addParameter(name='server', value=self.temporalFTP.server, format='str')
+        procUnitConfObj.addParameter(name='username', value=self.temporalFTP.username, format='str')
+        procUnitConfObj.addParameter(name='password', value=self.temporalFTP.password, format='str')
+        procUnitConfObj.addParameter(name='localfolder', value=folderList, format='list')
+        procUnitConfObj.addParameter(name='remotefolder', value=self.temporalFTP.remotefolder, format='str')
+        procUnitConfObj.addParameter(name='ext', value=self.temporalFTP.extension, format='str')
+        procUnitConfObj.addParameter(name='period', value=self.temporalFTP.period, format='int')
+        procUnitConfObj.addParameter(name='protocol', value=self.temporalFTP.protocol, format='str')
         
-        self.__puObjDict.pop(procUnitConfObj.getId())
+        procUnitConfObj.addParameter(name='ftp_wei', value=self.temporalFTP.ftp_wei, format='str')
+        procUnitConfObj.addParameter(name='exp_code', value=self.temporalFTP.exp_code, format='str')
+        procUnitConfObj.addParameter(name='sub_exp_code', value=self.temporalFTP.sub_exp_code, format='str')
+        procUnitConfObj.addParameter(name='plot_pos', value=self.temporalFTP.plot_pos, format='str')
+            
+        self.__puObjDict[procUnitConfObj.getId()] = procUnitConfObj
+
+    def removeAllFTPProcUnitView(self, projectObj):
+        
+        for thisPuId, thisPuObj in projectObj.procUnitItems():
+            
+            if not thisPuObj.name == "SendToServer":
+                continue
+            
+            projectObj.removeProcUnit(thisPuId)
+        
+            if thisPuId not in self.__puObjDict.keys():
+                continue
+            
+            self.__puObjDict.pop(thisPuId)
 
     def showPUinitView(self):
+        
         self.propertiesModel = TreeModel()
         self.propertiesModel.initPUVoltageView()
         self.treeProjectProperties.setModel(self.propertiesModel)
@@ -4167,119 +4408,129 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.treeProjectProperties.allColumnsShowFocus()
         self.treeProjectProperties.resizeColumnToContents(1)
             
-    def saveFTPvalues(self, opObj):
+    def saveFTPvalues(self, puObj):
+        
+        opObj = puObj.getOperationObj(name="run")
         
         parmObj = opObj.getParameterObj(parameterName="server")
         if parmObj == None:
             server = 'jro-app.igp.gob.pe'                      
         else:
-            server = opObj.getParameterValue(parameterName='server')
+            server = parmObj.getValue()
         
-        parmObj = opObj.getParameterObj(parameterName="folder")
+        parmObj = opObj.getParameterObj(parameterName="remotefolder")
         if parmObj == None:
-            folder = '/home/wmaster/graficos'
+            remotefolder = '/home/wmaster/graficos'
         else:
-            folder = opObj.getParameterValue(parameterName='folder')
+            remotefolder = parmObj.getValue()
         
         parmObj = opObj.getParameterObj(parameterName="username")
         if parmObj == None:
             username = 'wmaster'
         else:
-            username = opObj.getParameterValue(parameterName='username')
+            username = parmObj.getValue()
         
         parmObj = opObj.getParameterObj(parameterName="password")
         if parmObj == None:
             password = 'mst2010vhf'
         else:
-            password = opObj.getParameterValue(parameterName='password')
+            password = parmObj.getValue()
         
         parmObj = opObj.getParameterObj(parameterName="ftp_wei")
         if parmObj == None:
             ftp_wei = '0'
         else:
-            ftp_wei = opObj.getParameterValue(parameterName='ftp_wei')
+            ftp_wei = parmObj.getValue()
         
         parmObj = opObj.getParameterObj(parameterName="exp_code")
         if parmObj == None:
             exp_code = '0'
         else:
-            exp_code = opObj.getParameterValue(parameterName='exp_code')
+            exp_code = parmObj.getValue()
         
         parmObj = opObj.getParameterObj(parameterName="sub_exp_code")
         if parmObj == None:
             sub_exp_code = '0'
         else:
-            sub_exp_code = opObj.getParameterValue(parameterName='sub_exp_code')
+            sub_exp_code = parmObj.getValue()
 
         parmObj = opObj.getParameterObj(parameterName="plot_pos")
         if parmObj == None:
             plot_pos = '0'
         else:
-            plot_pos = opObj.getParameterValue(parameterName='plot_pos')
+            plot_pos = parmObj.getValue()
 
         parmObj = opObj.getParameterObj(parameterName="localfolder")
         if parmObj == None:
             localfolder = None
         else:
-            localfolder = opObj.getParameterValue(parameterName='localfolder')
+            localfolder = parmObj.getValue()
 
         parmObj = opObj.getParameterObj(parameterName="extension")
         if parmObj == None:
-            extension = None
+            extension = '.png'
         else:
-            extension = opObj.getParameterValue(parameterName='extension')
+            extension = parmObj.getValue()
                             
-        self.temporalFTP.save(server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos,
+        self.temporalFTP.save(server=server,
+                              remotefolder=remotefolder,
+                              username=username,
+                              password=password,
+                              ftp_wei=ftp_wei,
+                              exp_code=exp_code,
+                              sub_exp_code=sub_exp_code,
+                              plot_pos=plot_pos,
                               localfolder=localfolder,
                               extension=extension)
 
     def addProject2ProjectExplorer(self, id, name):
         
         itemTree = QtGui.QStandardItem(QtCore.QString(str(name)))
-        self.parentItem = self.projectExplorerModel.invisibleRootItem()
-        self.parentItem.appendRow(itemTree)
-        self.parentItem = itemTree
-        self.projectExplorerTree.setCurrentIndex(self.parentItem.index())
+        
+        parentItem = self.projectExplorerModel.invisibleRootItem()
+        parentItem.appendRow(itemTree)
+        
+        self.projectExplorerTree.setCurrentIndex(itemTree.index())
 
         self.selectedItemTree = itemTree
         
         self.__itemTreeDict[id] = itemTree
         
-    def addPU2ProjectExplorer(self, id, name):
-#         id1= round(int(id)/10.)*10
-#         id= int(id)
-#         id=id-id1
+    def addPU2ProjectExplorer(self, puObj):
+        
+        id, name = puObj.id, puObj.datatype
+        
         itemTree = QtGui.QStandardItem(QtCore.QString(str(name)))
         
-        self.parentItem = self.selectedItemTree
-        self.parentItem.appendRow(itemTree)   
+        parentItem = self.selectedItemTree
+        parentItem.appendRow(itemTree)   
         self.projectExplorerTree.expandAll()
-        self.parentItem = itemTree
-        self.projectExplorerTree.setCurrentIndex(self.parentItem.index())
+        
+        self.projectExplorerTree.setCurrentIndex(itemTree.index())
 
         self.selectedItemTree = itemTree
                
         self.__itemTreeDict[id] = itemTree
          
-    def addPU2PELoadXML(self, id, name, inputId):
+    def addPU2PELoadXML(self, puObj):
+        
+        id, name, inputId = puObj.id, puObj.datatype, puObj.inputId
         
         itemTree = QtGui.QStandardItem(QtCore.QString(str(name)))
         
         if self.__itemTreeDict.has_key(inputId):
-            self.parentItem = self.__itemTreeDict[inputId]
+            parentItem = self.__itemTreeDict[inputId]
         else:
             #If parent is a Reader object
-            self.parentItem = self.__itemTreeDict[inputId[:-1]]
+            parentItem = self.__itemTreeDict[id[:-1]]
             
-        self.parentItem.appendRow(itemTree)   
+        parentItem.appendRow(itemTree)   
         self.projectExplorerTree.expandAll()
-        self.parentItem = itemTree
-        self.projectExplorerTree.setCurrentIndex(self.parentItem.index())
-
-        self.selectedItemTree = itemTree
-               
+        parentItem = itemTree
+        self.projectExplorerTree.setCurrentIndex(parentItem.index())
+        
         self.__itemTreeDict[id] = itemTree
-        # print "stop"
+        self.selectedItemTree = itemTree
     
     def getSelectedProjectObj(self):
         """
@@ -4417,22 +4668,24 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.__puObjDict[puId] = puObj
 
             if puObj.name == "SendToServer":
-                self.__ftpProcUnitAdded = True
-                self.__ftpProcUnitId = puObj.getId()
-                
-                opObj = puObj.getOperationObj(name="run")
-                self.saveFTPvalues(opObj)
+                self.saveFTPvalues(puObj)
                 
             if puObj.inputId == '0':
                 continue
             
-            self.addPU2PELoadXML(id=puId , name=puObj.datatype , inputId=puObj.inputId)
-                
-            if puObj.datatype in ("Voltage", "Spectra", "SpectraHeis"):
-                self.refreshPUWindow(puObj)
-                self.refreshPUProperties(puObj)
-                self.showtabPUCreated(datatype=puObj.datatype)
-
+            self.addPU2PELoadXML(puObj)
+            
+            self.refreshPUWindow(puObj)
+            self.refreshPUProperties(puObj)
+            self.showtabPUCreated(datatype=puObj.datatype)
+            
+            ############## COMPATIBLE FROM OLD VERSIONS ################
+            operationObj = puObj.getOperationObj("SendByFTP")
+            
+            if operationObj:
+                send2ServerObj = self.__addFTPProcUnitFrom(operationObj)
+                self.saveFTPvalues(send2ServerObj)
+            ############################################################
                 
         self.console.clear()
         self.console.append("The selected xml file has been loaded successfully")
@@ -4541,6 +4794,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             if not sts:
                 return None
+        
+        self.addFTPProcUnitView()
             
         if not filename:
             filename = os.path.join( str(self.pathWorkSpace), "%s%s" %(str(projectObj.name), '.xml') )
@@ -4587,11 +4842,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     del self.__itemTreeDict[projectObj.procUnitConfObjDict[key].getId()]
                     del projectObj.procUnitConfObjDict[key]
                 # print projectObj.procUnitConfObjDict
-            # print self.__itemTreeDict,self.__projectObjDict,self.__puObjDict    
-            
-    def removefromtree(self, row):
-        self.parentItem.removeRow(row)
-
+            # print self.__itemTreeDict,self.__projectObjDict,self.__puObjDict
     
     def setInputsProject_View(self):
         
@@ -4763,13 +5014,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specHeisGgraphYminYmax.clear()
             self.specHeisGgraphTminTmax.clear()
             self.specHeisGgraphTimeRange.clear()
-            self.specHeisGgraphftpratio.clear()   
-            
-            
-            
-              
+            self.specHeisGgraphftpratio.clear()
                         
     def showtabPUCreated(self, datatype):
+        
         if datatype == "Voltage":
             self.tabVoltage.setEnabled(True)
             self.tabProject.setEnabled(False)
@@ -4785,6 +5033,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.tabCorrelation.setEnabled(False)
             self.tabSpectraHeis.setEnabled(False)
             self.tabWidgetProject.setCurrentWidget(self.tabSpectra)
+            
         if datatype == "SpectraHeis":
             self.tabVoltage.setEnabled(False)
             self.tabProject.setEnabled(False)
@@ -5342,7 +5591,7 @@ class Ftp(QMainWindow, Ui_Ftp):
     create = False
     closed = pyqtSignal()
     server = None
-    folder = None
+    remotefolder = None
     username = None
     password = None
     ftp_wei = None
@@ -5369,9 +5618,9 @@ class Ftp(QMainWindow, Ui_Ftp):
         self.subexpFTP.setToolTip('Example: 0')
         self.plotposFTP.setToolTip('Example: 0')
         
-    def setParmsfromTemporal(self, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos):
+    def setParmsfromTemporal(self, server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos):
         self.serverFTP.setText(str(server))
-        self.folderFTP.setText(str(folder))
+        self.folderFTP.setText(str(remotefolder))
         self.usernameFTP.setText(str(username))
         self.passwordFTP.setText(str(password))
         self.weightFTP.setText(str(ftp_wei))
@@ -5383,7 +5632,7 @@ class Ftp(QMainWindow, Ui_Ftp):
         """
         Return Inputs Project:
         - server
-        - folder
+        - remotefolder
         - username
         - password
         - ftp_wei
@@ -5392,33 +5641,25 @@ class Ftp(QMainWindow, Ui_Ftp):
         - plot_pos
         """
         name_server_ftp = str(self.serverFTP.text())
-        try:
-           name = str(self.serverFTP.text())
-        except:
+        if not name_server_ftp:
             self.console.clear()
             self.console.append("Please Write  a FTP Server")
             return 0     
         
         folder_server_ftp = str(self.folderFTP.text())
-        try:
-           folder = str(self.folderFTP.text())
-        except:
+        if not folder_server_ftp:
             self.console.clear()
             self.console.append("Please Write  a Folder")
             return 0  
         
         username_ftp = str(self.usernameFTP.text())
-        try:
-           username = str(self.usernameFTP.text())
-        except:
+        if not username_ftp:
             self.console.clear()
             self.console.append("Please Write  a User Name")
             return 0   
     
         password_ftp = str(self.passwordFTP.text())
-        try:
-           password = str(self.passwordFTP.text())
-        except:
+        if not password_ftp:
             self.console.clear()
             self.console.append("Please Write  a passwordFTP")
             return 0
@@ -5464,7 +5705,7 @@ class Ftp(QMainWindow, Ui_Ftp):
 
     @pyqtSignature("")       
     def on_ftpOkButton_clicked(self):
-        server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.getParmsFromFtpWindow()
+        server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos = self.getParmsFromFtpWindow()
         self.create = True
         self.close()
         
@@ -5478,8 +5719,9 @@ class Ftp(QMainWindow, Ui_Ftp):
         event.accept()
         
 class ftpBuffer():
+    
     server = None
-    folder = None
+    remotefolder = None
     username = None
     password = None
     ftp_wei = None
@@ -5498,7 +5740,7 @@ class ftpBuffer():
         
         self.create = False
         self.server = None
-        self.folder = None
+        self.remotefolder = None
         self.username = None
         self.password = None
         self.ftp_wei = None
@@ -5515,13 +5757,9 @@ class ftpBuffer():
         
         self.create = False
         self.server = "jro-app.igp.gob.pe"
-        self.folder = "/home/wmaster/graficos"
+        self.remotefolder = "/home/wmaster/graficos"
         self.username = "wmaster"
         self.password = "mst2010vhf"
-        self.ftp_wei = "0"
-        self.exp_code = "0"
-        self.sub_exp_code = "0"
-        self.plot_pos = "0"
         self.withoutconfig = True
         self.localfolder = './'
         self.extension = '.png'
@@ -5529,10 +5767,22 @@ class ftpBuffer():
         self.protocol = 'ftp'
         self.createforView = True
         
-    def save(self, server, folder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos, localfolder='./', extension='.png', period='60', protocol='ftp'):
+        if not self.ftp_wei:
+            self.ftp_wei = "0"
+        
+        if not self.exp_code:
+            self.exp_code = "0"
+            
+        if not self.sub_exp_code:
+            self.sub_exp_code = "0"
+        
+        if not self.plot_pos:
+            self.plot_pos = "0"
+        
+    def save(self, server, remotefolder, username, password, ftp_wei, exp_code, sub_exp_code, plot_pos, localfolder='./', extension='.png', period='60', protocol='ftp'):
         
         self.server = server
-        self.folder = folder
+        self.remotefolder = remotefolder
         self.username = username
         self.password = password
         self.ftp_wei = ftp_wei
@@ -5543,11 +5793,13 @@ class ftpBuffer():
         self.withoutconfig = False 
         self.createforView = True 
         self.localfolder = localfolder
-           
+        self.extension = extension
+        self.period = period
+        self.protocol = protocol
         
     def recover(self):
         
-        return self.server, self.folder, self.username, self.password, self.ftp_wei, self.exp_code, self.sub_exp_code, self.plot_pos  
+        return self.server, self.remotefolder, self.username, self.password, self.ftp_wei, self.exp_code, self.sub_exp_code, self.plot_pos, self.extension, self.period, self.protocol
 
 class ShowMeConsole(QtCore.QObject):
         textWritten = QtCore.pyqtSignal(str)

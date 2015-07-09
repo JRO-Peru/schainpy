@@ -405,7 +405,7 @@ class Ui_SpectraTab(object):
         self.specOpCebIncoherent.setText(_translate("MainWindow", "Incoherent Integration", None))
         self.specOpCobIncInt.setItemText(0, _translate("MainWindow", "Time Interval", None))
         self.specOpCobIncInt.setItemText(1, _translate("MainWindow", "Profiles", None))
-        self.specOpCebRadarfrequency.setText(_translate("MainWindow", "Radar wavelength", None))
+        self.specOpCebRadarfrequency.setText(_translate("MainWindow", "Radar frequency (MHz)", None))
         self.label_21.setText(_translate("MainWindow", "Profiles", None))
         self.specOpCebRemoveInt.setText(_translate("MainWindow", "Remove Interference", None))
         self.label_70.setText(_translate("MainWindow", "IppFactor", None))

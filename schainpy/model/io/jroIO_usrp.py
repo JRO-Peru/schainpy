@@ -338,7 +338,9 @@ class USRPReader(ProcessingUnit):
                                                       datetime.datetime.utcfromtimestamp(self.__endUTCSecond - self.__timezone)
                                                       )
         
-        print "[Reading] Starting process from ", datetime.datetime.utcfromtimestamp(startUTCSecond - self.__timezone), " to ", datetime.datetime.utcfromtimestamp(endUTCSecond - self.__timezone)
+        print "[Reading] Starting process from %s to %s" %(datetime.datetime.utcfromtimestamp(startUTCSecond - self.__timezone),
+                                                           datetime.datetime.utcfromtimestamp(endUTCSecond - self.__timezone)
+                                                           )
         
     def __reload(self):
         

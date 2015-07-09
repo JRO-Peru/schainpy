@@ -17,6 +17,7 @@ except AttributeError:
 import os
 from schainpy.gui.figures import tools
 
+INITIAL_MSG = "Signal Chain GUI - v2.1"
 FIGURES_PATH = tools.get_path()
 
 class Ui_InitWindow(object):
@@ -37,7 +38,7 @@ class Ui_InitWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.label_3.setFont(font)
-        self.label_3.setText(QtGui.QApplication.translate("Dialog", "Signal Chain GUI - Ver. 2.0", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_3.setText(QtGui.QApplication.translate("Dialog", INITIAL_MSG, None, QtGui.QApplication.UnicodeUTF8))
         self.label_3.setObjectName(_fromUtf8("label_3"))
         self.verticalLayout_4.addWidget(self.label_3)
         self.line_2 = QtGui.QFrame(Dialog)

@@ -52,6 +52,8 @@ class Remote(threading.Thread):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         
+        self.setDaemon(True)
+        
         self.status = 0
 
         self.period = period
@@ -154,7 +156,7 @@ class Remote(threading.Thread):
         """
         
         if fileList == self.fileList:
-            return 1
+            return 0
         
         init = time.time()
         
@@ -188,9 +190,9 @@ class Remote(threading.Thread):
                 sts = self.upload(thisFile, self.remotefolder)
                 if not sts: break
             
-            if not sts: break
-              
             self.bussy = False
+            
+            if not sts: break
             
             if self.stopFlag:
                 break
@@ -346,7 +348,7 @@ class FTPClient(Remote):
         
         file = open(fullfilename, 'rb')
         
-        filename = os.path.split(fullfilename)[-1]
+        filename = os.path.basename(fullfilename)
         
         command = "STOR %s" %filename
         
@@ -574,13 +576,24 @@ class SendToServer(ProcessingUnit):
         
     def findFiles(self):
         
-        filenameList = glob.glob1(self.localfolder, '*%s' %self.ext)
+        if not type(self.localfolder) == list:
+            folderList = [self.localfolder]
+        else:
+            folderList = self.localfolder
         
-        if len(filenameList) < 1:
-            return []
+        fullfilenameList = []
+        
+        for thisFolder in folderList:
+        
+            filenameList = glob.glob1(thisFolder, '*%s' %self.ext)
             
-        fullfilenameList = [os.path.join(self.localfolder, thisFile) for thisFile in filenameList]
-        
+            if len(filenameList) < 1:
+                continue
+            
+            for thisFile in filenameList:
+                fullfilename = os.path.join(thisFolder, thisFile)
+                fullfilenameList.append(fullfilename)
+                
         return fullfilenameList
     
     def run(self, **kwargs):
@@ -592,7 +605,10 @@ class SendToServer(ProcessingUnit):
         
         if time.time() - self.init >= self.period:
             fullfilenameList = self.findFiles()
-            self.clientObj.updateFileList(fullfilenameList)
+            
+            if self.clientObj.updateFileList(fullfilenameList):
+                print "[Remote Server]: Sending the next files ", str(fullfilenameList)
+            
             self.init = time.time()
     
     def close(self):
