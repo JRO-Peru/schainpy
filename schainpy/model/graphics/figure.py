@@ -84,9 +84,9 @@ class Figure(Operation):
             #raise ValueError, "(timerange) or (xmin & xmax) should be defined"
             
         if timerange != None:
-            txmin = x[0] - x[0] % min(timerange/10, 10*60)
+            txmin = x[0] #- x[0] % min(timerange/10, 10*60)
         else:
-            txmin = x[0] - x[0] % 10*60
+            txmin = x[0] #- x[0] % 10*60
             
         thisdatetime = datetime.datetime.utcfromtimestamp(txmin)
         thisdate = datetime.datetime.combine(thisdatetime.date(), datetime.time(0,0,0))

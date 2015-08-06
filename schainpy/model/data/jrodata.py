@@ -1069,13 +1069,13 @@ class Parameters(JROData):
     
     data_SNR = None         #Signal to Noise Ratio
     
-    heightRange = None      #Heights
+#     heightRange = None      #Heights
     
-    abscissaRange = None    #Abscissa, can be velocities, lags or time
+    abscissaList = None    #Abscissa, can be velocities, lags or time
     
     noise = None            #Noise Potency
     
-#     initUtcTime = None      #Initial UTC time
+    utctimeInit = None      #Initial UTC time
     
     paramInterval = None    #Time interval to calculate Parameters in seconds
     
@@ -1093,6 +1093,8 @@ class Parameters(JROData):
     
     data_output = None       #Out signal
     
+    
+    
     def __init__(self):
         '''
         Constructor
@@ -1102,14 +1104,21 @@ class Parameters(JROData):
         self.systemHeaderObj = SystemHeader()
         
         self.type = "Parameters"
-    
+        
     def getTimeRange1(self):
         
         datatime = []
         
-        datatime.append(self.ltctime)
-        datatime.append(self.ltctime + self.outputInterval - 1)
+        if self.useLocalTime:
+            time1 = self.utctimeInit - self.timeZone*60
+        else:
+            time1 = utctimeInit
+        
+#         datatime.append(self.utctimeInit)
+#         datatime.append(self.utctimeInit + self.outputInterval)
+        datatime.append(time1)
+        datatime.append(time1 + self.outputInterval)
         
         datatime = numpy.array(datatime)
         
-        return datatime
+        return datatime    

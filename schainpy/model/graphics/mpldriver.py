@@ -395,9 +395,11 @@ def createPolar(ax, x, y,
 #     ax.set_rmax(90)
     ax.set_ylim(0,90)
     ax.set_yticks(numpy.arange(0,90,20))
-    ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center' ,size='11')
+#     ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center' ,size='11')
+#     ax.text(0, 50, ylabel, rotation='vertical', va ='center', ha = 'left' ,size='11')
 #     ax.text(100, 100, 'example', ha='left', va='center', rotation='vertical')
-    printLabels(ax, xlabel, '', title)
+    ax.yaxis.labelpad = 230
+    printLabels(ax, xlabel, ylabel, title)
     iplot = ax.lines[-1]
     
     if '0.' in matplotlib.__version__[0:2]:
@@ -423,7 +425,7 @@ def polar(iplot, x, y, xlabel='', ylabel='', title=''):
     ax = iplot.get_axes()
     
 #     ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center',size='11')
-    printLabels(ax, xlabel, '', title)
+    printLabels(ax, xlabel, ylabel, title)
     
     set_linedata(ax, x, y, idline=0)
     

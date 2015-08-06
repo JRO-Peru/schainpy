@@ -198,7 +198,7 @@ class SkyMapPlot(Figure):
     
     WIDTHPROF = None
     HEIGHTPROF = None
-    PREFIX = 'prm'
+    PREFIX = 'mmap'
     
     def __init__(self):
         
@@ -213,7 +213,7 @@ class SkyMapPlot(Figure):
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
         
-        self.PLOT_CODE = SKYMAP_CODE
+        self.PLOT_CODE = MSKYMAP_CODE
         
         self.FTP_WEI = None
         self.EXP_CODE = None
@@ -269,7 +269,7 @@ class SkyMapPlot(Figure):
             zmax            :    None
         """
         
-        arrayParameters = dataOut.data_param
+        arrayParameters = dataOut.data_param[0,:]
         error = arrayParameters[:,-1]
         indValid = numpy.where(error == 0)[0]
         finalMeteor = arrayParameters[indValid,:]
@@ -324,6 +324,7 @@ class SkyMapPlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
+
                                 
 class WindProfilerPlot(Figure):
      
@@ -336,7 +337,7 @@ class WindProfilerPlot(Figure):
      
     def __init__(self):
          
-        self.timerange = 2*60*60
+        self.timerange = None
         self.__isConfig = False
         self.__nsubplots = 1
         
@@ -391,7 +392,7 @@ class WindProfilerPlot(Figure):
             self.addAxes(nrow, ncol*ncolspan, y, 0, colspan, 1)                    
             counter += 1
     
-    def run(self, dataOut, id, wintitle="", channelList=None, 
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile='False',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             zmax_ver = None, zmin_ver = None, SNRmin = None, SNRmax = None,
             timerange=None, SNRthresh = None,
@@ -423,11 +424,11 @@ class WindProfilerPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
          
-        if timerange != None:
-            self.timerange = timerange
-         
-        tmin = None
-        tmax = None
+#         if timerange != None:
+#             self.timerange = timerange
+#          
+#         tmin = None
+#         tmax = None
  
         x = dataOut.getTimeRange1()
 #         y = dataOut.heightList
@@ -453,7 +454,7 @@ class WindProfilerPlot(Figure):
                 z[i,ind] = numpy.nan
  
  
-        showprofile = False 
+#         showprofile = False 
 #        thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + "Wind"
@@ -468,6 +469,9 @@ class WindProfilerPlot(Figure):
                        showprofile=showprofile,
                        show=show)
              
+            if timerange != None:
+                self.timerange = timerange
+            
             self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
  
             if ymin == None: ymin = numpy.nanmin(y)
@@ -485,17 +489,18 @@ class WindProfilerPlot(Figure):
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
              
+            
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
             self.SUB_EXP_CODE = sub_exp_code
             self.PLOT_POS = plot_pos
-             
+            
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
-         
-         
+            self.figfile = figfile
+        
         self.setWinTitle(title)
-         
+        
         if ((self.xmax - x[1]) < (x[1]-x[0])):
             x[1] = self.xmax
          
@@ -620,7 +625,7 @@ class ParametersPlot(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,timerange=None, 
             parameterIndex = None, onlyPositive = False,
-            SNRthresh = -numpy.inf, SNR = True, SNRmin = None, SNRmax = None,
+            SNRthresh = -numpy.inf, SNR = True, SNRmin = None, SNRmax = None, onlySNR = False,
             DOP = True,
             zlabel = "", parameterName = "", parameterObject = "data_param",
             save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
@@ -689,11 +694,13 @@ class ParametersPlot(Figure):
 #             SNRavgdB = 10*numpy.log10(SNRavg)
             ind = numpy.where(SNRdB < 10**(SNRthresh/10))
             z[ind] = numpy.nan
-
+            
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Parameters Plot" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
+        
+        if (SNR and not onlySNR): nplots = 2*nplots
         
         if onlyPositive:
             colormap = "jet"
@@ -734,9 +741,23 @@ class ParametersPlot(Figure):
             x[1] = self.xmax
                 
         for i in range(nchan):
+
+            if (SNR and not onlySNR): j = 2*i
+            else: j = i
             
             j = nGraphsByChannel*i
+
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
             
+            if not onlySNR:
+                axes = self.axesList[j*self.__nsubplots]
+                z1 = z[i,:].reshape((1,-1))
+                axes.pcolorbuffer(x, y, z1,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap=colormap,
+                        ticksize=9, cblabel=zlabel, cbsize="1%")
+
             if DOP:
                 title = "%s Channel %d: %s" %(parameterName, channelIndexList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
                 
@@ -751,7 +772,12 @@ class ParametersPlot(Figure):
             
             if SNR:
                 title = "Channel %d Signal Noise Ratio (SNR): %s" %(channelIndexList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+                axes = self.axesList[(j)*self.__nsubplots]
+                if not onlySNR:
+                    axes = self.axesList[(j + 1)*self.__nsubplots]
+
                 axes = self.axesList[(j + nGraphsByChannel-1)]
+
                 z1 = SNRdB[i,:].reshape((1,-1))
                 axes.pcolorbuffer(x, y, z1,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
@@ -1153,6 +1179,178 @@ class EWDriftsPlot(Figure):
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False
+            self.figfile = None
+            
+            
+            
+            
+class PhasePlot(Figure):
+    
+    __isConfig = None
+    __nsubplots = None
+
+    PREFIX = 'mphase'
+    
+    def __init__(self):
+        
+        self.timerange = 24*60*60
+        self.__isConfig = False
+        self.__nsubplots = 1
+        self.counter_imagwr = 0
+        self.WIDTH = 600
+        self.HEIGHT = 300
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.xdata = None
+        self.ydata = None
+              
+        self.PLOT_CODE = MPHASE_CODE
+        
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        
+        
+        self.filename_phase = None
+        
+        self.figfile = None
+        
+    def getSubplots(self):
+        
+        ncol = 1
+        nrow = 1
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
+               
+        self.__showprofile = showprofile
+        self.nplots = nplots
+        
+        ncolspan = 7
+        colspan = 6
+        self.__nsubplots = 2
+        
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH+self.WIDTHPROF,
+                          heightplot = self.HEIGHT+self.HEIGHTPROF,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        self.addAxes(nrow, ncol*ncolspan, 0, 0, colspan, 1)
+
+
+    def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
+            xmin=None, xmax=None, ymin=None, ymax=None,
+            timerange=None,
+            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+        
+
+        if timerange != None:
+            self.timerange = timerange
+        
+        tmin = None
+        tmax = None
+        x = dataOut.getTimeRange1()
+        y = dataOut.getHeiRange()
+
+        
+        #thisDatetime = dataOut.datatime
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        title = wintitle + " Phase of Beacon Signal" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = "Local Time"
+        ylabel = "Phase"
+        
+        
+        #phase = numpy.zeros((len(pairsIndexList),len(dataOut.beacon_heiIndexList)))
+        phase_beacon = dataOut.data_output
+        
+        
+        if not self.__isConfig:
+             
+            self.nplots = phase_beacon.size
+             
+            self.setup(id=id,
+                       nplots=self.nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile,
+                       show=show)
+             
+            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            if ymin == None: ymin = numpy.nanmin(phase_beacon) - 10.0
+            if ymax == None: ymax = numpy.nanmax(phase_beacon) + 10.0
+             
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+             
+            self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.__isConfig = True
+            self.figfile = figfile
+            self.xdata = numpy.array([])
+            self.ydata = numpy.array([])
+            
+            #open file beacon phase
+            path = '%s%03d' %(self.PREFIX, self.id)
+            beacon_file = os.path.join(path,'%s.txt'%self.name)
+            self.filename_phase = os.path.join(figpath,beacon_file)
+            #self.save_phase(self.filename_phase)
+         
+        
+        #store data beacon phase
+        #self.save_data(self.filename_phase, phase_beacon, thisDatetime)
+        
+        self.setWinTitle(title)
+             
+         
+        title = "Phase Offset %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+         
+        legendlabels = ["phase %d"%(chan) for chan in numpy.arange(self.nplots)]
+
+        axes = self.axesList[0]
+         
+        self.xdata = numpy.hstack((self.xdata, x[0:1]))
+         
+        if len(self.ydata)==0:
+            self.ydata = phase_beacon.reshape(-1,1)
+        else:
+            self.ydata = numpy.hstack((self.ydata, phase_beacon.reshape(-1,1)))
+         
+         
+        axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
+                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
+                    XAxisAsTime=True, grid='both'
+                    )
+             
+        self.draw()
+        
+        if x[1] >= self.axesList[0].xmax:
+            self.counter_imagwr = wr_period
+            del self.xdata
+            del self.ydata
+            self.__isConfig = False
+        
+        if self.figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            self.figfile = self.getFilename(name = str_datetime)
+        
+        if figpath != '':
+            self.counter_imagwr += 1
+            if (self.counter_imagwr>=wr_period):
+                # store png plot to local folder
+                self.saveFigure(figpath, self.figfile)
+                # store png plot to FTP server according to RT-Web format 
+                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+                ftp_filename = os.path.join(figpath, name)
+                self.saveFigure(figpath, ftp_filename)                
+                self.counter_imagwr = 0
             self.figfile = None
             
         self.save(figpath=figpath,
