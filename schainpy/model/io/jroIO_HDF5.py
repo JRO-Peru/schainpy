@@ -843,8 +843,6 @@ class HDF5Writer(Operation):
     def putData(self):
         
         if not self.firsttime:
-            self.fp.flush()
-            self.fp.close()
             self.readBlock()
 
         if self.blockIndex == self.blocksPerFile:
@@ -854,6 +852,8 @@ class HDF5Writer(Operation):
         self.setBlock()
         self.writeBlock()
         
+        self.fp.flush()
+        self.fp.close()
    
         return
     

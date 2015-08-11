@@ -1250,9 +1250,6 @@ class PhasePlot(Figure):
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
-
-        if timerange != None:
-            self.timerange = timerange
         
         tmin = None
         tmax = None
@@ -1280,8 +1277,12 @@ class PhasePlot(Figure):
                        wintitle=wintitle,
                        showprofile=showprofile,
                        show=show)
-             
-            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            
+            if timerange != None:
+                self.timerange = timerange 
+            
+            self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
+            
             if ymin == None: ymin = numpy.nanmin(phase_beacon) - 10.0
             if ymax == None: ymax = numpy.nanmax(phase_beacon) + 10.0
              
@@ -1324,7 +1325,7 @@ class PhasePlot(Figure):
          
          
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
-                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax,
                     xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='x', markersize=8, linestyle="solid",
                     XAxisAsTime=True, grid='both'
                     )
