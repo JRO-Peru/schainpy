@@ -130,7 +130,7 @@ class SpectraProc(ProcessingUnit):
             self.dataOut.nFFTPoints = nFFTPoints
             self.dataOut.pairsList = pairsList
 
-            if self.buffer == None:
+            if self.buffer is None:
                 self.buffer = numpy.zeros((self.dataIn.nChannels,
                                            nProfiles,
                                            self.dataIn.nHeights), 
@@ -776,12 +776,12 @@ class IncohInt(Operation):
         if not self.__withOverapping:
             self.__buffer_spc += data_spc
             
-            if data_cspc == None:
+            if data_cspc is None:
                 self.__buffer_cspc = None
             else:
                 self.__buffer_cspc += data_cspc
             
-            if data_dc == None:
+            if data_dc is None:
                 self.__buffer_dc = None
             else:
                 self.__buffer_dc += data_dc
@@ -798,15 +798,15 @@ class IncohInt(Operation):
             data_dc = numpy.reshape(data_dc, (1, -1, nHeis))
         
         #If the buffer is empty then it takes the data value
-        if self.__buffer_spc == None:
+        if self.__buffer_spc is None:
             self.__buffer_spc = data_spc
             
-            if data_cspc == None:
+            if data_cspc is None:
                 self.__buffer_cspc = None
             else:
                 self.__buffer_cspc += data_cspc
             
-            if data_dc == None:
+            if data_dc is None:
                 self.__buffer_dc = None
             else:
                 self.__buffer_dc += data_dc
@@ -929,7 +929,7 @@ class IncohInt(Operation):
         
         self.__lastdatatime = datatime
         
-        if avgdata_spc == None:
+        if avgdata_spc is None:
             return None, None, None, None
         
         avgdatatime = self.__initime

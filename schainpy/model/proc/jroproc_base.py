@@ -116,7 +116,7 @@ class ProcessingUnit(object):
 #         if name != 'run':
 #             return True
         
-        if self.dataOut == None:
+        if self.dataOut is None:
             return False
         
         if self.dataOut.isEmpty():

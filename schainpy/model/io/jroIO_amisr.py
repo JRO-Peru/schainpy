@@ -668,7 +668,7 @@ class AMISRReader(ProcessingUnit):
             self.readNextBlock()
 
         
-        if self.datablock == None: # setear esta condicion cuando no hayan datos por leers
+        if self.datablock is None: # setear esta condicion cuando no hayan datos por leers
             self.dataOut.flagNoData = True 
             return 0
         

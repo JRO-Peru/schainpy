@@ -222,7 +222,7 @@ class IncohInt4SpectraHeis(Operation):
         data = numpy.reshape(data, (1, nChannels, nHeis))
         
         #If the buffer is empty then it takes the data value
-        if self.__buffer == None:
+        if self.__buffer is None:
             self.__buffer = data
             self.__profIndex += 1
             return
@@ -308,7 +308,7 @@ class IncohInt4SpectraHeis(Operation):
         
         self.__lastdatatime = datatime
         
-        if avgdata == None:
+        if avgdata is None:
             return None, None
         
         avgdatatime = self.__initime

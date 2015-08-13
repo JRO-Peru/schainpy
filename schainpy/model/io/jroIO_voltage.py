@@ -332,7 +332,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         
             self.getFirstHeader()
         
-        if self.datablock == None:
+        if self.datablock is None:
             self.dataOut.flagNoData = True
             return 0
         

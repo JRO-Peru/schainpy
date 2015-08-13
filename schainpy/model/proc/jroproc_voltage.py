@@ -378,7 +378,7 @@ class CohInt(Operation):
         data = numpy.reshape(data, (1, nChannels, nHeis))
         
         #If the buffer is empty then it takes the data value
-        if self.__buffer == None:
+        if self.__buffer is None:
             self.__buffer = data
             self.__profIndex += 1
             return
@@ -464,7 +464,7 @@ class CohInt(Operation):
         
         self.__lastdatatime = datatime
         
-        if avgdata == None:
+        if avgdata is None:
             return None, None
         
         avgdatatime = self.__initime
@@ -608,7 +608,7 @@ class Decoder(Operation):
         code = self.code[self.__profIndex]
         
         for i in range(self.__nChannels):
-            self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='same')
+            self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='full')[self.nBaud-1:]
         
         return self.datadecTime
     
@@ -630,7 +630,7 @@ class Decoder(Operation):
             
         if not self.isConfig:
             
-            if code == None:
+            if code is None:
                 code = dataOut.code
             else:
                 code = numpy.array(code).reshape(nCode,nBaud)

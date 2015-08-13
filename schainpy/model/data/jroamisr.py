@@ -65,7 +65,7 @@ class AMISR:
         
     def copy(self, inputObj=None):
         
-        if inputObj == None:
+        if inputObj is None:
             return copy.deepcopy(self)
 
         for key in inputObj.__dict__.keys():

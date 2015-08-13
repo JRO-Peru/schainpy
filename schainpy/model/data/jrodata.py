@@ -619,14 +619,14 @@ class Spectra(JROData):
     
     def getFlagCspc(self):
         
-        if self.data_cspc == None:
+        if self.data_cspc is None:
             return True
         
         return False
     
     def getFlagDc(self):
         
-        if self.data_dc == None:
+        if self.data_dc is None:
             return True
             
         return False

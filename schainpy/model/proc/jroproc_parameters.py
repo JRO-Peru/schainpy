@@ -75,7 +75,7 @@ class ParametersProc(ProcessingUnit):
                 self.nSeconds = nSeconds
                 self.nProfiles= int(numpy.floor(nSeconds/(self.dataIn.ippSeconds*self.dataIn.nCohInt)))
             
-            if self.buffer == None:
+            if self.buffer is None:
                     self.buffer = numpy.zeros((self.dataIn.nChannels,
                                                self.nProfiles,
                                                self.dataIn.nHeights), 
@@ -174,7 +174,7 @@ class ParametersProc(ProcessingUnit):
         elif (self.smooth < 3): smooth = 0
 
         if (type1 == None): type1 = 0
-        if (fwindow == None): fwindow = numpy.zeros(oldfreq.size) + 1
+        if (fwindow is None): fwindow = numpy.zeros(oldfreq.size) + 1
         if (snrth == None): snrth = -3
         if (dc == None): dc = 0
         if (aliasing == None): aliasing = 0
@@ -1280,7 +1280,7 @@ class ParametersProc(ProcessingUnit):
                     error1 = p0*numpy.nan
                                          
                 #Save
-                if self.dataOut.data_param == None:
+                if self.dataOut.data_param is None:
                     self.dataOut.data_param = numpy.zeros((nGroups, p0.size, nHeights))*numpy.nan
                     self.dataOut.data_error = numpy.zeros((nGroups, p0.size + 1, nHeights))*numpy.nan
                 
@@ -1726,7 +1726,7 @@ class WindProfiler(Operation):
 
                 self.__isConfig = True
                 
-            if self.__buffer == None:
+            if self.__buffer is None:
                 self.__buffer = dataOut.data_param
                 self.__firstdata = copy.copy(dataOut)
 
@@ -1963,7 +1963,7 @@ class PhaseCalibration(Operation):
 
             self.__isConfig = True
             
-        if self.__buffer == None:
+        if self.__buffer is None:
             self.__buffer = dataOut.data_param.copy()
 
         else:

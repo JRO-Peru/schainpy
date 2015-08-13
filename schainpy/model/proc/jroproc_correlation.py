@@ -165,7 +165,7 @@ class CorrelationProc(ProcessingUnit):
             self.dataOut.nPoints = nPoints 
 #             channels = numpy.sort(list(set(list(itertools.chain.from_iterable(pairsList)))))
             
-            if self.buffer == None:
+            if self.buffer is None:
                 
                 self.buffer = numpy.zeros((self.dataIn.nChannels,self.dataIn.nProfiles,self.dataIn.nHeights),dtype='complex')
             
