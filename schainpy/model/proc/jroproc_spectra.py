@@ -195,8 +195,8 @@ class SpectraProc(ProcessingUnit):
             return
             
         self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndexListSelected]
-        self.dataOut.pairsList = self.dataOut.pairsList[pairsIndexListSelected]
-            
+        self.dataOut.pairsList = [self.dataOut.pairsList[i] for i in pairsIndexListSelected] 
+        
         return
     
     def selectChannels(self, channelList):
@@ -316,12 +316,12 @@ class SpectraProc(ProcessingUnit):
         
         #data_spc = data_spc[:,:,beacon_heiIndexList]
         data_cspc = None
-        if self.dataOut.data_cspc != None:
+        if self.dataOut.data_cspc is not None:
             data_cspc = self.dataOut.data_cspc[:,:,minIndex:maxIndex+1]
             #data_cspc = data_cspc[:,:,beacon_heiIndexList]
         
         data_dc = None
-        if self.dataOut.data_dc != None:
+        if self.dataOut.data_dc is not None:
             data_dc = self.dataOut.data_dc[:,minIndex:maxIndex+1]
             #data_dc = data_dc[:,beacon_heiIndexList]
         
@@ -366,11 +366,11 @@ class SpectraProc(ProcessingUnit):
         data_spc = self.dataOut.data_spc[:,:,minIndex:maxIndex+1]
         
         data_cspc = None
-        if self.dataOut.data_cspc != None:
+        if self.dataOut.data_cspc is not None:
             data_cspc = self.dataOut.data_cspc[:,:,minIndex:maxIndex+1]
         
         data_dc = None
-        if self.dataOut.data_dc != None:
+        if self.dataOut.data_dc is not None:
             data_dc = self.dataOut.data_dc[:,minIndex:maxIndex+1]
         
         self.dataOut.data_spc = data_spc
@@ -389,7 +389,7 @@ class SpectraProc(ProcessingUnit):
         num_chan = jspectra.shape[0]
         num_hei = jspectra.shape[2]
         
-        if jcspectra != None:
+        if jcspectra is not None:
             jcspectraExist = True
             num_pairs = jcspectra.shape[0]
         else:   jcspectraExist = False
@@ -450,7 +450,7 @@ class SpectraProc(ProcessingUnit):
         num_hei   = jspectra.shape[2]
         
         #hei_interf
-        if hei_interf == None:
+        if hei_interf is None:
             count_hei = num_hei/2   #Como es entero no importa
             hei_interf = numpy.asmatrix(range(count_hei)) + num_hei - count_hei
             hei_interf = numpy.asarray(hei_interf)[0]
@@ -552,7 +552,7 @@ class SpectraProc(ProcessingUnit):
             jspectra[ich,indAux[0],indAux[1]] = tmp_noise * (1 - 1/math.sqrt(num_incoh))
             
         #Remocion de Interferencia en el Cross Spectra
-        if jcspectra == None: return jspectra, jcspectra
+        if jcspectra is None: return jspectra, jcspectra
         num_pairs = jcspectra.size/(num_prof*num_hei)
         jcspectra = jcspectra.reshape(num_pairs, num_prof, num_hei)
         
@@ -792,9 +792,9 @@ class IncohInt(Operation):
         #Overlapping data
         nChannels, nFFTPoints, nHeis = data_spc.shape
         data_spc = numpy.reshape(data_spc, (1, nChannels, nFFTPoints, nHeis))
-        if data_cspc != None:
+        if data_cspc is not None:
             data_cspc = numpy.reshape(data_cspc, (1, -1, nFFTPoints, nHeis))
-        if data_dc != None:
+        if data_dc is not None:
             data_dc = numpy.reshape(data_dc, (1, -1, nHeis))
         
         #If the buffer is empty then it takes the data value
@@ -818,10 +818,10 @@ class IncohInt(Operation):
         if self.__profIndex < self.n:
             self.__buffer_spc = numpy.vstack((self.__buffer_spc, data_spc))
             
-            if data_cspc != None:
+            if data_cspc is not None:
                 self.__buffer_cspc = numpy.vstack((self.__buffer_cspc, data_cspc))
             
-            if data_dc != None: 
+            if data_dc is not None: 
                 self.__buffer_dc = numpy.vstack((self.__buffer_dc, data_dc))
                 
             self.__profIndex += 1
@@ -831,11 +831,11 @@ class IncohInt(Operation):
         self.__buffer_spc = numpy.roll(self.__buffer_spc, -1, axis=0)
         self.__buffer_spc[self.n-1] = data_spc
         
-        if data_cspc != None:
+        if data_cspc is not None:
             self.__buffer_cspc = numpy.roll(self.__buffer_cspc, -1, axis=0)
             self.__buffer_cspc[self.n-1] = data_cspc
         
-        if data_dc != None:
+        if data_dc is not None:
             self.__buffer_dc = numpy.roll(self.__buffer_dc, -1, axis=0)
             self.__buffer_dc[self.n-1] = data_dc
         
@@ -873,10 +873,10 @@ class IncohInt(Operation):
         #Integration with Overlapping
         data_spc = numpy.sum(self.__buffer_spc, axis=0)
         
-        if self.__buffer_cspc != None:
+        if self.__buffer_cspc is not None:
             data_cspc = numpy.sum(self.__buffer_cspc, axis=0)
         
-        if self.__buffer_dc != None:
+        if self.__buffer_dc is not None:
             data_dc = numpy.sum(self.__buffer_dc, axis=0)
         
         n = self.__profIndex

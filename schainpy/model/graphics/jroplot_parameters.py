@@ -424,7 +424,7 @@ class WindProfilerPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
          
-#         if timerange != None:
+#         if timerange is not None:
 #             self.timerange = timerange
 #          
 #         tmin = None
@@ -439,7 +439,7 @@ class WindProfilerPlot(Figure):
         nplotsw = nplots
          
         #If there is a SNR function defined
-        if dataOut.data_SNR != None:
+        if dataOut.data_SNR is not None:
             nplots += 1
             SNR = dataOut.data_SNR
             SNRavg = numpy.average(SNR, axis=0)
@@ -469,7 +469,7 @@ class WindProfilerPlot(Figure):
                        showprofile=showprofile,
                        show=show)
              
-            if timerange != None:
+            if timerange is not None:
                 self.timerange = timerange
             
             self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
@@ -485,7 +485,7 @@ class WindProfilerPlot(Figure):
                 if zmax_ver == None: zmax_ver = numpy.nanmax(abs(z[2,:]))
                 if zmin_ver == None: zmin_ver = -zmax_ver
              
-            if dataOut.data_SNR != None:
+            if dataOut.data_SNR is not None:
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
              
@@ -522,7 +522,7 @@ class WindProfilerPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel=strCb[i], cbsize="1%", colormap="RdBu_r" )
                      
-        if dataOut.data_SNR != None:
+        if dataOut.data_SNR is not None:
             i += 1              
             title = "Signal Noise Ratio (SNR): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
@@ -672,7 +672,7 @@ class ParametersPlot(Figure):
         
         nplots = nGraphsByChannel*nchan
         
-        if timerange != None:
+        if timerange is not None:
             self.timerange = timerange
         
         #tmin = None
@@ -688,7 +688,7 @@ class ParametersPlot(Figure):
 #         nChannels = z.shape[0]    #Number of wind dimensions estimated
 #        thisDatetime = dataOut.datatime
 
-        if dataOut.data_SNR != None:
+        if dataOut.data_SNR is not None:
             SNRarray = dataOut.data_SNR[channelIndexList,:]
             SNRdB = 10*numpy.log10(SNRarray)
 #             SNRavgdB = 10*numpy.log10(SNRavg)
@@ -1067,7 +1067,7 @@ class EWDriftsPlot(Figure):
             zmax            :    None
         """
          
-        if timerange != None:
+        if timerange is not None:
             self.timerange = timerange
          
         tmin = None
@@ -1082,7 +1082,7 @@ class EWDriftsPlot(Figure):
         nplotsw = nplots
          
         #If there is a SNR function defined
-        if dataOut.data_SNR != None:
+        if dataOut.data_SNR is not None:
             nplots += 1
             SNR = dataOut.data_SNR
             
@@ -1125,7 +1125,7 @@ class EWDriftsPlot(Figure):
             if zmaxVertical == None: zmaxVertical = numpy.nanmax(abs(z[1,:]))
             if zminVertical == None: zminVertical = -zmaxVertical
             
-            if dataOut.data_SNR != None:
+            if dataOut.data_SNR is not None:
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
              
@@ -1160,7 +1160,7 @@ class EWDriftsPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel=strCb, cbsize="1%", colormap="RdBu_r")
                      
-        if dataOut.data_SNR != None:
+        if dataOut.data_SNR is not None:
             i += 1                 
             if SNR_1:
                 title = "Signal Noise Ratio + 1 (SNR+1): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
@@ -1278,7 +1278,7 @@ class PhasePlot(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            if timerange != None:
+            if timerange is not None:
                 self.timerange = timerange 
             
             self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)

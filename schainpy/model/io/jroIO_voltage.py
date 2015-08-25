@@ -249,7 +249,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
 #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
 # 
-#         if self.radarControllerHeaderObj.code != None:
+#         if self.radarControllerHeaderObj.code is not None:
 #             
 #             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
 #             
@@ -572,7 +572,7 @@ class VoltageWriter(JRODataWriter, Operation):
         if self.dataOut.flagDeflipData:
             processFlags += PROCFLAG.DEFLIP_DATA
         
-        if self.dataOut.code != None:
+        if self.dataOut.code is not None:
             processFlags += PROCFLAG.DEFINE_PROCESS_CODE
         
         if self.dataOut.nCohInt > 1:
@@ -635,7 +635,7 @@ class VoltageWriter(JRODataWriter, Operation):
         self.processingHeaderObj.nIncohInt = 1 # Cuando la data de origen es de tipo Voltage
         self.processingHeaderObj.totalSpectra = 0 # Cuando la data de origen es de tipo Voltage
         
-#         if self.dataOut.code != None:
+#         if self.dataOut.code is not None:
 #             self.processingHeaderObj.code = self.dataOut.code
 #             self.processingHeaderObj.nCode = self.dataOut.nCode
 #             self.processingHeaderObj.nBaud = self.dataOut.nBaud

@@ -332,7 +332,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
     
         self.dataOut.flagDeflipData = False #asumo q la data esta sin flip
         
-        if self.radarControllerHeaderObj.code != None:
+        if self.radarControllerHeaderObj.code is not None:
             
 #             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
 #             
@@ -377,7 +377,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
 
-        if self.data_dc == None:
+        if self.data_dc is None:
             self.dataOut.flagNoData = True
             return 0
         
@@ -525,7 +525,7 @@ class SpectraWriter(JRODataWriter, Operation):
         data = data.astype(self.dtype[0])
         data.tofile(self.fp)
 
-        if self.data_cspc != None:
+        if self.data_cspc is not None:
             data = numpy.zeros( self.shape_cspc_Buffer, self.dtype )
             cspc = numpy.transpose( self.data_cspc, (0,2,1) )
             if not( self.processingHeaderObj.shif_fft ):
@@ -535,7 +535,7 @@ class SpectraWriter(JRODataWriter, Operation):
             data = data.reshape((-1))
             data.tofile(self.fp)
         
-        if self.data_dc != None:
+        if self.data_dc is not None:
             data = numpy.zeros( self.shape_dc_Buffer, self.dtype )
             dc = self.data_dc
             data['real'] = dc.real
@@ -545,10 +545,10 @@ class SpectraWriter(JRODataWriter, Operation):
 
         self.data_spc.fill(0)
         
-        if self.data_dc != None:
+        if self.data_dc is not None:
             self.data_dc.fill(0)
             
-        if self.data_cspc != None:
+        if self.data_cspc is not None:
             self.data_cspc.fill(0)
         
         self.flagIsNewFile = 0
@@ -588,7 +588,7 @@ class SpectraWriter(JRODataWriter, Operation):
             self.setBasicHeader()
         
         self.data_spc = self.dataOut.data_spc.copy()
-        if self.dataOut.data_cspc != None:
+        if self.dataOut.data_cspc is not None:
             self.data_cspc = self.dataOut.data_cspc.copy()
         self.data_dc = self.dataOut.data_dc.copy()
         
@@ -636,13 +636,13 @@ class SpectraWriter(JRODataWriter, Operation):
         if self.dataOut.flagDeflipData:
             processFlags += PROCFLAG.DEFLIP_DATA
         
-        if self.dataOut.code != None:
+        if self.dataOut.code is not None:
             processFlags += PROCFLAG.DEFINE_PROCESS_CODE
         
         if self.dataOut.nIncohInt > 1:
             processFlags += PROCFLAG.INCOHERENT_INTEGRATION
             
-        if self.dataOut.data_dc != None:
+        if self.dataOut.data_dc is not None:
             processFlags += PROCFLAG.SAVE_CHANNELS_DC
         
         return processFlags
@@ -673,11 +673,11 @@ class SpectraWriter(JRODataWriter, Operation):
         pts2write_SelfSpectra = int(self.dataOut.nChannels * pts2write)
         blocksize = (pts2write_SelfSpectra*datatypeValue)
         
-        if self.dataOut.data_cspc != None:
+        if self.dataOut.data_cspc is not None:
             pts2write_CrossSpectra = int(self.dataOut.nPairs * pts2write)
             blocksize += (pts2write_CrossSpectra*datatypeValue*2)
         
-        if self.dataOut.data_dc != None:
+        if self.dataOut.data_dc is not None:
             pts2write_DCchannels = int(self.dataOut.nChannels * self.dataOut.nHeights)
             blocksize += (pts2write_DCchannels*datatypeValue*2)
         
@@ -739,7 +739,7 @@ class SpectraWriter(JRODataWriter, Operation):
             processingHeaderSize += sizeOfSpcComb
             
 #        The processing header should not have information about code
-#        if self.dataOut.code != None:
+#        if self.dataOut.code is not None:
 #            self.processingHeaderObj.code = self.dataOut.code
 #            self.processingHeaderObj.nCode = self.dataOut.nCode
 #            self.processingHeaderObj.nBaud = self.dataOut.nBaud
