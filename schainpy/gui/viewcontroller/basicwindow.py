@@ -5341,7 +5341,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
 
         sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
-        sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
+#         sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
         
         
 class UnitProcessWindow(QMainWindow, Ui_UnitProcess):
