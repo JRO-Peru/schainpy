@@ -16,10 +16,6 @@ from model.data.jroheaderIO import RadarControllerHeader, SystemHeader
 from model.data.jrodata import Voltage
 from model.proc.jroproc_base import ProcessingUnit, Operation
 
-try:
-    from gevent import sleep
-except:
-    from time import sleep
 
 def isNumber(str):
     """
@@ -40,10 +36,14 @@ def isNumber(str):
     except:
         return False
 
-def getFileFromSet(path, ext, set):
+def getFileFromSet(path, ext, set=None):
     validFilelist = []
     fileList = os.listdir(path)
-    
+
+
+    if len(fileList) < 1:
+        return None
+
     # 0 1234 567 89A BCDE
     # H YYYY DDD SSS .ext
     
@@ -60,7 +60,24 @@ def getFileFromSet(path, ext, set):
             continue
         
         validFilelist.append(thisFile)
-    myfile = fnmatch.filter(validFilelist,'*%10.10d*'%(set))
+
+    if len(validFilelist) < 1:
+        return None
+
+    validFilelist = sorted( validFilelist, key=str.lower )
+
+    if set == None:
+        return validFilelist[-1]
+    
+    print "set =" ,set
+    for thisFile in validFilelist:
+        if set <= int(thisFile[6:16]):
+            print thisFile,int(thisFile[6:16])
+            return thisFile        
+
+    return validFilelist[-1]
+
+    myfile = fnmatch.filter(validFilelist,'*%10d*'%(set))
     #myfile = fnmatch.filter(validFilelist,'*%4.4d%3.3d%3.3d*'%(year,doy,set))
     
     if len(myfile)!= 0:
@@ -178,7 +195,7 @@ class HFReader(ProcessingUnit):
         
         self.flagNoMoreFiles= False
         
-        self.__waitForNewFile = 1
+        self.__waitForNewFile = 20
 
                       
         #--------------------------------------------------
@@ -335,7 +352,38 @@ class HFReader(ProcessingUnit):
                 self.status=0
                 return None
         else:
-            if self.set== None:
+            if self.set != None:
+
+                filename=getFileFromSet(self.path,self.ext,self.set)
+
+                if self.flag_nextfile==True:
+                    self.dirnameList=[filename]
+                    fullfilename=self.path+"/"+filename
+                    self.filenameList=[fullfilename]
+                    self.filename_next_set=int(filename[6:16])+10
+                    
+                    self.flag_nextfile=False
+                else:
+                    print filename
+                    print "PRIMERA CONDICION"
+                    #if self.filename_next_set== int(filename[6:16]):
+                    print "TODO BIEN"
+
+                    if filename == None:
+                        raise ValueError, "corregir"
+
+                    self.dirnameList=[filename]
+                    fullfilename=self.path+"/"+filename
+                    self.filenameList=[fullfilename]
+                    self.filename_next_set=int(filename[6:16])+10
+                    print "Setting next file",self.filename_next_set
+                    self.set=int(filename[6:16])
+                    if True:
+                        pass
+                    else:
+                        print "ESTOY AQUI PORQUE NO EXISTE EL SIGUIENTE ARCHIVO"
+                   
+            else:
                 filename =getlastFileFromPath(self.path,self.ext)
                 
                 if self.flag_nextfile==True:
@@ -346,31 +394,26 @@ class HFReader(ProcessingUnit):
                     
                     self.flag_nextfile=False
                 else:
-                    if self.filename_next_set== int(filename[6:16]):
-                        self.dirnameList=[filename]
-                        fullfilename=self.path+"/"+filename
-                        self.filenameList=[self.filenameList[-1]]
-                        self.filename_next_set=int(filename[6:16])+10
-                        
-                    else:
-                        set=self.filename_next_set
-                        filename=getFileFromSet(self.path,self.ext,set=set)
-                        self.filename_next_set=int(filename[6:16])+10
-                        if filename==None:
-                            filename =getlastFileFromPath(self.path,self.ext)
-                            self.filename_next_set=int(filename[6:16])
-                        self.dirnameList=[filename]                        
-                        fullfilename=self.path+"/"+filename
-                        self.filenameList=[self.filenameList[-1]]
-                   
-            else:
-                try:
-                    filename=getFileFromSet(self.path,self.ext,self.set)
-                    self.dirnameList=[filename]
-                    fullfilename=self.path+"/"+filename
-                    self.filenameList=[fullfilename]
-                except:
-                    self.filenameList=[self.filenameList[-1]]
+                   filename=getFileFromSet(self.path,self.ext,self.set)    
+                   print filename
+                   print "PRIMERA CONDICION"
+                    #if self.filename_next_set== int(filename[6:16]):
+                   print "TODO BIEN"
+
+                   if filename == None:
+                       raise ValueError, "corregir"
+        
+                   self.dirnameList=[filename]
+                   fullfilename=self.path+"/"+filename
+                   self.filenameList=[fullfilename]
+                   self.filename_next_set=int(filename[6:16])+10
+                   print "Setting next file",self.filename_next_set
+                   self.set=int(filename[6:16])
+                   if True:
+                       pass
+                   else:
+                       print "ESTOY AQUI PORQUE NO EXISTE EL SIGUIENTE ARCHIVO"
+        
 
                     
     def __searchFilesOffline(self,
@@ -499,6 +542,7 @@ class HFReader(ProcessingUnit):
     def __setNextFileOnline(self):
         """
         """     
+        print "SOY NONE",self.set
         if self.set==None:
             pass
         else:
@@ -510,8 +554,9 @@ class HFReader(ProcessingUnit):
             filename = self.filenameList[0]
             while self.filename_online == filename:
                 print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
-                sleep(self.__waitForNewFile)
+                time.sleep(self.__waitForNewFile)
                 #self.__findDataForDates(online=True)
+                self.set=self.filename_next_set
                 self.__selectDataForTimes(online=True)
                 filename = self.filenameList[0]
                 sizeoffile=os.path.getsize(filename)
@@ -520,17 +565,21 @@ class HFReader(ProcessingUnit):
         sizeoffile=os.path.getsize(filename)
         if sizeoffile<1670240:
             print "%s is not the rigth  size"%filename
-            delay=2
+            delay=50
             print 'waiting %d seconds for delay...'%(delay)
-            sleep(delay) 
+            time.sleep(delay) 
         sizeoffile=os.path.getsize(filename)
         if sizeoffile<1670240:
-            delay
+            delay=50
             print 'waiting %d  more seconds for delay...'%(delay)
-            sleep(delay) 
+            time.sleep(delay) 
+
+        sizeoffile=os.path.getsize(filename)
+        if sizeoffile<1670240:
+            delay=50
+            print 'waiting %d  more seconds for delay...'%(delay)
+            time.sleep(delay) 
             
-               
-        
         try:        
             hfFilePointer=h5py.File(filename,'r')
             
@@ -708,7 +757,7 @@ class HFReader(ProcessingUnit):
         
         self.dataOut.utctime = None
         
-        self.dataOut.timeZone = 0
+        self.dataOut.timeZone = self.timezone
     
         self.dataOut.dstFlag = 0
         
@@ -796,7 +845,7 @@ class HFReader(ProcessingUnit):
         ##############################
         ##############################
         self.dataOut.data = self.datablock[:,:,self.profileIndex]
-        self.dataOut.utctime= self.__t0 + self.dataOut.ippSeconds*self.profileIndex+self.timezone
+        self.dataOut.utctime = self.__t0 + self.dataOut.ippSeconds*self.profileIndex
         self.dataOut.profileIndex= self.profileIndex
         self.dataOut.flagNoData=False
         self.profileIndex +=1 
