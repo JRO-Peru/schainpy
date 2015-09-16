@@ -18,13 +18,16 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 
 #path = '/home/operaciones/mst_data/MST_ISR_EEJ/'
 path ='/home/operaciones/mst_data'
+path = '/media/data/DATA/MST_ISR_EEJ'
 
 figpath = '/home/operaciones/Pictures/mst_isr_eej/mst'
+figpath = '/media/DATA/mst_isr_eej/mst'
+
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
-                                            startDate='2014/05/01',
-                                            endDate='2014/05/30',
+                                            startDate='2015/01/01',
+                                            endDate='2015/12/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=1,
