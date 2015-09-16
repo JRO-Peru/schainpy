@@ -19,6 +19,7 @@ except:
     from time import sleep
     
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
+from schainpy.model.data.jroheaderIO import get_dtype_index, get_numpy_dtype, get_procflag_dtype, get_dtype_width
 
 LOCALTIME = True
 
@@ -365,6 +366,13 @@ class JRODataIO:
         
         raise ValueError, "Not implemented"
 
+    def getDtypeWidth(self):
+        
+        dtype_index = get_dtype_index(self.dtype)
+        dtype_width = get_dtype_width(dtype_index)
+        
+        return dtype_width
+    
 class JRODataReader(JRODataIO):
     
     nReadBlocks = 0
@@ -872,12 +880,16 @@ class JRODataReader(JRODataIO):
         return 1
 
     def readNextBlock(self):
+        
         if not(self.__setNewBlock()):
             return 0
 
         if not(self.readBlock()):
             return 0
-
+        
+        print "[Reading] Block No. %d/%d -> %s" %(self.basicHeaderObj.dataBlock+1,
+                                                  self.processingHeaderObj.dataBlocksPerFile,
+                                                  self.dataOut.datatime.ctime())
         return 1
 
     def __readFirstHeader(self):
@@ -1128,7 +1140,8 @@ class JRODataReader(JRODataIO):
 
             sys.exit(-1)
 
-#        self.updateDataHeader()
+        self.getBasicHeader()
+        
         if last_set != None:
             self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
         return
@@ -1183,7 +1196,10 @@ class JRODataReader(JRODataIO):
     def printNumberOfBlock(self):
         
         if self.flagIsNewBlock:
-            print "[Reading] Block No. %04d, Total blocks %04d -> %s" %(self.basicHeaderObj.dataBlock, self.nTotalBlocks, self.dataOut.datatime.ctime())
+            print "[Reading] Block No. %d/%d -> %s" %(self.basicHeaderObj.dataBlock+1,
+                                                      self.processingHeaderObj.dataBlocksPerFile,
+                                                      self.dataOut.datatime.ctime())
+            
             self.dataOut.blocknow = self.basicHeaderObj.dataBlock
 
     def printInfo(self):
@@ -1248,6 +1264,36 @@ class JRODataWriter(JRODataIO):
         raise ValueError, "No implemented"
 
     
+    def getProcessFlags(self):
+        
+        processFlags = 0
+        
+        dtype_index = get_dtype_index(self.dtype)
+        procflag_dtype = get_procflag_dtype(dtype_index)
+        
+        processFlags += procflag_dtype
+        
+        if self.dataOut.flagDecodeData:
+            processFlags += PROCFLAG.DECODE_DATA
+        
+        if self.dataOut.flagDeflipData:
+            processFlags += PROCFLAG.DEFLIP_DATA
+        
+        if self.dataOut.code is not None:
+            processFlags += PROCFLAG.DEFINE_PROCESS_CODE
+        
+        if self.dataOut.nCohInt > 1:
+            processFlags += PROCFLAG.COHERENT_INTEGRATION
+        
+        if self.dataOut.type == "Spectra":
+            if self.dataOut.nIncohInt > 1:
+                processFlags += PROCFLAG.INCOHERENT_INTEGRATION
+                
+            if self.dataOut.data_dc is not None:
+                processFlags += PROCFLAG.SAVE_CHANNELS_DC
+            
+        return processFlags
+    
     def setBasicHeader(self):
         
         self.basicHeaderObj.size = self.basicHeaderSize #bytes
@@ -1301,7 +1347,7 @@ class JRODataWriter(JRODataIO):
         self.radarControllerHeaderObj.write(self.fp)
         self.processingHeaderObj.write(self.fp)
         
-        self.dtype = self.dataOut.dtype
+        
 
     def __setNewBlock(self):
         """
@@ -1339,7 +1385,9 @@ class JRODataWriter(JRODataIO):
             return 0
         
         self.writeBlock()
-
+        
+        print "[Writing] Block No. %d/%d" %(self.blockIndex, self.processingHeaderObj.dataBlocksPerFile)
+        
         return 1        
 
     def setNextFile(self):
@@ -1409,20 +1457,27 @@ class JRODataWriter(JRODataIO):
         
         self.setFirstHeader()
         
-        print '[Writing] file: %s'%self.filename
+        print '[Writing] Opening file: %s'%self.filename
         
         self.__writeFirstHeader()
         
         return 1
     
-    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=0, ext=None):
+    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=0, ext=None, datatype=2):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
         Inputs:
-            path      :    el path destino en el cual se escribiran los files a crear
-            format    :    formato en el cual sera salvado un file
-            set       :    el setebo del file
+            path                :    directory where data will be saved
+            profilesPerBlock    :    number of profiles per block 
+            set                 :    file set
+            datatype            :    An integer number that defines data type:
+                                        0 : int8  (1 byte)
+                                        1 : int16 (2 bytes)
+                                        2 : int32 (4 bytes)
+                                        3 : int64 (8 bytes)
+                                        4 : float (4 bytes)
+                                        5 : double (8 bytes)
             
         Return:
             0    :    Si no realizo un buen seteo
@@ -1445,6 +1500,12 @@ class JRODataWriter(JRODataIO):
         self.profilesPerBlock = profilesPerBlock
         
         self.dataOut = dataOut
+        
+        #By default
+        self.dtype = self.dataOut.dtype
+        
+        if datatype is not None:
+            self.dtype = get_numpy_dtype(datatype)
         
         if not(self.setNextFile()):
             print "[Writing] There isn't a next file"

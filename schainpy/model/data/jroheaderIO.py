@@ -7,6 +7,9 @@ import numpy
 import copy
 import datetime
 
+SPEED_OF_LIGHT = 299792458
+SPEED_OF_LIGHT = 3e8
+
 BASIC_STRUCTURE = numpy.dtype([
                           ('nSize','<u4'),
                           ('nVersion','<u2'),
@@ -222,12 +225,12 @@ class RadarControllerHeader(Header):
     rangeTxA = None
     rangeTxB = None
     
-    __C = 3e8
+    __size = None
         
     def __init__(self, expType=2, nTx=1,
                  ippKm=None, txA=0, txB=0,
                  nWindows=None, nHeights=None, firstHeight=None, deltaHeight=None,
-                 numTaus=0, line6Function=0, line5Function=0, fClock=0,
+                 numTaus=0, line6Function=0, line5Function=0, fClock=None,
                  prePulseBefore=0, prePulseAfter=0,
                  codeType=0, nCode=0, nBaud=0, code=None,
                  flip1=0, flip2=0):
@@ -265,6 +268,8 @@ class RadarControllerHeader(Header):
         self.code_size = int(numpy.ceil(self.nBaud/32.))*self.nCode*4
 #         self.dynamic = numpy.array([],numpy.dtype('byte'))
         
+        if self.fClock is None and self.deltaHeight is not None:
+            self.fClock = 0.15/(deltaHeight*1e-6)   #0.15Km / (height * 1u)
 
     def read(self, fp):
         
@@ -272,7 +277,7 @@ class RadarControllerHeader(Header):
             startFp = fp.tell()
             header = numpy.fromfile(fp,RADAR_STRUCTURE,1)
             
-            self.size = int(header['nSize'][0])
+            size = int(header['nSize'][0])
             self.expType = int(header['nExpType'][0])
             self.nTx = int(header['nNTx'][0])
             self.ipp = float(header['fIpp'][0])
@@ -290,7 +295,7 @@ class RadarControllerHeader(Header):
             self.rangeTxA = header['sRangeTxA'][0]
             self.rangeTxB = header['sRangeTxB'][0]
             # jump Dynamic Radar Controller Header
-#             jumpFp =  self.size - 116
+#             jumpFp =  size - 116
 #             self.dynamic = numpy.fromfile(fp,numpy.dtype('byte'),jumpFp)
             #pointer backward to dynamic header and read
 #             backFp = fp.tell() - jumpFp
@@ -319,13 +324,13 @@ class RadarControllerHeader(Header):
                 self.code = 2.0*self.code - 1.0
                 self.code_size = int(numpy.ceil(self.nBaud/32.))*self.nCode*4
                 
-            if self.line5Function == RCfunction.FLIP:
-                self.flip1 = numpy.fromfile(fp,'<u4',1)
-
-            if self.line6Function == RCfunction.FLIP:
-                self.flip2 = numpy.fromfile(fp,'<u4',1)
+#             if self.line5Function == RCfunction.FLIP:
+#                 self.flip1 = numpy.fromfile(fp,'<u4',1)
+# 
+#             if self.line6Function == RCfunction.FLIP:
+#                 self.flip2 = numpy.fromfile(fp,'<u4',1)
                 
-            endFp = self.size + startFp
+            endFp = size + startFp
             jumpFp =  endFp - fp.tell()
             if jumpFp > 0:
                 fp.seek(jumpFp)
@@ -337,6 +342,7 @@ class RadarControllerHeader(Header):
         return 1
     
     def write(self, fp):
+        
         headerTuple = (self.size,
                        self.expType,
                        self.nTx,
@@ -357,9 +363,6 @@ class RadarControllerHeader(Header):
         
         header = numpy.array(headerTuple,RADAR_STRUCTURE)
         header.tofile(fp)
-        
-        #dynamic = self.dynamic
-        #dynamic.tofile(fp)
         
         sampleWindowTuple = (self.firstHeight,self.deltaHeight,self.samplesWin)
         samplingWindow = numpy.array(sampleWindowTuple,SAMPLING_STRUCTURE)
@@ -390,18 +393,18 @@ class RadarControllerHeader(Header):
                 tempx = tempx.astype('u4')
                 tempx.tofile(fp)
             
-        if self.line5Function == RCfunction.FLIP:
-            self.flip1.tofile(fp)
-
-        if self.line6Function == RCfunction.FLIP:
-            self.flip2.tofile(fp)
+#         if self.line5Function == RCfunction.FLIP:
+#             self.flip1.tofile(fp)
+# 
+#         if self.line6Function == RCfunction.FLIP:
+#             self.flip2.tofile(fp)
         
         return 1
 
     def get_ippSeconds(self):
         '''
         '''
-        ippSeconds = 2.0 * 1000 * self.ipp / self.__C
+        ippSeconds = 2.0 * 1000 * self.ipp / SPEED_OF_LIGHT
         
         return ippSeconds
     
@@ -409,11 +412,27 @@ class RadarControllerHeader(Header):
         '''
         '''
         
-        self.ipp = ippSeconds * self.__C / (2.0*1000)
+        self.ipp = ippSeconds * SPEED_OF_LIGHT / (2.0*1000)
+        
+        return
+    
+    def get_size(self):
+        
+        self.__size = 116 + 12*self.nWindows + 4*self.numTaus
+        
+        if self.codeType != 0:
+            self.__size += 4 + 4 + 4*self.nCode*numpy.ceil(self.nBaud/32.)
+        
+        return self.__size
+    
+    def set_size(self, value):
+        
+        self.__size = value
         
         return
     
     ippSeconds = property(get_ippSeconds, set_ippSeconds)
+    size = property(get_size, set_size)
 
 class ProcessingHeader(Header):
     
@@ -581,6 +600,7 @@ class nCodeType:
     CODE_BINARY28=17
 
 class PROCFLAG:    
+    
     COHERENT_INTEGRATION = numpy.uint32(0x00000001)
     DECODE_DATA = numpy.uint32(0x00000002) 
     SPECTRA_CALC = numpy.uint32(0x00000004)
@@ -616,3 +636,44 @@ class PROCFLAG:
     DATATYPE_MASK = numpy.uint32(0x00000FC0)
     DATAARRANGE_MASK = numpy.uint32(0x00007000)
     ACQ_SYS_MASK = numpy.uint32(0x001C0000)
+    
+dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
+dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
+dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
+dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
+dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
+dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
+
+NUMPY_DTYPE_LIST = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
+
+PROCFLAG_DTYPE_LIST =  [PROCFLAG.DATATYPE_CHAR, 
+                       PROCFLAG.DATATYPE_SHORT, 
+                       PROCFLAG.DATATYPE_LONG, 
+                       PROCFLAG.DATATYPE_INT64, 
+                       PROCFLAG.DATATYPE_FLOAT, 
+                       PROCFLAG.DATATYPE_DOUBLE]
+
+DTYPE_WIDTH = [1, 2, 4, 8, 4, 8]
+
+def get_dtype_index(numpy_dtype):
+    
+    index = None
+    
+    for i in range(len(NUMPY_DTYPE_LIST)):
+        if numpy_dtype == NUMPY_DTYPE_LIST[i]:
+            index = i
+            break
+    
+    return index
+
+def get_numpy_dtype(index):
+    
+    return NUMPY_DTYPE_LIST[index]
+
+def get_procflag_dtype(index):
+    
+    return PROCFLAG_DTYPE_LIST[index]
+
+def get_dtype_width(index):
+    
+    return DTYPE_WIDTH[index]

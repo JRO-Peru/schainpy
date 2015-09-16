@@ -224,6 +224,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
                 junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
                 junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
 #             return 0
+
+        #Dimensions : nChannels, nProfiles, nSamples
         
         junk = numpy.transpose(junk, (2,0,1))
         self.datablock = junk['real'] + junk['imag']*1j
@@ -239,6 +241,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         return 1
 
     def getFirstHeader(self):
+        
+        self.getBasicHeader()
         
         self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
         
@@ -419,7 +423,7 @@ class VoltageWriter(JRODataWriter, Operation):
 
         self.flagIsNewFile = 1
         
-        self.nTotalBlocks = 0 
+        self.blockIndex = 0 
         
         self.flagIsNewBlock = 0
 
@@ -536,71 +540,14 @@ class VoltageWriter(JRODataWriter, Operation):
         
         return 1
     
-    def __getProcessFlags(self):
-        
-        processFlags = 0
-        
-        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
-        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
-        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
-        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
-        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
-        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
-        
-        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
-        
-        
-        
-        datatypeValueList =  [PROCFLAG.DATATYPE_CHAR, 
-                           PROCFLAG.DATATYPE_SHORT, 
-                           PROCFLAG.DATATYPE_LONG, 
-                           PROCFLAG.DATATYPE_INT64, 
-                           PROCFLAG.DATATYPE_FLOAT, 
-                           PROCFLAG.DATATYPE_DOUBLE]
-        
-        
-        for index in range(len(dtypeList)):
-            if self.dataOut.dtype == dtypeList[index]:
-                dtypeValue = datatypeValueList[index]
-                break
-        
-        processFlags += dtypeValue
-        
-        if self.dataOut.flagDecodeData:
-            processFlags += PROCFLAG.DECODE_DATA
-        
-        if self.dataOut.flagDeflipData:
-            processFlags += PROCFLAG.DEFLIP_DATA
-        
-        if self.dataOut.code is not None:
-            processFlags += PROCFLAG.DEFINE_PROCESS_CODE
-        
-        if self.dataOut.nCohInt > 1:
-            processFlags += PROCFLAG.COHERENT_INTEGRATION
-        
-        return processFlags
-    
-    
     def __getBlockSize(self):
         '''
         Este metodos determina el cantidad de bytes para un bloque de datos de tipo Voltage
         '''
         
-        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
-        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
-        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
-        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
-        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
-        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
+        dtype_width = self.getDtypeWidth()
         
-        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
-        datatypeValueList = [1,2,4,8,4,8]
-        for index in range(len(dtypeList)):
-            if self.dataOut.dtype == dtypeList[index]:
-                datatypeValue = datatypeValueList[index]
-                break
-        
-        blocksize = int(self.dataOut.nHeights * self.dataOut.nChannels * self.profilesPerBlock * datatypeValue * 2)
+        blocksize = int(self.dataOut.nHeights * self.dataOut.nChannels * self.profilesPerBlock * dtype_width * 2)
         
         return blocksize
     
@@ -630,7 +577,7 @@ class VoltageWriter(JRODataWriter, Operation):
         self.processingHeaderObj.profilesPerBlock = self.profilesPerBlock
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
         self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOut.processingHeaderObj.nWindows
-        self.processingHeaderObj.processFlags = self.__getProcessFlags()
+        self.processingHeaderObj.processFlags = self.getProcessFlags()
         self.processingHeaderObj.nCohInt = self.dataOut.nCohInt
         self.processingHeaderObj.nIncohInt = 1 # Cuando la data de origen es de tipo Voltage
         self.processingHeaderObj.totalSpectra = 0 # Cuando la data de origen es de tipo Voltage

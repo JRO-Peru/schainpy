@@ -273,7 +273,8 @@ class SpectraReader(JRODataReader, ProcessingUnit):
                 cspc = numpy.roll( cspc, shift, axis=2 )
             
 #            self.processingHeaderObj.shif_fft = True
-
+        
+        #Dimensions : nChannels, nProfiles, nSamples
         spc = numpy.transpose( spc, (0,2,1) )
         self.data_spc = spc
         
@@ -297,6 +298,8 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         return 1
     
     def getFirstHeader(self):
+        
+        self.getBasicHeader()
         
         self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
         
@@ -599,89 +602,27 @@ class SpectraWriter(JRODataWriter, Operation):
         
         return 1
     
-    
-    def __getProcessFlags(self):
-        
-        processFlags = 0
-        
-        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
-        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
-        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
-        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
-        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
-        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
-        
-        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
-        
-        
-        
-        datatypeValueList =  [PROCFLAG.DATATYPE_CHAR, 
-                           PROCFLAG.DATATYPE_SHORT, 
-                           PROCFLAG.DATATYPE_LONG, 
-                           PROCFLAG.DATATYPE_INT64, 
-                           PROCFLAG.DATATYPE_FLOAT, 
-                           PROCFLAG.DATATYPE_DOUBLE]
-        
-        
-        for index in range(len(dtypeList)):
-            if self.dataOut.dtype == dtypeList[index]:
-                dtypeValue = datatypeValueList[index]
-                break
-        
-        processFlags += dtypeValue
-        
-        if self.dataOut.flagDecodeData:
-            processFlags += PROCFLAG.DECODE_DATA
-        
-        if self.dataOut.flagDeflipData:
-            processFlags += PROCFLAG.DEFLIP_DATA
-        
-        if self.dataOut.code is not None:
-            processFlags += PROCFLAG.DEFINE_PROCESS_CODE
-        
-        if self.dataOut.nIncohInt > 1:
-            processFlags += PROCFLAG.INCOHERENT_INTEGRATION
-            
-        if self.dataOut.data_dc is not None:
-            processFlags += PROCFLAG.SAVE_CHANNELS_DC
-        
-        return processFlags
-    
-    
     def __getBlockSize(self):
         '''
         Este metodos determina el cantidad de bytes para un bloque de datos de tipo Spectra
         '''
         
-        dtype0 = numpy.dtype([('real','<i1'),('imag','<i1')])
-        dtype1 = numpy.dtype([('real','<i2'),('imag','<i2')])
-        dtype2 = numpy.dtype([('real','<i4'),('imag','<i4')])
-        dtype3 = numpy.dtype([('real','<i8'),('imag','<i8')])
-        dtype4 = numpy.dtype([('real','<f4'),('imag','<f4')])
-        dtype5 = numpy.dtype([('real','<f8'),('imag','<f8')])
-        
-        dtypeList = [dtype0, dtype1, dtype2, dtype3, dtype4, dtype5]
-        datatypeValueList = [1,2,4,8,4,8]
-        for index in range(len(dtypeList)):
-            if self.dataOut.dtype == dtypeList[index]:
-                datatypeValue = datatypeValueList[index]
-                break
-        
+        dtype_width = self.getDtypeWidth()
         
         pts2write = self.dataOut.nHeights * self.dataOut.nFFTPoints
         
         pts2write_SelfSpectra = int(self.dataOut.nChannels * pts2write)
-        blocksize = (pts2write_SelfSpectra*datatypeValue)
+        blocksize = (pts2write_SelfSpectra*dtype_width)
         
         if self.dataOut.data_cspc is not None:
             pts2write_CrossSpectra = int(self.dataOut.nPairs * pts2write)
-            blocksize += (pts2write_CrossSpectra*datatypeValue*2)
+            blocksize += (pts2write_CrossSpectra*dtype_width*2)
         
         if self.dataOut.data_dc is not None:
             pts2write_DCchannels = int(self.dataOut.nChannels * self.dataOut.nHeights)
-            blocksize += (pts2write_DCchannels*datatypeValue*2)
+            blocksize += (pts2write_DCchannels*dtype_width*2)
         
-        blocksize = blocksize #* datatypeValue * 2 #CORREGIR ESTO
+#         blocksize = blocksize #* datatypeValue * 2 #CORREGIR ESTO
 
         return blocksize
     
@@ -714,7 +655,7 @@ class SpectraWriter(JRODataWriter, Operation):
         self.processingHeaderObj.profilesPerBlock = self.dataOut.nFFTPoints
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
         self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOut.processingHeaderObj.nWindows
-        self.processingHeaderObj.processFlags = self.__getProcessFlags()
+        self.processingHeaderObj.processFlags = self.getProcessFlags()
         self.processingHeaderObj.nCohInt = self.dataOut.nCohInt# Se requiere para determinar el valor de timeInterval
         self.processingHeaderObj.nIncohInt = self.dataOut.nIncohInt 
         self.processingHeaderObj.totalSpectra = self.dataOut.nPairs + self.dataOut.nChannels
