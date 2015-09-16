@@ -15,18 +15,21 @@ controllerObj = Project()
 controllerObj.setup(id = '191', name='test01', description=desc)
 
 path = '/media/signalchain/HD-PXU2/mst_isr_eej'
+path = '/media/data/DATA/MST_ISR_EEJ'
 
 figpath = '/home/signalchain/Pictures/mst_isr_eej/isr'
+figpath = '/media/DATA/mst_isr_eej/isr'
+
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
-                                            startDate='2014/05/01',
-                                            endDate='2014/05/30',
+                                            startDate='2015/01/01',
+                                            endDate='2015/12/30',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             online=1,
                                             delay=10,
-                                            walk=0,
+                                            walk=1,
                                             getblock=1)
 
 opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
@@ -47,7 +50,7 @@ opObj11.addParameter(name='shape', value='4,16,6750', format='intlist') # shape 
      
 opObj11 = procUnitConfObjISR.addOperation(name='filterByHeights')
 opObj11.addParameter(name='window', value='20', format='int')
-opObj11.addParameter(name='axis', value='2', format='int')
+#opObj11.addParameter(name='axis', value='2', format='int')
     
 barker3x1 = '1,1,-1,-1,-1,1'
 #barker3x5 = '1,1,1,1,1, 1,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1,1,1'
@@ -71,6 +74,8 @@ opObj11.addParameter(name='n', value='36', format='float')
    
 opObj11 = procUnitConfObjISRSpectra.addOperation(name='SpectraPlot', optype='other')
 opObj11.addParameter(name='id', value='300', format='int')
+opObj11.addParameter(name='zmin', value='23', format='int')
+opObj11.addParameter(name='zmax', value='40', format='int')
 opObj11.addParameter(name='wintitle', value='ISR', format='str')
 opObj11.addParameter(name='figpath', value=figpath, format='str')
 opObj11.addParameter(name='wr_period', value='5', format='int')
@@ -78,6 +83,10 @@ opObj11.addParameter(name='exp_code', value='20', format='int')
 
 opObj11 = procUnitConfObjISRSpectra.addOperation(name='RTIPlot', optype='other')
 opObj11.addParameter(name='id', value='301', format='int')
+opObj11.addParameter(name='xmin', value='00', format='int')
+opObj11.addParameter(name='xmax', value='24', format='int')
+opObj11.addParameter(name='zmin', value='23', format='int')
+opObj11.addParameter(name='zmax', value='40', format='int')
 opObj11.addParameter(name='wintitle', value='ISR', format='str')
 opObj11.addParameter(name='showprofile', value='0', format='int')
 opObj11.addParameter(name='figpath', value=figpath, format='str')
