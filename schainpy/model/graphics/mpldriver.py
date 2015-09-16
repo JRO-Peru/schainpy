@@ -435,3 +435,8 @@ def draw(fig):
         raise ValueError, "Error drawing: Fig parameter should be a matplotlib figure object figure"
     
     fig.canvas.draw()
+
+def pause(interval=0.000001):
+    
+    matplotlib.pyplot.pause(interval)
+    
