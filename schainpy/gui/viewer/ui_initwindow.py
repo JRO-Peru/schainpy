@@ -17,7 +17,7 @@ except AttributeError:
 import os
 from schainpy.gui.figures import tools
 
-INITIAL_MSG = "Signal Chain GUI - v2.1.3"
+INITIAL_MSG = "Signal Chain GUI - v2.1.4"
 FIGURES_PATH = tools.get_path()
 
 class Ui_InitWindow(object):

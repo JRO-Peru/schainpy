@@ -391,23 +391,23 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         SELECCION DEL RANGO DE FECHAS -START DATE
         """
-        stopIndex = self.proComEndDate.count() - self.proComEndDate.currentIndex()
+        stopIndex = self.proComEndDate.count() - self.proComEndDate.currentIndex() - 1
+        
         self.proComEndDate.clear()
         for i in self.dateList[index:]:
             self.proComEndDate.addItem(i)
-        self.proComEndDate.setCurrentIndex(self.proComEndDate.count() - stopIndex)
+        
+        if self.proComEndDate.count() - stopIndex - 1 >= 0:
+            self.proComEndDate.setCurrentIndex(self.proComEndDate.count() - stopIndex - 1)
+        else:
+            self.proComEndDate.setCurrentIndex(self.proComEndDate.count() - 1)
 
     @pyqtSignature("int")
     def on_proComEndDate_activated(self, index):
         """
         SELECCION DEL RANGO DE FECHAS-END DATE
         """
-        startIndex = self.proComStartDate.currentIndex()
-        stopIndex = self.proComEndDate.count() - index
-        self.proComStartDate.clear()
-        for i in self.dateList[:len(self.dateList) - stopIndex + 1]:
-            self.proComStartDate.addItem(i)
-        self.proComStartDate.setCurrentIndex(startIndex)
+        pass
     
     @pyqtSignature("")
     def on_proOk_clicked(self):
@@ -2505,6 +2505,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proDelay.setText(str(projectParms.delay))
         self.proSet.setText(str(projectParms.set))
         self.proIPPKm.setText(str(projectParms.ippKm))
+        self.proComWalk.setCurrentIndex(projectParms.walk)
         
         dateList = self.loadDays(data_path = projectParms.dpath,
                                  ext = projectParms.getExt(),
@@ -4955,16 +4956,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             # parms_ok = False
             set = None
         
-        walk_str = str(self.proComWalk.currentText())
-        if walk_str == 'On Files':
-            walk = 0
-        elif walk_str == 'On Folder':
-            walk = 1
-        else:
-            outputstr = 'Walk: %s, this must be either On Files or On Folders' % walk_str
-            self.console.append(outputstr)
-            parms_ok = False
-            walk = None
+        walk = self.proComWalk.currentIndex()
         
         return parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set
 

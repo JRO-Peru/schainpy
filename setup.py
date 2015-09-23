@@ -7,7 +7,7 @@ Created on Jul 16, 2014
 from distutils.core import setup, Extension
 
 setup(name="schainpy",
-        version="2.1.2",
+        version="2.1.4",
         description="Python tools to read, write and process Jicamarca data",
         author="Miguel Urco",
         author_email="miguel.urco@jro.igp.gob.pe",
