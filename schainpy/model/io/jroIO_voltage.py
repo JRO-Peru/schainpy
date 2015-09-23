@@ -251,6 +251,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         if self.nTxs > 1:
             self.dataOut.radarControllerHeaderObj.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
 
+        #Time interval and code are propierties of dataOut. Its value depends of radarControllerHeaderObj.
+        
 #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
 # 
 #         if self.radarControllerHeaderObj.code is not None:
@@ -276,13 +278,11 @@ class VoltageReader(JRODataReader, ProcessingUnit):
                 
         self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
         
-        self.dataOut.flagShiftFFT = False
-        
-        self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
+        self.dataOut.flagDecodeData = self.processingHeaderObj.flag_decode #asumo q la data no esta decodificada
 
-        self.dataOut.flagDeflipData = False #asumo q la data no esta sin flip
+        self.dataOut.flagDeflipData = self.processingHeaderObj.flag_deflip #asumo q la data no esta sin flip
         
-        self.dataOut.flagShiftFFT = False
+        self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
     
     def getData(self):
         """
@@ -569,31 +569,26 @@ class VoltageWriter(JRODataWriter, Operation):
         self.systemHeaderObj.nChannels = self.dataOut.nChannels
         self.radarControllerHeaderObj = self.dataOut.radarControllerHeaderObj.copy()
         
-        self.setBasicHeader()
-        
-        processingHeaderSize = 40 # bytes    
         self.processingHeaderObj.dtype = 0 # Voltage
         self.processingHeaderObj.blockSize = self.__getBlockSize()
         self.processingHeaderObj.profilesPerBlock = self.profilesPerBlock
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
         self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOut.processingHeaderObj.nWindows
-        self.processingHeaderObj.processFlags = self.getProcessFlags()
         self.processingHeaderObj.nCohInt = self.dataOut.nCohInt
         self.processingHeaderObj.nIncohInt = 1 # Cuando la data de origen es de tipo Voltage
         self.processingHeaderObj.totalSpectra = 0 # Cuando la data de origen es de tipo Voltage
         
-#         if self.dataOut.code is not None:
-#             self.processingHeaderObj.code = self.dataOut.code
-#             self.processingHeaderObj.nCode = self.dataOut.nCode
-#             self.processingHeaderObj.nBaud = self.dataOut.nBaud
-#             codesize = int(8 + 4 * self.dataOut.nCode * self.dataOut.nBaud)
-#             processingHeaderSize += codesize
+        if self.dataOut.code is not None:
+            self.processingHeaderObj.code = self.dataOut.code
+            self.processingHeaderObj.nCode = self.dataOut.nCode
+            self.processingHeaderObj.nBaud = self.dataOut.nBaud
         
         if self.processingHeaderObj.nWindows != 0:
             self.processingHeaderObj.firstHeight = self.dataOut.heightList[0]
             self.processingHeaderObj.deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
             self.processingHeaderObj.nHeights = self.dataOut.nHeights
             self.processingHeaderObj.samplesWin = self.dataOut.nHeights
-            processingHeaderSize += 12
             
-        self.processingHeaderObj.size = processingHeaderSize
+        self.processingHeaderObj.processFlags = self.getProcessFlags()
+        
+        self.setBasicHeader()

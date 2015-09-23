@@ -609,7 +609,9 @@ class Spectra(JROData):
         return range(self.nPairs)
     
     def getNormFactor(self):
+        
         pwcode = 1
+        
         if self.flagDecodeData:
             pwcode = numpy.sum(self.code[0]**2)
         #normFactor = min(self.nFFTPoints,self.nProfiles)*self.nIncohInt*self.nCohInt*pwcode*self.windowOfFilter
@@ -637,13 +639,19 @@ class Spectra(JROData):
         
         return timeInterval
     
-    nPairs = property(getNPairs, "I'm the 'nPairs' property.")
-    pairsIndexList = property(getPairsIndexList, "I'm the 'pairsIndexList' property.")
-    normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
-    flag_cspc = property(getFlagCspc)
-    flag_dc = property(getFlagDc)
-    noise = property(getNoise, "I'm the 'nHeights' property.")
-    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
+    def setValue(self, value):
+        
+        print "This property should not be initialized"
+        
+        return
+    
+    nPairs = property(getNPairs, setValue, "I'm the 'nPairs' property.")
+    pairsIndexList = property(getPairsIndexList, setValue, "I'm the 'pairsIndexList' property.")
+    normFactor = property(getNormFactor, setValue, "I'm the 'getNormFactor' property.")
+    flag_cspc = property(getFlagCspc, setValue)
+    flag_dc = property(getFlagDc, setValue)
+    noise = property(getNoise, setValue, "I'm the 'nHeights' property.")
+    timeInterval = property(getTimeInterval, setValue, "I'm the 'timeInterval' property")
     
 class SpectraHeis(Spectra):
     

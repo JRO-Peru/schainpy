@@ -182,8 +182,11 @@ class SystemHeader(Header):
         
     def read(self, fp):
         
+        startFp = fp.tell()
+        
         try:
             header = numpy.fromfile(fp,SYSTEM_STRUCTURE,1)
+            
             self.size = header['nSize'][0]
             self.nSamples = header['nNumSamples'][0]
             self.nProfiles = header['nNumProfiles'][0]
@@ -195,6 +198,11 @@ class SystemHeader(Header):
             print "SystemHeader: " + e
             return 0
         
+        endFp = self.size + startFp
+        
+        if fp.tell() != endFp:
+            raise IOError, "System Header is not consistent"
+            
         return 1
     
     def write(self, fp):
@@ -273,72 +281,63 @@ class RadarControllerHeader(Header):
 
     def read(self, fp):
         
-        try:
-            startFp = fp.tell()
-            header = numpy.fromfile(fp,RADAR_STRUCTURE,1)
+       
+        startFp = fp.tell()
+        header = numpy.fromfile(fp,RADAR_STRUCTURE,1)
+        
+        size = int(header['nSize'][0])
+        self.expType = int(header['nExpType'][0])
+        self.nTx = int(header['nNTx'][0])
+        self.ipp = float(header['fIpp'][0])
+        self.txA = float(header['fTxA'][0])
+        self.txB = float(header['fTxB'][0])
+        self.nWindows = int(header['nNumWindows'][0])
+        self.numTaus = int(header['nNumTaus'][0])
+        self.codeType = int(header['nCodeType'][0])
+        self.line6Function = int(header['nLine6Function'][0])
+        self.line5Function = int(header['nLine5Function'][0])
+        self.fClock = float(header['fClock'][0])
+        self.prePulseBefore = int(header['nPrePulseBefore'][0])
+        self.prePulserAfter = int(header['nPrePulseAfter'][0])
+        self.rangeIpp = header['sRangeIPP'][0]
+        self.rangeTxA = header['sRangeTxA'][0]
+        self.rangeTxB = header['sRangeTxB'][0]
+        
+        samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
+        
+        self.nHeights = int(numpy.sum(samplingWindow['nsa']))
+        self.firstHeight = samplingWindow['h0']
+        self.deltaHeight = samplingWindow['dh']
+        self.samplesWin = samplingWindow['nsa']
+        
+        self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
+        
+        self.code_size = 0
+        if self.codeType != 0:
+            self.nCode = int(numpy.fromfile(fp,'<u4',1))
+            self.nBaud = int(numpy.fromfile(fp,'<u4',1))
             
-            size = int(header['nSize'][0])
-            self.expType = int(header['nExpType'][0])
-            self.nTx = int(header['nNTx'][0])
-            self.ipp = float(header['fIpp'][0])
-            self.txA = float(header['fTxA'][0])
-            self.txB = float(header['fTxB'][0])
-            self.nWindows = int(header['nNumWindows'][0])
-            self.numTaus = int(header['nNumTaus'][0])
-            self.codeType = int(header['nCodeType'][0])
-            self.line6Function = int(header['nLine6Function'][0])
-            self.line5Function = int(header['nLine5Function'][0])
-            self.fClock = float(header['fClock'][0])
-            self.prePulseBefore = int(header['nPrePulseBefore'][0])
-            self.prePulserAfter = int(header['nPrePulseAfter'][0])
-            self.rangeIpp = header['sRangeIPP'][0]
-            self.rangeTxA = header['sRangeTxA'][0]
-            self.rangeTxB = header['sRangeTxB'][0]
-            # jump Dynamic Radar Controller Header
-#             jumpFp =  size - 116
-#             self.dynamic = numpy.fromfile(fp,numpy.dtype('byte'),jumpFp)
-            #pointer backward to dynamic header and read
-#             backFp = fp.tell() - jumpFp
-#             fp.seek(backFp)
+            code = numpy.empty([self.nCode,self.nBaud],dtype='i1')
+            for ic in range(self.nCode):
+                temp = numpy.fromfile(fp,'u4',int(numpy.ceil(self.nBaud/32.)))
+                for ib in range(self.nBaud-1,-1,-1):
+                    code[ic,ib] = temp[ib/32]%2
+                    temp[ib/32] = temp[ib/32]/2
+                    
+            self.code = 2.0*code - 1.0
+            self.code_size = int(numpy.ceil(self.nBaud/32.))*self.nCode*4
             
-            samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
-            
-            self.nHeights = int(numpy.sum(samplingWindow['nsa']))
-            self.firstHeight = samplingWindow['h0']
-            self.deltaHeight = samplingWindow['dh']
-            self.samplesWin = samplingWindow['nsa']
-            
-            self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
-            
-            self.code_size = 0
-            if self.codeType != 0:
-                self.nCode = int(numpy.fromfile(fp,'<u4',1))
-                self.nBaud = int(numpy.fromfile(fp,'<u4',1))
-                self.code = numpy.empty([self.nCode,self.nBaud],dtype='i1')
-                 
-                for ic in range(self.nCode):
-                    temp = numpy.fromfile(fp,'u4',int(numpy.ceil(self.nBaud/32.)))
-                    for ib in range(self.nBaud-1,-1,-1):
-                        self.code[ic,ib] = temp[ib/32]%2
-                        temp[ib/32] = temp[ib/32]/2
-                self.code = 2.0*self.code - 1.0
-                self.code_size = int(numpy.ceil(self.nBaud/32.))*self.nCode*4
-                
 #             if self.line5Function == RCfunction.FLIP:
 #                 self.flip1 = numpy.fromfile(fp,'<u4',1)
 # 
 #             if self.line6Function == RCfunction.FLIP:
 #                 self.flip2 = numpy.fromfile(fp,'<u4',1)
+        
+        endFp = size + startFp
+        
+        if fp.tell() != endFp:
+            raise IOError, "Radar Controller Header is not consistent"
                 
-            endFp = size + startFp
-            jumpFp =  endFp - fp.tell()
-            if jumpFp > 0:
-                fp.seek(jumpFp)
-        
-        except Exception, e:
-            print "RadarControllerHeader: " + e
-            return 0
-        
         return 1
     
     def write(self, fp):
@@ -436,7 +435,7 @@ class RadarControllerHeader(Header):
 
 class ProcessingHeader(Header):
     
-    size = None
+#     size = None
     dtype = None
     blockSize = None
     profilesPerBlock = None
@@ -452,7 +451,7 @@ class ProcessingHeader(Header):
         
     def __init__(self):
         
-        self.size = 0
+#         self.size = 0
         self.dtype = 0
         self.blockSize = 0
         self.profilesPerBlock = 0
@@ -468,17 +467,23 @@ class ProcessingHeader(Header):
         self.deltaHeight = 0
         self.samplesWin = 0
         self.spectraComb = 0
-#         self.nCode = None
-#         self.code = None
-#         self.nBaud = None
+        self.nCode = None
+        self.code = None
+        self.nBaud = None
+        
         self.shif_fft = False
         self.flag_dc = False
         self.flag_cspc = False
+        self.flag_decode = False
+        self.flag_deflip = False
     
     def read(self, fp):
-#        try:
+        
+        startFp = fp.tell()
+        
         header = numpy.fromfile(fp,PROCESSING_STRUCTURE,1)
-        self.size = int(header['nSize'][0])
+        
+        size = int(header['nSize'][0])
         self.dtype = int(header['nDataType'][0])
         self.blockSize = int(header['nSizeOfDataBlock'][0])
         self.profilesPerBlock = int(header['nProfilesperBlock'][0])
@@ -495,21 +500,38 @@ class ProcessingHeader(Header):
         self.firstHeight = float(samplingWindow['h0'][0])
         self.deltaHeight = float(samplingWindow['dh'][0])
         self.samplesWin = samplingWindow['nsa'][0]
+        
         self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
         
-#        if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
-#            self.nCode = int(numpy.fromfile(fp,'<u4',1))
-#            self.nBaud = int(numpy.fromfile(fp,'<u4',1))
-#            self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nCode,self.nBaud)
+        if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
+            self.nCode = int(numpy.fromfile(fp,'<u4',1))
+            self.nBaud = int(numpy.fromfile(fp,'<u4',1))
+            self.code = numpy.fromfile(fp,'<f4',self.nCode*self.nBaud).reshape(self.nCode,self.nBaud)
         
+        if ((self.processFlags & PROCFLAG.EXP_NAME_ESP) == PROCFLAG.EXP_NAME_ESP):
+            exp_name_len = int(numpy.fromfile(fp,'<u4',1))
+            exp_name = numpy.fromfile(fp,'u1',exp_name_len+1)
+            
         if ((self.processFlags & PROCFLAG.SHIFT_FFT_DATA) == PROCFLAG.SHIFT_FFT_DATA):
             self.shif_fft = True
         else:
             self.shif_fft = False
-            
+        
         if ((self.processFlags & PROCFLAG.SAVE_CHANNELS_DC) == PROCFLAG.SAVE_CHANNELS_DC):
             self.flag_dc = True
+        else:
+            self.flag_dc = False
         
+        if ((self.processFlags & PROCFLAG.DECODE_DATA) == PROCFLAG.DECODE_DATA):
+            self.flag_decode = True
+        else:
+            self.flag_decode = False
+        
+        if ((self.processFlags & PROCFLAG.DEFLIP_DATA) == PROCFLAG.DEFLIP_DATA):
+            self.flag_deflip = True
+        else:
+            self.flag_deflip = False
+              
         nChannels = 0
         nPairs = 0
         pairList = []
@@ -524,14 +546,17 @@ class ProcessingHeader(Header):
         self.flag_cspc = False
         if nPairs > 0:
             self.flag_cspc = True
-                
-#        except Exception, e:
-#            print "Error ProcessingHeader: "
-#            return 0
+        
+        endFp = size + startFp
+        
+        if fp.tell() != endFp:
+            raise IOError, "Processing Header is not consistent"
         
         return 1
     
     def write(self, fp):
+        #Clear DEFINE_PROCESS_CODE
+#         self.processFlags = self.processFlags & (~PROCFLAG.DEFINE_PROCESS_CODE)
         
         headerTuple = (self.size,
                        self.dtype,
@@ -551,26 +576,43 @@ class ProcessingHeader(Header):
             sampleWindowTuple = (self.firstHeight,self.deltaHeight,self.samplesWin)
             samplingWindow = numpy.array(sampleWindowTuple,SAMPLING_STRUCTURE)
             samplingWindow.tofile(fp)
-
             
         if self.totalSpectra != 0:
-            spectraComb = numpy.array([],numpy.dtype('u1'))
+#             spectraComb = numpy.array([],numpy.dtype('u1'))
             spectraComb = self.spectraComb
             spectraComb.tofile(fp)
         
-#        if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
-#            nCode = numpy.array([self.nCode], numpy.dtype('u4')) #Probar con un dato que almacene codigo, hasta el momento no se hizo la prueba
-#            nCode.tofile(fp)
-#
-#            nBaud = numpy.array([self.nBaud], numpy.dtype('u4'))
-#            nBaud.tofile(fp)
-#
-#            code = self.code.reshape(self.nCode*self.nBaud)
-#            code = code.astype(numpy.dtype('<f4'))
-#            code.tofile(fp)
+        if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
+            nCode = numpy.array([self.nCode], numpy.dtype('u4')) #Probar con un dato que almacene codigo, hasta el momento no se hizo la prueba
+            nCode.tofile(fp)
+ 
+            nBaud = numpy.array([self.nBaud], numpy.dtype('u4'))
+            nBaud.tofile(fp)
+ 
+            code = self.code.reshape(self.nCode*self.nBaud)
+            code = code.astype(numpy.dtype('<f4'))
+            code.tofile(fp)
             
         return 1
 
+    def get_size(self):
+        
+        self.__size = 40 + 12*self.nWindows + 2*self.totalSpectra
+        
+        if self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE == PROCFLAG.DEFINE_PROCESS_CODE:
+#             self.__size += 4 + 4 + 4*self.nCode*numpy.ceil(self.nBaud/32.)
+            self.__size += 4 + 4 + 4 * self.nCode * self.nBaud
+            
+        return self.__size
+    
+    def set_size(self, value):
+        
+        self.__size = value
+        
+        return
+    
+    size = property(get_size, set_size)
+    
 class RCfunction:
     NONE=0
     FLIP=1

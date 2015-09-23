@@ -606,6 +606,7 @@ class SpectraProc(ProcessingUnit):
         return 1
     
     def setRadarFrequency(self, frequency=None):
+        
         if frequency != None:
             self.dataOut.frequency = frequency
         
@@ -807,7 +808,10 @@ class IncohInt(Operation):
     def byProfiles(self, *args):
         
         self.__dataReady = False
-            
+        avgdata_spc = None
+        avgdata_cspc = None
+        avgdata_dc = None
+        
         self.putData(*args)
         
         if self.__profIndex == self.n:
@@ -821,6 +825,9 @@ class IncohInt(Operation):
     def byTime(self, datatime, *args):
         
         self.__dataReady = False
+        avgdata_spc = None
+        avgdata_cspc = None
+        avgdata_dc = None
         
         self.putData(*args)
         

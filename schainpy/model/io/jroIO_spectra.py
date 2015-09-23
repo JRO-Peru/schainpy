@@ -271,8 +271,6 @@ class SpectraReader(JRODataReader, ProcessingUnit):
             if self.processingHeaderObj.flag_cspc:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 cspc = numpy.roll( cspc, shift, axis=2 )
-            
-#            self.processingHeaderObj.shif_fft = True
         
         #Dimensions : nChannels, nProfiles, nSamples
         spc = numpy.transpose( spc, (0,2,1) )
@@ -329,21 +327,11 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         
         self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
                 
-        self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
+        self.dataOut.flagShiftFFT = True    #Data is always shifted
         
-        self.dataOut.flagDecodeData = False #asumo q la data no esta decodificada
+        self.dataOut.flagDecodeData = self.processingHeaderObj.flag_decode #asumo q la data no esta decodificada
     
-        self.dataOut.flagDeflipData = False #asumo q la data esta sin flip
-        
-        if self.radarControllerHeaderObj.code is not None:
-            
-#             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
-#             
-#             self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
-#             
-#             self.dataOut.code = self.radarControllerHeaderObj.code
-            
-            self.dataOut.flagDecodeData = True
+        self.dataOut.flagDeflipData = self.processingHeaderObj.flag_deflip #asumo q la data esta sin flip            
         
     def getData(self):
         """
@@ -380,7 +368,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         
         #data es un numpy array de 3 dmensiones (perfiles, alturas y canales)
 
-        if self.data_dc is None:
+        if self.data_spc is None:
             self.dataOut.flagNoData = True
             return 0
         
@@ -591,8 +579,10 @@ class SpectraWriter(JRODataWriter, Operation):
             self.setBasicHeader()
         
         self.data_spc = self.dataOut.data_spc.copy()
+        
         if self.dataOut.data_cspc is not None:
             self.data_cspc = self.dataOut.data_cspc.copy()
+            
         self.data_dc = self.dataOut.data_dc.copy()
         
         # #self.processingHeaderObj.dataBlocksPerFile)
@@ -643,19 +633,12 @@ class SpectraWriter(JRODataWriter, Operation):
         self.systemHeaderObj = self.dataOut.systemHeaderObj.copy()
         self.systemHeaderObj.nChannels = self.dataOut.nChannels
         self.radarControllerHeaderObj = self.dataOut.radarControllerHeaderObj.copy()
-        old_code_size = self.dataOut.radarControllerHeaderObj.code_size
-        new_code_size = int(numpy.ceil(self.dataOut.nBaud/32.))*self.dataOut.nCode*4
-        self.radarControllerHeaderObj.size = self.radarControllerHeaderObj.size - old_code_size + new_code_size
         
-        self.setBasicHeader()
-        
-        processingHeaderSize = 40 # bytes    
         self.processingHeaderObj.dtype = 1 # Spectra
         self.processingHeaderObj.blockSize = self.__getBlockSize()
         self.processingHeaderObj.profilesPerBlock = self.dataOut.nFFTPoints
         self.processingHeaderObj.dataBlocksPerFile = self.blocksPerFile
         self.processingHeaderObj.nWindows = 1 #podria ser 1 o self.dataOut.processingHeaderObj.nWindows
-        self.processingHeaderObj.processFlags = self.getProcessFlags()
         self.processingHeaderObj.nCohInt = self.dataOut.nCohInt# Se requiere para determinar el valor de timeInterval
         self.processingHeaderObj.nIncohInt = self.dataOut.nIncohInt 
         self.processingHeaderObj.totalSpectra = self.dataOut.nPairs + self.dataOut.nChannels
@@ -674,32 +657,20 @@ class SpectraWriter(JRODataWriter, Operation):
                     pairsList.append(pair[1])
             
             spectraComb = channelList + pairsList
-            spectraComb = numpy.array(spectraComb,dtype="u1")
+            spectraComb = numpy.array(spectraComb, dtype="u1")
             self.processingHeaderObj.spectraComb = spectraComb
-            sizeOfSpcComb = len(spectraComb)
-            processingHeaderSize += sizeOfSpcComb
-            
-#        The processing header should not have information about code
-#        if self.dataOut.code is not None:
-#            self.processingHeaderObj.code = self.dataOut.code
-#            self.processingHeaderObj.nCode = self.dataOut.nCode
-#            self.processingHeaderObj.nBaud = self.dataOut.nBaud
-#            nCodeSize = 4 # bytes
-#            nBaudSize = 4 # bytes
-#            codeSize = 4 # bytes
-#            sizeOfCode = int(nCodeSize + nBaudSize + codeSize * self.dataOut.nCode * self.dataOut.nBaud)
-#            processingHeaderSize += sizeOfCode
+        
+        if self.dataOut.code is not None:
+            self.processingHeaderObj.code = self.dataOut.code
+            self.processingHeaderObj.nCode = self.dataOut.nCode
+            self.processingHeaderObj.nBaud = self.dataOut.nBaud
         
         if self.processingHeaderObj.nWindows != 0:
             self.processingHeaderObj.firstHeight = self.dataOut.heightList[0]
             self.processingHeaderObj.deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
             self.processingHeaderObj.nHeights = self.dataOut.nHeights
             self.processingHeaderObj.samplesWin = self.dataOut.nHeights
-            sizeOfFirstHeight = 4
-            sizeOfdeltaHeight = 4
-            sizeOfnHeights = 4
-            sizeOfWindows = (sizeOfFirstHeight + sizeOfdeltaHeight + sizeOfnHeights)*self.processingHeaderObj.nWindows
-            processingHeaderSize += sizeOfWindows
             
-        self.processingHeaderObj.size = processingHeaderSize
+        self.processingHeaderObj.processFlags = self.getProcessFlags()
         
+        self.setBasicHeader()

@@ -954,6 +954,8 @@ class JRODataReader(JRODataIO):
 
             except IOError:
                 traceback.print_exc()
+                sys.exit(0)
+                
                 if msgFlag:
                     print "[Reading] The file %s is empty or it hasn't enough data" % filename
 
@@ -1292,6 +1294,9 @@ class JRODataWriter(JRODataIO):
             if self.dataOut.data_dc is not None:
                 processFlags += PROCFLAG.SAVE_CHANNELS_DC
             
+            if self.dataOut.flagShiftFFT:
+                processFlags += PROCFLAG.SHIFT_FFT_DATA
+            
         return processFlags
     
     def setBasicHeader(self):
@@ -1347,8 +1352,6 @@ class JRODataWriter(JRODataIO):
         self.radarControllerHeaderObj.write(self.fp)
         self.processingHeaderObj.write(self.fp)
         
-        
-
     def __setNewBlock(self):
         """
         Si es un nuevo file escribe el First Header caso contrario escribe solo el Basic Header

@@ -136,9 +136,12 @@ class VoltageProc(ProcessingUnit):
         if maxHei == None:
             maxHei = self.dataOut.heightList[-1]
             
-        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
-            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
-        
+        if (minHei < self.dataOut.heightList[0]):
+            minHei = self.dataOut.heightList[0]
+#             raise ValueError, "height range [%d,%d] is not valid. Data height range is [%d, %d]" % (minHei,
+#                                                                                                     maxHei,
+#                                                                                                     self.dataOut.heightList[0],
+#                                                                                                     self.dataOut.heightList[-1])
         
         if (maxHei > self.dataOut.heightList[-1]):
             maxHei = self.dataOut.heightList[-1]
@@ -627,7 +630,10 @@ class Decoder(Operation):
         return self.datadecTime
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
-            
+        
+        if dataOut.flagDecodeData:
+            print "This data is already decoded, recoding again ..."
+        
         if not self.isConfig:
             
             if code is None:
@@ -638,7 +644,11 @@ class Decoder(Operation):
             self.setup(code, osamp, dataOut)
             
             self.isConfig = True
-
+        
+        if self.code is None:
+            print "Fail decoding: Code is not defined."
+            return
+            
         if dataOut.flagDataAsBlock:
             """
             Decoding when data have been read as block,
@@ -917,139 +927,139 @@ class Reshaper(Operation):
             dataOut.nProfiles = dataOut.data.shape[1]
             
             dataOut.ippSeconds *= factor
-            
-import collections
-from scipy.stats import mode
-
-class Synchronize(Operation):
-    
-    isConfig = False
-    __profIndex = 0
-    
-    def __init__(self):
-        
-        Operation.__init__(self)
-#         self.isConfig = False
-        self.__powBuffer = None
-        self.__startIndex = 0
-        self.__pulseFound = False
-    
-    def __findTxPulse(self, dataOut, channel=0, pulse_with = None):
-        
-        #Read data
-        
-        powerdB = dataOut.getPower(channel = channel)
-        noisedB = dataOut.getNoise(channel = channel)[0]
-        
-        self.__powBuffer.extend(powerdB.flatten())
-        
-        dataArray = numpy.array(self.__powBuffer)
-        
-        filteredPower = numpy.correlate(dataArray, dataArray[0:self.__nSamples], "same")
-        
-        maxValue = numpy.nanmax(filteredPower)
-        
-        if maxValue < noisedB + 10:
-            #No se encuentra ningun pulso de transmision
-            return None
-        
-        maxValuesIndex = numpy.where(filteredPower > maxValue - 0.1*abs(maxValue))[0]
-        
-        if len(maxValuesIndex) < 2:
-            #Solo se encontro un solo pulso de transmision de un baudio, esperando por el siguiente TX
-            return None
-        
-        phasedMaxValuesIndex = maxValuesIndex - self.__nSamples
-        
-        #Seleccionar solo valores con un espaciamiento de nSamples
-        pulseIndex = numpy.intersect1d(maxValuesIndex, phasedMaxValuesIndex)
-        
-        if len(pulseIndex) < 2:
-            #Solo se encontro un pulso de transmision con ancho mayor a 1
-            return None
-        
-        spacing = pulseIndex[1:] - pulseIndex[:-1]
-        
-        #remover senales que se distancien menos de 10 unidades o muestras
-        #(No deberian existir IPP menor a 10 unidades)
-        
-        realIndex = numpy.where(spacing > 10 )[0]
-        
-        if len(realIndex) < 2:
-            #Solo se encontro un pulso de transmision con ancho mayor a 1
-            return None
-        
-        #Eliminar pulsos anchos (deja solo la diferencia entre IPPs)
-        realPulseIndex = pulseIndex[realIndex]
-        
-        period = mode(realPulseIndex[1:] - realPulseIndex[:-1])[0][0]
-        
-        print "IPP = %d samples" %period
-        
-        self.__newNSamples = dataOut.nHeights #int(period)
-        self.__startIndex = int(realPulseIndex[0])
-        
-        return 1
-        
-    
-    def setup(self, nSamples, nChannels, buffer_size = 4):
-        
-        self.__powBuffer = collections.deque(numpy.zeros( buffer_size*nSamples,dtype=numpy.float),
-                                          maxlen = buffer_size*nSamples)
-        
-        bufferList = []
-        
-        for i in range(nChannels):
-            bufferByChannel = collections.deque(numpy.zeros( buffer_size*nSamples, dtype=numpy.complex) +  numpy.NAN,
-                                          maxlen = buffer_size*nSamples)
-            
-            bufferList.append(bufferByChannel)
-            
-        self.__nSamples = nSamples
-        self.__nChannels = nChannels
-        self.__bufferList = bufferList
-    
-    def run(self, dataOut, channel = 0):
-            
-        if not self.isConfig:
-            nSamples = dataOut.nHeights
-            nChannels = dataOut.nChannels
-            self.setup(nSamples, nChannels)
-            self.isConfig = True
-        
-        #Append new data to internal buffer
-        for thisChannel in range(self.__nChannels):
-            bufferByChannel = self.__bufferList[thisChannel]
-            bufferByChannel.extend(dataOut.data[thisChannel])
-            
-        if self.__pulseFound:
-            self.__startIndex -= self.__nSamples
-        
-        #Finding Tx Pulse
-        if not self.__pulseFound:
-            indexFound = self.__findTxPulse(dataOut, channel)
-            
-            if indexFound == None:
-                dataOut.flagNoData = True
-                return
-            
-            self.__arrayBuffer = numpy.zeros((self.__nChannels, self.__newNSamples), dtype = numpy.complex)
-            self.__pulseFound = True
-            self.__startIndex = indexFound
-        
-        #If pulse was found ...
-        for thisChannel in range(self.__nChannels):
-            bufferByChannel = self.__bufferList[thisChannel]
-            #print self.__startIndex 
-            x = numpy.array(bufferByChannel)
-            self.__arrayBuffer[thisChannel] = x[self.__startIndex:self.__startIndex+self.__newNSamples]
-        
-        deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
-        dataOut.heightList = numpy.arange(self.__newNSamples)*deltaHeight
-#             dataOut.ippSeconds = (self.__newNSamples / deltaHeight)/1e6
-        
-        dataOut.data = self.__arrayBuffer
-        
-        self.__startIndex += self.__newNSamples
-            
-        return
+#             
+# import collections
+# from scipy.stats import mode
+# 
+# class Synchronize(Operation):
+#     
+#     isConfig = False
+#     __profIndex = 0
+#     
+#     def __init__(self):
+#         
+#         Operation.__init__(self)
+# #         self.isConfig = False
+#         self.__powBuffer = None
+#         self.__startIndex = 0
+#         self.__pulseFound = False
+#     
+#     def __findTxPulse(self, dataOut, channel=0, pulse_with = None):
+#         
+#         #Read data
+#         
+#         powerdB = dataOut.getPower(channel = channel)
+#         noisedB = dataOut.getNoise(channel = channel)[0]
+#         
+#         self.__powBuffer.extend(powerdB.flatten())
+#         
+#         dataArray = numpy.array(self.__powBuffer)
+#         
+#         filteredPower = numpy.correlate(dataArray, dataArray[0:self.__nSamples], "same")
+#         
+#         maxValue = numpy.nanmax(filteredPower)
+#         
+#         if maxValue < noisedB + 10:
+#             #No se encuentra ningun pulso de transmision
+#             return None
+#         
+#         maxValuesIndex = numpy.where(filteredPower > maxValue - 0.1*abs(maxValue))[0]
+#         
+#         if len(maxValuesIndex) < 2:
+#             #Solo se encontro un solo pulso de transmision de un baudio, esperando por el siguiente TX
+#             return None
+#         
+#         phasedMaxValuesIndex = maxValuesIndex - self.__nSamples
+#         
+#         #Seleccionar solo valores con un espaciamiento de nSamples
+#         pulseIndex = numpy.intersect1d(maxValuesIndex, phasedMaxValuesIndex)
+#         
+#         if len(pulseIndex) < 2:
+#             #Solo se encontro un pulso de transmision con ancho mayor a 1
+#             return None
+#         
+#         spacing = pulseIndex[1:] - pulseIndex[:-1]
+#         
+#         #remover senales que se distancien menos de 10 unidades o muestras
+#         #(No deberian existir IPP menor a 10 unidades)
+#         
+#         realIndex = numpy.where(spacing > 10 )[0]
+#         
+#         if len(realIndex) < 2:
+#             #Solo se encontro un pulso de transmision con ancho mayor a 1
+#             return None
+#         
+#         #Eliminar pulsos anchos (deja solo la diferencia entre IPPs)
+#         realPulseIndex = pulseIndex[realIndex]
+#         
+#         period = mode(realPulseIndex[1:] - realPulseIndex[:-1])[0][0]
+#         
+#         print "IPP = %d samples" %period
+#         
+#         self.__newNSamples = dataOut.nHeights #int(period)
+#         self.__startIndex = int(realPulseIndex[0])
+#         
+#         return 1
+#         
+#     
+#     def setup(self, nSamples, nChannels, buffer_size = 4):
+#         
+#         self.__powBuffer = collections.deque(numpy.zeros( buffer_size*nSamples,dtype=numpy.float),
+#                                           maxlen = buffer_size*nSamples)
+#         
+#         bufferList = []
+#         
+#         for i in range(nChannels):
+#             bufferByChannel = collections.deque(numpy.zeros( buffer_size*nSamples, dtype=numpy.complex) +  numpy.NAN,
+#                                           maxlen = buffer_size*nSamples)
+#             
+#             bufferList.append(bufferByChannel)
+#             
+#         self.__nSamples = nSamples
+#         self.__nChannels = nChannels
+#         self.__bufferList = bufferList
+#     
+#     def run(self, dataOut, channel = 0):
+#             
+#         if not self.isConfig:
+#             nSamples = dataOut.nHeights
+#             nChannels = dataOut.nChannels
+#             self.setup(nSamples, nChannels)
+#             self.isConfig = True
+#         
+#         #Append new data to internal buffer
+#         for thisChannel in range(self.__nChannels):
+#             bufferByChannel = self.__bufferList[thisChannel]
+#             bufferByChannel.extend(dataOut.data[thisChannel])
+#             
+#         if self.__pulseFound:
+#             self.__startIndex -= self.__nSamples
+#         
+#         #Finding Tx Pulse
+#         if not self.__pulseFound:
+#             indexFound = self.__findTxPulse(dataOut, channel)
+#             
+#             if indexFound == None:
+#                 dataOut.flagNoData = True
+#                 return
+#             
+#             self.__arrayBuffer = numpy.zeros((self.__nChannels, self.__newNSamples), dtype = numpy.complex)
+#             self.__pulseFound = True
+#             self.__startIndex = indexFound
+#         
+#         #If pulse was found ...
+#         for thisChannel in range(self.__nChannels):
+#             bufferByChannel = self.__bufferList[thisChannel]
+#             #print self.__startIndex 
+#             x = numpy.array(bufferByChannel)
+#             self.__arrayBuffer[thisChannel] = x[self.__startIndex:self.__startIndex+self.__newNSamples]
+#         
+#         deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
+#         dataOut.heightList = numpy.arange(self.__newNSamples)*deltaHeight
+# #             dataOut.ippSeconds = (self.__newNSamples / deltaHeight)/1e6
+#         
+#         dataOut.data = self.__arrayBuffer
+#         
+#         self.__startIndex += self.__newNSamples
+#             
+#         return
