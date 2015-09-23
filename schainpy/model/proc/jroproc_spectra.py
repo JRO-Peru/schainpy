@@ -18,7 +18,7 @@ class SpectraProc(ProcessingUnit):
         self.id_min = None
         self.id_max = None
 
-    def __updateObjFromInput(self):
+    def __updateSpecFromVoltage(self):
         
         self.dataOut.timeZone = self.dataIn.timeZone
         self.dataOut.dstFlag = self.dataIn.dstFlag
@@ -30,24 +30,23 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])
-#        self.dataOut.nHeights = self.dataIn.nHeights
-#        self.dataOut.nChannels = self.dataIn.nChannels
+        
         self.dataOut.nBaud = self.dataIn.nBaud
         self.dataOut.nCode = self.dataIn.nCode
         self.dataOut.code = self.dataIn.code
         self.dataOut.nProfiles = self.dataOut.nFFTPoints
-#        self.dataOut.channelIndexList = self.dataIn.channelIndexList
+        
         self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
         self.dataOut.utctime = self.firstdatatime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
-#        self.dataOut.flagShiftFFT = self.dataIn.flagShiftFFT
+        self.dataOut.flagShiftFFT = False
+        
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
-#         self.dataOut.ippSeconds = self.dataIn.ippSeconds
+        
         self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         
-#         self.dataOut.timeInterval = self.dataIn.timeInterval*self.dataOut.nFFTPoints*self.dataOut.nIncohInt
         self.dataOut.frequency = self.dataIn.frequency
         self.dataOut.realtime = self.dataIn.realtime
         
@@ -103,7 +102,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_cspc = cspc
         self.dataOut.data_dc = dc
         self.dataOut.blockSize = blocksize
-        self.dataOut.flagShiftFFT = False
+        self.dataOut.flagShiftFFT = True
         
     def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None):
         
@@ -121,51 +120,53 @@ class SpectraProc(ProcessingUnit):
             if nProfiles == None:
                 nProfiles = nFFTPoints
 #                 raise ValueError, "This SpectraProc.run() need nProfiles input variable"
-
             
             if ippFactor == None:
                 ippFactor = 1
+                
             self.dataOut.ippFactor = ippFactor
             
             self.dataOut.nFFTPoints = nFFTPoints
             self.dataOut.pairsList = pairsList
 
             if self.buffer is None:
-                self.buffer = numpy.zeros((self.dataIn.nChannels,
-                                           nProfiles,
-                                           self.dataIn.nHeights), 
-                                        dtype='complex')
-                self.id_min = 0
-                self.id_max = self.dataIn.data.shape[1]
+                self.buffer = numpy.zeros( (self.dataIn.nChannels,
+                                            nProfiles,
+                                            self.dataIn.nHeights),
+                                          dtype='complex')
 
-            if len(self.dataIn.data.shape) == 2:           
-                self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
-                self.profIndex += 1
-            else:
-                if self.dataIn.data.shape[1] == nProfiles:
+            if self.dataIn.flagDataAsBlock:
+                
+                if self.dataIn.nProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
                     self.profIndex = nProfiles
-                elif self.dataIn.data.shape[1] < nProfiles:
+                    
+                elif self.dataIn.nProfiles < nProfiles:
+                    
+                    if self.profIndex == 0:
+                        self.id_min = 0
+                        self.id_max = self.dataIn.nProfiles
+                
                     self.buffer[:,self.id_min:self.id_max,:] = self.dataIn.data
-                    self.profIndex += self.dataIn.data.shape[1]
+                    self.profIndex += self.dataIn.nProfiles
                     self.id_min += self.dataIn.data.shape[1]
                     self.id_max += self.dataIn.data.shape[1]
                 else:
                     raise ValueError, "The type object %s has %d profiles, it should be equal to %d profiles"%(self.dataIn.type,self.dataIn.data.shape[1],nProfiles)
                     self.dataOut.flagNoData = True
                     return 0
-                    
+            else:         
+                self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
+                self.profIndex += 1
             
             if self.firstdatatime == None:
                 self.firstdatatime = self.dataIn.utctime
             
             if self.profIndex == nProfiles:
-                self.__updateObjFromInput()
+                self.__updateSpecFromVoltage()
                 self.__getFft()
                 
                 self.dataOut.flagNoData = False
-                
-                self.buffer = None
                 self.firstdatatime = None
                 self.profIndex = 0
             
@@ -739,32 +740,24 @@ class IncohInt(Operation):
         
         self.__initime = None
         self.__lastdatatime = 0
-        self.__buffer_spc = None
-        self.__buffer_cspc = None
-        self.__buffer_dc = None
-        self.__dataReady = False
         
-        
-        if n == None and timeInterval == None:
-            raise ValueError, "n or timeInterval should be specified ..." 
-        
-        if n != None:
-            self.n = n
-            self.__byTime = False
-        else:
-            self.__integrationtime = timeInterval #if (type(timeInterval)!=integer) -> change this line
-            self.n = 9999
-            self.__byTime = True
-        
-        if overlapping:
-            self.__withOverapping = True
-        else:
-            self.__withOverapping = False
-            self.__buffer_spc = 0
-            self.__buffer_cspc = 0
-            self.__buffer_dc = 0
+        self.__buffer_spc = 0
+        self.__buffer_cspc = 0
+        self.__buffer_dc = 0
         
         self.__profIndex = 0
+        self.__dataReady = False
+        self.__byTime = False
+        
+        if n is None and timeInterval is None:
+            raise ValueError, "n or timeInterval should be specified ..." 
+        
+        if n is not None:
+            self.n = int(n)
+        else:
+            self.__integrationtime = int(timeInterval) #if (type(timeInterval)!=integer) -> change this line
+            self.n = None
+            self.__byTime = True
     
     def putData(self, data_spc, data_cspc, data_dc):
         
@@ -773,75 +766,21 @@ class IncohInt(Operation):
         
         """
             
-        if not self.__withOverapping:
-            self.__buffer_spc += data_spc
-            
-            if data_cspc is None:
-                self.__buffer_cspc = None
-            else:
-                self.__buffer_cspc += data_cspc
-            
-            if data_dc is None:
-                self.__buffer_dc = None
-            else:
-                self.__buffer_dc += data_dc
-            
-            self.__profIndex += 1            
-            return
+        self.__buffer_spc += data_spc
         
-        #Overlapping data
-        nChannels, nFFTPoints, nHeis = data_spc.shape
-        data_spc = numpy.reshape(data_spc, (1, nChannels, nFFTPoints, nHeis))
-        if data_cspc is not None:
-            data_cspc = numpy.reshape(data_cspc, (1, -1, nFFTPoints, nHeis))
-        if data_dc is not None:
-            data_dc = numpy.reshape(data_dc, (1, -1, nHeis))
+        if data_cspc is None:
+            self.__buffer_cspc = None
+        else:
+            self.__buffer_cspc += data_cspc
         
-        #If the buffer is empty then it takes the data value
-        if self.__buffer_spc is None:
-            self.__buffer_spc = data_spc
-            
-            if data_cspc is None:
-                self.__buffer_cspc = None
-            else:
-                self.__buffer_cspc += data_cspc
-            
-            if data_dc is None:
-                self.__buffer_dc = None
-            else:
-                self.__buffer_dc += data_dc
-                
-            self.__profIndex += 1
-            return
+        if data_dc is None:
+            self.__buffer_dc = None
+        else:
+            self.__buffer_dc += data_dc
         
-        #If the buffer length is lower than n then stakcing the data value
-        if self.__profIndex < self.n:
-            self.__buffer_spc = numpy.vstack((self.__buffer_spc, data_spc))
-            
-            if data_cspc is not None:
-                self.__buffer_cspc = numpy.vstack((self.__buffer_cspc, data_cspc))
-            
-            if data_dc is not None: 
-                self.__buffer_dc = numpy.vstack((self.__buffer_dc, data_dc))
-                
-            self.__profIndex += 1
-            return
-        
-        #If the buffer length is equal to n then replacing the last buffer value with the data value 
-        self.__buffer_spc = numpy.roll(self.__buffer_spc, -1, axis=0)
-        self.__buffer_spc[self.n-1] = data_spc
-        
-        if data_cspc is not None:
-            self.__buffer_cspc = numpy.roll(self.__buffer_cspc, -1, axis=0)
-            self.__buffer_cspc[self.n-1] = data_cspc
-        
-        if data_dc is not None:
-            self.__buffer_dc = numpy.roll(self.__buffer_dc, -1, axis=0)
-            self.__buffer_dc[self.n-1] = data_dc
-        
-        self.__profIndex = self.n
+        self.__profIndex += 1
+                  
         return
-        
         
     def pushData(self):
         """
@@ -852,50 +791,29 @@ class IncohInt(Operation):
         self.__profileIndex
         
         """
-        data_spc = None
-        data_cspc  = None
-        data_dc = None
         
-        if not self.__withOverapping:
-            data_spc = self.__buffer_spc
-            data_cspc = self.__buffer_cspc
-            data_dc = self.__buffer_dc
-            
-            n = self.__profIndex
-        
-            self.__buffer_spc = 0
-            self.__buffer_cspc = 0
-            self.__buffer_dc = 0
-            self.__profIndex = 0
-            
-            return data_spc, data_cspc, data_dc, n
-        
-        #Integration with Overlapping
-        data_spc = numpy.sum(self.__buffer_spc, axis=0)
-        
-        if self.__buffer_cspc is not None:
-            data_cspc = numpy.sum(self.__buffer_cspc, axis=0)
-        
-        if self.__buffer_dc is not None:
-            data_dc = numpy.sum(self.__buffer_dc, axis=0)
-        
+        data_spc = self.__buffer_spc
+        data_cspc = self.__buffer_cspc
+        data_dc = self.__buffer_dc
         n = self.__profIndex
+    
+        self.__buffer_spc = 0
+        self.__buffer_cspc = 0
+        self.__buffer_dc = 0
+        self.__profIndex = 0
         
         return data_spc, data_cspc, data_dc, n
     
     def byProfiles(self, *args):
         
         self.__dataReady = False
-        avgdata_spc = None
-        avgdata_cspc = None
-        avgdata_dc = None
-#         n = None
             
         self.putData(*args)
         
         if self.__profIndex == self.n:
             
             avgdata_spc, avgdata_cspc, avgdata_dc, n = self.pushData()
+            self.n = n
             self.__dataReady = True
         
         return avgdata_spc, avgdata_cspc, avgdata_dc
@@ -903,10 +821,6 @@ class IncohInt(Operation):
     def byTime(self, datatime, *args):
         
         self.__dataReady = False
-        avgdata_spc = None
-        avgdata_cspc = None
-        avgdata_dc = None
-        n = None
         
         self.putData(*args)
         
@@ -919,7 +833,7 @@ class IncohInt(Operation):
         
     def integrate(self, datatime, *args):
         
-        if self.__initime == None:
+        if self.__profIndex == 0:
             self.__initime = datatime
         
         if self.__byTime:
@@ -927,31 +841,17 @@ class IncohInt(Operation):
         else:
             avgdata_spc, avgdata_cspc, avgdata_dc = self.byProfiles(*args)
         
-        self.__lastdatatime = datatime
-        
-        if avgdata_spc is None:
+        if not self.__dataReady:
             return None, None, None, None
-        
-        avgdatatime = self.__initime
-        try:
-            self.__timeInterval = (self.__lastdatatime - self.__initime)/(self.n - 1)
-        except:
-            self.__timeInterval = self.__lastdatatime - self.__initime
             
-        deltatime = datatime -self.__lastdatatime
-        
-        if not self.__withOverapping:
-            self.__initime = datatime
-        else:
-            self.__initime += deltatime
-            
-        return avgdatatime, avgdata_spc, avgdata_cspc, avgdata_dc
+        return self.__initime, avgdata_spc, avgdata_cspc, avgdata_dc
         
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
         
         if n==1:
-            dataOut.flagNoData = False
             return
+        
+        dataOut.flagNoData = True
         
         if not self.isConfig:
             self.setup(n, timeInterval, overlapping)
@@ -962,9 +862,6 @@ class IncohInt(Operation):
                                                                             dataOut.data_cspc,
                                                                             dataOut.data_dc)
         
-#        dataOut.timeInterval *= n
-        dataOut.flagNoData = True
-        
         if self.__dataReady:
             
             dataOut.data_spc = avgdata_spc
@@ -973,6 +870,4 @@ class IncohInt(Operation):
             
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
-            #dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt * dataOut.nIncohInt * dataOut.nFFTPoints
-#             dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False
