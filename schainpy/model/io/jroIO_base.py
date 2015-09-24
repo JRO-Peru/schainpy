@@ -1466,21 +1466,21 @@ class JRODataWriter(JRODataIO):
         
         return 1
     
-    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=0, ext=None, datatype=2):
+    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=0, ext=None, datatype=3):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
         Inputs:
             path                :    directory where data will be saved
             profilesPerBlock    :    number of profiles per block 
-            set                 :    file set
+            set                 :    initial file set
             datatype            :    An integer number that defines data type:
                                         0 : int8  (1 byte)
                                         1 : int16 (2 bytes)
                                         2 : int32 (4 bytes)
                                         3 : int64 (8 bytes)
-                                        4 : float (4 bytes)
-                                        5 : double (8 bytes)
+                                        4 : float32 (4 bytes)
+                                        5 : double64 (8 bytes)
             
         Return:
             0    :    Si no realizo un buen seteo
