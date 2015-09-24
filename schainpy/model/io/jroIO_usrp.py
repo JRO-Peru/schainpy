@@ -415,13 +415,14 @@ class USRPReader(ProcessingUnit):
             except IOError, e:
                 #read next profile
                 self.__flagDiscontinuousBlock = True
-                print e
+                print "[Reading] %s" %datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone), e
                 break
             
             if result.shape[0] != self.__samples_to_read:
                 self.__flagDiscontinuousBlock = True
-                print "[Reading] %s: Too few samples were found, just %d samples" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
-                                                                                result.shape[0])
+                print "[Reading] %s: Too few samples were found, just %d/%d  samples" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
+                                                                                result.shape[0],
+                                                                                self.__samples_to_read)
                 break
             
             self.__data_buffer[indexChannel,:] = result*volt_scale
