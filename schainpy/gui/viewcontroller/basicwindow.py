@@ -12,6 +12,8 @@ import Queue
 from collections import OrderedDict
 from os.path import  expanduser
 from time import sleep
+# from gevent import sleep
+
 import ast
 
 from PyQt4.QtGui           import QMainWindow 
@@ -19,11 +21,14 @@ from PyQt4.QtCore          import pyqtSignature
 from PyQt4.QtCore          import pyqtSignal
 from PyQt4                 import QtCore
 from PyQt4                 import QtGui
+# from PyQt4.QtCore          import QThread
+# from PyQt4.QtCore          import QObject, SIGNAL
 
 from schainpy.gui.viewer.ui_unitprocess import Ui_UnitProcess
 from schainpy.gui.viewer.ui_ftp      import Ui_Ftp
 from schainpy.gui.viewer.ui_mainwindow  import Ui_BasicWindow
-from schainpy.controller  import Project, ControllerThread
+from schainpy.controller_api import ControllerThread
+from schainpy.controller  import Project
 
 from propertiesViewModel  import TreeModel, PropertyBuffer
 from parametersModel import ProjectParms
@@ -34,23 +39,23 @@ FIGURES_PATH = tools.get_path()
 TEMPORAL_FILE = ".temp.xml"
 
 def isRadarFile(file):
-        try:
-            year = int(file[1:5])
-            doy = int(file[5:8])
-            set = int(file[8:11])
-        except:
-            return 0
-    
-        return 1
+    try:
+        year = int(file[1:5])
+        doy = int(file[5:8])
+        set = int(file[8:11])
+    except:
+        return 0
+
+    return 1
 
 def isRadarPath(path):
-        try:
-            year = int(path[1:5])
-            doy = int(path[5:8])
-        except:
-            return 0
-    
-        return 1
+    try:
+        year = int(path[1:5])
+        doy = int(path[5:8])
+    except:
+        return 0
+
+    return 1
         
 class BasicWindow(QMainWindow, Ui_BasicWindow):
     """
@@ -84,7 +89,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.walk = 0
         self.create = False
         self.selectedItemTree = None
-        self.controllerObj = None
+        self.controllerThread = None
 #         self.commCtrlPThread = None
 #         self.create_figure()
         self.temporalFTP = ftpBuffer()
@@ -108,11 +113,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.__operationObjDict = {}
         
         self.__puLocalFolder2FTP = {}
-        self.__initialized = False
+        self.__enable = False
         
 #         self.create_comm() 
         self.create_updating_timer()
-        self.setParameter()
+        self.setGUIStatus()
         
     @pyqtSignature("")
     def on_actionOpen_triggered(self):
@@ -271,10 +276,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            self.proDelay.setEnabled(False)
         elif index == 1:
             self.online = 1
-            self.proSet.setText(" ")
+            self.proSet.setText("")
             self.proDelay.setText("5")
             self.proSet.setEnabled(True)
-            self.proDelay.setEnabled(True)   
+            self.proDelay.setEnabled(True) 
 
     @pyqtSignature("int")
     def on_proComDataType_activated(self, index):
@@ -283,6 +288,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         self.labelSet.show()
         self.proSet.show()
+        
+        self.labExpLabel.show()
+        self.proExpLabel.show()
         
         self.labelIPPKm.hide()
         self.proIPPKm.hide()
@@ -296,10 +304,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         elif index == 3:
             extension = '.hdf5'
             
-            self.labelSet.hide()
-            self.proSet.hide()
             self.labelIPPKm.show()
             self.proIPPKm.show()
+            
+            self.labelSet.hide()
+            self.proSet.hide()
+            
+            self.labExpLabel.hide()
+            self.proExpLabel.hide()
             
         self.proDataType.setText(extension)
 
@@ -345,7 +357,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not os.path.exists(datapath):
             
             self.console.clear()
-            self.console.append("Write a correct a path")
+            self.console.append("Write a valid path")
             return
         
         self.dataPath = datapath
@@ -364,7 +376,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not parameter_list[0]:
             return
         
-        parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set = parameter_list
+        parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set, expLabel = parameter_list
         
         if read_mode == "Offline":
             self.proComStartDate.clear()
@@ -376,15 +388,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.frame_2.setEnabled(True)
                 
         if read_mode == "Online":
-            self.proComStartDate.addItem("2000/01/30")
-            self.proComEndDate.addItem("2016/12/31")
+            self.proComStartDate.addItem("1960/01/30")
+            self.proComEndDate.addItem("2018/12/31")
             self.proComStartDate.setEnabled(False)
             self.proComEndDate.setEnabled(False)
             self.proStartTime.setEnabled(False)
             self.proEndTime.setEnabled(False)
             self.frame_2.setEnabled(True)
         
-        self.loadDays(data_path, ext, walk)
+        self.loadDays(data_path, ext, walk, expLabel)
         
     @pyqtSignature("int")
     def on_proComStartDate_activated(self, index):
@@ -964,12 +976,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         Donde se guardan los DATOS
         """
-        self.dataPath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './', QtGui.QFileDialog.ShowDirsOnly))
-        self.volGraphPath.setText(self.dataPath)
+        save_path = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './', QtGui.QFileDialog.ShowDirsOnly))
+        self.volGraphPath.setText(save_path)
         
-#         if not os.path.exists(self.dataPath):
-#             self.volGraphOk.setEnabled(False)
-#             return                          
+        if not os.path.exists(save_path):
+            self.console.clear()
+            self.console.append("Set a valid path")
+            self.volGraphOk.setEnabled(False)
+            return               
     
     @pyqtSignature("int")
     def on_volGraphCebshow_stateChanged(self, p0):
@@ -1734,7 +1748,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj = puObj.addOperation(name='SpectraWriter', optype='other')
             opObj.addParameter(name='path', value=output_path)
             opObj.addParameter(name='blocksPerFile', value=blocksperfile, format='int')
-            opObj.addParameter(name='profilesPerBlock', value=profilesperblock, format='int')
         
         self.console.clear()
         try:
@@ -1859,11 +1872,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def on_specGraphToolPath_clicked(self):        
         """
         """
-        self.savePath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './', QtGui.QFileDialog.ShowDirsOnly))
-        self.specGraphPath.setText(self.savePath)
-        if not os.path.exists(self.savePath):
+        save_path = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './', QtGui.QFileDialog.ShowDirsOnly))
+        self.specGraphPath.setText(save_path)
+        if not os.path.exists(save_path):
             self.console.clear()
-            self.console.append("Write a correct a path")
+            self.console.append("Write a valid path")
             return 
         
     @pyqtSignature("")
@@ -1874,11 +1887,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def on_specHeisGraphToolPath_clicked(self):        
         """
         """
-        self.savePath = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './', QtGui.QFileDialog.ShowDirsOnly))
-        self.specHeisGraphPath.setText(self.savePath)
-        if not os.path.exists(self.savePath):
+        save_path = str(QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', './', QtGui.QFileDialog.ShowDirsOnly))
+        self.specHeisGraphPath.setText(save_path)
+        if not os.path.exists(save_path):
             self.console.clear()
-            self.console.append("Write a correct a path")
+            self.console.append("Write a valid path")
             return
         
     @pyqtSignature("int")
@@ -2095,9 +2108,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 return 0
                 
         if addFTP and not localfolder:
-                self.console.clear()
-                self.console.append("You have to save the plots before sending them to FTP Server")
-                return 0
+            self.console.clear()
+            self.console.append("You should save plots before send them to FTP Server")
+            return 0
             
         # if something happened
         parms_ok, output_path, blocksperfile, metada = self.checkInputsPUSave(datatype='SpectraHeis')
@@ -2376,6 +2389,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 parms_ok = False
         
         walk = int(self.proComWalk.currentIndex())
+        expLabel = str(self.proExpLabel.text())
         
         startDate = str(self.proComStartDate.currentText())
         endDate = str(self.proComEndDate.currentText())
@@ -2404,11 +2418,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         projectParms.endDate = endDate
         projectParms.startTime = startTime
         projectParms.endTime = endTime
-        projectParms.delay=delay
-        projectParms.walk=walk
-        projectParms.set=set
-        projectParms.ippKm=ippKm
-        projectParms.parmsOk=parms_ok
+        projectParms.delay = delay
+        projectParms.walk = walk
+        projectParms.expLabel = expLabel
+        projectParms.set = set
+        projectParms.ippKm = ippKm
+        projectParms.parmsOk = parms_ok
         
         return projectParms
         
@@ -2461,6 +2476,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         except:
             pass
         
+        expLabel = ''
+        try:
+            expLabel = operationObj.getParameterValue(parameterName='expLabel')
+        except:
+            pass
+        
         ippKm = ''
         if datatype.lower() == 'usrp':
             try:
@@ -2484,11 +2505,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         projectParms.walk=walk
         projectParms.set=set
         projectParms.ippKm=ippKm
+        projectParms.expLabel = expLabel
         projectParms.parmsOk=parms_ok
         
         return projectParms
     
-    def refreshProjectWindow2(self, projectObjView):
+    def refreshProjectWindow(self, projectObjView):
         
         projectParms = self.__getParmsFromProjectObj(projectObjView)            
         
@@ -2506,6 +2528,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proSet.setText(str(projectParms.set))
         self.proIPPKm.setText(str(projectParms.ippKm))
         self.proComWalk.setCurrentIndex(projectParms.walk)
+        self.proExpLabel.setText(str(projectParms.expLabel).strip())
         
         dateList = self.loadDays(data_path = projectParms.dpath,
                                  ext = projectParms.getExt(),
@@ -3521,7 +3544,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if opObj == None:
             self.specOutputPath.clear()
             self.specOutputblocksperfile.clear()
-            self.specOutputprofileperblock.clear()
         else:
             value = opObj.getParameterObj(parameterName='path')
             if value == None:
@@ -3537,13 +3559,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value = opObj.getParameterValue(parameterName='blocksPerFile')
                 blocksperfile = str(value)
                 self.specOutputblocksperfile.setText(blocksperfile)
-            value = opObj.getParameterObj(parameterName='profilesPerBlock')
-            if value == None:
-                self.specOutputprofileperblock.clear()
-            else:
-                value = opObj.getParameterValue(parameterName='profilesPerBlock')
-                profilesPerBlock = str(value)
-                self.specOutputprofileperblock.setText(profilesPerBlock)
         
         return
     
@@ -3861,7 +3876,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         #A project has been selected
         if projectObjView == selectedObjView:
             
-            self.refreshProjectWindow2(projectObjView)
+            self.refreshProjectWindow(projectObjView)
             self.refreshProjectProperties(projectObjView)
             
             self.tabProject.setEnabled(True)
@@ -3939,11 +3954,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if action == quitAction3:
             self.close()
             return 0
-    
-    def create_updating_timer(self):
-        self.comm_data_timer = QtCore.QTimer(self)
-        self.comm_data_timer.timeout.connect(self.on_comm_updating_timer)
-        self.comm_data_timer.start(1000)
         
     def createProjectView(self, id):
         
@@ -4003,7 +4013,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             if projectParms.delay:
                 readUnitConfObj.addParameter(name="delay", value=projectParms.delay, format="int")
-                
+            
+            if projectParms.expLabel:
+                readUnitConfObj.addParameter(name="expLabel", value=projectParms.expLabel)
+            
         if projectParms.datatype == "USRP":
             readUnitConfObj = projectObjView.addReadUnit(datatype=projectParms.datatype,
                                                             path=projectParms.dpath,
@@ -4046,6 +4059,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
             if projectParms.delay:
                 readUnitConfObj.addParameter(name="delay", value=projectParms.delay, format="int")
+            
+            if projectParms.expLabel:
+                readUnitConfObj.addParameter(name="expLabel", value=projectParms.expLabel)
                 
         if projectParms.datatype == "USRP":
             readUnitConfObj.update(datatype=projectParms.datatype,
@@ -4141,35 +4157,35 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if self.temporalFTP.plot_pos:
             opObj.addParameter(name='plot_pos', value=int(self.temporalFTP.plot_pos), format='int')
                
-    def __checkFTPProcUnit(self, projectObj, localfolder):
-        
-        puId = None
-        puObj = None
-            
-        for thisPuId, thisPuObj in projectObj.procUnitItems():
-            
-            if not thisPuObj.name == "SendToServer":
-                continue
-            
-            opObj = thisPuObj.getOperationObj(name='run')
-            
-            parmObj = opObj.getParameterObj('localfolder')
-
-            #localfolder parameter should always be set, if it is not set then ProcUnit should be removed
-            if not parmObj:
-                projectObj.removeProcUnit(thisPuId)
-                continue
-            
-            thisLocalfolder = parmObj.getValue()
-            
-            if localfolder != thisLocalfolder:
-                continue
-            
-            puId = thisPuId
-            puObj = thisPuObj
-            break
-        
-        return puObj
+#     def __checkFTPProcUnit(self, projectObj, localfolder):
+#         
+#         puId = None
+#         puObj = None
+#             
+#         for thisPuId, thisPuObj in projectObj.procUnitItems():
+#             
+#             if not thisPuObj.name == "SendToServer":
+#                 continue
+#             
+#             opObj = thisPuObj.getOperationObj(name='run')
+#             
+#             parmObj = opObj.getParameterObj('localfolder')
+# 
+#             #localfolder parameter should always be set, if it is not set then ProcUnit should be removed
+#             if not parmObj:
+#                 projectObj.removeProcUnit(thisPuId)
+#                 continue
+#             
+#             thisLocalfolder = parmObj.getValue()
+#             
+#             if localfolder != thisLocalfolder:
+#                 continue
+#             
+#             puId = thisPuId
+#             puObj = thisPuObj
+#             break
+#         
+#         return puObj
     
     def createFTPProcUnitView(self):
         
@@ -4183,10 +4199,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not self.__puLocalFolder2FTP:
             return
         
-        folderList = ""
-        
-        for localfolder in self.__puLocalFolder2FTP.values():
-            folderList += str(localfolder) + ","
+        folderList = ",".join(self.__puLocalFolder2FTP.values())
                 
         procUnitConfObj = projectObj.addProcUnit(name="SendToServer")
             
@@ -4477,7 +4490,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.console.append("The selected xml file could not be loaded ...")
             return 0
         
-        self.refreshProjectWindow2(projectObjLoad)
+        self.refreshProjectWindow(projectObjLoad)
         self.refreshProjectProperties(projectObjLoad)
         
         projectId = projectObjLoad.id
@@ -4534,16 +4547,30 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.actionStart.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
-        
+
+    def create_updating_timer(self):
+        self.comm_data_timer = QtCore.QTimer(self)
+        self.comm_data_timer.timeout.connect(self.on_comm_updating_timer)
+        self.comm_data_timer.start(1000)
+     
     def on_comm_updating_timer(self):
         # Verifica si algun proceso ha sido inicializado y sigue ejecutandose
-        
-        if not self.__initialized:
+        # Si el proceso se ha parado actualizar el GUI (stopProject)
+        if not self.__enable:
             return
-        
-        if not self.controllerObj.isAlive():
+         
+        if self.controllerThread.isFinished():
             self.stopProject()
-        
+    
+#     def jobStartedFromThread(self, success):
+#         
+#         self.console.clear()
+#         self.console.append("Job started")
+#     
+#     def jobFinishedFromThread(self, success):
+#         
+#         self.stopProject()
+    
     def playProject(self, ext=".xml", save=1):
         
 #         self.console.clear()
@@ -4572,18 +4599,25 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.append("Please Wait...")
         
-        self.controllerObj = ControllerThread(filename)
-        self.controllerObj.start()
+        self.controllerThread = ControllerThread(filename)
+        
+#         QObject.connect( self.controllerThread, SIGNAL( "jobFinished( PyQt_PyObject )" ), self.jobFinishedFromThread )
+#         QObject.connect( self.controllerThread, SIGNAL( "jobStarted( PyQt_PyObject )" ), self.jobStartedFromThread )
+        
+        self.controllerThread.start()
         sleep(0.5)
-        self.__initialized = True
+        self.__enable = True
         
     def stopProject(self):
         
-        self.__initialized = False
+        self.__enable = False
         
 #         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, True))
-        self.controllerObj.stop()
+        self.controllerThread.stop()
         
+        while self.controllerThread.isRunning():
+            sleep(0.5)
+            
         self.actionStart.setEnabled(True)
         self.actionPause.setEnabled(False)
         self.actionStop.setEnabled(False)
@@ -4597,7 +4631,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def pauseProject(self):
         
 #         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
-        self.controllerObj.pause()
+        self.controllerThread.pause()
         
         self.actionStart.setEnabled(False)
         self.actionPause.setEnabled(True)
@@ -4940,13 +4974,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             parms_ok = False
             read_mode = None
         
-        try:
-            delay = int(str(self.proDelay.text()))
-        except:
-            outputstr = 'Delay: %s, this must be a integer number' % str(self.proDelay.text())
-            self.console.append(outputstr)
-#             parms_ok = False
-            delay = None
+        delay = None
+        if read_mode == "Online":
+            parms_ok = False
+            try:
+                delay = int(str(self.proDelay.text()))
+                parms_ok = True
+            except:
+                outputstr = 'Delay: %s, this must be a integer number' % str(self.proDelay.text())
+                self.console.append(outputstr)
             
         try:
             set = int(str(self.proSet.text()))
@@ -4956,9 +4992,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             # parms_ok = False
             set = None
         
-        walk = self.proComWalk.currentIndex()
+        walk = int(self.proComWalk.currentIndex())
+        expLabel = str(self.proExpLabel.text())
         
-        return parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set
+        return parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set, expLabel
 
     def checkInputsPUSave(self, datatype):
         """
@@ -4978,7 +5015,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if datatype == "Spectra":
             output_path = str(self.specOutputPath.text())
             blocksperfile = str(self.specOutputblocksperfile.text())
-            profilesperblock = str(self.specOutputprofileperblock.text())
+            profilesperblock = 0
             
         if datatype == "SpectraHeis":
             output_path = str(self.specHeisOutputPath.text())
@@ -5004,12 +5041,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         except:
             if datatype == "Voltage":
                 outputstr = 'Profilesperblock: %s, this must be a integer number' % str(self.volOutputprofilesperblock.text())
-                self.console.append(outputstr)
-                parms_ok = False
-                profilesperblock = None
-
-            elif datatype == "Spectra":
-                outputstr = 'Profilesperblock: %s, this must be a integer number' % str(self.specOutputprofileperblock.text())
                 self.console.append(outputstr)
                 parms_ok = False
                 profilesperblock = None
@@ -5104,11 +5135,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not os.path.isdir(data_path):
             return
         
+        self.dataPath = data_path
+        
         dateList = self.findDatafiles(data_path, ext=ext, walk=walk, expLabel=expLabel)
         
         if not dateList:
 #             self.console.clear()
-            outputstr = "The path: %s is empty with file extension *%s" % (data_path, ext)
+            outputstr = "The path %s has no files with extension *%s" % (data_path, ext)
             self.console.append(outputstr)
             return
         
@@ -5125,6 +5158,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.dateList = dateStrList
         self.proOk.setEnabled(True)
+        
+        self.console.clear()
+        self.console.append("Successful load")
         
         return self.dateList
         
@@ -5156,7 +5192,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.append(text)   
         self.console.setTextColor(color_black)
         
-    def setParameter(self):
+    def setGUIStatus(self):
         
         self.setWindowTitle("ROJ-Signal Chain")
         self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
@@ -5226,8 +5262,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.treeProjectProperties.resizeColumnToContents(1)
    
         # set Project
+        self.proExpLabel.setEnabled(True)  
         self.proDelay.setEnabled(False)  
-        self.proSet.setEnabled(False)
+        self.proSet.setEnabled(True)
         self.proDataType.setReadOnly(True)
          
          # set Operation Voltage
@@ -5332,6 +5369,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
 
+        self.labelSet.show()
+        self.proSet.show()
+        
+        self.labelIPPKm.hide()
+        self.proIPPKm.hide()
+        
         sys.stdout = ShowMeConsole(textWritten=self.normalOutputWritten)
 #         sys.stderr = ShowMeConsole(textWritten=self.errorOutputWritten)
         
@@ -5441,9 +5484,9 @@ class Ftp(QMainWindow, Ui_Ftp):
         """
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
-        self.setParameter()
+        self.setGUIStatus()
         
-    def setParameter(self):
+    def setGUIStatus(self):
         self.setWindowTitle("ROJ-Signal Chain")
         self.serverFTP.setToolTip('Example: jro-app.igp.gob.pe')    
         self.folderFTP.setToolTip('Example: /home/wmaster/graficos')

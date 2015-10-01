@@ -68,17 +68,29 @@ class Ui_ProjectTab(object):
         self.label_33 = QtGui.QLabel(self.frame)
         self.label_33.setObjectName(_fromUtf8("label_33"))
         self.gridLayout_2.addWidget(self.label_33, 3, 5, 1, 1)
+        
         self.proDelay = QtGui.QLineEdit(self.frame)
         self.proDelay.setObjectName(_fromUtf8("proDelay"))
         self.gridLayout_2.addWidget(self.proDelay, 3, 6, 1, 1)
+        
         self.label_32 = QtGui.QLabel(self.frame)
         self.label_32.setObjectName(_fromUtf8("label_32"))
         self.gridLayout_2.addWidget(self.label_32, 4, 0, 1, 1)
+        
         self.proComWalk = QtGui.QComboBox(self.frame)
         self.proComWalk.setObjectName(_fromUtf8("proComWalk"))
         self.proComWalk.addItem(_fromUtf8(""))
         self.proComWalk.addItem(_fromUtf8(""))
-        self.gridLayout_2.addWidget(self.proComWalk, 4, 1, 1, 8)
+        self.gridLayout_2.addWidget(self.proComWalk, 4, 1, 1, 4)
+        
+        self.labExpLabel = QtGui.QLabel(self.frame)
+        self.labExpLabel.setObjectName(_fromUtf8("labExpLabel"))
+        self.gridLayout_2.addWidget(self.labExpLabel, 4, 5, 1, 1)
+        
+        self.proExpLabel = QtGui.QLineEdit(self.frame)
+        self.proExpLabel.setObjectName(_fromUtf8("proExpLabel"))
+        self.gridLayout_2.addWidget(self.proExpLabel, 4, 6, 1, 1)
+        
         self.proLoadButton = QtGui.QPushButton(self.frame)
         self.proLoadButton.setObjectName(_fromUtf8("proLoadButton"))
         self.gridLayout_2.addWidget(self.proLoadButton, 5, 0, 1, 9)
@@ -164,6 +176,7 @@ class Ui_ProjectTab(object):
         self.proComReadMode.setItemText(0, _translate("MainWindow", "Offline", None))
         self.proComReadMode.setItemText(1, _translate("MainWindow", "Online", None))
         self.label_33.setText(_translate("MainWindow", "Delay:", None))
+        self.labExpLabel.setText(_translate("MainWindow", "Exp Label:", None))
         self.label_32.setText(_translate("MainWindow", "Walk :", None))
         self.proComWalk.setItemText(0, _translate("MainWindow", "On Files", None))
         self.proComWalk.setItemText(1, _translate("MainWindow", "On Folder", None))

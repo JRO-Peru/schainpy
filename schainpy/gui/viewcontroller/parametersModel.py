@@ -70,7 +70,7 @@ class ProjectParms():
                
     def set(self, project_name, datatype, ext, dpath, online,
             startDate=None, endDate=None, startTime=None, endTime=None,
-            delay=None, walk=None, set=None, ippKm=None, parmsOk=True):
+            delay=None, walk=None, set=None, ippKm=None, parmsOk=True, expLabel=''):
         
         name = project_name
         datatype = datatype
@@ -85,6 +85,7 @@ class ProjectParms():
         walk  = walk
         set = set
         ippKm = ippKm 
+        expLabel = expLabel
         
         self.parmsOk = parmsOk
     
