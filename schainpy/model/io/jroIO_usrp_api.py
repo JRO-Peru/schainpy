@@ -7,10 +7,10 @@ import time
 import threading
 import cPickle
 
-try:
-    from gevent import sleep
-except:
-    from time import sleep
+# try:
+#     from gevent import sleep
+# except:
+from time import sleep
 
 SERIALIZER = cPickle
 
