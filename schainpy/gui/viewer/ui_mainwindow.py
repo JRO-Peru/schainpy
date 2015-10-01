@@ -26,6 +26,7 @@ except AttributeError:
 
 import os
 from schainpy.gui.figures import tools
+from schainpy import __version__
 
 FIGURES_PATH = tools.get_path()
 
@@ -57,6 +58,8 @@ class Ui_EnvWindow(object):
              return 0
          
     def setupUi(self, MainWindow):
+        
+        self.paused=False
         
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(1200, 800)
@@ -156,6 +159,7 @@ class Ui_EnvWindow(object):
         self.actionStop.setObjectName(_fromUtf8("actionStop"))
         self.actionAbout = QtGui.QAction(MainWindow)
         self.actionAbout.setObjectName(_fromUtf8("actionAbout"))
+        
         self.actionOpenToolbar = QtGui.QAction(MainWindow)
         self.actionOpenToolbar.setIcon(iconOpen)
         self.actionOpenToolbar.setObjectName(_fromUtf8("actionOpenToolbar"))
@@ -195,7 +199,6 @@ class Ui_EnvWindow(object):
         self.toolBar.addAction(self.actionStopToolbar)
         self.toolBar.addSeparator()
         
-        self.paused=False
         self.actionPause.triggered.connect(self.changePauseIcon)
         self.actionPauseToolbar.triggered.connect(self.changePauseIcon)
         
@@ -235,7 +238,7 @@ class Ui_EnvWindow(object):
         self.actionStart.setText(_translate("MainWindow", "Start", None))
         self.actionPause.setText(_translate("MainWindow", "Pause", None))
         self.actionStop.setText(_translate("MainWindow", "Stop", None))
-        self.actionAbout.setText(_translate("MainWindow", "About", None))
+        self.actionAbout.setText(_translate("MainWindow", "About SChain", None))
         self.actionOpenToolbar.setText(_translate("MainWindow", "openToolbar", None))
         self.actionOpenToolbar.setToolTip(_translate("MainWindow", "Open a project", None))
         self.actionCreateToolbar.setText(_translate("MainWindow", "createToolbar", None))
@@ -260,6 +263,14 @@ class Ui_EnvWindow(object):
             event.accept()
         else:
             event.ignore()
+    
+    def aboutEvent(self):
+        
+        reply = QtGui.QMessageBox.information(self,
+                                              'About',
+            "Signal Chain Processing Software v%s" %__version__,
+            "Developed by Jicamarca Radio Observatory\nComments to miguel.urco@jro.igp.gob.pe")
+        
             
 class Ui_BasicWindow(Ui_EnvWindow, Ui_ProjectTab, Ui_VoltageTab, Ui_SpectraTab, Ui_SpectraHeisTab, Ui_CorrelationTab):
     

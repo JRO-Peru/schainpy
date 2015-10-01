@@ -165,7 +165,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         """
         self.stopProject()
-            
+    
+    @pyqtSignature("")   
+    def on_actionAbout_triggered(self):
+        """
+        """
+        self.aboutEvent()
+              
     @pyqtSignature("")     
     def on_actionFTP_triggered(self):
         """
@@ -5683,36 +5689,3 @@ class ShowMeConsole(QtCore.QObject):
         textWritten = QtCore.pyqtSignal(str)
         def write (self, text):
             self.textWritten.emit(str(text))
-
-class PlotManager():
-    def __init__(self, queue):
-        self.queue = queue
-        self.objPlotDict = {}
-
-    def processIncoming(self):
-        while self.queue.qsize():
-            try:
-                dataFromQueue = self.queue.get(True)
-                if dataFromQueue == None:
-                    continue
-                 
-                dataPlot = dataFromQueue['data']
-                kwargs = dataFromQueue['kwargs']                 
-                id = kwargs['id']
-                if 'channelList' in kwargs.keys():
-                    channelList = kwargs['channelList']
-                else:
-                    channelList = None
-                plotname = kwargs.pop('type')
-
-                if not(id in self.objPlotDict.keys()):
-                    className = eval(plotname)
-                    self.objPlotDict[id] = className(id, channelList, dataPlot)
-                    self.objPlotDict[id].show()
-                      
-                self.objPlotDict[id].run(dataPlot , **kwargs)
-   
-            except Queue.Empty:
-                pass
-            
-            

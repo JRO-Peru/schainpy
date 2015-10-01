@@ -1,12 +1,20 @@
 Prerequisites:
 
 	-numpy 1.8.0
-	-
+	-scipy
+	-math
+	-matplotlib
+	-h5py
+	-ftplib
+	-paramiko and scp (optional for using SendTFilesToServer)
+	-stuffr (optional for using jroIO_hf)
+	-PyQt4 (for using GUI)
 
 Signal Chain Installation:
 
 	1. Install numpy, matplotlib, TKAgg
-	2. Install digital_rf_hdf5 module (developed by Haystack Observatory) if you will use USRP data
+	2. Install digital_rf_hdf5 module (developed by Haystack Observatory)
+	   if you want to use USRP data
 	3. untar schainpy-x.x.x.tar.gz
 	4. cd schainpy-x.x.x
 	5. execute:
