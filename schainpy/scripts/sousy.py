@@ -1,14 +1,16 @@
+#!python
+'''
+Created on Jul 7, 2015
 
-
-
-
-
+@author: Miguel Urco
+'''
 import os, sys
 
-path = os.path.split(os.getcwd())[0]
-sys.path.append(path)
+path = os.path.dirname(os.getcwd())
+path = os.path.dirname(path)
+sys.path.insert(0, path)
 
-from controller import *
+from schainpy.controller import Project
 
 desc = "Sousy_test"
 filename = "sousy_processing.xml"
