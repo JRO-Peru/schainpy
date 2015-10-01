@@ -3,7 +3,6 @@ import time
 import os
 import h5py
 import re
-import tables
 
 from schainpy.model.data.jrodata import *
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
