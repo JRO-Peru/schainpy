@@ -887,7 +887,9 @@ class JRODataReader(JRODataIO):
         if not(self.readBlock()):
             return 0
         
-        print "[Reading] Block No. %d/%d -> %s" %(self.basicHeaderObj.dataBlock+1,
+        self.getBasicHeader()
+        
+        print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
                                                   self.processingHeaderObj.dataBlocksPerFile,
                                                   self.dataOut.datatime.ctime())
         return 1
@@ -1043,17 +1045,31 @@ class JRODataReader(JRODataIO):
                         continue
                     
                     for match in matchlist:
-                        pathList.append(os.path.join(single_path,match,expLabel))
+                        
+                        datapath = os.path.join(single_path, match, expLabel)
+                        fileList = glob.glob1(datapath, "*"+ext)
+                        
+                        if len(fileList) < 1:
+                            continue
+                        
+                        pathList.append(datapath)
                         dateList.append(thisDate)
                     
                     thisDate += datetime.timedelta(1)
             else:
                 for thisDir in dirList:
+                    
+                    datapath = os.path.join(single_path, thisDir, expLabel)
+                    fileList = glob.glob1(datapath, "*"+ext)
+                    
+                    if len(fileList) < 1:
+                        continue
+                    
                     year = int(thisDir[1:5])
                     doy = int(thisDir[5:8])
                     thisDate = datetime.date(year,1,1) + datetime.timedelta(doy-1)
                     
-                    pathList.append(os.path.join(single_path,thisDir,expLabel))
+                    pathList.append(datapath)
                     dateList.append(thisDate)
             
         return dateList
@@ -1142,7 +1158,7 @@ class JRODataReader(JRODataIO):
 
             sys.exit(-1)
 
-        self.getBasicHeader()
+#         self.getBasicHeader()
         
         if last_set != None:
             self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
@@ -1198,11 +1214,9 @@ class JRODataReader(JRODataIO):
     def printNumberOfBlock(self):
         
         if self.flagIsNewBlock:
-            print "[Reading] Block No. %d/%d -> %s" %(self.basicHeaderObj.dataBlock+1,
+            print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
                                                       self.processingHeaderObj.dataBlocksPerFile,
                                                       self.dataOut.datatime.ctime())
-            
-            self.dataOut.blocknow = self.basicHeaderObj.dataBlock
 
     def printInfo(self):
         
@@ -1245,6 +1259,8 @@ class JRODataWriter(JRODataIO):
     blocksPerFile = None
     
     nWriteBlocks = 0
+    
+    fileDate = None
     
     def __init__(self, dataOut=None):
         raise ValueError, "Not implemented"
@@ -1303,7 +1319,7 @@ class JRODataWriter(JRODataIO):
         
         self.basicHeaderObj.size = self.basicHeaderSize #bytes
         self.basicHeaderObj.version = self.versionFile
-        self.basicHeaderObj.dataBlock = self.blockIndex
+        self.basicHeaderObj.dataBlock = self.nTotalBlocks
         
         utc = numpy.floor(self.dataOut.utctime)
         milisecond  = (self.dataOut.utctime - utc)* 1000.0
@@ -1389,7 +1405,8 @@ class JRODataWriter(JRODataIO):
         
         self.writeBlock()
         
-        print "[Writing] Block No. %d/%d" %(self.blockIndex, self.processingHeaderObj.dataBlocksPerFile)
+        print "[Writing] Block No. %d/%d" %(self.blockIndex,
+                                            self.processingHeaderObj.dataBlocksPerFile)
         
         return 1        
 
@@ -1418,9 +1435,11 @@ class JRODataWriter(JRODataIO):
         subfolder = 'd%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
 
         fullpath = os.path.join( path, subfolder )
+        setFile = self.setFile
+        
         if not( os.path.exists(fullpath) ):
             os.mkdir(fullpath)
-            self.setFile = -1 #inicializo mi contador de seteo
+            setFile = -1 #inicializo mi contador de seteo
         else:
             filesList = os.listdir( fullpath )
             if len( filesList ) > 0:
@@ -1430,20 +1449,20 @@ class JRODataWriter(JRODataIO):
                 # 0 1234 567 89A BCDE (hex)
                 # x YYYY DDD SSS .ext
                 if isNumber( filen[8:11] ):
-                    self.setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
+                    setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
                 else:    
-                    self.setFile = -1
+                    setFile = -1
             else:
-                self.setFile = -1 #inicializo mi contador de seteo
-                
-        setFile = self.setFile
+                setFile = -1 #inicializo mi contador de seteo
+        
         setFile += 1
+        
+        #If this is a new day it resets some values
+        if self.dataOut.datatime.date() > self.fileDate:
+            setFile = 0
+            self.nTotalBlocks = 0
                 
-        filen = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
-                                        timeTuple.tm_year,
-                                        timeTuple.tm_yday,
-                                        setFile,
-                                        ext )
+        filen = '%s%4.4d%3.3d%3.3d%s' % (self.optchar, timeTuple.tm_year, timeTuple.tm_yday, setFile, ext )
 
         filename = os.path.join( path, subfolder, filen )
 
@@ -1457,6 +1476,7 @@ class JRODataWriter(JRODataIO):
         self.fp = fp
         self.setFile = setFile
         self.flagIsNewFile = 1
+        self.fileDate = self.dataOut.datatime.date()
         
         self.setFirstHeader()
         
@@ -1466,7 +1486,7 @@ class JRODataWriter(JRODataIO):
         
         return 1
     
-    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=0, ext=None, datatype=4):
+    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=None, ext=None, datatype=4):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header 
             
@@ -1490,20 +1510,21 @@ class JRODataWriter(JRODataIO):
         if ext == None:
             ext = self.ext
         
-        ext = ext.lower()
-        
-        self.ext = ext
+        self.ext = ext.lower()
         
         self.path = path
         
-        self.setFile = set - 1
+        if set is None:
+            self.setFile = -1
+        else:
+            self.setFile = set - 1
         
         self.blocksPerFile = blocksPerFile
         
         self.profilesPerBlock = profilesPerBlock
         
         self.dataOut = dataOut
-        
+        self.fileDate = self.dataOut.datatime.date()
         #By default
         self.dtype = self.dataOut.dtype
         
