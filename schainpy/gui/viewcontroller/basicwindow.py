@@ -4573,7 +4573,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def playProject(self, ext=".xml", save=1):
         
-#         self.console.clear()
         projectObj = self.getSelectedProjectObj()
         
         if not projectObj:
@@ -4603,7 +4602,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
 #         QObject.connect( self.controllerThread, SIGNAL( "jobFinished( PyQt_PyObject )" ), self.jobFinishedFromThread )
 #         QObject.connect( self.controllerThread, SIGNAL( "jobStarted( PyQt_PyObject )" ), self.jobStartedFromThread )
-        
+        self.console.clear()
         self.controllerThread.start()
         sleep(0.5)
         self.__enable = True
@@ -4677,7 +4676,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             filename = os.path.join( str(self.pathWorkSpace), "%s%s" %(str(projectObj.name), '.xml') )
             
         projectObj.writeXml(filename)     
-        self.console.append("Now,  you can press Start button")
+        self.console.append("\nPress Play button to start data processing ...")
         
         self.actionStart.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
