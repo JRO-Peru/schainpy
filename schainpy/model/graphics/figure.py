@@ -357,7 +357,7 @@ class Axes:
                                                     ylabel=ylabel,
                                                     title=title)
 
-        self.__driver.pause()
+#         self.__driver.pause()
         
     def addpline(self, x, y, idline, **kwargs):
         lines = self.ax.lines
@@ -399,7 +399,7 @@ class Axes:
                                                     ylabel=ylabel,
                                                     title=title)
         
-        self.__driver.pause()
+#         self.__driver.pause()
         
     def pmultilineyaxis(self, x, y,
                    xmin=None, xmax=None,
@@ -434,7 +434,7 @@ class Axes:
                                                     ylabel=ylabel,
                                                     title=title)
         
-        self.__driver.pause()
+#         self.__driver.pause()
         
     def pcolor(self, x, y, z,
                xmin=None, xmax=None,
@@ -507,7 +507,7 @@ class Axes:
                              ylabel=ylabel,
                              title=title)
     
-        self.__driver.pause()
+#         self.__driver.pause()
         
     def pcolorbuffer(self, x, y, z,
                xmin=None, xmax=None,
@@ -584,7 +584,7 @@ class Axes:
                                 title=title,
                                 colormap=colormap)
         
-        self.__driver.pause()
+#         self.__driver.pause()
         
     def polar(self, x, y,
                title='', xlabel='',ylabel='',**kwargs):
@@ -602,7 +602,7 @@ class Axes:
                                             ylabel=ylabel,
                                             title=title)
     
-        self.__driver.pause()
+#         self.__driver.pause()
         
     def __fillGaps(self, x_buffer, y_buffer, z_buffer):
         
