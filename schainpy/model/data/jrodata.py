@@ -875,7 +875,7 @@ class Fits(JROData):
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
     channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
     noise = property(getNoise, "I'm the 'nHeights' property.")
-    datatime = property(getDatatime, "I'm the 'datatime' property")
+    
     ltctime = property(getltctime, "I'm the 'ltctime' property")
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
     
