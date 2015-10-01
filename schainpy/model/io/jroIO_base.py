@@ -42,7 +42,7 @@ def isNumber(cad):
     except:
         return False
 
-def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
+def isFileInEpoch(filename, startUTSeconds, endUTSeconds):
     """
     Esta funcion determina si un archivo de datos se encuentra o no dentro del rango de fecha especificado.
     
@@ -83,7 +83,7 @@ def isThisFileinRange(filename, startUTSeconds, endUTSeconds):
     
     return 1
 
-def isFileinThisTime(filename, startTime, endTime):
+def isFileInTimeRange(filename, startTime, endTime):
     """
     Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
     
@@ -126,6 +126,86 @@ def isFileinThisTime(filename, startTime, endTime):
         return None
     
     return thisDatetime
+
+def isFolderInDateRange(folder, startDate=None, endDate=None):
+    """
+    Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
+    
+    Inputs:
+        folder            :    nombre completo del directorio.
+                               Su formato deberia ser "/path_root/?YYYYDDD"
+        
+                                siendo:
+                                    YYYY    :    Anio         (ejemplo 2015)
+                                    DDD     :    Dia del anio (ejemplo 305)
+        
+        startDate          :    fecha inicial del rango seleccionado en formato datetime.date
+        
+        endDate            :    fecha final del rango seleccionado en formato datetime.date
+    
+    Return:
+        Boolean    :    Retorna True si el archivo de datos contiene datos en el rango de
+                        fecha especificado, de lo contrario retorna False.
+    Excepciones:
+        Si el directorio no tiene el formato adecuado
+    """
+    
+    basename = os.path.basename(folder)
+    
+    if not isRadarFolder(basename):
+        raise IOError, "The folder %s has not the rigth format" %folder
+    
+    if startDate and endDate:
+        thisDate = getDateFromRadarFolder(basename)
+        
+        if thisDate < startDate:
+            return 0
+        
+        if thisDate > endDate:
+            return 0
+    
+    return 1
+
+def isFileInDateRange(filename, startDate=None, endDate=None):
+    """
+    Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
+    
+    Inputs:
+        filename            :    nombre completo del archivo de datos en formato Jicamarca (.r)
+        
+                               Su formato deberia ser "?YYYYDDDsss"
+        
+                                siendo:
+                                    YYYY    :    Anio         (ejemplo 2015)
+                                    DDD     :    Dia del anio (ejemplo 305)
+                                    sss     :    set
+        
+        startDate          :    fecha inicial del rango seleccionado en formato datetime.date
+        
+        endDate            :    fecha final del rango seleccionado en formato datetime.date
+    
+    Return:
+        Boolean    :    Retorna True si el archivo de datos contiene datos en el rango de
+                        fecha especificado, de lo contrario retorna False.
+    Excepciones:
+        Si el archivo no tiene el formato adecuado
+    """
+    
+    basename = os.path.basename(filename)
+    
+    if not isRadarFile(basename):
+        raise IOError, "The filename %s has not the rigth format" %filename
+    
+    if startDate and endDate:
+        thisDate = getDateFromRadarFile(basename)
+        
+        if thisDate < startDate:
+            return 0
+        
+        if thisDate > endDate:
+            return 0
+    
+    return 1
 
 def getFileFromSet(path, ext, set):
     validFilelist = []
@@ -282,16 +362,26 @@ def isRadarFile(file):
         return 1
 
 def getDateFromRadarFile(file):
-        try:
-            year = int(file[1:5])
-            doy = int(file[5:8])
-            set = int(file[8:11])
-        except:
-            return None
-    
-        thisDate = datetime.date(year, 1, 1) + datetime.timedelta(doy-1)
-        return thisDate
-    
+    try:
+        year = int(file[1:5])
+        doy = int(file[5:8])
+        set = int(file[8:11])
+    except:
+        return None
+
+    thisDate = datetime.date(year, 1, 1) + datetime.timedelta(doy-1)
+    return thisDate
+
+def getDateFromRadarFolder(folder):
+    try:
+        year = int(folder[1:5])
+        doy = int(folder[5:8])
+    except:
+        return None
+
+    thisDate = datetime.date(year, 1, 1) + datetime.timedelta(doy-1)
+    return thisDate
+       
 class JRODataIO:
     
     c = 3E8
@@ -436,82 +526,87 @@ class JRODataReader(JRODataIO):
         
         pathList = []
         
-        if not walk:
-            #pathList.append(path)
-            multi_path = path.split(',')
-            for single_path in multi_path:
-                
-                if not os.path.isdir(single_path):
-                    continue
-                
-                pathList.append(single_path)
+#         if not walk:
+#             #pathList.append(path)
+#             multi_path = path.split(',')
+#             for single_path in multi_path:
+#                 
+#                 if not os.path.isdir(single_path):
+#                     continue
+#                 
+#                 pathList.append(single_path)
+#         
+#         else:
+#             #dirList = []
+#             multi_path = path.split(',')
+#             for single_path in multi_path:
+#                 
+#                 if not os.path.isdir(single_path):
+#                     continue
+#                 
+#                 dirList = []
+#                 for thisPath in os.listdir(single_path):
+#                     if not os.path.isdir(os.path.join(single_path,thisPath)):
+#                         continue
+#                     if not isRadarFolder(thisPath):
+#                         continue
+#                 
+#                     dirList.append(thisPath)
+#     
+#                 if not(dirList):
+#                     return None, None
+#                 
+#                 if startDate and endDate:
+#                     thisDate = startDate
+#                 
+#                     while(thisDate <= endDate):
+#                         year = thisDate.timetuple().tm_year
+#                         doy = thisDate.timetuple().tm_yday
+#                         
+#                         matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
+#                         if len(matchlist) == 0:
+#                             thisDate += datetime.timedelta(1)
+#                             continue
+#                         for match in matchlist:
+#                             pathList.append(os.path.join(single_path,match,expLabel))
+#                         
+#                         thisDate += datetime.timedelta(1)
+#                 else:
+#                     for thiDir in dirList:
+#                         pathList.append(os.path.join(single_path,thiDir,expLabel))
         
-        else:
-            #dirList = []
-            multi_path = path.split(',')
-            for single_path in multi_path:
-                
-                if not os.path.isdir(single_path):
-                    continue
-                
-                dirList = []
-                for thisPath in os.listdir(single_path):
-                    if not os.path.isdir(os.path.join(single_path,thisPath)):
-                        continue
-                    if not isRadarFolder(thisPath):
-                        continue
-                
-                    dirList.append(thisPath)
-    
-                if not(dirList):
-                    return None, None
-                
-                if startDate and endDate:
-                    thisDate = startDate
-                
-                    while(thisDate <= endDate):
-                        year = thisDate.timetuple().tm_year
-                        doy = thisDate.timetuple().tm_yday
-                        
-                        matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
-                        if len(matchlist) == 0:
-                            thisDate += datetime.timedelta(1)
-                            continue
-                        for match in matchlist:
-                            pathList.append(os.path.join(single_path,match,expLabel))
-                        
-                        thisDate += datetime.timedelta(1)
-                else:
-                    for thiDir in dirList:
-                        pathList.append(os.path.join(single_path,thiDir,expLabel))
+        dateList, pathList = self.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
         
-        if pathList == []:
+        if dateList == []:
             print "Any folder was found for the date range: %s-%s" %(startDate, endDate)
             return None, None
         
-        print "%d folder(s) was(were) found for the date range: %s - %s" %(len(pathList), startDate, endDate)
-            
+        if len(dateList) > 1:
+            print "%d dates with data were found for the date range: %s - %s" %(len(dateList), startDate, endDate)
+        else:
+            print "data was found for the date %s" %(dateList[0])
+             
         filenameList = []
         datetimeList = []
-        pathDict = {}
-        filenameList_to_sort = []
+#         pathDict = {}
+#         filenameList_to_sort = []
+#         
+#         for i in range(len(pathList)):
+#             
+#             thisPath = pathList[i]
+#             
+#             fileList = glob.glob1(thisPath, "*%s" %ext)
+#             if len(fileList) < 1:
+#                 continue
+#             fileList.sort()
+#             pathDict.setdefault(fileList[0])
+#             pathDict[fileList[0]] = i
+#             filenameList_to_sort.append(fileList[0])
+#         
+#         filenameList_to_sort.sort()
         
-        for i in range(len(pathList)):
-            
-            thisPath = pathList[i]
-            
-            fileList = glob.glob1(thisPath, "*%s" %ext)
-            if len(fileList) < 1:
-                continue
-            fileList.sort()
-            pathDict.setdefault(fileList[0])
-            pathDict[fileList[0]] = i
-            filenameList_to_sort.append(fileList[0])
-        
-        filenameList_to_sort.sort()
-        
-        for file in filenameList_to_sort:
-            thisPath = pathList[pathDict[file]]
+        for thisPath in pathList:
+#             thisPath = pathList[pathDict[file]]
             
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
@@ -519,7 +614,11 @@ class JRODataReader(JRODataIO):
             for file in fileList:
                 
                 filename = os.path.join(thisPath,file)
-                thisDatetime = isFileinThisTime(filename, startTime, endTime)
+                
+                if not isFileInDateRange(filename, startDate, endDate):
+                    continue
+                
+                thisDatetime = isFileInTimeRange(filename, startTime, endTime)
                 
                 if not(thisDatetime):
                     continue
@@ -976,20 +1075,20 @@ class JRODataReader(JRODataIO):
 
         return True
 
-    def findDatafiles(self, path, startDate=None, endDate=None, expLabel='', ext='.r', walk=True):
+    def findDatafiles(self, path, startDate=None, endDate=None, expLabel='', ext='.r', walk=True, include_path=False):
         
         dateList = []
         pathList = []
         
+        multi_path = path.split(',')
+        
         if not walk:
-            #pathList.append(path)
-            multi_path = path.split(',')
+    
             for single_path in multi_path:
                 
                 if not os.path.isdir(single_path):
                     continue
                 
-                ok = False
                 fileList = glob.glob1(single_path, "*"+ext)
                 
                 for thisFile in fileList:
@@ -1000,63 +1099,41 @@ class JRODataReader(JRODataIO):
                     if not isRadarFile(thisFile):
                         continue
                     
-                    ok = True
-                    thisDate = getDateFromRadarFile(thisFile)
-                    
-                    if thisDate not in dateList:
-                        dateList.append(thisDate)
-                
-                if ok:
-                    pathList.append(single_path)
-            
-            return dateList
-        
-        multi_path = path.split(',')
-        for single_path in multi_path:
-            
-            if not os.path.isdir(single_path):
-                continue
-                
-            dirList = []
-            
-            for thisPath in os.listdir(single_path):
-                
-                if not os.path.isdir(os.path.join(single_path,thisPath)):
-                    continue
-                
-                if not isRadarFolder(thisPath):
-                    continue
-            
-                dirList.append(thisPath)
-
-            if not dirList:
-                return dateList
-            
-            if startDate and endDate:
-                thisDate = startDate
-            
-                while(thisDate <= endDate):
-                    year = thisDate.timetuple().tm_year
-                    doy = thisDate.timetuple().tm_yday
-                    
-                    matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
-                    if len(matchlist) == 0:
-                        thisDate += datetime.timedelta(1)
+                    if not isFileInDateRange(thisFile, startDate, endDate):
                         continue
                     
-                    for match in matchlist:
-                        
-                        datapath = os.path.join(single_path, match, expLabel)
-                        fileList = glob.glob1(datapath, "*"+ext)
-                        
-                        if len(fileList) < 1:
-                            continue
-                        
-                        pathList.append(datapath)
-                        dateList.append(thisDate)
+                    thisDate = getDateFromRadarFile(thisFile)
                     
-                    thisDate += datetime.timedelta(1)
-            else:
+                    if thisDate in dateList:
+                        continue
+                    
+                    dateList.append(thisDate)
+                    pathList.append(single_path)
+        
+        else:
+            for single_path in multi_path:
+                
+                if not os.path.isdir(single_path):
+                    continue
+                    
+                dirList = []
+                
+                for thisPath in os.listdir(single_path):
+                    
+                    if not os.path.isdir(os.path.join(single_path,thisPath)):
+                        continue
+                    
+                    if not isRadarFolder(thisPath):
+                        continue
+                    
+                    if not isFolderInDateRange(thisPath, startDate, endDate):
+                        continue
+                    
+                    dirList.append(thisPath)
+        
+                if not dirList:
+                    continue
+                
                 for thisDir in dirList:
                     
                     datapath = os.path.join(single_path, thisDir, expLabel)
@@ -1065,15 +1142,17 @@ class JRODataReader(JRODataIO):
                     if len(fileList) < 1:
                         continue
                     
-                    year = int(thisDir[1:5])
-                    doy = int(thisDir[5:8])
-                    thisDate = datetime.date(year,1,1) + datetime.timedelta(doy-1)
+                    thisDate = getDateFromRadarFolder(thisDir)
                     
                     pathList.append(datapath)
                     dateList.append(thisDate)
-            
-        return dateList
         
+        dateList.sort()
+        
+        if include_path:
+            return dateList, pathList
+        
+        return dateList
         
     def setup(self,
                 path=None,
