@@ -56,6 +56,33 @@ def isRadarPath(path):
         return 0
 
     return 1
+
+def isInt(value):
+    
+    try:
+        int(value)
+    except:
+        return 0
+    
+    return 1
+
+def isFloat(value):
+    
+    try:
+        float(value)
+    except:
+        return 0
+    
+    return 1
+
+def isList(value):
+    
+    x = ast.literal_eval(value)
+    
+    if type(x) in (tuple, list):
+        return 1
+    
+    return 0
         
 class BasicWindow(QMainWindow, Ui_BasicWindow):
     """
@@ -436,7 +463,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.actionStart.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
-                           
+        
+        self.console.clear()
+        
         if self.create:
             
             projectId = self.__getNewProjectId()
@@ -705,6 +734,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
+        self.console.clear()
+        self.console.append("Checking input parameters ...")
+        
         puObj = self.getSelectedItemObj()
         puObj.removeOperations()
         
@@ -718,10 +750,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     radarfreq = float(self.volOpRadarfrequency.text())*1e6
                 except:
                     self.console.clear()
-                    self.console.append("Write the parameter Radar Frequency  type float")
+                    self.console.append("Invalid value '%s' for Radar Frequency" %value)
                     return 0
+                
                 opObj = puObj.addOperation(name=name_operation)
-                opObj.addParameter(name=name_parameter, value=radarfreq, format=format)
+                if not opObj.addParameter(name=name_parameter, value=radarfreq, format=format):
+                    self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
+                    return 0
         
         if self.volOpCebChannels.isChecked():
             value = str(self.volOpChannel.text())
@@ -739,7 +774,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 name_parameter = 'channelIndexList'
                 
             opObj = puObj.addOperation(name=name_operation)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
+                return 0
             
         if self.volOpCebHeights.isChecked():
            value = str(self.volOpHeights.text())
@@ -773,7 +810,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            name_operation = 'filterByHeights'
            name_parameter = 'window'
            opObj = puObj.addOperation(name=name_operation)
-           opObj.addParameter(name=name_parameter, value=value, format=format)  
+           if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
+                return 0
 
         if self.volOpCebProfile.isChecked():
             value = str(self.volOpProfile.text())
@@ -793,61 +832,90 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 name_parameter = 'rangeList'
                 
             opObj = puObj.addOperation(name='ProfileSelector', optype='other')
-            opObj.addParameter(name=name_parameter, value=value, format=format)  
+            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
+                return 0 
         
         if self.volOpCebDecodification.isChecked():
-
-            if self.volOpComMode.currentIndex() == 0:
-                mode = '0'
-            if self.volOpComMode.currentIndex() == 1:
-                mode = '1'
-            if self.volOpComMode.currentIndex() == 2:
-                mode = '2'
-                    
-            if self.volOpComCode.currentIndex() == 0:
-                opObj = puObj.addOperation(name='Decoder', optype='other')
-                opObj.addParameter(name='mode', value=mode, format='int')  
-            else:
-                #User defined
-                code = str(self.volOpCode.text())
-                try:
-                    code_tmp = ast.literal_eval(code)
-                except:
-                    code_tmp = []
-                
-                if len(code_tmp) < 1:
-                    self.console.append("Please fill the code value")
-                    return 0
-                
-                if len(code_tmp) == 1 or type(code_tmp[0]) != int:
-                    nBaud = len(code_tmp[0])
-                    nCode = len(code_tmp)
-                else:
-                    nBaud = len(code_tmp)
-                    nCode = 1
-                    
-                opObj = puObj.addOperation(name='Decoder', optype='other')  
+            name_operation = 'Decoder'
             
-                code = code.replace("(", "")
-                code = code.replace(")", "")
-                code = code.replace("[", "")
-                code = code.replace("]", "")
-                opObj.addParameter(name='code', value=code, format='intlist')
-                opObj.addParameter(name='nCode', value=nCode, format='int')
-                opObj.addParameter(name='nBaud', value=nBaud, format='int')  
-                opObj.addParameter(name='mode', value=mode, format='int')  
+            #User defined
+            nBaud = None
+            nCode = None
+            
+            code = str(self.volOpCode.text())
+            try:
+                code_tmp = ast.literal_eval(code)
+            except:
+                code_tmp = []
+            
+            if len(code_tmp) < 1:
+                self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
+                return 0
+            
+            if type(code_tmp) not in (tuple, list):
+                self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
+                return 0
+                
+            if len(code_tmp) > 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1], [1,1,-1] ]
+                nBaud = len(code_tmp[0])
+                nCode = len(code_tmp)
+            elif len(code_tmp) == 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1] ]
+                nBaud = len(code_tmp[0])
+                nCode = 1
+            elif type(code_tmp[0]) in (int, float): #[1,-1,1]  or (1,-1,1)
+                nBaud = len(code_tmp)
+                nCode = 1
+            else:
+                self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
+                return 0
+                
+            if not nBaud or not nCode:
+                self.console.append("Please write a right value for Code")
+                return 0
+            
+            opObj = puObj.addOperation(name='Decoder', optype='other')  
+        
+            code = code.replace("(", "")
+            code = code.replace(")", "")
+            code = code.replace("[", "")
+            code = code.replace("]", "")
+            
+            if not opObj.addParameter(name='code', value=code, format='intlist'):
+                self.console.append("Please write a right value for Code")
+                return 0
+            if not opObj.addParameter(name='nCode', value=nCode, format='int'):
+                self.console.append("Please write a right value for Code")
+                return 0
+            if not opObj.addParameter(name='nBaud', value=nBaud, format='int'):
+                self.console.append("Please write a right value for Code")
+                return 0
+            
+            name_parameter = 'mode'
+            format = 'int'
+            
+            value = str(self.volOpComMode.currentIndex())
+                
+            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
+                return 0
+                
 
         if self.volOpCebFlip.isChecked():
             name_operation = 'deFlip'
             optype = 'self'
-            value = str(self.volOpFlip.text())
-            name_parameter = 'channelList'
-            format = 'intlist'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            if value:
-                opObj.addParameter(name=name_parameter, value=value, format=format) 
-                               
+            
+            name_parameter = 'channelList'
+            format = 'intlist'
+            value = str(self.volOpFlip.text())
+            
+            if value != "":
+                if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                    self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
+                    return 0
+            
         if self.volOpCebCohInt.isChecked():
             name_operation = 'CohInt'
             optype = 'other'
@@ -861,7 +929,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'float'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format) 
+            
+            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
+                return 0
 
         if self.volGraphCebshow.isChecked():    
             name_operation = 'Scope'
@@ -914,7 +985,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if self.volGraphCebSave.isChecked():
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='int')
-                opObj.addParameter(name='figpath', value=self.volGraphPath.text(), format='str')
+                opObj.addParameter(name='figpath', value=str(self.volGraphPath.text()), format='str')
                 value = str(self.volGraphPrefix.text()).replace(" ","")
                 if value:
                    opObj.addParameter(name='figfile', value=value, format='str')
@@ -948,11 +1019,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         try:
             self.refreshPUProperties(puObj)
         except:
-            self.console.append("Check input parameters")
+            self.console.append("An error reading input parameters was found ...Check them!")
             return 0
         
-        self.console.append("If you want to save your project")
-        self.console.append("click on your project name in the Tree Project Explorer")
+        self.console.append("Save your project and press Play button to start signal processing")
         
         self.actionSaveToolbar.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
@@ -1102,74 +1172,82 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
+        self.console.clear()
+        self.console.append("Checking input parameters ...")
+        
         projectObj = self.getSelectedProjectObj() 
         puObj = self.getSelectedItemObj()
         
         puObj.removeOperations()
         
         if self.specOpCebRadarfrequency.isChecked():
-            value = self.specOpRadarfrequency.text()
+            value = str(self.specOpRadarfrequency.text())
             format = 'float'
             name_operation = 'setRadarFrequency'
             name_parameter = 'frequency'
-            if not value == "":
-                try:
-                    radarfreq = float(self.specOpRadarfrequency.text())*1e6
-                except:
-                    self.console.clear()
-                    self.console.append("Write the parameter Radar Frequency  type float")
-                    return 0
-                opObj = puObj.addOperation(name=name_operation)
-                opObj.addParameter(name=name_parameter, value=radarfreq, format=format)
+            
+            if not isFloat(value):
+                self.console.clear()
+                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                return 0
+            
+            radarfreq = float(value)*1e6
+            opObj = puObj.addOperation(name=name_operation)
+            opObj.addParameter(name=name_parameter, value=radarfreq, format=format)
         
         inputId = puObj.getInputId()
         inputPuObj = projectObj.getProcUnitObj(inputId)
         
         if inputPuObj.datatype == 'Voltage' or inputPuObj.datatype == 'USRP':
             
-            try:
-                value = int(self.specOpnFFTpoints.text())
-                puObj.addParameter(name='nFFTPoints', value=value, format='int')
-            except:
-                self.console.clear()
-                self.console.append("Please write the number of FFT")
+            value = str(self.specOpnFFTpoints.text())
+            
+            if not isInt(value):
+                self.console.append("Invalid value '%s' for '%s'" %(value, 'nFFTPoints'))
                 return 0
             
-            try:
-                value1 = int(self.specOpProfiles.text())
-                puObj.addParameter(name='nProfiles', value=value1, format='int')
-            except:
-                self.console.append("Please Write the number of Profiles")
-                
-            try:
-                value2 = int(self.specOpippFactor.text())
-                puObj.addParameter(name='ippFactor' , value=value2 , format='int')
-            except:
-                self.console.append("Please Write the Number of IppFactor")
+            puObj.addParameter(name='nFFTPoints', value=value, format='int')
             
-                    
+            value = str(self.specOpProfiles.text())
+            if not isInt(value):
+                self.console.append("Please write a value on Profiles field")
+            else:
+                puObj.addParameter(name='nProfiles', value=value, format='int')
+            
+            value = str(self.specOpippFactor.text())
+            if not isInt(value):
+                self.console.append("Please write a value on IppFactor field")
+            else:
+                puObj.addParameter(name='ippFactor' , value=value , format='int')
+                
         if self.specOpCebCrossSpectra.isChecked():
             name_parameter = 'pairsList'
             format = 'pairslist'         
-            value2 = self.specOppairsList.text()
+            value = str(self.specOppairsList.text())
             
-            if value2 == "":
+            if value == "":
                 print "Please fill the pairs list field"
                 return 0
             
-            puObj.addParameter(name=name_parameter, value=value2, format=format)
+            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
+                return 0
                                 
         if self.specOpCebHeights.isChecked():
             value = str(self.specOpHeights.text())
             
             if value == "":
-                print "Please fill height range"
+                self.console.append("Empty value for '%s'" %(value, "Height range"))
                 return 0
             
             valueList = value.split(',')
             format = 'float'
             value0 = valueList[0]
             value1 = valueList[1]
+            
+            if not isFloat(value0) or not isFloat(value1):
+                self.console.append("Invalid value '%s' for '%s'" %(value, "Height range"))
+                return 0
             
             if self.specOpComHeights.currentIndex() == 0:
                 name_operation = 'selectHeights'
@@ -1179,43 +1257,55 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 name_operation = 'selectHeightsByIndex'
                 name_parameter1 = 'minIndex'
                 name_parameter2 = 'maxIndex'
+                
             opObj = puObj.addOperation(name=name_operation)    
             opObj.addParameter(name=name_parameter1, value=value0, format=format)
             opObj.addParameter(name=name_parameter2, value=value1, format=format) 
           
         if self.specOpCebChannel.isChecked():
-            value = str(self.specOpChannel.text())
             
-            if value == "":
-                print "Please fill channel list"
-                return 0
-            
-            format = 'intlist'
             if self.specOpComChannel.currentIndex() == 0:
                 name_operation = "selectChannels"
                 name_parameter = 'channelList'
             else:
                 name_operation = "selectChannelsByIndex" 
                 name_parameter = 'channelIndexList'
+            
+            format = 'intlist'
+            value = str(self.specOpChannel.text())
+            
+            if value == "":
+                print "Please fill channel list"
+                return 0
+            
+            if not isList(value):
+                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                return 0
                 
             opObj = puObj.addOperation(name=name_operation)
             opObj.addParameter(name=name_parameter, value=value, format=format)
             
         if self.specOpCebIncoherent.isChecked():
-            value = str(self.specOpIncoherent.text())
             
-            if value == "":
-                print "Please fill Incoherent integration value"
-                return 0
-               
             name_operation = 'IncohInt'
             optype = 'other'
+            
             if self.specOpCobIncInt.currentIndex() == 0:
                 name_parameter = 'timeInterval'
                 format = 'float'
             else:
                 name_parameter = 'n'
                 format = 'float'
+                
+            value = str(self.specOpIncoherent.text())
+            
+            if value == "":
+                print "Please fill Incoherent integration value"
+                return 0
+               
+            if not isFloat(value):
+                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                return 0
 
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             opObj.addParameter(name=name_parameter, value=value, format=format)
@@ -1237,7 +1327,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
                                         
         if self.specOpCebgetNoise.isChecked():
-            value = self.specOpgetNoise.text()
+            value = str(self.specOpgetNoise.text())
             valueList = value.split(',')
             format = 'float'
             name_operation = "getNoise"
@@ -1332,7 +1422,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name='id', value=opObj.id, format='int')      
             
             if not channelList == '':
-               opObj.addParameter(name='channelList', value=channelList, format='intlist') 
+                
+                if not isList(channelList):
+                    self.console.append("Invalid channelList")
+                    return 0
+                
+                opObj.addParameter(name='channelList', value=channelList, format='intlist') 
            
             if not vel_range == '':
                xvalueList = vel_range.split(',')
@@ -1480,6 +1575,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name='id', value=opObj.id, format='int')
             
             if not channelList == '':
+                if not isList(channelList):
+                    self.console.append("Invalid channelList")
+                    return 0
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
             
             if not trange == '':
@@ -1635,6 +1733,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            opObj.addParameter(name='id', value=opObj.id, format='int')
            
            if not channelList == '':
+               if not isList(channelList):
+                    self.console.append("Invalid channelList")
+                    return 0
+                
                opObj.addParameter(name='channelList', value=channelList, format='intlist') 
            
            if not db_range == '':
@@ -1684,6 +1786,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name='id', value=opObj.id, format='int')
             
             if not channelList == '':
+                if not isList(channelList):
+                    self.console.append("Invalid channelList")
+                    return 0
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
             
 #             if not timerange == '':
@@ -1759,11 +1864,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         try:
             self.refreshPUProperties(puObj)
         except:
-            self.console.append("Check input parameters")
+            self.console.append("An error reading input parameters was found ... Check them!")
             return 0
         
-        self.console.append("If you want to save your project")
-        self.console.append("click on your project name in the Tree Project Explorer")
+        self.console.append("Save your project and press Play button to start signal processing")
 
         self.actionSaveToolbar.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
@@ -1923,77 +2027,104 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
+        self.console.clear()
+        self.console.append("Checking input parameters ...")
+        
         puObj = self.getSelectedItemObj()
         puObj.removeOperations()
         
         if self.specHeisOpCebIncoherent.isChecked():
-            value = self.specHeisOpIncoherent.text()   
+            value = str(self.specHeisOpIncoherent.text()) 
             name_operation = 'IncohInt4SpectraHeis'
             optype = 'other'
+            
+            name_parameter = 'timeInterval'
+            format = 'float'
+                
             if self.specOpCobIncInt.currentIndex() == 0:
                 name_parameter = 'timeInterval'
                 format = 'float'
+            
+            if not isFloat(value):
+                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                return 0
+            
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+            
+            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                return 0
             
         # ---- Spectra Plot-----
         if self.specHeisGraphCebSpectraplot.isChecked():   
             name_operation = 'SpectraHeisScope'
             optype = 'other'
-            name_parameter = 'type'
-            value = 'SpectraHeisScope'
-            format = 'str'
-            if self.idImagspectraHeis == 0:
-                self.idImagspectraHeis = 800
-            else:
-                self.idImagspectraHeis = self.idImagspectraHeis + 1
-            name_parameter1 = 'id'
-            value1 = int(self.idImagspectraHeis)
-            format1 = 'int'
             
-            format = 'str'
+            name_parameter = 'id'
+            format = 'int'
             
-            channelList = self.specHeisGgraphChannelList.text()
-            xvalue = self.specHeisGgraphXminXmax.text() 
-            yvalue = self.specHeisGgraphYminYmax.text()            
+            channelList = str(self.specHeisGgraphChannelList.text())
+            xvalue = str(self.specHeisGgraphXminXmax.text())
+            yvalue = str(self.specHeisGgraphYminYmax.text()) 
+                      
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-#             opObj.addParameter(name=name_parameter, value=value, format=format)
-            opObj.addParameter(name=name_parameter1, value=value1, format=format1)      
+            value = opObj.id
+            
+            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                return 0
             
             if not channelList == '':
                name_parameter = 'channelList'
                format = 'intlist'
+               
+               if not isList(channelList):
+                   self.console.append("Invalid value '%s' for '%s'" %(channelList, name_parameter))
+                   return 0
+                   
                opObj.addParameter(name=name_parameter, value=channelList, format=format) 
            
             if not xvalue == '':
-               xvalueList = xvalue.split(',')
-               try:
-                   value1 = float(xvalueList[0])
-                   value2 = float(xvalueList[1])
-               except:
-                       self.console.clear()
-                       self.console.append("Please Write  corrects parameter xmin-xmax")
-                       return 0
-               name1 = 'xmin'
-               name2 = 'xmax'
-               format = 'float'
-               opObj.addParameter(name=name1, value=value1, format=format)
-               opObj.addParameter(name=name2, value=value2, format=format)
+                xvalueList = xvalue.split(',')
+                
+                if len(xvalueList) != 2:
+                    self.console.append("Invalid value '%s' for '%s'" %(xvalue, "xrange"))
+                    return 0
+                
+                value1 = xvalueList[0]
+                value2 = xvalueList[1]
+                
+                if not isFloat(value1) or not isFloat(value2):
+                    self.console.append("Invalid value '%s' for '%s'" %(xvalue, "xrange"))
+                    return 0
+                    
+                name1 = 'xmin'
+                name2 = 'xmax'
+                format = 'float'
+                
+                opObj.addParameter(name=name1, value=value1, format=format)
+                opObj.addParameter(name=name2, value=value2, format=format)
+               
             #------specHeisGgraphYmin-Ymax---
             if not yvalue == '':
-                  yvalueList = yvalue.split(",")
-                  try:
-                       value1 = float(yvalueList[0])
-                       value2 = float(yvalueList[1])
-                  except:
-                      self.console.clear()
-                      self.console.append("Please Write  corrects parameter Ymix-Ymax")
-                      return 0 
-                  name1 = 'ymin'
-                  name2 = 'ymax'
-                  format = 'float'
-                  opObj.addParameter(name=name1, value=value1, format=format)
-                  opObj.addParameter(name=name2, value=value2, format=format) 
+                yvalueList = yvalue.split(",")
+                
+                if len(yvalueList) != 2:
+                    self.console.append("Invalid value '%s' for '%s'" %(xvalue, "xrange"))
+                    return 0
+               
+                value1 = yvalueList[0]
+                value2 = yvalueList[1]
+                
+                if not isFloat(value1) or not isFloat(value2):
+                    self.console.append("Invalid value '%s' for '%s'" %(yvalue, "yrange"))
+                    return 0
+                
+                name1 = 'ymin'
+                name2 = 'ymax'
+                format = 'float'
+                opObj.addParameter(name=name1, value=value1, format=format)
+                opObj.addParameter(name=name2, value=value2, format=format) 
             
             if self.specHeisGraphSaveSpectra.isChecked():
                 checkPath = True
@@ -2001,8 +2132,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 name_parameter2 = 'figpath'
                 name_parameter3 = 'figfile'
                 value1 = '1'
-                value2 = self.specHeisGraphPath.text()
-                value3 = self.specHeisGraphPrefix.text()
+                value2 = str(self.specHeisGraphPath.text())
+                value3 = str(self.specHeisGraphPrefix.text())
                 format1 = 'bool'
                 format2 = 'str'
                 opObj.addParameter(name=name_parameter1, value=value1 , format=format1)
@@ -2014,7 +2145,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                        self.console.clear()
                        self.console.append("Please Write prefix")
                        return 0    
-                   opObj.addParameter(name='figfile', value=self.specHeisGraphPrefix.text(), format='str')
+                   opObj.addParameter(name='figfile', value=str(self.specHeisGraphPrefix.text()), format='str')
                 
              #   opObj.addParameter(name=name_parameter3, value=value3, format=format2) 
              #   opObj.addParameter(name='wr_period', value='5',format='int')
@@ -2027,29 +2158,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if self.specHeisGraphCebRTIplot.isChecked():
             name_operation = 'RTIfromSpectraHeis'
             optype = 'other'
-            name_parameter = 'type'
-            value = 'RTIfromSpectraHeis'
-            format = 'str'
-          
-            if self.idImagrtiHeis == 0:
-                self.idImagrtiHeis = 900
-            else:
-                self.idImagrtiHeis = self.idImagrtiHeis + 1
             
-            name_parameter1 = 'id'
-            value1 = int(self.idImagrtiHeis)
-            format1 = 'int'
-            
-            format = 'str'
+            name_parameter = 'id'
+            format = 'int'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-#             opObj.addParameter(name=name_parameter, value=value, format=format)
-            opObj.addParameter(name=name_parameter1, value=value1, format=format1)
+            value = opObj.id
+            opObj.addParameter(name=name_parameter, value=value, format=format)
 
-            channelList = self.specHeisGgraphChannelList.text()
-            xvalue = self.specHeisGgraphTminTmax.text()     
-            yvalue = self.specHeisGgraphYminYmax.text()
-            timerange = self.specHeisGgraphTimeRange.text()
+            channelList = str(self.specHeisGgraphChannelList.text())
+            xvalue = str(self.specHeisGgraphTminTmax.text())   
+            yvalue = str(self.specHeisGgraphYminYmax.text())
+            timerange = str(self.specHeisGgraphTimeRange.text())
             
             if not channelList == '':
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
@@ -2088,8 +2208,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if self.specHeisGraphSaveRTIplot.isChecked():
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
-                opObj.addParameter(name='figpath', value=self.specHeisGraphPath.text(), format='str')
-                value = self.specHeisGraphPrefix.text()
+                opObj.addParameter(name='figpath', value=str(self.specHeisGraphPath.text()), format='str')
+                value = str(self.specHeisGraphPrefix.text())
                 if not value == "":
                    try:
                        value = str(self.specHeisGraphPrefix.text())
@@ -2107,7 +2227,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         localfolder = None
         if checkPath:
-            localfolder = str(self.specGraphPath.text())
+            localfolder = str(self.specHeisGraphPath.text())
             if localfolder == '':
                 self.console.clear()
                 self.console.append("Graphic path should be defined")
@@ -2140,10 +2260,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         try:
             self.refreshPUProperties(puObj)
         except:
-            self.console.append("Check input parameters")
+            self.console.append("An error reading input parameters was found ... Check them!")
             return 0
         
-        self.console.append("Click on save icon ff you want to save your project")
+        self.console.append("Save your project and press Play button to start signal processing")
         
         self.actionSaveToolbar.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
@@ -2390,7 +2510,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             ippKm = float(value)
         except:
             if datatype=="USRP":
-                outputstr = 'IPP value (%s) must be a float number' % str(self.proIPPKm.text())
+                outputstr = 'IPP value "%s" must be a float number' % str(self.proIPPKm.text())
                 self.console.append(outputstr)
                 parms_ok = False
         

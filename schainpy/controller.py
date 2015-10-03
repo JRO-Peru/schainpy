@@ -79,7 +79,7 @@ class ParameterConf():
             value = value.replace(']', '')
             
             strList = value.split(',')
-            intList = [int(x) for x in strList]
+            intList = [int(float(x)) for x in strList]
             
             self.__formated_value = intList
             
@@ -174,6 +174,13 @@ class ParameterConf():
         self.name = name
         self.value = str(value)
         self.format = str.lower(format)
+        
+        try:
+            self.getValue()
+        except:
+            return 0
+        
+        return 1
         
     def update(self, name, value, format='str'):
         
@@ -301,7 +308,8 @@ class OperationConf():
         id = self.__getNewId()
         
         parmConfObj = ParameterConf()
-        parmConfObj.setup(id, name, value, format)
+        if not parmConfObj.setup(id, name, value, format):
+            return None
         
         self.parmConfObjList.append(parmConfObj)
         
