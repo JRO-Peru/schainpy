@@ -404,6 +404,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.clear()
         
+        if not self.getSelectedProjectObj():
+            self.console.append("Please select a Project before Load files")
+            return
+        
         parameter_list = self.checkInputsProject()
         
         if not parameter_list[0]:
@@ -1176,6 +1180,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.append("Checking input parameters ...")
         
         projectObj = self.getSelectedProjectObj() 
+        
+        if not projectObj:
+            self.console.append("Please select a project before update it")
+            return
+        
         puObj = self.getSelectedItemObj()
         
         puObj.removeOperations()
@@ -3978,6 +3987,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         projectObj = self.getSelectedProjectObj()
         
+        if not projectObj:
+            return
+        
         for idPU, puObj in projectObj.procUnitConfObjDict.items():
             
             for opObj in puObj.getOperationObjList():
@@ -4105,13 +4117,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #         project_name, description, datatype, data_path, starDate, endDate, startTime, endTime, online, delay, walk, set = self.getParmsFromProjectWindow()
         
         projectParms = self.__getParmsFromProjectWindow()
-
+        
         if not projectParms.isValid():
             return None
         
         projectObjView = self.getSelectedProjectObj()
+        
+        if not projectObjView:
+            self.console.append("Please select a project before update it")
+            return None
+        
         projectObjView.update(name=projectParms.name, description=projectParms.description)
-               
+        
         return projectObjView
          
     def createReadUnitView(self, projectObjView):
@@ -4254,6 +4271,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             inputId = fatherObj.getId()
             projectObjView = self.getSelectedProjectObj()
         
+        if not projectObjView:
+            return
+        
         puObj = self.createProcUnitView(projectObjView, datatype, inputId)
         
         self.addPU2ProjectExplorer(puObj)
@@ -4319,6 +4339,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.temporalFTP.setwithoutconfiguration()
         
         projectObj = self.getSelectedProjectObj()
+        
+        if not projectObj:
+            return
         
         self.removeAllFTPProcUnitView(projectObj)
             
@@ -4702,7 +4725,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         projectObj = self.getSelectedProjectObj()
         
         if not projectObj:
-            print "Please select a project before pressing PLAY button"
+            self.console.append("Please select a project before pressing PLAY button")
             return
         
         if save:
@@ -4771,7 +4794,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStart.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
-        projectObj = self.getSelectedProjectObj()  
+        projectObj = self.getSelectedProjectObj()
+        
+        if not projectObj:
+            self.console.append("Please select a project before save it")
+            return
+        
         self.refreshGraphicsId()
         
         sts = True
@@ -4802,7 +4830,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             filename = os.path.join( str(self.pathWorkSpace), "%s%s" %(str(projectObj.name), '.xml') )
             
         projectObj.writeXml(filename)     
-        self.console.append("\nPress Play button to start data processing ...")
+        self.console.clear()
+        self.console.append("Project saved")
+        self.console.append("Press Play button to start data processing ...")
         
         self.actionStart.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
@@ -5266,7 +5296,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         if not dateList:
 #             self.console.clear()
-            outputstr = "The path %s has no files with extension *%s" % (data_path, ext)
+            if walk:
+                if expLabel:
+                    outputstr = "No files (*%s) were found on %s/DOYPATH/%s" % (ext, data_path, expLabel)
+                else:
+                    outputstr = "No files (*%s) were found on %s" % (ext, data_path)
+            else:
+                outputstr = "No files (*%s) were found on %s" % (ext, data_path)
+                                                                 
             self.console.append(outputstr)
             return
         
@@ -5806,6 +5843,12 @@ class ftpBuffer():
         return self.server, self.remotefolder, self.username, self.password, self.ftp_wei, self.exp_code, self.sub_exp_code, self.plot_pos, self.extension, self.period, self.protocol
 
 class ShowMeConsole(QtCore.QObject):
-        textWritten = QtCore.pyqtSignal(str)
-        def write (self, text):
-            self.textWritten.emit(str(text))
+    
+    textWritten = QtCore.pyqtSignal(str)
+    
+    def write(self, text):
+        
+        if text[-1] == "\n":
+            text = text[:-1]
+            
+        self.textWritten.emit(str(text))

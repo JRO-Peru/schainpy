@@ -983,9 +983,9 @@ class Project():
     def run(self):
         
         print
-        print "*"*40
+        print "*"*50
         print "   Starting SIGNAL CHAIN PROCESSING  "
-        print "*"*40
+        print "*"*50
         print
         
         keyList = self.procUnitConfObjDict.keys()
