@@ -10,11 +10,10 @@ import h5py
 import numpy
 import fnmatch
 import re
-import stuffr
 
-from model.data.jroheaderIO import RadarControllerHeader, SystemHeader
-from model.data.jrodata import Voltage
-from model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.data.jroheaderIO import RadarControllerHeader, SystemHeader
+from schainpy.model.data.jrodata import Voltage
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 
 
 def isNumber(str):
@@ -267,7 +266,7 @@ class HFReader(ProcessingUnit):
             fp= h5py.File(dir_hf_filename,'r')
             hipoc=fp['t'].value
             fp.close()
-            date_time=stuffr.unix2datestr(hipoc)
+            date_time=datetime.datetime.utcfromtimestamp(hipoc)
             year =int(date_time[0:4])
             month=int(date_time[5:7])
             dom  =int(date_time[8:10])
@@ -312,7 +311,7 @@ class HFReader(ProcessingUnit):
             fp= h5py.File(dir_hf_filename,'r')
             hipoc=fp['t'].value
             hipoc=hipoc+self.timezone
-            date_time=stuffr.unix2datestr(hipoc)
+            date_time=datetime.datetime.utcfromtimestamp(hipoc)
             fp.close()
             year =int(date_time[0:4])
             month=int(date_time[5:7])
@@ -479,7 +478,7 @@ class HFReader(ProcessingUnit):
 #         fp= h5py.File(dir_hf_filename,'r')
 #         hipoc=fp['t'].value
 #         fp.close()
-#         date_time=stuffr.unix2datestr(hipoc)
+#         date_time=datetime.datetime.utcfromtimestamp(hipoc)
 #         
 #         year =int(date_time[0:4])
 #         month=int(date_time[5:7])
