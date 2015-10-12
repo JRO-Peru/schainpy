@@ -980,7 +980,9 @@ class Noise(Figure):
         f.close()
 
     def save_data(self, filename_phase, data, data_datetime):
+        
         f=open(filename_phase,'a')
+        
         timetuple_data = data_datetime.timetuple()
         day = str(timetuple_data.tm_mday)
         month = str(timetuple_data.tm_mon)
@@ -1080,15 +1082,7 @@ class Noise(Figure):
             path = '%s%03d' %(self.PREFIX, self.id)
             noise_file = os.path.join(path,'%s.txt'%self.name)
             self.filename_noise = os.path.join(figpath,noise_file)
-            if save:
-                self.openfile(self.filename_noise)
-         
-        
-        #store data beacon phase
-        if save:
-            self.save_data(self.filename_noise, noisedB, thisDatetime)
-            
-        
+
         self.setWinTitle(title)
             
         
@@ -1128,7 +1122,10 @@ class Noise(Figure):
                   thisDatetime=thisDatetime,
                   update_figfile=False)
         
-        
+        #store data beacon phase
+        if save:
+            self.save_data(self.filename_noise, noisedB, thisDatetime)
+            
 class BeaconPhase(Figure):
     
     __isConfig = None
