@@ -180,8 +180,6 @@ class Remote(Thread):
         if not self.cd(self.remotefolder):
             raise ValueError, "Could not access to the new remote directory: %s" %self.remotefolder
         
-        sts = True
-        
         while True:
             
             for i in range(self.period):
@@ -196,14 +194,10 @@ class Remote(Thread):
             self.mutex.acquire()
             
             for thisFile in self.fileList:
-                sts = self.upload(thisFile, self.remotefolder)
-                if not sts: break
+                self.upload(thisFile, self.remotefolder)
             
             self.mutex.release()
 #             self.bussy = False
-            
-            if not sts:
-                break
             
         print "[Remote Server] Thread stopped successfully"
             
