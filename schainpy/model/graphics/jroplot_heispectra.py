@@ -147,7 +147,7 @@ class SpectraHeisScope(Figure):
         for i in range(len(self.axesList)):
             ychannel = y[i,:]
             str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
-            title = "Channel %d: %4.2fdB: %s" %(i, numpy.max(ychannel), str_datetime)
+            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[channelIndexList[i]], numpy.max(ychannel), str_datetime)
             axes = self.axesList[i]
             axes.pline(x, ychannel,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
