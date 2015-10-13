@@ -83,12 +83,16 @@ def isFileInEpoch(filename, startUTSeconds, endUTSeconds):
     
     return 1
 
-def isFileInTimeRange(filename, startTime, endTime):
+def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
     """
     Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
     
     Inputs:
         filename            :    nombre completo del archivo de datos en formato Jicamarca (.r)
+        
+        startDate          :    fecha inicial del rango seleccionado en formato datetime.date
+        
+        endDate            :    fecha final del rango seleccionado en formato datetime.date
         
         startTime          :    tiempo inicial del rango seleccionado en formato datetime.time
         
@@ -116,6 +120,7 @@ def isFileInTimeRange(filename, startTime, endTime):
     fp.close()
     
     thisDatetime = basicHeaderObj.datatime
+    thisDate = thisDatetime.date()
     thisTime = thisDatetime.time()
     
     if not(sts):
@@ -139,6 +144,12 @@ def isFileInTimeRange(filename, startTime, endTime):
     #<<<<<<<<<<<o                            o>>>>>>>>>>>
     #-----------o----------------------------o-----------
     #        endTime                    startTime
+    
+    if (thisDate == startDate) and (thisTime < startTime):
+        return None
+    
+    if (thisDate == endDate) and (thisTime > endTime):
+        return None
     
     if (thisTime < startTime) and (thisTime > endTime):
         return None
@@ -554,7 +565,7 @@ class JRODataReader(JRODataIO):
             return None, None
         
         if len(dateList) > 1:
-            print "[Reading] %d dates with data were found for the date range: %s - %s" %(len(dateList), startDate, endDate)
+            print "[Reading] %d days were found in date range: %s - %s" %(len(dateList), startDate, endDate)
         else:
             print "[Reading] data was found for the date %s" %(dateList[0])
              
@@ -574,7 +585,7 @@ class JRODataReader(JRODataIO):
                 if not isFileInDateRange(filename, startDate, endDate):
                     continue
                 
-                thisDatetime = isFileInTimeRange(filename, startTime, endTime)
+                thisDatetime = isFileInTimeRange(filename, startDate, endDate, startTime, endTime)
                 
                 if not(thisDatetime):
                     continue
