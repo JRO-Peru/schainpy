@@ -122,7 +122,25 @@ def isFileInTimeRange(filename, startTime, endTime):
         print "Skipping the file %s because it has not a valid header" %(filename)
         return None
     
-    if not ((startTime <= thisTime) and (endTime > thisTime)):
+    #General case
+    #           o>>>>>>>>>>>>>><<<<<<<<<<<<<<o
+    #-----------o----------------------------o-----------
+    #       startTime                     endTime
+    
+    if endTime >= startTime:
+        if (thisTime < startTime) or (thisTime > endTime):
+            return None
+        
+        return thisDatetime
+    
+    #If endTime < startTime then endTime belongs to the next day
+    
+    
+    #<<<<<<<<<<<o                            o>>>>>>>>>>>
+    #-----------o----------------------------o-----------
+    #        endTime                    startTime
+    
+    if (thisTime < startTime) and (thisTime > endTime):
         return None
     
     return thisDatetime
@@ -526,84 +544,22 @@ class JRODataReader(JRODataIO):
         
         pathList = []
         
-#         if not walk:
-#             #pathList.append(path)
-#             multi_path = path.split(',')
-#             for single_path in multi_path:
-#                 
-#                 if not os.path.isdir(single_path):
-#                     continue
-#                 
-#                 pathList.append(single_path)
-#         
-#         else:
-#             #dirList = []
-#             multi_path = path.split(',')
-#             for single_path in multi_path:
-#                 
-#                 if not os.path.isdir(single_path):
-#                     continue
-#                 
-#                 dirList = []
-#                 for thisPath in os.listdir(single_path):
-#                     if not os.path.isdir(os.path.join(single_path,thisPath)):
-#                         continue
-#                     if not isRadarFolder(thisPath):
-#                         continue
-#                 
-#                     dirList.append(thisPath)
-#     
-#                 if not(dirList):
-#                     return None, None
-#                 
-#                 if startDate and endDate:
-#                     thisDate = startDate
-#                 
-#                     while(thisDate <= endDate):
-#                         year = thisDate.timetuple().tm_year
-#                         doy = thisDate.timetuple().tm_yday
-#                         
-#                         matchlist = fnmatch.filter(dirList, '?' + '%4.4d%3.3d' % (year,doy) + '*')
-#                         if len(matchlist) == 0:
-#                             thisDate += datetime.timedelta(1)
-#                             continue
-#                         for match in matchlist:
-#                             pathList.append(os.path.join(single_path,match,expLabel))
-#                         
-#                         thisDate += datetime.timedelta(1)
-#                 else:
-#                     for thiDir in dirList:
-#                         pathList.append(os.path.join(single_path,thiDir,expLabel))
-        
         dateList, pathList = self.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
         
         if dateList == []:
-            print "Any folder was found for the date range: %s-%s" %(startDate, endDate)
+            print "[Reading] No *%s files in %s from %s to %s)"%(ext, path,
+                                                        datetime.datetime.combine(startDate,startTime).ctime(),
+                                                        datetime.datetime.combine(endDate,endTime).ctime())
+                
             return None, None
         
         if len(dateList) > 1:
-            print "%d dates with data were found for the date range: %s - %s" %(len(dateList), startDate, endDate)
+            print "[Reading] %d dates with data were found for the date range: %s - %s" %(len(dateList), startDate, endDate)
         else:
-            print "data was found for the date %s" %(dateList[0])
+            print "[Reading] data was found for the date %s" %(dateList[0])
              
         filenameList = []
         datetimeList = []
-#         pathDict = {}
-#         filenameList_to_sort = []
-#         
-#         for i in range(len(pathList)):
-#             
-#             thisPath = pathList[i]
-#             
-#             fileList = glob.glob1(thisPath, "*%s" %ext)
-#             if len(fileList) < 1:
-#                 continue
-#             fileList.sort()
-#             pathDict.setdefault(fileList[0])
-#             pathDict[fileList[0]] = i
-#             filenameList_to_sort.append(fileList[0])
-#         
-#         filenameList_to_sort.sort()
         
         for thisPath in pathList:
 #             thisPath = pathList[pathDict[file]]
@@ -627,14 +583,14 @@ class JRODataReader(JRODataIO):
                 datetimeList.append(thisDatetime)
                 
         if not(filenameList):
-            print "Any file was found for the time range %s - %s" %(startTime, endTime)
+            print "[Reading] Any file was found int time range %s - %s" %(startTime.ctime(), endTime.ctime())
             return None, None
         
-        print "%d file(s) was(were) found for the time range: %s - %s" %(len(filenameList), startTime, endTime)
+        print "[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime)
         print
         
         for i in range(len(filenameList)):
-            print "%s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
+            print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
 
         self.filenameList = filenameList
         self.datetimeList = datetimeList
@@ -690,7 +646,7 @@ class JRODataReader(JRODataIO):
             fullpath = os.path.join(path, doypath, expLabel)
             
             
-        print "%s folder was found: " %(fullpath )
+        print "[Reading] %s folder was found: " %(fullpath )
 
         if set == None:
             filename = getlastFileFromPath(fullpath, ext)
@@ -700,7 +656,7 @@ class JRODataReader(JRODataIO):
         if not(filename):
             return None, None, None, None, None, None
         
-        print "%s file was found" %(filename)
+        print "[Reading] %s file was found" %(filename)
         
         if not(self.__verifyFile(os.path.join(fullpath, filename))):
             return None, None, None, None, None, None
@@ -1206,10 +1162,10 @@ class JRODataReader(JRODataIO):
                                                                walk=walk)
             
             if not(pathList):
-                print "[Reading] No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
-                                                        datetime.datetime.combine(startDate,startTime).ctime(),
-                                                        datetime.datetime.combine(endDate,endTime).ctime())
-                
+#                 print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
+#                                                         datetime.datetime.combine(startDate,startTime).ctime(),
+#                                                         datetime.datetime.combine(endDate,endTime).ctime())
+#                 
                 sys.exit(-1)
                 
             
