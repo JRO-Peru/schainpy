@@ -2063,27 +2063,29 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if not opObj.addParameter(name=name_parameter, value=value, format=format):
                 self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
                 return 0
+        
+        channelList = str(self.specHeisGgraphChannelList.text())
+        freq_range = str(self.specHeisGgraphXminXmax.text())   
+        power_range = str(self.specHeisGgraphYminYmax.text())
+        time_range = str(self.specHeisGgraphTminTmax.text()) 
+        timerange = str(self.specHeisGgraphTimeRange.text())
             
         # ---- Spectra Plot-----
-        if self.specHeisGraphCebSpectraplot.isChecked():   
+        if self.specHeisGraphCebSpectraplot.isChecked(): 
+              
             name_operation = 'SpectraHeisScope'
             optype = 'other'
+            opObj = puObj.addOperation(name=name_operation, optype=optype)
             
             name_parameter = 'id'
             format = 'int'
-            
-            channelList = str(self.specHeisGgraphChannelList.text())
-            xvalue = str(self.specHeisGgraphXminXmax.text())
-            yvalue = str(self.specHeisGgraphYminYmax.text()) 
-                      
-            opObj = puObj.addOperation(name=name_operation, optype=optype)
             value = opObj.id
             
             if not opObj.addParameter(name=name_parameter, value=value, format=format):
                 self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
                 return 0
             
-            if not channelList == '':
+            if not (channelList == ''):
                name_parameter = 'channelList'
                format = 'intlist'
                
@@ -2093,18 +2095,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                    
                opObj.addParameter(name=name_parameter, value=channelList, format=format) 
            
-            if not xvalue == '':
-                xvalueList = xvalue.split(',')
+            if not freq_range == '':
+                xvalueList = freq_range.split(',')
                 
                 if len(xvalueList) != 2:
-                    self.console.append("Invalid value '%s' for '%s'" %(xvalue, "xrange"))
+                    self.console.append("Invalid value '%s' for '%s'" %(freq_range, "xrange"))
                     return 0
                 
                 value1 = xvalueList[0]
                 value2 = xvalueList[1]
                 
                 if not isFloat(value1) or not isFloat(value2):
-                    self.console.append("Invalid value '%s' for '%s'" %(xvalue, "xrange"))
+                    self.console.append("Invalid value '%s' for '%s'" %(freq_range, "xrange"))
                     return 0
                     
                 name1 = 'xmin'
@@ -2115,18 +2117,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name=name2, value=value2, format=format)
                
             #------specHeisGgraphYmin-Ymax---
-            if not yvalue == '':
-                yvalueList = yvalue.split(",")
+            if not power_range == '':
+                yvalueList = power_range.split(",")
                 
                 if len(yvalueList) != 2:
-                    self.console.append("Invalid value '%s' for '%s'" %(xvalue, "xrange"))
+                    self.console.append("Invalid value '%s' for '%s'" %(power_range, "xrange"))
                     return 0
                
                 value1 = yvalueList[0]
                 value2 = yvalueList[1]
                 
                 if not isFloat(value1) or not isFloat(value2):
-                    self.console.append("Invalid value '%s' for '%s'" %(yvalue, "yrange"))
+                    self.console.append("Invalid value '%s' for '%s'" %(power_range, "yrange"))
                     return 0
                 
                 name1 = 'ymin'
@@ -2174,17 +2176,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             value = opObj.id
             opObj.addParameter(name=name_parameter, value=value, format=format)
-
-            channelList = str(self.specHeisGgraphChannelList.text())
-            xvalue = str(self.specHeisGgraphTminTmax.text())   
-            yvalue = str(self.specHeisGgraphYminYmax.text())
-            timerange = str(self.specHeisGgraphTimeRange.text())
             
             if not channelList == '':
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
             
-            if not xvalue == '':
-                xvalueList = xvalue.split(',')
+            if not time_range == '':
+                xvalueList = time_range.split(',')
                 try:
                     value = float(xvalueList[0])
                     value = float(xvalueList[1])
@@ -2203,13 +2200,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 opObj.addParameter(name='timerange', value=timerange, format=format)
 
                 
-            if not yvalue == '':
-                yvalueList = yvalue.split(",")
+            if not power_range == '':
+                yvalueList = power_range.split(",")
                 try:
                     value = float(yvalueList[0])
                     value = float(yvalueList[1])
                 except:
-                        return 0
+                    return 0
+                
                 format = 'float'
                 opObj.addParameter(name='ymin', value=yvalueList[0], format=format)
                 opObj.addParameter(name='ymax', value=yvalueList[1], format=format)   
@@ -5531,6 +5529,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
 
+        
+        self.specHeisOpIncoherent.setToolTip('Example: 10')
+        
+        self.specHeisGgraphChannelList.setToolTip('Example: 0,2,3')
+        self.specHeisGgraphXminXmax.setToolTip('Example (Hz): -1000, 1000')
+        self.specHeisGgraphYminYmax.setToolTip('Example (dB): 5, 35')
+        self.specHeisGgraphTminTmax.setToolTip('Example (hours): 0, 24')
+        self.specHeisGgraphTimeRange.setToolTip('Example (hours): 8')
+        
         self.labelSet.show()
         self.proSet.show()
         
