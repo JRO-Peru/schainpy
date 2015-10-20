@@ -1,7 +1,8 @@
 VERSIONS:
 
 2.1.2:
--jroutils_ftp.py: Server thread stops when an error sending file has been detected
+-jroutils_ftp.py: Bug fixed, Any error sending file stopped the Server Thread
+				  Server thread opens and closes remote server each time file list is sent
 -jroplot_spectra.py: Noise path was not being created saving noise data.
 -jroIO_base.py: startTime can be greater than endTime 
 -jroplot_heispectra.py: SpectraHeisScope was not showing the right channel
