@@ -404,9 +404,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.clear()
         
-        if not self.getSelectedProjectObj():
-            self.console.append("Please select a Project before Load files")
-            return
+#         if not self.getSelectedProjectObj():
+#             self.console.append("Please select a project before load files")
+#             return
         
         parameter_list = self.checkInputsProject()
         
@@ -481,6 +481,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             if not projectObjView:
                 return 0
+            
+            self.create = False
             
             readUnitObj = self.createReadUnitView(projectObjView)
             
@@ -4106,8 +4108,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.__projectObjDict[id] = projectObjView
         self.addProject2ProjectExplorer(id=id, name=projectObjView.name) 
         
-        self.create = False
-        
         return projectObjView 
     
     def updateProjectView(self):
@@ -4622,7 +4622,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStart.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
         
-        self.create = False
         self.frame_2.setEnabled(True)
         
         # print self.dir
@@ -4637,6 +4636,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.console.append("The selected xml file could not be loaded ...")
             return 0
         
+        self.create = False
         self.refreshProjectWindow(projectObjLoad)
         self.refreshProjectProperties(projectObjLoad)
         
@@ -4795,7 +4795,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         projectObj = self.getSelectedProjectObj()
         
         if not projectObj:
-            self.console.append("Please select a project before save it")
+            
+            if self.create:
+                self.console.append("Please press Ok before save it")
+            else:
+                self.console.append("Please select a project before save it")
             return
         
         self.refreshGraphicsId()
