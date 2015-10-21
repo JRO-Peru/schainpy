@@ -594,7 +594,7 @@ class JRODataReader(JRODataIO):
                 datetimeList.append(thisDatetime)
                 
         if not(filenameList):
-            print "[Reading] Any file was found int time range %s - %s" %(startTime.ctime(), endTime.ctime())
+            print "[Reading] Any file was found int time range %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
             return None, None
         
         print "[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime)

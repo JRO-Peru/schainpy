@@ -844,6 +844,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         if self.volOpCebDecodification.isChecked():
             name_operation = 'Decoder'
+            opObj = puObj.addOperation(name=name_operation, optype='other')  
             
             #User defined
             nBaud = None
@@ -855,47 +856,43 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             except:
                 code_tmp = []
             
-            if len(code_tmp) < 1:
-                self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
-                return 0
+            if len(code_tmp) > 0:
             
-            if type(code_tmp) not in (tuple, list):
-                self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
-                return 0
-                
-            if len(code_tmp) > 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1], [1,1,-1] ]
-                nBaud = len(code_tmp[0])
-                nCode = len(code_tmp)
-            elif len(code_tmp) == 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1] ]
-                nBaud = len(code_tmp[0])
-                nCode = 1
-            elif type(code_tmp[0]) in (int, float): #[1,-1,1]  or (1,-1,1)
-                nBaud = len(code_tmp)
-                nCode = 1
-            else:
-                self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
-                return 0
-                
-            if not nBaud or not nCode:
-                self.console.append("Please write a right value for Code")
-                return 0
-            
-            opObj = puObj.addOperation(name='Decoder', optype='other')  
+                if type(code_tmp) not in (tuple, list):
+                    self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
+                    return 0
+                    
+                if len(code_tmp) > 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1], [1,1,-1] ]
+                    nBaud = len(code_tmp[0])
+                    nCode = len(code_tmp)
+                elif len(code_tmp) == 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1] ]
+                    nBaud = len(code_tmp[0])
+                    nCode = 1
+                elif type(code_tmp[0]) in (int, float): #[1,-1,1]  or (1,-1,1)
+                    nBaud = len(code_tmp)
+                    nCode = 1
+                else:
+                    self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
+                    return 0
+                    
+                if not nBaud or not nCode:
+                    self.console.append("Please write a right value for Code")
+                    return 0
         
-            code = code.replace("(", "")
-            code = code.replace(")", "")
-            code = code.replace("[", "")
-            code = code.replace("]", "")
-            
-            if not opObj.addParameter(name='code', value=code, format='intlist'):
-                self.console.append("Please write a right value for Code")
-                return 0
-            if not opObj.addParameter(name='nCode', value=nCode, format='int'):
-                self.console.append("Please write a right value for Code")
-                return 0
-            if not opObj.addParameter(name='nBaud', value=nBaud, format='int'):
-                self.console.append("Please write a right value for Code")
-                return 0
+                code = code.replace("(", "")
+                code = code.replace(")", "")
+                code = code.replace("[", "")
+                code = code.replace("]", "")
+                
+                if not opObj.addParameter(name='code', value=code, format='intlist'):
+                    self.console.append("Please write a right value for Code")
+                    return 0
+                if not opObj.addParameter(name='nCode', value=nCode, format='int'):
+                    self.console.append("Please write a right value for Code")
+                    return 0
+                if not opObj.addParameter(name='nBaud', value=nBaud, format='int'):
+                    self.console.append("Please write a right value for Code")
+                    return 0
             
             name_parameter = 'mode'
             format = 'int'
@@ -4158,6 +4155,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             if projectParms.expLabel:
                 readUnitConfObj.addParameter(name="expLabel", value=projectParms.expLabel)
             
+            readUnitConfObj.addOperation(name="printInfo")
+            
         if projectParms.datatype == "USRP":
             readUnitConfObj = projectObjView.addReadUnit(datatype=projectParms.datatype,
                                                             path=projectParms.dpath,
@@ -4203,7 +4202,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             if projectParms.expLabel:
                 readUnitConfObj.addParameter(name="expLabel", value=projectParms.expLabel)
-                
+            
+            readUnitConfObj.addOperation(name="printInfo")
+            
         if projectParms.datatype == "USRP":
             readUnitConfObj.update(datatype=projectParms.datatype,
                                     path=projectParms.dpath,

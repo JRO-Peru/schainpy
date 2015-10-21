@@ -562,6 +562,10 @@ class Decoder(Operation):
         self.__nProfiles = dataOut.nProfiles
         self.__nHeis = dataOut.nHeights
         
+        if self.__nHeis < self.nBaud:
+            print 'IOError: Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
+            raise IOError, 'Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
+        
         if dataOut.flagDataAsBlock:
             
             self.ndatadec = self.__nHeis #- self.nBaud + 1
