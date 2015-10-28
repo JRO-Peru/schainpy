@@ -606,6 +606,9 @@ class Axes:
         
     def __fillGaps(self, x_buffer, y_buffer, z_buffer):
         
+        if x_buffer.shape[0] < 2:
+            return x_buffer, y_buffer, z_buffer
+        
         deltas = x_buffer[1:] - x_buffer[0:-1]
         x_median = numpy.median(deltas)
         
