@@ -4,8 +4,8 @@ Created on Jul 16, 2014
 @author: roj-idl71
 '''
 
-from distutils.core import setup, Extension
 from schainpy import __version__
+from setuptools import setup, Extension
 
 setup(name="schainpy",
         version=__version__,
@@ -29,4 +29,10 @@ setup(name="schainpy",
                     'schainpy.serializer.JROSerializer'],
         package_data={'schainpy.gui.figures': ['*.jpg', '*.jpeg', '*.png', '*.gif']},
         include_package_data=True,
-        scripts =['schainpy/gui/schainGUI'])
+        scripts =['schainpy/gui/schainGUI'],
+        install_requires=["numpy >= 1.6.0",
+                          "scipy >= 0.11.0",
+                          "h5py >= 2.0.1",
+                          "matplotlib >= 1.0.0"
+                          ],
+      )
