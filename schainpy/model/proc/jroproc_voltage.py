@@ -817,7 +817,7 @@ class ProfileSelector(Operation):
                 dataOut.profileIndex = dataOut.nProfiles - 1
             
             if rangeList != None:
-                raise ValueError, "Profile Selector: Not implemented for rangeList yet"
+                raise ValueError, "Profile Selector: Invalid argument rangeList. Not implemented for getByBlock yet"
             
             dataOut.flagNoData = False
             
