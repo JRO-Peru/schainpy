@@ -425,8 +425,6 @@ class JRODataIO:
     
     processingHeaderObj = None
     
-    online = 0
-    
     dtype = None
     
     pathList = []
@@ -493,6 +491,11 @@ class JRODataIO:
         return dtype_width
     
 class JRODataReader(JRODataIO):
+    
+    
+    online = 0
+    
+    realtime = 0
     
     nReadBlocks = 0
     
@@ -756,7 +759,7 @@ class JRODataReader(JRODataIO):
                     
                 for nTries in range( tries ): 
                     if firstTime_flag:
-                        print "\t[Reading] Waiting %0.2f sec for the file \"%s\" , try %03d ..." % ( self.delay, filename, nTries+1 ) 
+                        print "\t[Reading] Waiting %0.2f sec for the next file: \"%s\" , try %03d ..." % ( self.delay, filename, nTries+1 ) 
                         sleep( self.delay )
                     else:
                         print "\t[Reading] Searching the next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext)
@@ -915,28 +918,38 @@ class JRODataReader(JRODataIO):
         
         if self.fp == None:
             return 0
-        
-        if self.online:
-            self.__jumpToLastBlock()
+            
+#         if self.online:
+#             self.__jumpToLastBlock()
         
         if self.flagIsNewFile:
+            self.lastUTTime = self.basicHeaderObj.utc
             return 1
         
-        self.lastUTTime = self.basicHeaderObj.utc
+        if self.realtime:
+            self.flagDiscontinuousBlock = 1
+            if not(self.setNextFile()):
+                return 0
+            else:
+                return 1
+            
         currentSize = self.fileSize - self.fp.tell()
         neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
         
         if (currentSize >= neededSize):
             self.basicHeaderObj.read(self.fp)
+            self.lastUTTime = self.basicHeaderObj.utc
             return 1
         
         if self.__waitNewBlock():
+            self.lastUTTime = self.basicHeaderObj.utc
             return 1
 
         if not(self.setNextFile()):
             return 0
 
         deltaTime = self.basicHeaderObj.utc - self.lastUTTime #
+        self.lastUTTime = self.basicHeaderObj.utc
         
         self.flagDiscontinuousBlock = 0
 
@@ -1134,7 +1147,8 @@ class JRODataReader(JRODataIO):
                 delay = 60,
                 walk = True,
                 getblock = False,
-                nTxs = 1):
+                nTxs = 1,
+                realtime=False):
 
         if path == None:
             raise ValueError, "[Reading] The path is not valid"
@@ -1188,6 +1202,7 @@ class JRODataReader(JRODataIO):
             last_set = int(basename[-3:])
             
         self.online = online
+        self.realtime = realtime
         self.delay = delay
         ext = ext.lower()
         self.ext = ext
