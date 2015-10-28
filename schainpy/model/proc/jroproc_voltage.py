@@ -200,9 +200,9 @@ class VoltageProc(ProcessingUnit):
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
-            data = self.dataOut.data[:,minIndex:maxIndex,:]
+            data = self.dataOut.data[:,:, minIndex:maxIndex]
         else:
-            data = self.dataOut.data[:,minIndex:maxIndex]
+            data = self.dataOut.data[:, minIndex:maxIndex]
 
 #         firstHeight = self.dataOut.heightList[minIndex]
 
@@ -566,6 +566,13 @@ class Decoder(Operation):
             print 'IOError: Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
             raise IOError, 'Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
         
+        #Frequency
+        __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
+        
+        __codeBuffer[:,0:self.nBaud] = self.code
+        
+        self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
+            
         if dataOut.flagDataAsBlock:
             
             self.ndatadec = self.__nHeis #- self.nBaud + 1
@@ -573,18 +580,13 @@ class Decoder(Operation):
             self.datadecTime = numpy.zeros((self.__nChannels, self.__nProfiles, self.ndatadec), dtype=numpy.complex)
         
         else:
-        
-            __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
             
-            __codeBuffer[:,0:self.nBaud] = self.code
-            
-            self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
-            
+            #Time
             self.ndatadec = self.__nHeis #- self.nBaud + 1
             
             self.datadecTime = numpy.zeros((self.__nChannels, self.ndatadec), dtype=numpy.complex)     
          
-    def convolutionInFreq(self, data):
+    def __convolutionInFreq(self, data):
         
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
@@ -594,11 +596,9 @@ class Decoder(Operation):
         
         data = numpy.fft.ifft(conv,axis=1)
         
-        datadec = data#[:,:]
+        return data
         
-        return datadec
-        
-    def convolutionInFreqOpt(self, data):
+    def __convolutionInFreqOpt(self, data):
         
         raise NotImplementedError
     
@@ -610,7 +610,7 @@ class Decoder(Operation):
 #         
 #         return datadec
     
-    def convolutionInTime(self, data):
+    def __convolutionInTime(self, data):
         
         code = self.code[self.__profIndex]
         
@@ -619,7 +619,7 @@ class Decoder(Operation):
         
         return self.datadecTime
     
-    def convolutionByBlockInTime(self, data):
+    def __convolutionByBlockInTime(self, data):
         
         repetitions = self.__nProfiles / self.nCode
         
@@ -629,9 +629,21 @@ class Decoder(Operation):
         
         for i in range(self.__nChannels):
             for j in range(self.__nProfiles):
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='same')
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
         
         return self.datadecTime
+    
+    def __convolutionByBlockInFreq(self, data):
+        
+        fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
+        
+        fft_data = numpy.fft.fft(data, axis=2)
+        
+        conv = fft_data*fft_code
+        
+        data = numpy.fft.ifft(conv,axis=2)
+        
+        return data
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
         
@@ -652,25 +664,32 @@ class Decoder(Operation):
         if self.code is None:
             print "Fail decoding: Code is not defined."
             return
-            
+        
+        datadec = None
+        
         if dataOut.flagDataAsBlock:
             """
             Decoding when data have been read as block,
             """
-            datadec = self.convolutionByBlockInTime(dataOut.data)
-        
+            if mode == 0:
+                datadec = self.__convolutionByBlockInTime(dataOut.data)
+            if mode == 1:
+                datadec = self.__convolutionByBlockInFreq(dataOut.data)
         else:
             """
             Decoding when data have been read profile by profile
             """
             if mode == 0:
-                datadec = self.convolutionInTime(dataOut.data)
+                datadec = self.__convolutionInTime(dataOut.data)
                 
             if mode == 1:
-                datadec = self.convolutionInFreq(dataOut.data)
+                datadec = self.__convolutionInFreq(dataOut.data)
             
             if mode == 2:
-                datadec = self.convolutionInFreqOpt(dataOut.data)
+                datadec = self.__convolutionInFreqOpt(dataOut.data)
+        
+        if datadec is None:
+            raise ValueError, "Codification mode selected is not valid: mode=%d. Try selecting 0 or 1" %mode
         
         dataOut.code = self.code
         dataOut.nCode = self.nCode
@@ -678,7 +697,7 @@ class Decoder(Operation):
         
         dataOut.data = datadec
         
-        dataOut.heightList = dataOut.heightList[0:self.ndatadec]
+        dataOut.heightList = dataOut.heightList[0:datadec.shape[-1]]
         
         dataOut.flagDecodeData = True #asumo q la data esta decodificada
 
@@ -794,11 +813,6 @@ class ProfileSelector(Operation):
                     
         dataOut.flagNoData = True
         
-        if nProfiles:
-            self.nProfiles = dataOut.nProfiles
-        else:
-            self.nProfiles = nProfiles
-        
         if dataOut.flagDataAsBlock:
             """
             data dimension  = [nChannels, nProfiles, nHeis]
@@ -823,77 +837,81 @@ class ProfileSelector(Operation):
             
             return True
     
+        """
+        data dimension  = [nChannels, nHeis]
+        """
+        
+        if nProfiles:
+            self.nProfiles = nProfiles
         else:
-            """
-            data dimension  = [nChannels, nHeis]
+            self.nProfiles = dataOut.nProfiles
+        
+        if profileList != None:
             
-            """
-            if profileList != None:
-                
-                dataOut.nProfiles = len(profileList)
-                
-                if self.isThisProfileInList(dataOut.profileIndex, profileList):
-                    dataOut.flagNoData = False
-                    dataOut.profileIndex = self.profileIndex
-                    
-                    self.incIndex()
-                return True
-    
+            dataOut.nProfiles = len(profileList)
             
-            if profileRangeList != None:
+            if self.isThisProfileInList(dataOut.profileIndex, profileList):
+                dataOut.flagNoData = False
+                dataOut.profileIndex = self.profileIndex
                 
-                minIndex = profileRangeList[0]
-                maxIndex = profileRangeList[1]
+                self.incIndex()
+            return True
+        
+        if profileRangeList != None:
+            
+            minIndex = profileRangeList[0]
+            maxIndex = profileRangeList[1]
+            
+            dataOut.nProfiles = maxIndex - minIndex + 1
+            
+            if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
+                dataOut.flagNoData = False
+                dataOut.profileIndex = self.profileIndex
                 
-                dataOut.nProfiles = maxIndex - minIndex + 1
+                self.incIndex()
+            return True
+        
+        if rangeList != None:
+            
+            nProfiles = 0
+            
+            for thisRange in rangeList:
+                minIndex = thisRange[0]
+                maxIndex = thisRange[1]
+            
+                nProfiles += maxIndex - minIndex + 1
+            
+            dataOut.nProfiles = nProfiles
+            
+            for thisRange in rangeList:
                 
+                minIndex = thisRange[0]
+                maxIndex = thisRange[1]
+            
                 if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
-                    dataOut.flagNoData = False
-                    dataOut.profileIndex = self.profileIndex
                     
-                    self.incIndex()
-                return True
-            
-            if rangeList != None:
-                
-                nProfiles = 0
-                
-                for thisRange in rangeList:
-                    minIndex = thisRange[0]
-                    maxIndex = thisRange[1]
-                
-                    nProfiles += maxIndex - minIndex + 1
-                
-                dataOut.nProfiles = nProfiles
-                
-                for thisRange in rangeList:
-                    
-                    minIndex = thisRange[0]
-                    maxIndex = thisRange[1]
-                
-                    if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
-                        
 #                         print "profileIndex = ", dataOut.profileIndex
-                        
-                        dataOut.flagNoData = False
-                        dataOut.profileIndex = self.profileIndex
-                        
-                        self.incIndex()
-                        break
-                return True
                     
-                
-            if beam != None: #beam is only for AMISR data
-                if self.isThisProfileInList(dataOut.profileIndex, dataOut.beamRangeDict[beam]):
                     dataOut.flagNoData = False
                     dataOut.profileIndex = self.profileIndex
                     
                     self.incIndex()
-                return 1
+                    break
+            return True
+                    
+                
+        if beam != None: #beam is only for AMISR data
+            if self.isThisProfileInList(dataOut.profileIndex, dataOut.beamRangeDict[beam]):
+                dataOut.flagNoData = False
+                dataOut.profileIndex = self.profileIndex
+                
+                self.incIndex()
+                
+            return True
         
         raise ValueError, "ProfileSelector needs profileList, profileRangeList or rangeList parameter"
         
-        return 0    
+        return False    
 
         
         
