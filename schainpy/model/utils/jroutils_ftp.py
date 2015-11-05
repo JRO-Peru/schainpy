@@ -203,6 +203,7 @@ class Remote(Thread):
             
             print "[Remote Server] Opening %s" %self.__server
             if not self.open(self.__server, self.__username, self.__password, self.__remotefolder):
+                self.mutex.release()
                 return 0
         
             for thisFile in self.fileList:
