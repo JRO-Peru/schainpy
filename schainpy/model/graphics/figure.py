@@ -612,7 +612,7 @@ class Axes:
         deltas = x_buffer[1:] - x_buffer[0:-1]
         x_median = numpy.median(deltas)
         
-        index = numpy.where(deltas >= 2*x_median)
+        index = numpy.where(deltas > 5*x_median)
         
         if len(index[0]) != 0:
             z_buffer[index[0],::] = self.__missing
