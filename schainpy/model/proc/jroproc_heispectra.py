@@ -56,7 +56,7 @@ class SpectraHeisProc(ProcessingUnit):
     def __updateObjFromFits(self):
         
         self.dataOut.utctime = self.dataIn.utctime
-        self.dataOut.channelIndexList = self.dataIn.channelIndexList
+#         self.dataOut.channelIndexList = self.dataIn.channelIndexList
         
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList

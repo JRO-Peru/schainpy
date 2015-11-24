@@ -5,4 +5,11 @@ VERSIONS:
 				  Server thread opens and closes remote server each time file list is sent
 -jroplot_spectra.py: Noise path was not being created saving noise data.
 -jroIO_base.py: startTime can be greater than endTime 
--jroplot_heispectra.py: SpectraHeisScope was not showing the right channel
+
+2.1.3:
+-jroplot_heispectra.py: SpectraHeisScope was not showing the right channels
+-jroproc_voltage.py: Bug fixed selecting profiles (self.nProfiles took a wrong value),
+					 Bug fixed selecting heights by block (selecting profiles instead heights)
+-jroproc_voltage.py: New feature added: decoding data by block using FFT.
+-jroIO_heispectra.py: Bug fixed in FitsReader. Using local Fits object instead schainpy.mode.data.jrodata.Fits object.
+-jroIO_heispectra.py: Channel index list does not exist.

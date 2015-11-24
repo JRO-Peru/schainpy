@@ -9,24 +9,20 @@ import time, datetime
 import numpy
 import fnmatch
 import glob
-
-try:
-    from gevent import sleep
-except:
-    from time import sleep
+from time import sleep
 
 try:
     import pyfits
-except:
-    """
-    """
+except ImportError, e:
+    print "Fits data cannot be used. Install pyfits module"
     
 from xml.etree.ElementTree import ElementTree
 
 from jroIO_base import isRadarFolder, isNumber
+from schainpy.model.data.jrodata import Fits
 from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
         
-class Fits: 
+class PyFits(object): 
     name=None
     format=None
     array =None
@@ -103,7 +99,7 @@ class ParameterConf:
     def getElementName(self):
         return self.ELEMENTNAME
 
-class Metadata:
+class Metadata(object):
     
     def __init__(self, filename):
         self.parmConfObjList = []
@@ -134,28 +130,23 @@ class FitsWriter(Operation):
         self.ext = '.fits'
         self.setFile = 0
         
-    def setFitsHeader(self, dataOut, metadatafile):
+    def setFitsHeader(self, dataOut, metadatafile=None):
         
         header_data = pyfits.PrimaryHDU()
         
-        metadata4fits = Metadata(metadatafile)
-        for parameter in metadata4fits.parmConfObjList:
-            parm_name = parameter.name
-            parm_value = parameter.value
+        header_data.header['EXPNAME'] = "RADAR DATA"
+        header_data.header['DATATYPE'] = "SPECTRA"
+        header_data.header['COMMENT'] = ""
+        
+        if metadatafile:
             
-#             if parm_value == 'fromdatadatetime':
-#                 value = time.strftime("%b %d %Y %H:%M:%S", dataOut.datatime.timetuple())
-#             elif parm_value == 'fromdataheights':
-#                 value = dataOut.nHeights
-#             elif parm_value == 'fromdatachannel':
-#                 value = dataOut.nChannels
-#             elif parm_value == 'fromdatasamples':
-#                 value = dataOut.nFFTPoints
-#             else:
-#                 value = parm_value
-                
-            header_data.header[parm_name] = parm_value
+            metadata4fits = Metadata(metadatafile)
             
+            for parameter in metadata4fits.parmConfObjList:
+                parm_name = parameter.name
+                parm_value = parameter.value
+                    
+                header_data.header[parm_name] = parm_value
         
         header_data.header['DATETIME'] = time.strftime("%b %d %Y %H:%M:%S", dataOut.datatime.timetuple())
         header_data.header['CHANNELLIST'] = str(dataOut.channelList)
@@ -174,7 +165,7 @@ class FitsWriter(Operation):
         self.addExtension(dataOut.heightList,'HEIGHTLIST')
         
         
-    def setup(self, dataOut, path, dataBlocksPerFile, metadatafile):
+    def setup(self, dataOut, path, dataBlocksPerFile=100, metadatafile=None):
         
         self.path = path
         self.dataOut = dataOut
@@ -388,7 +379,7 @@ class FitsReader(ProcessingUnit):
         
         self.dataOut.header = self.header_dict 
         self.dataOut.expName = self.expName
-        self.dataOut.nChannels = self.nChannels
+        
         self.dataOut.timeZone = self.timeZone
         self.dataOut.dataBlocksPerFile = self.dataBlocksPerFile
         self.dataOut.comments = self.comments 
@@ -398,6 +389,8 @@ class FitsReader(ProcessingUnit):
         
         self.dataOut.nCohInt = self.nCohInt
         self.dataOut.nIncohInt = self.nIncohInt
+        
+        self.dataOut.ippSeconds = self.ippSeconds
         
     def readHeader(self):
         headerObj = self.fitsObj[0]
@@ -688,6 +681,9 @@ class FitsReader(ProcessingUnit):
 
         return 1
     
+    def printInfo(self):
+        
+        pass
     
     def getData(self):
         
@@ -702,7 +698,7 @@ class FitsReader(ProcessingUnit):
         if not(self.readNextBlock()):
             return 0
         
-        if self.data == None:
+        if self.data is None:
             self.dataOut.flagNoData = True
             return 0
         
@@ -739,7 +735,7 @@ class SpectraHeisWriter(Operation):
     subfolder = None
     
     def __init__(self):
-        self.wrObj = Fits()
+        self.wrObj = PyFits()
 #        self.dataOut = dataOut 
         self.nTotalBlocks=0
 #        self.set = None

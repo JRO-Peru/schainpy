@@ -2245,7 +2245,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             return 0
             
         # if something happened
-        parms_ok, output_path, blocksperfile, metada = self.checkInputsPUSave(datatype='SpectraHeis')
+        parms_ok, output_path, blocksperfile, metadata_file = self.checkInputsPUSave(datatype='SpectraHeis')
         if parms_ok:
             name_operation = 'FitsWriter'
             optype = 'other'
@@ -2254,13 +2254,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             name_parameter3 = 'metadatafile'
             value1 = output_path
             value2 = blocksperfile
-            value3 = metada
+            value3 = metadata_file
             format2 = "int"
             format3 = "str"
             opObj = puObj.addOperation(name=name_operation, optype=optype)
+            
             opObj.addParameter(name=name_parameter1, value=value1)
-            opObj.addParameter(name=name_parameter2, value=value2, format=format2)
-            opObj.addParameter(name=name_parameter3, value=value3, format=format3)
+            
+            if blocksperfile:
+                opObj.addParameter(name=name_parameter2, value=value2, format=format2)
+            
+            if metadata_file:
+                opObj.addParameter(name=name_parameter3, value=value3, format=format3)
 
         self.console.clear()
         try:
@@ -3882,8 +3887,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.specHeisOutputMetada.clear()
             else:
                 value = opObj.getParameterValue(parameterName='metadatafile')
-                metada = str(value)
-                self.specHeisOutputMetada.setText(metada)
+                metadata_file = str(value)
+                self.specHeisOutputMetada.setText(metadata_file)
         
         return
     
@@ -5178,21 +5183,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if datatype == "SpectraHeis":
             output_path = str(self.specHeisOutputPath.text())
             blocksperfile = str(self.specHeisOutputblocksperfile.text())
-            metada = str(self.specHeisOutputMetada.text())
+            metadata_file = str(self.specHeisOutputMetada.text())
             
         if output_path == '':
             outputstr = 'Outputpath is empty'
             self.console.append(outputstr)
             parms_ok = False
-            data_path = None
         
-        if output_path != None: 
-            if not os.path.exists(output_path):
-                outputstr = 'OutputPath:%s does not exists' % output_path
-                self.console.append(outputstr)
-                parms_ok = False
-                output_path = None
-        
+        if not os.path.isdir(output_path):
+            outputstr = 'OutputPath:%s does not exists' % output_path
+            self.console.append(outputstr)
+            parms_ok = False
         
         try:
             profilesperblock = int(profilesperblock)
@@ -5218,16 +5219,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             blocksperfile = None
             
         if datatype == "SpectraHeis":
-            if metada == '':
-                outputstr = 'Choose metada file'
-                self.console.append(outputstr)
-                parms_ok = False
-            if metada != None: 
-               if not  os.path.isfile(metada):
-                    outputstr = 'Metadata:%s does not exists' % metada
+            if metadata_file != '':
+               if not os.path.isfile(metadata_file):
+                    outputstr = 'Metadata file %s does not exist' % metadata_file
                     self.console.append(outputstr)
                     parms_ok = False
-                    output_path = None
 
         if datatype == "Voltage":
             return parms_ok, output_path, blocksperfile, profilesperblock        
@@ -5238,7 +5234,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
             
         if datatype == "SpectraHeis":    
-            return parms_ok, output_path, blocksperfile, metada      
+            return parms_ok, output_path, blocksperfile, metadata_file      
 
     def findDatafiles(self, data_path, ext, walk, expLabel=''):
         

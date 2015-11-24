@@ -2,8 +2,7 @@
 Created on September , 2012
 @author: 
 '''
-from xml.etree.ElementTree import Element, SubElement
-from xml.etree import ElementTree as ET
+from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
 from model import *
@@ -18,7 +17,7 @@ import ast
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
     """
-    rough_string = ET.tostring(elem, 'utf-8')
+    rough_string = tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 

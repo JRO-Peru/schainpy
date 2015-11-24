@@ -228,13 +228,13 @@ class Ui_SpectraHeisTab(object):
         
         self.tabWidgetSpectraHeis.setTabText(self.tabWidgetSpectraHeis.indexOf(self.tabgraphSpectraHeis), _translate("MainWindow", "Graphics", None))
         self.label_67.setText(_translate("MainWindow", "Path:", None))
-        self.label_68.setText(_translate("MainWindow", "Blocks  per File:", None))
+        self.label_68.setText(_translate("MainWindow", "Blocks per file:", None))
         self.label_66.setText(_translate("MainWindow", "Type:", None))
         
         self.tabWidgetSpectraHeis.setTabText(self.tabWidgetSpectraHeis.indexOf(self.taboutputSpectraHeis), _translate("MainWindow", "Output", None))
         self.specHeisOutputToolPath.setText(_translate("MainWindow", "...", None))
         self.specHeisOutputComdata.setItemText(0, _translate("MainWindow", ".fits", None))
-        self.label_69.setText(_translate("MainWindow", "Metada", None))
+        self.label_69.setText(_translate("MainWindow", "Metadata file:", None))
         self.specHeisOutputMetadaToolPath.setText(_translate("MainWindow", "...", None))
         
         self.tabWidgetProject.setTabText(self.tabWidgetProject.indexOf(self.tabSpectraHeis), _translate("MainWindow", "SpectraHeis", None))

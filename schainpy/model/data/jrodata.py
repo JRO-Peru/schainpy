@@ -833,10 +833,6 @@ class Fits(JROData):
         
         return heis
     
-    def isEmpty(self):
-        
-        return self.flagNoData
-    
     def getNHeights(self):
         
         return len(self.heightList)
