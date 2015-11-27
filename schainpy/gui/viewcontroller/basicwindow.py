@@ -140,7 +140,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.__operationObjDict = {}
         
         self.__puLocalFolder2FTP = {}
-        self.__enable = False
+        self.threadStarted = False
         
 #         self.create_comm() 
         self.create_updating_timer()
@@ -792,12 +792,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 return 0
             
            valueList = value.split(',')
-           format = 'float'
+           
            if  self.volOpComHeights.currentIndex() == 0:
+               format = 'float'
                name_operation = 'selectHeights'
                name_parameter1 = 'minHei'
                name_parameter2 = 'maxHei'
            else:
+               format = 'int'
                name_operation = 'selectHeightsByIndex'   
                name_parameter1 = 'minIndex'
                name_parameter2 = 'maxIndex'
@@ -929,7 +931,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 return 0
             
             name_parameter = 'n'
-            format = 'float'
+            format = 'int'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             
@@ -1303,7 +1305,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 format = 'float'
             else:
                 name_parameter = 'n'
-                format = 'float'
+                format = 'int'
                 
             value = str(self.specOpIncoherent.text())
             
@@ -2744,10 +2746,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpHeights.clear()
             self.volOpCebHeights.setCheckState(0)
         else:
-           value1 = int(opObj.getParameterValue(parameterName='minHei'))             
-           value1 = str(value1)
-           value2 = int(opObj.getParameterValue(parameterName='maxHei'))             
-           value2 = str(value2)
+           value1 = str(opObj.getParameterValue(parameterName='minHei'))
+           value2 = str(opObj.getParameterValue(parameterName='maxHei'))
            value = value1 + "," + value2
            self.volOpHeights.setText(value)
            self.volOpHeights.setEnabled(True)
@@ -4236,10 +4236,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def updateProcUnitView(self, id):
         
-        procUnitConfObj = projectObjView.getProcUnitObj(id)
-        procUnitConfObj.removeOperations()
-        
-        return procUnitConfObj
+        pass
         
     def addPUWindow(self):
         
@@ -4709,20 +4706,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def on_comm_updating_timer(self):
         # Verifica si algun proceso ha sido inicializado y sigue ejecutandose
         # Si el proceso se ha parado actualizar el GUI (stopProject)
-        if not self.__enable:
+        if not self.threadStarted:
             return
          
         if self.controllerThread.isFinished():
             self.stopProject()
-    
-#     def jobStartedFromThread(self, success):
-#         
-#         self.console.clear()
-#         self.console.append("Job started")
-#     
-#     def jobFinishedFromThread(self, success):
-#         
-#         self.stopProject()
     
     def playProject(self, ext=".xml", save=1):
         
@@ -4758,14 +4746,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.clear()
         self.controllerThread.start()
         sleep(0.5)
-        self.__enable = True
+        self.threadStarted = True
+        
+        self.changeStartIcon(started=True)
         
     def stopProject(self):
         
-        self.__enable = False
-        
 #         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, True))
         self.controllerThread.stop()
+        self.threadStarted = False
         
         while self.controllerThread.isRunning():
             sleep(0.5)
@@ -4779,11 +4768,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStopToolbar.setEnabled(False)
         
         self.restorePauseIcon()
+        self.restoreStartIcon()
      
     def pauseProject(self):
         
 #         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
-        self.controllerThread.pause()
+        paused = self.controllerThread.pause()
         
         self.actionStart.setEnabled(False)
         self.actionPause.setEnabled(True)
@@ -4792,6 +4782,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionStarToolbar.setEnabled(False)
         self.actionPauseToolbar.setEnabled(True)
         self.actionStopToolbar.setEnabled(True)
+        
+        self.changePauseIcon(paused)
                
     def saveProject(self, filename=None):
         
@@ -5356,7 +5348,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def setGUIStatus(self):
         
         self.setWindowTitle("ROJ-Signal Chain")
-        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
+        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"logo.png") ))
         
         self.tabWidgetProject.setEnabled(False)
         self.tabVoltage.setEnabled(False)

@@ -35,28 +35,44 @@ class Ui_EnvWindow(object):
     
     def restorePauseIcon(self):
         
-         iconPause = QtGui.QIcon()
-         iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-         self.actionPauseToolbar.setIcon(iconPause)
-         
-         self.paused = False
-             
-    def changePauseIcon(self):
+        icon_name = "pause.png"
+        iconPause = QtGui.QIcon()
+        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionPauseToolbar.setIcon(iconPause)
+    
+    def restoreStartIcon(self):
         
-         if self.paused == False:
-            iconPauseRed = QtGui.QIcon()
-            iconPauseRed.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pausered.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-            self.actionPauseToolbar.setIcon(iconPauseRed)
-            self.paused = True
-            return 0
+        icon_name = "start.png"
+        iconStart = QtGui.QIcon()
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionStarToolbar.setIcon(iconStart)
+              
+    def changePauseIcon(self, paused=False):
         
-         if self.paused:
-             iconPause = QtGui.QIcon()
-             iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-             self.actionPauseToolbar.setIcon(iconPause)
-             self.paused = False
-             return 0
-         
+        if paused == True:
+            icon_name = "pausered.png"
+        else:
+            icon_name = "pause.png"
+            
+        iconPause = QtGui.QIcon()
+        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionPauseToolbar.setIcon(iconPause)
+    
+        return
+    
+    def changeStartIcon(self, started=False):
+        
+        if started == True:
+            icon_name = "startred.png"
+        else:
+            icon_name = "start.png"
+            
+        iconStart = QtGui.QIcon()
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionStarToolbar.setIcon(iconStart)
+     
+        return
+    
     def setupUi(self, MainWindow):
         
         self.paused=False
@@ -123,19 +139,22 @@ class Ui_EnvWindow(object):
         MainWindow.setMenuBar(self.menuBar)
 
         iconOpen = QtGui.QIcon()
-        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"open.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconOpen.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"open.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconCreate = QtGui.QIcon()
-        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"project.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconCreate.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"new.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconSave = QtGui.QIcon()
-        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"saveicon.jpeg") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconSave.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"save.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconStart = QtGui.QIcon()
-        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"startServer.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"start.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconStop = QtGui.QIcon()
-        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"stopServer.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"stop.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconPause = QtGui.QIcon()
         iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconAddPU = QtGui.QIcon()
-        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"add_PU.gif") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"branch.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconClose = QtGui.QIcon()
+        iconClose.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"close.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
         
         self.actionOpen = QtGui.QAction(MainWindow)
         self.actionOpen.setIcon(iconOpen)
@@ -147,6 +166,7 @@ class Ui_EnvWindow(object):
         self.actionSave.setIcon(iconSave)
         self.actionSave.setObjectName(_fromUtf8("actionSave"))
         self.actionClose = QtGui.QAction(MainWindow)
+        self.actionClose.setIcon(iconClose)
         self.actionClose.setObjectName(_fromUtf8("actionClose"))
         self.actionStart = QtGui.QAction(MainWindow)
         self.actionStart.setIcon(iconStart)
@@ -199,8 +219,8 @@ class Ui_EnvWindow(object):
         self.toolBar.addAction(self.actionStopToolbar)
         self.toolBar.addSeparator()
         
-        self.actionPause.triggered.connect(self.changePauseIcon)
-        self.actionPauseToolbar.triggered.connect(self.changePauseIcon)
+#         self.actionPause.triggered.connect(self.changePauseIcon)
+#         self.actionPauseToolbar.triggered.connect(self.changePauseIcon)
         
         self.menuProject.addAction(self.actionOpen)
         self.menuProject.addAction(self.actionCreate)
@@ -265,12 +285,14 @@ class Ui_EnvWindow(object):
             event.ignore()
     
     def aboutEvent(self):
+        title = "Signal Chain Processing Software v%s" %__version__
+        message = """
+        Developed by Jicamarca Radio Observatory
+        Any comment to miguel.urco@jro.igp.gob.pe
+        """
         
-        reply = QtGui.QMessageBox.information(self,
-                                              'About',
-            "Signal Chain Processing Software v%s" %__version__,
-            "Developed by Jicamarca Radio Observatory\nComments to miguel.urco@jro.igp.gob.pe")
-        
+        QtGui.QMessageBox.about(self, title, message)
+            
             
 class Ui_BasicWindow(Ui_EnvWindow, Ui_ProjectTab, Ui_VoltageTab, Ui_SpectraTab, Ui_SpectraHeisTab, Ui_CorrelationTab):
     
