@@ -7,7 +7,7 @@ if 'linux' in sys.platform:
     matplotlib.use("TKAgg")
     
 if 'darwin' in sys.platform:
-    matplotlib.use("WXAgg")
+    matplotlib.use('GTKAgg')
 #Qt4Agg', 'GTK', 'GTKAgg', 'ps', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'template', 'TkAgg', 'GTK3Cairo', 'GTK3Agg', 'svg', 'WebAgg', 'CocoaAgg', 'emf', 'gdk', 'WX'
 import matplotlib.pyplot
 

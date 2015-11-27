@@ -647,12 +647,18 @@ class Decoder(Operation):
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
         
+        dataOut.flagNoData = True
+        
         if dataOut.flagDecodeData:
             print "This data is already decoded, recoding again ..."
         
         if not self.isConfig:
             
             if code is None:
+                if not dataOut.code:
+                    print "Code is not defined"
+                    raise ValueError, "Code could not be read from %s object. Enter a value in Code parameter" %dataOut.type
+                
                 code = dataOut.code
             else:
                 code = numpy.array(code).reshape(nCode,nBaud)
@@ -706,6 +712,8 @@ class Decoder(Operation):
             return 1
         
         self.__profIndex += 1
+        
+        dataOut.flagNoData = False
         
         return 1
 #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip

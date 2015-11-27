@@ -13,3 +13,7 @@ VERSIONS:
 -jroproc_voltage.py: New feature added: decoding data by block using FFT.
 -jroIO_heispectra.py: Bug fixed in FitsReader. Using local Fits object instead schainpy.mode.data.jrodata.Fits object.
 -jroIO_heispectra.py: Channel index list does not exist.
+
+2.1.3.1:
+-GUI: every icon were resized
+-jroproc_voltage.py: Print a message when "Read from code" option is selected and the code is not defined inside data file

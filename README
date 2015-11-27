@@ -9,6 +9,7 @@ Prerequisites:
 	-paramiko and scp (optional for using SendTFilesToServer)
 	-stuffr (optional for using jroIO_hf)
 	-PyQt4 (for using GUI)
+	-pyfits (Fits data)
 
 Signal Chain Installation:
 
