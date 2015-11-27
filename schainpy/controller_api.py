@@ -28,7 +28,9 @@ class ControllerThread(threading.Thread, Project):
         
     def pause(self):
         self.control['pause'] = not(self.control['pause'])
-
+        
+        return self.control['pause']
+    
     def __run(self):
         
         print
