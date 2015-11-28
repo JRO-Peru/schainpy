@@ -410,8 +410,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         parameter_list = self.checkInputsProject()
         
-        if not parameter_list[0]:
-            return
+#         if not parameter_list[0]:
+#             return
         
         parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set, expLabel = parameter_list
         
@@ -465,8 +465,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         Prepara la configuración del diágrama del Arbol del treeView numero 2
         """
         
-        self.actionStart.setEnabled(False)
+        self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
+        
+        self.actionSave.setEnabled(False)
+        self.actionStart.setEnabled(False)
         
         self.console.clear()
         
@@ -743,6 +746,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
+        
+        self.actionSave.setEnabled(False)
+        self.actionStart.setEnabled(False)
         
         self.console.clear()
         self.console.append("Checking input parameters ...")
@@ -1183,6 +1189,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
+        
+        self.actionSave.setEnabled(False)
+        self.actionStart.setEnabled(False)
         
         self.console.clear()
         self.console.append("Checking input parameters ...")
@@ -2046,6 +2055,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(False)
+        
+        self.actionSave.setEnabled(False)
+        self.actionStart.setEnabled(False)
         
         self.console.clear()
         self.console.append("Checking input parameters ...")
@@ -5288,14 +5300,23 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         Method to loads day
         """
+        self.actionSaveToolbar.setEnabled(False)
+        self.actionStarToolbar.setEnabled(False)
+        
+        self.actionSave.setEnabled(False)
+        self.actionStart.setEnabled(False)
+        
         self.proOk.setEnabled(False)
         self.proComStartDate.clear()
         self.proComEndDate.clear()
         
         self.dateList = []
         
+        if not data_path:
+            return []
+        
         if not os.path.isdir(data_path):
-            return
+            return []
         
         self.dataPath = data_path
         
@@ -5312,7 +5333,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 outputstr = "No files (*%s) were found on %s" % (ext, data_path)
                                                                  
             self.console.append(outputstr)
-            return
+            return []
         
         dateStrList = []
         for thisDate in dateList:
@@ -5326,7 +5347,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proComEndDate.setCurrentIndex(self.proComEndDate.count() - 1)
         
         self.dateList = dateStrList
+        
         self.proOk.setEnabled(True)
+        
+        self.actionSaveToolbar.setEnabled(True)
+        self.actionStarToolbar.setEnabled(True)
+        
+        self.actionSave.setEnabled(True)
+        self.actionStart.setEnabled(True)
         
         self.console.clear()
         self.console.append("Successful load")
