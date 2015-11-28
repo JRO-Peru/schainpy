@@ -507,8 +507,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.refreshProjectProperties(projectObjView)
         # Disable tabProject after finish the creation
         
-        self.actionStart.setEnabled(True)
+        self.actionSaveToolbar.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
+        
+        self.actionSave.setEnabled(True)
+        self.actionStart.setEnabled(True)
+        
         self.console.clear()
         self.console.append("The project parameters were validated")
         
@@ -1031,6 +1035,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.actionSaveToolbar.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
+        
+        self.actionSave.setEnabled(True)
+        self.actionStart.setEnabled(True)
         
         return 1
     
@@ -1882,6 +1889,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.actionSaveToolbar.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
         
+        self.actionSave.setEnabled(True)
+        self.actionStart.setEnabled(True)
+        
         return 1
     
     """
@@ -2280,6 +2290,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.actionSaveToolbar.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
+        
+        self.actionSave.setEnabled(True)
+        self.actionStart.setEnabled(True)
         
         return 1
     @pyqtSignature("int")
@@ -4834,8 +4847,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.append("Project saved")
         self.console.append("Press Play button to start data processing ...")
         
-        self.actionStart.setEnabled(True)
+        self.actionSaveToolbar.setEnabled(False)
         self.actionStarToolbar.setEnabled(True)
+        
+        self.actionSave.setEnabled(False)
+        self.actionStart.setEnabled(True)
         
         return filename
         
