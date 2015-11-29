@@ -84,11 +84,14 @@ class Header(object):
     
     def printInfo(self):
         
-        print "#"*100
-        print self.__class__.__name__.upper()
-        print "#"*100
+        message = "#"*50 + "\n"
+        message += self.__class__.__name__.upper() + "\n"
+        message += "#"*50 + "\n"
+        
         for key in self.__dict__.keys():
-            print "%s = %s" %(key, self.__dict__[key])
+            message += "%s = %s" %(key, self.__dict__[key]) + "\n"
+            
+        print message
 
 class BasicHeader(Header):
     

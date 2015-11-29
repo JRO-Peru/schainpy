@@ -6,13 +6,14 @@ from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
 from model import *
-
-try:
-    from gevent import sleep
-except:
-    from time import sleep
+from time import sleep
     
+import sys
 import ast
+import traceback
+
+SCHAIN_MAIL = "miguel.urco@jro.igp.gob.pe"
+EMAIL_SERVER = "jro.igp.gob.pe"
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -603,7 +604,7 @@ class ProcUnitConf():
     
     def run(self):
         
-        finalSts = False
+        is_ok = False
         
         for opConfObj in self.opConfObjList:
             
@@ -619,9 +620,9 @@ class ProcUnitConf():
                                         opName = opConfObj.name,
                                         opId = opConfObj.id,
                                          **kwargs)
-            finalSts = finalSts or sts
+            is_ok = is_ok or sts
         
-        return finalSts
+        return is_ok
 
     def close(self):
         
@@ -763,21 +764,13 @@ class Project():
     
     ELEMENTNAME = 'Project'
     
-    def __init__(self, control=None, dataq=None):
+    def __init__(self):
         
         self.id = None
         self.name = None
         self.description = None
 
         self.procUnitConfObjDict = {}
-        
-        #global data_q
-        #data_q = dataq
-        
-        if control==None:
-            control = {'stop':False,'pause':False}
-        
-        self.control = control
         
     def __getNewId(self):
         
@@ -979,12 +972,43 @@ class Project():
             
             self.__connect(puObjIN, thisPUObj)
     
+    def isPaused(self):
+        return 0
+    
+    def isStopped(self):
+        return 0
+    
+    def runController(self):
+        """
+        returns 0 when this process has been stopped, 1 otherwise
+        """
+        
+        if self.isPaused():
+            print "Process suspended"
+            
+            while True:
+                sleep(0.1)
+                
+                if not self.isPaused():
+                    break
+                
+                if self.isStopped():
+                    break
+                
+            print "Process reinitialized"
+        
+        if self.isStopped():
+            print "Process stopped"
+            return 0
+        
+        return 1
+    
     def run(self):
         
         print
-        print "*"*50
+        print "*"*60
         print "   Starting SIGNAL CHAIN PROCESSING  "
-        print "*"*50
+        print "*"*60
         print
         
         keyList = self.procUnitConfObjDict.keys()
@@ -992,35 +1016,40 @@ class Project():
             
         while(True):
             
-            finalSts = False
+            is_ok = False
             
             for procKey in keyList:
 #                 print "Running the '%s' process with %s" %(procUnitConfObj.name, procUnitConfObj.id)
                 
                 procUnitConfObj = self.procUnitConfObjDict[procKey]
-                sts = procUnitConfObj.run()
-                finalSts = finalSts or sts
+                
+                message = ""
+                try:
+                    sts = procUnitConfObj.run()
+                    is_ok = is_ok or sts
+                except:
+                    sleep(1)
+                    err = traceback.format_exception(sys.exc_info()[0],
+                                                     sys.exc_info()[1],
+                                                     sys.exc_info()[2])
+                    
+                    for thisLine in err:
+                        message += thisLine
+                    
+                    print message
+#                     self.sendReport(message)
+                    sleep(0.1)
+                    is_ok = False
+                    
+                    break
             
             #If every process unit finished so end process
-            if not(finalSts):
+            if not(is_ok):
+                print message
                 print "Every process unit have finished"
                 break
 
-            if self.control['pause']:
-                print "Process suspended"
-                
-                while True:    
-                    sleep(0.1)
-                    
-                    if not self.control['pause']:
-                        break
-                    
-                    if self.control['stop']:
-                        break
-                print "Process reinitialized"
-            
-            if self.control['stop']:
-#                 print "Process stopped"
+            if not self.runController():
                 break
                 
         #Closing every process
@@ -1038,6 +1067,23 @@ class Project():
         self.createObjects()
         self.connectObjects()
         self.run()
+    
+    def sendReport(self, message, subject="Error occurred in Signal Chain", email=SCHAIN_MAIL):
+        
+        import smtplib
+        
+        print subject
+        print "Sending report to %s ..." %email
+        
+        message = 'From: (Python Signal Chain API) ' + email + '\n' + \
+        'To: ' + email + '\n' + \
+        'Subject: ' + str(subject) + '\n' + \
+        'Content-type: text/html\n\n' + message
+
+        server = smtplib.SMTP(EMAIL_SERVER)
+        server.sendmail(email.split(',')[0],
+                        email.split(','), message)
+        server.quit()
         
 if __name__ == '__main__':
     

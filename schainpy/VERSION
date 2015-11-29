@@ -17,3 +17,7 @@ VERSIONS:
 2.1.3.1:
 -GUI: every icon were resized
 -jroproc_voltage.py: Print a message when "Read from code" option is selected and the code is not defined inside data file
+
+2.1.3.2:
+-GUI: user interaction enhanced
+-controller_api.py: Safe access to ControllerThead

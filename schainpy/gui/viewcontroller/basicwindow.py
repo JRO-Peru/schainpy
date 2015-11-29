@@ -5892,6 +5892,10 @@ class ShowMeConsole(QtCore.QObject):
     
     def write(self, text):
         
+        if len(text) == 0:
+            self.textWritten.emit("\n")
+            return
+            
         if text[-1] == "\n":
             text = text[:-1]
             

@@ -15,80 +15,49 @@ class ControllerThread(threading.Thread, Project):
         self.setDaemon(True)
         
         self.filename = filename
+        
+        self.lock = threading.Lock()
         self.control = {'stop':False, 'pause':False}
     
     def __del__(self):
         
         self.control['stop'] = True
-#         self.pause(1)
-#         self.wait()
     
     def stop(self):
+        
+        self.lock.acquire()
+        
         self.control['stop'] = True
         
+        self.lock.release()
+        
     def pause(self):
+        
+        self.lock.acquire()
+        
         self.control['pause'] = not(self.control['pause'])
+        paused = self.control['pause']
         
-        return self.control['pause']
+        self.lock.release()
+        
+        return paused
     
-    def __run(self):
+    def isPaused(self):
         
-        print
-        print "*"*40
-        print "   Starting SIGNAL CHAIN PROCESSING  "
-        print "*"*40
-        print
+        self.lock.acquire()
+        paused = self.control['pause']
+        self.lock.release()
         
-        keyList = self.procUnitConfObjDict.keys()
-        keyList.sort()
-            
-        while(True):
-            
-            finalSts = False
-            #executed proc units
-            procUnitExecutedList = []
-            
-            for procKey in keyList:
-#                 print "Running the '%s' process with %s" %(procUnitConfObj.name, procUnitConfObj.id)
-                
-                procUnitConfObj = self.procUnitConfObjDict[procKey]
-                
-                inputId = procUnitConfObj.getInputId()
-                
-                sts = procUnitConfObj.run()
-                finalSts = finalSts or sts
-                
-                procUnitExecutedList.append(procUnitConfObj.id)
-            
-            #If every process unit finished so end process
-            if not(finalSts):
-                print "Every process unit have finished"
-                break
-
-            if self.control['pause']:
-                print "Process suspended"
-                
-                while True:    
-                    sleep(0.1)
-                    
-                    if not self.control['pause']:
-                        break
-                    
-                    if self.control['stop']:
-                        break
-                print "Process reinitialized"
-            
-            if self.control['stop']:
-#                 print "Process stopped"
-                break
-                
-        #Closing every process
-        for procKey in keyList:
-            procUnitConfObj = self.procUnitConfObjDict[procKey]
-            procUnitConfObj.close()
-            
-        print "Process finished"
+        return paused
+    
+    def isStopped(self):
         
+        self.lock.acquire()
+        stopped = self.control['stop']
+        self.lock.release()
+        
+        return stopped
+            
     def run(self):
         self.control['stop'] = False
         self.control['pause'] = False
@@ -114,6 +83,8 @@ class ControllerQThread(QtCore.QThread, Project):
         Project.__init__(self)
         
         self.filename = filename
+        
+        self.lock = threading.Lock()
         self.control = {'stop':False, 'pause':False}
     
     def __del__(self):
@@ -122,12 +93,42 @@ class ControllerQThread(QtCore.QThread, Project):
         self.wait()
         
     def stop(self):
+        
+        self.lock.acquire()
+        
         self.control['stop'] = True
         
+        self.lock.release()
+        
     def pause(self):
+        
+        self.lock.acquire()
+        
         self.control['pause'] = not(self.control['pause'])
-
+        paused = self.control['pause']
+        
+        self.lock.release()
+        
+        return paused
+    
+    def isPaused(self):
+        
+        self.lock.acquire()
+        paused = self.control['pause']
+        self.lock.release()
+        
+        return paused
+    
+    def isStopped(self):
+        
+        self.lock.acquire()
+        stopped = self.control['stop']
+        self.lock.release()
+        
+        return stopped
+    
     def run(self):
+        
         self.control['stop'] = False
         self.control['pause'] = False
         
@@ -137,3 +138,4 @@ class ControllerQThread(QtCore.QThread, Project):
         self.emit( SIGNAL( "jobStarted( PyQt_PyObject )" ), 1)
         Project.run(self)
         self.emit( SIGNAL( "jobFinished( PyQt_PyObject )" ), 1)
+        
