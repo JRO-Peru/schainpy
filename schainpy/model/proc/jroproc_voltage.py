@@ -647,8 +647,6 @@ class Decoder(Operation):
     
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
         
-        dataOut.flagNoData = True
-        
         if dataOut.flagDecodeData:
             print "This data is already decoded, recoding again ..."
         
@@ -712,8 +710,6 @@ class Decoder(Operation):
             return 1
         
         self.__profIndex += 1
-        
-        dataOut.flagNoData = False
         
         return 1
 #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
