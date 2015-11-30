@@ -30,46 +30,54 @@ from schainpy import __version__
 
 FIGURES_PATH = tools.get_path()
 
+ICON_START = "start_green.png"
+ICON_PAUSE = "pause_yellow.png"
+ICON_STOP = "stop_red.png"
+
+ICON_PAUSE_ENA = "restart_yellow.png"
+
+ICON_START_DIS = "start.png"
+ICON_PAUSE_DIS = "pause.png"
+ICON_STOP_DIS = "stop.png"
+
 class Ui_EnvWindow(object):
-    paused = False
-    
-    def restorePauseIcon(self):
         
-        icon_name = "pause.png"
-        iconPause = QtGui.QIcon()
-        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionPauseToolbar.setIcon(iconPause)
-    
-    def restoreStartIcon(self):
+    def changeStartIcon(self, started=False):
         
-        icon_name = "start.png"
+        if started == False:
+            icon_name = ICON_START
+        else:
+            icon_name = ICON_START_DIS
+            
         iconStart = QtGui.QIcon()
         iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionStarToolbar.setIcon(iconStart)
+    
+        return
               
     def changePauseIcon(self, paused=False):
         
         if paused == True:
-            icon_name = "pausered.png"
+            icon_name = ICON_PAUSE_ENA
         else:
-            icon_name = "pause.png"
+            icon_name = ICON_PAUSE
             
         iconPause = QtGui.QIcon()
         iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionPauseToolbar.setIcon(iconPause)
     
         return
-    
-    def changeStartIcon(self, started=False):
+        
+    def changeStopIcon(self, started=False):
         
         if started == True:
-            icon_name = "startred.png"
+            icon_name = ICON_STOP
         else:
-            icon_name = "start.png"
+            icon_name = ICON_STOP_DIS
             
-        iconStart = QtGui.QIcon()
-        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionStarToolbar.setIcon(iconStart)
+        iconStop = QtGui.QIcon()
+        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionStopToolbar.setIcon(iconStop)
     
         return
     
@@ -145,11 +153,11 @@ class Ui_EnvWindow(object):
         iconSave = QtGui.QIcon()
         iconSave.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"save.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconStart = QtGui.QIcon()
-        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"start.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, ICON_START_DIS) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconStop = QtGui.QIcon()
-        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"stop.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconStop.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, ICON_STOP_DIS) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconPause = QtGui.QIcon()
-        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"pause.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        iconPause.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, ICON_PAUSE_DIS) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconAddPU = QtGui.QIcon()
         iconAddPU.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH,"branch.png") )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         iconClose = QtGui.QIcon()

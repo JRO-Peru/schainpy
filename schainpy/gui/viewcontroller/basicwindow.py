@@ -380,8 +380,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.proDataPath.setText(datapath)
         
-        self.actionStart.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
+        self._disable_play_button()
+        self._disable_save_button()
         self.proOk.setEnabled(False)
         
         self.proComStartDate.clear()
@@ -465,11 +465,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         Prepara la configuración del diágrama del Arbol del treeView numero 2
         """
         
-        self.actionSaveToolbar.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
-        
-        self.actionSave.setEnabled(False)
-        self.actionStart.setEnabled(False)
+        self._disable_play_button()
+        self._disable_save_button()
         
         self.console.clear()
         
@@ -510,11 +507,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.refreshProjectProperties(projectObjView)
         # Disable tabProject after finish the creation
         
-        self.actionSaveToolbar.setEnabled(True)
-        self.actionStarToolbar.setEnabled(True)
-        
-        self.actionSave.setEnabled(True)
-        self.actionStart.setEnabled(True)
+        self._enable_play_button()
+        self._enable_save_button()
         
         self.console.clear()
         self.console.append("The project parameters were validated")
@@ -744,11 +738,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         checkPath = False
         
-        self.actionSaveToolbar.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
-        
-        self.actionSave.setEnabled(False)
-        self.actionStart.setEnabled(False)
+        self._disable_play_button()
+        self._disable_save_button()
         
         self.console.clear()
         self.console.append("Checking input parameters ...")
@@ -1039,11 +1030,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.append("Save your project and press Play button to start signal processing")
         
-        self.actionSaveToolbar.setEnabled(True)
-        self.actionStarToolbar.setEnabled(True)
-        
-        self.actionSave.setEnabled(True)
-        self.actionStart.setEnabled(True)
+        self._enable_play_button()
+        self._enable_save_button()
         
         return 1
     
@@ -1187,11 +1175,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         addFTP = False
         checkPath = False
 
-        self.actionSaveToolbar.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
-        
-        self.actionSave.setEnabled(False)
-        self.actionStart.setEnabled(False)
+        self._disable_play_button()
+        self._disable_save_button()
         
         self.console.clear()
         self.console.append("Checking input parameters ...")
@@ -1895,11 +1880,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.append("Save your project and press Play button to start signal processing")
 
-        self.actionSaveToolbar.setEnabled(True)
-        self.actionStarToolbar.setEnabled(True)
-        
-        self.actionSave.setEnabled(True)
-        self.actionStart.setEnabled(True)
+        self._enable_play_button()
+        self._enable_save_button()
         
         return 1
     
@@ -2053,11 +2035,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         addFTP = False
         checkPath = False
 
-        self.actionSaveToolbar.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
-        
-        self.actionSave.setEnabled(False)
-        self.actionStart.setEnabled(False)
+        self._disable_play_button()
+        self._disable_save_button()
         
         self.console.clear()
         self.console.append("Checking input parameters ...")
@@ -2300,11 +2279,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.append("Save your project and press Play button to start signal processing")
         
-        self.actionSaveToolbar.setEnabled(True)
-        self.actionStarToolbar.setEnabled(True)
-        
-        self.actionSave.setEnabled(True)
-        self.actionStart.setEnabled(True)
+        self._enable_save_button()
+        self._enable_play_button()
         
         return 1
     @pyqtSignature("int")
@@ -4644,13 +4620,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def openProject(self):
         
-        self.actionStart.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
+        self._disable_save_button()
+        self._disable_play_button()
         
         self.frame_2.setEnabled(True)
         
         # print self.dir
-        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open text file", self.pathWorkSpace, self.tr("Text Files (*.xml)")))
+        filename = str(QtGui.QFileDialog.getOpenFileName(self, "Open a project file", self.pathWorkSpace, self.tr("Html Files (*.xml)")))
         
         projectObjLoad = Project()
         
@@ -4717,8 +4693,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.clear()
         self.console.append("The selected xml file has been loaded successfully")
         
-        self.actionStart.setEnabled(True)
-        self.actionStarToolbar.setEnabled(True)
+        self._disable_save_button()
+        self._enable_play_button()
 
     def create_updating_timer(self):
         self.comm_data_timer = QtCore.QTimer(self)
@@ -4736,28 +4712,29 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def playProject(self, ext=".xml", save=1):
         
+        self._disable_play_button()
+        self._disable_save_button()
+        
+        if self.controllerThread:
+            if self.controllerThread.isRunning():
+                self.console.append("There is already another process running")
+                self._enable_stop_button()
+                return
+        
         projectObj = self.getSelectedProjectObj()
         
         if not projectObj:
-            self.console.append("Please select a project before pressing PLAY button")
+            self.console.append("Please, select a project to start it")
             return
         
         if save:
             filename = self.saveProject()
             if filename == None:
-                self.console.append("Process did not initialize.")
+                self.console.append("Process not initialized.")
                 return
         else:
             filename = TEMPORAL_FILE
             projectObj.writeXml( os.path.join(self.pathWorkSpace,filename) )
-
-        self.actionStart.setEnabled(False)
-        self.actionPause.setEnabled(True)
-        self.actionStop.setEnabled(True)
-        
-        self.actionStarToolbar.setEnabled(False)
-        self.actionPauseToolbar.setEnabled(True)
-        self.actionStopToolbar.setEnabled(True)
         
         self.console.append("Please Wait...")
         
@@ -4770,7 +4747,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         sleep(0.5)
         self.threadStarted = True
         
-        self.changeStartIcon(started=True)
+        self._disable_play_button()
+        self._disable_save_button()
+        self._enable_stop_button()
         
     def stopProject(self):
         
@@ -4780,37 +4759,21 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         while self.controllerThread.isRunning():
             sleep(0.5)
-            
-        self.actionStart.setEnabled(True)
-        self.actionPause.setEnabled(False)
-        self.actionStop.setEnabled(False)
         
-        self.actionStarToolbar.setEnabled(True)
-        self.actionPauseToolbar.setEnabled(False)
-        self.actionStopToolbar.setEnabled(False)
-        
-        self.restorePauseIcon()
-        self.restoreStartIcon()
+        self._disable_stop_button()
+        self._enable_play_button()
      
     def pauseProject(self):
         
 #         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.PAUSE, data=True))
         paused = self.controllerThread.pause()
         
-        self.actionStart.setEnabled(False)
-        self.actionPause.setEnabled(True)
-        self.actionStop.setEnabled(True)
-        
-        self.actionStarToolbar.setEnabled(False)
-        self.actionPauseToolbar.setEnabled(True)
-        self.actionStopToolbar.setEnabled(True)
-        
         self.changePauseIcon(paused)
                
     def saveProject(self, filename=None):
         
-        self.actionStart.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
+        self._disable_save_button()
+        self._disable_play_button()
         
         projectObj = self.getSelectedProjectObj()
         
@@ -4856,11 +4819,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.append("Project saved")
         self.console.append("Press Play button to start data processing ...")
         
-        self.actionSaveToolbar.setEnabled(False)
-        self.actionStarToolbar.setEnabled(True)
-        
-        self.actionSave.setEnabled(False)
-        self.actionStart.setEnabled(True)
+        self._disable_save_button()
+        self._enable_play_button()
         
         return filename
         
@@ -5297,13 +5257,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         Method to loads day
         """
-        self.actionSaveToolbar.setEnabled(False)
-        self.actionStarToolbar.setEnabled(False)
-        
-        self.actionSave.setEnabled(False)
-        self.actionStart.setEnabled(False)
-        
+        self._disable_save_button()
+        self._disable_play_button()
         self.proOk.setEnabled(False)
+        
         self.proComStartDate.clear()
         self.proComEndDate.clear()
         
@@ -5345,16 +5302,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.dateList = dateStrList
         
-        self.proOk.setEnabled(True)
-        
-        self.actionSaveToolbar.setEnabled(True)
-        self.actionStarToolbar.setEnabled(True)
-        
-        self.actionSave.setEnabled(True)
-        self.actionStart.setEnabled(True)
-        
         self.console.clear()
         self.console.append("Successful load")
+        
+        self.proOk.setEnabled(True)
+        self._enable_play_button()
+        self._enable_save_button()
         
         return self.dateList
         
@@ -5385,6 +5338,52 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.setTextColor(color_red)
         self.console.append(text)   
         self.console.setTextColor(color_black)
+    
+    def _enable_save_button(self):
+        
+        self.actionSaveToolbar.setEnabled(True)
+        self.actionSave.setEnabled(True)
+    
+    def _disable_save_button(self):
+        
+        self.actionSaveToolbar.setEnabled(False)
+        self.actionSave.setEnabled(False)
+    
+    def _enable_play_button(self):
+        
+        self.actionStart.setEnabled(True)
+        self.actionStarToolbar.setEnabled(True)
+        
+        self.changeStartIcon(started=False)
+    
+    def _disable_play_button(self):
+        
+        self.actionStart.setEnabled(False)
+        self.actionStarToolbar.setEnabled(False)
+        
+        self.changeStartIcon(started=True)
+        
+    def _enable_stop_button(self):
+        
+        self.actionPause.setEnabled(True)
+        self.actionStop.setEnabled(True)
+        
+        self.actionPauseToolbar.setEnabled(True)
+        self.actionStopToolbar.setEnabled(True)
+        
+        self.changePauseIcon(paused=False)
+        self.changeStopIcon(started=True)
+    
+    def _disable_stop_button(self):
+        
+        self.actionPause.setEnabled(False)
+        self.actionStop.setEnabled(False)
+        
+        self.actionPauseToolbar.setEnabled(False)
+        self.actionStopToolbar.setEnabled(False)
+        
+        self.changePauseIcon(paused=False)
+        self.changeStopIcon(started=False)
         
     def setGUIStatus(self):
         
