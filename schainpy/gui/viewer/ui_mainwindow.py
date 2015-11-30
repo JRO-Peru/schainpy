@@ -196,7 +196,6 @@ class Ui_EnvWindow(object):
         self.actionStopToolbar.setIcon(iconStop)
         self.actionStopToolbar.setObjectName(_fromUtf8("actionStopToolbar"))
         self.actionPauseToolbar = QtGui.QAction(MainWindow)
-        self.actionPause.setIcon(iconPause)
         self.actionPauseToolbar.setIcon(iconPause)
         self.actionPauseToolbar.setObjectName(_fromUtf8("actionPauseToolbar"))
         self.actionAddPU = QtGui.QAction(MainWindow)
