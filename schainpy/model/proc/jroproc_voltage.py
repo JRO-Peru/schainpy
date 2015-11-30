@@ -655,7 +655,7 @@ class Decoder(Operation):
         if not self.isConfig:
             
             if code is None:
-                if not dataOut.code:
+                if dataOut.code is None:
                     print "Code is not defined"
                     raise ValueError, "Code could not be read from %s object. Enter a value in Code parameter" %dataOut.type
                 
