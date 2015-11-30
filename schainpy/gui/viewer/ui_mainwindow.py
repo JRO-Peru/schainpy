@@ -70,7 +70,7 @@ class Ui_EnvWindow(object):
         iconStart = QtGui.QIcon()
         iconStart.addPixmap(QtGui.QPixmap(_fromUtf8( os.path.join(FIGURES_PATH, icon_name) )), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionStarToolbar.setIcon(iconStart)
-     
+    
         return
     
     def setupUi(self, MainWindow):

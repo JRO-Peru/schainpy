@@ -2953,7 +2953,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.volGraphCebSave.setCheckState(QtCore.Qt.Unchecked)
             else:
                 value = parmObj.getValue()
-                if int(value):
+                if value:
                     self.volGraphCebSave.setCheckState(QtCore.Qt.Checked)
                 else:
                     self.volGraphCebSave.setCheckState(QtCore.Qt.Unchecked)
@@ -3131,16 +3131,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         else:    
             for parmObj in opObj.getParameterObjList():
                if parmObj.name == 'timeInterval':
-                   value = opObj.getParameterValue(parameterName='timeInterval')             
-                   value = float(value)
+                   value = opObj.getParameterValue(parameterName='timeInterval')
                    self.specOpIncoherent.setText(str(value))
                    self.specOpIncoherent.setEnabled(True)
                    self.specOpCebIncoherent.setCheckState(QtCore.Qt.Checked)
                    self.specOpCobIncInt.setCurrentIndex(0)
                    
                if parmObj.name == 'n':
-                   value = opObj.getParameterValue(parameterName='n')             
-                   value = float(value)
+                   value = opObj.getParameterValue(parameterName='n')
                    self.specOpIncoherent.setText(str(value))
                    self.specOpIncoherent.setEnabled(True)
                    self.specOpCebIncoherent.setCheckState(QtCore.Qt.Checked)
@@ -3733,8 +3731,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         else:    
             for parmObj in opObj.getParameterObjList():
                if parmObj.name == 'timeInterval':
-                   value = opObj.getParameterValue(parameterName='timeInterval')             
-                   value = float(value)
+                   value = opObj.getParameterValue(parameterName='timeInterval')
                    self.specHeisOpIncoherent.setText(str(value))
                    self.specHeisOpIncoherent.setEnabled(True)
                    self.specHeisOpCebIncoherent.setCheckState(QtCore.Qt.Checked)

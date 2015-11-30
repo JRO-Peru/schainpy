@@ -56,9 +56,6 @@ class ParameterConf():
         
         if value == '':
             raise ValueError, "%s: This parameter value is empty" %self.name
-        
-        if format == 'bool':
-            value = int(value)
             
         if format == 'list':
             strList = value.split(',')
@@ -158,6 +155,12 @@ class ParameterConf():
             
             return self.__formated_value
         
+        if format == 'bool':
+            value = int(value)
+            
+        if format == 'int':
+            value = float(value)
+               
         format_func = eval(format)
         
         self.__formated_value = format_func(value)
