@@ -1035,7 +1035,7 @@ class JRODataReader(JRODataIO):
 
             except IOError:
                 traceback.print_exc()
-                sys.exit(0)
+#                 sys.exit(0)
                 
                 if msgFlag:
                     print "[Reading] The file %s is empty or it hasn't enough data" % filename
@@ -1170,7 +1170,7 @@ class JRODataReader(JRODataIO):
             
             if not(fullpath):
                 print "[Reading] There 'isn't any valid file in %s" % path
-                return None
+                return
         
             self.year = year
             self.doy  = doy
@@ -1187,12 +1187,16 @@ class JRODataReader(JRODataIO):
                                                                walk=walk)
             
             if not(pathList):
-#                 print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
-#                                                         datetime.datetime.combine(startDate,startTime).ctime(),
-#                                                         datetime.datetime.combine(endDate,endTime).ctime())
-#                 
-                sys.exit(-1)
+                print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
+                                                        datetime.datetime.combine(startDate,startTime).ctime(),
+                                                        datetime.datetime.combine(endDate,endTime).ctime())
+                 
+#                 sys.exit(-1)
                 
+                self.fileIndex = -1
+                self.pathList = []
+                self.filenameList = []
+                return
             
             self.fileIndex = -1
             self.pathList = pathList
@@ -1216,8 +1220,11 @@ class JRODataReader(JRODataIO):
                 print "[Reading] No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime())
             else:
                 print "[Reading] No files"
-
-            sys.exit(-1)
+                
+                self.fileIndex = -1
+                self.pathList = []
+                self.filenameList = []
+                return
 
 #         self.getBasicHeader()
         
