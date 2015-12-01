@@ -2,18 +2,18 @@
 Created on September , 2012
 @author: 
 '''
-from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
-from xml.dom import minidom
-
-from model import *
-from time import sleep
     
 import sys
 import ast
 import traceback
+import schainpy
+import schainpy.admin
 
-SCHAIN_MAIL = "miguel.urco@jro.igp.gob.pe"
-EMAIL_SERVER = "jro.igp.gob.pe"
+from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
+from xml.dom import minidom
+
+from schainpy.model import *
+from time import sleep
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -325,9 +325,9 @@ class OperationConf():
         
         return parmConfObj
     
-    def makeXml(self, upElement):
+    def makeXml(self, procUnitElement):
         
-        opElement = SubElement(upElement, self.ELEMENTNAME)
+        opElement = SubElement(procUnitElement, self.ELEMENTNAME)
         opElement.set('id', str(self.id))
         opElement.set('name', self.name)
         opElement.set('type', self.type)
@@ -539,16 +539,16 @@ class ProcUnitConf():
         
         return opConfObj
     
-    def makeXml(self, procUnitElement):
+    def makeXml(self, projectElement):
         
-        upElement = SubElement(procUnitElement, self.ELEMENTNAME)
-        upElement.set('id', str(self.id))
-        upElement.set('name', self.name)
-        upElement.set('datatype', self.datatype)
-        upElement.set('inputId', str(self.inputId))
+        procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
+        procUnitElement.set('id', str(self.id))
+        procUnitElement.set('name', self.name)
+        procUnitElement.set('datatype', self.datatype)
+        procUnitElement.set('inputId', str(self.inputId))
         
         for opConfObj in self.opConfObjList:
-            opConfObj.makeXml(upElement)
+            opConfObj.makeXml(procUnitElement)
     
     def readXml(self, upElement):
         
@@ -757,12 +757,53 @@ class ReadUnitConf(ProcUnitConf):
             
         return opObj
     
+#     def makeXml(self, projectElement):
+#         
+#         procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
+#         procUnitElement.set('id', str(self.id))
+#         procUnitElement.set('name', self.name)
+#         procUnitElement.set('datatype', self.datatype)
+#         procUnitElement.set('inputId', str(self.inputId))
+#         
+#         for opConfObj in self.opConfObjList:
+#             opConfObj.makeXml(procUnitElement)
+    
+    def readXml(self, upElement):
+        
+        self.id = upElement.get('id')
+        self.name = upElement.get('name')
+        self.datatype = upElement.get('datatype')
+        self.inputId = upElement.get('inputId')
+        
+        if self.ELEMENTNAME == "ReadUnit":
+            self.datatype = self.datatype.replace("Reader", "")
+        
+        if self.inputId == 'None':
+            self.inputId = '0'
+            
+        self.opConfObjList = []
+        
+        opElementList = upElement.getiterator(OperationConf().getElementName())
+        
+        for opElement in opElementList:
+            opConfObj = OperationConf()
+            opConfObj.readXml(opElement)
+            self.opConfObjList.append(opConfObj)
+            
+            if opConfObj.name == 'run':
+                self.path = opConfObj.getParameterValue('path')
+                self.startDate = opConfObj.getParameterValue('startDate')
+                self.endDate = opConfObj.getParameterValue('endDate')
+                self.startTime = opConfObj.getParameterValue('startTime')
+                self.endTime = opConfObj.getParameterValue('endTime')
+            
 class Project():
     
     id = None
     name = None
     description = None
-#    readUnitConfObjList = None
+    filename = None
+    
     procUnitConfObjDict = None
     
     ELEMENTNAME = 'Project'
@@ -898,13 +939,25 @@ class Project():
     
     def writeXml(self, filename):
         
+        if not os.access(os.path.dirname(filename), os.W_OK):
+            return 0
+        
+        if os.path.isfile(filename) and not(os.access(filename, os.W_OK)):
+            return 0
+        
         self.makeXml()
         
-        #print prettify(self.projectElement)
-        
         ElementTree(self.projectElement).write(filename, method='xml')
+        
+        self.filename = filename
+        
+        return 1
 
     def readXml(self, filename):
+        
+        if not os.path.isfile(filename):
+            print "%s does not exist" %filename
+            return 0
         
         self.projectElement = None
         self.procUnitConfObjDict = {}
@@ -938,7 +991,9 @@ class Project():
                 procUnitConfObj.parentId = self.id
                 
             self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
-               
+        
+        return 1
+    
     def printattr(self):
         
         print "Project[%s]: name = %s, description = %s" %(self.id,
@@ -1010,7 +1065,7 @@ class Project():
         
         print
         print "*"*60
-        print "   Starting SIGNAL CHAIN PROCESSING  "
+        print "   Starting SIGNAL CHAIN PROCESSING v%s " %schainpy.__version__
         print "*"*60
         print
         
@@ -1026,28 +1081,46 @@ class Project():
                 
                 procUnitConfObj = self.procUnitConfObjDict[procKey]
                 
-                message = ""
                 try:
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
                 except:
-                    print "***** Error running %s *****" %procUnitConfObj.name
-                    sleep(1)
+                    print "***** Error occurred in %s *****" %(procUnitConfObj.name)
+                    
+                    sleep(0.5)
                     
                     err = traceback.format_exception(sys.exc_info()[0],
                                                      sys.exc_info()[1],
                                                      sys.exc_info()[2])
                     
-                    for thisLine in err:
-                        message += thisLine
+                    import socket
+                    
+                    subject =  "SChain v%s: Error running %s\n" %(schainpy.__version__, procUnitConfObj.name)
+                    
+                    subtitle = "%s: %s\n" %(procUnitConfObj.getElementName() ,procUnitConfObj.name)
+                    subtitle += "Hostname: %s\n" %socket.gethostbyname(socket.gethostname())
+                    subtitle += "Working directory: %s\n" %os.path.abspath("./")
+                    subtitle += "Configuration file: %s\n" %self.filename
+                    
+                    readUnitConfObj = self.getReadUnitObj()
+                    if readUnitConfObj:
+                        subtitle += "Data path: %s\n" %readUnitConfObj.path
+                        subtitle += "Data type: %s\n" %readUnitConfObj.datatype
+                        subtitle += "Start date: %s\n" %readUnitConfObj.startDate
+                        subtitle += "End date: %s\n" %readUnitConfObj.endDate
+                        subtitle += "Start time: %s\n" %readUnitConfObj.startTime
+                        subtitle += "End time: %s\n" %readUnitConfObj.endTime
+                        
+                    message = "".join(err)
                     
                     sys.stderr.write(message)
-#                     print "*"*60
-#                     print message
-#                     print "*"*60
+                                        
+                    adminObj = schainpy.admin.SchainNotify()
+                    adminObj.sendAlert(message=message,
+                                       subject=subject,
+                                       subtitle=subtitle,
+                                       filename=self.filename)
                     
-#                     self.sendReport(message)
-                    sleep(0.1)
                     is_ok = False
                     
                     break
@@ -1075,23 +1148,6 @@ class Project():
         self.createObjects()
         self.connectObjects()
         self.run()
-    
-    def sendReport(self, message, subject="Error occurred in Signal Chain", email=SCHAIN_MAIL):
-        
-        import smtplib
-        
-        print subject
-        print "Sending report to %s ..." %email
-        
-        message = 'From: (Python Signal Chain API) ' + email + '\n' + \
-        'To: ' + email + '\n' + \
-        'Subject: ' + str(subject) + '\n' + \
-        'Content-type: text/html\n\n' + message
-
-        server = smtplib.SMTP(EMAIL_SERVER)
-        server.sendmail(email.split(',')[0],
-                        email.split(','), message)
-        server.quit()
         
 if __name__ == '__main__':
     

@@ -1,0 +1,346 @@
+"""The admin module contains all administrative classes relating to the schain python api.
+
+The main role of this module is to send some reports. It contains a
+notification class and a standard error handing class.
+
+$Id: admin.py 3966 2015-12-01 14:32:29Z miguel.urco $
+"""
+import os
+import smtplib
+import ConfigParser
+import StringIO
+
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+
+class SchainConfigure():
+    
+    __DEFAULT_SENDER_EMAIL = "notifier-schain@jro.igp.gob.pe"
+    __DEFAULT_ADMINISTRATOR_EMAIL = "miguel.urco@jro.igp.gob.pe"
+    __DEFAULT_EMAIL_SERVER = "jro-zimbra.igp.gob.pe"
+    
+    __SCHAIN_ADMINISTRATOR_EMAIL = "CONTACT"
+    __SCHAIN_EMAIL_SERVER = "MAILSERVER"
+    __SCHAIN_SENDER_EMAIL = "MAILSERVER_ACCOUNT"
+    
+    def __init__(self, initFile = None):
+        
+        # Set configuration file
+        if (initFile == None):
+            self.__confFilePath = "/etc/schain.conf"
+        else:
+            self.__confFilePath = initFile
+
+        # open configuration file
+        try:
+            self.__confFile = open(self.__confFilePath, "r")
+        except IOError:
+            # can't read from file - use all hard-coded values
+            self.__initFromHardCode()
+            return
+        
+        # create Parser using standard module ConfigParser
+        self.__parser = ConfigParser.ConfigParser()
+        
+        # read conf file into a StringIO with "[madrigal]\n" section heading prepended
+        strConfFile = StringIO.StringIO("[schain]\n" + self.__confFile.read())
+
+        # parse StringIO configuration file
+        self.__parser.readfp(strConfFile)
+        
+        # read information from configuration file
+        self.__readConfFile()
+
+        # close conf file
+        self.__confFile.close()
+    
+    
+    def __initFromHardCode(self):
+        
+        self.__sender_email = self.__DEFAULT_SENDER_EMAIL
+        self.__admin_email = self.__DEFAULT_ADMINISTRATOR_EMAIL
+        self.__email_server = self.__DEFAULT_EMAIL_SERVER
+    
+    def __readConfFile(self):
+        """__readConfFile is a private helper function that reads information from the parsed config file.
+        
+        Inputs: None
+        
+        Returns: Void.
+
+        Affects: Initializes class member variables that are found in the config file.
+
+        Exceptions: MadrigalError thrown if any key not found.
+        """
+
+        # get the sender email
+        try:
+            self.__sender_email = self.__parser.get("schain", self.__SCHAIN_SENDER_EMAIL)
+        except:
+            self.__sender_email = self.__DEFAULT_SENDER_EMAIL
+
+        # get the administrator email
+        try:
+            self.__admin_email = self.__parser.get("schain", self.__SCHAIN_ADMINISTRATOR_EMAIL)
+        except:
+            self.__admin_email = self.__DEFAULT_ADMINISTRATOR_EMAIL
+            
+        # get the server email
+        try:
+            self.__email_server = self.__parser.get("schain", self.__SCHAIN_EMAIL_SERVER)
+        except:
+            self.__email_server = self.__DEFAULT_EMAIL_SERVER
+    
+    def getEmailServer(self):
+        
+        return self.__email_server
+    
+    def getSenderEmail(self):
+        
+        return self.__sender_email
+    
+    def getAdminEmail(self):
+        
+        return self.__admin_email
+    
+class SchainNotify:
+    """SchainNotify is an object used to send messages to an administrator about a Schain software.
+
+    This object provides functions needed to send messages to an administrator about a Schain , for now
+    only sendAlert, which sends an email to the site administrator found is ADMIN_EMAIL
+
+    Usage example:
+
+        import schainpy.admin
+    
+        try:
+        
+            adminObj =  schainpy.admin.SchainNotify()
+            adminObj.sendAlert('This is important!', 'Important Message')
+            
+        except schainpy.admin.SchainError, e:
+        
+            print e.getExceptionStr()
+
+
+    Non-standard Python modules used:
+    None
+
+    Exceptions thrown: None - Note that SchainNotify tries every trick it knows to avoid
+    throwing exceptions, since this is the class that will generally be called when there is a problem.
+
+    Change history:
+
+    Written by "Miguel Urco":mailto:miguel.urco@jro.igp.gob.pe  Dec. 1, 2015
+    """
+
+    #constants
+    
+    def __init__(self):
+        """__init__ initializes SchainNotify by getting some basic information from SchainDB and SchainSite.
+
+        Note that SchainNotify tries every trick it knows to avoid throwing exceptions, since
+        this is the class that will generally be called when there is a problem.
+
+        Inputs: Existing SchainDB object, by default = None.
+        
+        Returns: void
+
+        Affects: Initializes self.__binDir.
+
+        Exceptions: None.
+        """
+
+        # note that the main configuration file is unavailable 
+        # the best that can be done is send an email to root using localhost mailserver
+        confObj = SchainConfigure()
+        
+        self.__emailFromAddress = confObj.getSenderEmail()
+        self.__emailToAddress = confObj.getAdminEmail()
+        self.__emailServer  = confObj.getEmailServer()
+
+    def sendEmail(self, email_from, email_to, subject='Error running ...', message="", subtitle="", filename="", html_format=True):
+        
+        msg = MIMEMultipart()
+        msg['Subject'] = subject
+        msg['From'] = "(Python SChain API): " + email_from
+        msg['Reply-to'] = email_from
+        msg['To'] = email_to
+        
+        # That is what u see if dont have an email reader:
+        msg.preamble = 'SChainPy'
+        
+        if html_format:
+            message = "<h1> %s </h1>" %subject + "<h3>" + subtitle.replace("\n", "</h3><h3>\n") + "</h3>" + message.replace("\n", "<br>\n")
+            message = "<html>\n" + message + '</html>'
+        
+            # This is the textual part:
+            part = MIMEText(message, "html")
+        else:
+            message = subject + "\n" + subtitle + "\n" + message
+            part = MIMEText(message)
+            
+        msg.attach(part)
+        
+        if os.path.isfile(filename):
+            # This is the binary part(The Attachment):
+            part = MIMEApplication(open(filename,"rb").read())
+            part.add_header('Content-Disposition', 
+                            'attachment',
+                            filename=os.path.basename(filename))
+            msg.attach(part)
+        
+        # Create an instance in SMTP server
+        smtp = smtplib.SMTP(self.__emailServer)
+        # Start the server:
+#         smtp.ehlo()
+#         smtp.login(email_from, email_from_pass)
+        
+        # Send the email
+        smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+        smtp.quit()
+        
+    
+    def sendAlert(self, message, subject = "", subtitle="", filename=""):
+        """sendAlert sends an email with the given message and optional title.
+
+        Inputs: message (string), and optional title (string)
+        
+        Returns: void
+
+        Affects: none
+
+        Exceptions: None.
+        """
+        print "***** Sending alert to %s *****" %self.__emailToAddress
+        # set up message
+    
+        self.sendEmail(email_from=self.__emailFromAddress,
+                       email_to=self.__emailToAddress,
+                       subject=subject,
+                       message=message,
+                       subtitle=subtitle, 
+                       filename=filename)
+        
+        print "***** Your system administrator has been notified *****"
+        
+        
+    def notify(self, email, message, subject = "", subtitle="", filename=""):
+        """notify sends an email with the given message and title to email.
+
+        Inputs: email (string), message (string), and subject (string)
+        
+        Returns: void
+
+        Affects: none
+
+        Exceptions: None.
+        """
+        
+        print "Notifying to %s ..." %email
+        
+        self.sendEmail(email_from=self.__emailFromAddress,
+                       email_to=email,
+                       subject=subject,
+                       message=message,
+                       subtitle=subtitle, 
+                       filename=filename)
+        
+        print "***** Your system administrator has been notified *****"
+
+class SchainError:
+    """SchainError is an exception class that is thrown for all known errors in using Schain Py lib.
+
+    Usage example:
+
+        import sys, traceback
+        import schainpy.admin
+    
+        try:
+        
+            test = open('ImportantFile.txt', 'r')
+            
+        except:
+        
+            raise schainpy.admin.SchainError('ImportantFile.txt not opened!',
+                                                traceback.format_exception(sys.exc_info()[0],
+                                                                        sys.exc_info()[1],
+                                                                        sys.exc_info()[2]))
+    """
+
+
+    def __init__(self, strInterpretation, exceptionList):
+        """ __init__ gathers the interpretation string along with all information from sys.exc_info().
+
+        Inputs: strIntepretation - A string representing the programmer's interpretation of
+        why the exception occurred
+
+                exceptionList - a list of strings completely describing the exception.
+                Generated by traceback.format_exception(sys.exc_info()[0],
+                                                        sys.exc_info()[1],
+                                                        sys.exc_info()[2])
+        
+        Returns: Void.
+
+        Affects: Initializes class member variables _strInterp, _strExcList.
+
+        Exceptions: None.
+        """
+        
+        self._strInterp = strInterpretation
+        self._strExcList = exceptionList
+
+        
+    def getExceptionStr(self):
+        """ getExceptionStr returns a formatted string ready for printing completely describing the exception.
+
+        Inputs: None
+        
+        Returns: A formatted string ready for printing completely describing the exception.
+
+        Affects: None
+
+        Exceptions: None.
+        """
+        excStr = 'The following Schain Python exception has occurred:\n'
+        excStr = excStr + self._strInterp + '\n\n'
+
+        if self._strExcList != None:
+            for item in self._strExcList:
+                excStr = excStr + str(item) + '\n'
+
+        return excStr
+    
+    def __str__(self):
+        return(self.getExceptionStr())
+
+
+    def getExceptionHtml(self):
+        """ getExceptionHtml returns an Html formatted string completely describing the exception.
+
+        Inputs: None
+        
+        Returns: A formatted string ready for printing completely describing the exception.
+
+        Affects: None
+
+        Exceptions: None.
+        """
+        
+        excStr = '<BR>The following Schain Python exception has occurred:\n<BR>'
+        excStr = excStr + self._strInterp + '\n<BR>\n'
+
+        if self._strExcList != None:
+            for item in self._strExcList:
+                excStr = excStr + str(item) + '\n<BR>'
+
+        return excStr
+
+if __name__ == '__main__':
+
+    test = SchainNotify()
+
+    test.sendAlert('This is a message from the python module SchainNotify', 'Test from SchainNotify')
+
+    print 'Hopefully message sent - check.'
