@@ -256,18 +256,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     @pyqtSignature("")
     def on_actionAddPU_triggered(self):
+        
         if len(self.__projectObjDict) == 0:
-            outputstr = "First Create a Project then add Processing Unit"
+            outputstr = "First create a Project before add any Processing Unit"
             self.console.clear()
             self.console.append(outputstr)
-            return 0
+            return
         else:       
            self.addPUWindow()   
            self.console.clear()
            self.console.append("Please, Choose the type of Processing Unit")
-           self.console.append("If your Datatype is rawdata, you will start with processing unit Type Voltage")
-           self.console.append("If your Datatype is pdata, you will choose between processing unit Type Spectra or Correlation")
-           self.console.append("If your Datatype is fits, you will start with processing unit Type SpectraHeis")
+#            self.console.append("If your Datatype is rawdata, you will start with processing unit Type Voltage")
+#            self.console.append("If your Datatype is pdata, you will choose between processing unit Type Spectra or Correlation")
+#            self.console.append("If your Datatype is fits, you will start with processing unit Type SpectraHeis")
 
            
     @pyqtSignature("")
@@ -404,14 +405,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.clear()
         
-#         if not self.getSelectedProjectObj():
-#             self.console.append("Please select a project before load files")
-#             return
-        
         parameter_list = self.checkInputsProject()
-        
-#         if not parameter_list[0]:
-#             return
         
         parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set, expLabel = parameter_list
         
@@ -433,8 +427,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.proEndTime.setEnabled(False)
             self.frame_2.setEnabled(True)
         
-        self.loadDays(data_path, ext, walk, expLabel)
-        
+        if self.loadDays(data_path, ext, walk, expLabel) == []:
+            self._disable_save_button()
+            self._disable_play_button()
+            self.proOk.setEnabled(False)
+        else:
+            self._enable_save_button()
+            self._enable_play_button()
+            self.proOk.setEnabled(True)
+            
     @pyqtSignature("int")
     def on_proComStartDate_activated(self, index):
         """
@@ -4077,7 +4078,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             try:
                 index.parent()
             except:
-                self.console.append('Please first select a Project or Processing Unit')
+                self.console.append('Please, first at all select a Project or Processing Unit')
                 return 0
             # print index.parent(),index
             if index.parent() == None:
@@ -5257,9 +5258,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         Method to loads day
         """
-        self._disable_save_button()
-        self._disable_play_button()
-        self.proOk.setEnabled(False)
+#         self._disable_save_button()
+#         self._disable_play_button()
+#         self.proOk.setEnabled(False)
         
         self.proComStartDate.clear()
         self.proComEndDate.clear()
@@ -5305,9 +5306,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.clear()
         self.console.append("Successful load")
         
-        self.proOk.setEnabled(True)
-        self._enable_play_button()
-        self._enable_save_button()
+#         self.proOk.setEnabled(True)
+#         self._enable_play_button()
+#         self._enable_save_button()
         
         return self.dateList
         

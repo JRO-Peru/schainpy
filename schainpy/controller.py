@@ -1031,7 +1031,9 @@ class Project():
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
                 except:
+                    print "***** Error running %s *****" %procUnitConfObj.name
                     sleep(1)
+                    
                     err = traceback.format_exception(sys.exc_info()[0],
                                                      sys.exc_info()[1],
                                                      sys.exc_info()[2])
@@ -1039,7 +1041,11 @@ class Project():
                     for thisLine in err:
                         message += thisLine
                     
-                    print message
+                    sys.stderr.write(message)
+#                     print "*"*60
+#                     print message
+#                     print "*"*60
+                    
 #                     self.sendReport(message)
                     sleep(0.1)
                     is_ok = False
@@ -1048,7 +1054,6 @@ class Project():
             
             #If every process unit finished so end process
             if not(is_ok):
-                print message
                 print "Every process unit have finished"
                 break
 
