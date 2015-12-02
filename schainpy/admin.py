@@ -16,13 +16,15 @@ from email.mime.multipart import MIMEMultipart
 
 class SchainConfigure():
     
-    __DEFAULT_SENDER_EMAIL = "notifier-schain@jro.igp.gob.pe"
     __DEFAULT_ADMINISTRATOR_EMAIL = "miguel.urco@jro.igp.gob.pe"
     __DEFAULT_EMAIL_SERVER = "jro-zimbra.igp.gob.pe"
+    __DEFAULT_SENDER_EMAIL = "notifier-schain@jro.igp.gob.pe"
+    __DEFAULT_SENDER_PASS = ""
     
     __SCHAIN_ADMINISTRATOR_EMAIL = "CONTACT"
     __SCHAIN_EMAIL_SERVER = "MAILSERVER"
     __SCHAIN_SENDER_EMAIL = "MAILSERVER_ACCOUNT"
+    __SCHAIN_SENDER_PASS = "MAILSERVER_PASSWORD"
     
     def __init__(self, initFile = None):
         
@@ -59,6 +61,7 @@ class SchainConfigure():
     def __initFromHardCode(self):
         
         self.__sender_email = self.__DEFAULT_SENDER_EMAIL
+        self.__sender_pass = self.__DEFAULT_SENDER_PASS
         self.__admin_email = self.__DEFAULT_ADMINISTRATOR_EMAIL
         self.__email_server = self.__DEFAULT_EMAIL_SERVER
     
@@ -79,7 +82,13 @@ class SchainConfigure():
             self.__sender_email = self.__parser.get("schain", self.__SCHAIN_SENDER_EMAIL)
         except:
             self.__sender_email = self.__DEFAULT_SENDER_EMAIL
-
+        
+        # get the sender password
+        try:
+            self.__sender_pass = self.__parser.get("schain", self.__SCHAIN_SENDER_PASS)
+        except:
+            self.__sender_pass = self.__DEFAULT_SENDER_PASS
+            
         # get the administrator email
         try:
             self.__admin_email = self.__parser.get("schain", self.__SCHAIN_ADMINISTRATOR_EMAIL)
@@ -99,6 +108,10 @@ class SchainConfigure():
     def getSenderEmail(self):
         
         return self.__sender_email
+    
+    def getSenderPass(self):
+        
+        return self.__sender_pass
     
     def getAdminEmail(self):
         
@@ -157,6 +170,7 @@ class SchainNotify:
         confObj = SchainConfigure()
         
         self.__emailFromAddress = confObj.getSenderEmail()
+        self.__emailPass = confObj.getSenderPass()
         self.__emailToAddress = confObj.getAdminEmail()
         self.__emailServer  = confObj.getEmailServer()
 
@@ -192,15 +206,23 @@ class SchainNotify:
             msg.attach(part)
         
         # Create an instance in SMTP server
-        smtp = smtplib.SMTP(self.__emailServer)
+        try:
+            smtp = smtplib.SMTP(self.__emailServer)
+        except:
+            print "***** Could not connect to server %s *****" %self.__emailServer
+            return 0
+            
         # Start the server:
 #         smtp.ehlo()
-#         smtp.login(email_from, email_from_pass)
+        if self.__emailPass:
+            smtp.login(self.__emailFromAddress, self.__emailPass)
         
         # Send the email
         smtp.sendmail(msg['From'], msg['To'], msg.as_string())
         smtp.quit()
+        smtp.close()
         
+        return 1
     
     def sendAlert(self, message, subject = "", subtitle="", filename=""):
         """sendAlert sends an email with the given message and optional title.
@@ -216,14 +238,15 @@ class SchainNotify:
         print "***** Sending alert to %s *****" %self.__emailToAddress
         # set up message
     
-        self.sendEmail(email_from=self.__emailFromAddress,
-                       email_to=self.__emailToAddress,
-                       subject=subject,
-                       message=message,
-                       subtitle=subtitle, 
-                       filename=filename)
+        sent=self.sendEmail(email_from=self.__emailFromAddress,
+                           email_to=self.__emailToAddress,
+                           subject=subject,
+                           message=message,
+                           subtitle=subtitle, 
+                           filename=filename)
         
-        print "***** Your system administrator has been notified *****"
+        if sent:
+            print "***** Your system administrator has been notified *****"
         
         
     def notify(self, email, message, subject = "", subtitle="", filename=""):
