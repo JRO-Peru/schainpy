@@ -4130,9 +4130,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         return projectObjView
          
-    def createReadUnitView(self, projectObjView):
-        
-#         project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, walk, set = self.getParmsFromProjectWindow()
+    def createReadUnitView(self, projectObjView, idReadUnit=None):
         
         projectParms = self.__getParmsFromProjectWindow()
         
@@ -4140,7 +4138,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             return None
         
         if projectParms.datatype in ("Voltage", "Spectra", "Fits"):
-            readUnitConfObj = projectObjView.addReadUnit(datatype=projectParms.datatype,
+            readUnitConfObj = projectObjView.addReadUnit(id=idReadUnit,
+                                                         datatype=projectParms.datatype,
                                                             path=projectParms.dpath,
                                                             startDate=projectParms.startDate,
                                                             endDate=projectParms.endDate,
@@ -4162,7 +4161,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             readUnitConfObj.addOperation(name="printInfo")
             
         if projectParms.datatype == "USRP":
-            readUnitConfObj = projectObjView.addReadUnit(datatype=projectParms.datatype,
+            readUnitConfObj = projectObjView.addReadUnit(id=idReadUnit,
+                                                         datatype=projectParms.datatype,
                                                             path=projectParms.dpath,
                                                             startDate=projectParms.startDate,
                                                             endDate=projectParms.endDate,
@@ -4179,50 +4179,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
     def updateReadUnitView(self, projectObjView, idReadUnit):
         
-#         project_name, description, datatype, data_path, startDate, endDate, startTime, endTime, online, delay, walk , set = self.getParmsFromProjectWindow()
+        projectObjView.removeProcUnit(idReadUnit)
         
-        readUnitConfObj = projectObjView.getProcUnitObj(idReadUnit)
+        readUnitConfObj = self.createReadUnitView(projectObjView, idReadUnit)
         
-        projectParms = self.__getParmsFromProjectWindow()
-        
-        if not projectParms.isValid():
-            return None
-        
-        if projectParms.datatype in ["Voltage", "Spectra", "Fits"]:
-            readUnitConfObj.update(datatype=projectParms.datatype,
-                                    path=projectParms.dpath,
-                                    startDate=projectParms.startDate,
-                                    endDate=projectParms.endDate,
-                                    startTime=projectParms.startTime,
-                                    endTime=projectParms.endTime,
-                                    online=projectParms.online,
-                                    walk=projectParms.walk
-                                    )
-            if projectParms.set:
-                readUnitConfObj.addParameter(name="set", value=projectParms.set, format="int")
-        
-            if projectParms.delay:
-                readUnitConfObj.addParameter(name="delay", value=projectParms.delay, format="int")
-            
-            if projectParms.expLabel:
-                readUnitConfObj.addParameter(name="expLabel", value=projectParms.expLabel)
-            
-            readUnitConfObj.addOperation(name="printInfo")
-            
-        if projectParms.datatype == "USRP":
-            readUnitConfObj.update(datatype=projectParms.datatype,
-                                    path=projectParms.dpath,
-                                    startDate=projectParms.startDate,
-                                    endDate=projectParms.endDate,
-                                    startTime=projectParms.startTime,
-                                    endTime=projectParms.endTime,
-                                    online=projectParms.online,
-                                    ippKm=projectParms.ippKm
-                                    ) 
-
-            if projectParms.delay:
-                readUnitConfObj.addParameter(name="delay", value=projectParms.delay, format="int")
-                
         return readUnitConfObj
         
     def createProcUnitView(self, projectObjView, datatype, inputId):

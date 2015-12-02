@@ -5,6 +5,7 @@ Created on September , 2012
     
 import sys
 import ast
+import datetime
 import traceback
 import schainpy
 import schainpy.admin
@@ -685,7 +686,7 @@ class ReadUnitConf(ProcUnitConf):
         self.name = name
         self.datatype = datatype
         
-        self.path = path
+        self.path = os.path.abspath(path)
         self.startDate = startDate
         self.endDate = endDate
         self.startTime = startTime
@@ -723,6 +724,13 @@ class ReadUnitConf(ProcUnitConf):
         self.parentId = parentId
         
         self.updateRunOperation(**kwargs)
+    
+    def removeOperations(self):
+        
+        for obj in self.opConfObjList:
+            del obj
+            
+        self.opConfObjList = []
         
     def addRunOperation(self, **kwargs):
         
@@ -862,9 +870,12 @@ class Project():
         self.name = name
         self.description = description
         
-    def addReadUnit(self, datatype=None, name=None, **kwargs):
+    def addReadUnit(self, id=None, datatype=None, name=None, **kwargs):
             
-        idReadUnit = self.__getNewId()
+        if id is None:
+            idReadUnit = self.__getNewId()
+        else:
+            idReadUnit = str(id)
         
         readUnitConfObj = ReadUnitConf()
         readUnitConfObj.setup(idReadUnit, name, datatype, parentId=self.id, **kwargs)
@@ -939,30 +950,36 @@ class Project():
     
     def writeXml(self, filename):
         
-        if not os.access(os.path.dirname(filename), os.W_OK):
+        abs_file = os.path.abspath(filename)
+        
+        if not os.access(os.path.dirname(abs_file), os.W_OK):
+            print "No write permission on %s" %os.path.dirname(abs_file)
             return 0
         
-        if os.path.isfile(filename) and not(os.access(filename, os.W_OK)):
+        if os.path.isfile(abs_file) and not(os.access(abs_file, os.W_OK)):
+            print "File %s already exists and it could not be overwriten" %abs_file
             return 0
         
         self.makeXml()
         
-        ElementTree(self.projectElement).write(filename, method='xml')
+        ElementTree(self.projectElement).write(abs_file, method='xml')
         
-        self.filename = filename
+        self.filename = abs_file
         
         return 1
 
     def readXml(self, filename):
         
-        if not os.path.isfile(filename):
-            print "%s does not exist" %filename
+        abs_file = os.path.abspath(filename)
+        
+        if not os.path.isfile(abs_file):
+            print "%s does not exist" %abs_file
             return 0
         
         self.projectElement = None
         self.procUnitConfObjDict = {}
         
-        self.projectElement = ElementTree().parse(filename)
+        self.projectElement = ElementTree().parse(abs_file)
         
         self.project = self.projectElement.tag
         
@@ -1030,6 +1047,42 @@ class Project():
             
             self.__connect(puObjIN, thisPUObj)
     
+    def __handleError(self, procUnitConfObj):
+        
+        import socket
+        
+        err = traceback.format_exception(sys.exc_info()[0],
+                                         sys.exc_info()[1],
+                                         sys.exc_info()[2])
+        
+        subject =  "SChain v%s: Error running %s\n" %(schainpy.__version__, procUnitConfObj.name)
+        
+        subtitle = "%s: %s\n" %(procUnitConfObj.getElementName() ,procUnitConfObj.name)
+        subtitle += "Hostname: %s\n" %socket.gethostbyname(socket.gethostname())
+        subtitle += "Working directory: %s\n" %os.path.abspath("./")
+        subtitle += "Configuration file: %s\n" %self.filename
+        subtitle += "Time: %s\n" %str(datetime.datetime.now())
+        
+        readUnitConfObj = self.getReadUnitObj()
+        if readUnitConfObj:
+            subtitle += "\nInput parameters:\n"
+            subtitle += "[Data path = %s]\n" %readUnitConfObj.path
+            subtitle += "[Data type = %s]\n" %readUnitConfObj.datatype
+            subtitle += "[Start date = %s]\n" %readUnitConfObj.startDate
+            subtitle += "[End date = %s]\n" %readUnitConfObj.endDate
+            subtitle += "[Start time = %s]\n" %readUnitConfObj.startTime
+            subtitle += "[End time = %s]\n" %readUnitConfObj.endTime
+            
+        message = "".join(err)
+        
+        sys.stderr.write(message)
+                            
+        adminObj = schainpy.admin.SchainNotify()
+        adminObj.sendAlert(message=message,
+                           subject=subject,
+                           subtitle=subtitle,
+                           filename=self.filename)
+                    
     def isPaused(self):
         return 0
     
@@ -1084,45 +1137,17 @@ class Project():
                 try:
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
+                except ValueError, e:
+                    print "***** Error occurred in %s *****" %(procUnitConfObj.name)
+                    sleep(0.5)
+                    print e
+                    is_ok = False
+                    break
                 except:
                     print "***** Error occurred in %s *****" %(procUnitConfObj.name)
-                    
                     sleep(0.5)
-                    
-                    err = traceback.format_exception(sys.exc_info()[0],
-                                                     sys.exc_info()[1],
-                                                     sys.exc_info()[2])
-                    
-                    import socket
-                    
-                    subject =  "SChain v%s: Error running %s\n" %(schainpy.__version__, procUnitConfObj.name)
-                    
-                    subtitle = "%s: %s\n" %(procUnitConfObj.getElementName() ,procUnitConfObj.name)
-                    subtitle += "Hostname: %s\n" %socket.gethostbyname(socket.gethostname())
-                    subtitle += "Working directory: %s\n" %os.path.abspath("./")
-                    subtitle += "Configuration file: %s\n" %self.filename
-                    
-                    readUnitConfObj = self.getReadUnitObj()
-                    if readUnitConfObj:
-                        subtitle += "Data path: %s\n" %readUnitConfObj.path
-                        subtitle += "Data type: %s\n" %readUnitConfObj.datatype
-                        subtitle += "Start date: %s\n" %readUnitConfObj.startDate
-                        subtitle += "End date: %s\n" %readUnitConfObj.endDate
-                        subtitle += "Start time: %s\n" %readUnitConfObj.startTime
-                        subtitle += "End time: %s\n" %readUnitConfObj.endTime
-                        
-                    message = "".join(err)
-                    
-                    sys.stderr.write(message)
-                                        
-                    adminObj = schainpy.admin.SchainNotify()
-                    adminObj.sendAlert(message=message,
-                                       subject=subject,
-                                       subtitle=subtitle,
-                                       filename=self.filename)
-                    
+                    self.__handleError(procUnitConfObj)
                     is_ok = False
-                    
                     break
             
             #If every process unit finished so end process
@@ -1142,8 +1167,11 @@ class Project():
                 
     def start(self, filename):
         
-        self.writeXml(filename)
-        self.readXml(filename)
+        if not self.writeXml(filename):
+            return
+        
+        if not self.readXml(filename):
+            return
     
         self.createObjects()
         self.connectObjects()
