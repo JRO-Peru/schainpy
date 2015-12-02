@@ -4,14 +4,12 @@ from schainpy.controller import Project
 
 class ControllerThread(threading.Thread, Project):
     
-    def __init__(self, filename):
+    def __init__(self, filename=None, plotter_queue=None):
         
         threading.Thread.__init__(self)
-        Project.__init__(self)
+        Project.__init__(self, filename, plotter_queue)
         
         self.setDaemon(True)
-        
-        self.filename = filename
         
         self.lock = threading.Lock()
         self.control = {'stop':False, 'pause':False}

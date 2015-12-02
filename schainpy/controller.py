@@ -377,11 +377,15 @@ class OperationConf():
         for parmConfObj in self.parmConfObjList:
             parmConfObj.printattr()
     
-    def createObject(self):
+    def createObject(self, plotter_queue=None):
         
         if self.type == 'self':
             raise ValueError, "This operation type cannot be created"
         
+        if self.type == 'plotter':
+            #Plotter(plotter_name)
+            opObj = Plotter(self.name, plotter_queue)
+            
         if self.type == 'external' or self.type == 'other':
             className = eval(self.name)
             opObj = className()
@@ -587,7 +591,7 @@ class ProcUnitConf():
         for opConfObj in self.opConfObjList:
             opConfObj.printattr()
     
-    def createObjects(self):
+    def createObjects(self, plotter_queue=None):
         
         className = eval(self.name)
         procUnitObj = className()
@@ -597,7 +601,7 @@ class ProcUnitConf():
             if opConfObj.type == 'self':
                 continue
             
-            opObj = opConfObj.createObject()
+            opObj = opConfObj.createObject(plotter_queue)
             
             self.opObjDict[opConfObj.id] = opObj
             procUnitObj.addOperation(opObj, opConfObj.id)
@@ -816,12 +820,17 @@ class Project():
     
     ELEMENTNAME = 'Project'
     
-    def __init__(self):
+    __plotterQueue = None
+    
+    def __init__(self, filename="./schain.xml", plotter_queue=None):
         
         self.id = None
         self.name = None
         self.description = None
 
+        self.filename = filename
+        self.__plotterQueue = plotter_queue
+        
         self.procUnitConfObjDict = {}
         
     def __getNewId(self):
@@ -1023,7 +1032,7 @@ class Project():
     def createObjects(self):
         
         for procUnitConfObj in self.procUnitConfObjDict.values():
-            procUnitConfObj.createObjects()
+            procUnitConfObj.createObjects(self.__plotterQueue)
     
     def __connect(self, objIN, thisObj):
         
@@ -1113,7 +1122,19 @@ class Project():
             return 0
         
         return 1
+
+    def setFilename(self, filename):
+        
+        self.filename = filename
+        
+    def setPlotterQueue(self, plotter_queue):
+        
+        self.__plotterQueue = plotter_queue
     
+    def getPlotterQueue(self):
+        
+        return self.__plotterQueue
+        
     def run(self):
         
         print
@@ -1164,15 +1185,12 @@ class Project():
             procUnitConfObj.close()
             
         print "Process finished"
-                
-    def start(self, filename):
         
-        if not self.writeXml(filename):
+    def start(self):
+        
+        if not self.writeXml(self.filename):
             return
         
-        if not self.readXml(filename):
-            return
-    
         self.createObjects()
         self.connectObjects()
         self.run()

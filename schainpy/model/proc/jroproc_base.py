@@ -161,26 +161,31 @@ class ProcessingUnit(object):
         
             opType    :    Puede ser "self" o "external"
             
-                La operacion puede ser de dos tipos (callMethod or callObject):
+                Depende del tipo de operacion para llamar a:callMethod or callObject:
             
-                1. Un metodo propio de esta clase:
+                1. If opType = "self": Llama a un metodo propio de esta clase:
                     
-                    opType = "self"
+                        name_method = getattr(self, name)
+                        name_method(**kwargs)
+                    
                 
-                2. El metodo "run" de un objeto del tipo Operation o de un derivado de ella:
+                2. If opType = "other" o"external": Llama al metodo "run()" de una instancia de la
+                   clase "Operation" o de un derivado de ella:
                 
-                    opType = "other" or "external".
+                        instanceName = self.operationList[opId]
+                        instanceName.run(**kwargs)
             
             opName    : Si la operacion es interna (opType = 'self'), entonces el "opName" sera
                         usada para llamar a un metodo interno de la clase Processing
             
-            opId    :    Si la operacion es externa (opType = 'other'), entonces el "opId" sera
-                        usada para llamar al metodo "run" de la clase Operation registrada con ese Id
+            opId    :    Si la operacion es externa (opType = 'other' o 'external), entonces el
+                        "opId" sera usada para llamar al metodo "run" de la clase Operation
+                        registrada anteriormente con ese Id
         
         Exception:
                Este objeto de tipo Operation debe de haber sido agregado antes con el metodo:
                "addOperation" e identificado con el valor "opId"  = el id de la operacion.
-               De lo contrario retornara un error del tipo IOError
+               De lo contrario retornara un error del tipo ValueError
             
         """
         
@@ -191,15 +196,18 @@ class ProcessingUnit(object):
             
             sts = self.callMethod(opName, **kwargs)
         
-        if opType == 'other' or opType == 'external':
+        elif opType == 'other' or opType == 'external' or opType == 'plotter':
             
             if not opId:
                 raise ValueError, "opId parameter should be defined"
             
             if opId not in self.operations2RunDict.keys():
-                raise ValueError, "Id operation has not been registered"
+                raise ValueError, "Any operation with id=%s has been added" %str(opId)
             
             sts = self.callObject(opId, **kwargs)
+        
+        else:
+            raise ValueError, "opType should be 'self', 'external' or 'plotter'; and not '%s'" %opType
         
         return sts 
     
