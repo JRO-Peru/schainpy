@@ -251,7 +251,7 @@ class USRPReader(ProcessingUnit):
         
         nCode = 1
         nBaud = 1
-        code = [1]
+        code = numpy.zeros((nCode, nBaud))
         
         if codeType:
             nCode = this_metadata_file['nCode'].value
