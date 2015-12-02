@@ -258,8 +258,8 @@ class HDF5Reader(ProcessingUnit):
         try:
             fp = fp = h5py.File(filename,'r')
         except IOError:
-            traceback.print_exc()
-            raise IOError, "The file %s can't be opened" %(filename)
+            print "File %s can't be opened" %(filename)
+            return None
         
         grp = fp['Data']
         timeAux = grp['time']

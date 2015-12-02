@@ -69,18 +69,18 @@ PROCESSING_STRUCTURE = numpy.dtype([
 class Header(object):
     
     def __init__(self):
-        raise
+        raise NotImplementedError
     
     def copy(self):
         return copy.deepcopy(self)
     
     def read(self):
         
-        raise ValueError
+        raise NotImplementedError
     
     def write(self):
         
-        raise ValueError
+        raise NotImplementedError
     
     def printInfo(self):
         
@@ -122,24 +122,24 @@ class BasicHeader(Header):
         self.useLocalTime = useLocalTime
     
     def read(self, fp):
+        
         try:
-            
             header = numpy.fromfile(fp, BASIC_STRUCTURE,1)
-            
-            self.size = int(header['nSize'][0])
-            self.version = int(header['nVersion'][0])
-            self.dataBlock = int(header['nDataBlockId'][0])
-            self.utc = int(header['nUtime'][0])
-            self.miliSecond = int(header['nMilsec'][0])
-            self.timeZone = int(header['nTimezone'][0])
-            self.dstFlag = int(header['nDstflag'][0])
-            self.errorCount = int(header['nErrorCount'][0])
             
         except Exception, e:
             print "BasicHeader: "
             print e
             return 0
         
+        self.size = int(header['nSize'][0])
+        self.version = int(header['nVersion'][0])
+        self.dataBlock = int(header['nDataBlockId'][0])
+        self.utc = int(header['nUtime'][0])
+        self.miliSecond = int(header['nMilsec'][0])
+        self.timeZone = int(header['nTimezone'][0])
+        self.dstFlag = int(header['nDstflag'][0])
+        self.errorCount = int(header['nErrorCount'][0])
+            
         return 1
     
     def write(self, fp):
@@ -189,22 +189,22 @@ class SystemHeader(Header):
         
         try:
             header = numpy.fromfile(fp,SYSTEM_STRUCTURE,1)
-            
-            self.size = header['nSize'][0]
-            self.nSamples = header['nNumSamples'][0]
-            self.nProfiles = header['nNumProfiles'][0]
-            self.nChannels = header['nNumChannels'][0]
-            self.adcResolution = header['nADCResolution'][0]
-            self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
-            
         except Exception, e:
             print "SystemHeader: " + e
             return 0
         
+        self.size = header['nSize'][0]
+        self.nSamples = header['nNumSamples'][0]
+        self.nProfiles = header['nNumProfiles'][0]
+        self.nChannels = header['nNumChannels'][0]
+        self.adcResolution = header['nADCResolution'][0]
+        self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
+        
         endFp = self.size + startFp
         
         if fp.tell() != endFp:
-            raise IOError, "System Header is not consistent"
+            print "System Header is not consistent"
+            return 0
             
         return 1
     
@@ -286,7 +286,11 @@ class RadarControllerHeader(Header):
         
        
         startFp = fp.tell()
-        header = numpy.fromfile(fp,RADAR_STRUCTURE,1)
+        try:
+            header = numpy.fromfile(fp,RADAR_STRUCTURE,1)
+        except Exception, e:
+            print "RadarControllerHeader: " + e
+            return 0
         
         size = int(header['nSize'][0])
         self.expType = int(header['nExpType'][0])
@@ -339,7 +343,8 @@ class RadarControllerHeader(Header):
         endFp = size + startFp
         
         if fp.tell() != endFp:
-            raise IOError, "Radar Controller Header is not consistent"
+            print "Radar Controller Header is not consistent"
+            return 0
                 
         return 1
     
@@ -484,7 +489,11 @@ class ProcessingHeader(Header):
         
         startFp = fp.tell()
         
-        header = numpy.fromfile(fp,PROCESSING_STRUCTURE,1)
+        try:
+            header = numpy.fromfile(fp,PROCESSING_STRUCTURE,1)
+        except Exception, e:
+            print "ProcessingHeader: " + e
+            return 0
         
         size = int(header['nSize'][0])
         self.dtype = int(header['nDataType'][0])
@@ -553,7 +562,8 @@ class ProcessingHeader(Header):
         endFp = size + startFp
         
         if fp.tell() != endFp:
-            raise IOError, "Processing Header is not consistent"
+            print "Processing Header is not consistent"
+            return 0
         
         return 1
     

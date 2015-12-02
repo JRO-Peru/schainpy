@@ -109,7 +109,7 @@ class USRPReaderAPI(USRPReader, threading.Thread):
         '''
          
         if not self.isConfig:
-            raise IOError, 'setup() method has to be called before start()'
+            raise RuntimeError, 'setup() method has to be called before start()'
          
         while True:
              

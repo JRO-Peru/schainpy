@@ -99,7 +99,6 @@ class VoltageProc(ProcessingUnit):
                 print channelIndexList
                 raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
         
-#         nChannels = len(channelIndexList)
         if self.dataOut.flagDataAsBlock:
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
@@ -138,15 +137,10 @@ class VoltageProc(ProcessingUnit):
             
         if (minHei < self.dataOut.heightList[0]):
             minHei = self.dataOut.heightList[0]
-#             raise ValueError, "height range [%d,%d] is not valid. Data height range is [%d, %d]" % (minHei,
-#                                                                                                     maxHei,
-#                                                                                                     self.dataOut.heightList[0],
-#                                                                                                     self.dataOut.heightList[-1])
-        
+
         if (maxHei > self.dataOut.heightList[-1]):
             maxHei = self.dataOut.heightList[-1]
-#            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
-
+            
         minIndex = 0
         maxIndex = 0
         heights = self.dataOut.heightList
@@ -187,14 +181,11 @@ class VoltageProc(ProcessingUnit):
         """
         
         if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+            raise ValueError, "Height index range (%d,%d) is not valid" % (minIndex, maxIndex)
         
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights
-#            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
-        
-#         nHeights = maxIndex - minIndex + 1
-
+            
         #voltage
         if self.dataOut.flagDataAsBlock:
             """
@@ -563,8 +554,7 @@ class Decoder(Operation):
         self.__nHeis = dataOut.nHeights
         
         if self.__nHeis < self.nBaud:
-            print 'IOError: Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
-            raise IOError, 'Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
+            raise ValueError, 'Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
         
         #Frequency
         __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
@@ -601,14 +591,6 @@ class Decoder(Operation):
     def __convolutionInFreqOpt(self, data):
         
         raise NotImplementedError
-    
-#         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
-#         
-#         data = cfunctions.decoder(fft_code, data)
-#         
-#         datadec = data#[:,:]
-#         
-#         return datadec
     
     def __convolutionInTime(self, data):
         
@@ -654,8 +636,7 @@ class Decoder(Operation):
             
             if code is None:
                 if dataOut.code is None:
-                    print "Code is not defined"
-                    raise ValueError, "Code could not be read from %s object. Enter a value in Code parameter" %dataOut.type
+                    raise ValueError, "Code could not be read from %s instance. Enter a value in Code parameter" %dataOut.type
                 
                 code = dataOut.code
             else:
@@ -750,7 +731,6 @@ class ProfileConcat(Operation):
             self.isConfig = True
             
         if dataOut.flagDataAsBlock:
-            
             raise ValueError, "ProfileConcat can only be used when voltage have been read profile by profile, getBlock = False"
         
         else:

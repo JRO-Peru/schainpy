@@ -326,7 +326,8 @@ class FitsReader(ProcessingUnit):
         try:
             fitsObj = pyfits.open(filename,'readonly')
         except:
-            raise IOError, "The file %s can't be opened" %(filename)
+            print "File %s can't be opened" %(filename)
+            return None
         
         header = fitsObj[0].header
         struct_time = time.strptime(header['DATETIME'], "%b %d %Y %H:%M:%S")
@@ -344,7 +345,7 @@ class FitsReader(ProcessingUnit):
         return thisDatetime
     
     def __setNextFileOnline(self):
-        raise ValueError, "No implemented" 
+        raise NotImplementedError
     
     def __setNextFileOffline(self):
         idFile = self.fileIndex
@@ -605,7 +606,7 @@ class FitsReader(ProcessingUnit):
         return 1
     
     def __jumpToLastBlock(self):
-        raise ValueError, "No implemented" 
+        raise NotImplementedError
 
     def __waitNewBlock(self):
         """

@@ -68,8 +68,8 @@ def isFileInEpoch(filename, startUTSeconds, endUTSeconds):
     try:
         fp = open(filename,'rb')
     except IOError:
-        traceback.print_exc()
-        raise IOError, "The file %s can't be opened" %(filename)
+        print "The file %s can't be opened" %(filename)
+        return 0
     
     sts = basicHeaderObj.read(fp)
     fp.close()
@@ -112,8 +112,8 @@ def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
     try:
         fp = open(filename,'rb')
     except IOError:
-        traceback.print_exc()
-        raise IOError, "The file %s can't be opened" %(filename)
+        print "The file %s can't be opened" %(filename)
+        return None
     
     basicHeaderObj = BasicHeader(LOCALTIME)
     sts = basicHeaderObj.read(fp)
@@ -182,7 +182,8 @@ def isFolderInDateRange(folder, startDate=None, endDate=None):
     basename = os.path.basename(folder)
     
     if not isRadarFolder(basename):
-        raise IOError, "The folder %s has not the rigth format" %folder
+        print "The folder %s has not the rigth format" %folder
+        return 0
     
     if startDate and endDate:
         thisDate = getDateFromRadarFolder(basename)
@@ -223,7 +224,8 @@ def isFileInDateRange(filename, startDate=None, endDate=None):
     basename = os.path.basename(filename)
     
     if not isRadarFile(basename):
-        raise IOError, "The filename %s has not the rigth format" %filename
+        print "The filename %s has not the rigth format" %filename
+        return 0
     
     if startDate and endDate:
         thisDate = getDateFromRadarFile(basename)
@@ -477,11 +479,11 @@ class JRODataIO:
     
     def __init__(self):
         
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
     
     def run(self):
         
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
 
     def getDtypeWidth(self):
         
@@ -526,21 +528,25 @@ class JRODataReader(JRODataIO):
     def __init__(self):
         
         """
-
-        """
+        This class is used to find data files
         
-#         raise NotImplementedError, "This method has not been implemented"
+        Example:
+            reader = JRODataReader()
+            fileList = reader.findDataFiles()
+            
+        """
+        pass
     
 
     def createObjByDefault(self):
         """
 
         """
-        raise NotImplementedError, "This method has not been implemented"
+        raise NotImplementedError
 
     def getBlockDimension(self):
         
-        raise NotImplementedError, "No implemented"
+        raise NotImplementedError
 
     def __searchFilesOffLine(self,
                             path,
@@ -561,9 +567,9 @@ class JRODataReader(JRODataIO):
         dateList, pathList = self.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
         
         if dateList == []:
-            print "[Reading] No *%s files in %s from %s to %s)"%(ext, path,
-                                                        datetime.datetime.combine(startDate,startTime).ctime(),
-                                                        datetime.datetime.combine(endDate,endTime).ctime())
+#             print "[Reading] No *%s files in %s from %s to %s)"%(ext, path,
+#                                                         datetime.datetime.combine(startDate,startTime).ctime(),
+#                                                         datetime.datetime.combine(endDate,endTime).ctime())
                 
             return None, None
         
@@ -1006,16 +1012,19 @@ class JRODataReader(JRODataIO):
         self.getBlockDimension()
     
     def __verifyFile(self, filename, msgFlag=True):
+        
         msg = None
+        
         try:
             fp = open(filename, 'rb')
-            currentPosition = fp.tell()
         except IOError:
-            traceback.print_exc()
+            
             if msgFlag:
-                print "[Reading] The file %s can't be opened" % (filename)
+                print "[Reading] File %s can't be opened" % (filename)
+                
             return False
-
+        
+        currentPosition = fp.tell()
         neededSize = self.processingHeaderObj.blockSize + self.firstHeaderSize
 
         if neededSize == 0:
@@ -1023,34 +1032,35 @@ class JRODataReader(JRODataIO):
             systemHeaderObj = SystemHeader()
             radarControllerHeaderObj = RadarControllerHeader()
             processingHeaderObj = ProcessingHeader()
-
-            try:
-                if not( basicHeaderObj.read(fp) ): raise IOError
-                if not( systemHeaderObj.read(fp) ): raise IOError
-                if not( radarControllerHeaderObj.read(fp) ): raise IOError
-                if not( processingHeaderObj.read(fp) ): raise IOError
-#                 data_type = int(numpy.log2((processingHeaderObj.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
-
-                neededSize = processingHeaderObj.blockSize + basicHeaderObj.size
-
-            except IOError:
-                traceback.print_exc()
-#                 sys.exit(0)
-                
-                if msgFlag:
-                    print "[Reading] The file %s is empty or it hasn't enough data" % filename
-
+            
+            if not( basicHeaderObj.read(fp) ):
                 fp.close()
                 return False
+            
+            if not( systemHeaderObj.read(fp) ):
+                fp.close()
+                return False
+            
+            if not( radarControllerHeaderObj.read(fp) ):
+                fp.close()
+                return False
+            
+            if not( processingHeaderObj.read(fp) ):
+                fp.close()
+                return False
+            
+            neededSize = processingHeaderObj.blockSize + basicHeaderObj.size
         else:
             msg = "[Reading] Skipping the file %s due to it hasn't enough data" %filename
 
         fp.close()
+        
         fileSize = os.path.getsize(filename)
         currentSize = fileSize - currentPosition
+        
         if currentSize < neededSize:
             if msgFlag and (msg != None):
-                print msg #print"\tSkipping the file %s due to it hasn't enough data" %filename
+                print msg
             return False
 
         return True
@@ -1129,6 +1139,14 @@ class JRODataReader(JRODataIO):
         
         dateList.sort()
         
+        if walk:
+            pattern_path = os.path.join(multi_path[0], "[dYYYYDDD]", expLabel)
+        else:
+            pattern_path = multi_path[0]
+        
+        if not dateList:
+            print "[Reading] No *%s files in %s from %s to %s" %(ext, pattern_path, startDate, endDate)
+        
         if include_path:
             return dateList, pathList
         
@@ -1187,9 +1205,9 @@ class JRODataReader(JRODataIO):
                                                                walk=walk)
             
             if not(pathList):
-                print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
-                                                        datetime.datetime.combine(startDate,startTime).ctime(),
-                                                        datetime.datetime.combine(endDate,endTime).ctime())
+#                 print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
+#                                                         datetime.datetime.combine(startDate,startTime).ctime(),
+#                                                         datetime.datetime.combine(endDate,endTime).ctime())
                  
 #                 sys.exit(-1)
                 
@@ -1253,19 +1271,19 @@ class JRODataReader(JRODataIO):
         
     def getFirstHeader(self):
         
-        raise ValueError, "This method has not been implemented"
+        raise NotImplementedError
     
     def getData(self):
         
-        raise ValueError, "This method has not been implemented"
+        raise NotImplementedError
 
     def hasNotDataInBuffer(self):
         
-        raise ValueError, "This method has not been implemented"
+        raise NotImplementedError
 
     def readBlock(self):
         
-        raise ValueError, "This method has not been implemented"
+        raise NotImplementedError
     
     def isEndProcess(self):
         
@@ -1331,23 +1349,23 @@ class JRODataWriter(JRODataIO):
     fileDate = None
     
     def __init__(self, dataOut=None):
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
 
 
     def hasAllDataInBuffer(self):
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
 
 
     def setBlockDimension(self):
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
 
     
     def writeBlock(self):
-        raise ValueError, "No implemented"
+        raise NotImplementedError
 
 
     def putData(self):
-        raise ValueError, "No implemented"
+        raise NotImplementedError
 
     
     def getProcessFlags(self):
@@ -1413,7 +1431,7 @@ class JRODataWriter(JRODataIO):
             None
         """
         
-        raise ValueError, "No implemented"
+        raise NotImplementedError
            
     def __writeFirstHeader(self):
         """

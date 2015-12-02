@@ -75,7 +75,7 @@ class ProcessingUnit(object):
             **kwargs    :    Diccionario de argumentos de la funcion a ejecutar
         """
         
-        raise ValueError, "ImplementedError"
+        raise NotImplementedError
     
     def callMethod(self, name, **kwargs):
         
@@ -187,17 +187,17 @@ class ProcessingUnit(object):
         if opType == 'self':
             
             if not opName:
-                raise IOError, "opName parameter should be defined"
+                raise ValueError, "opName parameter should be defined"
             
             sts = self.callMethod(opName, **kwargs)
         
         if opType == 'other' or opType == 'external':
             
             if not opId:
-                raise IOError, "opId parameter should be defined"
+                raise ValueError, "opId parameter should be defined"
             
             if opId not in self.operations2RunDict.keys():
-                raise IOError, "This id operation have not been registered"
+                raise ValueError, "Id operation has not been registered"
             
             sts = self.callObject(opId, **kwargs)
         
@@ -223,11 +223,11 @@ class ProcessingUnit(object):
     
     def setup(self):
         
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
     
     def run(self):
         
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
     
     def close(self):
         #Close every thread, queue or any other object here is it is neccesary.
@@ -256,7 +256,7 @@ class Operation(object):
         
         self.isConfig = True
         
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
 
     def run(self, dataIn, **kwargs):
         
@@ -279,7 +279,7 @@ class Operation(object):
         if not self.isConfig:
             self.setup(**kwargs)
             
-        raise ValueError, "ImplementedError"
+        raise NotImplementedError
     
     def close(self):
         

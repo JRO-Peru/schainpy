@@ -112,7 +112,7 @@ class GenericData(object):
     
     def __init__(self):
         
-        raise ValueError, "This class has not been implemented"
+        raise NotImplementedError
         
     def copy(self, inputObj=None):
         
@@ -216,11 +216,11 @@ class JROData(GenericData):
     
     def __init__(self):
         
-        raise ValueError, "This class has not been implemented"
+        raise NotImplementedError
     
     def getNoise(self):
         
-        raise ValueError, "Not implemented"
+        raise NotImplementedError
         
     def getNChannels(self):
         
@@ -341,9 +341,6 @@ class JROData(GenericData):
         self.radarControllerHeaderObj.nBaud = nBaud
         
         return
-#     def getTimeInterval(self):
-#         
-#         raise IOError, "This method should be implemented inside each Class"
         
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
     channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")

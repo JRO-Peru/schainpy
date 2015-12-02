@@ -119,7 +119,6 @@ class SpectraProc(ProcessingUnit):
             
             if nProfiles == None:
                 nProfiles = nFFTPoints
-#                 raise ValueError, "This SpectraProc.run() need nProfiles input variable"
             
             if ippFactor == None:
                 ippFactor = 1
@@ -272,7 +271,6 @@ class SpectraProc(ProcessingUnit):
         
         if (maxHei > self.dataOut.heightList[-1]):
             maxHei = self.dataOut.heightList[-1]
-#            raise ValueError, "some value in (%d,%d) is not valid" % (minHei, maxHei)
 
         minIndex = 0
         maxIndex = 0
@@ -359,9 +357,6 @@ class SpectraProc(ProcessingUnit):
         
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights-1
-#            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
-        
-#         nHeights = maxIndex - minIndex + 1
 
         #Spectra
         data_spc = self.dataOut.data_spc[:,:,minIndex:maxIndex+1]

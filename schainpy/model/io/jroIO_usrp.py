@@ -211,7 +211,7 @@ class USRPReader(ProcessingUnit):
             buffer_size = nbuffer
         
         if not os.path.isdir(path):
-            raise ValueError, "[Reading] This path %s does not exist" %path 
+            raise ValueError, "[Reading] Directory %s does not exist" %path 
                 
         try:
             self.digitalReadObj = digital_rf_hdf5.read_hdf5(path, load_all_metadata=True)
@@ -221,7 +221,7 @@ class USRPReader(ProcessingUnit):
         channelNameList = self.digitalReadObj.get_channels()
         
         if not channelNameList:
-            raise IOError, "[Reading] The path doesn,t have any files .. "
+            raise ValueError, "[Reading] Directory %s does not have any files" %path
         
         if not channelList:
             channelList = range(len(channelNameList))
@@ -249,9 +249,9 @@ class USRPReader(ProcessingUnit):
         except:
             codeType = 0
         
-        nCode = 0
-        nBaud = 0
-        code = None
+        nCode = 1
+        nBaud = 1
+        code = [1]
         
         if codeType:
             nCode = this_metadata_file['nCode'].value
