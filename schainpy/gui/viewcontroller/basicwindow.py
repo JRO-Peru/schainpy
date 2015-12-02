@@ -2653,6 +2653,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def refreshProjectWindow(self, projectObjView):
         
+        self.proOk.setEnabled(False)
+        
         projectParms = self.__getParmsFromProjectObj(projectObjView)            
         
         index = projectParms.getDatatypeIndex()
@@ -2676,6 +2678,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                                  walk = projectParms.walk,
                                  expLabel = projectParms.expLabel)
         
+        if not dateList:
+            return
+            
         try:
             startDateIndex = dateList.index(projectParms.startDate)
         except:
@@ -2698,6 +2703,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.time.setHMS(int(endlist[0]), int(endlist[1]), int(endlist[2]))
         self.proEndTime.setTime(self.time)
 
+        self.proOk.setEnabled(True)
     
     def __refreshVoltageWindow(self, puObj):
         
