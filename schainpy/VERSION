@@ -27,3 +27,7 @@ VERSIONS:
 
 2.1.4:
 -Sending error notifications to signal chain administrator
+-Login to email server added
+
+2.1.4.1:
+-Send notifications when an error different to ValueError is detected
