@@ -219,9 +219,14 @@ class SchainNotify:
             smtp.login(self.__emailFromAddress, self.__emailPass)
         
         # Send the email
-        smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+        try:
+            smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+        except:
+            print "***** Could not send the email to %s *****" %msg['To']
+            smtp.quit()
+            return 0
+        
         smtp.quit()
-        smtp.close()
         
         return 1
     
