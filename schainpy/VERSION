@@ -34,4 +34,9 @@ VERSIONS:
 
 2.1.4.2:
 -A new Plotter Class was added
+-Project.start() does not accept filename as a parameter anymore
+
+2.1.5:
+-serializer module added to Signal Chain
+-jroplotter.py added to Signal Chain
 

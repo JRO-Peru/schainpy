@@ -7,19 +7,27 @@ import os
 import datetime
 import numpy
 
-from figure import Figure
+from time import sleep
+from Queue import Queue
+from threading import Thread
 
-class Plotter(Figure):
+from schainpy.model.proc.jroproc_base import Operation
+from schainpy.model.serializer.data import obj2Dict, dict2Obj
+from schainpy.model.graphics import *
+
+class Plotter(Operation):
     
     isConfig = None
     name = None
-    plotterQueue = None
+    __queue = None
     
     def __init__(self, plotter_name, plotter_queue=None):
         
+        Operation.__init__(self)
+        
         self.isConfig = False
         self.name = plotter_name
-        self.plotterQueue = plotter_queue
+        self.__queue = plotter_queue
     
     def getSubplots(self):
         
@@ -29,40 +37,68 @@ class Plotter(Figure):
     
     def setup(self, **kwargs):
         
-#         self.nplots = nplots
-#          
-#         self.createFigure(id=id, 
-#                           wintitle=wintitle, 
-#                           show=show)
-#         
-#         nrow,ncol = self.getSubplots()
-#         colspan = 3
-#         rowspan = 1
-#         
-#         for i in range(nplots):
-#             self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
-            
-        
-        
         print "Initializing ..."
     
     
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, id=None, **kwargs):
         
         """
         
         Input:
             dataOut         :
             id              :
-            wintitle        :
-            channelList     :
-            show            :
         """
         
-        if not self.isConfig:
-            self.setup(**kwargs)
-            self.isConfig=True
-            
-        print "Putting data on %s queue:" %self.name
-        print kwargs
+        packDict = {}
         
+        packDict['id'] =  id
+        packDict['name'] = self.name
+        packDict['kwargs'] = kwargs
+        
+        packDict['data'] = obj2Dict(dataOut)
+        
+        self.__queue.put(packDict)
+
+class PlotterManager(Thread):
+    
+    __stop = False
+    
+    def __init__(self, plotter_queue):
+        
+        Thread.__init__(self)
+        
+        self.__queue = plotter_queue
+        
+        self.plotInstanceDict = {}
+        self.__stop = False
+        
+    def run(self):
+        
+        while True:
+            
+            if self.__stop:
+                break
+            
+            if self.__queue.empty():
+                sleep(0.5)
+                continue
+            
+            serial_data = self.__queue.get(True)
+            
+            plot_id = serial_data['id']
+            plot_name = serial_data['name']
+            kwargs = serial_data['kwargs']
+            dataDict = serial_data['data']
+            
+            dataPlot = dict2Obj(dataDict)
+            
+            if plot_id not in self.plotInstanceDict.keys():
+                className = eval(plot_name)
+                self.plotInstanceDict[plot_id] = className()
+                       
+            plotter = self.plotInstanceDict[plot_id]
+            plotter.run(dataPlot, plot_id, **kwargs)
+            
+    def stop(self):
+        
+        self.__stop = True
