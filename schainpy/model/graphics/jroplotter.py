@@ -13,7 +13,12 @@ from threading import Thread
 
 from schainpy.model.proc.jroproc_base import Operation
 from schainpy.model.serializer.data import obj2Dict, dict2Obj
-from schainpy.model.graphics import *
+from jroplot_correlation import *
+from jroplot_heispectra import *
+from jroplot_parameters import *
+from jroplot_spectra import *
+from jroplot_voltage import *
+
 
 class Plotter(Operation):
     
