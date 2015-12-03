@@ -822,12 +822,12 @@ class Project():
     
     __plotterQueue = None
     
-    def __init__(self, filename="./schain.xml", plotter_queue=None):
+    def __init__(self, filename=None, plotter_queue=None):
         
         self.id = None
         self.name = None
         self.description = None
-
+        
         self.filename = filename
         self.__plotterQueue = plotter_queue
         
@@ -957,8 +957,15 @@ class Project():
             
         self.projectElement = projectElement
     
-    def writeXml(self, filename):
+    def writeXml(self, filename=None):
         
+        if filename == None:
+            filename = self.filename
+        
+        if not filename:
+            print "filename has not been defined. Use setFilename(filename) for do it."
+            return 0
+            
         abs_file = os.path.abspath(filename)
         
         if not os.access(os.path.dirname(abs_file), os.W_OK):
@@ -973,12 +980,13 @@ class Project():
         
         ElementTree(self.projectElement).write(abs_file, method='xml')
         
-        self.filename = abs_file
-        
         return 1
 
-    def readXml(self, filename):
+    def readXml(self, filename = None):
         
+        if filename == None:
+            filename = self.filename
+            
         abs_file = os.path.abspath(filename)
         
         if not os.path.isfile(abs_file):
@@ -1017,6 +1025,9 @@ class Project():
                 procUnitConfObj.parentId = self.id
                 
             self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
+        
+        if self.filename == None:
+            self.filename = abs_file
         
         return 1
     
@@ -1188,7 +1199,7 @@ class Project():
         
     def start(self):
         
-        if not self.writeXml(self.filename):
+        if not self.writeXml():
             return
         
         self.createObjects()
