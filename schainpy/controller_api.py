@@ -57,7 +57,9 @@ class ControllerThread(threading.Thread, Project):
         self.control['stop'] = False
         self.control['pause'] = False
         
-        self.readXml(self.filename)
+        if not self.writeXml(self.filename):
+            return 
+        
         self.createObjects()
         self.connectObjects()
         Project.run(self)

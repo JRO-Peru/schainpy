@@ -2,19 +2,21 @@
 """
 Module implementing MainWindow.
 #+++++++++++++GUI V1++++++++++++++#
-@author: AlexanderValdezPortocarrero ñ_ñ
+@author: AlexanderValdezPortocarrero
+
+#+++++++++++++GUI V2++++++++++++++#
+@author Miguel Urco
 """
-import os, sys, time
+import os, sys
 import datetime
 import numpy
-import Queue
+import ast
+
+from Queue import Queue
 
 from collections import OrderedDict
 from os.path import  expanduser
 from time import sleep
-# from gevent import sleep
-
-import ast
 
 from PyQt4.QtGui           import QMainWindow 
 from PyQt4.QtCore          import pyqtSignature
@@ -2405,7 +2407,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         freq = False
         height = False
         db = False
-        time = False
+        timerange = False
         magnitud = False
         phase = False
         channelList = False
@@ -2426,12 +2428,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if self.specGraphCebRTIplot.checkState():
             height = True
             db = True
-            time = True
+            timerange = True
             channelList = True
         
         if self.specGraphCebCoherencmap.checkState():
             height = True
-            time = True
+            timerange = True
             magnitud = True
             phase = True
             
@@ -2442,14 +2444,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         if self.specGraphCebRTInoise.checkState():
             db = True
-            time = True
+            timerange = True
             channelList = True
             
         
         self.specGgraphFreq.setEnabled(freq)
         self.specGgraphHeight.setEnabled(height)
         self.specGgraphDbsrange.setEnabled(db)
-        self.specGgraphTminTmax.setEnabled(time)
+        self.specGgraphTminTmax.setEnabled(timerange)
         
         self.specGgraphmagnitud.setEnabled(magnitud)
         self.specGgraphPhase.setEnabled(phase)
@@ -4703,20 +4705,20 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             filename = TEMPORAL_FILE
             projectObj.writeXml( os.path.join(self.pathWorkSpace,filename) )
         
-        self.console.append("Please Wait...")
+        self.console.clear()
+        self.console.append("Please wait...")
         
         self.controllerThread = ControllerThread(filename)
-        
-#         QObject.connect( self.controllerThread, SIGNAL( "jobFinished( PyQt_PyObject )" ), self.jobFinishedFromThread )
-#         QObject.connect( self.controllerThread, SIGNAL( "jobStarted( PyQt_PyObject )" ), self.jobStartedFromThread )
-        self.console.clear()
         self.controllerThread.start()
+        
         sleep(0.5)
+        
         self.threadStarted = True
         
         self._disable_play_button()
         self._disable_save_button()
         self._enable_stop_button()
+        self.console.clear()
         
     def stopProject(self):
         
