@@ -29,6 +29,7 @@ from PyQt4                 import QtGui
 from schainpy.gui.viewer.ui_unitprocess import Ui_UnitProcess
 from schainpy.gui.viewer.ui_ftp      import Ui_Ftp
 from schainpy.gui.viewer.ui_mainwindow  import Ui_BasicWindow
+
 from schainpy.controller_api import ControllerThread
 from schainpy.controller  import Project
 
@@ -4709,6 +4710,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.append("Please wait...")
         
         self.controllerThread = ControllerThread(filename)
+        self.controllerThread.readXml(filename)
         self.controllerThread.start()
         
         sleep(0.5)
@@ -4718,7 +4720,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self._disable_play_button()
         self._disable_save_button()
         self._enable_stop_button()
-        self.console.clear()
         
     def stopProject(self):
         
