@@ -569,7 +569,7 @@ class ProcessingHeader(Header):
     
     def write(self, fp):
         #Clear DEFINE_PROCESS_CODE
-#         self.processFlags = self.processFlags & (~PROCFLAG.DEFINE_PROCESS_CODE)
+        self.processFlags = self.processFlags & (~PROCFLAG.DEFINE_PROCESS_CODE)
         
         headerTuple = (self.size,
                        self.dtype,
