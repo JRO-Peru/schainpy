@@ -641,8 +641,11 @@ class JRODataReader(JRODataIO):
             
             
         """
-        dirList = []
+        if not os.path.isdir(path):
+            return None, None, None, None, None, None
         
+        dirList = []
+            
         if not walk:
             fullpath = path
             foldercounter = 0
