@@ -1,15 +1,21 @@
 Prerequisites:
 
+Core:
 	-numpy 1.8.0
 	-scipy
 	-math
 	-matplotlib
 	-h5py
 	-ftplib
-	-paramiko and scp (optional for using SendTFilesToServer)
-	-stuffr (optional for using jroIO_hf)
-	-PyQt4 (for using GUI)
+	-paramiko (optional for SendTFilesToServer)
+	-stuffr (optional for jroIO_hf)
 	-pyfits (Fits data)
+	
+GUI:
+	-PyQt4
+	-wxPython
+	-msgpack-numpy
+	-cPickle
 
 Signal Chain Installation:
 

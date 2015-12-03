@@ -72,6 +72,8 @@ class PlotterManager(Thread):
         
         Thread.__init__(self)
         
+        self.setDaemon(True)
+        
         self.__queue = plotter_queue
         
         self.plotInstanceDict = {}
@@ -85,7 +87,7 @@ class PlotterManager(Thread):
                 break
             
             if self.__queue.empty():
-                sleep(0.5)
+                sleep(0.1)
                 continue
             
             serial_data = self.__queue.get(True)

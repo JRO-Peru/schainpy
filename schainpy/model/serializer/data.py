@@ -4,9 +4,8 @@ Created on Jul 15, 2014
 @author: Miguel Urco
 '''
 from serializer import DynamicSerializer
-
-PICKLE_SERIALIZER = DynamicSerializer('cPickle')
-MSGPACK_SERIALIZER = DynamicSerializer('msgpack')
+ 
+DEFAULT_SERIALIZER = None #'cPickle', 'msgpack', "yaml"
 
 from schainpy.model.data.jrodata import *
 
@@ -75,54 +74,42 @@ def dict2Obj(myDict):
     
     return myObj
 
-def dict2Serial(myDict, serializer='msgpack'):
-    
-    if serializer == 'cPickle':
-        SERIALIZER = PICKLE_SERIALIZER
-    else:
-        SERIALIZER = MSGPACK_SERIALIZER
-    
+def dict2Serial(myDict, serializer=DEFAULT_SERIALIZER):
+     
+    SERIALIZER = DynamicSerializer(serializer)
+ 
     mySerial = SERIALIZER.dumps(myDict)
-    
+     
     return mySerial
-
-def serial2Dict(mySerial, serializer='msgpack'):
-    
-    if serializer == 'cPickle':
-        SERIALIZER = PICKLE_SERIALIZER
-    else:
-        SERIALIZER = MSGPACK_SERIALIZER
-    
+ 
+def serial2Dict(mySerial, serializer=DEFAULT_SERIALIZER):
+     
+    SERIALIZER = DynamicSerializer(serializer)
+     
     myDict = SERIALIZER.loads(mySerial)
-    
+     
     return myDict
-
-def obj2Serial(myObj, serializer='msgpack', **kwargs):
-    
-    if serializer == 'cPickle':
-        SERIALIZER = PICKLE_SERIALIZER
-    else:
-        SERIALIZER = MSGPACK_SERIALIZER
-        
+ 
+def obj2Serial(myObj, serializer=DEFAULT_SERIALIZER, **kwargs):
+     
+    SERIALIZER = DynamicSerializer(serializer)
+         
     myDict = obj2Dict(myObj, **kwargs)
     mySerial = dict2Serial(myDict, serializer)
-    
+     
     return mySerial
-
-def serial2Obj(mySerial, metadataDict = {}, serializer='msgpack'):
-    
-    if serializer == 'cPickle':
-        SERIALIZER = PICKLE_SERIALIZER
-    else:
-        SERIALIZER = MSGPACK_SERIALIZER
-        
+ 
+def serial2Obj(mySerial, metadataDict = {}, serializer=DEFAULT_SERIALIZER):
+     
+    SERIALIZER = DynamicSerializer(serializer)
+         
     myDataDict = serial2Dict(mySerial, serializer)
-    
+     
     if not metadataDict:
         myObj = dict2Obj(myDataDict)
         return myObj
-
+ 
     metadataDict.update(myDataDict)
     myObj = dict2Obj(metadataDict)
-    
+     
     return myObj
