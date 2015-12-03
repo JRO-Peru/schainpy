@@ -6,6 +6,7 @@ import mpldriver
 from schainpy.model.proc.jroproc_base import Operation
 
 def isRealtime(utcdatatime):
+    
     utcnow = time.mktime(time.localtime())
     delta = abs(utcnow - utcdatatime) # abs
     if delta >= 30.:
@@ -15,7 +16,6 @@ def isRealtime(utcdatatime):
 class Figure(Operation):
     
     __driver = mpldriver
-    __isConfigThread = False
     fig = None
     
     id = None
@@ -27,8 +27,8 @@ class Figure(Operation):
     
     axesObjList = []
     
-    WIDTH = None
-    HEIGHT = None
+    WIDTH = 300
+    HEIGHT = 200
     PREFIX = 'fig'
     
     xmin = None
@@ -40,7 +40,7 @@ class Figure(Operation):
     
     def __init__(self):
          
-        raise ValueError, "This method is not implemented"
+        raise NotImplementedError
     
     def __del__(self):
         
@@ -58,7 +58,7 @@ class Figure(Operation):
     
     def getSubplots(self):
         
-        raise ValueError, "Abstract method: This method should be defined"
+        raise NotImplementedError
         
     def getScreenDim(self, widthplot, heightplot):
         
@@ -81,7 +81,6 @@ class Figure(Operation):
         
         if timerange == None and (xmin==None or xmax==None):
             timerange = 14400   #seconds
-            #raise ValueError, "(timerange) or (xmin & xmax) should be defined"
             
         if timerange != None:
             txmin = x[0] #- x[0] % min(timerange/10, 10*60)
@@ -105,7 +104,7 @@ class Figure(Operation):
     
     def init(self, id, nplots, wintitle):
     
-        raise ValueError, "This method has been replaced with createFigure"
+        raise NotImplementedError, "This method has been replaced with createFigure"
     
     def createFigure(self, id, wintitle, widthplot=None, heightplot=None, show=True):
         
@@ -156,11 +155,11 @@ class Figure(Operation):
     
     def setTextFromAxes(self, text):
         
-        raise ValueError, "Este metodo ha sido reemplazaado con el metodo setText de la clase Axes"
+        raise NotImplementedError, "This method has been replaced with Axes.setText"
     
     def makeAxes(self, nrow, ncol, xpos, ypos, colspan, rowspan):
         
-        raise ValueError, "Este metodo ha sido reemplazaado con el metodo addAxes"
+        raise NotImplementedError, "This method has been replaced with Axes.addAxes"
         
     def addAxes(self, *args):
         """
@@ -246,7 +245,7 @@ class Figure(Operation):
     
     def run(self):
         
-        raise ValueError, "This method is not implemented"
+        raise NotImplementedError
     
     def close(self, show=False):
         

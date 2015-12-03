@@ -12,7 +12,7 @@ if 'darwin' in sys.platform:
 import matplotlib.pyplot
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.ticker import *
+from matplotlib.ticker import FuncFormatter, LinearLocator
 
 ###########################################
 #Actualizacion de las funciones del driver
@@ -40,12 +40,12 @@ def closeFigure(show=False, fig=None):
     
     if fig != None:
         matplotlib.pyplot.close(fig.number)
-#         matplotlib.pyplot.pause(0.1)
+        matplotlib.pyplot.pause(0.1)
 #         matplotlib.pyplot.ion()
         return
     
     matplotlib.pyplot.close("all")
-#     matplotlib.pyplot.pause(0.1)
+    matplotlib.pyplot.pause(0.1)
 #     matplotlib.pyplot.ion()
     return
 
