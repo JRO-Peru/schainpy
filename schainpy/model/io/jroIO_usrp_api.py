@@ -16,7 +16,7 @@ SERIALIZER = cPickle
 
 # from schainpy.serializer import DynamicSerializer
 from schainpy.model.io.jroIO_usrp import USRPReader
-from schainpy.serializer.DataTranslate import obj2Serial
+from schainpy.model.serializer.data import obj2Serial
 
 class USRPReaderAPI(USRPReader, threading.Thread):
     

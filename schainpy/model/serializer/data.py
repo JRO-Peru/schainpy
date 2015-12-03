@@ -3,7 +3,7 @@ Created on Jul 15, 2014
 
 @author: Miguel Urco
 '''
-from JROSerializer import DynamicSerializer
+from serializer import DynamicSerializer
 
 PICKLE_SERIALIZER = DynamicSerializer('cPickle')
 MSGPACK_SERIALIZER = DynamicSerializer('msgpack')
@@ -75,14 +75,13 @@ def dict2Obj(myDict):
     
     return myObj
 
-def obj2Serial(myObj, serializer='msgpack', **kwargs):
+def dict2Serial(myDict, serializer='msgpack'):
     
     if serializer == 'cPickle':
         SERIALIZER = PICKLE_SERIALIZER
     else:
         SERIALIZER = MSGPACK_SERIALIZER
-        
-    myDict = obj2Dict(myObj, **kwargs)
+    
     mySerial = SERIALIZER.dumps(myDict)
     
     return mySerial
@@ -93,8 +92,22 @@ def serial2Dict(mySerial, serializer='msgpack'):
         SERIALIZER = PICKLE_SERIALIZER
     else:
         SERIALIZER = MSGPACK_SERIALIZER
+    
+    myDict = SERIALIZER.loads(mySerial)
+    
+    return myDict
+
+def obj2Serial(myObj, serializer='msgpack', **kwargs):
+    
+    if serializer == 'cPickle':
+        SERIALIZER = PICKLE_SERIALIZER
+    else:
+        SERIALIZER = MSGPACK_SERIALIZER
         
-    return SERIALIZER.loads(mySerial)
+    myDict = obj2Dict(myObj, **kwargs)
+    mySerial = dict2Serial(myDict, serializer)
+    
+    return mySerial
 
 def serial2Obj(mySerial, metadataDict = {}, serializer='msgpack'):
     
@@ -103,7 +116,7 @@ def serial2Obj(mySerial, metadataDict = {}, serializer='msgpack'):
     else:
         SERIALIZER = MSGPACK_SERIALIZER
         
-    myDataDict = SERIALIZER.loads(mySerial)
+    myDataDict = serial2Dict(mySerial, serializer)
     
     if not metadataDict:
         myObj = dict2Obj(myDataDict)
