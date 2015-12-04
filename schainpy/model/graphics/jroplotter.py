@@ -9,7 +9,8 @@ import numpy
 
 from time import sleep
 from Queue import Queue
-from threading import Thread
+from threading import Lock
+# from threading import Thread
 
 from schainpy.model.proc.jroproc_base import Operation
 from schainpy.model.serializer.data import obj2Dict, dict2Obj
@@ -64,33 +65,39 @@ class Plotter(Operation):
         
         self.__queue.put(packDict)
 
-class PlotterManager(Thread):
-    
+# class PlotManager(Thread):
+class PlotManager():
     __stop = False
     
     def __init__(self, plotter_queue):
         
-        Thread.__init__(self)
-        
-        self.setDaemon(True)
+#         Thread.__init__(self)
+#         self.setDaemon(True)
         
         self.__queue = plotter_queue
+        self.__lock = Lock()
         
         self.plotInstanceDict = {}
         self.__stop = False
         
     def run(self):
         
-        while True:
+        if self.__queue.empty():
+            return
+        
+        self.__lock.acquire()
+        
+#         if self.__queue.full():
+#             for i in range(int(self.__queue.qsize()/2)):
+#                 serial_data = self.__queue.get()
+#                 self.__queue.task_done()
             
-            if self.__stop:
-                break
+        n = int(self.__queue.qsize()/3 + 1)
+        
+        for i in range(n):
             
-            if self.__queue.empty():
-                sleep(0.1)
-                continue
-            
-            serial_data = self.__queue.get(True)
+            serial_data = self.__queue.get()
+            self.__queue.task_done()
             
             plot_id = serial_data['id']
             plot_name = serial_data['name']
@@ -106,6 +113,25 @@ class PlotterManager(Thread):
             plotter = self.plotInstanceDict[plot_id]
             plotter.run(dataPlot, plot_id, **kwargs)
             
+            
+            
+        self.__lock.release()
+            
     def stop(self):
         
+        self.__lock.acquire()
+        
         self.__stop = True
+        
+        self.__lock.release()
+        
+    def close(self):
+        
+        self.__lock.acquire()
+        
+        for plot_id in self.plotInstanceDict.keys():
+            plotter = self.plotInstanceDict[plot_id]
+            plotter.close()
+        
+        self.__lock.release()
+        
