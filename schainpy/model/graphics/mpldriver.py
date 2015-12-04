@@ -7,7 +7,7 @@ if 'linux' in sys.platform:
     matplotlib.use("TKAgg")
     
 if 'darwin' in sys.platform:
-    matplotlib.use('WXAgg')
+    matplotlib.use('TKAgg')
 #Qt4Agg', 'GTK', 'GTKAgg', 'ps', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'template', 'TkAgg', 'GTK3Cairo', 'GTK3Agg', 'svg', 'WebAgg', 'CocoaAgg', 'emf', 'gdk', 'WX'
 import matplotlib.pyplot
 
@@ -33,20 +33,22 @@ def createFigure(id, wintitle, width, height, facecolor="w", show=True):
 def closeFigure(show=False, fig=None):
     
     matplotlib.pyplot.ioff()
-#     matplotlib.pyplot.pause(0.1)
+#     matplotlib.pyplot.pause(0)
     
     if show:
         matplotlib.pyplot.show()
     
     if fig != None:
-        matplotlib.pyplot.close(fig.number)
-        matplotlib.pyplot.pause(0.1)
+        matplotlib.pyplot.close(fig)
+#         matplotlib.pyplot.pause(0)
 #         matplotlib.pyplot.ion()
+
         return
     
     matplotlib.pyplot.close("all")
-    matplotlib.pyplot.pause(0.1)
+#     matplotlib.pyplot.pause(0)
 #     matplotlib.pyplot.ion()
+
     return
 
 def saveFigure(fig, filename):
