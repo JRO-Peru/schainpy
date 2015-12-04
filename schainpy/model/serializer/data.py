@@ -11,9 +11,9 @@ from schainpy.model.data.jrodata import *
 
 CLASSNAME_KEY = 'classname__'
 
-def isNotClassVar(myObj):
+def isObject(myObj):
     
-    return not hasattr(myObj,'__dict__')
+    return hasattr(myObj,'__dict__')
 
 def isDictFormat(thisValue):
     
@@ -39,13 +39,12 @@ def obj2Dict(myObj, keyList=[]):
         if thisKey not in keyList:
             continue
         
-        if isNotClassVar(thisValue):
+        if not isObject(thisValue):
             myDict[thisKey] = thisValue
             continue
         
         ## If this value is another class instance
-        myNewDict = obj2Dict(thisValue)
-        myDict[thisKey] = myNewDict
+        myDict[thisKey] = obj2Dict(thisValue)
         
     return myDict
 
