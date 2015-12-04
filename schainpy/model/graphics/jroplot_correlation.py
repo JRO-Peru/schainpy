@@ -160,7 +160,7 @@ class CorrelationPlot(Figure):
             
         for i in range(self.nplots):
             str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
-            title = "Channel %d and %d: : %s" %(dataOut.pairsList[i][0]+1,dataOut.pairsList[i][1]+1 , str_datetime)
+            title = "Channel %d and %d: : %s" %(dataOut.pairsList[i][0],dataOut.pairsList[i][1] , str_datetime)
             axes = self.axesList[i*self.__nsubplots]
             axes.pcolor(x, y, zdB[i,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,

@@ -159,7 +159,7 @@ class MomentsPlot(Figure):
             
         for i in range(self.nplots):
             str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
-            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[i]+1, noisedB[i], str_datetime)
+            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[i], noisedB[i], str_datetime)
             axes = self.axesList[i*self.__nsubplots]
             axes.pcolor(x, y, zdB[i,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
@@ -759,7 +759,7 @@ class ParametersPlot(Figure):
                         ticksize=9, cblabel=zlabel, cbsize="1%")
 
             if DOP:
-                title = "%s Channel %d: %s" %(parameterName, channelIndexList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+                title = "%s Channel %d: %s" %(parameterName, channelIndexList[i], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
                 
                 if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
                     title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
@@ -771,7 +771,7 @@ class ParametersPlot(Figure):
                             ticksize=9, cblabel=zlabel, cbsize="1%")
             
             if SNR:
-                title = "Channel %d Signal Noise Ratio (SNR): %s" %(channelIndexList[i]+1, thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+                title = "Channel %d Signal Noise Ratio (SNR): %s" %(channelIndexList[i], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
                 axes = self.axesList[(j)*self.__nsubplots]
                 if not onlySNR:
                     axes = self.axesList[(j + 1)*self.__nsubplots]
@@ -951,7 +951,7 @@ class SpectralFittingPlot(Figure):
         self.setWinTitle(title)
         for i in range(self.nplots):
 #             title = "Channel %d: %4.2fdB" %(dataOut.channelList[i]+1, noisedB[i])
-            title = "Height %4.1f km\nChannel %d:" %(cutHeight, listChannels[i]+1)
+            title = "Height %4.1f km\nChannel %d:" %(cutHeight, listChannels[i])
             axes = self.axesList[i*self.__nsubplots]
             if fit == False:
                 axes.pline(x, zdB[i,:],
