@@ -40,3 +40,6 @@ VERSIONS:
 -serializer module added to Signal Chain
 -jroplotter.py added to Signal Chain
 
+2.2.0:
+-GUI: use of external plotter
+
