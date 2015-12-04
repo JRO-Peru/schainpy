@@ -65,12 +65,10 @@ def hildebrand_sekhon(data, navg):
     
     sortdata = numpy.sort(data,axis=None)
     lenOfData = len(sortdata)
-    nums_min = lenOfData/10
+    nums_min = lenOfData*0.2
     
-    if (lenOfData/10) > 2:
-        nums_min = lenOfData/10
-    else:
-        nums_min = 2
+    if nums_min <= 5:
+        nums_min = 5
 
     sump = 0.
     
