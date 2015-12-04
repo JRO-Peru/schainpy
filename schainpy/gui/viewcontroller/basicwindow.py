@@ -81,7 +81,7 @@ def isList(value):
     
     x = ast.literal_eval(value)
     
-    if type(x) in (tuple, list):
+    if type(x) in (int, float, tuple, list):
         return 1
     
     return 0
