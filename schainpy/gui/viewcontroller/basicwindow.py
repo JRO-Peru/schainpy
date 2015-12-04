@@ -4751,15 +4751,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.threadStarted = False
         self.controllerThread.stop()
         
-        while self.controllerThread.isRunning():
+        while not self.plotManager.isEmpty():
             self.plotManager.run()
+        
+        self.plotManager.close()
+        self.plotManager = None
+        
+        while self.controllerThread.isRunning():
             sleep(0.5)
-        
-        if self.plotManager is not None:
-            self.plotManager.stop()
-            self.plotManager.close()
-            self.plotManager = None
-        
+            
         self._disable_stop_button()
         self._enable_play_button()
      

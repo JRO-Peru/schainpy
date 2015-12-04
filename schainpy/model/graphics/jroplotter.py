@@ -113,10 +113,12 @@ class PlotManager():
             plotter = self.plotInstanceDict[plot_id]
             plotter.run(dataPlot, plot_id, **kwargs)
             
-            
-            
         self.__lock.release()
-            
+    
+    def isEmpty(self):
+        
+        return self.__queue.empty()
+        
     def stop(self):
         
         self.__lock.acquire()
