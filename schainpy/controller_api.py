@@ -4,10 +4,10 @@ from schainpy.controller import Project
 
 class ControllerThread(threading.Thread, Project):
     
-    def __init__(self, filename=None, plotter_queue=None):
+    def __init__(self, plotter_queue=None):
         
         threading.Thread.__init__(self)
-        Project.__init__(self, filename, plotter_queue)
+        Project.__init__(self, plotter_queue)
         
         self.setDaemon(True)
         
@@ -57,8 +57,7 @@ class ControllerThread(threading.Thread, Project):
         self.control['stop'] = False
         self.control['pause'] = False
         
-        if not self.writeXml(self.filename):
-            return 
+        self.writeXml()
         
         self.createObjects()
         self.connectObjects()

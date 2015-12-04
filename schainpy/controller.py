@@ -384,6 +384,9 @@ class OperationConf():
         
         if self.type == 'plotter':
             #Plotter(plotter_name)
+            if not plotter_queue:
+                raise ValueError, "plotter_queue is not defined. Use:\nmyProject = Project()\nmyProject.setPlotterQueue(plotter_queue)"
+            
             opObj = Plotter(self.name, plotter_queue)
             
         if self.type == 'external' or self.type == 'other':
@@ -822,13 +825,12 @@ class Project():
     
     __plotterQueue = None
     
-    def __init__(self, filename=None, plotter_queue=None):
+    def __init__(self, plotter_queue=None):
         
         self.id = None
         self.name = None
         self.description = None
         
-        self.filename = filename
         self.__plotterQueue = plotter_queue
         
         self.procUnitConfObjDict = {}
@@ -960,7 +962,10 @@ class Project():
     def writeXml(self, filename=None):
         
         if filename == None:
-            filename = self.filename
+            if self.filename:
+                filename = self.filename
+            else:
+                filename = "schain.xml"
         
         if not filename:
             print "filename has not been defined. Use setFilename(filename) for do it."
@@ -980,12 +985,11 @@ class Project():
         
         ElementTree(self.projectElement).write(abs_file, method='xml')
         
+        self.filename = abs_file
+        
         return 1
 
     def readXml(self, filename = None):
-        
-        if filename == None:
-            filename = self.filename
             
         abs_file = os.path.abspath(filename)
         
@@ -1026,8 +1030,7 @@ class Project():
                 
             self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
         
-        if self.filename == None:
-            self.filename = abs_file
+        self.filename = abs_file
         
         return 1
     
@@ -1145,7 +1148,31 @@ class Project():
     def getPlotterQueue(self):
         
         return self.__plotterQueue
+    
+    def useExternalPlotManager(self):
         
+        plotterList = ['Scope',
+                       'SpectraPlot', 'RTIPlot',
+                       'CrossSpectraPlot', 'CoherenceMap',
+                       'PowerProfilePlot', 'Noise', 'BeaconPhase',
+                       'CorrelationPlot',
+                       'SpectraHeisScope','RTIfromSpectraHeis']
+        
+        for thisPUConfObj in self.procUnitConfObjDict.values():
+            
+            inputId = thisPUConfObj.getInputId()
+            
+            if int(inputId) == 0:
+                continue
+            
+            for thisOpObj in thisPUConfObj.getOperationObjList():
+                
+                if thisOpObj.type == "self":
+                    continue
+                
+                if thisOpObj.name in plotterList:
+                    thisOpObj.type = "plotter"
+    
     def run(self):
         
         print
@@ -1199,8 +1226,7 @@ class Project():
         
     def start(self):
         
-        if not self.writeXml():
-            return
+        self.writeXml()
         
         self.createObjects()
         self.connectObjects()

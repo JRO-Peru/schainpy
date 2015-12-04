@@ -14,8 +14,6 @@ Core:
 GUI:
 	-PyQt4
 	-wxPython
-	-msgpack-numpy
-	-cPickle
 
 Signal Chain Installation:
 

@@ -23,8 +23,9 @@ from PyQt4.QtCore          import pyqtSignature
 from PyQt4.QtCore          import pyqtSignal
 from PyQt4                 import QtCore
 from PyQt4                 import QtGui
-# from PyQt4.QtCore          import QThread
-# from PyQt4.QtCore          import QObject, SIGNAL
+
+from propertiesViewModel  import TreeModel, PropertyBuffer
+from parametersModel import ProjectParms
 
 from schainpy.gui.viewer.ui_unitprocess import Ui_UnitProcess
 from schainpy.gui.viewer.ui_ftp      import Ui_Ftp
@@ -33,9 +34,7 @@ from schainpy.gui.viewer.ui_mainwindow  import Ui_BasicWindow
 from schainpy.controller_api import ControllerThread
 from schainpy.controller  import Project
 
-from propertiesViewModel  import TreeModel, PropertyBuffer
-from parametersModel import ProjectParms
-
+from schainpy.model.graphics.jroplotter import PlotManager
 from schainpy.gui.figures import tools
 
 FIGURES_PATH = tools.get_path()
@@ -144,6 +143,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.__puLocalFolder2FTP = {}
         self.threadStarted = False
+        
+        self.plotManager = None
         
 #         self.create_comm() 
         self.create_updating_timer()
@@ -4667,6 +4668,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self._enable_play_button()
 
     def create_updating_timer(self):
+        
         self.comm_data_timer = QtCore.QTimer(self)
         self.comm_data_timer.timeout.connect(self.on_comm_updating_timer)
         self.comm_data_timer.start(1000)
@@ -4679,7 +4681,27 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
          
         if self.controllerThread.isFinished():
             self.stopProject()
+            return
     
+    def use_plotmanager(self, controllerThread):
+        
+        plotter_queue = Queue(10)
+        controllerThread.setPlotterQueue(plotter_queue)
+        controllerThread.useExternalPlotManager()
+        
+        self.plotManager = PlotManager(plotter_queue)
+        
+        self.plot_timer = QtCore.QTimer()
+        self.plot_timer.timeout.connect(self.on_plotmanager_timer)
+        self.plot_timer.start(10)
+    
+    def on_plotmanager_timer(self):
+        
+        if not self.plotManager:
+            return
+        
+        self.plotManager.run()
+        
     def playProject(self, ext=".xml", save=1):
         
         self._disable_play_button()
@@ -4709,8 +4731,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.console.clear()
         self.console.append("Please wait...")
         
-        self.controllerThread = ControllerThread(filename)
+        self.controllerThread = ControllerThread()
         self.controllerThread.readXml(filename)
+        
+        self.use_plotmanager(self.controllerThread)
+        
         self.controllerThread.start()
         
         sleep(0.5)
@@ -4723,12 +4748,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
     def stopProject(self):
         
-#         self.commCtrlPThread.cmd_q.put(ProcessCommand(ProcessCommand.STOP, True))
-        self.controllerThread.stop()
         self.threadStarted = False
+        self.controllerThread.stop()
         
         while self.controllerThread.isRunning():
+            self.plotManager.run()
             sleep(0.5)
+        
+        if self.plotManager is not None:
+            self.plotManager.stop()
+            self.plotManager.close()
+            self.plotManager = None
         
         self._disable_stop_button()
         self._enable_play_button()
