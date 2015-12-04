@@ -1245,7 +1245,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 print "Please fill the pairs list field"
                 return 0
             
-            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+            if not puObj.addParameter(name=name_parameter, value=value, format=format):
                 self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
                 return 0
                                 
