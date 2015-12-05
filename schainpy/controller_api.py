@@ -1,6 +1,8 @@
 import threading
+import Queue
 
 from schainpy.controller import Project
+from schainpy.model.graphics.jroplotter import PlotManager
 
 class ControllerThread(threading.Thread, Project):
     
@@ -71,6 +73,48 @@ class ControllerThread(threading.Thread, Project):
         
         return not self.is_alive()
 
+    def setPlotters(self):
+        
+        plotterList = ['Scope',
+                       'SpectraPlot', 'RTIPlot',
+                       'CrossSpectraPlot', 'CoherenceMap',
+                       'PowerProfilePlot', 'Noise', 'BeaconPhase',
+                       'CorrelationPlot',
+                       'SpectraHeisScope','RTIfromSpectraHeis']
+        
+        for thisPUConfObj in self.procUnitConfObjDict.values():
+            
+            inputId = thisPUConfObj.getInputId()
+            
+            if int(inputId) == 0:
+                continue
+            
+            for thisOpObj in thisPUConfObj.getOperationObjList():
+                
+                if thisOpObj.type == "self":
+                    continue
+                
+                if thisOpObj.name in plotterList:
+                    thisOpObj.type = "plotter"
+
+    def setPlotterQueue(self, plotter_queue):
+        
+        self.plotterQueue = plotter_queue
+        
+    def getPlotterQueue(self):
+        
+        return self.plotterQueue
+
+    def useExternalPlotter(self):
+        
+        self.plotterQueue = Queue.Queue(10)
+        self.setPlotters()
+        
+        plotManagerObj = PlotManager(self.plotterQueue)
+        plotManagerObj.setController(self)
+        
+        return plotManagerObj
+                    
 # from PyQt4 import QtCore
 # from PyQt4.QtCore import SIGNAL
 # 

@@ -4685,16 +4685,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def use_plotmanager(self, controllerThread):
         
-        plotter_queue = Queue(10)
-        controllerThread.setPlotterQueue(plotter_queue)
-        controllerThread.useExternalPlotManager()
-        
-        self.plotManager = PlotManager(plotter_queue)
+        self.plotManager = controllerThread.useExternalPlotter()
         
         self.plot_timer = QtCore.QTimer()
         self.plot_timer.timeout.connect(self.on_plotmanager_timer)
         self.plot_timer.start(10)
-    
+        
     def on_plotmanager_timer(self):
         
         if not self.plotManager:
@@ -4750,11 +4746,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.threadStarted = False
         self.controllerThread.stop()
+        self.plot_timer.stop()
         
-        while not self.plotManager.isEmpty():
-            self.plotManager.run()
-        
-        self.plotManager.close()
+        self.plotManager.join()
         self.plotManager = None
         
         while self.controllerThread.isRunning():

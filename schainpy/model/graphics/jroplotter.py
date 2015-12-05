@@ -68,6 +68,7 @@ class Plotter(Operation):
 # class PlotManager(Thread):
 class PlotManager():
     __stop = False
+    controllerThreadObj = None
     
     def __init__(self, plotter_queue):
         
@@ -96,6 +97,9 @@ class PlotManager():
         
         for i in range(n):
             
+            if self.__queue.empty():
+                break
+        
             serial_data = self.__queue.get()
             self.__queue.task_done()
             
@@ -136,4 +140,28 @@ class PlotManager():
             plotter.close()
         
         self.__lock.release()
+    
+    def setController(self, controllerThreadObj):
         
+        self.controllerThreadObj = controllerThreadObj
+        
+    def start(self):
+        
+        if not self.controllerThreadObj.isRunning():
+            raise RuntimeError, "controllerThreadObj has not been initialized. Use controllerThreadObj.start() before call this method"
+        
+        self.join()
+        
+    def join(self):
+        
+        #Execute plotter while controller is running
+        while self.controllerThreadObj.isRunning():
+            self.run()
+        
+        self.controllerThreadObj.stop()
+        
+        #Wait until plotter queue is empty
+        while not self.isEmpty():
+            self.run()
+        
+        self.close()

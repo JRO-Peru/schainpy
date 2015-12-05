@@ -823,7 +823,7 @@ class Project():
     
     ELEMENTNAME = 'Project'
     
-    __plotterQueue = None
+    plotterQueue = None
     
     def __init__(self, plotter_queue=None):
         
@@ -831,7 +831,7 @@ class Project():
         self.name = None
         self.description = None
         
-        self.__plotterQueue = plotter_queue
+        self.plotterQueue = plotter_queue
         
         self.procUnitConfObjDict = {}
         
@@ -1046,7 +1046,7 @@ class Project():
     def createObjects(self):
         
         for procUnitConfObj in self.procUnitConfObjDict.values():
-            procUnitConfObj.createObjects(self.__plotterQueue)
+            procUnitConfObj.createObjects(self.plotterQueue)
     
     def __connect(self, objIN, thisObj):
         
@@ -1143,35 +1143,15 @@ class Project():
         
     def setPlotterQueue(self, plotter_queue):
         
-        self.__plotterQueue = plotter_queue
-    
+        raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
+
     def getPlotterQueue(self):
         
-        return self.__plotterQueue
-    
-    def useExternalPlotManager(self):
+        raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
+
+    def useExternalPlotter(self):
         
-        plotterList = ['Scope',
-                       'SpectraPlot', 'RTIPlot',
-                       'CrossSpectraPlot', 'CoherenceMap',
-                       'PowerProfilePlot', 'Noise', 'BeaconPhase',
-                       'CorrelationPlot',
-                       'SpectraHeisScope','RTIfromSpectraHeis']
-        
-        for thisPUConfObj in self.procUnitConfObjDict.values():
-            
-            inputId = thisPUConfObj.getInputId()
-            
-            if int(inputId) == 0:
-                continue
-            
-            for thisOpObj in thisPUConfObj.getOperationObjList():
-                
-                if thisOpObj.type == "self":
-                    continue
-                
-                if thisOpObj.name in plotterList:
-                    thisOpObj.type = "plotter"
+        raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
     
     def run(self):
         
