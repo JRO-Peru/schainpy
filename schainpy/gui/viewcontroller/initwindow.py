@@ -26,7 +26,7 @@ class InitWindow(QDialog, Ui_InitWindow):
         QDialog.__init__(self, parent)
         self.setupUi(self)
         self.setWindowTitle("ROJ-Signal Chain")
-        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
+        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"logo.png") ))
     
     @pyqtSignature("")
     def on_ExitBtn_clicked(self):

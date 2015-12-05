@@ -25,7 +25,7 @@ class Workspace(QDialog, Ui_Workspace):
         self.dirList=[]
         self.setupUi(self)
         self.setWindowTitle("ROJ-Signal Chain")
-        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"adn.jpg") ))
+        self.setWindowIcon(QtGui.QIcon( os.path.join(FIGURES_PATH,"logo.png") ))
         #*#######   DIRECTORIO DE TRABAJO  #########*#
         #self.dirCmbBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "C:\WorkSpaceGui", None, QtGui.QApplication.UnicodeUTF8))
         home=expanduser("~")
