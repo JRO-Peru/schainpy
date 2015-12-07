@@ -657,6 +657,10 @@ class Decoder(Operation):
             """
             Decoding when data have been read as block,
             """
+            if mode == 3:
+                sys.stderr.write("Decoder Warning: mode=%d is not valid, using mode=0\n" %mode)
+                mode = 0
+                
             if mode == 0:
                 datadec = self.__convolutionByBlockInTime(dataOut.data)
             if mode == 1:
