@@ -3136,7 +3136,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specOpCebRemoveDC.setCheckState(0)
         else:                     
             self.specOpCebRemoveDC.setCheckState(QtCore.Qt.Checked)
-            value = opObj.getParameterValue(parameterName='mode')
+            
+            parmObj = opObj.getParameterObj(parameterName='mode')
+            
+            value = 1
+            if parmObj:
+                value = parmObj.getValue()
+            
             if value == 1:
                 self.specOpComRemoveDC.setCurrentIndex(0)
             elif value == 2:
