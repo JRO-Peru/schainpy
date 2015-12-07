@@ -445,7 +445,7 @@ class Voltage(JROData):
         if type == 1:
             noise = self.getNoisebyHildebrand(channel)
             
-        return 10*numpy.log10(noise)
+        return noise
     
     def getPower(self, channel = None):
         

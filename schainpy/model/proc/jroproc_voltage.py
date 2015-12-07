@@ -502,6 +502,7 @@ class CohInt(Operation):
             Si la data es leida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
             avgdata, avgdatatime = self.integrateByBlock(dataOut)
+            dataOut.nProfiles /= self.n
         else:            
             avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
         

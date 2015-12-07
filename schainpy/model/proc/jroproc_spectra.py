@@ -135,21 +135,24 @@ class SpectraProc(ProcessingUnit):
                                           dtype='complex')
 
             if self.dataIn.flagDataAsBlock:
+                #data dimension: [nChannels, nProfiles, nSamples]
+                nVoltProfiles = self.dataIn.data.shape[1]
+                nVoltProfiles = self.dataIn.nProfiles
                 
-                if self.dataIn.nProfiles == nProfiles:
+                if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
-                    self.profIndex = nProfiles
+                    self.profIndex = nVoltProfiles
                     
-                elif self.dataIn.nProfiles < nProfiles:
+                elif nVoltProfiles < nProfiles:
                     
                     if self.profIndex == 0:
                         self.id_min = 0
-                        self.id_max = self.dataIn.nProfiles
+                        self.id_max = nVoltProfiles
                 
                     self.buffer[:,self.id_min:self.id_max,:] = self.dataIn.data
-                    self.profIndex += self.dataIn.nProfiles
-                    self.id_min += self.dataIn.data.shape[1]
-                    self.id_max += self.dataIn.data.shape[1]
+                    self.profIndex += nVoltProfiles
+                    self.id_min += nVoltProfiles
+                    self.id_max += nVoltProfiles
                 else:
                     raise ValueError, "The type object %s has %d profiles, it should be equal to %d profiles"%(self.dataIn.type,self.dataIn.data.shape[1],nProfiles)
                     self.dataOut.flagNoData = True
