@@ -4607,9 +4607,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         projectObjLoad = Project()
         
-        try:
-            projectObjLoad.readXml(filename)
-        except:
+        if not projectObjLoad.readXml(filename):
             self.console.clear()
             self.console.append("The selected xml file could not be loaded ...")
             return 0
