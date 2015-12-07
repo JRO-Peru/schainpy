@@ -1070,13 +1070,20 @@ class Project():
             
             self.__connect(puObjIN, thisPUObj)
     
-    def __handleError(self, procUnitConfObj):
+    def __handleError(self, procUnitConfObj, send_email=True):
         
         import socket
         
         err = traceback.format_exception(sys.exc_info()[0],
                                          sys.exc_info()[1],
                                          sys.exc_info()[2])
+        
+        message = "".join(err)
+        
+        sys.stderr.write(message)
+        
+        if not send_email:
+            return
         
         subject =  "SChain v%s: Error running %s\n" %(schainpy.__version__, procUnitConfObj.name)
         
@@ -1095,10 +1102,6 @@ class Project():
             subtitle += "[End date = %s]\n" %readUnitConfObj.endDate
             subtitle += "[Start time = %s]\n" %readUnitConfObj.startTime
             subtitle += "[End time = %s]\n" %readUnitConfObj.endTime
-            
-        message = "".join(err)
-        
-        sys.stderr.write(message)
                             
         adminObj = schainpy.admin.SchainNotify()
         adminObj.sendAlert(message=message,
@@ -1179,7 +1182,7 @@ class Project():
                 except ValueError, e:
                     print "***** Error occurred in %s *****" %(procUnitConfObj.name)
                     sleep(0.5)
-                    print e
+                    self.__handleError(procUnitConfObj, send_email=False)
                     is_ok = False
                     break
                 except:
