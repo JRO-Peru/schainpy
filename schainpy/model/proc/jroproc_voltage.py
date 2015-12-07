@@ -1,3 +1,4 @@
+import sys
 import numpy
 
 from jroproc_base import ProcessingUnit, Operation
@@ -646,6 +647,10 @@ class Decoder(Operation):
             self.setup(code, osamp, dataOut)
             
             self.isConfig = True
+            
+            if mode == 3:
+                sys.stderr.write("Decoder Warning: mode=%d is not valid, using mode=0\n" %mode)
+                    
         
         if self.code is None:
             print "Fail decoding: Code is not defined."
@@ -658,7 +663,6 @@ class Decoder(Operation):
             Decoding when data have been read as block,
             """
             if mode == 3:
-                sys.stderr.write("Decoder Warning: mode=%d is not valid, using mode=0\n" %mode)
                 mode = 0
                 
             if mode == 0:
