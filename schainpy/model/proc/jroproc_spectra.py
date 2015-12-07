@@ -1,5 +1,4 @@
 import numpy
-import math
 
 from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Spectra
@@ -496,10 +495,10 @@ class SpectraProc(ProcessingUnit):
             jspc_interf = junkspc_interf.sum(axis = 0) / nhei_interf
             jspc_interf = jspc_interf.transpose()
             #Calculando el espectro de interferencia promedio
-            noiseid =  numpy.where(jspc_interf <= tmp_noise/ math.sqrt(num_incoh))
+            noiseid =  numpy.where(jspc_interf <= tmp_noise/ numpy.sqrt(num_incoh))
             noiseid = noiseid[0]
             cnoiseid = noiseid.size
-            interfid = numpy.where(jspc_interf > tmp_noise/ math.sqrt(num_incoh))
+            interfid = numpy.where(jspc_interf > tmp_noise/ numpy.sqrt(num_incoh))
             interfid = interfid[0]
             cinterfid = interfid.size
             
@@ -528,11 +527,11 @@ class SpectraProc(ProcessingUnit):
             
             if cinterfid > 0:
                 for ip in range(cinterfid*(interf == 2) - 1):
-                    ind = (jspectra[ich,interfid[ip],:] < tmp_noise*(1 + 1/math.sqrt(num_incoh))).nonzero()
+                    ind = (jspectra[ich,interfid[ip],:] < tmp_noise*(1 + 1/numpy.sqrt(num_incoh))).nonzero()
                     cind = len(ind)
                     
                     if (cind > 0):
-                        jspectra[ich,interfid[ip],ind] = tmp_noise*(1 + (numpy.random.uniform(cind) - 0.5)/math.sqrt(num_incoh))
+                        jspectra[ich,interfid[ip],ind] = tmp_noise*(1 + (numpy.random.uniform(cind) - 0.5)/numpy.sqrt(num_incoh))
                     
                 ind = numpy.array([-2,-1,1,2])
                 xx = numpy.zeros([4,4])
@@ -547,8 +546,8 @@ class SpectraProc(ProcessingUnit):
                 jspectra[ich,mask_prof[maxid],:] = numpy.dot(yy.transpose(),xx)
                     
                     
-            indAux = (jspectra[ich,:,:] < tmp_noise*(1-1/math.sqrt(num_incoh))).nonzero()         
-            jspectra[ich,indAux[0],indAux[1]] = tmp_noise * (1 - 1/math.sqrt(num_incoh))
+            indAux = (jspectra[ich,:,:] < tmp_noise*(1-1/numpy.sqrt(num_incoh))).nonzero()         
+            jspectra[ich,indAux[0],indAux[1]] = tmp_noise * (1 - 1/numpy.sqrt(num_incoh))
             
         #Remocion de Interferencia en el Cross Spectra
         if jcspectra is None: return jspectra, jcspectra
