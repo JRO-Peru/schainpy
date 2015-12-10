@@ -336,15 +336,16 @@ class RadarControllerHeader(Header):
             
 #             if self.line5Function == RCfunction.FLIP:
 #                 self.flip1 = numpy.fromfile(fp,'<u4',1)
-# 
+#  
 #             if self.line6Function == RCfunction.FLIP:
 #                 self.flip2 = numpy.fromfile(fp,'<u4',1)
         
         endFp = size + startFp
         
         if fp.tell() != endFp:
-            print "Radar Controller Header is not consistent"
-            return 0
+#             fp.seek(endFp)
+            print "Radar Controller Header is not consistent read[%d] != header[%d]" %(fp.tell()-startFp,endFp)
+#             return 0
                 
         return 1
     
