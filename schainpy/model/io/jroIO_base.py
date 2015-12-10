@@ -1084,6 +1084,11 @@ class JRODataReader(JRODataIO):
                 
                 fileList = glob.glob1(single_path, "*"+ext)
                 
+                if not fileList:
+                    continue
+                
+                fileList.sort()
+                
                 for thisFile in fileList:
                     
                     if not os.path.isfile(os.path.join(single_path, thisFile)):
@@ -1126,6 +1131,8 @@ class JRODataReader(JRODataIO):
         
                 if not dirList:
                     continue
+                
+                dirList.sort()
                 
                 for thisDir in dirList:
                     
