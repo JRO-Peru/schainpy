@@ -258,8 +258,8 @@ class HDF5Reader(ProcessingUnit):
         try:
             fp = fp = h5py.File(filename,'r')
         except IOError:
-            print "File %s can't be opened" %(filename)
-            return None
+            traceback.print_exc()
+            raise IOError, "The file %s can't be opened" %(filename)
         
         grp = fp['Data']
         timeAux = grp['time']
@@ -593,12 +593,13 @@ class HDF5Writer(Operation):
     
     nDimsForDs = None
     
+    currentDay = None
+    
     def __init__(self):
         
         Operation.__init__(self)
         self.isConfig = False
         return
-    
     
     def setup(self, dataOut, **kwargs):
 
@@ -643,6 +644,10 @@ class HDF5Writer(Operation):
             if type(dataAux)==float or type(dataAux)==int:
                 arrayDim[i,0] = 1
             else:
+                
+                if dataAux == None:
+                    return 0
+                
                 arrayDim0 = dataAux.shape
                 arrayDim[i,0] = len(arrayDim0)
                 arrayDim[i,4] = mode[i]
@@ -664,7 +669,9 @@ class HDF5Writer(Operation):
         self.tableDim = numpy.array(tableList, dtype = dtype0)        
         self.blockIndex = 0
         
-        return
+        timeTuple = time.localtime(dataOut.utctime)
+        self.currentDay = timeTuple.tm_yday
+        return 1
 
     def putMetadata(self):
         
@@ -734,6 +741,17 @@ class HDF5Writer(Operation):
             grp.create_dataset(self.metadataList[i], data=getattr(self.dataOut, self.metadataList[i]))
         return
         
+    def dateFlag(self):
+        
+        timeTuple = time.localtime(self.dataOut.utctime)
+        dataDay = timeTuple.tm_yday
+        
+        if dataDay == self.currentDay:
+            return False
+        
+        self.currentDay = dataDay
+        return True
+
     def setNextFile(self):
         
         ext = self.ext
@@ -761,7 +779,10 @@ class HDF5Writer(Operation):
                     setFile = -1
             else:
                 setFile = -1 #inicializo mi contador de seteo
-
+        else:
+            os.mkdir(fullpath)
+            setFile = -1 #inicializo mi contador de seteo       
+        
         setFile += 1
                 
         file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
@@ -774,8 +795,12 @@ class HDF5Writer(Operation):
 
         #Setting HDF5 File
         fp = h5py.File(filename,'w')
+        
+        #writemetadata
+        self.writeMetadata(fp) 
+        
         grp = fp.create_group("Data")
-        grp.attrs['metadata'] = self.metaFile
+#         grp.attrs['metadata'] = self.metaFile
         
 #         grp.attrs['blocksPerFile'] = 0
         
@@ -844,7 +869,7 @@ class HDF5Writer(Operation):
         if not self.firsttime:
             self.readBlock()
 
-        if self.blockIndex == self.blocksPerFile:
+        if self.blockIndex == self.blocksPerFile or self.dateFlag():
 
             self.setNextFile()  
         
@@ -898,7 +923,6 @@ class HDF5Writer(Operation):
         
         return
 
-    
     def setBlock(self):
         '''
         data Array configured
@@ -979,26 +1003,24 @@ class HDF5Writer(Operation):
                     else:
                         self.ds[i].resize((self.ds[i].shape[0] + dataShape[0],self.ds[i].shape[1],self.ds[i].shape[2]))  
                         self.ds[i][dsShape[0]:,:,0] = self.data[i]
-#                 self.ds[i].append(self.data[i])
-#                 self.fp.flush()
-#         if not self.firsttime:
-#             self.fp.root.Data._v_attrs.nRecords = self.blockIndex
-                  
-#         if self.firsttime:
-#             self.fp.close()
-#             self.readBlock2()
         
         self.blockIndex += 1
         self.firsttime = False
         return
     
     def run(self, dataOut, **kwargs):
+
         if not(self.isConfig):
-            self.setup(dataOut, **kwargs)
+            flagdata = self.setup(dataOut, **kwargs)
+            
+            if not(flagdata):
+                return
+            
             self.isConfig = True
-            self.putMetadata()
+#             self.putMetadata()
             self.setNextFile()
             
         self.putData()
         return
         
+
