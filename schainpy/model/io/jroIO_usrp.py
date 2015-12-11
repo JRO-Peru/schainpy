@@ -188,8 +188,7 @@ class USRPReader(ProcessingUnit):
                     ippKm = 60,
                     online = False,
                     delay = 60,
-                    buffer_size = None,
-                    nbuffer = 1024,
+                    buffer_size = 1024,
                     **kwargs):
         '''
         In this method we should set all initial parameters.
@@ -206,9 +205,6 @@ class USRPReader(ProcessingUnit):
             online
             delay
         '''
-        
-        if not buffer_size:
-            buffer_size = nbuffer
         
         if not os.path.isdir(path):
             raise ValueError, "[Reading] Directory %s does not exist" %path 
