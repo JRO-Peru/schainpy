@@ -88,9 +88,18 @@ class Header(object):
         message += self.__class__.__name__.upper() + "\n"
         message += "#"*50 + "\n"
         
-        for key in self.__dict__.keys():
+        keyList = self.__dict__.keys()
+        keyList.sort()
+        
+        for key in keyList:
             message += "%s = %s" %(key, self.__dict__[key]) + "\n"
+        
+        if "size" not in keyList:
+            attr = getattr(self, "size")
             
+            if attr:
+                message += "%s = %s" %("size", attr) + "\n"
+        
         print message
 
 class BasicHeader(Header):
@@ -190,7 +199,7 @@ class SystemHeader(Header):
         try:
             header = numpy.fromfile(fp,SYSTEM_STRUCTURE,1)
         except Exception, e:
-            print "SystemHeader: " + e
+            print "System Header: " + e
             return 0
         
         self.size = header['nSize'][0]
@@ -202,9 +211,12 @@ class SystemHeader(Header):
         
         endFp = self.size + startFp
         
-        if fp.tell() != endFp:
-            print "System Header is not consistent"
+        if fp.tell() > endFp:
+            sys.stderr.write("Warning: System header size is lower than it has to be")
             return 0
+            
+        if fp.tell() < endFp:
+            sys.stderr.write("Warning: System header size is greater than it is considered")
             
         return 1
     
@@ -218,7 +230,6 @@ class SystemHeader(Header):
 
 class RadarControllerHeader(Header):
     
-    size = None
     expType = None
     nTx = None
     ipp = None
@@ -246,7 +257,7 @@ class RadarControllerHeader(Header):
                  codeType=0, nCode=0, nBaud=0, code=None,
                  flip1=0, flip2=0):
         
-        self.size = 116
+#         self.size = 116
         self.expType = expType
         self.nTx = nTx
         self.ipp = ippKm
@@ -346,7 +357,15 @@ class RadarControllerHeader(Header):
 #             fp.seek(endFp)
             print "Radar Controller Header is not consistent read[%d] != header[%d]" %(fp.tell()-startFp,endFp)
 #             return 0
-                
+
+        if fp.tell() > endFp:
+            sys.stderr.write("Warning: Radar Controller header size is lower than it has to be")
+#             return 0
+            
+        if fp.tell() < endFp:
+            sys.stderr.write("Warning: Radar Controller header size is greater than it is considered")
+            
+            
         return 1
     
     def write(self, fp):
@@ -435,7 +454,7 @@ class RadarControllerHeader(Header):
     
     def set_size(self, value):
         
-        self.__size = value
+        raise IOError, "size is a property and it cannot be set, just read"
         
         return
     
@@ -562,9 +581,12 @@ class ProcessingHeader(Header):
         
         endFp = size + startFp
         
-        if fp.tell() != endFp:
-            print "Processing Header is not consistent"
+        if fp.tell() > endFp:
+            sys.stderr.write("Warning: Processing header size is lower than it has to be")
             return 0
+            
+        if fp.tell() < endFp:
+            sys.stderr.write("Warning: Processing header size is greater than it is considered")
         
         return 1
     
@@ -621,7 +643,7 @@ class ProcessingHeader(Header):
     
     def set_size(self, value):
         
-        self.__size = value
+        raise IOError, "size is a property and it cannot be set, just read"
         
         return
     
