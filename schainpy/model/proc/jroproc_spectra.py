@@ -109,6 +109,7 @@ class SpectraProc(ProcessingUnit):
         
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
+#             self.__selectPairs(pairsList)
             return True
         
         if self.dataIn.type == "Voltage":
@@ -136,7 +137,7 @@ class SpectraProc(ProcessingUnit):
             if self.dataIn.flagDataAsBlock:
                 #data dimension: [nChannels, nProfiles, nSamples]
                 nVoltProfiles = self.dataIn.data.shape[1]
-                nVoltProfiles = self.dataIn.nProfiles
+#                 nVoltProfiles = self.dataIn.nProfiles
                 
                 if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
@@ -175,7 +176,33 @@ class SpectraProc(ProcessingUnit):
         
         raise ValueError, "The type of input object '%s' is not valid"%(self.dataIn.type)
     
-    def __selectPairs(self, channelList=None):
+    def __selectPairs(self, pairsList):
+        
+        if channelList == None:
+            return
+    
+        pairsIndexListSelected = []
+        
+        for thisPair in pairsList:
+            
+            if thisPair not in self.dataOut.pairsList:
+                continue
+            
+            pairIndex = self.dataOut.pairsList.index(thisPair)
+            
+            pairsIndexListSelected.append(pairIndex)
+        
+        if not pairsIndexListSelected:
+            self.dataOut.data_cspc = None
+            self.dataOut.pairsList = []
+            return
+            
+        self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndexListSelected]
+        self.dataOut.pairsList = [self.dataOut.pairsList[i] for i in pairsIndexListSelected] 
+        
+        return
+    
+    def __selectPairsByChannel(self, channelList=None):
         
         if channelList == None:
             return
@@ -207,7 +234,7 @@ class SpectraProc(ProcessingUnit):
         
         for channel in channelList:
             if channel not in self.dataOut.channelList:
-                raise ValueError, "Error selecting channels: The value %d in channelList is not valid.\nAvailable channels = %s" %(channel, str(self.dataOut.channelList))
+                raise ValueError, "Error selecting channels, Channel %d is not valid.\nAvailable channels = %s" %(channel, str(self.dataOut.channelList))
             
             index = self.dataOut.channelList.index(channel)
             channelIndexList.append(index)
@@ -245,7 +272,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
 #        self.dataOut.nChannels = nChannels
         
-        self.__selectPairs(self.dataOut.channelList)
+        self.__selectPairsByChannel(self.dataOut.channelList)
         
         return 1
 
@@ -355,7 +382,7 @@ class SpectraProc(ProcessingUnit):
         """
         
         if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "Error selecting heights by index: Index range in (%d,%d) is not valid" % (minIndex, maxIndex)
+            raise ValueError, "Error selecting heights: Index range (%d,%d) is not valid" % (minIndex, maxIndex)
         
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights-1
