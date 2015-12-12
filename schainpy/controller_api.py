@@ -75,12 +75,7 @@ class ControllerThread(threading.Thread, Project):
 
     def setPlotters(self):
         
-        plotterList = ['Scope',
-                       'SpectraPlot', 'RTIPlot',
-                       'CrossSpectraPlot', 'CoherenceMap',
-                       'PowerProfilePlot', 'Noise', 'BeaconPhase',
-                       'CorrelationPlot',
-                       'SpectraHeisScope','RTIfromSpectraHeis']
+        plotterList = PlotManager.plotterList
         
         for thisPUConfObj in self.procUnitConfObjDict.values():
             
