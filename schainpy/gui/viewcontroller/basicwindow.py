@@ -1107,8 +1107,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter1, value=opObj.id, format=format1)
             
             channelList = str(self.volGraphChannelList.text()).strip()
-            xvalue = str(self.volGraphfreqrange.text()).strip()
-            yvalue = str(self.volGraphHeightrange.text()).strip()
+            xvalue = str(self.volGraphHeightrange.text()).strip()
+            yvalue = str(self.volGraphIntensityRange.text()).strip()
             figpath = str(self.volGraphPath.text()).strip()
             figfile = str(self.volGraphPrefix.text()).strip()
             
@@ -1119,12 +1119,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             if xvalue != "":
                 if not isFloatRange(xvalue):
-                    self.console.append("Invalid value '%s' for 'Graphics:Frequncy-Range'" %(xvalue))
+                    self.console.append("Invalid value '%s' for 'Graphics:Height-Range'" %(xvalue))
                     return 0
             
             if yvalue != "":
                 if not isFloatRange(yvalue):
-                    self.console.append("Invalid value '%s' for 'Graphics:Height-Range'" %(yvalue))
+                    self.console.append("Invalid value '%s' for 'Graphics:Amplitude-Range'" %(yvalue))
                     return 0
                 
             
@@ -1142,7 +1142,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                opObj.addParameter(name='ymin', value=yvalueList[0], format='int')
                opObj.addParameter(name='ymax', value=yvalueList[1], format='int')
-                   
+            
+            plot_type = self.volComScopeType.currentIndex()
+            
+            if plot_type == 0:
+                opObj.addParameter(name='type', value="iq")
+            if plot_type == 1:
+                opObj.addParameter(name='type', value="power")
+                
             if self.volGraphCebSave.isChecked():
                 checkPath = True
                 
@@ -1235,12 +1242,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if p0 == 0:
  
            self.volGraphChannelList.setEnabled(False)
-           self.volGraphfreqrange.setEnabled(False)
+           self.volGraphIntensityRange.setEnabled(False)
            self.volGraphHeightrange.setEnabled(False)
         if p0 == 2:
 
            self.volGraphChannelList.setEnabled(True)
-           self.volGraphfreqrange.setEnabled(True)
+           self.volGraphIntensityRange.setEnabled(True)
            self.volGraphHeightrange.setEnabled(True)  
 
     """
@@ -3035,23 +3042,23 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value = parmObj.getValue()            
                 value = str(value)
                 self.volGraphChannelList.setText(value)  
-                self.volOpProfile.setEnabled(True) 
+#                 self.volOpChannel.setEnabled(True) 
             
-            parmObj1 = opObj.getParameterObj(parameterName='xmin')
-            parmObj2 = opObj.getParameterObj(parameterName='xmax')
+            parmObj1 = opObj.getParameterObj(parameterName='ymin')
+            parmObj2 = opObj.getParameterObj(parameterName='ymax')
             
             if parmObj1 == None or parmObj2 ==None:
-                self.volGraphfreqrange.clear()
+                self.volGraphIntensityRange.clear()
             else:
                 value1 = parmObj1.getValue()
                 value1 = str(value1) 
                 value2 = parmObj2.getValue()          
                 value2 = str(value2)
                 value = value1 + "," + value2
-                self.volGraphfreqrange.setText(value)
+                self.volGraphIntensityRange.setText(value)
             
-            parmObj1 = opObj.getParameterObj(parameterName='ymin')
-            parmObj2 = opObj.getParameterObj(parameterName='ymax')
+            parmObj1 = opObj.getParameterObj(parameterName='xmin')
+            parmObj2 = opObj.getParameterObj(parameterName='xmax')
             
             if parmObj1 == None or parmObj2 ==None:
                 self.volGraphHeightrange.clear()
@@ -3064,6 +3071,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 value2 = str(value2)
                 self.volGraphHeightrange.setText(value)
             
+            parmObj = opObj.getParameterObj(parameterName='type')
+            
+            if parmObj == None:
+                self.volComScopeType.setCurrentIndex(0)
+            else:
+                value = parmObj.getValue()
+                if value == "iq":
+                    self.volComScopeType.setCurrentIndex(0)
+                if value == "power":
+                    self.volComScopeType.setCurrentIndex(1)
+                    
             parmObj = opObj.getParameterObj(parameterName='save')
             
             if parmObj == None:
@@ -5641,7 +5659,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         # set Graph Voltage
         self.volGraphChannelList.setEnabled(False)
-        self.volGraphfreqrange.setEnabled(False)
+        self.volGraphIntensityRange.setEnabled(False)
         self.volGraphHeightrange.setEnabled(False)
         
         # set Operation Spectra
@@ -5703,7 +5721,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #         self.volOpFlip.setToolTip('ChannelList where flip will be applied. Example: 0,2,3')
 #         self.volOpOk.setToolTip('If you have finished, please Ok ')
 #         # tool tip gui volGraph
-#         self.volGraphfreqrange.setToolTip('Height range. Example: 50,100')
+#         self.volGraphIntensityRange.setToolTip('Height range. Example: 50,100')
 #         self.volGraphHeightrange.setToolTip('Amplitude. Example: 0,10000')
         # tool tip gui specOp
 #         self.specOpnFFTpoints.setToolTip('Example: 128')

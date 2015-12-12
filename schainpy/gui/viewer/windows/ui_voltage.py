@@ -207,9 +207,9 @@ class Ui_VoltageTab(object):
         self.gridLayout_6.setObjectName(_fromUtf8("gridLayout_6"))
         spacerItem4 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.gridLayout_6.addItem(spacerItem4, 12, 3, 1, 1)
-        self.volGraphfreqrange = QtGui.QLineEdit(self.tabgraphVoltage)
-        self.volGraphfreqrange.setObjectName(_fromUtf8("volGraphfreqrange"))
-        self.gridLayout_6.addWidget(self.volGraphfreqrange, 9, 1, 1, 6)
+        self.volGraphIntensityRange = QtGui.QLineEdit(self.tabgraphVoltage)
+        self.volGraphIntensityRange.setObjectName(_fromUtf8("volGraphIntensityRange"))
+        self.gridLayout_6.addWidget(self.volGraphIntensityRange, 9, 1, 1, 6)
         self.volGraphPrefix = QtGui.QLineEdit(self.tabgraphVoltage)
         self.volGraphPrefix.setObjectName(_fromUtf8("volGraphPrefix"))
         self.gridLayout_6.addWidget(self.volGraphPrefix, 2, 1, 1, 6)
@@ -245,14 +245,28 @@ class Ui_VoltageTab(object):
         self.gridLayout_6.addWidget(self.label_13, 2, 0, 1, 1)
         self.label_52 = QtGui.QLabel(self.tabgraphVoltage)
         self.label_52.setObjectName(_fromUtf8("label_52"))
+        
         self.gridLayout_6.addWidget(self.label_52, 11, 0, 1, 1)
         spacerItem6 = QtGui.QSpacerItem(40, 12, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.gridLayout_6.addItem(spacerItem6, 14, 5, 1, 2)
         spacerItem7 = QtGui.QSpacerItem(18, 12, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.gridLayout_6.addItem(spacerItem7, 14, 3, 1, 1)
+        
+        self.volLabScopeType = QtGui.QLabel(self.tabgraphVoltage)
+        self.volLabScopeType.setObjectName(_fromUtf8("volLabScopeType"))
+        self.gridLayout_6.addWidget(self.volLabScopeType, 7, 0, 1, 1)
+        
+        self.volComScopeType = QtGui.QComboBox(self.tabgraphVoltage)
+        self.volComScopeType.setObjectName(_fromUtf8("volComScopeType"))
+        self.volComScopeType.addItem(_fromUtf8(""))
+        self.volComScopeType.addItem(_fromUtf8(""))
+        self.gridLayout_6.addWidget(self.volComScopeType, 7, 1, 1, 6)
+        
         self.volGraphChannelList = QtGui.QLineEdit(self.tabgraphVoltage)
         self.volGraphChannelList.setObjectName(_fromUtf8("volGraphChannelList"))
         self.gridLayout_6.addWidget(self.volGraphChannelList, 8, 1, 1, 6)
+        
+        
         self.volGraphHeightrange = QtGui.QLineEdit(self.tabgraphVoltage)
         self.volGraphHeightrange.setObjectName(_fromUtf8("volGraphHeightrange"))
         self.gridLayout_6.addWidget(self.volGraphHeightrange, 11, 1, 1, 6)
@@ -353,11 +367,16 @@ class Ui_VoltageTab(object):
         self.label_14.setText(_translate("MainWindow", "Scope:", None))
         self.label_8.setText(_translate("MainWindow", "Channel List:", None))
         self.label_49.setText(_translate("MainWindow", "Show:", None))
-        self.label_51.setText(_translate("MainWindow", "Height range:", None))
+        self.label_51.setText(_translate("MainWindow", "Amplitude/Intensity:", None))
         self.label_12.setText(_translate("MainWindow", "Path   :", None))
         self.label_13.setText(_translate("MainWindow", "Figure name:", None))
-        self.label_52.setText(_translate("MainWindow", "Amplitude:", None))
+        self.label_52.setText(_translate("MainWindow", "Height range:", None))
         self.label_50.setText(_translate("MainWindow", "Save:", None))
+        
+        self.volLabScopeType.setText(_translate("MainWindow", "Scope type:", None))
+        self.volComScopeType.setItemText(0, _translate("MainWindow", "I&Q", None))
+        self.volComScopeType.setItemText(1, _translate("MainWindow", "Power", None))
+        
         self.tabWidgetVoltage.setTabText(self.tabWidgetVoltage.indexOf(self.tabgraphVoltage), _translate("MainWindow", "Graphics", None))
         
         self.label_36.setText(_translate("MainWindow", "Type:", None))
@@ -382,7 +401,7 @@ class Ui_VoltageTab(object):
         self.volOpFlip.setToolTip('ChannelList where flip will be applied. Example: 0,2,3')
         self.volOpOk.setToolTip('If you have finished, please Ok ')
         # tool tip gui volGraph
-        self.volGraphfreqrange.setToolTip('Height range. Example: 50,100')
+        self.volGraphIntensityRange.setToolTip('Height range. Example: 50,100')
         self.volGraphHeightrange.setToolTip('Amplitude. Example: 0,10000')
         
         
