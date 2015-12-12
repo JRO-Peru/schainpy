@@ -70,16 +70,13 @@ class ParameterConf():
             Example:
                 value = (0,1,2)
             """
-            value = value.replace('(', '')
-            value = value.replace(')', '')
             
-            value = value.replace('[', '')
-            value = value.replace(']', '')
+            new_value = ast.literal_eval(value)
             
-            strList = value.split(',')
-            intList = [int(float(x)) for x in strList]
+            if type(new_value) not in (tuple, list):
+                new_value = [int(new_value)]
             
-            self.__formated_value = intList
+            self.__formated_value = new_value
             
             return self.__formated_value
         
@@ -89,14 +86,10 @@ class ParameterConf():
                 value = (0.5, 1.4, 2.7)
             """
             
-            value = value.replace('(', '')
-            value = value.replace(')', '')
+            new_value = ast.literal_eval(value)
             
-            value = value.replace('[', '')
-            value = value.replace(']', '')
-            
-            strList = value.split(',')
-            floatList = [float(x) for x in strList]
+            if type(new_value) not in (tuple, list):
+                new_value = [float(new_value)]
             
             self.__formated_value = floatList
             
@@ -126,19 +119,21 @@ class ParameterConf():
                 value = (0,1),(1,2)
             """
 
-            value = value.replace('(', '')
-            value = value.replace(')', '')
+            new_value = ast.literal_eval(value)
             
-            value = value.replace('[', '')
-            value = value.replace(']', '')
+            if type(new_value) not in (tuple, list):
+                raise ValueError, "%s has to be a tuple or list of pairs" %value
             
-            strList = value.split(',')
-            intList = [int(item) for item in strList]
-            pairList = []
-            for i in range(len(intList)/2):
-                pairList.append((intList[i*2], intList[i*2 + 1]))
+            if type(new_value[0]) not in (tuple, list):
+                if len(new_value) != 2:
+                    raise ValueError, "%s has to be a tuple or list of pairs" %value
+                new_value = [new_value]
             
-            self.__formated_value = pairList
+            for thisPair in new_value:
+                if len(thisPair) != 2:
+                    raise ValueError, "%s has to be a tuple or list of pairs" %value
+            
+            self.__formated_value = new_value
             
             return self.__formated_value
         
@@ -179,10 +174,7 @@ class ParameterConf():
         self.value = str(value)
         self.format = str.lower(format)
         
-        try:
-            self.getValue()
-        except:
-            return 0
+        self.getValue()
         
         return 1
         
@@ -1000,7 +992,11 @@ class Project():
         self.projectElement = None
         self.procUnitConfObjDict = {}
         
-        self.projectElement = ElementTree().parse(abs_file)
+        try:
+            self.projectElement = ElementTree().parse(abs_file)
+        except:
+            print "Error reading %s, verify file format" %filename
+            return 0
         
         self.project = self.projectElement.tag
         
@@ -1078,6 +1074,9 @@ class Project():
                                          sys.exc_info()[1],
                                          sys.exc_info()[2])
         
+        print "***** Error occurred in %s *****" %(procUnitConfObj.name)
+        print "***** %s" %err[-1]
+
         message = "".join(err)
         
         sys.stderr.write(message)
@@ -1179,14 +1178,15 @@ class Project():
                 try:
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
+                except KeyboardInterrupt:
+                    is_ok = False
+                    break
                 except ValueError, e:
-                    print "***** Error occurred in %s *****" %(procUnitConfObj.name)
                     sleep(0.5)
                     self.__handleError(procUnitConfObj, send_email=False)
                     is_ok = False
                     break
                 except:
-                    print "***** Error occurred in %s *****" %(procUnitConfObj.name)
                     sleep(0.5)
                     self.__handleError(procUnitConfObj)
                     is_ok = False
@@ -1194,7 +1194,7 @@ class Project():
             
             #If every process unit finished so end process
             if not(is_ok):
-                print "Every process unit have finished"
+#                 print "Every process unit have finished"
                 break
 
             if not self.runController():
