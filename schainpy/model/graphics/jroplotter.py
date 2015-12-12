@@ -3,14 +3,18 @@ Created on Jul 9, 2014
 
 @author: roj-idl71
 '''
-import os
+import os, sys
 import datetime
 import numpy
+import traceback
 
 from time import sleep
 from Queue import Queue
 from threading import Lock
 # from threading import Thread
+
+import schainpy
+import schainpy.admin
 
 from schainpy.model.proc.jroproc_base import Operation
 from schainpy.model.serializer.data import obj2Dict, dict2Obj
@@ -67,8 +71,19 @@ class Plotter(Operation):
 
 # class PlotManager(Thread):
 class PlotManager():
+    
+    __err = False
     __stop = False
+    __realtime = False
+    
     controllerThreadObj = None
+    
+    plotterList = ['Scope',
+                   'SpectraPlot', 'RTIPlot',
+                   'CrossSpectraPlot', 'CoherenceMap',
+                   'PowerProfilePlot', 'Noise', 'BeaconPhase',
+                   'CorrelationPlot',
+                   'SpectraHeisScope','RTIfromSpectraHeis']
     
     def __init__(self, plotter_queue):
         
@@ -79,11 +94,51 @@ class PlotManager():
         self.__lock = Lock()
         
         self.plotInstanceDict = {}
+        
+        self.__err = False
         self.__stop = False
+        self.__realtime = False
+    
+    def __handleError(self, name="", send_email=False):
+        
+        err = traceback.format_exception(sys.exc_info()[0],
+                                         sys.exc_info()[1],
+                                         sys.exc_info()[2])
+        
+        print "***** Error occurred in PlotManager *****"
+        print "***** [%s]: %s" %(name, err[-1])
+
+        message = "\nError ocurred in %s:\n" %name
+        message += "".join(err)
+        
+        sys.stderr.write(message)
+        
+        if not send_email:
+            return
+        
+        import socket
+        
+        subject =  "SChain v%s: Error running %s\n" %(schainpy.__version__, name)
+        
+        subtitle = "%s:\n" %(name)
+        subtitle += "Hostname: %s\n" %socket.gethostbyname(socket.gethostname())
+        subtitle += "Working directory: %s\n" %os.path.abspath("./")
+#         subtitle += "Configuration file: %s\n" %self.filename
+        subtitle += "Time: %s\n" %str(datetime.datetime.now())
+                            
+        adminObj = schainpy.admin.SchainNotify()
+        adminObj.sendAlert(message=message,
+                           subject=subject,
+                           subtitle=subtitle)
         
     def run(self):
         
         if self.__queue.empty():
+            return
+        
+        if self.__err:
+            serial_data = self.__queue.get()
+            self.__queue.task_done()
             return
         
         self.__lock.acquire()
@@ -115,7 +170,12 @@ class PlotManager():
                 self.plotInstanceDict[plot_id] = className()
                        
             plotter = self.plotInstanceDict[plot_id]
-            plotter.run(dataPlot, plot_id, **kwargs)
+            try:
+                plotter.run(dataPlot, plot_id, **kwargs)
+            except:
+                self.__err = True
+                self.__handleError(plot_name, send_email=True)
+                break
             
         self.__lock.release()
     
@@ -165,3 +225,13 @@ class PlotManager():
             self.run()
         
         self.close()
+    
+    def isErrorDetected(self):
+        
+        self.__lock.acquire()
+        
+        err = self.__err
+        
+        self.__lock.release()
+        
+        return err
