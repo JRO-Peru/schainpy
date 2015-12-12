@@ -294,8 +294,10 @@ class Ui_EnvWindow(object):
     def aboutEvent(self):
         title = "Signal Chain Processing Software v%s" %__version__
         message = """
-Developed by Jicamarca Radio Observatory
-Any comment to miguel.urco@jro.igp.gob.pe
+           Developed by:
+            Miguel Urco
+ miguel.urco@jro.igp.gob.pe
+Jicamarca Radio Observatory
 """
         QtGui.QMessageBox.about(self, title, message)
             
