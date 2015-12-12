@@ -247,6 +247,10 @@ class SchainNotify:
 
         Exceptions: None.
         """
+        
+        if not self.__emailToAddress:
+            return 0
+        
         print "***** Sending alert to %s *****" %self.__emailToAddress
         # set up message
     
@@ -257,9 +261,12 @@ class SchainNotify:
                            subtitle=subtitle, 
                            filename=filename)
         
-        if sent:
-            print "***** Your system administrator has been notified *****"
+        if not sent:
+            return 0
         
+        print "***** Your system administrator has been notified *****"
+        
+        return 1
         
     def notify(self, email, message, subject = "", subtitle="", filename=""):
         """notify sends an email with the given message and title to email.
