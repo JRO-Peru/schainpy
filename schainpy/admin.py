@@ -177,6 +177,12 @@ class SchainNotify:
 
     def sendEmail(self, email_from, email_to, subject='Error running ...', message="", subtitle="", filename="", html_format=True):
         
+        if not email_to:
+            return 0
+        
+        if not self.__emailServer:
+            return 0
+        
         msg = MIMEMultipart()
         msg['Subject'] = subject
         msg['From'] = "(Python SChain API): " + email_from
