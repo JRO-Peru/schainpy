@@ -24,7 +24,7 @@ class SpectraPlot(Figure):
         self.isConfig = False
         self.__nsubplots = 1
         
-        self.WIDTH = 280
+        self.WIDTH = 250
         self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
@@ -114,7 +114,7 @@ class SpectraPlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError, "Channel %d is not in dataOut.channelList" %channel
                 channelIndexList.append(dataOut.channelList.index(channel))
                 
         factor = dataOut.normFactor
@@ -122,7 +122,7 @@ class SpectraPlot(Figure):
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         
-        z = dataOut.data_spc[channelIndexList,:,:]/factor
+        z = dataOut.data_spc/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         zdB = 10*numpy.log10(z)
 
@@ -167,26 +167,27 @@ class SpectraPlot(Figure):
         self.setWinTitle(title)
             
         for i in range(self.nplots):
+            index = channelIndexList[i]
             str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
-            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[i], noisedB[i], str_datetime)
+            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[index], noisedB[index], str_datetime)
             if len(dataOut.beam.codeList) != 0:
-                title = "Ch%d:%4.2fdB,%2.2f,%2.2f:%s" %(dataOut.channelList[i]+1, noisedB[i], dataOut.beam.azimuthList[i], dataOut.beam.zenithList[i], str_datetime)
+                title = "Ch%d:%4.2fdB,%2.2f,%2.2f:%s" %(dataOut.channelList[index], noisedB[index], dataOut.beam.azimuthList[index], dataOut.beam.zenithList[index], str_datetime)
 
             axes = self.axesList[i*self.__nsubplots]
-            axes.pcolor(x, y, zdB[i,:,:],
+            axes.pcolor(x, y, zdB[index,:,:],
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, cblabel='')
             
             if self.__showprofile:
                 axes = self.axesList[i*self.__nsubplots +1]
-                axes.pline(avgdB[i,:], y,
+                axes.pline(avgdB[index,:], y,
                         xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
                         xlabel='dB', ylabel='', title='',
                         ytick_visible=False,
                         grid='x')
                 
-                noiseline = numpy.repeat(noisedB[i], len(y))
+                noiseline = numpy.repeat(noisedB[index], len(y))
                 axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
             
         self.draw()
@@ -423,7 +424,7 @@ class RTIPlot(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 150
+        self.HEIGHT = 180
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -524,7 +525,7 @@ class RTIPlot(Figure):
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        z = dataOut.data_spc[channelIndexList,:,:]/factor
+        z = dataOut.data_spc/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         avg = numpy.average(z, axis=1)
         
@@ -575,11 +576,12 @@ class RTIPlot(Figure):
             x[1] = self.xmax
         
         for i in range(self.nplots):
-            title = "Channel %d: %s" %(dataOut.channelList[i], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            index = channelIndexList[i]
+            title = "Channel %d: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
                 title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
             axes = self.axesList[i*self.__nsubplots]
-            zdB = avgdB[i].reshape((1,-1))
+            zdB = avgdB[index].reshape((1,-1))
             axes.pcolorbuffer(x, y, zdB,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
@@ -587,7 +589,7 @@ class RTIPlot(Figure):
             
             if self.__showprofile:
                 axes = self.axesList[i*self.__nsubplots +1]
-                axes.pline(avgdB[i], y,
+                axes.pline(avgdB[index], y,
                         xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
                         xlabel='dB', ylabel='', title='',
                         ytick_visible=False,
@@ -622,7 +624,7 @@ class CoherenceMap(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 150
+        self.HEIGHT = 180
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -673,7 +675,7 @@ class CoherenceMap(Figure):
     
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            timerange=None,
+            timerange=None, phase_min=None, phase_max=None,
             save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
             coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
@@ -693,6 +695,11 @@ class CoherenceMap(Figure):
         
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
+        
+        if phase_min == None:
+            phase_min = -180
+        if phase_max == None:
+            phase_max = 180
             
 #         tmin = None
 #         tmax = None
@@ -778,7 +785,7 @@ class CoherenceMap(Figure):
             title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2 + counter]
             axes.pcolorbuffer(x, y, z,
-                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=-180, zmax=180,
+                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=phase_min, zmax=phase_max,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', colormap=phase_cmap, cbsize="1%")
             
@@ -786,7 +793,7 @@ class CoherenceMap(Figure):
                 counter += 1
                 axes = self.axesList[i*self.__nsubplots*2 + counter]
                 axes.pline(phase, y,
-                        xmin=-180, xmax=180, ymin=ymin, ymax=ymax,
+                        xmin=phase_min, xmax=phase_max, ymin=ymin, ymax=ymax,
                         xlabel='', ylabel='', title='', ticksize=7,
                         ytick_visible=False, nxticks=4,
                         grid='x')
@@ -1039,7 +1046,7 @@ class Noise(Figure):
         x = dataOut.getTimeRange()
         #y = dataOut.getHeiRange()
         factor = dataOut.normFactor
-        noise = dataOut.noise/factor
+        noise = dataOut.noise[channelIndexList]/factor
         noisedB = 10*numpy.log10(noise)
         
         #thisDatetime = dataOut.datatime
@@ -1094,9 +1101,9 @@ class Noise(Figure):
         self.xdata = numpy.hstack((self.xdata, x[0:1]))
         
         if len(self.ydata)==0:
-            self.ydata = noisedB[channelIndexList].reshape(-1,1)
+            self.ydata = noisedB.reshape(-1,1)
         else:
-            self.ydata = numpy.hstack((self.ydata, noisedB[channelIndexList].reshape(-1,1)))
+            self.ydata = numpy.hstack((self.ydata, noisedB.reshape(-1,1)))
         
         
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
