@@ -574,13 +574,12 @@ class Spectra(JROData):
         
     def getNoise(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
         
-        if self.noise_estimation != None:
+        if self.noise_estimation is not None:
             return self.noise_estimation #this was estimated by getNoise Operation defined in jroproc_spectra.py
         else:
             noise = self.getNoisebyHildebrand(xmin_index, xmax_index, ymin_index, ymax_index)
             return noise
-
-    
+        
     def getFreqRange(self, extrapoints=0):
         
         deltafreq = self.getFmax() / (self.nFFTPoints*self.ippFactor)
