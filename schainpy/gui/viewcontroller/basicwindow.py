@@ -59,33 +59,178 @@ def isRadarPath(path):
 
     return 1
 
-def isInt(value):
+def isInt(cadena):
     
     try:
-        int(value)
+        int(cadena)
     except:
         return 0
     
     return 1
 
-def isFloat(value):
+def isFloat(cadena):
     
     try:
-        float(value)
+        float(cadena)
     except:
         return 0
     
     return 1
 
-def isList(value):
+def isList(cadena):
     
-    x = ast.literal_eval(value)
+    value = str.strip(cadena)
+    
+    if not value:
+        return 0
+    
+    try:
+        x = ast.literal_eval(value)
+    except:
+        return 0
     
     if type(x) in (int, float, tuple, list):
         return 1
     
     return 0
+
+def isIntList(cadena):
+    
+    value = str.strip(cadena)
+    
+    if not value:
+        return 0
+    
+    try:
+        x = ast.literal_eval(value)
+    except:
+        return 0
+    
+    if type(x) not in (int, tuple, list):
+        return 0
+    
+    return 1
+
+def isFloatRange(cadena):
+    
+    value = str.strip(cadena)
+    
+    if not value:
+        return 0
+    
+    c = str.split(value, ",")
+    
+    if len(c) != 2:
+        return 0
+    
+    if not isFloat(c[0]):
+        return 0
+    
+    if not isFloat(c[1]):
+        return 0
+    
+    return 1
+ 
+def isIntRange(cadena):
+    
+    value = str.strip(cadena)
+    
+    if not value:
+        return 0
+    
+    c = str.split(value, ",")
+    
+    if len(c) != 2:
+        return 0
+    
+    if not isInt(c[0]):
+        return 0
+    
+    if not isInt(c[1]):
+        return 0
+
+def isPair(value):
+    
+    if type(value) not in (tuple, list):
+        return 0
+    
+    if len(value) != 2:
+        return 0
         
+    for i in value:
+        if type(i) not in (int,):
+            return 0
+    
+    return 1
+    
+def isPairList(cadena):
+    
+    value = str.strip(cadena)
+    
+    if not value:
+        return 0
+    
+    try:
+        x = ast.literal_eval(value)
+    except:
+        return 0
+    
+    if type(x) not in (tuple, list):
+        return 0
+    
+    if type(x[0]) not in (tuple, list):
+        #x = (0,1)
+        if not isPair(x):
+            return 0
+            
+        return 1
+    
+    for thisPair in x:
+        if not isPair(thisPair):
+            return 0
+        
+    return 1
+
+def isMultiList(cadena):
+    
+    value = str.strip(cadena)
+    
+    if not value:
+        return 0
+    
+    try:
+        x = ast.literal_eval(value)
+    except:
+        return 0
+    
+    if type(x) not in (tuple, list):
+        return 0
+    
+    if type(x[0]) not in (int, tuple, list):
+        return 0
+    
+    for thisList in x:
+        if type(thisList) not in (tuple, list):
+            return 0
+        
+    return 1
+
+def getCode(cadena):
+    
+    if not isMultiList(cadena):
+        return None
+    
+    try:
+        x = ast.literal_eval(value)
+    except:
+        return 0
+    
+    if type(x[0]) not in (tuple, list):
+        return [x]
+    
+    return x
+    
+    
 class BasicWindow(QMainWindow, Ui_BasicWindow):
     """
     """
@@ -113,9 +258,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.idImagspectraHeis = 0
         self.idImagrtiHeis = 0
         
+        self.dateList = []
         self.dataPath = None
-        self.online = 0
-        self.walk = 0
         self.create = False
         self.selectedItemTree = None
         self.controllerThread = None
@@ -307,49 +451,94 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         SELECCION DEL MODO DE LECTURA ON=1, OFF=0
         """
         if index == 0:
-           self.online = 0 
-           self.proDelay.setText("0")
-           self.proSet.setText("")
-           self.proSet.setEnabled(False)
+#            self.proDelay.setText("0")
+           self.proSet.setEnabled(True)
            self.proDelay.setEnabled(False)
         elif index == 1:
-            self.online = 1
             self.proSet.setText("")
-            self.proDelay.setText("5")
-            self.proSet.setEnabled(True)
+#             self.proDelay.setText("5")
+            self.proSet.setEnabled(False)
             self.proDelay.setEnabled(True) 
 
-    @pyqtSignature("int")
-    def on_proComDataType_activated(self, index):
-        """
-        Voltage or Spectra
-        """
+    
+    def __setRawDataWindow(self):
+
+        self.__setPDataWindow()
+        
+        self.frame_data.show()
+        
+        self.labnTxs.show()
+        self.pronTxs.show()
+        
+        self.labByBlock.show()
+        self.proComByBlock.show()
+    
+    def __setPDataWindow(self):
+
+        self.labelIPPKm.hide()
+        self.proIPPKm.hide()
+        
         self.labelSet.show()
         self.proSet.show()
         
         self.labExpLabel.show()
         self.proExpLabel.show()
         
-        self.labelIPPKm.hide()
-        self.proIPPKm.hide()
+        self.labelWalk.show()
+        self.proComWalk.show()
+        
+        self.frame_data.hide()
+        
+#         self.labnTxs.hide()
+#         self.pronTxs.hide()
+#         
+#         self.labByBlock.hide()
+#         self.proComByBlock.hide()
+        
+    def __setUSRPDataWindow(self):
+        
+        self.frame_data.show()
+        
+        self.labelIPPKm.show()
+        self.proIPPKm.show()
+        
+        self.labelSet.hide()
+        self.proSet.hide()
+        
+        self.labExpLabel.hide()
+        self.proExpLabel.hide()
+        
+        self.labelWalk.hide()
+        self.proComWalk.hide()
+        
+        self.labnTxs.hide()
+        self.pronTxs.hide()
+        
+        self.labByBlock.hide()
+        self.proComByBlock.hide()
+    
+    @pyqtSignature("int")
+    def on_proComDataType_activated(self, index):
+        """
+        Voltage or Spectra
+        """
         
         if index == 0:
             extension = '.r'
+            self.__setRawDataWindow()
+            
         elif index == 1:
             extension = '.pdata'
+            self.__setPDataWindow()
+            
+            
         elif index == 2:
             extension = '.fits'
+            self.__setPDataWindow()
+            
         elif index == 3:
             extension = '.hdf5'
-            
-            self.labelIPPKm.show()
-            self.proIPPKm.show()
-            
-            self.labelSet.hide()
-            self.proSet.hide()
-            
-            self.labExpLabel.hide()
-            self.proExpLabel.hide()
+            self.__setUSRPDataWindow()
             
         self.proDataType.setText(extension)
 
@@ -359,10 +548,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
          
         """
         if index == 0:
-           self.walk = 0
+           self.proExpLabel.setEnabled(False)
         elif index == 1:
-            self.walk = 1
-
+            self.proExpLabel.setEnabled(True)
+            
     @pyqtSignature("")
     def on_proToolPath_clicked(self):
         """
@@ -409,11 +598,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.console.clear()
         
-        parameter_list = self.checkInputsProject()
+        projectParms = self.__getParmsFromProjectWindow()
         
-        parms_ok, project_name, datatype, ext, data_path, read_mode, delay, walk, set, expLabel = parameter_list
-        
-        if read_mode == "Offline":
+        if not projectParms.online:
             self.proComStartDate.clear()
             self.proComEndDate.clear()
             self.proComStartDate.setEnabled(True)
@@ -422,7 +609,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.proEndTime.setEnabled(True)
             self.frame_2.setEnabled(True)
                 
-        if read_mode == "Online":
+        else:
             self.proComStartDate.addItem("1960/01/30")
             self.proComEndDate.addItem("2018/12/31")
             self.proComStartDate.setEnabled(False)
@@ -431,7 +618,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.proEndTime.setEnabled(False)
             self.frame_2.setEnabled(True)
         
-        if self.loadDays(data_path, ext, walk, expLabel) == []:
+        if self.loadDays(projectParms.dpath, projectParms.ext, projectParms.walk, projectParms.expLabel) == []:
             self._disable_save_button()
             self._disable_play_button()
             self.proOk.setEnabled(False)
@@ -537,7 +724,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if  p0 == 0:
             self.volOpComChannels.setEnabled(False)
             self.volOpChannel.setEnabled(False)
-            self.volOpChannel.clear()
+#             self.volOpChannel.clear()
 
     @pyqtSignature("int")
     def on_volOpCebHeights_stateChanged(self, p0):
@@ -550,7 +737,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 
         if  p0 == 0:
             self.volOpHeights.setEnabled(False)
-            self.volOpHeights.clear()
+#             self.volOpHeights.clear()
             self.volOpComHeights.setEnabled(False)
 
     @pyqtSignature("int")
@@ -563,7 +750,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
   
          if  p0 == 0:
             self.volOpFilter.setEnabled(False)
-            self.volOpFilter.clear()
+#             self.volOpFilter.clear()
 
     @pyqtSignature("int")
     def on_volOpCebProfile_stateChanged(self, p0):
@@ -577,7 +764,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if  p0 == 0:
             self.volOpComProfile.setEnabled(False)
             self.volOpProfile.setEnabled(False)
-            self.volOpProfile.clear()
+#             self.volOpProfile.clear()
 
     @pyqtSignature("int")
     def on_volOpComProfile_activated(self, index):
@@ -689,7 +876,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpFlip.setEnabled(True)
         if  p0 == 0:
             self.volOpFlip.setEnabled(False)
-            self.volOpFlip.clear()
+#             self.volOpFlip.clear()
                           
     @pyqtSignature("int")
     def on_volOpCebCohInt_stateChanged(self, p0):
@@ -700,7 +887,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpCohInt.setEnabled(True)
         if  p0 == 0:
             self.volOpCohInt.setEnabled(False)
-            self.volOpCohInt.clear()
+#             self.volOpCohInt.clear()
             
     @pyqtSignature("int")
     def on_volOpCebRadarfrequency_stateChanged(self, p0):
@@ -747,7 +934,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self._disable_save_button()
         
         self.console.clear()
-        self.console.append("Checking input parameters ...")
+        self.console.append("Checking input parameters:\n")
         
         puObj = self.getSelectedItemObj()
         puObj.removeOperations()
@@ -757,25 +944,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'float'
             name_operation = 'setRadarFrequency'
             name_parameter = 'frequency'
-            if not value == "":
-                try:
-                    radarfreq = float(self.volOpRadarfrequency.text())*1e6
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid value '%s' for Radar Frequency" %value)
-                    return 0
+            
+            if not isFloat(value):
+                self.console.append("Invalid value '%s' for Radar Frequency" %value)
+                return 0
                 
-                opObj = puObj.addOperation(name=name_operation)
-                if not opObj.addParameter(name=name_parameter, value=radarfreq, format=format):
-                    self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
-                    return 0
+            opObj = puObj.addOperation(name=name_operation)
+            opObj.addParameter(name=name_parameter, value=radarfreq, format=format)
         
         if self.volOpCebChannels.isChecked():
-            value = str(self.volOpChannel.text())
-            
-            if value == "":
-                print "Please fill channel list"
-                return 0
             
             format = 'intlist'
             if self.volOpComChannels.currentIndex() == 0:            
@@ -784,18 +961,22 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             else:       
                 name_operation = "selectChannelsByIndex"
                 name_parameter = 'channelIndexList'
-                
-            opObj = puObj.addOperation(name=name_operation)
-            if not opObj.addParameter(name=name_parameter, value=value, format=format):
+            
+            value = str(self.volOpChannel.text())
+            
+            if not isIntList(value):
                 self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
                 return 0
+            
+            opObj = puObj.addOperation(name=name_operation)
+            opObj.addParameter(name=name_parameter, value=value, format=format)
             
         if self.volOpCebHeights.isChecked():
            value = str(self.volOpHeights.text())
            
-           if value == "":
-                print "Please fill height range"
-                return 0
+           if not isFloatRange(value):
+               self.console.append("Invalid value '%s' for Height range" %value)
+               return 0
             
            valueList = value.split(',')
            
@@ -816,100 +997,63 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            
         if self.volOpCebFilter.isChecked():
            value = str(self.volOpFilter.text())
-           if value == "":
-                print "Please fill filter value"
+           
+           if not isInt(value):
+                self.console.append("Invalid value '%s' for Filter" %value)
                 return 0
             
            format = 'int'
            name_operation = 'filterByHeights'
            name_parameter = 'window'
            opObj = puObj.addOperation(name=name_operation)
-           if not opObj.addParameter(name=name_parameter, value=value, format=format):
-                self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
-                return 0
+           opObj.addParameter(name=name_parameter, value=value, format=format)
 
         if self.volOpCebProfile.isChecked():
             value = str(self.volOpProfile.text())
             
-            if value == "":
-                print "Please fill profile value"
-                return 0
-            
             format = 'intlist'
             optype = 'other'
             name_operation = 'ProfileSelector'
+            
             if self.volOpComProfile.currentIndex() == 0:
                 name_parameter = 'profileList'
             if self.volOpComProfile.currentIndex() == 1:
                 name_parameter = 'profileRangeList'
             if self.volOpComProfile.currentIndex() == 2:
                 name_parameter = 'rangeList'
-                
+            
+            if not isIntList(value):
+                self.console.append("Invalid value '%s' for %s" %(value, name_parameter) )
+                return 0
+            
             opObj = puObj.addOperation(name='ProfileSelector', optype='other')
-            if not opObj.addParameter(name=name_parameter, value=value, format=format):
-                self.console.append("Invalid value '%s' for %s" %(value,name_parameter))
-                return 0 
+            opObj.addParameter(name=name_parameter, value=value, format=format)
         
         if self.volOpCebDecodification.isChecked():
             name_operation = 'Decoder'
             opObj = puObj.addOperation(name=name_operation, optype='other')  
             
-            #User defined
-            nBaud = None
-            nCode = None
-            
-            code = str(self.volOpCode.text())
-            try:
-                code_tmp = ast.literal_eval(code)
-            except:
-                code_tmp = []
-            
-            if len(code_tmp) > 0:
-            
-                if type(code_tmp) not in (tuple, list):
-                    self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
-                    return 0
-                    
-                if len(code_tmp) > 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1], [1,1,-1] ]
-                    nBaud = len(code_tmp[0])
-                    nCode = len(code_tmp)
-                elif len(code_tmp) == 1 and type(code_tmp[0]) in (tuple, list): #[ [1,-1,1] ]
-                    nBaud = len(code_tmp[0])
-                    nCode = 1
-                elif type(code_tmp[0]) in (int, float): #[1,-1,1]  or (1,-1,1)
-                    nBaud = len(code_tmp)
-                    nCode = 1
-                else:
-                    self.console.append("Please write a right value for Code (Exmaple: [1,1,-1], [1,-1,1])")
-                    return 0
-                    
-                if not nBaud or not nCode:
-                    self.console.append("Please write a right value for Code")
-                    return 0
-        
-                code = code.replace("(", "")
-                code = code.replace(")", "")
-                code = code.replace("[", "")
-                code = code.replace("]", "")
+            if self.volOpComCode.currentIndex() != 0:
                 
-                if not opObj.addParameter(name='code', value=code, format='intlist'):
-                    self.console.append("Please write a right value for Code")
+                code = str(self.volOpCode.text())
+                
+                if not isMultiList(code):
+                    self.console.append("Please write a valid Code (Example: [1,1,-1], [1,-1,1])")
                     return 0
-                if not opObj.addParameter(name='nCode', value=nCode, format='int'):
-                    self.console.append("Please write a right value for Code")
-                    return 0
-                if not opObj.addParameter(name='nBaud', value=nBaud, format='int'):
-                    self.console.append("Please write a right value for Code")
-                    return 0
+                
+                real_code = getCode(code)
+                nCode = len(real_code)
+                nBaud = len(real_code[0])
+                
+                opObj.addParameter(name='code', value=code, format='intlist')
+                opObj.addParameter(name='nCode', value=nCode, format='int')
+                opObj.addParameter(name='nBaud', value=nBaud, format='int')
             
             name_parameter = 'mode'
             format = 'int'
-            
             value = str(self.volOpComMode.currentIndex())
-                
-            if not opObj.addParameter(name=name_parameter, value=value, format=format):
-                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
-                return 0
+            
+            opObj.addParameter(name=name_parameter, value=value, format=format)
                 
 
         if self.volOpCebFlip.isChecked():
@@ -922,29 +1066,27 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'intlist'
             value = str(self.volOpFlip.text())
             
-            if value != "":
-                if not opObj.addParameter(name=name_parameter, value=value, format=format):
-                    self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
-                    return 0
+            if not isIntList(value):
+                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
+                return 0
+            
+            opObj.addParameter(name=name_parameter, value=value, format=format)
             
         if self.volOpCebCohInt.isChecked():
             name_operation = 'CohInt'
             optype = 'other'
             value = str(self.volOpCohInt.text())
             
-            if value == "":
-                print "Please fill number of coherent integrations"
+            if not isInt(value):
+                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
                 return 0
             
             name_parameter = 'n'
             format = 'int'
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
+            opObj.addParameter(name=name_parameter, value=value, format=format)
             
-            if not opObj.addParameter(name=name_parameter, value=value, format=format):
-                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
-                return 0
-
         if self.volGraphCebshow.isChecked():    
             name_operation = 'Scope'
             optype = 'other'
@@ -964,49 +1106,62 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
 #             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=opObj.id, format=format1)
             
-            channelList = str(self.volGraphChannelList.text()).replace(" ","")
-            xvalue = str(self.volGraphfreqrange.text()).replace(" ","")
-            yvalue = str(self.volGraphHeightrange.text()).replace(" ","")
-
+            channelList = str(self.volGraphChannelList.text()).strip()
+            xvalue = str(self.volGraphfreqrange.text()).strip()
+            yvalue = str(self.volGraphHeightrange.text()).strip()
+            figpath = str(self.volGraphPath.text()).strip()
+            figfile = str(self.volGraphPrefix.text()).strip()
+            
+            if channelList != "":
+                if not isIntList(channelList):
+                    self.console.append("Invalid value '%s' for 'Graphics:ChannelList'" %(channelList))
+                    return 0
+            
+            if xvalue != "":
+                if not isFloatRange(xvalue):
+                    self.console.append("Invalid value '%s' for 'Graphics:Frequncy-Range'" %(xvalue))
+                    return 0
+            
+            if yvalue != "":
+                if not isFloatRange(yvalue):
+                    self.console.append("Invalid value '%s' for 'Graphics:Height-Range'" %(yvalue))
+                    return 0
+                
+            
             if channelList:
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
 
             if xvalue:
                 xvalueList = xvalue.split(',')
-                try:
-                   value0 = float(xvalueList[0])
-                   value1 = float(xvalueList[1])  
-                except:
-                    return 0
-                opObj.addParameter(name='xmin', value=value0, format='float')
-                opObj.addParameter(name='xmax', value=value1, format='float')               
                 
+                opObj.addParameter(name='xmin', value=xvalueList[0], format='float')
+                opObj.addParameter(name='xmax', value=xvalueList[1], format='float')               
                 
-            if not yvalue == "":
+            if yvalue:
                yvalueList = yvalue.split(",")
-               try:
-                   value0 = int(yvalueList[0])
-                   value1 = int(yvalueList[1])
-               except:
-                    return 0
                 
-               opObj.addParameter(name='ymin', value=value0, format='int')
-               opObj.addParameter(name='ymax', value=value1, format='int')
+               opObj.addParameter(name='ymin', value=yvalueList[0], format='int')
+               opObj.addParameter(name='ymax', value=yvalueList[1], format='int')
                    
             if self.volGraphCebSave.isChecked():
                 checkPath = True
+                
                 opObj.addParameter(name='save', value='1', format='int')
-                opObj.addParameter(name='figpath', value=str(self.volGraphPath.text()), format='str')
-                value = str(self.volGraphPrefix.text()).replace(" ","")
-                if value:
+                opObj.addParameter(name='figpath', value=figpath, format='str')
+                
+                if figfile:
                    opObj.addParameter(name='figfile', value=value, format='str')
-
-        localfolder = None
+                   
         if checkPath:
-            localfolder = str(self.volGraphPath.text())
-            if localfolder == '':
+            
+            if not figpath:
                 self.console.clear()
                 self.console.append("Graphic path should be defined")
+                return 0
+            
+            if os.path.isdir(figpath):
+                self.console.clear()
+                self.console.append("Graphic path does not exist, it has to be created")
                 return 0
             
         # if something happend 
@@ -1099,7 +1254,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if  p0 == 2:
             self.specOpRadarfrequency.setEnabled(True)
         if  p0 == 0:
-            self.specOpRadarfrequency.clear()
+#             self.specOpRadarfrequency.clear()
             self.specOpRadarfrequency.setEnabled(False)
     
     
@@ -1110,9 +1265,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         """
         if  p0 == 2:
           #  self.specOpnFFTpoints.setEnabled(True)
+            self.specOpComCrossSpectra.setEnabled(True)
             self.specOppairsList.setEnabled(True)
+            
         if  p0 == 0:
           #  self.specOpnFFTpoints.setEnabled(False)
+            self.specOpComCrossSpectra.setEnabled(False)
             self.specOppairsList.setEnabled(False)
             
     @pyqtSignature("int")
@@ -1184,7 +1342,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self._disable_save_button()
         
         self.console.clear()
-        self.console.append("Checking input parameters ...")
+        self.console.append("Checking input parameters:\n")
         
         projectObj = self.getSelectedProjectObj() 
         
@@ -1204,7 +1362,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             if not isFloat(value):
                 self.console.clear()
-                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                self.console.append("Invalid value [%s] for '%s'" %(value, name_parameter))
                 return 0
             
             radarfreq = float(value)*1e6
@@ -1219,7 +1377,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             value = str(self.specOpnFFTpoints.text())
             
             if not isInt(value):
-                self.console.append("Invalid value '%s' for '%s'" %(value, 'nFFTPoints'))
+                self.console.append("Invalid value [%s] for '%s'" %(value, 'nFFTPoints'))
                 return 0
             
             puObj.addParameter(name='nFFTPoints', value=value, format='int')
@@ -1241,29 +1399,22 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'pairslist'         
             value = str(self.specOppairsList.text())
             
-            if value == "":
-                print "Please fill the pairs list field"
+            if not isPairList(value):
+                self.console.append("Invalid value [%s] for '%s'" %(value, name_parameter))
                 return 0
             
-            if not puObj.addParameter(name=name_parameter, value=value, format=format):
-                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
-                return 0
+            puObj.addParameter(name=name_parameter, value=value, format=format)
                                 
         if self.specOpCebHeights.isChecked():
             value = str(self.specOpHeights.text())
             
-            if value == "":
-                self.console.append("Empty value for '%s'" %(value, "Height range"))
+            if not isFloatRange(value):
+                self.console.append("Invalid value [%s] for Height range" %value)
                 return 0
-            
+                
             valueList = value.split(',')
-            format = 'float'
             value0 = valueList[0]
             value1 = valueList[1]
-            
-            if not isFloat(value0) or not isFloat(value1):
-                self.console.append("Invalid value '%s' for '%s'" %(value, "Height range"))
-                return 0
             
             if self.specOpComHeights.currentIndex() == 0:
                 name_operation = 'selectHeights'
@@ -1273,7 +1424,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 name_operation = 'selectHeightsByIndex'
                 name_parameter1 = 'minIndex'
                 name_parameter2 = 'maxIndex'
-                
+            
+            format = 'float'
+            
             opObj = puObj.addOperation(name=name_operation)    
             opObj.addParameter(name=name_parameter1, value=value0, format=format)
             opObj.addParameter(name=name_parameter2, value=value1, format=format) 
@@ -1290,12 +1443,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             format = 'intlist'
             value = str(self.specOpChannel.text())
             
-            if value == "":
-                print "Please fill channel list"
-                return 0
-            
-            if not isList(value):
-                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+            if not isIntList(value):
+                self.console.append("Invalid value [%s] for '%s'" %(value, name_parameter))
                 return 0
                 
             opObj = puObj.addOperation(name=name_operation)
@@ -1314,13 +1463,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 format = 'int'
                 
             value = str(self.specOpIncoherent.text())
-            
-            if value == "":
-                print "Please fill Incoherent integration value"
-                return 0
                
             if not isFloat(value):
-                self.console.append("Invalid value '%s' for '%s'" %(value, name_parameter))
+                self.console.append("Invalid value [%s] for '%s'" %(value, name_parameter))
                 return 0
 
             opObj = puObj.addOperation(name=name_operation, optype=optype)
@@ -1330,10 +1475,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             name_operation = 'removeDC'
             name_parameter = 'mode'
             format = 'int'
+            
             if self.specOpComRemoveDC.currentIndex() == 0:
                 value = 1
             else:
                 value = 2
+                
             opObj = puObj.addOperation(name=name_operation)
             opObj.addParameter(name=name_parameter, value=value, format=format)
             
@@ -1414,20 +1561,21 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                    self.console.append("Get Noise Operation only accepts  4 parameters")
                    return 0
 
-        channelList = str(self.specGgraphChannelList.text()).replace(" ","")
-        vel_range = str(self.specGgraphFreq.text()).replace(" ","")
-        hei_range = str(self.specGgraphHeight.text()).replace(" ","")
-        db_range = str(self.specGgraphDbsrange.text()).replace(" ","")
+        channelList = str(self.specGgraphChannelList.text()).strip()
+        vel_range = str(self.specGgraphFreq.text()).strip()
+        hei_range = str(self.specGgraphHeight.text()).strip()
+        db_range = str(self.specGgraphDbsrange.text()).strip()
         
-        trange = str(self.specGgraphTminTmax.text()).replace(" ","")
-        magrange = str(self.specGgraphmagnitud.text()).replace(" ","")
-        phaserange = str(self.specGgraphPhase.text()).replace(" ","")
-#         timerange = str(self.specGgraphTimeRange.text()).replace(" ","")
+        trange = str(self.specGgraphTminTmax.text()).strip()
+        magrange = str(self.specGgraphmagnitud.text()).strip()
+        phaserange = str(self.specGgraphPhase.text()).strip()
+#         timerange = str(self.specGgraphTimeRange.text()).strip()
         
-        figpath = str(self.specGraphPath.text())
-        figfile = str(self.specGraphPrefix.text()).replace(" ","")
+        figpath = str(self.specGraphPath.text()).strip()
+        figfile = str(self.specGraphPrefix.text()).strip()
+        
         try:
-            wrperiod = int(str(self.specGgraphftpratio.text()).replace(" ",""))
+            wrperiod = int(str(self.specGgraphftpratio.text()).strip())
         except:
             wrperiod = None
         
@@ -1437,54 +1585,55 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj = puObj.addOperation(name='SpectraPlot', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')      
             
-            if not channelList == '':
+            if channelList:
                 
                 if not isList(channelList):
-                    self.console.append("Invalid channelList")
+                    self.console.append("Invalid value [%s] for 'Graphic:ChannelList" %(channelList))
                     return 0
                 
                 opObj.addParameter(name='channelList', value=channelList, format='intlist') 
            
-            if not vel_range == '':
-               xvalueList = vel_range.split(',')
-               try:
-                   value1 = float(xvalueList[0])
-                   value2 = float(xvalueList[1])
-               except:
-                   self.console.clear()
-                   self.console.append("Invalid velocity/frequency range")
-                   return 0
-               
-               opObj.addParameter(name='xmin', value=value1, format='float')
-               opObj.addParameter(name='xmax', value=value2, format='float')
-               
-            if not hei_range == '':
-              yvalueList = hei_range.split(",")
-              try:
-                   value1 = float(yvalueList[0])
-                   value2 = float(yvalueList[1])
-              except:
-                  self.console.clear()
-                  self.console.append("Invalid height range")
-                  return 0
+            if vel_range:
+                
+                if not isFloatRange(vel_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:Velocity-Range" %(vel_range))
+                    return 0
+                
+                xvalueList = vel_range.split(',')
+                value1 = float(xvalueList[0])
+                value2 = float(xvalueList[1])
+                
+                opObj.addParameter(name='xmin', value=value1, format='float')
+                opObj.addParameter(name='xmax', value=value2, format='float')
+
+            if hei_range:
+                
+                if not isFloatRange(hei_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:Height-Range" %(hei_range))
+                    return 0
+                
+                yvalueList = hei_range.split(",")
+                value1 = float(yvalueList[0])
+                value2 = float(yvalueList[1])
               
-              opObj.addParameter(name='ymin', value=value1, format='float')
-              opObj.addParameter(name='ymax', value=value2, format='float') 
-            
-            if not db_range == '':
+                opObj.addParameter(name='ymin', value=value1, format='float')
+                opObj.addParameter(name='ymax', value=value2, format='float') 
+
+            if db_range:
+                
+                if not isFloatRange(db_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:dB-Range" %(db_range))
+                    return 0
+                
                 zvalueList = db_range.split(",")
-                try:
-                   value1 = float(zvalueList[0])
-                   value2 = float(zvalueList[1])
-                except:
-                   self.console.clear()
-                   self.console.append("Invalid db range")
-                   return 0
-               
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
+                
                 opObj.addParameter(name='zmin', value=value1, format='float')
                 opObj.addParameter(name='zmax', value=value2, format='float')      
 
             if self.specGraphSaveSpectra.isChecked():
+                
                 checkPath = True
                 opObj.addParameter(name='save', value=1 , format='bool')
                 opObj.addParameter(name='figpath', value=figpath, format='str')
@@ -1494,79 +1643,77 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     opObj.addParameter(name='wr_period', value=wrperiod,format='int')
                         
             if self.specGraphftpSpectra.isChecked():
-               opObj.addParameter(name='ftp', value='1', format='int')
-               self.addFTPConf2Operation(puObj, opObj)
-               addFTP = True
+                
+                opObj.addParameter(name='ftp', value='1', format='int')
+                self.addFTPConf2Operation(puObj, opObj)
+                addFTP = True
                
         if self.specGraphCebCrossSpectraplot.isChecked():
             
             opObj = puObj.addOperation(name='CrossSpectraPlot', optype='other')
-#             opObj.addParameter(name='power_cmap', value='jet', format='str')
-#             opObj.addParameter(name='coherence_cmap', value='jet', format='str')
-#             opObj.addParameter(name='phase_cmap', value='RdBu_r', format='str')
             opObj.addParameter(name='id', value=opObj.id, format='int')
             
-            if not vel_range == '':
-                xvalueList = vel_range.split(',')
-                try:
-                    value1 = float(xvalueList[0])
-                    value2 = float(xvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid velocity/frequency range")
-                    return 0
-                 
-                opObj.addParameter(name='xmin', value=value1, format='float')
-                opObj.addParameter(name='xmax', value=value2, format='float')
-
-            if not hei_range == '':
-                yvalueList = hei_range.split(",")
-                try:
-                     value1 = float(yvalueList[0])
-                     value2 = float(yvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid height range")
-                    return 0
-                 
-                opObj.addParameter(name='ymin', value=value1, format='float')
-                opObj.addParameter(name='ymax', value=value2, format='float')
-        
-            if not db_range == '':
-                zvalueList = db_range.split(",")
-                try:
-                    value1 = float(zvalueList[0])
-                    value2 = float(zvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid db range")
+            if vel_range:
+                
+                if not isFloatRange(vel_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:Velocity-Range" %(vel_range))
                     return 0
                 
-                opObj.addParameter(name='zmin', value=value1, format='float')
-                opObj.addParameter(name='zmax', value=value2, format='float')
-
-            if not magrange == '':
-                zvalueList = magrange.split(",")
-                try:
-                    value1 = float(zvalueList[0])
-                    value2 = float(zvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid magnitude range")
+                xvalueList = vel_range.split(',')
+                value1 = float(xvalueList[0])
+                value2 = float(xvalueList[1])
+                
+                opObj.addParameter(name='xmin', value=value1, format='float')
+                opObj.addParameter(name='xmax', value=value2, format='float')
+            
+            if hei_range:
+                
+                if not isFloatRange(hei_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:Height-Range" %(hei_range))
                     return 0
+                
+                yvalueList = hei_range.split(",")
+                value1 = float(yvalueList[0])
+                value2 = float(yvalueList[1])
+              
+                opObj.addParameter(name='ymin', value=value1, format='float')
+                opObj.addParameter(name='ymax', value=value2, format='float') 
+
+            if db_range:
+                
+                if not isFloatRange(db_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:dB-Range" %(db_range))
+                    return 0
+                
+                zvalueList = db_range.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
+                
+                opObj.addParameter(name='zmin', value=value1, format='float')
+                opObj.addParameter(name='zmax', value=value2, format='float')  
+
+            if magrange:
+                
+                if not isFloatRange(magrange):
+                    self.console.append("Invalid value [%s] for 'Graphic:Magnitud-Range" %(magrange))
+                    return 0
+                
+                zvalueList = magrange.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
                 
                 opObj.addParameter(name='coh_min', value=value1, format='float')
                 opObj.addParameter(name='coh_max', value=value2, format='float')
                 
-            if not phaserange == '':
-                zvalueList = phaserange.split(",")
-                try:
-                    value1 = float(zvalueList[0])
-                    value2 = float(zvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid phase range")
+            if phaserange:
+                
+                if not isFloatRange(phaserange):
+                    self.console.append("Invalid value [%s] for 'Graphic:Phase-Range" %(phaserange))
                     return 0
+                
+                zvalueList = phaserange.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
                 
                 opObj.addParameter(name='phase_min', value=value1, format='float')
                 opObj.addParameter(name='phase_max', value=value2, format='float')
@@ -1590,60 +1737,52 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj = puObj.addOperation(name='RTIPlot', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')
             
-            if not channelList == '':
-                if not isList(channelList):
-                    self.console.append("Invalid channelList")
+            if channelList:
+                
+                if not isIntList(channelList):
+                    self.console.append("Invalid value [%s] for 'Graphic:ChannelList" %(channelList))
                     return 0
+                
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
             
-            if not trange == '':
-                xvalueList = trange.split(',')
-                try:
-                    value1 = float(xvalueList[0])
-                    value2 = float(xvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid time range")
+            if trange:
+                
+                if not isFloatRange(trange):
+                    self.console.append("Invalid value [%s] for 'Graphic:Time-Range" %(trange))
                     return 0
-                    
+                
+                zvalueList = trange.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
+                
                 opObj.addParameter(name='xmin', value=value1, format='float')
                 opObj.addParameter(name='xmax', value=value2, format='float')
-            
-#             if not timerange == '':
-#                 try:
-#                     timerange = float(timerange)
-#                 except:
-#                     self.console.clear()
-#                     self.console.append("Invalid time range")
-#                     return 0
-#                 
-#                 opObj.addParameter(name='timerange', value=timerange, format='float')
                 
-            if not hei_range == '':
+            if hei_range:
+                
+                if not isFloatRange(hei_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:Height-Range" %(hei_range))
+                    return 0
+                
                 yvalueList = hei_range.split(",")
-                try:
-                    value1 = float(yvalueList[0])
-                    value2 = float(yvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid height range")
-                    return 0
-                    
+                value1 = float(yvalueList[0])
+                value2 = float(yvalueList[1])
+              
                 opObj.addParameter(name='ymin', value=value1, format='float')
-                opObj.addParameter(name='ymax', value=value2, format='float')   
-                        
-            if not db_range == '':
-                zvalueList = db_range.split(",")
-                try:
-                    value1 = float(zvalueList[0])
-                    value2 = float(zvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid db range")
+                opObj.addParameter(name='ymax', value=value2, format='float') 
+
+            if db_range:
+                
+                if not isFloatRange(db_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:dB-Range" %(db_range))
                     return 0
+                
+                zvalueList = db_range.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
                 
                 opObj.addParameter(name='zmin', value=value1, format='float')
-                opObj.addParameter(name='zmax', value=value2, format='float')     
+                opObj.addParameter(name='zmax', value=value2, format='float')    
                 
             if self.specGraphSaveRTIplot.isChecked():
                 checkPath = True
@@ -1661,70 +1800,57 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                                  
         if self.specGraphCebCoherencmap.isChecked():
            
-            opObj = puObj.addOperation(name='CoherenceMap', optype='other')
-#             opObj.addParameter(name=name_parameter, value=value, format=format)
-            # opObj.addParameter(name='coherence_cmap', value='jet', format='str')
-            # opObj.addParameter(name='phase_cmap', value='RdBu_r', format='str')     
+            opObj = puObj.addOperation(name='CoherenceMap', optype='other')    
             opObj.addParameter(name='id', value=opObj.id, format='int')
-            
-#             if not timerange == '':
-#                 try:
-#                     timerange = int(timerange)
-#                 except:
-#                     self.console.clear()
-#                     self.console.append("Invalid time range")
-#                     return 0
-#                 
-#                 opObj.addParameter(name='timerange', value=timerange, format='int')
                 
-            if not trange == '':
-                xvalueList = trange.split(',')
-                try:
-                    value1 = float(xvalueList[0])
-                    value2 = float(xvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid time range")
+            if trange:
+                
+                if not isFloatRange(trange):
+                    self.console.append("Invalid value [%s] for 'Graphic:Time-Range" %(trange))
                     return 0
+                
+                zvalueList = trange.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
                 
                 opObj.addParameter(name='xmin', value=value1, format='float')
-                opObj.addParameter(name='xmax', value=value2, format='float')  
-            
-            if not hei_range == '':
+                opObj.addParameter(name='xmax', value=value2, format='float')
+                
+            if hei_range:
+                
+                if not isFloatRange(hei_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:Height-Range" %(hei_range))
+                    return 0
+                
                 yvalueList = hei_range.split(",")
-                try:
-                    value1 = float(yvalueList[0])
-                    value2 = float(yvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid height range")
-                    return 0
-                   
+                value1 = float(yvalueList[0])
+                value2 = float(yvalueList[1])
+              
                 opObj.addParameter(name='ymin', value=value1, format='float')
-                opObj.addParameter(name='ymax', value=value2, format='float')   
+                opObj.addParameter(name='ymax', value=value2, format='float') 
                           
-            if not magrange == '':
-                zvalueList = magrange.split(",")
-                try:
-                    value1 = float(zvalueList[0])
-                    value2 = float(zvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid magnitude range")
+            if magrange:
+                
+                if not isFloatRange(magrange):
+                    self.console.append("Invalid value [%s] for 'Graphic:Magnitud-Range" %(magrange))
                     return 0
+                
+                zvalueList = magrange.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
                 
                 opObj.addParameter(name='zmin', value=value1, format='float')
                 opObj.addParameter(name='zmax', value=value2, format='float')
-            
-            if not phaserange == '':
-                zvalueList = phaserange.split(",")
-                try:
-                    value1 = float(zvalueList[0])
-                    value2 = float(zvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid phase range")
+                
+            if phaserange:
+                
+                if not isFloatRange(phaserange):
+                    self.console.append("Invalid value [%s] for 'Graphic:Phase-Range" %(phaserange))
                     return 0
+                
+                zvalueList = phaserange.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
                 
                 opObj.addParameter(name='phase_min', value=value1, format='float')
                 opObj.addParameter(name='phase_max', value=value2, format='float')
@@ -1745,55 +1871,56 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            
         if self.specGraphPowerprofile.isChecked():
             
-           opObj = puObj.addOperation(name='PowerProfilePlot', optype='other')
-           opObj.addParameter(name='id', value=opObj.id, format='int')
-           
-           if not channelList == '':
-               if not isList(channelList):
-                    self.console.append("Invalid channelList")
+            opObj = puObj.addOperation(name='PowerProfilePlot', optype='other')
+            opObj.addParameter(name='id', value=opObj.id, format='int')
+            
+            if channelList:
+                
+                if not isList(channelList):
+                    self.console.append("Invalid value [%s] for 'Graphic:ChannelList" %(channelList))
                     return 0
                 
-               opObj.addParameter(name='channelList', value=channelList, format='intlist') 
-           
-           if not db_range == '':
-               xvalueList = db_range.split(',')
-               try:
-                    value1 = float(xvalueList[0])
-                    value2 = float(xvalueList[1])
-               except:
-                    self.console.clear()
-                    self.console.append("Invalid db range")
+                opObj.addParameter(name='channelList', value=channelList, format='intlist')
+
+            if hei_range:
+                
+                if not isFloatRange(hei_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:Height-Range" %(hei_range))
                     return 0
                 
-               opObj.addParameter(name='xmin', value=value1, format='float')
-               opObj.addParameter(name='xmax', value=value2, format='float')     
-  
-           if not hei_range == '':
                 yvalueList = hei_range.split(",")
-                try:
-                     value1 = float(yvalueList[0])
-                     value2 = float(yvalueList[1])
-                except:
-                     self.console.clear()
-                     self.console.append("Invalid height range")
-                     return 0
-                
+                value1 = float(yvalueList[0])
+                value2 = float(yvalueList[1])
+              
                 opObj.addParameter(name='ymin', value=value1, format='float')
-                opObj.addParameter(name='ymax', value=value2, format='float')
- 
-           if self.specGraphSavePowerprofile.isChecked():
-                checkPath = True
-                opObj.addParameter(name='save', value='1', format='bool')
-                opObj.addParameter(name='figpath', value=figpath, format='str')
-                if figfile:
-                   opObj.addParameter(name='figfile', value=value, format='str')
-                if wrperiod:
-                    opObj.addParameter(name='wr_period', value=wrperiod,format='int')
+                opObj.addParameter(name='ymax', value=value2, format='float') 
+
+            if db_range:
                 
-           if self.specGraphftpPowerprofile.isChecked():
-              opObj.addParameter(name='ftp', value='1', format='int')
-              self.addFTPConf2Operation(puObj, opObj)
-              addFTP = True
+                if not isFloatRange(db_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:dB-Range" %(db_range))
+                    return 0
+                
+                zvalueList = db_range.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
+                
+                opObj.addParameter(name='xmin', value=value1, format='float')
+                opObj.addParameter(name='xmax', value=value2, format='float')  
+                
+            if self.specGraphSavePowerprofile.isChecked():
+                 checkPath = True
+                 opObj.addParameter(name='save', value='1', format='bool')
+                 opObj.addParameter(name='figpath', value=figpath, format='str')
+                 if figfile:
+                    opObj.addParameter(name='figfile', value=value, format='str')
+                 if wrperiod:
+                     opObj.addParameter(name='wr_period', value=wrperiod,format='int')
+                 
+            if self.specGraphftpPowerprofile.isChecked():
+               opObj.addParameter(name='ftp', value='1', format='int')
+               self.addFTPConf2Operation(puObj, opObj)
+               addFTP = True
            # rti noise
               
         if self.specGraphCebRTInoise.isChecked():
@@ -1801,47 +1928,39 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj = puObj.addOperation(name='Noise', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')
             
-            if not channelList == '':
+            if channelList:
+                
                 if not isList(channelList):
-                    self.console.append("Invalid channelList")
+                    self.console.append("Invalid value [%s] for 'Graphic:ChannelList" %(channelList))
                     return 0
+                
                 opObj.addParameter(name='channelList', value=channelList, format='intlist')
             
-#             if not timerange == '':
-#                 try:
-#                     timerange = float(timerange)
-#                 except:
-#                     self.console.clear()
-#                     self.console.append("Invalid time range")
-#                     return 0
-#                 
-#                 opObj.addParameter(name='timerange', value=timerange, format='float')
+            if trange:
                 
-            if not trange == '':
-                xvalueList = trange.split(',')
-                try:
-                    value1 = float(xvalueList[0])
-                    value2 = float(xvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid time range")
+                if not isFloatRange(trange):
+                    self.console.append("Invalid value [%s] for 'Graphic:Time-Range" %(trange))
                     return 0
-                    
+                
+                zvalueList = trange.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
+                
                 opObj.addParameter(name='xmin', value=value1, format='float')
                 opObj.addParameter(name='xmax', value=value2, format='float')
-            
-            if not db_range == '':
-                yvalueList = db_range.split(",")
-                try:
-                    value1 = float(yvalueList[0])
-                    value2 = float(yvalueList[1])
-                except:
-                    self.console.clear()
-                    self.console.append("Invalid db range")
+                
+            if db_range:
+                
+                if not isFloatRange(db_range):
+                    self.console.append("Invalid value [%s] for 'Graphic:dB-Range" %(db_range))
                     return 0
                 
+                zvalueList = db_range.split(",")
+                value1 = float(zvalueList[0])
+                value2 = float(zvalueList[1])
+                
                 opObj.addParameter(name='ymin', value=value1, format='float')
-                opObj.addParameter(name='ymax', value=value2, format='float')      
+                opObj.addParameter(name='ymax', value=value2, format='float')
                 
             if self.specGraphSaveRTInoise.isChecked():
                 checkPath = True
@@ -2536,9 +2655,15 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         walk = int(self.proComWalk.currentIndex())
         expLabel = str(self.proExpLabel.text())
         
-        startDate = str(self.proComStartDate.currentText())
-        endDate = str(self.proComEndDate.currentText())
+        startDate = str(self.proComStartDate.currentText()).strip()
+        endDate = str(self.proComEndDate.currentText()).strip()
         
+        if not startDate:
+            parms_ok = False
+            
+        if not endDate:
+            parms_ok = False
+            
 #         startDateList = startDate.split("/")
 #         endDateList = endDate.split("/")
 #         
@@ -2677,13 +2802,16 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proComWalk.setCurrentIndex(projectParms.walk)
         self.proExpLabel.setText(str(projectParms.expLabel).strip())
         
+        self.on_proComReadMode_activated(projectParms.online)
+        self.on_proComWalk_activated(projectParms.walk)
+        
         dateList = self.loadDays(data_path = projectParms.dpath,
                                  ext = projectParms.getExt(),
                                  walk = projectParms.walk,
                                  expLabel = projectParms.expLabel)
         
         if not dateList:
-            return
+            return 0
             
         try:
             startDateIndex = dateList.index(projectParms.startDate)
@@ -2708,6 +2836,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proEndTime.setTime(self.time)
 
         self.proOk.setEnabled(True)
+        
+        return 1
     
     def __refreshVoltageWindow(self, puObj):
         
@@ -4018,6 +4148,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def on_click(self, index):
         
+        self._disable_save_button()
+        self._disable_play_button()
+        
+        self.console.clear()
+        
         self.selectedItemTree = self.projectExplorerModel.itemFromIndex(index)
         
         projectObjView = self.getSelectedProjectObj()
@@ -4028,11 +4163,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.create = False
         selectedObjView = self.getSelectedItemObj()
         
+        self.refreshProjectWindow(projectObjView)
+        self.refreshProjectProperties(projectObjView)
+            
         #A project has been selected
         if projectObjView == selectedObjView:
-            
-            self.refreshProjectWindow(projectObjView)
-            self.refreshProjectProperties(projectObjView)
             
             self.tabProject.setEnabled(True)
             self.tabVoltage.setEnabled(False)
@@ -4040,6 +4175,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.tabCorrelation.setEnabled(False)
             self.tabSpectraHeis.setEnabled(False)
             self.tabWidgetProject.setCurrentWidget(self.tabProject)  
+            
+            if self.dateList:
+                self._enable_save_button()
+                self._enable_play_button()
             
             return    
         
@@ -4055,7 +4194,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.refreshPUWindow(puObj)
         self.refreshPUProperties(puObj)
         self.showtabPUCreated(puObj.datatype)
-                  
+        
+        if self.dateList:
+            self._enable_save_button()
+            self._enable_play_button()
+            
     def on_right_click(self, pos):
         
         self.menu = QtGui.QMenu()
@@ -4600,6 +4743,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self._disable_save_button()
         self._disable_play_button()
         
+        self.console.clear()
+        
         self.frame_2.setEnabled(True)
         
         # print self.dir
@@ -4608,7 +4753,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         projectObjLoad = Project()
         
         if not projectObjLoad.readXml(filename):
-            self.console.clear()
             self.console.append("The selected xml file could not be loaded ...")
             return 0
         
@@ -4620,15 +4764,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         if projectId in self.__projectObjDict.keys():
             
-#             answer = self._WarningWindow("You already have a project loaded with the same Id",
-#                                             "Do you want to load the file anyway?")
-#             if not answer:
-#                 return
-            
             projectId = self.__getNewProjectId()
             
             if not projectId:
-                return
+                return 0
             
             projectObjLoad.updateId(projectId)
         
@@ -4664,12 +4803,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.refreshPUWindow(puObj)
             self.refreshPUProperties(puObj)
             self.showtabPUCreated(datatype=puObj.datatype)
-                
-        self.console.clear()
-        self.console.append("The selected xml file has been loaded successfully")
         
-        self._disable_save_button()
-        self._enable_play_button()
+#         self.console.clear()
+        self.console.append("\nThe selected xml file has been loaded successfully")
+        
+        if self.dateList:
+            self._disable_save_button()
+            self._enable_play_button()
 
     def create_updating_timer(self):
         
@@ -4682,7 +4822,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         # Si el proceso se ha parado actualizar el GUI (stopProject)
         if not self.threadStarted:
             return
-         
+        
         if self.controllerThread.isFinished():
             self.stopProject()
             return
@@ -4702,6 +4842,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.plotManager.run()
         
+        if self.plotManager.isErrorDetected():
+            self.stopProject()
+            return
+            
     def playProject(self, ext=".xml", save=1):
         
         self._disable_play_button()
@@ -4713,6 +4857,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self._enable_stop_button()
                 return
         
+        if not self.dateList:
+            self.console.append("No data found, check datapath")
+            
         projectObj = self.getSelectedProjectObj()
         
         if not projectObj:
@@ -4736,9 +4883,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         self.use_plotmanager(self.controllerThread)
         
+        self.console.clear()
+        
         self.controllerThread.start()
         
         sleep(0.5)
+        
         
         self.threadStarted = True
         
@@ -5265,9 +5415,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.dateList = []
         
         if not data_path:
+            self.console.append("Datapath has not been set")
             return []
         
         if not os.path.isdir(data_path):
+            self.console.append("Directory %s does not exist" %data_path)
             return []
         
         self.dataPath = data_path
@@ -5349,6 +5501,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     
     def _enable_play_button(self):
         
+        if self.controllerThread:
+            if self.controllerThread.isRunning():
+                return
+        
         self.actionStart.setEnabled(True)
         self.actionStarToolbar.setEnabled(True)
         
@@ -5416,13 +5572,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.proName.clear()
         self.proDataPath.setText('')
         self.console.setReadOnly(True)
-        self.console.append("Welcome to Signal Chain\nOpen a project or Create a new one")
+        self.console.append("Welcome to Signal Chain\n\n")
+        self.console.append("Open a project or Create a new one\n")
         self.proStartTime.setDisplayFormat("hh:mm:ss")
         self.proDataType.setEnabled(False)
         self.time = QtCore.QTime()
-        self.hour = 0
-        self.min = 0
-        self.sec = 0 
         self.proEndTime.setDisplayFormat("hh:mm:ss")
         startTime = "00:00:00"
         endTime = "23:59:59"
@@ -5453,11 +5607,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.treeProjectProperties.resizeColumnToContents(1)
    
         # set Project
-        self.proExpLabel.setEnabled(True)  
-        self.proDelay.setEnabled(False)  
+        self.pronTxs.setEnabled(False)
+        self.proComByBlock.setEnabled(False)
+        self.proExpLabel.setEnabled(False)  
+        self.proDelay.setEnabled(False)
         self.proSet.setEnabled(True)
         self.proDataType.setReadOnly(True)
-         
+        
          # set Operation Voltage
         self.volOpComChannels.setEnabled(False)
         self.volOpComHeights.setEnabled(False)
@@ -5473,6 +5629,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.volOpProfile.setEnabled(False)
         self.volOpComMode.setEnabled(False)
         
+        self.volOpReshaper.setEnabled(False)
+        self.volOpAdjustHei.setEnabled(False)
+        
+        self.volOpCebReshaper.setEnabled(False)
+        self.volOpCebAdjustHei.setEnabled(False)
+        
         self.volGraphPath.setEnabled(False)
         self.volGraphPrefix.setEnabled(False)
         self.volGraphToolPath.setEnabled(False)
@@ -5487,6 +5649,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specOpProfiles.setEnabled(False)
         self.specOpippFactor.setEnabled(False)
         self.specOppairsList.setEnabled(False)
+        
+        self.specOpComCrossSpectra.setEnabled(False)
         self.specOpComChannel.setEnabled(False)
         self.specOpComHeights.setEnabled(False)
         self.specOpIncoherent.setEnabled(False)
@@ -5523,51 +5687,51 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specHeisGraphPrefix.setEnabled(False)
         self.specHeisGraphToolPath.setEnabled(False)
         
+        self.proComWalk.setCurrentIndex(0)
         
         # tool tip gui
         QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
         self.projectExplorerTree.setToolTip('Right clik to add Project or Unit Process')
         # tool tip gui project
-        self.proComWalk.setToolTip('<b>On Files</b>:<i>Search file in format .r or pdata</i> <b>On Folders</b>:<i>Search file in a directory DYYYYDOY</i>')
-        self.proComWalk.setCurrentIndex(0)
+        
         # tool tip gui volOp
-        self.volOpChannel.setToolTip('Example: 1,2,3,4,5')    
-        self.volOpHeights.setToolTip('Example: 90,180')
-        self.volOpFilter.setToolTip('Example: 2')
-        self.volOpProfile.setToolTip('Example:0,127')
-        self.volOpCohInt.setToolTip('Example: 128')
-        self.volOpFlip.setToolTip('ChannelList where flip will be applied. Example: 0,2,3')
-        self.volOpOk.setToolTip('If you have finished, please Ok ')
-        # tool tip gui volGraph
-        self.volGraphfreqrange.setToolTip('Height range. Example: 50,100')
-        self.volGraphHeightrange.setToolTip('Amplitude. Example: 0,10000')
+#         self.volOpChannel.setToolTip('Example: 1,2,3,4,5')    
+#         self.volOpHeights.setToolTip('Example: 90,180')
+#         self.volOpFilter.setToolTip('Example: 2')
+#         self.volOpProfile.setToolTip('Example:0,127')
+#         self.volOpCohInt.setToolTip('Example: 128')
+#         self.volOpFlip.setToolTip('ChannelList where flip will be applied. Example: 0,2,3')
+#         self.volOpOk.setToolTip('If you have finished, please Ok ')
+#         # tool tip gui volGraph
+#         self.volGraphfreqrange.setToolTip('Height range. Example: 50,100')
+#         self.volGraphHeightrange.setToolTip('Amplitude. Example: 0,10000')
         # tool tip gui specOp
-        self.specOpnFFTpoints.setToolTip('Example: 128')
-        self.specOpProfiles.setToolTip('Example: 128')
-        self.specOpippFactor.setToolTip('Example:1.0')
-        self.specOpIncoherent.setToolTip('Example: 10')
-        self.specOpgetNoise.setToolTip('Example:20,180,30,120 (minHei,maxHei,minVel,maxVel)')
-        
-        self.specOpChannel.setToolTip('Example: 0,1,2,3')
-        self.specOpHeights.setToolTip('Example: 90,180')
-        self.specOppairsList.setToolTip('Example: (0,1),(2,3)')
-        # tool tip gui specGraph
-        
-        self.specGgraphChannelList.setToolTip('Example: 0,3,4')
-        self.specGgraphFreq.setToolTip('Example: -20,20')
-        self.specGgraphHeight.setToolTip('Example: 100,400')
-        self.specGgraphDbsrange.setToolTip('Example: 30,170')
-
-        self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
-
-        
-        self.specHeisOpIncoherent.setToolTip('Example: 10')
-        
-        self.specHeisGgraphChannelList.setToolTip('Example: 0,2,3')
-        self.specHeisGgraphXminXmax.setToolTip('Example (Hz): -1000, 1000')
-        self.specHeisGgraphYminYmax.setToolTip('Example (dB): 5, 35')
-        self.specHeisGgraphTminTmax.setToolTip('Example (hours): 0, 24')
-        self.specHeisGgraphTimeRange.setToolTip('Example (hours): 8')
+#         self.specOpnFFTpoints.setToolTip('Example: 128')
+#         self.specOpProfiles.setToolTip('Example: 128')
+#         self.specOpippFactor.setToolTip('Example:1.0')
+#         self.specOpIncoherent.setToolTip('Example: 10')
+#         self.specOpgetNoise.setToolTip('Example:20,180,30,120 (minHei,maxHei,minVel,maxVel)')
+#         
+#         self.specOpChannel.setToolTip('Example: 0,1,2,3')
+#         self.specOpHeights.setToolTip('Example: 90,180')
+#         self.specOppairsList.setToolTip('Example: (0,1),(2,3)')
+#         # tool tip gui specGraph
+#         
+#         self.specGgraphChannelList.setToolTip('Example: 0,3,4')
+#         self.specGgraphFreq.setToolTip('Example: -20,20')
+#         self.specGgraphHeight.setToolTip('Example: 100,400')
+#         self.specGgraphDbsrange.setToolTip('Example: 30,170')
+# 
+#         self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
+# 
+#         
+#         self.specHeisOpIncoherent.setToolTip('Example: 10')
+#         
+#         self.specHeisGgraphChannelList.setToolTip('Example: 0,2,3')
+#         self.specHeisGgraphXminXmax.setToolTip('Example (Hz): -1000, 1000')
+#         self.specHeisGgraphYminYmax.setToolTip('Example (dB): 5, 35')
+#         self.specHeisGgraphTminTmax.setToolTip('Example (hours): 0, 24')
+#         self.specHeisGgraphTimeRange.setToolTip('Example (hours): 8')
         
         self.labelSet.show()
         self.proSet.show()

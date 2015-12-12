@@ -28,116 +28,163 @@ class Ui_SpectraTab(object):
         self.frame_5.setObjectName(_fromUtf8("frame_5"))
         self.gridLayout_18 = QtGui.QGridLayout(self.frame_5)
         self.gridLayout_18.setObjectName(_fromUtf8("gridLayout_18"))
+        
         self.specOpOk = QtGui.QPushButton(self.frame_5)
         self.specOpOk.setObjectName(_fromUtf8("specOpOk"))
         self.gridLayout_18.addWidget(self.specOpOk, 0, 0, 1, 1)
+        
         self.specGraphClear = QtGui.QPushButton(self.frame_5)
         self.specGraphClear.setObjectName(_fromUtf8("specGraphClear"))
         self.gridLayout_18.addWidget(self.specGraphClear, 0, 1, 1, 1)
+        
         self.gridLayout_7.addWidget(self.frame_5, 1, 1, 1, 1)
+        
         self.tabWidgetSpectra = QtGui.QTabWidget(self.tabSpectra)
         self.tabWidgetSpectra.setObjectName(_fromUtf8("tabWidgetSpectra"))
+        
         self.tabopSpectra = QtGui.QWidget()
         self.tabopSpectra.setObjectName(_fromUtf8("tabopSpectra"))
+        
         self.gridLayout_5 = QtGui.QGridLayout(self.tabopSpectra)
         self.gridLayout_5.setObjectName(_fromUtf8("gridLayout_5"))
-        self.specOpCebCrossSpectra = QtGui.QCheckBox(self.tabopSpectra)
-        self.specOpCebCrossSpectra.setObjectName(_fromUtf8("specOpCebCrossSpectra"))
-        self.gridLayout_5.addWidget(self.specOpCebCrossSpectra, 4, 0, 1, 2)
+        
+        
+        
+        self.specOpCebRadarfrequency = QtGui.QCheckBox(self.tabopSpectra)
+        self.specOpCebRadarfrequency.setObjectName(_fromUtf8("specOpCebRadarfrequency"))
+        self.gridLayout_5.addWidget(self.specOpCebRadarfrequency, 0, 0, 1, 1)
+        
+        self.specOpRadarfrequency = QtGui.QLineEdit(self.tabopSpectra)
+        self.specOpRadarfrequency.setObjectName(_fromUtf8("specOpRadarfrequency"))
+        self.gridLayout_5.addWidget(self.specOpRadarfrequency, 0, 1, 1, 4)
+        
+        
+        self.specLabProfiles = QtGui.QLabel(self.tabopSpectra)
+        self.specLabProfiles.setObjectName(_fromUtf8("specLabProfiles"))
+        self.gridLayout_5.addWidget(self.specLabProfiles, 1, 0, 1, 1)
+        
+        self.specOpProfiles = QtGui.QLineEdit(self.tabopSpectra)
+        self.specOpProfiles.setObjectName(_fromUtf8("specOpProfiles"))
+        self.gridLayout_5.addWidget(self.specOpProfiles, 1, 1, 1, 4)
+        
+        
+        self.specLabnFFTPoints = QtGui.QLabel(self.tabopSpectra)
+        self.specLabnFFTPoints.setObjectName(_fromUtf8("specLabnFFTPoints"))
+        self.gridLayout_5.addWidget(self.specLabnFFTPoints, 2, 0, 1, 1)
+        
+        self.specOpnFFTpoints = QtGui.QLineEdit(self.tabopSpectra)
+        self.specOpnFFTpoints.setObjectName(_fromUtf8("specOpnFFTpoints"))
+        self.gridLayout_5.addWidget(self.specOpnFFTpoints, 2, 1, 1, 4)
+        
+        
+        self.specLabippFactor = QtGui.QLabel(self.tabopSpectra)
+        self.specLabippFactor.setObjectName(_fromUtf8("specLabippFactor"))
+        self.gridLayout_5.addWidget(self.specLabippFactor, 3, 0, 1, 1)
+        
+        self.specOpippFactor = QtGui.QLineEdit(self.tabopSpectra)
+        self.specOpippFactor.setObjectName(_fromUtf8("specOpippFactor"))
+        self.gridLayout_5.addWidget(self.specOpippFactor, 3, 1, 1, 4)
+        
+        
+        self.specOpCebChannel = QtGui.QCheckBox(self.tabopSpectra)
+        self.specOpCebChannel.setObjectName(_fromUtf8("specOpCebChannel"))
+        self.gridLayout_5.addWidget(self.specOpCebChannel, 4, 0, 1, 1)
+        
         self.specOpComChannel = QtGui.QComboBox(self.tabopSpectra)
         self.specOpComChannel.setObjectName(_fromUtf8("specOpComChannel"))
         self.specOpComChannel.addItem(_fromUtf8(""))
         self.specOpComChannel.addItem(_fromUtf8(""))
-        self.gridLayout_5.addWidget(self.specOpComChannel, 8, 0, 1, 2)
+        self.gridLayout_5.addWidget(self.specOpComChannel, 4, 1, 1, 2)
+        
         self.specOpChannel = QtGui.QLineEdit(self.tabopSpectra)
         self.specOpChannel.setObjectName(_fromUtf8("specOpChannel"))
-        self.gridLayout_5.addWidget(self.specOpChannel, 8, 3, 1, 2)
+        self.gridLayout_5.addWidget(self.specOpChannel, 4, 3, 1, 2)
+        
+        
+        self.specOpCebCrossSpectra = QtGui.QCheckBox(self.tabopSpectra)
+        self.specOpCebCrossSpectra.setObjectName(_fromUtf8("specOpCebCrossSpectra"))
+        self.gridLayout_5.addWidget(self.specOpCebCrossSpectra, 5, 0, 1, 1)
+        
+        self.specOpComCrossSpectra = QtGui.QComboBox(self.tabopSpectra)
+        self.specOpComCrossSpectra.setObjectName(_fromUtf8("specOpComCrossSpectra"))
+        self.specOpComCrossSpectra.addItem(_fromUtf8(""))
+        self.gridLayout_5.addWidget(self.specOpComCrossSpectra, 5, 1, 1, 2)
+        
+        self.specOppairsList = QtGui.QLineEdit(self.tabopSpectra)
+        self.specOppairsList.setObjectName(_fromUtf8("specOppairsList"))
+        self.gridLayout_5.addWidget(self.specOppairsList, 5, 3, 1, 2)
+        
+        
+        self.specOpCebHeights = QtGui.QCheckBox(self.tabopSpectra)
+        self.specOpCebHeights.setObjectName(_fromUtf8("specOpCebHeights"))
+        self.gridLayout_5.addWidget(self.specOpCebHeights, 6, 0, 1, 1)
+        
         self.specOpComHeights = QtGui.QComboBox(self.tabopSpectra)
         self.specOpComHeights.setObjectName(_fromUtf8("specOpComHeights"))
         self.specOpComHeights.addItem(_fromUtf8(""))
         self.specOpComHeights.addItem(_fromUtf8(""))
-        self.gridLayout_5.addWidget(self.specOpComHeights, 11, 0, 1, 2)
+        self.gridLayout_5.addWidget(self.specOpComHeights, 6, 1, 1, 2)
+        
         self.specOpHeights = QtGui.QLineEdit(self.tabopSpectra)
         self.specOpHeights.setObjectName(_fromUtf8("specOpHeights"))
-        self.gridLayout_5.addWidget(self.specOpHeights, 11, 3, 1, 2)
-        self.specOpIncoherent = QtGui.QLineEdit(self.tabopSpectra)
-        self.specOpIncoherent.setObjectName(_fromUtf8("specOpIncoherent"))
-        self.gridLayout_5.addWidget(self.specOpIncoherent, 13, 3, 1, 2)
-        self.specOpCebRemoveDC = QtGui.QCheckBox(self.tabopSpectra)
-        self.specOpCebRemoveDC.setObjectName(_fromUtf8("specOpCebRemoveDC"))
-        self.gridLayout_5.addWidget(self.specOpCebRemoveDC, 14, 0, 1, 2)
-        self.specOpCebHeights = QtGui.QCheckBox(self.tabopSpectra)
-        self.specOpCebHeights.setObjectName(_fromUtf8("specOpCebHeights"))
-        self.gridLayout_5.addWidget(self.specOpCebHeights, 9, 0, 1, 1)
-        self.specOpCebChannel = QtGui.QCheckBox(self.tabopSpectra)
-        self.specOpCebChannel.setObjectName(_fromUtf8("specOpCebChannel"))
-        self.gridLayout_5.addWidget(self.specOpCebChannel, 7, 0, 1, 1)
-        self.specOppairsList = QtGui.QLineEdit(self.tabopSpectra)
-        self.specOppairsList.setObjectName(_fromUtf8("specOppairsList"))
-        self.gridLayout_5.addWidget(self.specOppairsList, 6, 3, 1, 2)
-        self.specOpnFFTpoints = QtGui.QLineEdit(self.tabopSpectra)
-        self.specOpnFFTpoints.setObjectName(_fromUtf8("specOpnFFTpoints"))
-        self.gridLayout_5.addWidget(self.specOpnFFTpoints, 2, 3, 1, 2)
-        self.label_31 = QtGui.QLabel(self.tabopSpectra)
-        self.label_31.setObjectName(_fromUtf8("label_31"))
-        self.gridLayout_5.addWidget(self.label_31, 6, 0, 1, 2)
-        self.label_26 = QtGui.QLabel(self.tabopSpectra)
-        self.label_26.setObjectName(_fromUtf8("label_26"))
-        self.gridLayout_5.addWidget(self.label_26, 2, 0, 1, 2)
+        self.gridLayout_5.addWidget(self.specOpHeights, 6, 3, 1, 2)
+        
+        
         self.specOpCebIncoherent = QtGui.QCheckBox(self.tabopSpectra)
         self.specOpCebIncoherent.setObjectName(_fromUtf8("specOpCebIncoherent"))
-        self.gridLayout_5.addWidget(self.specOpCebIncoherent, 12, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.specOpCebIncoherent, 7, 0, 1, 1)
+        
         self.specOpCobIncInt = QtGui.QComboBox(self.tabopSpectra)
         self.specOpCobIncInt.setObjectName(_fromUtf8("specOpCobIncInt"))
         self.specOpCobIncInt.addItem(_fromUtf8(""))
         self.specOpCobIncInt.addItem(_fromUtf8(""))
-        self.gridLayout_5.addWidget(self.specOpCobIncInt, 13, 0, 1, 2)
-        spacerItem9 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gridLayout_5.addItem(spacerItem9, 12, 3, 1, 1)
-        self.specOpCebRadarfrequency = QtGui.QCheckBox(self.tabopSpectra)
-        self.specOpCebRadarfrequency.setObjectName(_fromUtf8("specOpCebRadarfrequency"))
-        self.gridLayout_5.addWidget(self.specOpCebRadarfrequency, 0, 0, 1, 2)
-        spacerItem10 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gridLayout_5.addItem(spacerItem10, 9, 3, 1, 1)
-        spacerItem11 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gridLayout_5.addItem(spacerItem11, 7, 3, 1, 1)
-        self.specOpRadarfrequency = QtGui.QLineEdit(self.tabopSpectra)
-        self.specOpRadarfrequency.setObjectName(_fromUtf8("specOpRadarfrequency"))
-        self.gridLayout_5.addWidget(self.specOpRadarfrequency, 0, 3, 1, 2)
+        self.gridLayout_5.addWidget(self.specOpCobIncInt, 7, 1, 1, 2)
         
-        spacerItem12 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gridLayout_5.addItem(spacerItem12, 4, 3, 1, 1)
+        self.specOpIncoherent = QtGui.QLineEdit(self.tabopSpectra)
+        self.specOpIncoherent.setObjectName(_fromUtf8("specOpIncoherent"))
+        self.gridLayout_5.addWidget(self.specOpIncoherent, 7, 3, 1, 2)
         
-        self.label_21 = QtGui.QLabel(self.tabopSpectra)
-        self.label_21.setObjectName(_fromUtf8("label_21"))
-        self.gridLayout_5.addWidget(self.label_21, 1, 0, 1, 1)
-        self.specOpProfiles = QtGui.QLineEdit(self.tabopSpectra)
-        self.specOpProfiles.setObjectName(_fromUtf8("specOpProfiles"))
-        self.gridLayout_5.addWidget(self.specOpProfiles, 1, 3, 1, 2)
-        self.specOpCebRemoveInt = QtGui.QCheckBox(self.tabopSpectra)
-        self.specOpCebRemoveInt.setObjectName(_fromUtf8("specOpCebRemoveInt"))
-        self.gridLayout_5.addWidget(self.specOpCebRemoveInt, 15, 0, 1, 1)
         
-        spacerItem13 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gridLayout_5.addItem(spacerItem13, 15, 3, 1, 1)
+        self.specOpCebRemoveDC = QtGui.QCheckBox(self.tabopSpectra)
+        self.specOpCebRemoveDC.setObjectName(_fromUtf8("specOpCebRemoveDC"))
+        self.gridLayout_5.addWidget(self.specOpCebRemoveDC, 8, 0, 1, 1)
         
-        self.label_70 = QtGui.QLabel(self.tabopSpectra)
-        self.label_70.setObjectName(_fromUtf8("label_70"))
-        self.gridLayout_5.addWidget(self.label_70, 3, 0, 1, 1)
-        self.specOpCebgetNoise = QtGui.QCheckBox(self.tabopSpectra)
-        self.specOpCebgetNoise.setObjectName(_fromUtf8("specOpCebgetNoise"))
-        self.gridLayout_5.addWidget(self.specOpCebgetNoise, 16, 0, 1, 1)
-        self.specOpippFactor = QtGui.QLineEdit(self.tabopSpectra)
-        self.specOpippFactor.setObjectName(_fromUtf8("specOpippFactor"))
-        self.gridLayout_5.addWidget(self.specOpippFactor, 3, 3, 1, 2)
         self.specOpComRemoveDC = QtGui.QComboBox(self.tabopSpectra)
         self.specOpComRemoveDC.setObjectName(_fromUtf8("specOpComRemoveDC"))
         self.specOpComRemoveDC.addItem(_fromUtf8(""))
         self.specOpComRemoveDC.addItem(_fromUtf8(""))
-        self.gridLayout_5.addWidget(self.specOpComRemoveDC, 14, 3, 1, 2)
+        self.gridLayout_5.addWidget(self.specOpComRemoveDC, 8, 1, 1, 2)
+        
+        
+        self.specOpCebRemoveInt = QtGui.QCheckBox(self.tabopSpectra)
+        self.specOpCebRemoveInt.setObjectName(_fromUtf8("specOpCebRemoveInt"))
+        self.gridLayout_5.addWidget(self.specOpCebRemoveInt, 9, 0, 1, 1)
+        
+        
+        self.specOpCebgetNoise = QtGui.QCheckBox(self.tabopSpectra)
+        self.specOpCebgetNoise.setObjectName(_fromUtf8("specOpCebgetNoise"))
+        self.gridLayout_5.addWidget(self.specOpCebgetNoise, 10, 0, 1, 1)
+        
         self.specOpgetNoise = QtGui.QLineEdit(self.tabopSpectra)
         self.specOpgetNoise.setObjectName(_fromUtf8("specOpgetNoise"))
-        self.gridLayout_5.addWidget(self.specOpgetNoise, 16, 3, 1, 2)
+        self.gridLayout_5.addWidget(self.specOpgetNoise, 10, 1, 1, 4)
+        
+#         spacerItem9 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+#         self.gridLayout_5.addItem(spacerItem9, 12, 3, 1, 1)
+#         
+#         spacerItem10 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+#         self.gridLayout_5.addItem(spacerItem10, 9, 3, 1, 1)
+#         
+#         spacerItem11 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+#         self.gridLayout_5.addItem(spacerItem11, 7, 3, 1, 1)
+#         
+#         spacerItem12 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+#         self.gridLayout_5.addItem(spacerItem12, 4, 3, 1, 1)
+#         
+#         spacerItem13 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+#         self.gridLayout_5.addItem(spacerItem13, 15, 3, 1, 1)
+        
+        
         self.tabWidgetSpectra.addTab(self.tabopSpectra, _fromUtf8(""))
         
         ################################################################
@@ -397,47 +444,49 @@ class Ui_SpectraTab(object):
         
         self.specOpOk.setText(_translate("MainWindow", "Ok", None))
         self.specGraphClear.setText(_translate("MainWindow", "Clear", None))
-        self.specOpCebCrossSpectra.setText(_translate("MainWindow", "Select  Cross Spectra", None))
+        self.specOpCebCrossSpectra.setText(_translate("MainWindow", "Select  Cross Spectra:", None))
         self.specOpComChannel.setItemText(0, _translate("MainWindow", "Value", None))
         self.specOpComChannel.setItemText(1, _translate("MainWindow", "Index", None))
         self.specOpComHeights.setItemText(0, _translate("MainWindow", "Value", None))
         self.specOpComHeights.setItemText(1, _translate("MainWindow", "Index", None))
-        self.specOpCebRemoveDC.setText(_translate("MainWindow", "Remove DC", None))
-        self.specOpCebHeights.setText(_translate("MainWindow", "Select Heights", None))
-        self.specOpCebChannel.setText(_translate("MainWindow", "Select Channel", None))
-        self.label_31.setText(_translate("MainWindow", "x-y pairs", None))
-        self.label_26.setText(_translate("MainWindow", "nFFTPoints", None))
-        self.specOpCebIncoherent.setText(_translate("MainWindow", "Incoherent Integration", None))
+        self.specOpCebRemoveDC.setText(_translate("MainWindow", "Remove DC:", None))
+        self.specOpCebHeights.setText(_translate("MainWindow", "Select Heights:", None))
+        self.specOpCebChannel.setText(_translate("MainWindow", "Select Channel:", None))
+        
+        self.specOpComCrossSpectra.setItemText(0, _translate("MainWindow", "x-y pairs", None))
+        
+        self.specLabnFFTPoints.setText(_translate("MainWindow", "Number of FFT points:", None))
+        self.specOpCebIncoherent.setText(_translate("MainWindow", "Incoherent Integration:", None))
         self.specOpCobIncInt.setItemText(0, _translate("MainWindow", "Time Interval", None))
-        self.specOpCobIncInt.setItemText(1, _translate("MainWindow", "Profiles", None))
-        self.specOpCebRadarfrequency.setText(_translate("MainWindow", "Radar frequency (MHz)", None))
-        self.label_21.setText(_translate("MainWindow", "Profiles", None))
-        self.specOpCebRemoveInt.setText(_translate("MainWindow", "Remove Interference", None))
-        self.label_70.setText(_translate("MainWindow", "IppFactor", None))
-        self.specOpCebgetNoise.setText(_translate("MainWindow", "Get Noise", None))
+        self.specOpCobIncInt.setItemText(1, _translate("MainWindow", "Number of Profiles", None))
+        self.specOpCebRadarfrequency.setText(_translate("MainWindow", "Radar frequency (MHz):", None))
+        self.specLabProfiles.setText(_translate("MainWindow", "Number of Profiles", None))
+        self.specOpCebRemoveInt.setText(_translate("MainWindow", "Remove Interference:", None))
+        self.specLabippFactor.setText(_translate("MainWindow", "Ipp Factor:", None))
+        self.specOpCebgetNoise.setText(_translate("MainWindow", "Set Noise area:", None))
         self.specOpComRemoveDC.setItemText(0, _translate("MainWindow", "Mode 1", None))
         self.specOpComRemoveDC.setItemText(1, _translate("MainWindow", "Mode 2", None))
         self.tabWidgetSpectra.setTabText(self.tabWidgetSpectra.indexOf(self.tabopSpectra), _translate("MainWindow", "Operation", None))
         
-        self.label_44.setText(_translate("MainWindow", "Coherence Map", None))
+        self.label_44.setText(_translate("MainWindow", "Coherence Map:", None))
         self.specGraphTminTmaxLabel.setText(_translate("MainWindow", "Time range:", None))
-        self.label_25.setText(_translate("MainWindow", "Prefix", None))
-        self.label_42.setText(_translate("MainWindow", "RTI Plot", None))
-        self.label_16.setText(_translate("MainWindow", "Height range", None))
-        self.label_17.setText(_translate("MainWindow", "dB range", None))
-        self.specGraphMagLabel.setText(_translate("MainWindow", "Coh. Magnitud ", None))
-        self.label_24.setText(_translate("MainWindow", "Path", None))
-        self.label_46.setText(_translate("MainWindow", "Power Profile", None))
+        self.label_25.setText(_translate("MainWindow", "Prefix:", None))
+        self.label_42.setText(_translate("MainWindow", "RTI Plot:", None))
+        self.label_16.setText(_translate("MainWindow", "Height range:", None))
+        self.label_17.setText(_translate("MainWindow", "dB range:", None))
+        self.specGraphMagLabel.setText(_translate("MainWindow", "Coh. Magnitud:", None))
+        self.label_24.setText(_translate("MainWindow", "Path:", None))
+        self.label_46.setText(_translate("MainWindow", "Power Profile:", None))
         self.label_22.setText(_translate("MainWindow", "Freq/Vel range:", None))
-        self.label_41.setText(_translate("MainWindow", "Cross Spectra Plot", None))
+        self.label_41.setText(_translate("MainWindow", "Cross Spectra Plot:", None))
         self.specGraphToolPath.setText(_translate("MainWindow", "...", None))
         self.label_6.setText(_translate("MainWindow", "Channel List:", None))
-        self.label_40.setText(_translate("MainWindow", "Spectra Plot", None))
-        self.label_43.setText(_translate("MainWindow", "Show", None))
+        self.label_40.setText(_translate("MainWindow", "Spectra Plot:", None))
+        self.label_43.setText(_translate("MainWindow", "Show:", None))
         self.label_29.setText(_translate("MainWindow", "Writing Period:", None))
-        self.label_47.setText(_translate("MainWindow", "Save", None))
-        self.label_19.setText(_translate("MainWindow", "Ftp", None))
-        self.label_45.setText(_translate("MainWindow", "Noise", None))
+        self.label_47.setText(_translate("MainWindow", "Save:", None))
+        self.label_19.setText(_translate("MainWindow", "Ftp:", None))
+        self.label_45.setText(_translate("MainWindow", "Noise:", None))
         self.label_48.setText(_translate("MainWindow", "Time Range:", None))
         self.specGraphPhaseLabel.setText(_translate("MainWindow", "Coh. Phase:", None))
         self.label_48.hide()
@@ -453,4 +502,27 @@ class Ui_SpectraTab(object):
         self.tabWidgetSpectra.setTabText(self.tabWidgetSpectra.indexOf(self.taboutputSpectra), _translate("MainWindow", "Output", None))
         
         self.tabWidgetProject.setTabText(self.tabWidgetProject.indexOf(self.tabSpectra), _translate("MainWindow", "Spectra", None))
+        
+        self.__setToolTip()
+        
+    def __setToolTip(self):
+        
+        self.specOpnFFTpoints.setToolTip('Number of FFT points used in FFT function. Example: 128')
+        self.specOpProfiles.setToolTip('Number of data points used in FFT function. Example: 128')
+        self.specOpippFactor.setToolTip('This factor is multiplied to IPP value to get velocity and frequency range. Example: 4')
+        self.specOpIncoherent.setToolTip('Example: 10')
+        self.specOpgetNoise.setToolTip('Example:20,180,30,120 (minHei,maxHei,minVel,maxVel)')
+        
+        self.specOpChannel.setToolTip('Example: 0,1,2,3')
+        self.specOpHeights.setToolTip('Example: 90,180')
+        self.specOppairsList.setToolTip('Example: (0,1),(2,3)')
+        # tool tip gui specGraph
+        
+        self.specGgraphChannelList.setToolTip('Example: 0,3,4')
+        self.specGgraphFreq.setToolTip('Example: -20,20')
+        self.specGgraphHeight.setToolTip('Example: 100,400')
+        self.specGgraphDbsrange.setToolTip('Example: 30,170')
+
+        self.specGraphPrefix.setToolTip('Example: EXPERIMENT_NAME')   
+        
         

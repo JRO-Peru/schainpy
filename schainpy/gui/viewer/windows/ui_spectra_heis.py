@@ -238,3 +238,15 @@ class Ui_SpectraHeisTab(object):
         self.specHeisOutputMetadaToolPath.setText(_translate("MainWindow", "...", None))
         
         self.tabWidgetProject.setTabText(self.tabWidgetProject.indexOf(self.tabSpectraHeis), _translate("MainWindow", "SpectraHeis", None))
+
+        self.__setToolTip()
+        
+    def __setToolTip(self):
+        
+        self.specHeisOpIncoherent.setToolTip('Example: 10')
+        
+        self.specHeisGgraphChannelList.setToolTip('Example: 0,2,3')
+        self.specHeisGgraphXminXmax.setToolTip('Example (Hz): -1000, 1000')
+        self.specHeisGgraphYminYmax.setToolTip('Example (dB): 5, 35')
+        self.specHeisGgraphTminTmax.setToolTip('Example (hours): 0, 24')
+        self.specHeisGgraphTimeRange.setToolTip('Example (hours): 8')
