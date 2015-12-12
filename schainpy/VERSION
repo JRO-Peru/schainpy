@@ -42,4 +42,12 @@ VERSIONS:
 
 2.2.0:
 -GUI: use of external plotter
+-Compatible with matplotlib 1.5.0
 
+2.2.1:
+-Bugs fixed in GUI
+-Views were improved in GUI
+-Support to MST-ISR experiments
+-Bug fixed getting noise using hyldebrant. (minimum number of points > 20%)
+-handleError added to jroplotter.py
+-
