@@ -91,7 +91,7 @@ class ParameterConf():
             if type(new_value) not in (tuple, list):
                 new_value = [float(new_value)]
             
-            self.__formated_value = floatList
+            self.__formated_value = new_value
             
             return self.__formated_value
         
@@ -1183,7 +1183,7 @@ class Project():
                     break
                 except ValueError, e:
                     sleep(0.5)
-                    self.__handleError(procUnitConfObj, send_email=False)
+                    self.__handleError(procUnitConfObj, send_email=True)
                     is_ok = False
                     break
                 except:
