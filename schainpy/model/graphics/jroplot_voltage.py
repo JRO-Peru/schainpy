@@ -137,38 +137,70 @@ class Scope(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
         
-        x = dataOut.heightList
-        y = dataOut.data[channelIndexList,:] * numpy.conjugate(dataOut.data[channelIndexList,:])
-        y = y.real
-        
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         
-        if type == "power":
-            self.plot_power(dataOut.heightList, 
-                            dataOut.data,
-                            id, 
-                            channelIndexList, 
-                            thisDatetime,
-                            wintitle,
-                            show,
-                            xmin,
-                            xmax,
-                            ymin,
-                            ymax)
+        if dataOut.flagDataAsBlock:
+            
+            for i in range(dataOut.nProfiles):
+                
+                wintitle1 = wintitle + " [Profile = %d] " %i
+                
+                if type == "power":
+                    self.plot_power(dataOut.heightList, 
+                                    dataOut.data[:,i,:],
+                                    id, 
+                                    channelIndexList, 
+                                    thisDatetime,
+                                    wintitle1,
+                                    show,
+                                    xmin,
+                                    xmax,
+                                    ymin,
+                                    ymax)
+                
+                if type == "iq":
+                    self.plot_iq(dataOut.heightList, 
+                                 dataOut.data[:,i,:],
+                                 id, 
+                                 channelIndexList, 
+                                 thisDatetime,
+                                 wintitle1,
+                                 show,
+                                 xmin,
+                                 xmax,
+                                 ymin,
+                                 ymax)
+                    
+                self.draw()
         
-        if type == "iq":
-            self.plot_iq(dataOut.heightList, 
-                         dataOut.data,
-                         id, 
-                         channelIndexList, 
-                         thisDatetime,
-                         wintitle,
-                         show,
-                         xmin,
-                         xmax,
-                         ymin,
-                         ymax)
-        
+        else:
+            wintitle += " [Profile = %d] " %dataOut.profileIndex
+            
+            if type == "power":
+                self.plot_power(dataOut.heightList, 
+                                dataOut.data,
+                                id, 
+                                channelIndexList, 
+                                thisDatetime,
+                                wintitle,
+                                show,
+                                xmin,
+                                xmax,
+                                ymin,
+                                ymax)
+            
+            if type == "iq":
+                self.plot_iq(dataOut.heightList, 
+                             dataOut.data,
+                             id, 
+                             channelIndexList, 
+                             thisDatetime,
+                             wintitle,
+                             show,
+                             xmin,
+                             xmax,
+                             ymin,
+                             ymax)
         
         self.draw()
             
