@@ -50,4 +50,7 @@ VERSIONS:
 -Support to MST-ISR experiments
 -Bug fixed getting noise using hyldebrant. (minimum number of points > 20%)
 -handleError added to jroplotter.py
--
+
+2.2.2:
+-VoltageProc: ProfileSelector, Reshape, Decoder with nTxs!=1 and getblock=True was tested
+-Rawdata and testRawdata.py added to Signal Chain project
