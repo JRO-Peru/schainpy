@@ -619,6 +619,9 @@ class Decoder(Operation):
     
     def __convolutionByBlockInFreq(self, data):
         
+        raise NotImplementedError, "Decoder by frequency fro Blocks not implemented"
+
+
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
         
         fft_data = numpy.fft.fft(data, axis=2)
@@ -650,20 +653,22 @@ class Decoder(Operation):
             
             if mode == 3:
                 sys.stderr.write("Decoder Warning: mode=%d is not valid, using mode=0\n" %mode)
-                    
+            
+            if times != None:
+                sys.stderr.write("Decoder Warning: Argument 'times' in not used anymore\n")
         
         if self.code is None:
             print "Fail decoding: Code is not defined."
             return
         
         datadec = None
-        
+        if mode == 3:
+            mode = 0
+                
         if dataOut.flagDataAsBlock:
             """
             Decoding when data have been read as block,
             """
-            if mode == 3:
-                mode = 0
                 
             if mode == 0:
                 datadec = self.__convolutionByBlockInTime(dataOut.data)
@@ -805,27 +810,35 @@ class ProfileSelector(Operation):
         """
                     
         dataOut.flagNoData = True
-        
+            
         if dataOut.flagDataAsBlock:
             """
             data dimension  = [nChannels, nProfiles, nHeis]
             """
             if profileList != None:
                 dataOut.data = dataOut.data[:,profileList,:]
-                dataOut.nProfiles = len(profileList)
-                dataOut.profileIndex = dataOut.nProfiles - 1
                 
             if profileRangeList != None:
                 minIndex = profileRangeList[0]
                 maxIndex = profileRangeList[1]
-            
+                profileList = range(minIndex, maxIndex+1)
+                
                 dataOut.data = dataOut.data[:,minIndex:maxIndex+1,:]
-                dataOut.nProfiles = maxIndex - minIndex + 1
-                dataOut.profileIndex = dataOut.nProfiles - 1
             
             if rangeList != None:
-                raise ValueError, "Profile Selector: Invalid argument rangeList. Not implemented for getByBlock yet"
             
+                profileList = []
+                
+                for thisRange in rangeList:
+                    minIndex = thisRange[0]
+                    maxIndex = thisRange[1]
+                    
+                    profileList.extend(range(minIndex, maxIndex+1))
+                
+                dataOut.data = dataOut.data[:,profileList,:]
+                
+            dataOut.nProfiles = len(profileList)
+            dataOut.profileIndex = dataOut.nProfiles - 1
             dataOut.flagNoData = False
             
             return True
@@ -834,18 +847,14 @@ class ProfileSelector(Operation):
         data dimension  = [nChannels, nHeis]
         """
         
-        if nProfiles:
-            self.nProfiles = nProfiles
-        else:
-            self.nProfiles = dataOut.nProfiles
-        
         if profileList != None:
             
-            dataOut.nProfiles = len(profileList)
-            
             if self.isThisProfileInList(dataOut.profileIndex, profileList):
-                dataOut.flagNoData = False
+                
+                self.nProfiles = len(profileList)
+                dataOut.nProfiles = self.nProfiles
                 dataOut.profileIndex = self.profileIndex
+                dataOut.flagNoData = False
                 
                 self.incIndex()
             return True
@@ -855,11 +864,12 @@ class ProfileSelector(Operation):
             minIndex = profileRangeList[0]
             maxIndex = profileRangeList[1]
             
-            dataOut.nProfiles = maxIndex - minIndex + 1
-            
             if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
-                dataOut.flagNoData = False
+                
+                self.nProfiles = maxIndex - minIndex + 1
+                dataOut.nProfiles = self.nProfiles
                 dataOut.profileIndex = self.profileIndex
+                dataOut.flagNoData = False
                 
                 self.incIndex()
             return True
@@ -874,8 +884,6 @@ class ProfileSelector(Operation):
             
                 nProfiles += maxIndex - minIndex + 1
             
-            dataOut.nProfiles = nProfiles
-            
             for thisRange in rangeList:
                 
                 minIndex = thisRange[0]
@@ -883,13 +891,15 @@ class ProfileSelector(Operation):
             
                 if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
                     
-#                         print "profileIndex = ", dataOut.profileIndex
-                    
-                    dataOut.flagNoData = False
+                    self.nProfiles = nProfiles
+                    dataOut.nProfiles = self.nProfiles
                     dataOut.profileIndex = self.profileIndex
-                    
+                    dataOut.flagNoData = False
+                
                     self.incIndex()
+                    
                     break
+                
             return True
                     
                 
@@ -913,35 +923,102 @@ class Reshaper(Operation):
     def __init__(self):
         
         Operation.__init__(self)
-        self.updateNewHeights = True
+        
+        self.__buffer = None
+        self.__nitems = 0
+        
+    def __appendProfile(self, dataOut, nTxs):
+        
+        if self.__buffer is None:
+            shape = (dataOut.nChannels, int(dataOut.nHeights/nTxs) )
+            self.__buffer = numpy.empty(shape, dtype = dataOut.data.dtype)
+            
+        ini = dataOut.nHeights * self.__nitems
+        end = ini + dataOut.nHeights
+        
+        self.__buffer[:, ini:end] = dataOut.data
+        
+        self.__nitems += 1
+        
+        return int(self.__nitems*nTxs)
     
-    def run(self, dataOut, shape):
+    def __getBuffer(self):
         
-        if not dataOut.flagDataAsBlock:
-            raise ValueError, "Reshaper can only be used when voltage have been read as Block, getBlock = True"
+        if self.__nitems == int(1./self.__nTxs):
+            
+            self.__nitems = 0
         
-        if len(shape) != 3:
-            raise ValueError, "shape len should be equal to 3, (nChannels, nProfiles, nHeis)"
+            return self.__buffer.copy()
         
-        shape_tuple = tuple(shape)
-        dataOut.data = numpy.reshape(dataOut.data, shape_tuple)
-        dataOut.flagNoData = False
+        return None
+    
+    def __checkInputs(self, dataOut, shape, nTxs):
         
-        if self.updateNewHeights:
+        if shape is None and nTxs is None:
+            raise ValueError, "Reshaper: shape of factor should be defined"
+        
+        if nTxs:
+            if nTxs < 0:
+                raise ValueError, "nTxs should be greater than 0"
             
-            old_nheights = dataOut.nHeights
-            new_nheights = dataOut.data.shape[2]
-            factor = 1.0*new_nheights / old_nheights  
+            if nTxs < 1 and dataOut.nProfiles % (1./nTxs) != 0:
+                raise ValueError, "nProfiles= %d is not divisibled by (1./nTxs) = %f" %(dataOut.nProfiles, (1./nTxs))
             
-            deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]  
+            shape = [dataOut.nChannels, dataOut.nProfiles*nTxs, dataOut.nHeights/nTxs]
+        
+        if len(shape) != 2 and len(shape) !=  3:
+            raise ValueError, "shape dimension should be equal to 2 or 3. shape = (nProfiles, nHeis) or (nChannels, nProfiles, nHeis). Actually shape = (%d, %d, %d)" %(dataOut.nChannels, dataOut.nProfiles, dataOut.nHeights)
+        
+        if len(shape) == 2:
+            shape_tuple = [dataOut.nChannels]
+            shape_tuple.extend(shape)
+        else:
+            shape_tuple = list(shape)
+                
+        if not nTxs:
+            nTxs = int(shape_tuple[1]/dataOut.nProfiles)
             
-            xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * factor
+        return shape_tuple, nTxs
             
-            dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight)
+    def run(self, dataOut, shape=None, nTxs=None):
+        
+        shape_tuple, self.__nTxs = self.__checkInputs(dataOut, shape, nTxs)
+        
+        dataOut.flagNoData = True
+        profileIndex = None
+        
+        if dataOut.flagDataAsBlock:
+                
+            dataOut.data = numpy.reshape(dataOut.data, shape_tuple)
+            dataOut.flagNoData = False
             
-            dataOut.nProfiles = dataOut.data.shape[1]
+            profileIndex = int(dataOut.nProfiles*nTxs) - 1
             
-            dataOut.ippSeconds *= factor
+        else:
+            
+            if self.__nTxs < 1:
+                
+                self.__appendProfile(dataOut, self.__nTxs)
+                new_data = self.__getBuffer()
+                
+                if new_data is not None:
+                    dataOut.data = new_data
+                    dataOut.flagNoData = False
+                    
+                    profileIndex = dataOut.profileIndex*nTxs
+                    
+            else:
+                raise ValueError, "nTxs should be greater than 0 and lower than 1, or use VoltageReader(..., getblock=True)"
+        
+        deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
+        
+        dataOut.heightList = numpy.arange(dataOut.nHeights/self.__nTxs) * deltaHeight + dataOut.heightList[0]
+        
+        dataOut.nProfiles = int(dataOut.nProfiles*self.__nTxs)
+        
+        dataOut.profileIndex = profileIndex
+        
+        dataOut.ippSeconds /= self.__nTxs
 #             
 # import collections
 # from scipy.stats import mode
