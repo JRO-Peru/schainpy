@@ -1090,20 +1090,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if self.volGraphCebshow.isChecked():    
             name_operation = 'Scope'
             optype = 'other'
-            name_parameter = 'type'
-            value = 'Scope' 
-            if self.idImagscope == 0:
-                self.idImagscope = 100
-            else:
-                self.idImagscope = self.idImagscope + 1
 
             name_parameter1 = 'id'
-            value1 = int(self.idImagscope)
-            format1 = 'int'        
-            format = 'str'
+            format1 = 'int'
      
             opObj = puObj.addOperation(name=name_operation, optype=optype)
-#             opObj.addParameter(name=name_parameter, value=value, format=format)
             opObj.addParameter(name=name_parameter1, value=opObj.id, format=format1)
             
             channelList = str(self.volGraphChannelList.text()).strip()
@@ -1202,6 +1193,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         return 1
     
+    @pyqtSignature("")
+    def on_volGraphClear_clicked(self):
+        
+        self.console.clear()
+        
     """
     Voltage Graph
     """
@@ -2016,6 +2012,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         return 1
     
+    
+    @pyqtSignature("")
+    def on_specGraphClear_clicked(self):
+        
+        self.console.clear()
+        
     """
     Spectra  Graph
     """
@@ -2129,11 +2131,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         if not os.path.exists(save_path):
             self.console.clear()
             self.console.append("Write a valid path")
-            return 
-        
-    @pyqtSignature("")
-    def on_specGraphClear_clicked(self):
-        return
+            return
     
     @pyqtSignature("")
     def on_specHeisGraphToolPath_clicked(self):        
@@ -2202,8 +2200,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         power_range = str(self.specHeisGgraphYminYmax.text())
         time_range = str(self.specHeisGgraphTminTmax.text()) 
         timerange = str(self.specHeisGgraphTimeRange.text())
-            
-        # ---- Spectra Plot-----
+        
         if self.specHeisGraphCebSpectraplot.isChecked(): 
               
             name_operation = 'SpectraHeisScope'
@@ -2248,8 +2245,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name=name1, value=value1, format=format)
                 opObj.addParameter(name=name2, value=value2, format=format)
-               
-            #------specHeisGgraphYmin-Ymax---
+            
             if not power_range == '':
                 yvalueList = power_range.split(",")
                 
@@ -2414,6 +2410,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self._enable_play_button()
         
         return 1
+    
+    @pyqtSignature("")
+    def on_specHeisGraphClear_clicked(self):
+        
+        self.console.clear()
+        
     @pyqtSignature("int")
     def on_specHeisGraphCebSpectraplot_stateChanged(self, p0):
         
@@ -2473,10 +2475,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def on_specHeisGraphftpRTIplot_stateChanged(self, p0):       
         if  p0 == 2:
             self.specHeisGgraphftpratio.setEnabled(True)
-            
-    @pyqtSignature("")
-    def on_specHeisGraphClear_clicked(self):
-        pass
     
     def __checkSpecGraphSaving(self):
         
