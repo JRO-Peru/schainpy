@@ -169,7 +169,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
     
     def __hasNotDataInBuffer(self):
         
-        if self.profileIndex >= self.processingHeaderObj.profilesPerBlock:
+        if self.profileIndex >= self.processingHeaderObj.profilesPerBlock*self.nTxs:
             return 1
         
         return 0
@@ -265,14 +265,9 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             
         self.dataOut.dtype = self.dtype
             
-        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
         
-        if self.processingHeaderObj.nHeights % self.nTxs != 0:
-            raise ValueError, "nTxs (%d) should be a multiple of nHeights (%d)" %(self.nTxs, self.processingHeaderObj.nHeights)
-        
-        xf = self.processingHeaderObj.firstHeight + int(self.processingHeaderObj.nHeights/self.nTxs)*self.processingHeaderObj.deltaHeight
-
-        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight) 
+        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.nHeights) *self.processingHeaderObj.deltaHeight +  self.processingHeaderObj.firstHeight 
         
         self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
                 
@@ -283,6 +278,28 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.flagDeflipData = self.processingHeaderObj.flag_deflip #asumo q la data no esta sin flip
         
         self.dataOut.flagShiftFFT = self.processingHeaderObj.shif_fft
+    
+    def reshapeData(self):
+        
+        if self.nTxs < 0:
+            return
+        
+        if self.nTxs == 1:
+            return
+        
+        if self.nTxs < 1 and self.processingHeaderObj.profilesPerBlock % (1./self.nTxs) != 0:
+            raise ValueError, "1./nTxs (=%f), should be a multiple of nProfiles (=%d)" %(1./self.nTxs, self.processingHeaderObj.profilesPerBlock)
+        
+        if self.nTxs > 1 and self.processingHeaderObj.nHeights % self.nTxs != 0:
+            raise ValueError, "nTxs (=%d), should be a multiple of nHeights (=%d)" %(self.nTxs, self.processingHeaderObj.nHeights)
+        
+        self.datablock = self.datablock.reshape((self.systemHeaderObj.nChannels, self.processingHeaderObj.profilesPerBlock*self.nTxs, self.processingHeaderObj.nHeights/self.nTxs))
+        
+        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
+        self.dataOut.heightList = numpy.arange(self.processingHeaderObj.nHeights/self.nTxs) *self.processingHeaderObj.deltaHeight +  self.processingHeaderObj.firstHeight 
+        self.dataOut.radarControllerHeaderObj.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
+        
+        return
     
     def getData(self):
         """
@@ -335,6 +352,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
                 return 0
         
             self.getFirstHeader()
+            
+            self.reshapeData()
         
         if self.datablock is None:
             self.dataOut.flagNoData = True
@@ -349,27 +368,10 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             blocks is increased by nTxs (nProfiles *= nTxs)
             """
             self.dataOut.flagDataAsBlock = False
+            self.dataOut.data = self.datablock[:,self.profileIndex,:]
+            self.dataOut.profileIndex = self.profileIndex
             
-            if self.nTxs == 1:
-                self.dataOut.data = self.datablock[:,self.profileIndex,:]
-                self.dataOut.profileIndex = self.profileIndex
-                
-                self.profileIndex += 1
-                
-            else:
-                iniHei_ForThisTx = (self.txIndex)*int(self.processingHeaderObj.nHeights/self.nTxs)
-                endHei_ForThisTx = (self.txIndex+1)*int(self.processingHeaderObj.nHeights/self.nTxs)
-                
-#                 print iniHei_ForThisTx, endHei_ForThisTx
-                
-                self.dataOut.data = self.datablock[:, self.profileIndex, iniHei_ForThisTx:endHei_ForThisTx]
-                self.dataOut.profileIndex = self.profileIndex*self.nTxs + self.txIndex
-                
-                self.txIndex += 1
-                
-                if self.txIndex == self.nTxs:
-                    self.txIndex = 0
-                    self.profileIndex += 1
+            self.profileIndex += 1
                 
         else:
             """
@@ -377,9 +379,9 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             """
             self.dataOut.flagDataAsBlock = True
             self.dataOut.data = self.datablock
-            self.dataOut.profileIndex = self.processingHeaderObj.profilesPerBlock
+            self.dataOut.profileIndex = self.dataOut.nProfiles - 1
             
-            self.profileIndex = self.processingHeaderObj.profilesPerBlock
+            self.profileIndex = self.dataOut.nProfiles
         
         self.dataOut.flagNoData = False
         
