@@ -1239,7 +1239,7 @@ class JRODataReader(JRODataIO):
         ext = ext.lower()
         self.ext = ext
         self.getByBlock = getblock
-        self.nTxs = int(nTxs)
+        self.nTxs = nTxs
         
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):
