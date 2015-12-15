@@ -154,7 +154,7 @@ class SpectraProc(ProcessingUnit):
                     self.id_min += nVoltProfiles
                     self.id_max += nVoltProfiles
                 else:
-                    raise ValueError, "The type object %s has %d profiles, it should be equal to %d profiles"%(self.dataIn.type,self.dataIn.data.shape[1],nProfiles)
+                    raise ValueError, "The type object %s has %d profiles, it should just has %d profiles"%(self.dataIn.type,self.dataIn.data.shape[1],nProfiles)
                     self.dataOut.flagNoData = True
                     return 0
             else:         
