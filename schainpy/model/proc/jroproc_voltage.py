@@ -808,7 +808,11 @@ class ProfileSelector(Operation):
             rangeList            :    List of profile ranges. Example: rangeList = ((4, 30), (32, 64), (128, 256))
         
         """
-                    
+        
+        if rangeList is not None:
+            if type(rangeList[0]) not in (tuple, list):
+                rangeList = [rangeList]
+        
         dataOut.flagNoData = True
             
         if dataOut.flagDataAsBlock:
