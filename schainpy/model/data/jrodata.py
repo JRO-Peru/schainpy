@@ -118,6 +118,19 @@ class GenericData(object):
             return copy.deepcopy(self)
 
         for key in inputObj.__dict__.keys():
+            
+            attribute = inputObj.__dict__[key]
+            
+            #If this attribute is a tuple or list
+            if type(inputObj.__dict__[key]) in (tuple, list):
+                self.__dict__[key] = attribute[:]
+                continue
+            
+            #If this attribute is another object or instance
+            if hasattr(attribute, '__dict__'):
+                self.__dict__[key] = attribute.copy()
+                continue
+            
             self.__dict__[key] = inputObj.__dict__[key]
 
     def deepcopy(self):
