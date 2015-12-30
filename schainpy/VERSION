@@ -54,3 +54,11 @@ VERSIONS:
 2.2.2:
 -VoltageProc: ProfileSelector, Reshape, Decoder with nTxs!=1 and getblock=True was tested
 -Rawdata and testRawdata.py added to Signal Chain project
+
+2.2.3:
+-Bug fixed in GUI: Error getting(reading) Code value
+-Bug fixed in GUI: Flip option always needs channelList field
+-Bug fixed in jrodata: when one branch modified a value in "dataOut" (example: dataOut.code) this value
+was modified for every branch (because this was a reference). It was modified in data.copy()
+-Bug fixed in jroproc_voltage.profileSelector(): rangeList replaces to profileRangeList.
+
