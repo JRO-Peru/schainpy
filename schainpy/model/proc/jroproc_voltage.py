@@ -771,7 +771,7 @@ class ProfileSelector(Operation):
         Operation.__init__(self)
         self.profileIndex = 0
     
-    def incIndex(self):
+    def incProfileIndex(self):
         
         self.profileIndex += 1
         
@@ -856,7 +856,7 @@ class ProfileSelector(Operation):
                 dataOut.profileIndex = self.profileIndex
                 dataOut.flagNoData = False
                 
-                self.incIndex()
+                self.incProfileIndex()
             return True
         
         if profileRangeList != None:
@@ -871,7 +871,7 @@ class ProfileSelector(Operation):
                 dataOut.profileIndex = self.profileIndex
                 dataOut.flagNoData = False
                 
-                self.incIndex()
+                self.incProfileIndex()
             return True
         
         if rangeList != None:
@@ -896,7 +896,7 @@ class ProfileSelector(Operation):
                     dataOut.profileIndex = self.profileIndex
                     dataOut.flagNoData = False
                 
-                    self.incIndex()
+                    self.incProfileIndex()
                     
                     break
                 
@@ -908,7 +908,7 @@ class ProfileSelector(Operation):
                 dataOut.flagNoData = False
                 dataOut.profileIndex = self.profileIndex
                 
-                self.incIndex()
+                self.incProfileIndex()
                 
             return True
         

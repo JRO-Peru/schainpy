@@ -574,9 +574,9 @@ class JRODataReader(JRODataIO):
             return None, None
         
         if len(dateList) > 1:
-            print "[Reading] %d days were found in date range: %s - %s" %(len(dateList), startDate, endDate)
+            print "[Reading] Data found: total days = %d, date range = %s - %s" %(len(dateList), startDate, endDate)
         else:
-            print "[Reading] data was found for the date %s" %(dateList[0])
+            print "[Reading] Data found: date = %s" %(dateList[0])
              
         filenameList = []
         datetimeList = []
