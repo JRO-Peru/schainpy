@@ -803,8 +803,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpCode.setEnabled(False)
             
             if index == 0:
-                code = ''
-                self.volOpCode.setText(str(code))
+#                 code = ''
+#                 self.volOpCode.setText(str(code))
                 return
             
             if index == 1:
@@ -1059,15 +1059,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             opObj = puObj.addOperation(name=name_operation, optype=optype)
             
-            name_parameter = 'channelList'
-            format = 'intlist'
             value = str(self.volOpFlip.text())
             
-            if not isIntList(value):
-                self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
-                return 0
+            if value:
+                
+                name_parameter = 'channelList'
+                format = 'intlist'
             
-            opObj.addParameter(name=name_parameter, value=value, format=format)
+                if not isIntList(value):
+                    self.console.append("Invalid value '%s' for '%s'" %(value,name_parameter))
+                    return 0
+            
+                opObj.addParameter(name=name_parameter, value=value, format=format)
             
         if self.volOpCebCohInt.isChecked():
             name_operation = 'CohInt'
