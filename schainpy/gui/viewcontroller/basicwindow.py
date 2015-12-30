@@ -206,11 +206,8 @@ def isMultiList(cadena):
     if type(x) not in (tuple, list):
         return 0
     
-    if type(x[0]) not in (int, tuple, list):
-        return 0
-    
     for thisList in x:
-        if type(thisList) not in (tuple, list):
+        if type(thisList) not in (int, float, tuple, list):
             return 0
         
     return 1
@@ -221,11 +218,11 @@ def getCode(cadena):
         return None
     
     try:
-        x = ast.literal_eval(value)
+        x = ast.literal_eval(cadena)
     except:
-        return 0
+        return None
     
-    if type(x[0]) not in (tuple, list):
+    if type(x[0]) in (int, float):
         return [x]
     
     return x
