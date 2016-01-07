@@ -7,7 +7,7 @@ import os
 import datetime
 import numpy
 
-from figure import Figure, isRealtime
+from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
 class SpectraPlot(Figure):
@@ -382,14 +382,14 @@ class CrossSpectraPlot(Figure):
 #            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
             phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
             
-            title = "Coherence %d%d" %(pair[0], pair[1])
+            title = "Coherence Ch%d * Ch%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+2]
             axes0.pcolor(x, y, coherence,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=coh_min, zmax=coh_max,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=coherence_cmap, cblabel='')
             
-            title = "Phase %d%d" %(pair[0], pair[1])
+            title = "Phase Ch%d * Ch%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+3]
             axes0.pcolor(x, y, phase,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=phase_min, zmax=phase_max,
@@ -420,7 +420,7 @@ class RTIPlot(Figure):
     def __init__(self):
         
         self.timerange = None
-        self.__isConfig = False
+        self.isConfig = False
         self.__nsubplots = 1
         
         self.WIDTH = 800
@@ -507,6 +507,9 @@ class RTIPlot(Figure):
             zmax            :    None
         """
         
+        if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
+            return
+        
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
         else:
@@ -516,11 +519,6 @@ class RTIPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
         
-#         if timerange != None:
-#             self.timerange = timerange
-        
-        #tmin = None
-        #tmax = None
         factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
@@ -530,15 +528,16 @@ class RTIPlot(Figure):
         avg = numpy.average(z, axis=1)
         
         avgdB = 10.*numpy.log10(avg)
-
         
-#        thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        thisDatetime = dataOut.datatime
+#         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " RTI" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
         
-        if not self.__isConfig:
+        update_figfile = False
+        
+        if not self.isConfig:
             
             nplots = len(channelIndexList)
             
@@ -567,13 +566,11 @@ class RTIPlot(Figure):
             self.PLOT_POS = plot_pos
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.__isConfig = True
+            self.isConfig = True
             self.figfile = figfile
-        
+            update_figfile = True
+                
         self.setWinTitle(title)
-        
-        if ((self.xmax - x[1]) < (x[1]-x[0])):
-            x[1] = self.xmax
         
         for i in range(self.nplots):
             index = channelIndexList[i]
@@ -595,12 +592,12 @@ class RTIPlot(Figure):
                         ytick_visible=False,
                         grid='x')
             
-        self.draw()      
-
-        if x[1] >= self.axesList[0].xmax:
+        self.draw()
+        
+        if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
-            self.__isConfig = False
-            self.figfile = None
+            self.isConfig = False
+            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
@@ -608,7 +605,7 @@ class RTIPlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)
 
 class CoherenceMap(Figure):
     isConfig = None
@@ -680,7 +677,10 @@ class CoherenceMap(Figure):
             coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
-                
+        
+        if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
+            return
+        
         if pairsList == None:
             pairsIndexList = dataOut.pairsIndexList
         else:
@@ -700,17 +700,16 @@ class CoherenceMap(Figure):
             phase_min = -180
         if phase_max == None:
             phase_max = 180
-            
-#         tmin = None
-#         tmax = None
+        
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        thisDatetime = dataOut.datatime
+        
         title = wintitle + " CoherenceMap" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
+        update_figfile = False
         
         if not self.isConfig:    
             nplots = len(pairsIndexList)
@@ -738,11 +737,9 @@ class CoherenceMap(Figure):
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             
             self.isConfig = True
+            update_figfile = True
         
         self.setWinTitle(title)
-        
-        if ((self.xmax - x[1]) < (x[1]-x[0])):
-            x[1] = self.xmax
         
         for i in range(self.nplots):
             
@@ -760,7 +757,7 @@ class CoherenceMap(Figure):
 
             counter = 0
             
-            title = "Coherence %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            title = "Coherence Ch%d * Ch%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2]
             axes.pcolorbuffer(x, y, z,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
@@ -782,7 +779,7 @@ class CoherenceMap(Figure):
 
             z = phase.reshape((1,-1))
             
-            title = "Phase %d%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+            title = "Phase Ch%d * Ch%d: %s" %(pair[0], pair[1], thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots*2 + counter]
             axes.pcolorbuffer(x, y, z,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=phase_min, zmax=phase_max,
@@ -800,10 +797,10 @@ class CoherenceMap(Figure):
             
         self.draw()
         
-        if x[1] >= self.axesList[0].xmax:
+        if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
-            self.__isConfig = False
-            self.figfile = None
+            self.isConfig = False
+            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
@@ -811,7 +808,7 @@ class CoherenceMap(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)
 
 class PowerProfilePlot(Figure):
     
@@ -913,7 +910,7 @@ class PowerProfilePlot(Figure):
             if xmin == None: xmin = numpy.nanmin(xdB)*0.9
             if xmax == None: xmax = numpy.nanmax(xdB)*1.1
             
-            self.__isConfig = True
+            self.isConfig = True
         
         self.setWinTitle(title)
         
@@ -949,8 +946,8 @@ class Noise(Figure):
         self.isConfig = False
         self.__nsubplots = 1
         self.counter_imagwr = 0
-        self.WIDTH = 600
-        self.HEIGHT = 300
+        self.WIDTH = 800
+        self.HEIGHT = 400
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.xdata = None
@@ -1033,6 +1030,9 @@ class Noise(Figure):
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
+        if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
+            return
+        
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
             channelList = dataOut.channelList
@@ -1049,11 +1049,12 @@ class Noise(Figure):
         noise = dataOut.noise[channelIndexList]/factor
         noisedB = 10*numpy.log10(noise)
         
-        #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        thisDatetime = dataOut.datatime
+        
         title = wintitle + " Noise" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Intensity (dB)"
+        update_figfile = False
         
         if not self.isConfig:
             
@@ -1085,13 +1086,14 @@ class Noise(Figure):
             self.xdata = numpy.array([])
             self.ydata = numpy.array([])
             
+            update_figfile = True
+            
             #open file beacon phase
             path = '%s%03d' %(self.PREFIX, self.id)
             noise_file = os.path.join(path,'%s.txt'%self.name)
             self.filename_noise = os.path.join(figpath,noise_file)
 
         self.setWinTitle(title)
-            
         
         title = "Noise %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
         
@@ -1114,12 +1116,10 @@ class Noise(Figure):
             
         self.draw()
         
-        if x[1] >= self.axesList[0].xmax:
+        if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
-            del self.xdata
-            del self.ydata
-            self.__isConfig = False
-            self.figfile = None
+            self.isConfig = False
+            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
@@ -1127,7 +1127,7 @@ class Noise(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)
         
         #store data beacon phase
         if save:
@@ -1143,11 +1143,11 @@ class BeaconPhase(Figure):
     def __init__(self):
         
         self.timerange = 24*60*60
-        self.__isConfig = False
+        self.isConfig = False
         self.__nsubplots = 1
         self.counter_imagwr = 0
-        self.WIDTH = 600
-        self.HEIGHT = 300
+        self.WIDTH = 800
+        self.HEIGHT = 400
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.xdata = None
@@ -1214,14 +1214,17 @@ class BeaconPhase(Figure):
 
 
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
-            xmin=None, xmax=None, ymin=None, ymax=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, hmin=None, hmax=None,
             timerange=None,
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
+        if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
+            return
+        
         if pairsList == None:
-            pairsIndexList = dataOut.pairsIndexList
+            pairsIndexList = dataOut.pairsIndexList[:10]
         else:
             pairsIndexList = []
             for pair in pairsList:
@@ -1234,34 +1237,53 @@ class BeaconPhase(Figure):
         
 #         if len(pairsIndexList) > 4:
 #             pairsIndexList = pairsIndexList[0:4]
+
+        hmin_index = None
+        hmax_index = None
         
+        if hmin != None and hmax != None:
+            indexes = numpy.arange(dataOut.nHeights)
+            hmin_list = indexes[dataOut.heightList >= hmin]
+            hmax_list = indexes[dataOut.heightList <= hmax]
+            
+            if hmin_list.any():
+                hmin_index = hmin_list[0]
+                
+            if hmax_list.any():
+                hmax_index = hmax_list[-1]+1
+            
         x = dataOut.getTimeRange()
         #y = dataOut.getHeiRange()
 
         
-        #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
-        title = wintitle + " Phase of Beacon Signal" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        thisDatetime = dataOut.datatime
+        
+        title = wintitle + " Signal Phase" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Local Time"
-        ylabel = "Phase"
+        ylabel = "Phase (degrees)"
+        
+        update_figfile = False
         
         nplots = len(pairsIndexList)
         #phase = numpy.zeros((len(pairsIndexList),len(dataOut.beacon_heiIndexList)))
         phase_beacon = numpy.zeros(len(pairsIndexList))
         for i in range(nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
-            ccf = numpy.average(dataOut.data_cspc[pairsIndexList[i],:,:],axis=0)
-            powa = numpy.average(dataOut.data_spc[pair[0],:,:],axis=0)
-            powb = numpy.average(dataOut.data_spc[pair[1],:,:],axis=0)
+            ccf = numpy.average(dataOut.data_cspc[pairsIndexList[i], :, hmin_index:hmax_index], axis=0)
+            powa = numpy.average(dataOut.data_spc[pair[0], :, hmin_index:hmax_index], axis=0)
+            powb = numpy.average(dataOut.data_spc[pair[1], :, hmin_index:hmax_index], axis=0)
             avgcoherenceComplex = ccf/numpy.sqrt(powa*powb)
             phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
             
             #print "Phase %d%d" %(pair[0], pair[1])
             #print phase[dataOut.beacon_heiIndexList]
             
-            phase_beacon[i] = numpy.average(phase[dataOut.beacon_heiIndexList])
+            if dataOut.beacon_heiIndexList:
+                phase_beacon[i] = numpy.average(phase[dataOut.beacon_heiIndexList])
+            else:
+                phase_beacon[i] = numpy.average(phase)
             
-        if not self.__isConfig:
+        if not self.isConfig:
              
             nplots = len(pairsIndexList)
              
@@ -1276,8 +1298,8 @@ class BeaconPhase(Figure):
             
             self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
             
-            if ymin == None: ymin = numpy.nanmin(phase_beacon) - 10.0
-            if ymax == None: ymax = numpy.nanmax(phase_beacon) + 10.0
+            if ymin == None: ymin = 0
+            if ymax == None: ymax = 360
              
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
@@ -1285,10 +1307,12 @@ class BeaconPhase(Figure):
             self.PLOT_POS = plot_pos
              
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.__isConfig = True
+            self.isConfig = True
             self.figfile = figfile
             self.xdata = numpy.array([])
             self.ydata = numpy.array([])
+            
+            update_figfile = True
             
             #open file beacon phase
             path = '%s%03d' %(self.PREFIX, self.id)
@@ -1303,9 +1327,9 @@ class BeaconPhase(Figure):
         self.setWinTitle(title)
              
          
-        title = "Beacon Signal %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+        title = "Phase Plot %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
          
-        legendlabels = ["pairs %d%d"%(pair[0], pair[1]) for pair in dataOut.pairsList]
+        legendlabels = ["Pair (%d,%d)"%(pair[0], pair[1]) for pair in dataOut.pairsList]
         
         axes = self.axesList[0]
          
@@ -1325,12 +1349,10 @@ class BeaconPhase(Figure):
              
         self.draw()
         
-        if x[1] >= self.axesList[0].xmax:
+        if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
-            del self.xdata
-            del self.ydata
-            self.__isConfig = False
-            self.figfile = None
+            self.isConfig = False
+            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
@@ -1338,4 +1360,4 @@ class BeaconPhase(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)

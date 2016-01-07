@@ -32,7 +32,7 @@ def createFigure(id, wintitle, width, height, facecolor="w", show=True):
 
 def closeFigure(show=False, fig=None):
     
-    matplotlib.pyplot.ioff()
+#     matplotlib.pyplot.ioff()
 #     matplotlib.pyplot.pause(0)
     
     if show:
@@ -57,6 +57,10 @@ def saveFigure(fig, filename):
     fig.savefig(filename)
 #     matplotlib.pyplot.ion()
 
+def clearFigure(fig):
+    
+    fig.clf()
+    
 def setWinTitle(fig, title):
     
     fig.canvas.manager.set_window_title(title)

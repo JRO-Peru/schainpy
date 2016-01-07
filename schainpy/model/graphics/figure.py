@@ -5,6 +5,28 @@ import mpldriver
 
 from schainpy.model.proc.jroproc_base import Operation
 
+def isTimeInHourRange(datatime, xmin, xmax):
+    
+    if xmin == None or xmax == None:
+        return 1
+    hour = datatime.hour + datatime.minute/60.0
+    
+    if xmin < (xmax % 24):
+        
+        if hour >= xmin and hour <= xmax:
+            return 1
+        else:
+            return 0
+    
+    else:
+        
+        if hour >= xmin or hour <= (xmax % 24):
+            return 1
+        else:
+            return 0
+        
+    return 0
+
 def isRealtime(utcdatatime):
     
     utcnow = time.mktime(time.localtime())
@@ -37,6 +59,8 @@ class Figure(Operation):
     counter_imagwr = 0
     
     figfile = None
+    
+    created = False
     
     def __init__(self):
          
@@ -71,13 +95,13 @@ class Figure(Operation):
     
     def getTimeLim(self, x, xmin=None, xmax=None, timerange=None):
         
-        if self.xmin != None and self.xmax != None:
-            if timerange == None:
-                timerange = self.xmax - self.xmin
-            xmin = self.xmin + timerange
-            xmax = self.xmax + timerange
-            
-            return xmin, xmax
+#         if self.xmin != None and self.xmax != None:
+#             if timerange == None:
+#                 timerange = self.xmax - self.xmin
+#             xmin = self.xmin + timerange
+#             xmax = self.xmax + timerange
+#             
+#             return xmin, xmax
         
         if timerange == None and (xmin==None or xmax==None):
             timerange = 14400   #seconds
@@ -131,15 +155,22 @@ class Figure(Operation):
         
         self.widthscreen, self.heightscreen = self.getScreenDim(widthplot, heightplot)
         
-        self.fig = self.__driver.createFigure(id=self.id,
-                                              wintitle=self.wintitle,
-                                              width=self.widthscreen,
-                                              height=self.heightscreen,
-                                              show=show)
+#         if self.created:
+#             self.__driver.closeFigure(self.fig)
+        
+        if not self.created:
+            self.fig = self.__driver.createFigure(id=self.id,
+                                                  wintitle=self.wintitle,
+                                                  width=self.widthscreen,
+                                                  height=self.heightscreen,
+                                                  show=show)
+        else:
+            self.__driver.clearFigure(self.fig)
         
         self.axesObjList = []
         self.counter_imagwr = 0
 
+        self.created = True
     
     def setDriver(self, driver=mpldriver):
         
