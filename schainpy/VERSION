@@ -62,3 +62,8 @@ VERSIONS:
 was modified for every branch (because this was a reference). It was modified in data.copy()
 -Bug fixed in jroproc_voltage.profileSelector(): rangeList replaces to profileRangeList.
 
+
+2.2.3.1:
+-Filtering block by time has been added.
+-Bug fixed plotting RTI, CoherenceMap and others using xmin and xmax parameters. The first day worked
+properly but the next days did not.
