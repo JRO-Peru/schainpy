@@ -83,6 +83,19 @@ def isFileInEpoch(filename, startUTSeconds, endUTSeconds):
     
     return 1
 
+def isTimeInRange(thisTime, startTime, endTime):
+    
+    if endTime >= startTime:
+        if (thisTime < startTime) or (thisTime > endTime):
+            return 0
+        
+        return 1
+    else:
+        if (thisTime < startTime) and (thisTime > endTime):
+            return 0
+        
+        return 1
+                
 def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
     """
     Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
@@ -115,17 +128,37 @@ def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
         print "The file %s can't be opened" %(filename)
         return None
     
-    basicHeaderObj = BasicHeader(LOCALTIME)
-    sts = basicHeaderObj.read(fp)
-    fp.close()
+    firstBasicHeaderObj = BasicHeader(LOCALTIME)
+    systemHeaderObj = SystemHeader()
+    radarControllerHeaderObj = RadarControllerHeader()
+    processingHeaderObj = ProcessingHeader()
     
-    thisDatetime = basicHeaderObj.datatime
-    thisDate = thisDatetime.date()
-    thisTime = thisDatetime.time()
+    lastBasicHeaderObj = BasicHeader(LOCALTIME)
+    
+    sts = firstBasicHeaderObj.read(fp)
+    sts = systemHeaderObj.read(fp)
+    sts = radarControllerHeaderObj.read(fp)
+    sts = processingHeaderObj.read(fp)
+    
+    offset = processingHeaderObj.blockSize + 24 #header size
+    
+    fp.seek(-offset, 2)
+    
+    sts = lastBasicHeaderObj.read(fp)
+    
+    fp.close()
     
     if not(sts):
         print "Skipping the file %s because it has not a valid header" %(filename)
         return None
+    
+    thisDatetime = firstBasicHeaderObj.datatime
+    thisDate = thisDatetime.date()
+    thisTime_first_block = thisDatetime.time()
+    
+    thisDatetime = lastBasicHeaderObj.datatime
+    thisTime_last_block = thisDatetime.time()
+    
     
     #General case
     #           o>>>>>>>>>>>>>><<<<<<<<<<<<<<o
@@ -133,7 +166,7 @@ def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
     #       startTime                     endTime
     
     if endTime >= startTime:
-        if (thisTime < startTime) or (thisTime > endTime):
+        if (thisTime_last_block < startTime) or (thisTime_first_block > endTime):
             return None
         
         return thisDatetime
@@ -145,13 +178,13 @@ def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
     #-----------o----------------------------o-----------
     #        endTime                    startTime
     
-    if (thisDate == startDate) and (thisTime < startTime):
+    if (thisDate == startDate) and (thisTime_last_block < startTime):
         return None
     
-    if (thisDate == endDate) and (thisTime > endTime):
+    if (thisDate == endDate) and (thisTime_first_block > endTime):
         return None
     
-    if (thisTime < startTime) and (thisTime > endTime):
+    if (thisTime_last_block < startTime) and (thisTime_first_block > endTime):
         return None
     
     return thisDatetime
@@ -567,16 +600,13 @@ class JRODataReader(JRODataIO):
         dateList, pathList = self.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
         
         if dateList == []:
-#             print "[Reading] No *%s files in %s from %s to %s)"%(ext, path,
-#                                                         datetime.datetime.combine(startDate,startTime).ctime(),
-#                                                         datetime.datetime.combine(endDate,endTime).ctime())
-                
+#             print "[Reading] Date range selected invalid [%s - %s]: No *%s files in %s)" %(startDate, endDate, ext, path)
             return None, None
         
         if len(dateList) > 1:
-            print "[Reading] Data found: total days = %d, date range = %s - %s" %(len(dateList), startDate, endDate)
+            print "[Reading] Data found for date range [%s - %s]: total days = %d" %(startDate, endDate, len(dateList))
         else:
-            print "[Reading] Data found: date = %s" %(dateList[0])
+            print "[Reading] Data found for date range [%s - %s]: date = %s" %(startDate, endDate, dateList[0])
              
         filenameList = []
         datetimeList = []
@@ -603,7 +633,7 @@ class JRODataReader(JRODataIO):
                 datetimeList.append(thisDatetime)
                 
         if not(filenameList):
-            print "[Reading] Any file was found int time range %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
+            print "[Reading] Time range selected invalid [%s - %s]: No *%s files in %s)" %(startTime, endTime, ext, path)
             return None, None
         
         print "[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime)
@@ -969,13 +999,24 @@ class JRODataReader(JRODataIO):
 
     def readNextBlock(self):
         
-        if not(self.__setNewBlock()):
-            return 0
-
-        if not(self.readBlock()):
-            return 0
+        #Skip block out of startTime and endTime
+        while True:
+            if not(self.__setNewBlock()):
+                return 0
+    
+            if not(self.readBlock()):
+                return 0
+            
+            self.getBasicHeader()
         
-        self.getBasicHeader()
+            if not isTimeInRange(self.dataOut.datatime.time(), self.startTime, self.endTime):
+                
+                print "[Reading] Block No. %d/%d -> %s [Skipping]" %(self.nReadBlocks,
+                                                              self.processingHeaderObj.dataBlocksPerFile,
+                                                              self.dataOut.datatime.ctime())
+                continue
+                
+            break
         
         print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
                                                   self.processingHeaderObj.dataBlocksPerFile,
@@ -1070,6 +1111,8 @@ class JRODataReader(JRODataIO):
 
     def findDatafiles(self, path, startDate=None, endDate=None, expLabel='', ext='.r', walk=True, include_path=False):
         
+        path_empty = True
+        
         dateList = []
         pathList = []
         
@@ -1086,6 +1129,8 @@ class JRODataReader(JRODataIO):
                 
                 if not fileList:
                     continue
+                
+                path_empty = False
                 
                 fileList.sort()
                 
@@ -1139,8 +1184,10 @@ class JRODataReader(JRODataIO):
                     datapath = os.path.join(single_path, thisDir, expLabel)
                     fileList = glob.glob1(datapath, "*"+ext)
                     
-                    if len(fileList) < 1:
+                    if not fileList:
                         continue
+                    
+                    path_empty = False
                     
                     thisDate = getDateFromRadarFolder(thisDir)
                     
@@ -1154,9 +1201,12 @@ class JRODataReader(JRODataIO):
         else:
             pattern_path = multi_path[0]
         
-        if not dateList:
-            print "[Reading] No *%s files in %s from %s to %s" %(ext, pattern_path, startDate, endDate)
-        
+        if path_empty:
+            print "[Reading] No *%s files in %s for %s to %s" %(ext, pattern_path, startDate, endDate)
+        else:
+            if not dateList:
+                print "[Reading] Date range selected invalid [%s - %s]: No *%s files in %s)" %(startDate, endDate, ext, path)
+
         if include_path:
             return dateList, pathList
         
@@ -1240,6 +1290,8 @@ class JRODataReader(JRODataIO):
         self.ext = ext
         self.getByBlock = getblock
         self.nTxs = nTxs
+        self.startTime = startTime
+        self.endTime = endTime
         
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):
