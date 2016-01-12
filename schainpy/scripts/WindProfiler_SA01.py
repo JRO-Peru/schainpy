@@ -4,9 +4,11 @@
 import os, sys
 
 path = os.path.split(os.getcwd())[0]
-sys.path.append(path)
+path = os.path.split(path)[0]
 
-from controller import *
+sys.path.insert(0, path)
+
+from schainpy.controller import Project
 
 desc = "SA Experiment Test"
 filename = "SA2014050.xml"
@@ -19,8 +21,8 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 #Experimentos
 
 #2014050    19 Feb 2014
-path = '/home/soporte/Data/MST/SA/d2014050'
-pathFigure = '/home/soporte/workspace/Graficos/SA/prueba1/'
+path = '/media/joscanoa/84A65E64A65E5730/soporte/Data/MST/SA/d2014050'
+pathFigure = '/media/joscanoa/84A65E64A65E5730/soporte/workspace/Graficos/SA/prueba1/'
 xmin = '15.5'
 xmax = '24'
 startTime = '15:30:00'

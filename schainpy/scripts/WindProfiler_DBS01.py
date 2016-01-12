@@ -4,9 +4,11 @@
 import os, sys
 
 path = os.path.split(os.getcwd())[0]
-sys.path.append(path)
+path = os.path.split(path)[0]
 
-from controller import *
+sys.path.insert(0, path)
+
+from schainpy.controller import Project
 
 desc = "DBS Experiment Test"
 filename = "DBStest.xml"
@@ -26,10 +28,11 @@ controllerObj.setup(id = '191', name='test01', description=desc)
 # filehdf5 = "DBS_2014050.hdf5"
 
 #2014051    20 Feb 2014
-path = '/home/soporte/Data/MST/DBS/d2014051'
-pathFigure = '/home/soporte/workspace/Graficos/DBS/prueba1/'
+path = '/media/joscanoa/84A65E64A65E5730/soporte/Data/MST/DBS/d2014051'
+# path = '/media/joscanoa/disco4/Data/2014/DBS_SA JAN 2014/DBS_SA/250/d2014050'
+pathFigure = '/home/joscanoa/Pictures/testHDF5/figure'
+xmax = '4'
 xmin = '0'
-xmax = '7.5'
 startTime = '00:00:00'
 filehdf5 = "DBS_2014051.hdf5"
 
@@ -74,17 +77,26 @@ procUnitConfObj1.addParameter(name='pairsList', value='(0,0),(0,1),(2,1)', forma
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
 opObj11.addParameter(name='n', value='5', format='int')
 
-opObj14 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
-opObj14.addParameter(name='id', value='1', format='int')
-opObj14.addParameter(name='wintitle', value='Con interf', format='str')
-opObj14.addParameter(name='save', value='1', format='bool')
-opObj14.addParameter(name='figpath', value=pathFigure, format='str')
-opObj14.addParameter(name='zmin', value='5', format='int')
-opObj14.addParameter(name='zmax', value='90', format='int')
+# opObj14 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+# opObj14.addParameter(name='id', value='1', format='int')
+# opObj14.addParameter(name='wintitle', value='Con interf', format='str')
+# opObj14.addParameter(name='save', value='0', format='bool')
+# opObj14.addParameter(name='figpath', value=pathFigure, format='str')
+# opObj14.addParameter(name='zmin', value='5', format='int')
+# opObj14.addParameter(name='zmax', value='90', format='int')
 
 opObj12 = procUnitConfObj1.addOperation(name='removeInterference')
 opObj13 = procUnitConfObj1.addOperation(name='removeDC')
 opObj13.addParameter(name='mode', value='1', format='int')
+# 
+opObj14 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+opObj14.addParameter(name='id', value='1', format='int')
+opObj14.addParameter(name='wintitle', value='Con interf', format='str')
+opObj14.addParameter(name='save', value='0', format='bool')
+opObj14.addParameter(name='figpath', value=pathFigure, format='str')
+opObj14.addParameter(name='zmin', value='5', format='int')
+opObj14.addParameter(name='zmax', value='90', format='int')
+
 
 opObj12 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
 opObj12.addParameter(name='id', value='2', format='int')
@@ -101,38 +113,26 @@ opObj12.addParameter(name='zmax', value='90', format='int')
 procUnitConfObj2 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=procUnitConfObj1.getId())
 opObj20 = procUnitConfObj2.addOperation(name='GetMoments')
  
-opObj21 = procUnitConfObj2.addOperation(name='MomentsPlot', optype='other')
-opObj21.addParameter(name='id', value='3', format='int')
-opObj21.addParameter(name='wintitle', value='Moments Plot', format='str')
-opObj21.addParameter(name='save', value='1', format='bool')
-opObj21.addParameter(name='figpath', value=pathFigure, format='str')
-opObj21.addParameter(name='zmin', value='5', format='int')
-opObj21.addParameter(name='zmax', value='90', format='int')
+# opObj21 = procUnitConfObj2.addOperation(name='MomentsPlot', optype='other')
+# opObj21.addParameter(name='id', value='3', format='int')
+# opObj21.addParameter(name='wintitle', value='Moments Plot', format='str')
+# opObj21.addParameter(name='save', value='1', format='bool')
+# opObj21.addParameter(name='figpath', value=pathFigure, format='str')
+# opObj21.addParameter(name='zmin', value='5', format='int')
+# opObj21.addParameter(name='zmax', value='90', format='int')
 
-opObj21 = procUnitConfObj2.addOperation(name='ParametersPlot', optype='other')
-opObj21.addParameter(name='id', value='5', format='int')
-opObj21.addParameter(name='wintitle', value='Radial Velocity Plot', format='str')
-opObj21.addParameter(name='save', value='1', format='bool')
-opObj21.addParameter(name='figpath', value=pathFigure, format='str')
-opObj21.addParameter(name='SNRmin', value='-10', format='int')
-opObj21.addParameter(name='SNRmax', value='60', format='int')
-opObj21.addParameter(name='SNRthresh', value='0', format='float')
-opObj21.addParameter(name='xmin', value=xmin, format='float')
-opObj21.addParameter(name='xmax', value=xmax, format='float')
-
-opObj21 = procUnitConfObj2.addOperation(name='ParametersPlot', optype='other')
-opObj21.addParameter(name='id', value='6', format='int')
-opObj21.addParameter(name='wintitle', value='Spectral width Plot', format='str')
-opObj21.addParameter(name='save', value='1', format='bool')
-opObj21.addParameter(name='figpath', value=pathFigure, format='str')
-opObj21.addParameter(name='SNRmin', value='-10', format='int')
-opObj21.addParameter(name='SNRmax', value='60', format='int')
-opObj21.addParameter(name='SNRthresh', value='0', format='float')
-opObj21.addParameter(name='xmin', value=xmin, format='float')
-opObj21.addParameter(name='xmax', value=xmax, format='float')
-opObj21.addParameter(name='zmin', value=0, format='float')
-opObj21.addParameter(name='paramIndex', value=2, format='int')
-opObj21.addParameter(name='onlyPositive', value=1, format='bool')
+# opObj21 = procUnitConfObj2.addOperation(name='ParametersPlot', optype='other')
+# opObj21.addParameter(name='id', value='5', format='int')
+# opObj21.addParameter(name='wintitle', value='Radial Velocity Plot', format='str')
+# opObj21.addParameter(name='save', value='0', format='bool')
+# opObj21.addParameter(name='figpath', value=pathFigure, format='str')
+# opObj21.addParameter(name='SNRmin', value='-10', format='int')
+# opObj21.addParameter(name='SNRmax', value='60', format='int')
+# opObj21.addParameter(name='channelList', value='0,2', format='intlist')
+# opObj21.addParameter(name='SNR', value='1', format='bool')
+# opObj21.addParameter(name='SNRthresh', value='0', format='float')
+# opObj21.addParameter(name='xmin', value=xmin, format='float')
+# opObj21.addParameter(name='xmax', value=xmax, format='float')
      
 opObj22 = procUnitConfObj2.addOperation(name='WindProfiler', optype='other')
 opObj22.addParameter(name='technique', value='DBS', format='str')
@@ -140,11 +140,11 @@ opObj22.addParameter(name='correctAzimuth', value='51.06', format='float')
 opObj22.addParameter(name='correctFactor', value='-1', format='float') 
 opObj22.addParameter(name='dirCosx', value='0.041016, 0, -0.054688', format='floatlist') 
 opObj22.addParameter(name='dirCosy', value='-0.041016, 0.025391, -0.023438', format='floatlist')
-# opObj22.addParameter(name='horizontalOnly', value='1', format='bool')
-# opObj22.addParameter(name='channelList', value='1,2', format='intlist')
-
+# opObj22.addParameter(name='horizontalOnly', value='0', format='bool')
+# opObj22.addParameter(name='channelList', value='1,2,3', format='intlist')
+  
 opObj23 = procUnitConfObj2.addOperation(name='WindProfilerPlot', optype='other')
-opObj23.addParameter(name='id', value='4', format='int')
+opObj23.addParameter(name='id', value='3', format='int')
 opObj23.addParameter(name='wintitle', value='Wind Profiler', format='str')
 opObj23.addParameter(name='save', value='1', format='bool')
 opObj23.addParameter(name='figpath', value = pathFigure, format='str')
