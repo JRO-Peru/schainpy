@@ -119,7 +119,8 @@ class SpectraPlot(Figure):
                 
         factor = dataOut.normFactor
         
-        x = dataOut.getVelRange(1)
+        x = dataOut.getFreqRange(1)/1000
+#         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         
         z = dataOut.data_spc/factor
@@ -137,7 +138,7 @@ class SpectraPlot(Figure):
         if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
             title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
         
-        xlabel = "Velocity (m/s)"
+        xlabel = "Frequency (KHz)"
         ylabel = "Range (Km)"
         
         if not self.isConfig:
@@ -360,24 +361,28 @@ class CrossSpectraPlot(Figure):
             
         for i in range(self.nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
+            
+            chan_index0 = dataOut.channelList.index(pair[0])
+            chan_index1 = dataOut.channelList.index(pair[1])
+            
             str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
-            title = "Ch%d: %4.2fdB: %s" %(pair[0], noisedB[pair[0]], str_datetime)
-            zdB = 10.*numpy.log10(dataOut.data_spc[pair[0],:,:]/factor)
+            title = "Ch%d: %4.2fdB: %s" %(pair[0], noisedB[chan_index0], str_datetime)
+            zdB = 10.*numpy.log10(dataOut.data_spc[chan_index0,:,:]/factor)
             axes0 = self.axesList[i*self.__nsubplots]
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=power_cmap, cblabel='')
             
-            title = "Ch%d: %4.2fdB: %s" %(pair[1], noisedB[pair[1]], str_datetime)
-            zdB = 10.*numpy.log10(dataOut.data_spc[pair[1],:,:]/factor)
+            title = "Ch%d: %4.2fdB: %s" %(pair[1], noisedB[chan_index1], str_datetime)
+            zdB = 10.*numpy.log10(dataOut.data_spc[chan_index1,:,:]/factor)
             axes0 = self.axesList[i*self.__nsubplots+1]
             axes0.pcolor(x, y, zdB,
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=power_cmap, cblabel='')
 
-            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[pair[0],:,:]*dataOut.data_spc[pair[1],:,:])
+            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:])
             coherence = numpy.abs(coherenceComplex)
 #            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
             phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
@@ -933,6 +938,125 @@ class PowerProfilePlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
+class SpectraCutPlot(Figure):
+    
+    isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'spc_cut'
+    
+    def __init__(self):
+        self.isConfig = False
+        self.__nsubplots = 1
+        
+        self.PLOT_CODE = POWER_CODE
+        
+        self.WIDTH = 700
+        self.HEIGHT = 500
+        self.counter_imagwr = 0
+    
+    def getSubplots(self):
+        ncol = 1
+        nrow = 1
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, show):
+        
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+        
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH,
+                          heightplot = self.HEIGHT,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+    
+    def run(self, dataOut, id, wintitle="", channelList=None,
+            xmin=None, xmax=None, ymin=None, ymax=None,
+            save=False, figpath='./', figfile=None, show=True,
+            ftp=False, wr_period=1, server=None,
+            folder=None, username=None, password=None):
+        
+        
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+            channelList = dataOut.channelList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+                
+        factor = dataOut.normFactor
+        
+        x = dataOut.getFreqRangeTimeResponse()/1000
+        y = dataOut.getHeiRange()
+        
+        z = dataOut.data_spc/factor
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
+        
+        hei_index = numpy.arange(30)*4 + 60
+        
+        zdB = 10*numpy.log10(z[0,:,hei_index])
+#         zdB = numpy.swapaxes(zdB, 0, 1)
+        
+        
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        title = wintitle + " Power Profile %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        xlabel = "Frequency (KHz)"
+        ylabel = "Power (dB)"
+        
+        if not self.isConfig:
+            
+            nplots = 1
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       show=show)
+            
+            if xmin == None: xmin = numpy.nanmin(x)*0.9
+            if xmax == None: xmax = numpy.nanmax(x)*1.1
+            if ymin == None: ymin = numpy.nanmin(zdB)
+            if ymax == None: ymax = numpy.nanmax(zdB)
+            
+            self.isConfig = True
+        
+        self.setWinTitle(title)
+        
+        title = "Spectra Cuts: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        axes = self.axesList[0]
+        
+        legendlabels = ["Range = %dKm" %y[i] for i in hei_index]
+        
+        axes.pmultilineyaxis( x, zdB,
+                xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels,
+                ytick_visible=True, nxticks=5,
+                grid='x')
+        
+        self.draw()
+        
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
+        
 class Noise(Figure):
     
     isConfig = None
