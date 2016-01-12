@@ -60,7 +60,7 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.heightList = self.dataIn.getHeiRange()   
         self.dataOut.frequency = self.dataIn.frequency
         
-    def run(self, nSeconds = None, nProfiles = None):
+    def run(self, nSeconds = 100, nProfiles = None):
         
         
         
@@ -71,16 +71,20 @@ class ParametersProc(ProcessingUnit):
         
         if self.dataIn.type == "Voltage":
             self.dataOut.flagNoData = True
-            if nSeconds != None:
+
+            
+            if self.buffer == None:
                 self.nSeconds = nSeconds
                 self.nProfiles= int(numpy.floor(nSeconds/(self.dataIn.ippSeconds*self.dataIn.nCohInt)))
+                
+                self.buffer = numpy.zeros((self.dataIn.nChannels,
+                                           self.nProfiles,
+                                           self.dataIn.nHeights), 
+                                           dtype='complex')
             
-            if self.buffer is None:
-                    self.buffer = numpy.zeros((self.dataIn.nChannels,
-                                               self.nProfiles,
-                                               self.dataIn.nHeights), 
-                                               dtype='complex')
-    
+            if self.profIndex == 7990:
+                a = 1
+                
             self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
             self.profIndex += 1
             
@@ -131,7 +135,7 @@ class ParametersProc(ProcessingUnit):
         self.__updateObjFromInput()
         self.firstdatatime = None
         self.dataOut.utctimeInit = self.dataIn.utctime
-        self.dataOut.outputInterval = self.dataIn.timeInterval
+        self.dataOut.paramInterval = self.dataIn.timeInterval
             
     #-------------------    Get Moments    ----------------------------------
     def GetMoments(self, channelList = None):
@@ -174,7 +178,7 @@ class ParametersProc(ProcessingUnit):
         elif (self.smooth < 3): smooth = 0
 
         if (type1 == None): type1 = 0
-        if (fwindow is None): fwindow = numpy.zeros(oldfreq.size) + 1
+        if (fwindow == None): fwindow = numpy.zeros(oldfreq.size) + 1
         if (snrth == None): snrth = -3
         if (dc == None): dc = 0
         if (aliasing == None): aliasing = 0
@@ -559,7 +563,10 @@ class ParametersProc(ProcessingUnit):
         #***************************+     PASS DATA TO NEXT STEP    **********************                       
             arrayFinal = arrayParameters.reshape((1,arrayParameters.shape[0],arrayParameters.shape[1]))
             self.dataOut.data_param = arrayFinal
-        
+            
+            if arrayFinal == None:
+                self.dataOut.flagNoData = True
+            
         return
     
     def __getHardwarePhaseDiff(self, voltage0, pairslist, newheis, n):
@@ -1051,6 +1058,10 @@ class ParametersProc(ProcessingUnit):
         date = re.findall(r'\((.*?)\)', date)
         date = date[0].split(',')
         date = map(int, date)
+        
+        if len(date)<6:
+            date.append(0)
+            
         date = [date[0]*10000 + date[1]*100 + date[2], date[3]*10000 + date[4]*100 + date[5]]
         arrayDate = numpy.tile(date, (len(listMeteors), 1))
         
@@ -1280,7 +1291,7 @@ class ParametersProc(ProcessingUnit):
                     error1 = p0*numpy.nan
                                          
                 #Save
-                if self.dataOut.data_param is None:
+                if self.dataOut.data_param == None:
                     self.dataOut.data_param = numpy.zeros((nGroups, p0.size, nHeights))*numpy.nan
                     self.dataOut.data_error = numpy.zeros((nGroups, p0.size + 1, nHeights))*numpy.nan
                 
@@ -1580,9 +1591,12 @@ class WindProfiler(Operation):
         
         Parameters affected:    Winds
         '''      
-        print arrayMeteor.shape  
+#         print arrayMeteor.shape  
         #Settings
         nInt = (heightMax - heightMin)/2
+#         print nInt
+        nInt = int(nInt)
+#         print nInt
         winds = numpy.zeros((2,nInt))*numpy.nan    
         
         #Filter errors
@@ -1633,8 +1647,8 @@ class WindProfiler(Operation):
     def run(self, dataOut, technique, **kwargs):
         
         param = dataOut.data_param
-#         if dataOut.abscissaList != None:
-#             absc = dataOut.abscissaList[:-1]
+        if dataOut.abscissaList != None:
+            absc = dataOut.abscissaList[:-1]
         noise = dataOut.noise
         heightList = dataOut.heightList
         SNR = dataOut.data_SNR
@@ -1726,7 +1740,7 @@ class WindProfiler(Operation):
 
                 self.__isConfig = True
                 
-            if self.__buffer is None:
+            if self.__buffer == None:
                 self.__buffer = dataOut.data_param
                 self.__firstdata = copy.copy(dataOut)
 
@@ -1837,7 +1851,7 @@ class PhaseCalibration(Operation):
     
     def __getGammas(self, pairs, k, d, phases):
         gammas = numpy.zeros(2)
-        
+    
         for i in range(len(pairs)):
      
             pairi = pairs[i]
@@ -1859,7 +1873,7 @@ class PhaseCalibration(Operation):
             phasesX = phaseHisto[1][:-1]
             width = phasesX[1] - phasesX[0]
             phasesX += width/2
-
+            
             #Gaussian aproximation
             bpeak = meteorsY.argmax()
             peak = meteorsY.max()
@@ -1878,8 +1892,7 @@ class PhaseCalibration(Operation):
             
             #Gammas
             gammas[i] = coeff[0][1]
-#             gammas[i] = bpeak
-            
+        
         return gammas
     
     def __residualFunction(self, coeffs, y, t):
@@ -1897,7 +1910,7 @@ class PhaseCalibration(Operation):
         pairy = pairsList[1]
         center_xangle = 0
         center_yangle = 0
-        range_angle = numpy.array([8*numpy.pi,numpy.pi,numpy.pi/2,numpy.pi/4])
+        range_angle = numpy.array([10*numpy.pi,numpy.pi,numpy.pi/2,numpy.pi/4])
         ntimes = len(range_angle)
         
         nstepsx = 20.0
@@ -1963,7 +1976,7 @@ class PhaseCalibration(Operation):
 
             self.__isConfig = True
             
-        if self.__buffer is None:
+        if self.__buffer == None:
             self.__buffer = dataOut.data_param.copy()
 
         else:
@@ -2139,6 +2152,3 @@ class MeteorOperations():
         error[indInvalid1] = 13 
         
         return heights, error
-
-    
-    
