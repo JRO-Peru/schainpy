@@ -829,8 +829,18 @@ class Project():
         
     def __getNewId(self):
         
-        id = int(self.id)*10 + len(self.procUnitConfObjDict) + 1
+        idList = self.procUnitConfObjDict.keys()
         
+        id = int(self.id)*10
+        
+        while True:
+            id += 1
+            
+            if str(id) in idList:
+                continue
+            
+            break
+            
         return str(id)
     
     def getElementName(self):
