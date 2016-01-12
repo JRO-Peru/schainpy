@@ -10,3 +10,4 @@ from jroproc_heispectra import *
 from jroproc_amisr import *
 from jroproc_correlation import *
 from jroproc_parameters import *
+from jroproc_spectra_lags import *
