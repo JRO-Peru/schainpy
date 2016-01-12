@@ -67,3 +67,7 @@ was modified for every branch (because this was a reference). It was modified in
 -Filtering block by time has been added.
 -Bug fixed plotting RTI, CoherenceMap and others using xmin and xmax parameters. The first day worked
 properly but the next days did not.
+
+2.2.4:
+-jroproc_spectra_lags.py added to schainpy
+-Bug fixed in schainGUI: project created the same procUnit in some cases.
