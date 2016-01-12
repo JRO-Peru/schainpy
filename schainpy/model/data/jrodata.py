@@ -95,7 +95,7 @@ def hildebrand_sekhon(data, navg):
         j += 1
         
     lnoise = sump /j
-    stdv = numpy.sqrt((sumq - lnoise**2)/(j - 1))
+#     stdv = numpy.sqrt((sumq - lnoise**2)/(j - 1))
     return lnoise   
 
 class Beam:
@@ -254,6 +254,12 @@ class JROData(GenericData):
         
         return heis
     
+    def getDeltaH(self):
+        
+        delta = self.heightList[1] - self.heightList[0]
+        
+        return delta
+    
     def getltctime(self):
         
         if self.useLocalTime:
@@ -277,11 +283,21 @@ class JROData(GenericData):
         
         return datatime
     
+    def getFmaxTimeResponse(self):
+        
+        period = (10**-6)*self.getDeltaH()/(0.15)
+        
+        PRF = 1./(period * self.nCohInt)
+        
+        fmax = PRF
+        
+        return fmax
+    
     def getFmax(self):
         
         PRF = 1./(self.ippSeconds * self.nCohInt)
         
-        fmax = PRF/2.
+        fmax = PRF
         
         return fmax
     
@@ -592,7 +608,14 @@ class Spectra(JROData):
         else:
             noise = self.getNoisebyHildebrand(xmin_index, xmax_index, ymin_index, ymax_index)
             return noise
+    
+    def getFreqRangeTimeResponse(self, extrapoints=0):
         
+        deltafreq = self.getFmaxTimeResponse() / (self.nFFTPoints*self.ippFactor)
+        freqrange = deltafreq*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
+        
+        return freqrange
+    
     def getFreqRange(self, extrapoints=0):
         
         deltafreq = self.getFmax() / (self.nFFTPoints*self.ippFactor)
