@@ -35,7 +35,7 @@ class SpectraLagsProc(ProcessingUnit):
         self.dataOut.nBaud = self.dataIn.nBaud
         self.dataOut.nCode = self.dataIn.nCode
         self.dataOut.code = self.dataIn.code
-        self.dataOut.nProfiles = self.dataOut.nFFTPoints
+#         self.dataOut.nProfiles = self.dataOut.nFFTPoints
         
         self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
         self.dataOut.utctime = self.firstdatatime
@@ -150,6 +150,7 @@ class SpectraLagsProc(ProcessingUnit):
             self.dataOut.ippFactor = 1
             
             self.dataOut.nFFTPoints = nFFTPoints
+            self.dataOut.nProfiles = nProfiles
             self.dataOut.pairsList = pairsList
 
 #             if self.buffer is None:
