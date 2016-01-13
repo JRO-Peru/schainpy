@@ -80,6 +80,7 @@ class PlotManager():
     
     plotterList = ['Scope',
                    'SpectraPlot', 'RTIPlot',
+                   'SpectraCutPlot',
                    'CrossSpectraPlot', 'CoherenceMap',
                    'PowerProfilePlot', 'Noise', 'BeaconPhase',
                    'CorrelationPlot',
