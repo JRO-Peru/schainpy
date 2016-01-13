@@ -523,6 +523,8 @@ class Spectra(JROData):
     
     profileIndex = 0
     
+    plotting = "spectra"
+    
     def __init__(self):
         '''
         Constructor
