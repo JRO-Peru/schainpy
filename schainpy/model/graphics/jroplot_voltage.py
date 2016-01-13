@@ -172,6 +172,16 @@ class Scope(Figure):
                                  ymax)
                     
                 self.draw()
+                
+                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+                figfile = self.getFilename(name = str_datetime) + "_" + str(i)
+        
+                self.save(figpath=figpath,
+                          figfile=figfile,
+                          save=save,
+                          ftp=ftp,
+                          wr_period=wr_period,
+                          thisDatetime=thisDatetime)
         
         else:
             wintitle += " [Profile = %d] " %dataOut.profileIndex
@@ -203,7 +213,10 @@ class Scope(Figure):
                              ymax)
         
         self.draw()
-            
+        
+        str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S") + "_" + str(dataOut.profileIndex)
+        figfile = self.getFilename(name = str_datetime) 
+                
         self.save(figpath=figpath,
                   figfile=figfile,
                   save=save,
