@@ -10,15 +10,19 @@ class SpectraLagsProc(ProcessingUnit):
         
         ProcessingUnit.__init__(self)
         
-        self.buffer = None
+        self.__input_buffer = None
         self.firstdatatime = None
         self.profIndex = 0
         self.dataOut = Spectra()
         self.id_min = None
         self.id_max = None
+        self.__codeIndex = 0
+        
+        self.__lags_buffer = None
 
     def __updateSpecFromVoltage(self):
         
+        self.dataOut.plotting = "spectra_lags"
         self.dataOut.timeZone = self.dataIn.timeZone
         self.dataOut.dstFlag = self.dataIn.dstFlag
         self.dataOut.errorCount = self.dataIn.errorCount
@@ -57,16 +61,36 @@ class SpectraLagsProc(ProcessingUnit):
         self.dataOut.beam.codeList = self.dataIn.beam.codeList
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
+    
+    def __createLagsBlock(self, voltages):
         
-    def __decodeData(self, nProfiles, code):
+        if self.__lags_buffer is None:
+            self.__lags_buffer = numpy.zeros((self.dataOut.nChannels, self.dataOut.nProfiles, self.dataOut.nHeights), dtype='complex')
         
-        if code is None:
-            return
+        nsegments = self.dataOut.nHeights - self.dataOut.nProfiles
         
-        for i in range(nProfiles):
-            self.buffer[:,i,:] = self.buffer[:,i,:]*code[0][i]
+#         codes = numpy.conjugate(self.__input_buffer[:,9:169])/10000
         
-    def __getFft(self):
+        for i in range(nsegments):
+            self.__lags_buffer[:,:,i] = voltages[:,i:i+self.dataOut.nProfiles]#*codes
+        
+        return self.__lags_buffer
+        
+    def __decodeData(self, volt_buffer, pulseIndex=None):
+        
+        if pulseIndex is None:
+            return volt_buffer
+        
+        codes = numpy.conjugate(self.__input_buffer[:,pulseIndex[0]:pulseIndex[1]])/10000
+        
+        nsegments = self.dataOut.nHeights - self.dataOut.nProfiles
+            
+        for i in range(nsegments):
+            volt_buffer[:,:,i] = volt_buffer[:,:,i]*codes
+        
+        return volt_buffer
+    
+    def __getFft(self, datablock):
         """
         Convierte valores de Voltaje a Spectra
         
@@ -76,25 +100,13 @@ class SpectraLagsProc(ProcessingUnit):
             self.dataOut.data_dc
             self.dataOut.heightList
             self.profIndex  
-            self.buffer
+            self.__input_buffer
             self.dataOut.flagNoData
         """
-        nsegments = self.dataOut.nHeights
         
-        _fft_buffer = numpy.zeros((self.dataOut.nChannels, self.dataOut.nProfiles, nsegments), dtype='complex')
+        fft_volt = numpy.fft.fft(datablock, n=self.dataOut.nFFTPoints, axis=1)
         
-        for i in range(nsegments):
-            try:
-                _fft_buffer[:,:,i] = self.buffer[:,i:i+self.dataOut.nProfiles]
-                
-                if self.code is not None:
-                    _fft_buffer[:,:,i] = _fft_buffer[:,:,i]*self.code[0]
-            except:
-                pass
-        
-        fft_volt = numpy.fft.fft(_fft_buffer, n=self.dataOut.nFFTPoints, axis=1)
-        fft_volt = fft_volt.astype(numpy.dtype('complex'))
-        dc = fft_volt[:,0,:]
+#         dc = fft_volt[:,0,:]
         
         #calculo de self-spectra
         fft_volt = numpy.fft.fftshift(fft_volt, axes=(1,))
@@ -102,7 +114,7 @@ class SpectraLagsProc(ProcessingUnit):
         spc = spc.real
         
         blocksize = 0
-        blocksize += dc.size
+#         blocksize += dc.size
         blocksize += spc.size
         
         cspc = None
@@ -126,19 +138,23 @@ class SpectraLagsProc(ProcessingUnit):
         
         self.dataOut.data_spc = spc
         self.dataOut.data_cspc = cspc
-        self.dataOut.data_dc = dc
+#         self.dataOut.data_dc = dc
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = True
         
-    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], code=None, nCode=1, nBaud=1):
+    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], code=None, nCode=None, nBaud=None, codeFromHeader=False, pulseIndex=None):
         
         self.dataOut.flagNoData = True
         
+        self.code = None
+            
+        if codeFromHeader:
+            if self.dataIn.code is not None:
+                self.code = self.dataIn.code
+        
         if code is not None:
             self.code = numpy.array(code).reshape(nCode,nBaud)
-        else:
-            self.code = None
-        
+            
         if self.dataIn.type == "Voltage":
             
             if nFFTPoints == None:
@@ -146,35 +162,28 @@ class SpectraLagsProc(ProcessingUnit):
             
             if nProfiles == None:
                 nProfiles = nFFTPoints
-                
-            self.dataOut.ippFactor = 1
             
+            self.profIndex == nProfiles
+            self.firstdatatime = self.dataIn.utctime
+            
+            self.dataOut.ippFactor = 1
             self.dataOut.nFFTPoints = nFFTPoints
             self.dataOut.nProfiles = nProfiles
             self.dataOut.pairsList = pairsList
-
-#             if self.buffer is None:
-#                 self.buffer = numpy.zeros( (self.dataIn.nChannels, nProfiles, self.dataIn.nHeights),
-#                                           dtype='complex')
-
-            if not self.dataIn.flagDataAsBlock:
-                self.buffer = self.dataIn.data.copy()
-                
-#                 for i in range(self.dataIn.nHeights):
-#                     self.buffer[:, self.profIndex, self.profIndex:] = voltage_data[:,:self.dataIn.nHeights - self.profIndex]
-#                 
-#                 self.profIndex += 1
-            
-            else:
-                raise ValueError, ""
-            
-            self.firstdatatime = self.dataIn.utctime
-            
-            self.profIndex == nProfiles
             
             self.__updateSpecFromVoltage()
             
-            self.__getFft()
+            if not self.dataIn.flagDataAsBlock:
+                self.__input_buffer = self.dataIn.data.copy()
+                
+                lags_block = self.__createLagsBlock(self.__input_buffer)
+            
+                lags_block = self.__decodeData(lags_block, pulseIndex)
+            
+            else:
+                self.__input_buffer = self.dataIn.data.copy()
+            
+            self.__getFft(lags_block)
             
             self.dataOut.flagNoData = False
             
@@ -728,183 +737,3 @@ class SpectraLagsProc(ProcessingUnit):
         self.dataOut.noise_estimation = noise.copy()
         
         return 1
-        
-class IncohIntLags(Operation):
-    
-    
-    __profIndex = 0
-    __withOverapping  = False
-    
-    __byTime = False
-    __initime = None
-    __lastdatatime = None
-    __integrationtime = None
-    
-    __buffer_spc = None
-    __buffer_cspc = None
-    __buffer_dc = None
-    
-    __dataReady = False
-    
-    __timeInterval = None
-    
-    n = None
-    
-    
-    
-    def __init__(self):
-        
-        Operation.__init__(self)
-#         self.isConfig = False
-    
-    def setup(self, n=None, timeInterval=None, overlapping=False):
-        """
-        Set the parameters of the integration class.
-        
-        Inputs:
-        
-            n        :    Number of coherent integrations
-            timeInterval   :    Time of integration. If the parameter "n" is selected this one does not work
-            overlapping    :    
-            
-        """
-        
-        self.__initime = None
-        self.__lastdatatime = 0
-        
-        self.__buffer_spc = 0
-        self.__buffer_cspc = 0
-        self.__buffer_dc = 0
-        
-        self.__profIndex = 0
-        self.__dataReady = False
-        self.__byTime = False
-        
-        if n is None and timeInterval is None:
-            raise ValueError, "n or timeInterval should be specified ..." 
-        
-        if n is not None:
-            self.n = int(n)
-        else:
-            self.__integrationtime = int(timeInterval) #if (type(timeInterval)!=integer) -> change this line
-            self.n = None
-            self.__byTime = True
-    
-    def putData(self, data_spc, data_cspc, data_dc):
-        
-        """
-        Add a profile to the __buffer_spc and increase in one the __profileIndex
-        
-        """
-            
-        self.__buffer_spc += data_spc
-        
-        if data_cspc is None:
-            self.__buffer_cspc = None
-        else:
-            self.__buffer_cspc += data_cspc
-        
-        if data_dc is None:
-            self.__buffer_dc = None
-        else:
-            self.__buffer_dc += data_dc
-        
-        self.__profIndex += 1
-                  
-        return
-        
-    def pushData(self):
-        """
-        Return the sum of the last profiles and the profiles used in the sum.
-        
-        Affected:
-        
-        self.__profileIndex
-        
-        """
-        
-        data_spc = self.__buffer_spc
-        data_cspc = self.__buffer_cspc
-        data_dc = self.__buffer_dc
-        n = self.__profIndex
-    
-        self.__buffer_spc = 0
-        self.__buffer_cspc = 0
-        self.__buffer_dc = 0
-        self.__profIndex = 0
-        
-        return data_spc, data_cspc, data_dc, n
-    
-    def byProfiles(self, *args):
-        
-        self.__dataReady = False
-        avgdata_spc = None
-        avgdata_cspc = None
-        avgdata_dc = None
-        
-        self.putData(*args)
-        
-        if self.__profIndex == self.n:
-            
-            avgdata_spc, avgdata_cspc, avgdata_dc, n = self.pushData()
-            self.n = n
-            self.__dataReady = True
-        
-        return avgdata_spc, avgdata_cspc, avgdata_dc
-    
-    def byTime(self, datatime, *args):
-        
-        self.__dataReady = False
-        avgdata_spc = None
-        avgdata_cspc = None
-        avgdata_dc = None
-        
-        self.putData(*args)
-        
-        if (datatime - self.__initime) >= self.__integrationtime:
-            avgdata_spc, avgdata_cspc, avgdata_dc, n = self.pushData()
-            self.n = n
-            self.__dataReady = True
-        
-        return avgdata_spc, avgdata_cspc, avgdata_dc
-        
-    def integrate(self, datatime, *args):
-        
-        if self.__profIndex == 0:
-            self.__initime = datatime
-        
-        if self.__byTime:
-            avgdata_spc, avgdata_cspc, avgdata_dc = self.byTime(datatime, *args)
-        else:
-            avgdata_spc, avgdata_cspc, avgdata_dc = self.byProfiles(*args)
-        
-        if not self.__dataReady:
-            return None, None, None, None
-            
-        return self.__initime, avgdata_spc, avgdata_cspc, avgdata_dc
-        
-    def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
-        
-        if n==1:
-            return
-        
-        dataOut.flagNoData = True
-        
-        if not self.isConfig:
-            self.setup(n, timeInterval, overlapping)
-            self.isConfig = True
-                    
-        avgdatatime, avgdata_spc, avgdata_cspc, avgdata_dc = self.integrate(dataOut.utctime,
-                                                                            dataOut.data_spc,
-                                                                            dataOut.data_cspc,
-                                                                            dataOut.data_dc)
-        
-        if self.__dataReady:
-            
-            dataOut.data_spc = avgdata_spc
-            dataOut.data_cspc = avgdata_cspc
-            dataOut.data_dc = avgdata_dc
-            
-            dataOut.nIncohInt *= self.n
-            dataOut.utctime = avgdatatime
-            dataOut.flagNoData = False
