@@ -85,7 +85,8 @@ class SpectraPlot(Figure):
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False):
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
+            xaxis="velocity"):
         
         """
         
@@ -119,8 +120,20 @@ class SpectraPlot(Figure):
                 
         factor = dataOut.normFactor
         
-        x = dataOut.getFreqRange(1)/1000
-#         x = dataOut.getVelRange(1)
+        if xaxis == "frequency":
+            x = dataOut.getFreqRange(1)/1000.
+            xlabel = "Frquency (KHz)"
+            
+        elif xaxis == "time":
+            x = dataOut.getAcfRange(1)
+            xlabel = "Time (ms)"
+            
+        else:
+            x = dataOut.getVelRange(1)
+            xlabel = "Velocity (m/s)"
+            
+        ylabel = "Range (Km)"
+        
         y = dataOut.getHeiRange()
         
         z = dataOut.data_spc/factor
@@ -137,10 +150,7 @@ class SpectraPlot(Figure):
         title = wintitle + " Spectra" 
         if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
             title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
-        
-        xlabel = "Frequency (KHz)"
-        ylabel = "Range (Km)"
-        
+                    
         if not self.isConfig:
             
             nplots = len(channelIndexList)
@@ -987,7 +997,8 @@ class SpectraCutPlot(Figure):
             xmin=None, xmax=None, ymin=None, ymax=None,
             save=False, figpath='./', figfile=None, show=True,
             ftp=False, wr_period=1, server=None,
-            folder=None, username=None, password=None):
+            folder=None, username=None, password=None,
+            xaxis="velocity"):
         
         
         if channelList == None:
@@ -1002,22 +1013,33 @@ class SpectraCutPlot(Figure):
                 
         factor = dataOut.normFactor
         
-        x = dataOut.getFreqRangeTimeResponse()/1000
         y = dataOut.getHeiRange()
         
         z = dataOut.data_spc/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         
-        hei_index = numpy.arange(30)*4 + 60
+        hei_index = numpy.arange(15)*3 + 20
         
-        zdB = 10*numpy.log10(z[0,:,hei_index])
-#         zdB = numpy.swapaxes(zdB, 0, 1)
-        
+        if xaxis == "frequency":
+            x = dataOut.getFreqRange()/1000.
+            zdB = 10*numpy.log10(z[0,:,hei_index])
+            xlabel = "Frquency (KHz)"
+            ylabel = "Power (dB)"
+            
+        elif xaxis == "time":
+            x = dataOut.getAcfRange()
+            zdB = z[0,:,hei_index]
+            xlabel = "Time (ms)"
+            ylabel = "ACF"
+            
+        else:
+            x = dataOut.getVelRange()
+            zdB = 10*numpy.log10(z[0,:,hei_index])
+            xlabel = "Velocity (m/s)"
+            ylabel = "Power (dB)"
         
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
-        title = wintitle + " Power Profile %s" %(thisDatetime.strftime("%d-%b-%Y"))
-        xlabel = "Frequency (KHz)"
-        ylabel = "Power (dB)"
+        title = wintitle + " Range Cuts %s" %(thisDatetime.strftime("%d-%b-%Y"))
         
         if not self.isConfig:
             
