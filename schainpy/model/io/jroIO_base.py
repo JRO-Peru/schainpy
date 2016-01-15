@@ -136,11 +136,22 @@ def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
     lastBasicHeaderObj = BasicHeader(LOCALTIME)
     
     sts = firstBasicHeaderObj.read(fp)
+    
+    if not(sts):
+        print "[Reading] Skipping the file %s because it has not a valid header" %(filename)
+        return None
+    
     sts = systemHeaderObj.read(fp)
     sts = radarControllerHeaderObj.read(fp)
     sts = processingHeaderObj.read(fp)
     
+    filesize = os.path.getsize(filename)
+    
     offset = processingHeaderObj.blockSize + 24 #header size
+    
+    if filesize <= offset:
+        print "[Reading] %s: This file has not enough data" %filename
+        return None
     
     fp.seek(-offset, 2)
     
@@ -148,17 +159,12 @@ def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
     
     fp.close()
     
-    if not(sts):
-        print "Skipping the file %s because it has not a valid header" %(filename)
-        return None
+    thisDatetime = lastBasicHeaderObj.datatime
+    thisTime_last_block = thisDatetime.time()
     
     thisDatetime = firstBasicHeaderObj.datatime
     thisDate = thisDatetime.date()
     thisTime_first_block = thisDatetime.time()
-    
-    thisDatetime = lastBasicHeaderObj.datatime
-    thisTime_last_block = thisDatetime.time()
-    
     
     #General case
     #           o>>>>>>>>>>>>>><<<<<<<<<<<<<<o
