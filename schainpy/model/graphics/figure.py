@@ -586,7 +586,7 @@ class Axes:
             self.__firsttime = False
             return
             
-        self.x_buffer = numpy.hstack((self.x_buffer, x[-1]))
+        self.x_buffer = numpy.hstack((self.x_buffer[:-1], x[0], x[-1]))
         self.z_buffer = numpy.hstack((self.z_buffer, z))
         
         if self.decimationx == None:
