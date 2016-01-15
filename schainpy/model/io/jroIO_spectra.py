@@ -534,13 +534,13 @@ class SpectraWriter(JRODataWriter, Operation):
             data = data.reshape((-1))
             data.tofile(self.fp)
 
-        self.data_spc.fill(0)
-        
-        if self.data_dc is not None:
-            self.data_dc.fill(0)
-            
-        if self.data_cspc is not None:
-            self.data_cspc.fill(0)
+#         self.data_spc.fill(0)
+#         
+#         if self.data_dc is not None:
+#             self.data_dc.fill(0)
+#             
+#         if self.data_cspc is not None:
+#             self.data_cspc.fill(0)
         
         self.flagIsNewFile = 0
         self.flagIsNewBlock = 1
@@ -582,8 +582,9 @@ class SpectraWriter(JRODataWriter, Operation):
         
         if self.dataOut.data_cspc is not None:
             self.data_cspc = self.dataOut.data_cspc.copy()
-            
-        self.data_dc = self.dataOut.data_dc.copy()
+        
+        if self.dataOut.data_dc is not None:
+            self.data_dc = self.dataOut.data_dc.copy()
         
         # #self.processingHeaderObj.dataBlocksPerFile)
         if self.hasAllDataInBuffer():
