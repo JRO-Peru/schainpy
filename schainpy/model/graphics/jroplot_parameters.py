@@ -323,7 +323,8 @@ class SkyMapPlot(Figure):
                   save=save,
                   ftp=ftp,
                   wr_period=wr_period,
-                  thisDatetime=thisDatetime)
+                  thisDatetime=thisDatetime,
+                  update_figfile=False)
 
                                 
 class WindProfilerPlot(Figure):
@@ -1338,21 +1339,21 @@ class PhasePlot(Figure):
             del self.ydata
             self.__isConfig = False
         
-        if self.figfile == None:
-            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.figfile = self.getFilename(name = str_datetime)
+#         if self.figfile == None:
+#             str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+#             self.figfile = self.getFilename(name = str_datetime)
         
-        if figpath != '':
-            self.counter_imagwr += 1
-            if (self.counter_imagwr>=wr_period):
-                # store png plot to local folder
-                self.saveFigure(figpath, self.figfile)
-                # store png plot to FTP server according to RT-Web format 
-                name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-                ftp_filename = os.path.join(figpath, name)
-                self.saveFigure(figpath, ftp_filename)                
-                self.counter_imagwr = 0
-            self.figfile = None
+#         if figpath != '':
+#             self.counter_imagwr += 1
+#             if (self.counter_imagwr>=wr_period):
+#                 # store png plot to local folder
+#                 self.saveFigure(figpath, self.figfile)
+#                 # store png plot to FTP server according to RT-Web format 
+#                 name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
+#                 ftp_filename = os.path.join(figpath, name)
+#                 self.saveFigure(figpath, ftp_filename)                
+#                 self.counter_imagwr = 0
+#             self.figfile = None
             
         self.save(figpath=figpath,
                   figfile=figfile,
