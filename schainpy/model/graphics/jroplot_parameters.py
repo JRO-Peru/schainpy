@@ -300,7 +300,8 @@ class SkyMapPlot(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            self.xmin, self.xmax = self.getTimeLim(x1, tmin, tmax, timerange)
+            if self.xmin is None and self.xmax is None:
+                self.xmin, self.xmax = self.getTimeLim(x1, tmin, tmax, timerange)
             
             if timerange != None:
                 self.timerange = timerange
