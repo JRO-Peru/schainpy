@@ -131,6 +131,8 @@ class MomentsPlot(Figure):
         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
+        update_figfile = False
+        
         if not self.isConfig:
             
             nplots = len(channelIndexList)
@@ -154,6 +156,7 @@ class MomentsPlot(Figure):
             self.PLOT_POS = plot_pos
             
             self.isConfig = True
+            update_figfile = True
         
         self.setWinTitle(title)
             
@@ -248,7 +251,7 @@ class SkyMapPlot(Figure):
         self.addAxes(1, 1, 0, 0, 1, 1, True)
 
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
-            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            tmin=None, tmax=None, timerange=None,
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False):
@@ -278,13 +281,14 @@ class SkyMapPlot(Figure):
          
         x = finalAzimuth*numpy.pi/180
         y = finalZenith
+        x1 = dataOut.getTimeRange()    
         
-
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Parameters" 
         xlabel = "Zonal Zenith Angle (deg) "
         ylabel = "Meridional Zenith Angle (deg)"
+        update_figfile = False
         
         if not self.__isConfig:
             
@@ -295,7 +299,14 @@ class SkyMapPlot(Figure):
                        wintitle=wintitle,
                        showprofile=showprofile,
                        show=show)
-
+            
+            self.xmin, self.xmax = self.getTimeLim(x1, tmin, tmax, timerange)
+            
+            if timerange != None:
+                self.timerange = timerange
+            else:
+                self.timerange = self.xmax - self.xmin
+            
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
             self.SUB_EXP_CODE = sub_exp_code
@@ -303,6 +314,7 @@ class SkyMapPlot(Figure):
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.firstdate = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
             self.__isConfig = True
+            update_figfile = True
         
         self.setWinTitle(title)
         
@@ -317,14 +329,24 @@ class SkyMapPlot(Figure):
                     ticksize=9, cblabel='')
         
         self.draw()
-            
+        
         self.save(figpath=figpath,
                   figfile=figfile,
                   save=save,
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)
+            
+        if dataOut.ltctime >= self.xmax:
+            self.counter_imagwr = wr_period
+            self.__isConfig = False
+            update_figfile = True
+            axes.__firsttime = True
+            self.xmin += self.timerange
+            self.xmax += self.timerange
+            
+
 
                                 
 class WindProfilerPlot(Figure):
@@ -461,6 +483,7 @@ class WindProfilerPlot(Figure):
         title = wintitle + "Wind"
         xlabel = ""
         ylabel = "Range (Km)"
+        update_figfile = False 
          
         if not self.__isConfig:
             
@@ -499,6 +522,7 @@ class WindProfilerPlot(Figure):
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.__isConfig = True
             self.figfile = figfile
+            update_figfile = True
         
         self.setWinTitle(title)
         
@@ -537,10 +561,10 @@ class WindProfilerPlot(Figure):
                            
         self.draw()
         
-        if x[1] >= self.axesList[0].xmax:
+        if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
             self.__isConfig = False
-            self.figfile = None
+            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
@@ -548,7 +572,8 @@ class WindProfilerPlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)
+
             
             
 class ParametersPlot(Figure):
@@ -1247,7 +1272,7 @@ class PhasePlot(Figure):
     def run(self, dataOut, id, wintitle="", pairsList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
-            save=False, figpath='', figfile=None, show=True, ftp=False, wr_period=1,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
@@ -1267,7 +1292,7 @@ class PhasePlot(Figure):
         
         #phase = numpy.zeros((len(pairsIndexList),len(dataOut.beacon_heiIndexList)))
         phase_beacon = dataOut.data_output
-        
+        update_figfile = False
         
         if not self.__isConfig:
              
@@ -1302,7 +1327,7 @@ class PhasePlot(Figure):
             path = '%s%03d' %(self.PREFIX, self.id)
             beacon_file = os.path.join(path,'%s.txt'%self.name)
             self.filename_phase = os.path.join(figpath,beacon_file)
-            #self.save_phase(self.filename_phase)
+            update_figfile = True
          
         
         #store data beacon phase
@@ -1333,27 +1358,10 @@ class PhasePlot(Figure):
              
         self.draw()
         
-        if x[1] >= self.axesList[0].xmax:
+        if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
-            del self.xdata
-            del self.ydata
             self.__isConfig = False
-        
-#         if self.figfile == None:
-#             str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-#             self.figfile = self.getFilename(name = str_datetime)
-        
-#         if figpath != '':
-#             self.counter_imagwr += 1
-#             if (self.counter_imagwr>=wr_period):
-#                 # store png plot to local folder
-#                 self.saveFigure(figpath, self.figfile)
-#                 # store png plot to FTP server according to RT-Web format 
-#                 name = self.getNameToFtp(thisDatetime, self.FTP_WEI, self.EXP_CODE, self.SUB_EXP_CODE, self.PLOT_CODE, self.PLOT_POS)
-#                 ftp_filename = os.path.join(figpath, name)
-#                 self.saveFigure(figpath, ftp_filename)                
-#                 self.counter_imagwr = 0
-#             self.figfile = None
+            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
@@ -1361,4 +1369,4 @@ class PhasePlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)
