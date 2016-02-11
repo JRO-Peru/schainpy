@@ -8,6 +8,7 @@ import datetime
 import numpy
 
 from figure import Figure, isRealtime
+from plotting_codes import *
 
 class SpectraHeisScope(Figure):
     
@@ -29,6 +30,8 @@ class SpectraHeisScope(Figure):
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
+        
+        self.PLOT_CODE = SPEC_CODE
         
     def getSubplots(self):
         
@@ -76,7 +79,8 @@ class SpectraHeisScope(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
             figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
-            server=None, folder=None, username=None, password=None):
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
         """
         
@@ -139,7 +143,12 @@ class SpectraHeisScope(Figure):
             if xmax == None: xmax = numpy.nanmax(x)
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-                
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
             self.isConfig = True
         
         self.setWinTitle(title)
@@ -185,6 +194,8 @@ class RTIfromSpectraHeis(Figure):
         self.ydata = None
         self.figfile = None
         
+        self.PLOT_CODE = RTI_CODE
+        
     def getSubplots(self):
         
         ncol = 1
@@ -216,7 +227,8 @@ class RTIfromSpectraHeis(Figure):
             xmin=None, xmax=None, ymin=None, ymax=None,
             timerange=None,
             save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
-            server=None, folder=None, username=None, password=None):
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -270,7 +282,12 @@ class RTIfromSpectraHeis(Figure):
             self.figfile = figfile
             self.xdata = numpy.array([])
             self.ydata = numpy.array([])
-        
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
         self.setWinTitle(title)
             
         
