@@ -122,7 +122,7 @@ class SpectraPlot(Figure):
         
         if xaxis == "frequency":
             x = dataOut.getFreqRange(1)/1000.
-            xlabel = "Frquency (KHz)"
+            xlabel = "Frquency (kHz)"
             
         elif xaxis == "time":
             x = dataOut.getAcfRange(1)
@@ -1018,12 +1018,12 @@ class SpectraCutPlot(Figure):
         z = dataOut.data_spc/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
         
-        hei_index = numpy.arange(15)*3 + 20
+        hei_index = numpy.arange(25)*3 + 20
         
         if xaxis == "frequency":
             x = dataOut.getFreqRange()/1000.
             zdB = 10*numpy.log10(z[0,:,hei_index])
-            xlabel = "Frquency (KHz)"
+            xlabel = "Frequency (kHz)"
             ylabel = "Power (dB)"
             
         elif xaxis == "time":
