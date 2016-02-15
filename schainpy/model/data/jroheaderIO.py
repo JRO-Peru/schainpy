@@ -3,6 +3,7 @@
 $Author: murco $
 $Id: JROHeaderIO.py 151 2012-10-31 19:00:51Z murco $
 '''
+import sys
 import numpy
 import copy
 import datetime
