@@ -11,3 +11,4 @@ from jroproc_amisr import *
 from jroproc_correlation import *
 from jroproc_parameters import *
 from jroproc_spectra_lags import *
+from jroproc_spectra_acf import *

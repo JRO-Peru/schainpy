@@ -4,25 +4,23 @@ from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Spectra
 from schainpy.model.data.jrodata import hildebrand_sekhon
 
-class SpectraLagsProc(ProcessingUnit):
+class SpectraAFCProc(ProcessingUnit):
     
     def __init__(self):
         
         ProcessingUnit.__init__(self)
         
-        self.__input_buffer = None
+        self.buffer = None
         self.firstdatatime = None
         self.profIndex = 0
         self.dataOut = Spectra()
         self.id_min = None
         self.id_max = None
-        self.__codeIndex = 0
-        
-        self.__lags_buffer = None
 
     def __updateSpecFromVoltage(self):
         
-        self.dataOut.plotting = "spectra_lags"
+        self.dataOut.plotting = "spectra_acf"
+        
         self.dataOut.timeZone = self.dataIn.timeZone
         self.dataOut.dstFlag = self.dataIn.dstFlag
         self.dataOut.errorCount = self.dataIn.errorCount
@@ -61,36 +59,16 @@ class SpectraLagsProc(ProcessingUnit):
         self.dataOut.beam.codeList = self.dataIn.beam.codeList
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
-    
-    def __createLagsBlock(self, voltages):
         
-        if self.__lags_buffer is None:
-            self.__lags_buffer = numpy.zeros((self.dataOut.nChannels, self.dataOut.nProfiles, self.dataOut.nHeights), dtype='complex')
+    def __decodeData(self, nProfiles, code):
         
-        nsegments = self.dataOut.nHeights - self.dataOut.nProfiles
+        if code is None:
+            return
         
-#         codes = numpy.conjugate(self.__input_buffer[:,9:169])/10000
+        for i in range(nProfiles):
+            self.buffer[:,i,:] = self.buffer[:,i,:]*code[0][i]
         
-        for i in range(nsegments):
-            self.__lags_buffer[:,:,i] = voltages[:,i:i+self.dataOut.nProfiles]#*codes
-        
-        return self.__lags_buffer
-        
-    def __decodeData(self, volt_buffer, pulseIndex=None):
-        
-        if pulseIndex is None:
-            return volt_buffer
-        
-        codes = numpy.conjugate(self.__input_buffer[:,pulseIndex[0]:pulseIndex[1]])/10000
-        
-        nsegments = self.dataOut.nHeights - self.dataOut.nProfiles
-            
-        for i in range(nsegments):
-            volt_buffer[:,:,i] = volt_buffer[:,:,i]*codes
-        
-        return volt_buffer
-    
-    def __getFft(self, datablock):
+    def __getFft(self):
         """
         Convierte valores de Voltaje a Spectra
         
@@ -100,18 +78,34 @@ class SpectraLagsProc(ProcessingUnit):
             self.dataOut.data_dc
             self.dataOut.heightList
             self.profIndex  
-            self.__input_buffer
+            self.buffer
             self.dataOut.flagNoData
         """
+        nsegments = self.dataOut.nHeights
         
-        fft_volt = numpy.fft.fft(datablock, n=self.dataOut.nFFTPoints, axis=1)
+        _fft_buffer = numpy.zeros((self.dataOut.nChannels, self.dataOut.nProfiles, nsegments), dtype='complex')
         
+        for i in range(nsegments):
+            try:
+                _fft_buffer[:,:,i] = self.buffer[:,i:i+self.dataOut.nProfiles]
+                
+                if self.code is not None:
+                    _fft_buffer[:,:,i] = _fft_buffer[:,:,i]*self.code[0]
+            except:
+                pass
+        
+        fft_volt = numpy.fft.fft(_fft_buffer, n=self.dataOut.nFFTPoints, axis=1)
+        fft_volt = fft_volt.astype(numpy.dtype('complex'))
         dc = fft_volt[:,0,:]
         
         #calculo de self-spectra
-        fft_volt = numpy.fft.fftshift(fft_volt, axes=(1,))
+#         fft_volt = numpy.fft.fftshift(fft_volt, axes=(1,))
         spc = fft_volt * numpy.conjugate(fft_volt)
-        spc = spc.real
+        
+        data = numpy.fft.ifft(spc, axis=1)
+        data = numpy.fft.fftshift(data, axes=(1,))
+        
+        spc = data
         
         blocksize = 0
         blocksize += dc.size
@@ -120,7 +114,7 @@ class SpectraLagsProc(ProcessingUnit):
         cspc = None
         pairIndex = 0
         
-        if self.dataOut.pairsList != []:
+        if self.dataOut.pairsList != None:
             #calculo de cross-spectra
             cspc = numpy.zeros((self.dataOut.nPairs, self.dataOut.nFFTPoints, self.dataOut.nHeights), dtype='complex')
             for pair in self.dataOut.pairsList:
@@ -142,19 +136,15 @@ class SpectraLagsProc(ProcessingUnit):
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = True
         
-    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], code=None, nCode=None, nBaud=None, codeFromHeader=False, pulseIndex=None):
+    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], code=None, nCode=1, nBaud=1):
         
         self.dataOut.flagNoData = True
         
-        self.code = None
-            
-        if codeFromHeader:
-            if self.dataIn.code is not None:
-                self.code = self.dataIn.code
-        
         if code is not None:
             self.code = numpy.array(code).reshape(nCode,nBaud)
-            
+        else:
+            self.code = None
+        
         if self.dataIn.type == "Voltage":
             
             if nFFTPoints == None:
@@ -162,28 +152,35 @@ class SpectraLagsProc(ProcessingUnit):
             
             if nProfiles == None:
                 nProfiles = nFFTPoints
-            
-            self.profIndex == nProfiles
-            self.firstdatatime = self.dataIn.utctime
-            
+                
             self.dataOut.ippFactor = 1
+            
             self.dataOut.nFFTPoints = nFFTPoints
             self.dataOut.nProfiles = nProfiles
             self.dataOut.pairsList = pairsList
+
+#             if self.buffer is None:
+#                 self.buffer = numpy.zeros( (self.dataIn.nChannels, nProfiles, self.dataIn.nHeights),
+#                                           dtype='complex')
+
+            if not self.dataIn.flagDataAsBlock:
+                self.buffer = self.dataIn.data.copy()
+                
+#                 for i in range(self.dataIn.nHeights):
+#                     self.buffer[:, self.profIndex, self.profIndex:] = voltage_data[:,:self.dataIn.nHeights - self.profIndex]
+#                 
+#                 self.profIndex += 1
+            
+            else:
+                raise ValueError, ""
+            
+            self.firstdatatime = self.dataIn.utctime
+            
+            self.profIndex == nProfiles
             
             self.__updateSpecFromVoltage()
             
-            if not self.dataIn.flagDataAsBlock:
-                self.__input_buffer = self.dataIn.data.copy()
-                
-                lags_block = self.__createLagsBlock(self.__input_buffer)
-            
-                lags_block = self.__decodeData(lags_block, pulseIndex)
-            
-            else:
-                self.__input_buffer = self.dataIn.data.copy()
-            
-            self.__getFft(lags_block)
+            self.__getFft()
             
             self.dataOut.flagNoData = False
             
