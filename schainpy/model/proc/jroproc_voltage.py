@@ -969,6 +969,8 @@ class Reshaper(Operation):
                 raise ValueError, "nProfiles= %d is not divisibled by (1./nTxs) = %f" %(dataOut.nProfiles, (1./nTxs))
             
             shape = [dataOut.nChannels, dataOut.nProfiles*nTxs, dataOut.nHeights/nTxs]
+            
+            return shape, nTxs
         
         if len(shape) != 2 and len(shape) !=  3:
             raise ValueError, "shape dimension should be equal to 2 or 3. shape = (nProfiles, nHeis) or (nChannels, nProfiles, nHeis). Actually shape = (%d, %d, %d)" %(dataOut.nChannels, dataOut.nProfiles, dataOut.nHeights)
@@ -979,8 +981,7 @@ class Reshaper(Operation):
         else:
             shape_tuple = list(shape)
                 
-        if not nTxs:
-            nTxs = int(shape_tuple[1]/dataOut.nProfiles)
+        nTxs = 1.0*shape_tuple[1]/dataOut.nProfiles
             
         return shape_tuple, nTxs
             
@@ -996,7 +997,7 @@ class Reshaper(Operation):
             dataOut.data = numpy.reshape(dataOut.data, shape_tuple)
             dataOut.flagNoData = False
             
-            profileIndex = int(dataOut.nProfiles*nTxs) - 1
+            profileIndex = int(dataOut.nProfiles*self.__nTxs) - 1
             
         else:
             
