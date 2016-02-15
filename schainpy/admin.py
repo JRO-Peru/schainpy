@@ -17,7 +17,7 @@ from email.mime.multipart import MIMEMultipart
 
 class SchainConfigure():
     
-    __DEFAULT_ADMINISTRATOR_EMAIL = "miguel.urco@jro.igp.gob.pe"
+    __DEFAULT_ADMINISTRATOR_EMAIL = ""
     __DEFAULT_EMAIL_SERVER = "jro-zimbra.igp.gob.pe"
     __DEFAULT_SENDER_EMAIL = "notifier-schain@jro.igp.gob.pe"
     __DEFAULT_SENDER_PASS = ""
