@@ -243,8 +243,6 @@ class RTIfromSpectraHeis(Figure):
         if timerange != None:
             self.timerange = timerange
         
-        tmin = None
-        tmax = None
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
@@ -273,7 +271,8 @@ class RTIfromSpectraHeis(Figure):
                        showprofile=showprofile,
                        show=show)
             
-            tmin, tmax = self.getTimeLim(x, xmin, xmax)
+            self.tmin, self.tmax = self.getTimeLim(x, xmin, xmax)
+            
             if ymin == None: ymin = numpy.nanmin(datadB)
             if ymax == None: ymax = numpy.nanmax(datadB)
             
@@ -306,19 +305,17 @@ class RTIfromSpectraHeis(Figure):
         
         
         axes.pmultilineyaxis(x=self.xdata, y=self.ydata,
-                    xmin=tmin, xmax=tmax, ymin=ymin, ymax=ymax,
+                    xmin=self.tmin, xmax=self.tmax, ymin=ymin, ymax=ymax,
                     xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels, marker='.', markersize=8, linestyle="solid", grid='both',
                     XAxisAsTime=True
                     )
             
         self.draw()
         
-        if x[1] >= self.axesList[0].xmax:
+        if dataOut.ltctime >= self.tmax:
             self.counter_imagwr = wr_period
-            del self.xdata
-            del self.ydata
             self.__isConfig = False
-            self.figfile = None
+            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
@@ -326,4 +323,4 @@ class RTIfromSpectraHeis(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
-                  update_figfile=False)
+                  update_figfile=update_figfile)
