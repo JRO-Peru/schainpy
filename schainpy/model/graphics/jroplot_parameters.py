@@ -340,7 +340,7 @@ class SkyMapPlot(Figure):
                   update_figfile=update_figfile)
             
         if dataOut.ltctime >= self.xmax:
-           self.isConfigmagwr = wr_period
+            self.isConfigmagwr = wr_period
             self.isConfig = False
             update_figfile = True
             axes.__firsttime = True
