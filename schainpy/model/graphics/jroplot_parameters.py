@@ -205,7 +205,7 @@ class SkyMapPlot(Figure):
     
     def __init__(self):
         
-        self.__isConfig = False
+        self.isConfig = False
         self.__nsubplots = 1
         
 #         self.WIDTH = 280
@@ -290,7 +290,7 @@ class SkyMapPlot(Figure):
         ylabel = "Meridional Zenith Angle (deg)"
         update_figfile = False
         
-        if not self.__isConfig:
+        if not self.isConfig:
             
             nplots = 1
             
@@ -314,7 +314,7 @@ class SkyMapPlot(Figure):
             self.PLOT_POS = plot_pos
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
             self.firstdate = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
-            self.__isConfig = True
+            self.isConfig = True
             update_figfile = True
         
         self.setWinTitle(title)
@@ -340,8 +340,8 @@ class SkyMapPlot(Figure):
                   update_figfile=update_figfile)
             
         if dataOut.ltctime >= self.xmax:
-            self.counter_imagwr = wr_period
-            self.__isConfig = False
+           self.isConfigmagwr = wr_period
+            self.isConfig = False
             update_figfile = True
             axes.__firsttime = True
             self.xmin += self.timerange
@@ -362,7 +362,7 @@ class WindProfilerPlot(Figure):
     def __init__(self):
          
         self.timerange = None
-        self.__isConfig = False
+        self.isConfig = False
         self.__nsubplots = 1
         
         self.WIDTH = 800
@@ -486,7 +486,7 @@ class WindProfilerPlot(Figure):
         ylabel = "Range (Km)"
         update_figfile = False 
          
-        if not self.__isConfig:
+        if not self.isConfig:
             
             self.setup(id=id,
                        nplots=nplots,
@@ -521,7 +521,7 @@ class WindProfilerPlot(Figure):
             self.PLOT_POS = plot_pos
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.__isConfig = True
+            self.isConfig = True
             self.figfile = figfile
             update_figfile = True
         
@@ -564,7 +564,7 @@ class WindProfilerPlot(Figure):
         
         if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
-            self.__isConfig = False
+            self.isConfig = False
             update_figfile = True
             
         self.save(figpath=figpath,
@@ -589,7 +589,7 @@ class ParametersPlot(Figure):
     def __init__(self):
         
         self.timerange = 2*60*60
-        self.__isConfig = False
+        self.isConfig = False
         self.__nsubplots = 1
         
         self.WIDTH = 800
@@ -734,7 +734,7 @@ class ParametersPlot(Figure):
             zmin = 0 
         else: colormap = "RdBu_r"
         
-        if not self.__isConfig:
+        if not self.isConfig:
            
             self.setup(id=id,
                        nplots=nplots,
@@ -759,7 +759,7 @@ class ParametersPlot(Figure):
             self.PLOT_POS = plot_pos
             
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.__isConfig = True
+            self.isConfig = True
             self.figfile = figfile
         
         self.setWinTitle(title)
@@ -817,7 +817,7 @@ class ParametersPlot(Figure):
         
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
-            self.__isConfig = False
+            self.isConfig = False
             self.figfile = None
             
         self.save(figpath=figpath,
@@ -842,7 +842,7 @@ class SpectralFittingPlot(Figure):
     ippSeconds = None
     
     def __init__(self):
-        self.__isConfig = False
+        self.isConfig = False
         self.__nsubplots = 1
         
         self.PLOT_CODE = SPECFIT_CODE
@@ -958,7 +958,7 @@ class SpectralFittingPlot(Figure):
         xlabel = "Velocity (m/s)"
         ylabel = "Spectrum"
         
-        if not self.__isConfig:
+        if not self.isConfig:
             
             nplots = listChannels.size
             
@@ -973,7 +973,7 @@ class SpectralFittingPlot(Figure):
             if ymin == None: ymin = numpy.nanmin(zdB)
             if ymax == None: ymax = numpy.nanmax(zdB)+2
             
-            self.__isConfig = True
+            self.isConfig = True
         
         self.setWinTitle(title)
         for i in range(self.nplots):
@@ -1134,7 +1134,7 @@ class EWDriftsPlot(Figure):
         xlabel = ""
         ylabel = "Height (Km)"
          
-        if not self.__isConfig:
+        if not self.isConfig:
              
             self.setup(id=id,
                        nplots=nplots,
@@ -1162,7 +1162,7 @@ class EWDriftsPlot(Figure):
             self.PLOT_POS = plot_pos
              
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.__isConfig = True
+            self.isConfig = True
          
          
         self.setWinTitle(title)
@@ -1205,7 +1205,7 @@ class EWDriftsPlot(Figure):
         
         if x[1] >= self.axesList[0].xmax:
             self.counter_imagwr = wr_period
-            self.__isConfig = False
+            self.isConfig = False
             self.figfile = None
             
             
@@ -1221,7 +1221,7 @@ class PhasePlot(Figure):
     def __init__(self):
         
         self.timerange = 24*60*60
-        self.__isConfig = False
+        self.isConfig = False
         self.__nsubplots = 1
         self.counter_imagwr = 0
         self.WIDTH = 600
@@ -1295,7 +1295,7 @@ class PhasePlot(Figure):
         phase_beacon = dataOut.data_output
         update_figfile = False
         
-        if not self.__isConfig:
+        if not self.isConfig:
              
             self.nplots = phase_beacon.size
              
@@ -1319,7 +1319,7 @@ class PhasePlot(Figure):
             self.PLOT_POS = plot_pos
              
             self.name = thisDatetime.strftime("%Y%m%d_%H%M%S")
-            self.__isConfig = True
+            self.isConfig = True
             self.figfile = figfile
             self.xdata = numpy.array([])
             self.ydata = numpy.array([])
@@ -1361,7 +1361,7 @@ class PhasePlot(Figure):
         
         if dataOut.ltctime >= self.xmax:
             self.counter_imagwr = wr_period
-            self.__isConfig = False
+            self.isConfig = False
             update_figfile = True
             
         self.save(figpath=figpath,

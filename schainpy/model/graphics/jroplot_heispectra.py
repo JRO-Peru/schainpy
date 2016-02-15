@@ -314,7 +314,7 @@ class RTIfromSpectraHeis(Figure):
         
         if dataOut.ltctime >= self.tmax:
             self.counter_imagwr = wr_period
-            self.__isConfig = False
+            self.isConfig = False
             update_figfile = True
             
         self.save(figpath=figpath,
