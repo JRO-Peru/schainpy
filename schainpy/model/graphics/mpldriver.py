@@ -335,7 +335,7 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
 #                     handletextpad=0.5, borderpad=0.5, labelspacing=0.5, borderaxespad=0.)
     
     leg = ax.legend(lines, legendlabels,
-                    loc='upper left', bbox_to_anchor=(0.75, 1), borderaxespad=0)
+                    loc='upper right', bbox_to_anchor=(1.16, 1), borderaxespad=0)
     
     for label in leg.get_texts(): label.set_fontsize(9)
     
