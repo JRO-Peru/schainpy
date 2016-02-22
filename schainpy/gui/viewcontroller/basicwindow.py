@@ -1161,7 +1161,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.console.clear()
                 self.console.append("Graphic path does not exist, it has to be created")
                 return 0
-            
+        
+        self.console.clear()
+        
         # if something happend 
         parms_ok, output_path, blocksperfile, profilesperblock = self.checkInputsPUSave(datatype='Voltage')
         if parms_ok:
@@ -1179,7 +1181,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name=name_parameter2, value=value2, format=format)
             opObj.addParameter(name=name_parameter3, value=value3, format=format)
             
-        self.console.clear()
         try:
             self.refreshPUProperties(puObj)
         except:
@@ -1990,6 +1991,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.console.clear()
                 self.console.append("You have to save the plots before sending them to FTP Server")
                 return 0
+            
+        self.console.clear()
         
 #      if something happend 
         parms_ok, output_path, blocksperfile, profilesperblock = self.checkInputsPUSave(datatype='Spectra')
@@ -1998,7 +2001,6 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             opObj.addParameter(name='path', value=output_path)
             opObj.addParameter(name='blocksPerFile', value=blocksperfile, format='int')
         
-        self.console.clear()
         try:
             self.refreshPUProperties(puObj)
         except:
@@ -5266,7 +5268,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         
         if data_path != None: 
             if not os.path.isdir(data_path):
-                outputstr = 'Datapath:%s does not exists' % data_path
+                outputstr = 'Datapath:%s does not exist' % data_path
                 self.console.append(outputstr)
                 parms_ok = False
                 data_path = None
@@ -5332,7 +5334,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             parms_ok = False
         
         if not os.path.isdir(output_path):
-            outputstr = 'OutputPath:%s does not exists' % output_path
+            outputstr = 'OutputPath:%s does not exist' % output_path
             self.console.append(outputstr)
             parms_ok = False
         
