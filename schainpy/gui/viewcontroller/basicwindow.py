@@ -5327,23 +5327,18 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             output_path = str(self.specHeisOutputPath.text())
             blocksperfile = str(self.specHeisOutputblocksperfile.text())
             metadata_file = str(self.specHeisOutputMetada.text())
-            
-        if output_path == '':
-            outputstr = 'Outputpath is empty'
-            self.console.append(outputstr)
-            parms_ok = False
+        
+        message = ''
         
         if not os.path.isdir(output_path):
-            outputstr = 'OutputPath:%s does not exist' % output_path
-            self.console.append(outputstr)
+            message += 'OutputPath:%s does not exist\n' % output_path
             parms_ok = False
         
         try:
             profilesperblock = int(profilesperblock)
         except:
             if datatype == "Voltage":
-                outputstr = 'Profilesperblock: %s, this must be a integer number' % str(self.volOutputprofilesperblock.text())
-                self.console.append(outputstr)
+                message += 'Profilesperblock: %s, this must be a integer number\n' % str(self.volOutputprofilesperblock.text())
                 parms_ok = False
                 profilesperblock = None
             
@@ -5351,23 +5346,24 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             blocksperfile = int(blocksperfile)
         except:
             if datatype == "Voltage":
-                outputstr = 'Blocksperfile: %s, this must be a integer number' % str(self.volOutputblocksperfile.text())
+                message += 'Blocksperfile: %s, this must be a integer number\n' % str(self.volOutputblocksperfile.text())
             elif datatype == "Spectra":
-                outputstr = 'Blocksperfile: %s, this must be a integer number' % str(self.specOutputblocksperfile.text())
+                message += 'Blocksperfile: %s, this must be a integer number\n' % str(self.specOutputblocksperfile.text())
             elif datatype == "SpectraHeis":
-                outputstr = 'Blocksperfile: %s, this must be a integer number' % str(self.specHeisOutputblocksperfile.text())
-        
-            self.console.append(outputstr)
+                message += 'Blocksperfile: %s, this must be a integer number\n' % str(self.specHeisOutputblocksperfile.text())
+                
             parms_ok = False
             blocksperfile = None
             
         if datatype == "SpectraHeis":
             if metadata_file != '':
                if not os.path.isfile(metadata_file):
-                    outputstr = 'Metadata file %s does not exist' % metadata_file
-                    self.console.append(outputstr)
+                    message += 'Metadata file %s does not exist\n' % metadata_file
                     parms_ok = False
-
+        
+        if str.strip(output_path) != '':
+            self.console.append(message)
+        
         if datatype == "Voltage":
             return parms_ok, output_path, blocksperfile, profilesperblock        
 
