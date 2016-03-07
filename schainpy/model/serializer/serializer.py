@@ -88,19 +88,19 @@ class DynamicSerializer(Serializer):
         if not DEFAULT_SERIALIZER:
             raise ImportError, "Install a python serializer like cPickle or msgpack"
             
-        if not mode:
-            mode == DEFAULT_SERIALIZER
+        if not module:
+            module == DEFAULT_SERIALIZER
             
-        if mode == 'cPickle':
+        if module == 'cPickle':
             self.serializer = cPickleSerializer()
 #         
-#         if mode == 'jsonpickle':
+#         if module == 'jsonpickle':
 #             self.serializer = jsonpickleSerializer()
 #         
-#         if mode == 'yaml':
+#         if module == 'yaml':
 #             self.serializer = yamlSerializer()
         
-        if mode == 'msgpack':
+        if module == 'msgpack':
             self.serializer = msgpackSerializer()
         
     

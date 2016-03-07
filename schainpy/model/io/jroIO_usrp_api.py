@@ -110,7 +110,9 @@ class USRPReaderAPI(USRPReader, threading.Thread):
          
         if not self.isConfig:
             raise RuntimeError, 'setup() method has to be called before start()'
-         
+        
+        print "Running ..."
+        
         while True:
              
             if not self.__isBufferEmpty:
@@ -131,5 +133,7 @@ class USRPReaderAPI(USRPReader, threading.Thread):
 #             print 'wait 1 second'
             
 #             sleep(0.1)
-         
+
+        print "Closing thread"
+        
         return

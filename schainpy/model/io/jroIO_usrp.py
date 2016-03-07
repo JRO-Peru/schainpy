@@ -291,7 +291,7 @@ class USRPReader(ProcessingUnit):
             if not ippKm:
                 raise ValueError, "[Reading] nSamples or ippKm should be defined"
             
-            nSamples = ippKm / (1e6*0.15/self.__sample_rate)
+            nSamples = int(ippKm / (1e6*0.15/self.__sample_rate))
             
         channelBoundList = []
         channelNameListFiltered = []
@@ -317,7 +317,7 @@ class USRPReader(ProcessingUnit):
         self.__channelNameList = channelNameListFiltered
         self.__channelBoundList = channelBoundList
         self.__nSamples = nSamples
-        self.__samples_to_read = buffer_size*nSamples
+        self.__samples_to_read = int(buffer_size*nSamples)
         self.__nChannels = len(self.__channelList)
         
         self.__startUTCSecond = startUTCSecond
@@ -389,7 +389,7 @@ class USRPReader(ProcessingUnit):
         self.__thisUnixSample += self.__samples_to_read
         
         if self.__thisUnixSample + 2*self.__samples_to_read > self.__endUTCSecond*self.__sample_rate:
-            print "[Reading] There are no more data into selected timerange"
+            print "[Reading] There are no more data into selected time-range"
                 
             self.__reload()
             
