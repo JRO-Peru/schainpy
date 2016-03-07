@@ -1122,6 +1122,8 @@ class Parameters(JROData):
     
     paramInterval = None    #Time interval to calculate Parameters in seconds
     
+    useLocalTime = True
+    
     #Fitting
     
     data_error = None       #Error of the estimation
@@ -1155,7 +1157,7 @@ class Parameters(JROData):
         if self.useLocalTime:
             time1 = self.utctimeInit - self.timeZone*60
         else:
-            time1 = utctimeInit
+            time1 = self.utctimeInit
         
 #         datatime.append(self.utctimeInit)
 #         datatime.append(self.utctimeInit + self.outputInterval)
