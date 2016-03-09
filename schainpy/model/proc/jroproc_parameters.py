@@ -365,7 +365,7 @@ class ParametersProc(ProcessingUnit):
         #-------------------    Detect Meteors  ------------------------------
     
     def MeteorDetection(self, hei_ref = None, tauindex = 0,
-                      predefinedPhaseShifts = None, centerReceiverIndex = 2, saveAll = False, 
+                      predefinedPhaseShifts = None, centerReceiverIndex = 2,
                       cohDetection = False, cohDet_timeStep = 1, cohDet_thresh = 25, 
                       noise_timeStep = 4, noise_multiple = 4,
                       multDet_timeLimit = 1, multDet_rangeLimit = 3,
@@ -456,10 +456,10 @@ class ParametersProc(ProcessingUnit):
         if predefinedPhaseShifts != None:
             hardwarePhaseShifts = numpy.array(predefinedPhaseShifts)*numpy.pi/180
         
-        elif beaconPhaseShifts:
-            #get hardware phase shifts using beacon signal
-            hardwarePhaseShifts = self.__getHardwarePhaseDiff(self.dataOut.data_pre, pairslist, newheis, 10)
-            hardwarePhaseShifts = numpy.insert(hardwarePhaseShifts,centerReceiverIndex,0)
+#         elif beaconPhaseShifts:
+#             #get hardware phase shifts using beacon signal
+#             hardwarePhaseShifts = self.__getHardwarePhaseDiff(self.dataOut.data_pre, pairslist, newheis, 10)
+#             hardwarePhaseShifts = numpy.insert(hardwarePhaseShifts,centerReceiverIndex,0)
             
         else:
             hardwarePhaseShifts = numpy.zeros(5)
@@ -529,16 +529,15 @@ class ParametersProc(ProcessingUnit):
         listMeteors4 = self.__getRadialVelocity(listMeteors3, listMeteorsVolts, radialStdThresh, pairslist, self.dataOut.timeInterval)    
 
         if len(listMeteors4) > 0:
+            #Setting New Array
+            date = self.dataOut.utctime
+            arrayParameters = self.__setNewArrays(listMeteors4, date, heiRang)
             
             pairsList = []
             pairx = (0,3)
             pairy = (1,2)
             pairsList.append(pairx)
             pairsList.append(pairy)
-            
-            #Setting New Array
-            date = repr(self.dataOut.datatime)
-            arrayParameters = self.__setNewArrays(listMeteors4, date, heiRang)
             
             meteorOps = MeteorOperations()
             jph = numpy.array([0,0,0,0])
@@ -561,12 +560,28 @@ class ParametersProc(ProcessingUnit):
         #*********************    END OF PARAMETERS CALCULATION    **************************
                 
         #***************************+     PASS DATA TO NEXT STEP    **********************                       
-            arrayFinal = arrayParameters.reshape((1,arrayParameters.shape[0],arrayParameters.shape[1]))
-            self.dataOut.data_param = arrayFinal
+#             arrayFinal = arrayParameters.reshape((1,arrayParameters.shape[0],arrayParameters.shape[1]))
+            self.dataOut.data_param = arrayParameters
             
-            if arrayFinal == None:
+            if arrayParameters == None:
                 self.dataOut.flagNoData = True
             
+        return
+    
+    def correctMeteorPhases(self):
+        
+        arrayParameters = self.dataOut.data_param
+        pairsList = []
+        pairx = (0,3)
+        pairy = (1,2)
+        pairsList.append(pairx)
+        pairsList.append(pairy)
+        
+        meteorOps = MeteorOperations()
+        jph = numpy.array([0,0,0,0])
+        h = (hmin,hmax)
+        arrayParameters = meteorOps.getMeteorParams(arrayParameters, azimuth, h, pairsList, jph)
+        self.dataOut.data_param = arrayParameters
         return
     
     def __getHardwarePhaseDiff(self, voltage0, pairslist, newheis, n):
@@ -1055,133 +1070,134 @@ class ParametersProc(ProcessingUnit):
         arrayParameters = numpy.zeros((len(listMeteors), 14))
         
         #Date inclusion
-        date = re.findall(r'\((.*?)\)', date)
-        date = date[0].split(',')
-        date = map(int, date)
-        
-        if len(date)<6:
-            date.append(0)
-            
-        date = [date[0]*10000 + date[1]*100 + date[2], date[3]*10000 + date[4]*100 + date[5]]
-        arrayDate = numpy.tile(date, (len(listMeteors), 1))
+#         date = re.findall(r'\((.*?)\)', date)
+#         date = date[0].split(',')
+#         date = map(int, date)
+#         
+#         if len(date)<6:
+#             date.append(0)
+#             
+#         date = [date[0]*10000 + date[1]*100 + date[2], date[3]*10000 + date[4]*100 + date[5]]
+#         arrayDate = numpy.tile(date, (len(listMeteors), 1))
+        arrayDate = numpy.tile(date, (len(listMeteors)))
         
         #Meteor array
 #         arrayMeteors[:,0] = heiRang[arrayMeteors[:,0].astype(int)]
 #         arrayMeteors = numpy.hstack((arrayDate, arrayMeteors))
         
         #Parameters Array
-        arrayParameters[:,:2] = arrayDate #Date
-        arrayParameters[:,2] = heiRang[arrayMeteors[:,0].astype(int)] #Range
-        arrayParameters[:,7:9] = arrayMeteors[:,-3:-1] #Radial velocity and its error
-        arrayParameters[:,9:13] = arrayMeteors[:,7:11]  #Phases
+        arrayParameters[:,0] = arrayDate #Date
+        arrayParameters[:,1] = heiRang[arrayMeteors[:,0].astype(int)] #Range
+        arrayParameters[:,6:8] = arrayMeteors[:,-3:-1] #Radial velocity and its error
+        arrayParameters[:,8:12] = arrayMeteors[:,7:11]  #Phases
         arrayParameters[:,-1] = arrayMeteors[:,-1]  #Error
 
         
         return arrayParameters
     
-    def __getAOA(self, phases, pairsList, error, AOAthresh, azimuth):
-        
-        arrayAOA = numpy.zeros((phases.shape[0],3))
-        cosdir0, cosdir = self.__getDirectionCosines(phases, pairsList)
-        
-        arrayAOA[:,:2] = self.__calculateAOA(cosdir, azimuth)
-        cosDirError = numpy.sum(numpy.abs(cosdir0 - cosdir), axis = 1)
-        arrayAOA[:,2] = cosDirError
-        
-        azimuthAngle = arrayAOA[:,0]
-        zenithAngle = arrayAOA[:,1]
-        
-        #Setting Error
-        #Number 3: AOA not fesible
-        indInvalid = numpy.where(numpy.logical_and((numpy.logical_or(numpy.isnan(zenithAngle), numpy.isnan(azimuthAngle))),error == 0))[0]
-        error[indInvalid] = 3 
-        #Number 4: Large difference in AOAs obtained from different antenna baselines
-        indInvalid = numpy.where(numpy.logical_and(cosDirError > AOAthresh,error == 0))[0]
-        error[indInvalid] = 4 
-        return arrayAOA, error
-    
-    def __getDirectionCosines(self, arrayPhase, pairsList):
-    
-        #Initializing some variables
-        ang_aux = numpy.array([-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8])*2*numpy.pi
-        ang_aux = ang_aux.reshape(1,ang_aux.size)
-        
-        cosdir = numpy.zeros((arrayPhase.shape[0],2))
-        cosdir0 = numpy.zeros((arrayPhase.shape[0],2))
-        
-        
-        for i in range(2):
-            #First Estimation
-            phi0_aux = arrayPhase[:,pairsList[i][0]] + arrayPhase[:,pairsList[i][1]]
-            #Dealias
-            indcsi = numpy.where(phi0_aux > numpy.pi)
-            phi0_aux[indcsi] -= 2*numpy.pi 
-            indcsi = numpy.where(phi0_aux < -numpy.pi)
-            phi0_aux[indcsi] += 2*numpy.pi 
-            #Direction Cosine 0
-            cosdir0[:,i] = -(phi0_aux)/(2*numpy.pi*0.5)
-        
-            #Most-Accurate Second Estimation
-            phi1_aux =  arrayPhase[:,pairsList[i][0]] - arrayPhase[:,pairsList[i][1]]
-            phi1_aux = phi1_aux.reshape(phi1_aux.size,1)
-            #Direction Cosine 1
-            cosdir1 = -(phi1_aux + ang_aux)/(2*numpy.pi*4.5)
-            
-            #Searching the correct Direction Cosine
-            cosdir0_aux = cosdir0[:,i]
-            cosdir0_aux = cosdir0_aux.reshape(cosdir0_aux.size,1)
-            #Minimum Distance
-            cosDiff = (cosdir1 - cosdir0_aux)**2
-            indcos = cosDiff.argmin(axis = 1)
-            #Saving Value obtained
-            cosdir[:,i] = cosdir1[numpy.arange(len(indcos)),indcos]
-            
-        return cosdir0, cosdir
-    
-    def __calculateAOA(self, cosdir, azimuth):
-        cosdirX = cosdir[:,0]
-        cosdirY = cosdir[:,1]
-        
-        zenithAngle = numpy.arccos(numpy.sqrt(1 - cosdirX**2 - cosdirY**2))*180/numpy.pi
-        azimuthAngle = numpy.arctan2(cosdirX,cosdirY)*180/numpy.pi + azimuth #0 deg north, 90 deg east
-        angles = numpy.vstack((azimuthAngle, zenithAngle)).transpose()
-        
-        return angles
-    
-    def __getHeights(self, Ranges, zenith, error, minHeight, maxHeight):
-    
-        Ramb = 375  #Ramb = c/(2*PRF)
-        Re = 6371   #Earth Radius
-        heights = numpy.zeros(Ranges.shape)
-        
-        R_aux = numpy.array([0,1,2])*Ramb
-        R_aux = R_aux.reshape(1,R_aux.size)
-
-        Ranges = Ranges.reshape(Ranges.size,1)
-        
-        Ri = Ranges + R_aux
-        hi = numpy.sqrt(Re**2 + Ri**2 + (2*Re*numpy.cos(zenith*numpy.pi/180)*Ri.transpose()).transpose()) - Re
-        
-        #Check if there is a height between 70 and 110 km
-        h_bool = numpy.sum(numpy.logical_and(hi > minHeight, hi < maxHeight), axis = 1)
-        ind_h = numpy.where(h_bool == 1)[0]
-        
-        hCorr = hi[ind_h, :]
-        ind_hCorr = numpy.where(numpy.logical_and(hi > minHeight, hi < maxHeight))
-           
-        hCorr = hi[ind_hCorr]   
-        heights[ind_h] = hCorr
-        
-        #Setting Error
-        #Number 13: Height unresolvable echo: not valid height within 70 to 110 km
-        #Number 14: Height ambiguous echo: more than one possible height within 70 to 110 km 
-        
-        indInvalid2 = numpy.where(numpy.logical_and(h_bool > 1, error == 0))[0]    
-        error[indInvalid2] = 14
-        indInvalid1 = numpy.where(numpy.logical_and(h_bool == 0, error == 0))[0]
-        error[indInvalid1] = 13 
-        
-        return heights, error
+#     def __getAOA(self, phases, pairsList, error, AOAthresh, azimuth):
+#         
+#         arrayAOA = numpy.zeros((phases.shape[0],3))
+#         cosdir0, cosdir = self.__getDirectionCosines(phases, pairsList)
+#         
+#         arrayAOA[:,:2] = self.__calculateAOA(cosdir, azimuth)
+#         cosDirError = numpy.sum(numpy.abs(cosdir0 - cosdir), axis = 1)
+#         arrayAOA[:,2] = cosDirError
+#         
+#         azimuthAngle = arrayAOA[:,0]
+#         zenithAngle = arrayAOA[:,1]
+#         
+#         #Setting Error
+#         #Number 3: AOA not fesible
+#         indInvalid = numpy.where(numpy.logical_and((numpy.logical_or(numpy.isnan(zenithAngle), numpy.isnan(azimuthAngle))),error == 0))[0]
+#         error[indInvalid] = 3 
+#         #Number 4: Large difference in AOAs obtained from different antenna baselines
+#         indInvalid = numpy.where(numpy.logical_and(cosDirError > AOAthresh,error == 0))[0]
+#         error[indInvalid] = 4 
+#         return arrayAOA, error
+#     
+#     def __getDirectionCosines(self, arrayPhase, pairsList):
+#     
+#         #Initializing some variables
+#         ang_aux = numpy.array([-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8])*2*numpy.pi
+#         ang_aux = ang_aux.reshape(1,ang_aux.size)
+#         
+#         cosdir = numpy.zeros((arrayPhase.shape[0],2))
+#         cosdir0 = numpy.zeros((arrayPhase.shape[0],2))
+#         
+#         
+#         for i in range(2):
+#             #First Estimation
+#             phi0_aux = arrayPhase[:,pairsList[i][0]] + arrayPhase[:,pairsList[i][1]]
+#             #Dealias
+#             indcsi = numpy.where(phi0_aux > numpy.pi)
+#             phi0_aux[indcsi] -= 2*numpy.pi 
+#             indcsi = numpy.where(phi0_aux < -numpy.pi)
+#             phi0_aux[indcsi] += 2*numpy.pi 
+#             #Direction Cosine 0
+#             cosdir0[:,i] = -(phi0_aux)/(2*numpy.pi*0.5)
+#         
+#             #Most-Accurate Second Estimation
+#             phi1_aux =  arrayPhase[:,pairsList[i][0]] - arrayPhase[:,pairsList[i][1]]
+#             phi1_aux = phi1_aux.reshape(phi1_aux.size,1)
+#             #Direction Cosine 1
+#             cosdir1 = -(phi1_aux + ang_aux)/(2*numpy.pi*4.5)
+#             
+#             #Searching the correct Direction Cosine
+#             cosdir0_aux = cosdir0[:,i]
+#             cosdir0_aux = cosdir0_aux.reshape(cosdir0_aux.size,1)
+#             #Minimum Distance
+#             cosDiff = (cosdir1 - cosdir0_aux)**2
+#             indcos = cosDiff.argmin(axis = 1)
+#             #Saving Value obtained
+#             cosdir[:,i] = cosdir1[numpy.arange(len(indcos)),indcos]
+#             
+#         return cosdir0, cosdir
+#     
+#     def __calculateAOA(self, cosdir, azimuth):
+#         cosdirX = cosdir[:,0]
+#         cosdirY = cosdir[:,1]
+#         
+#         zenithAngle = numpy.arccos(numpy.sqrt(1 - cosdirX**2 - cosdirY**2))*180/numpy.pi
+#         azimuthAngle = numpy.arctan2(cosdirX,cosdirY)*180/numpy.pi + azimuth #0 deg north, 90 deg east
+#         angles = numpy.vstack((azimuthAngle, zenithAngle)).transpose()
+#         
+#         return angles
+#     
+#     def __getHeights(self, Ranges, zenith, error, minHeight, maxHeight):
+#     
+#         Ramb = 375  #Ramb = c/(2*PRF)
+#         Re = 6371   #Earth Radius
+#         heights = numpy.zeros(Ranges.shape)
+#         
+#         R_aux = numpy.array([0,1,2])*Ramb
+#         R_aux = R_aux.reshape(1,R_aux.size)
+# 
+#         Ranges = Ranges.reshape(Ranges.size,1)
+#         
+#         Ri = Ranges + R_aux
+#         hi = numpy.sqrt(Re**2 + Ri**2 + (2*Re*numpy.cos(zenith*numpy.pi/180)*Ri.transpose()).transpose()) - Re
+#         
+#         #Check if there is a height between 70 and 110 km
+#         h_bool = numpy.sum(numpy.logical_and(hi > minHeight, hi < maxHeight), axis = 1)
+#         ind_h = numpy.where(h_bool == 1)[0]
+#         
+#         hCorr = hi[ind_h, :]
+#         ind_hCorr = numpy.where(numpy.logical_and(hi > minHeight, hi < maxHeight))
+#            
+#         hCorr = hi[ind_hCorr]   
+#         heights[ind_h] = hCorr
+#         
+#         #Setting Error
+#         #Number 13: Height unresolvable echo: not valid height within 70 to 110 km
+#         #Number 14: Height ambiguous echo: more than one possible height within 70 to 110 km 
+#         
+#         indInvalid2 = numpy.where(numpy.logical_and(h_bool > 1, error == 0))[0]    
+#         error[indInvalid2] = 14
+#         indInvalid1 = numpy.where(numpy.logical_and(h_bool == 0, error == 0))[0]
+#         error[indInvalid1] = 13 
+#         
+#         return heights, error
     
     def SpectralFitting(self, getSNR = True, path=None, file=None, groupList=None):
         
@@ -1321,7 +1337,6 @@ class ParametersProc(ProcessingUnit):
         chisq=numpy.dot((dp-fmp).T,(dp-fmp))
         return chisq
         
-    
         
 class WindProfiler(Operation):
        
@@ -1600,11 +1615,11 @@ class WindProfiler(Operation):
         winds = numpy.zeros((2,nInt))*numpy.nan    
         
         #Filter errors
-        error = numpy.where(arrayMeteor[0,:,-1] == 0)[0]
-        finalMeteor = arrayMeteor[0,error,:]
+        error = numpy.where(arrayMeteor[:,-1] == 0)[0]
+        finalMeteor = arrayMeteor[error,:]
         
         #Meteor Histogram
-        finalHeights = finalMeteor[:,3]
+        finalHeights = finalMeteor[:,2]
         hist = numpy.histogram(finalHeights, bins = nInt, range = (heightMin,heightMax))
         nMeteorsPerI = hist[0]
         heightPerI = hist[1]
@@ -1625,9 +1640,9 @@ class WindProfiler(Operation):
             meteorAux = finalMeteor2[ind1:ind2,:]
             
             if meteorAux.shape[0] >= meteorThresh:
-                vel = meteorAux[:, 7]
-                zen = meteorAux[:, 5]*numpy.pi/180
-                azim = meteorAux[:, 4]*numpy.pi/180
+                vel = meteorAux[:, 6]
+                zen = meteorAux[:, 4]*numpy.pi/180
+                azim = meteorAux[:, 3]*numpy.pi/180
                 
                 n = numpy.cos(zen)
         #         m = (1 - n**2)/(1 - numpy.tan(azim)**2)
@@ -1745,7 +1760,7 @@ class WindProfiler(Operation):
                 self.__firstdata = copy.copy(dataOut)
 
             else:
-                self.__buffer = numpy.hstack((self.__buffer, dataOut.data_param))
+                self.__buffer = numpy.vstack((self.__buffer, dataOut.data_param))
             
             self.__checkTime(dataOut.utctime, dataOut.paramInterval, dataOut.outputInterval) #Check if the buffer is ready
             
@@ -1996,13 +2011,13 @@ class PhaseCalibration(Operation):
             h = (hmin, hmax)
             pairsList = ((0,3),(1,2))
             
-            meteorsArray = self.__buffer[0,:,:]
+            meteorsArray = self.__buffer
             error = meteorsArray[:,-1]
             boolError = (error==0)|(error==3)|(error==4)|(error==13)|(error==14)
             ind1 = numpy.where(boolError)[0]
             meteorsArray = meteorsArray[ind1,:]
             meteorsArray[:,-1] = 0
-            phases = meteorsArray[:,9:13]
+            phases = meteorsArray[:,8:12]
             
             #Calculate Gammas
             gammas = self.__getGammas(pairs, k, distances, phases)
@@ -2033,14 +2048,14 @@ class MeteorOperations():
         #JONES ET AL. 1998
         AOAthresh = numpy.pi/8
         error = arrayParameters[:,-1]
-        phases = -arrayParameters[:,9:13] + jph
-        arrayParameters[:,4:7], arrayParameters[:,-1] = self.__getAOA(phases, pairsList, error, AOAthresh, azimuth)
+        phases = -arrayParameters[:,8:12] + jph
+        arrayParameters[:,3:6], arrayParameters[:,-1] = self.__getAOA(phases, pairsList, error, AOAthresh, azimuth)
         
         #Calculate Heights (Error N 13 and 14)
         error = arrayParameters[:,-1]
-        Ranges = arrayParameters[:,2]
-        zenith = arrayParameters[:,5]
-        arrayParameters[:,3], arrayParameters[:,-1] = self.__getHeights(Ranges, zenith, error, hmin, hmax)
+        Ranges = arrayParameters[:,1]
+        zenith = arrayParameters[:,4]
+        arrayParameters[:,2], arrayParameters[:,-1] = self.__getHeights(Ranges, zenith, error, hmin, hmax)
         
         #----------------------- Get Final data    ------------------------------------
 #         error = arrayParameters[:,-1]

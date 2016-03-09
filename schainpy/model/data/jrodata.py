@@ -1150,7 +1150,7 @@ class Parameters(JROData):
         
         self.type = "Parameters"
         
-    def getTimeRange1(self):
+    def getTimeRange1(self, interval):
         
         datatime = []
         
@@ -1162,7 +1162,7 @@ class Parameters(JROData):
 #         datatime.append(self.utctimeInit)
 #         datatime.append(self.utctimeInit + self.outputInterval)
         datatime.append(time1)
-        datatime.append(time1 + self.outputInterval)
+        datatime.append(time1 + interval)
         
         datatime = numpy.array(datatime)
         

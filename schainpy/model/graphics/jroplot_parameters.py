@@ -251,7 +251,7 @@ class SkyMapPlot(Figure):
         self.addAxes(1, 1, 0, 0, 1, 1, True)
 
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile=False,
-            tmin=None, tmax=None, timerange=None,
+            tmin=0, tmax=24, timerange=None,
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False):
@@ -272,19 +272,19 @@ class SkyMapPlot(Figure):
             zmax            :    None
         """
         
-        arrayParameters = dataOut.data_param[0,:]
+        arrayParameters = dataOut.data_param
         error = arrayParameters[:,-1]
         indValid = numpy.where(error == 0)[0]
         finalMeteor = arrayParameters[indValid,:]
-        finalAzimuth = finalMeteor[:,4]
-        finalZenith = finalMeteor[:,5]
+        finalAzimuth = finalMeteor[:,3]
+        finalZenith = finalMeteor[:,4]
          
         x = finalAzimuth*numpy.pi/180
         y = finalZenith
-        x1 = dataOut.getTimeRange()    
+        x1 = [dataOut.ltctime, dataOut.ltctime]    
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
         title = wintitle + " Parameters" 
         xlabel = "Zonal Zenith Angle (deg) "
         ylabel = "Meridional Zenith Angle (deg)"
@@ -439,22 +439,13 @@ class WindProfilerPlot(Figure):
             zmax            :    None
         """
          
-        if channelList == None:
-            channelIndexList = dataOut.channelIndexList
-        else:
-            channelIndexList = []
-            for channel in channelList:
-                if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
-                channelIndexList.append(dataOut.channelList.index(channel))
-         
 #         if timerange is not None:
 #             self.timerange = timerange
 #          
 #         tmin = None
 #         tmax = None
  
-        x = dataOut.getTimeRange1()
+        x = dataOut.getTimeRange1(dataOut.outputInterval)
 #         y = dataOut.heightList
         y = dataOut.heightList
             
@@ -480,7 +471,7 @@ class WindProfilerPlot(Figure):
  
 #         showprofile = False 
 #        thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
         title = wintitle + "Wind"
         xlabel = ""
         ylabel = "Range (Km)"
@@ -707,7 +698,7 @@ class ParametersPlot(Figure):
         if parameterIndex == None:
             parameterIndex = 1
             
-        x = dataOut.getTimeRange1()
+        x = dataOut.getTimeRange1(dataOut.paramInterval)
         y = dataOut.heightList
         z = data_param[channelIndexList,parameterIndex,:].copy()
         
@@ -1100,7 +1091,7 @@ class EWDriftsPlot(Figure):
         tmin = None
         tmax = None
  
-        x = dataOut.getTimeRange1()
+        x = dataOut.getTimeRange1(dataOut.outputInterval)
 #         y = dataOut.heightList
         y = dataOut.heightList
             
@@ -1280,7 +1271,7 @@ class PhasePlot(Figure):
         
         tmin = None
         tmax = None
-        x = dataOut.getTimeRange1()
+        x = dataOut.getTimeRange1(dataOut.outputInterval)
         y = dataOut.getHeiRange()
 
         
