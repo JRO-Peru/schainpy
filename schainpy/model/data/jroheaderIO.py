@@ -149,6 +149,9 @@ class BasicHeader(Header):
         self.timeZone = int(header['nTimezone'][0])
         self.dstFlag = int(header['nDstflag'][0])
         self.errorCount = int(header['nErrorCount'][0])
+        
+        if self.size < 24:
+            return 0
             
         return 1
     
@@ -213,12 +216,13 @@ class SystemHeader(Header):
         endFp = self.size + startFp
         
         if fp.tell() > endFp:
-            sys.stderr.write("Warning: System header size is lower than it has to be")
+            sys.stderr.write("Warning %s: Size value read from System Header is lower than it has to be\n" %fp.name)
             return 0
             
         if fp.tell() < endFp:
-            sys.stderr.write("Warning: System header size is greater than it is considered")
-            
+            sys.stderr.write("Warning %s: Size value read from System Header size is greater than it has to be\n" %fp.name)
+            return 0
+        
         return 1
     
     def write(self, fp):
@@ -356,15 +360,15 @@ class RadarControllerHeader(Header):
         
         if fp.tell() != endFp:
 #             fp.seek(endFp)
-            print "Radar Controller Header is not consistent read[%d] != header[%d]" %(fp.tell()-startFp,endFp)
+            print "%s: Radar Controller Header size is not consistent: from data [%d] != from header field [%d]" %(fp.name, fp.tell()-startFp, size)
 #             return 0
 
         if fp.tell() > endFp:
-            sys.stderr.write("Warning: Radar Controller header size is lower than it has to be")
+            sys.stderr.write("Warning %s: Size value read from Radar Controller header is lower than it has to be\n" %fp.name)
 #             return 0
             
         if fp.tell() < endFp:
-            sys.stderr.write("Warning: Radar Controller header size is greater than it is considered")
+            sys.stderr.write("Warning %s: Size value read from Radar Controller header is greater than it has to be\n" %fp.name)
             
             
         return 1

@@ -141,9 +141,14 @@ def isFileInTimeRange(filename, startDate, endDate, startTime, endTime):
         print "[Reading] Skipping the file %s because it has not a valid header" %(filename)
         return None
     
-    sts = systemHeaderObj.read(fp)
-    sts = radarControllerHeaderObj.read(fp)
-    sts = processingHeaderObj.read(fp)
+    if not systemHeaderObj.read(fp):
+        return None
+    
+    if not radarControllerHeaderObj.read(fp):
+        return None
+    
+    if not processingHeaderObj.read(fp):
+        return None
     
     filesize = os.path.getsize(filename)
     
