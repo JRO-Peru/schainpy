@@ -1157,10 +1157,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.console.append("Graphic path should be defined")
                 return 0
             
-            if os.path.isdir(figpath):
-                self.console.clear()
-                self.console.append("Graphic path does not exist, it has to be created")
-                return 0
+#             if os.path.isdir(figpath):
+#                 self.console.clear()
+#                 self.console.append("Graphic path does not exist, it has to be created")
+#                 return 0
         
         self.console.clear()
         
