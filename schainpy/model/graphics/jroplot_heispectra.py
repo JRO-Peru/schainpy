@@ -312,6 +312,8 @@ class RTIfromSpectraHeis(Figure):
             
         self.draw()
         
+        update_figfile = False
+        
         if dataOut.ltctime >= self.tmax:
             self.counter_imagwr = wr_period
             self.isConfig = False
