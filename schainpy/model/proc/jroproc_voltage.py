@@ -727,13 +727,13 @@ class ProfileConcat(Operation):
     
     def setup(self, data, m, n=1):
         self.buffer = numpy.zeros((data.shape[0],data.shape[1]*m),dtype=type(data[0,0]))
-        self.nHeights = data.nHeights
+        self.nHeights = data.shape[1]#.nHeights
         self.start_index = 0
         self.times = 1
     
     def concat(self, data):
         
-        self.buffer[:,self.start_index:self.profiles*self.times] = data.copy()
+        self.buffer[:,self.start_index:self.nHeights*self.times] = data.copy()
         self.start_index = self.start_index + self.nHeights 
         
     def run(self, dataOut, m):
