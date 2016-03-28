@@ -1,7 +1,7 @@
 '''
 Created on Jul 16, 2014
 
-@author: roj-idl71
+@author: @author: Miguel Urco
 '''
 
 from schainpy import __version__
