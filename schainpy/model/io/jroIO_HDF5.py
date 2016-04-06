@@ -577,7 +577,9 @@ class HDF5Writer(Operation):
     
     metadataList = None
     
-    arrayDim = None
+#     arrayDim = None
+
+    dsList = None   #List of dictionaries
     
     tableDim = None
     
@@ -611,9 +613,7 @@ class HDF5Writer(Operation):
             self.blocksPerFile = 10
         
         self.metadataList = kwargs['metadataList']
-         
         self.dataList = kwargs['dataList']
-        
         self.dataOut = dataOut
         
         if kwargs.has_key('mode'):
@@ -629,57 +629,91 @@ class HDF5Writer(Operation):
         arrayDim = numpy.zeros((len(self.dataList),5))
         
         #Table dimensions 
-        
         dtype0 = self.dtype
-        
         tableList = []
         
+        #Dictionary and list of tables
+        dsList = []
+        
         for i in range(len(self.dataList)):
-            
+            dsDict = {}
             dataAux = getattr(self.dataOut, self.dataList[i])
-            
+            dsDict['variable'] = self.dataList[i]
             #---------------------    Conditionals    ------------------------
             #There is no data
             if dataAux == None: 
                 return 0
             
             #Not array, just a number
-            if type(dataAux)==float or type(dataAux)==int: 
+            #Mode 0
+            if type(dataAux)==float or type(dataAux)==int:
+                dsDict['mode'] = 0
+                dsDict['nDim'] = 0
                 arrayDim[i,0] = 1
-                mode[i] = 0
-            
-            #Mode meteors
-            elif mode[i] == 2:  
+                dsList.append(dsDict)
+
+            #Mode 2: meteors
+            elif mode[i] == 2:
+#                 dsDict['nDim'] = 0  
+                dsDict['dsName'] = 'table0'                
+                dsDict['mode'] = 2      # Mode meteors
+                dsDict['shape'] = dataAux.shape[-1]
+                dsDict['nDim'] = 0
+                
                 arrayDim[i,3] = dataAux.shape[-1]
                 arrayDim[i,4] = mode[i]         #Mode the data was stored
+                
+                dsList.append(dsDict)
             
-            #All the rest
+            #Mode 1
             else:
                 arrayDim0 = dataAux.shape       #Data dimensions
                 arrayDim[i,0] = len(arrayDim0)  #Number of array dimensions
                 arrayDim[i,4] = mode[i]         #Mode the data was stored
                 
+                strtable = 'table'
+                dsDict['mode'] = 1      # Mode parameters
+                
                 # Three-dimension arrays
                 if len(arrayDim0) == 3:
                     arrayDim[i,1:-1] = numpy.array(arrayDim0)
-                
+                    nTables = int(arrayDim[i,2])
+                    dsDict['dsNumber'] = nTables
+                    dsDict['shape'] = arrayDim[i,2:4]
+                    dsDict['nDim'] = 3
+                    
+                    for j in range(nTables):
+                        dsDict = dsDict.copy()
+                        dsDict['dsName'] = strtable + str(j)
+                        dsList.append(dsDict)
+                        
                 # Two-dimension arrays
                 elif len(arrayDim0) == 2:
                     arrayDim[i,2:-1] = numpy.array(arrayDim0)
-                
+                    nTables = int(arrayDim[i,2])
+                    dsDict['dsNumber'] = nTables
+                    dsDict['shape'] = arrayDim[i,3]
+                    dsDict['nDim'] = 2
+                    
+                    for j in range(nTables):
+                        dsDict = dsDict.copy()
+                        dsDict['dsName'] = strtable + str(j)
+                        dsList.append(dsDict)
+                    
                 # One-dimension arrays
                 elif len(arrayDim0) == 1:
-                    arrayDim[i,3] = arrayDim0
-                
-                # No array, just a number
-                elif len(arrayDim0) == 0:
-                    arrayDim[i,0] = 1
-                    arrayDim[i,3] = 1
+                    arrayDim[i,3] = arrayDim0[0]
+                    dsDict['shape'] = arrayDim0[0]
+                    dsDict['dsNumber'] = 1
+                    dsDict['dsName'] = strtable + str(0)
+                    dsDict['nDim'] = 1
+                    dsList.append(dsDict)
                 
             table = numpy.array((self.dataList[i],) + tuple(arrayDim[i,:]),dtype = dtype0)
             tableList.append(table)
         
-        self.arrayDim = arrayDim 
+#         self.arrayDim = arrayDim
+        self.dsList = dsList 
         self.tableDim = numpy.array(tableList, dtype = dtype0)        
         self.blockIndex = 0
         
@@ -767,6 +801,117 @@ class HDF5Writer(Operation):
         return True
 
     def setNextFile(self):
+        
+        ext = self.ext
+        path = self.path
+        setFile = self.setFile
+        mode = self.mode
+   
+        timeTuple = time.localtime(self.dataOut.utctime)
+        subfolder = 'd%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
+
+        fullpath = os.path.join( path, subfolder )
+        
+        if os.path.exists(fullpath):
+            filesList = os.listdir( fullpath )
+            filesList = [k for k in filesList if 'D' in k]
+            if len( filesList ) > 0:
+                filesList = sorted( filesList, key=str.lower )
+                filen = filesList[-1]
+                # el filename debera tener el siguiente formato
+                # 0 1234 567 89A BCDE (hex)
+                # x YYYY DDD SSS .ext
+                if isNumber( filen[8:11] ):
+                    setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
+                else:    
+                    setFile = -1
+            else:
+                setFile = -1 #inicializo mi contador de seteo
+        else:
+            os.mkdir(fullpath)
+            setFile = -1 #inicializo mi contador de seteo       
+        
+        setFile += 1
+                
+        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
+                                        timeTuple.tm_year,
+                                        timeTuple.tm_yday,
+                                        setFile,
+                                        ext )
+
+        filename = os.path.join( path, subfolder, file )
+
+        #Setting HDF5 File
+        fp = h5py.File(filename,'w')
+        #write metadata
+        self.writeMetadata(fp) 
+        #Write data
+        grp = fp.create_group("Data")
+#         grp.attrs['metadata'] = self.metaFile
+        
+#         grp.attrs['blocksPerFile'] = 0
+        ds = []
+        data = []
+        dsList = self.dsList
+        i = 0
+        while i < len(dsList):           
+            dsInfo = dsList[i]
+            #One-dimension data
+            if dsInfo['mode'] == 0:
+#                 ds0 = grp.create_dataset(self.dataList[i], (1,1), maxshape=(1,self.blocksPerFile) , chunks = True, dtype='S20')
+                ds0 = grp.create_dataset(dsInfo['variable'], (1,1), maxshape=(1,self.blocksPerFile) , chunks = True, dtype=numpy.float64)
+                ds.append(ds0)
+                data.append([])
+                i += 1
+                continue
+#                 nDimsForDs.append(nDims[i])
+
+            elif dsInfo['mode'] == 2:
+                grp0 = grp.create_group(dsInfo['variable'])
+                ds0 = grp0.create_dataset(dsInfo['dsName'], (1,dsInfo['shape']), data = numpy.zeros((1,dsInfo['shape'])) , maxshape=(None,dsInfo['shape']), chunks=True)
+                ds.append(ds0)
+                data.append([])
+                i += 1
+                continue
+                
+            elif dsInfo['mode'] == 1:
+                grp0 = grp.create_group(dsInfo['variable'])
+            
+                for j in range(dsInfo['dsNumber']):
+                    dsInfo = dsList[i]
+                    tableName = dsInfo['dsName']
+                    shape = dsInfo['shape']
+                    
+                    if dsInfo['nDim'] == 3:    
+                        ds0 = grp0.create_dataset(tableName, (shape[0],shape[1],1) , data = numpy.zeros((shape[0],shape[1],1)), maxshape = (None,shape[1],None), chunks=True)
+                    else:
+                        ds0 = grp0.create_dataset(tableName, (1,shape), data = numpy.zeros((1,shape)) , maxshape=(None,shape), chunks=True)
+                    
+                    ds.append(ds0)
+                    data.append([])
+                    i += 1
+#                     nDimsForDs.append(nDims[i])
+        
+        fp.flush()
+        fp.close()
+        
+#         self.nDatas = nDatas
+#         self.nDims = nDims
+#         self.nDimsForDs = nDimsForDs
+        #Saving variables        
+        print 'Writing the file: %s'%filename
+        self.filename = filename
+#         self.fp = fp
+#         self.grp = grp
+#         self.grp.attrs.modify('nRecords', 1)
+        self.ds = ds
+        self.data = data
+#         self.setFile = setFile
+        self.firsttime = True
+        self.blockIndex = 0
+        return
+    
+    def setNextFile1(self):
         
         ext = self.ext
         path = self.path
@@ -914,6 +1059,7 @@ class HDF5Writer(Operation):
         
         self.data
         '''
+        dsList = self.dsList
         ds = self.ds
                 #Setting HDF5 File
         fp = h5py.File(self.filename,'r+')
@@ -921,25 +1067,20 @@ class HDF5Writer(Operation):
         ind = 0
         
 #         grp.attrs['blocksPerFile'] = 0
-        for i in range(len(self.dataList)):           
+        while ind < len(dsList):            
+            dsInfo = dsList[ind]
             
-            if self.nDims[i]==1:
-                ds0 = grp[self.dataList[i]]
+            if dsInfo['mode'] == 0:
+                ds0 = grp[dsInfo['variable']]
                 ds[ind] = ds0
                 ind += 1
             else:
-#                 if self.mode[i] == 0:
-#                     strMode = "channel"
-                if self.mode[i] == 1:
-                    strMode = "param"
-                elif self.mode[i] == 2:
-                    strMode = "table"
                 
-                grp0 = grp[self.dataList[i]]
+                grp0 = grp[dsInfo['variable']]
             
-                for j in range(int(self.nDatas[i])):
-                    tableName = strMode + str(j)
-                    ds0 = grp0[tableName]
+                for j in range(dsInfo['dsNumber']):
+                    dsInfo = dsList[ind]
+                    ds0 = grp0[dsInfo['dsName']]
                     ds[ind] = ds0
                     ind += 1
  
@@ -957,33 +1098,32 @@ class HDF5Writer(Operation):
         self.data
         '''
         #Creating Arrays
+        dsList = self.dsList
         data = self.data
-        nDatas = self.nDatas
-        nDims = self.nDims
-        mode = self.mode
         ind = 0
         
-        for i in range(len(self.dataList)):
-            dataAux = getattr(self.dataOut,self.dataList[i])
+        while ind < len(dsList):            
+            dsInfo = dsList[ind]
+            dataAux = getattr(self.dataOut, dsInfo['variable'])
             
-            if nDims[i] == 1 or mode[i] == 2:
+            mode = dsInfo['mode']
+            nDim = dsInfo['nDim']
+            
+            if mode == 0 or mode == 2 or nDim == 1:
                 data[ind] = dataAux
-                ind += 1  
-                  
-            elif nDims[i] == 2:     
-                for j in range(int(nDatas[i])):
+                ind += 1   
+#             elif nDim == 1:
+#                 data[ind] = numpy.reshape(dataAux,(numpy.size(dataAux),1))
+#                 ind += 1
+            elif nDim == 2:
+                for j in range(dsInfo['dsNumber']):
                     data[ind] = dataAux[j,:]
                     ind += 1
-                    
-            elif nDims[i] == 3:
-                for j in range(int(nDatas[i])):
-                    # Extinct mode 0
-#                     if (mode[i] == 0):
-#                         data[ind] = dataAux[j,:,:]
-#                     else:
+            elif nDim == 3:
+                for j in range(dsInfo['dsNumber']):
                     data[ind] = dataAux[:,j,:]
                     ind += 1
-                    
+
         self.data = data
         return
     
@@ -991,40 +1131,47 @@ class HDF5Writer(Operation):
         '''
         Saves the block in the HDF5 file
         '''
+        dsList = self.dsList        
+        
         for i in range(len(self.ds)):
+            dsInfo = dsList[i] 
+            nDim = dsInfo['nDim']
+            mode = dsInfo['mode']
             
             #    First time
             if self.firsttime:
 #                 self.ds[i].resize(self.data[i].shape)
 #                 self.ds[i][self.blockIndex,:] = self.data[i]
                 if type(self.data[i]) == numpy.ndarray:
-                    nDims1 = len(self.ds[i].shape)
                     
-                    if nDims1 == 3:
+                    if nDim == 3:
                         self.data[i] = self.data[i].reshape((self.data[i].shape[0],self.data[i].shape[1],1))
-                
-                    self.ds[i].resize(self.data[i].shape)
+                        self.ds[i].resize(self.data[i].shape)
                 
                 self.ds[i][:] = self.data[i]       
             else:      
                 
             #    From second time
                 #    Meteors!
-                if self.mode[i] == 2:
+                if mode == 2:
                     dataShape = self.data[i].shape
                     dsShape = self.ds[i].shape
                     self.ds[i].resize((self.ds[i].shape[0] + dataShape[0],self.ds[i].shape[1]))  
                     self.ds[i][dsShape[0]:,:] = self.data[i]
-                #    One dimension
-                elif self.nDimsForDs[i] == 1:
+                #    No dimension
+                elif mode == 0:
                     self.ds[i].resize((self.ds[i].shape[0], self.ds[i].shape[1] + 1))
                     self.ds[i][0,-1] = self.data[i]
+                #    One dimension
+                elif nDim == 1:
+                    self.ds[i].resize((self.ds[i].shape[0] + 1, self.ds[i].shape[1]))
+                    self.ds[i][-1,:] = self.data[i]    
                 #    Two dimension
-                elif self.nDimsForDs[i] == 2:
+                elif nDim == 2:
                     self.ds[i].resize((self.ds[i].shape[0] + 1,self.ds[i].shape[1]))  
                     self.ds[i][self.blockIndex,:] = self.data[i]
                 #    Three dimensions
-                elif self.nDimsForDs[i] == 3:
+                elif nDim == 3:
                     self.ds[i].resize((self.ds[i].shape[0],self.ds[i].shape[1],self.ds[i].shape[2]+1))  
                     self.ds[i][:,:,-1] = self.data[i]
         
