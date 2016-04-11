@@ -370,7 +370,7 @@ class ParametersProc(ProcessingUnit):
                       noise_timeStep = 4, noise_multiple = 4,
                       multDet_timeLimit = 1, multDet_rangeLimit = 3,
                       phaseThresh = 20, SNRThresh = 8,
-                      hmin = 70, hmax=110, azimuth = 0) :
+                      hmin = 50, hmax=150, azimuth = 0) :
         
         '''
         Function DetectMeteors()
@@ -429,9 +429,10 @@ class ParametersProc(ProcessingUnit):
         
         Data Storage:
             Meteors for Wind Estimation   (8):
-            Day    Hour    |    Range    Height
+            Utc Time   |    Range    Height
             Azimuth    Zenith    errorCosDir
             VelRad    errorVelRad
+            Phase0 Phase1 Phase2 Phase3
             TypeError
         
          '''       
@@ -443,6 +444,9 @@ class ParametersProc(ProcessingUnit):
         
         heiRang = self.dataOut.getHeiRange()
         #Pairs List
+        '''
+        Cambiar este pairslist
+        '''
         pairslist = []
         nChannel = self.dataOut.nChannels
         for i in range(nChannel):
@@ -568,7 +572,7 @@ class ParametersProc(ProcessingUnit):
             
         return
     
-    def correctMeteorPhases(self):
+    def CorrectMeteorPhases(self, phaseOffsets, hmin = 50, hmax = 150, azimuth = 45):
         
         arrayParameters = self.dataOut.data_param
         pairsList = []
@@ -576,10 +580,14 @@ class ParametersProc(ProcessingUnit):
         pairy = (1,2)
         pairsList.append(pairx)
         pairsList.append(pairy)
+        jph = numpy.zeros(4)
+        
+        phaseOffsets = numpy.array(phaseOffsets)*numpy.pi/180
+        arrayParameters[:,8:12] = numpy.unwrap(arrayParameters[:,8:12] + phaseOffsets)
         
         meteorOps = MeteorOperations()
-        jph = numpy.array([0,0,0,0])
         h = (hmin,hmax)
+        
         arrayParameters = meteorOps.getMeteorParams(arrayParameters, azimuth, h, pairsList, jph)
         self.dataOut.data_param = arrayParameters
         return
@@ -1067,7 +1075,7 @@ class ParametersProc(ProcessingUnit):
         
         #New arrays
         arrayMeteors = numpy.array(listMeteors)
-        arrayParameters = numpy.zeros((len(listMeteors), 14))
+        arrayParameters = numpy.zeros((len(listMeteors), 13))
         
         #Date inclusion
 #         date = re.findall(r'\((.*?)\)', date)
@@ -2049,6 +2057,7 @@ class MeteorOperations():
         AOAthresh = numpy.pi/8
         error = arrayParameters[:,-1]
         phases = -arrayParameters[:,8:12] + jph
+#         phases = numpy.unwrap(phases)
         arrayParameters[:,3:6], arrayParameters[:,-1] = self.__getAOA(phases, pairsList, error, AOAthresh, azimuth)
         
         #Calculate Heights (Error N 13 and 14)
@@ -2077,6 +2086,8 @@ class MeteorOperations():
         zenithAngle = arrayAOA[:,1]
         
         #Setting Error
+        indError = numpy.where(numpy.logical_or(error == 3, error == 4))[0]
+        error[indError] = 0
         #Number 3: AOA not fesible
         indInvalid = numpy.where(numpy.logical_and((numpy.logical_or(numpy.isnan(zenithAngle), numpy.isnan(azimuthAngle))),error == 0))[0]
         error[indInvalid] = 3 
@@ -2160,7 +2171,8 @@ class MeteorOperations():
         #Setting Error
         #Number 13: Height unresolvable echo: not valid height within 70 to 110 km
         #Number 14: Height ambiguous echo: more than one possible height within 70 to 110 km 
-        
+        indError = numpy.where(numpy.logical_or(error == 13, error == 14))[0]
+        error[indError] = 0
         indInvalid2 = numpy.where(numpy.logical_and(h_bool > 1, error == 0))[0]    
         error[indInvalid2] = 14
         indInvalid1 = numpy.where(numpy.logical_and(h_bool == 0, error == 0))[0]
