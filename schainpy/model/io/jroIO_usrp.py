@@ -227,12 +227,20 @@ class USRPReader(ProcessingUnit):
         metadata_dict = self.digitalReadObj.get_rf_file_metadata(channelNameList[channelList[0]])
         
         self.__sample_rate = metadata_dict['sample_rate'][0]
-        self.__samples_per_file = metadata_dict['samples_per_file'][0]
+#         self.__samples_per_file = metadata_dict['samples_per_file'][0]
         self.__deltaHeigth = 1e6*0.15/self.__sample_rate
         
         this_metadata_file = self.digitalReadObj.get_metadata(channelNameList[channelList[0]])
         
-        self.__frequency = this_metadata_file['center_frequencies'].value
+        self.__frequency = None
+        try:
+            self.__frequency = this_metadata_file['center_frequencies'].value
+        except:
+            self.__frequency = this_metadata_file['fc'].value
+        
+        if not self.__frequency:
+            raise ValueError, "Center Frequency is not defined in metadata file"
+        
         try:
             self.__timezone = this_metadata_file['timezone'].value
         except:
