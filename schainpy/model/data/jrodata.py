@@ -277,7 +277,7 @@ class JROData(GenericData):
         datatime = []
         
         datatime.append(self.ltctime)
-        datatime.append(self.ltctime + self.timeInterval+60)
+        datatime.append(self.ltctime + self.timeInterval+1)
         
         datatime = numpy.array(datatime)
         
