@@ -1573,7 +1573,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         trange = str(self.specGgraphTminTmax.text()).strip()
         magrange = str(self.specGgraphmagnitud.text()).strip()
         phaserange = str(self.specGgraphPhase.text()).strip()
-#         timerange = str(self.specGgraphTimeRange.text()).strip()
+        timerange = str(self.specGgraphTimeRange.text()).strip()
         
         figpath = str(self.specGraphPath.text()).strip()
         figfile = str(self.specGraphPrefix.text()).strip()
@@ -1761,6 +1761,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name='xmin', value=value1, format='float')
                 opObj.addParameter(name='xmax', value=value2, format='float')
+            
+            if timerange:
+                try:
+                    timerange = int(timerange)
+                except:
+                    return 0
+                opObj.addParameter(name='timerange', value=timerange, format='int')
                 
             if hei_range:
                 
@@ -2580,6 +2587,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.specGgraphHeight.setEnabled(height)
         self.specGgraphDbsrange.setEnabled(db)
         self.specGgraphTminTmax.setEnabled(timerange)
+        self.specGgraphTimeRange.setEnabled(timerange)
         
         self.specGgraphmagnitud.setEnabled(magnitud)
         self.specGgraphPhase.setEnabled(phase)

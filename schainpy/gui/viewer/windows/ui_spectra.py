@@ -359,6 +359,13 @@ class Ui_SpectraTab(object):
         self.specGgraphTminTmax.setObjectName(_fromUtf8("specGgraphTminTmax"))
         self.gridLayout_9.addWidget(self.specGgraphTminTmax, xi+3, 2, 1, 2)
         
+        self.label_48 = QtGui.QLabel(self.tabgraphSpectra)
+        self.label_48.setObjectName(_fromUtf8("label_48"))
+        self.gridLayout_9.addWidget(self.label_48, xi+4, 0, 1, 2)
+        self.specGgraphTimeRange = QtGui.QLineEdit(self.tabgraphSpectra)
+        self.specGgraphTimeRange.setObjectName(_fromUtf8("specGgraphTimeRange"))
+        self.gridLayout_9.addWidget(self.specGgraphTimeRange, xi+4, 2, 1, 2)
+        
         self.specGraphMagLabel = QtGui.QLabel(self.tabgraphSpectra)
         self.specGraphMagLabel.setObjectName(_fromUtf8("specGraphMagLabel"))
         self.gridLayout_9.addWidget(self.specGraphMagLabel, xi, 4, 1, 2)
@@ -386,13 +393,6 @@ class Ui_SpectraTab(object):
         self.specGgraphftpratio = QtGui.QLineEdit(self.tabgraphSpectra)
         self.specGgraphftpratio.setObjectName(_fromUtf8("specGgraphftpratio"))
         self.gridLayout_9.addWidget(self.specGgraphftpratio, xi+3, 6, 1, 2)
-
-        self.label_48 = QtGui.QLabel(self.tabgraphSpectra)
-        self.label_48.setObjectName(_fromUtf8("label_48"))
-        self.gridLayout_9.addWidget(self.label_48, xi+4, 4, 1, 2)
-        self.specGgraphTimeRange = QtGui.QLineEdit(self.tabgraphSpectra)
-        self.specGgraphTimeRange.setObjectName(_fromUtf8("specGgraphTimeRange"))
-        self.gridLayout_9.addWidget(self.specGgraphTimeRange, xi+4, 6, 1, 2)
         
 #         spacerItem15 = QtGui.QSpacerItem(28, 15, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
 #         self.gridLayout_9.addItem(spacerItem15, 27, 6, 1, 2)
@@ -469,7 +469,7 @@ class Ui_SpectraTab(object):
         self.tabWidgetSpectra.setTabText(self.tabWidgetSpectra.indexOf(self.tabopSpectra), _translate("MainWindow", "Operation", None))
         
         self.label_44.setText(_translate("MainWindow", "Coherence Map:", None))
-        self.specGraphTminTmaxLabel.setText(_translate("MainWindow", "Time range:", None))
+        self.specGraphTminTmaxLabel.setText(_translate("MainWindow", "Time range (hours):", None))
         self.label_25.setText(_translate("MainWindow", "Prefix:", None))
         self.label_42.setText(_translate("MainWindow", "RTI Plot:", None))
         self.label_16.setText(_translate("MainWindow", "Height range:", None))
@@ -487,10 +487,10 @@ class Ui_SpectraTab(object):
         self.label_47.setText(_translate("MainWindow", "Save:", None))
         self.label_19.setText(_translate("MainWindow", "Ftp:", None))
         self.label_45.setText(_translate("MainWindow", "Noise:", None))
-        self.label_48.setText(_translate("MainWindow", "Time Range:", None))
+        self.label_48.setText(_translate("MainWindow", "Time window (seconds):", None))
         self.specGraphPhaseLabel.setText(_translate("MainWindow", "Coh. Phase:", None))
-        self.label_48.hide()
-        self.specGgraphTimeRange.hide()
+#         self.label_48.hide()
+#         self.specGgraphTimeRange.hide()
         self.tabWidgetSpectra.setTabText(self.tabWidgetSpectra.indexOf(self.tabgraphSpectra), _translate("MainWindow", "Graphics", None))
         
         self.label_39.setText(_translate("MainWindow", "Type:", None))

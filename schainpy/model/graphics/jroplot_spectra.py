@@ -552,6 +552,11 @@ class RTIPlot(Figure):
         
         update_figfile = False
         
+        if dataOut.ltctime >= self.xmax:
+            self.counter_imagwr = wr_period
+            self.isConfig = False
+            update_figfile = True
+            
         if not self.isConfig:
             
             nplots = len(channelIndexList)
@@ -608,11 +613,6 @@ class RTIPlot(Figure):
                         grid='x')
             
         self.draw()
-        
-        if dataOut.ltctime >= self.xmax:
-            self.counter_imagwr = wr_period
-            self.isConfig = False
-            update_figfile = True
             
         self.save(figpath=figpath,
                   figfile=figfile,
