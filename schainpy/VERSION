@@ -72,3 +72,7 @@ properly but the next days did not.
 -jroproc_spectra_lags.py added to schainpy
 -Bug fixed in schainGUI: ProcUnit was created with the same id in some cases.
 -Bug fixed in jroHeaderIO: Header size validation.
+
+2.2.4.1:
+-jroIO_usrp.py is update to read Sandra's data 
+-decimation in Spectra and RTI plots is always enabled.

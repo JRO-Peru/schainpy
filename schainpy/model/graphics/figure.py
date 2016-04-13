@@ -309,8 +309,10 @@ class Axes:
     decimationx = None
     decimationy = None
     
-    __MAXNUMX = 300
-    __MAXNUMY = 150
+    __MAXNUMX = 200
+    __MAXNUMY = 400
+    
+    __MAXNUMTIME = 500
     
     def __init__(self, *args):
         
@@ -471,7 +473,7 @@ class Axes:
                ymin=None, ymax=None,
                zmin=None, zmax=None,
                xlabel='', ylabel='',
-               title='', rti = False, colormap='jet',
+               title='', colormap='jet',
                **kwargs):
         
         """
@@ -491,8 +493,19 @@ class Axes:
             **kwargs :    Los parametros aceptados son
                           ticksize=9,
                           cblabel=''
-                          rti = True or False
         """
+            
+        #Decimating data
+        xlen = len(x)
+        ylen = len(y)
+        
+        decimationx = numpy.floor(xlen/self.__MAXNUMX) + 1
+        decimationy = numpy.floor(ylen/self.__MAXNUMY) + 1
+        
+        x_buffer = x[::decimationx]
+        y_buffer = y[::decimationy]    
+        z_buffer = z[::decimationx, ::decimationy]
+        #===================================================
         
         if self.__firsttime:
             
@@ -504,7 +517,9 @@ class Axes:
             if zmax == None: zmax = numpy.nanmax(z)
             
             
-            self.plot = self.__driver.createPcolor(self.ax, x, y, z,
+            self.plot = self.__driver.createPcolor(self.ax, x_buffer,
+                                                   y_buffer,
+                                                   z_buffer,
                                                    xmin, xmax,
                                                    ymin, ymax,
                                                    zmin, zmax,
@@ -524,15 +539,8 @@ class Axes:
             self.__firsttime = False
             return
         
-        if rti:
-            self.__driver.addpcolor(self.ax, x, y, z, self.zmin, self.zmax,
-                                    xlabel=xlabel,
-                                    ylabel=ylabel,
-                                    title=title,
-                                    colormap=colormap)
-            return
-        
-        self.__driver.pcolor(self.plot, z,
+        self.__driver.pcolor(self.plot,
+                             z_buffer,
                              xlabel=xlabel,
                              ylabel=ylabel,
                              title=title)
@@ -549,7 +557,7 @@ class Axes:
                **kwargs):
     
         if maxNumX == None:
-            maxNumX = self.__MAXNUMX
+            maxNumX = self.__MAXNUMTIME
         
         if maxNumY == None:
             maxNumY = self.__MAXNUMY
@@ -588,22 +596,18 @@ class Axes:
             
         self.x_buffer = numpy.hstack((self.x_buffer[:-1], x[0], x[-1]))
         self.z_buffer = numpy.hstack((self.z_buffer, z))
-        
-        if self.decimationx == None:
-            deltax = float(self.xmax - self.xmin)/maxNumX
-            deltay = float(self.ymax - self.ymin)/maxNumY
-            
-            resolutionx = self.x_buffer[2]-self.x_buffer[0]
-            resolutiony = y[1]-y[0]
-            
-            self.decimationx = numpy.ceil(deltax / resolutionx) 
-            self.decimationy = numpy.ceil(deltay / resolutiony)
-        
         z_buffer = self.z_buffer.reshape(-1,len(y))
         
-        x_buffer = self.x_buffer[::self.decimationx]
-        y_buffer = y[::self.decimationy]    
-        z_buffer = z_buffer[::self.decimationx, ::self.decimationy]
+        #Decimating data
+        xlen = len(self.x_buffer)
+        ylen = len(y)
+        
+        decimationx = numpy.floor(xlen/maxNumX) + 1
+        decimationy = numpy.floor(ylen/maxNumY) + 1
+        
+        x_buffer = self.x_buffer[::decimationx]
+        y_buffer = y[::decimationy]    
+        z_buffer = z_buffer[::decimationx, ::decimationy]
         #===================================================
         
         x_buffer, y_buffer, z_buffer = self.__fillGaps(x_buffer, y_buffer, z_buffer)
