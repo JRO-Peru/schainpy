@@ -36,6 +36,6 @@ setup(name="schainpy",
                           "scipy >= 0.9.0",
                           "h5py >= 2.0.1",
                           "matplotlib >= 1.0.0",
-                          "pyfits >= 2.0.0",
+#                           "pyfits >= 2.0.0",
                           ],
       )
