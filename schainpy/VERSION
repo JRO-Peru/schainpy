@@ -76,3 +76,4 @@ properly but the next days did not.
 2.2.4.1:
 -jroIO_usrp.py is update to read Sandra's data 
 -decimation in Spectra and RTI plots is always enabled.
+-time-window option added to GUI
