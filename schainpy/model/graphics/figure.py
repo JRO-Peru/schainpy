@@ -118,11 +118,13 @@ class Figure(Operation):
             xmin = (thisdatetime - thisdate).seconds/(60*60.)
             xmax = xmin + timerange/(60*60.)
         
-        mindt = thisdate + datetime.timedelta(hours=xmin) - datetime.timedelta(seconds=time.timezone)
-        xmin_sec = time.mktime(mindt.timetuple())
+        d1970 = datetime.datetime(1970,1,1)
         
-        maxdt = thisdate + datetime.timedelta(hours=xmax) - datetime.timedelta(seconds=time.timezone)
-        xmax_sec = time.mktime(maxdt.timetuple())
+        mindt = thisdate + datetime.timedelta(hours=xmin) #- datetime.timedelta(seconds=time.timezone)
+        xmin_sec = (mindt - d1970).total_seconds() #time.mktime(mindt.timetuple()) - time.timezone
+        
+        maxdt = thisdate + datetime.timedelta(hours=xmax) #- datetime.timedelta(seconds=time.timezone)
+        xmax_sec = (maxdt - d1970).total_seconds() #time.mktime(maxdt.timetuple()) - time.timezone
 
         return xmin_sec, xmax_sec
     
