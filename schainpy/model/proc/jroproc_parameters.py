@@ -365,12 +365,14 @@ class ParametersProc(ProcessingUnit):
         #-------------------    Detect Meteors  ------------------------------
     
     def MeteorDetection(self, hei_ref = None, tauindex = 0,
-                      predefinedPhaseShifts = None, centerReceiverIndex = 2,
+                      phaseOffsets = None,
                       cohDetection = False, cohDet_timeStep = 1, cohDet_thresh = 25, 
                       noise_timeStep = 4, noise_multiple = 4,
                       multDet_timeLimit = 1, multDet_rangeLimit = 3,
                       phaseThresh = 20, SNRThresh = 8,
-                      hmin = 50, hmax=150, azimuth = 0) :
+                      hmin = 50, hmax=150, azimuth = 0,
+                      channel25X = 0, channel20X = 4, channelCentX = 2,
+                      channel25Y = 1, channel20Y = 3, channelCentY = 2) :
         
         '''
         Function DetectMeteors()
@@ -447,32 +449,31 @@ class ParametersProc(ProcessingUnit):
         '''
         Cambiar este pairslist
         '''
-        pairslist = []
-        nChannel = self.dataOut.nChannels
-        for i in range(nChannel):
-            if i != centerReceiverIndex:
-                pairslist.append((centerReceiverIndex,i))
+        pairslist = [(channelCentX, channel25X),(channelCentX, channel20X),(channelCentY,channel25Y),(channelCentY, channel20Y)]
+        
+#         nChannel = self.dataOut.nChannels
+#         for i in range(nChannel):
+#             if i != centerReceiverIndex:
+#                 pairslist.append((centerReceiverIndex,i))
             
         #****************REMOVING HARDWARE PHASE DIFFERENCES***************
         # see if the user put in pre defined phase shifts
         voltsPShift = self.dataOut.data_pre.copy()
         
-        if predefinedPhaseShifts != None:
-            hardwarePhaseShifts = numpy.array(predefinedPhaseShifts)*numpy.pi/180
-        
-#         elif beaconPhaseShifts:
-#             #get hardware phase shifts using beacon signal
-#             hardwarePhaseShifts = self.__getHardwarePhaseDiff(self.dataOut.data_pre, pairslist, newheis, 10)
-#             hardwarePhaseShifts = numpy.insert(hardwarePhaseShifts,centerReceiverIndex,0)
-            
-        else:
-            hardwarePhaseShifts = numpy.zeros(5)
-                                               
-
-        voltsPShift = numpy.zeros((self.dataOut.data_pre.shape[0],self.dataOut.data_pre.shape[1],self.dataOut.data_pre.shape[2]), dtype = 'complex')
-        for i in range(self.dataOut.data_pre.shape[0]):
-            voltsPShift[i,:,:] = self.__shiftPhase(self.dataOut.data_pre[i,:,:], hardwarePhaseShifts[i])
-
+#         if predefinedPhaseShifts != None:
+#             hardwarePhaseShifts = numpy.array(predefinedPhaseShifts)*numpy.pi/180
+#         
+# #         elif beaconPhaseShifts:
+# #             #get hardware phase shifts using beacon signal
+# #             hardwarePhaseShifts = self.__getHardwarePhaseDiff(self.dataOut.data_pre, pairslist, newheis, 10)
+# #             hardwarePhaseShifts = numpy.insert(hardwarePhaseShifts,centerReceiverIndex,0)
+#             
+#         else:
+#             hardwarePhaseShifts = numpy.zeros(5)                     
+# 
+#         voltsPShift = numpy.zeros((self.dataOut.data_pre.shape[0],self.dataOut.data_pre.shape[1],self.dataOut.data_pre.shape[2]), dtype = 'complex')
+#         for i in range(self.dataOut.data_pre.shape[0]):
+#             voltsPShift[i,:,:] = self.__shiftPhase(self.dataOut.data_pre[i,:,:], hardwarePhaseShifts[i])
 
         #******************END OF REMOVING HARDWARE PHASE DIFFERENCES*********
     
@@ -537,9 +538,15 @@ class ParametersProc(ProcessingUnit):
             date = self.dataOut.utctime
             arrayParameters = self.__setNewArrays(listMeteors4, date, heiRang)
             
+            #Correcting phase offset
+            if phaseOffsets != None:
+                phaseOffsets = numpy.array(phaseOffsets)*numpy.pi/180
+                arrayParameters[:,8:12] = numpy.unwrap(arrayParameters[:,8:12] + phaseOffsets)
+            
+            #Second Pairslist
             pairsList = []
-            pairx = (0,3)
-            pairy = (1,2)
+            pairx = (0,1)
+            pairy = (2,3)
             pairsList.append(pairx)
             pairsList.append(pairy)
             
@@ -1981,14 +1988,10 @@ class PhaseCalibration(Operation):
         return phOffset
             
        
-    def run(self, dataOut, pairs, distances, hmin, hmax, nHours = None):
+    def run(self, dataOut, hmin, hmax, direction_25X=-1, direction_20X=1, direction_25Y=-1, direction_20Y=1, nHours = 1):
         
         dataOut.flagNoData = True
-        self.__dataReady = False
-        
-        if nHours == None:
-            nHours = 1
-                             
+        self.__dataReady = False                             
         dataOut.outputInterval = nHours*3600
         
         if self.__isConfig == False:
@@ -2003,7 +2006,7 @@ class PhaseCalibration(Operation):
             self.__buffer = dataOut.data_param.copy()
 
         else:
-            self.__buffer = numpy.hstack((self.__buffer, dataOut.data_param))
+            self.__buffer = numpy.vstack((self.__buffer, dataOut.data_param))
         
         self.__dataReady = self.__checkTime(dataOut.utctime, self.__initime, dataOut.paramInterval, dataOut.outputInterval) #Check if the buffer is ready
         
@@ -2017,7 +2020,8 @@ class PhaseCalibration(Operation):
             k = 2*numpy.pi/lamb
             azimuth = 0
             h = (hmin, hmax)
-            pairsList = ((0,3),(1,2))
+            pairs = ((0,1),(2,3))
+            distances = [direction_25X*2.5*lamb, direction_20X*2*lamb, direction_25Y*2.5*lamb, direction_20Y*2*lamb]
             
             meteorsArray = self.__buffer
             error = meteorsArray[:,-1]
@@ -2031,7 +2035,7 @@ class PhaseCalibration(Operation):
             gammas = self.__getGammas(pairs, k, distances, phases)
 #             gammas = numpy.array([-21.70409463,45.76935864])*numpy.pi/180
             #Calculate Phases
-            phasesOff = self.__getPhases(azimuth, h, pairsList, distances, gammas, meteorsArray)
+            phasesOff = self.__getPhases(azimuth, h, pairs, distances, gammas, meteorsArray)
             phasesOff = phasesOff.reshape((1,phasesOff.size))
             dataOut.data_output = -phasesOff
             dataOut.flagNoData = False
