@@ -579,22 +579,14 @@ class HDF5Writer(Operation):
     
 #     arrayDim = None
 
-    dsList = None   #List of dictionaries
+    dsList = None   #List of dictionaries with dataset properties
     
     tableDim = None
     
 #     dtype = [('arrayName', 'S20'),('nChannels', 'i'), ('nPoints', 'i'), ('nSamples', 'i'),('mode', 'b')]
     
     dtype = [('arrayName', 'S20'),('nDimensions', 'i'), ('dim2', 'i'), ('dim1', 'i'),('dim0', 'i'),('mode', 'b')]
-    
-    mode = None
-    
-    nDatas = None    #Number of datasets to be stored per array
-        
-    nDims = None  #Number Dimensions in each dataset
-    
-    nDimsForDs = None
-    
+
     currentDay = None
     
     def __init__(self):
@@ -649,7 +641,7 @@ class HDF5Writer(Operation):
             if type(dataAux)==float or type(dataAux)==int:
                 dsDict['mode'] = 0
                 dsDict['nDim'] = 0
-                arrayDim[i,0] = 1
+                arrayDim[i,0] = 0
                 dsList.append(dsDict)
 
             #Mode 2: meteors
@@ -659,6 +651,7 @@ class HDF5Writer(Operation):
                 dsDict['mode'] = 2      # Mode meteors
                 dsDict['shape'] = dataAux.shape[-1]
                 dsDict['nDim'] = 0
+                dsDict['dsNumber'] = 1
                 
                 arrayDim[i,3] = dataAux.shape[-1]
                 arrayDim[i,4] = mode[i]         #Mode the data was stored
@@ -911,134 +904,6 @@ class HDF5Writer(Operation):
         self.blockIndex = 0
         return
     
-    def setNextFile1(self):
-        
-        ext = self.ext
-        path = self.path
-        setFile = self.setFile
-        mode = self.mode
-   
-        timeTuple = time.localtime(self.dataOut.utctime)
-        subfolder = 'd%4.4d%3.3d' % (timeTuple.tm_year,timeTuple.tm_yday)
-
-        fullpath = os.path.join( path, subfolder )
-        
-        if os.path.exists(fullpath):
-            filesList = os.listdir( fullpath )
-            filesList = [k for k in filesList if 'D' in k]
-            if len( filesList ) > 0:
-                filesList = sorted( filesList, key=str.lower )
-                filen = filesList[-1]
-                # el filename debera tener el siguiente formato
-                # 0 1234 567 89A BCDE (hex)
-                # x YYYY DDD SSS .ext
-                if isNumber( filen[8:11] ):
-                    setFile = int( filen[8:11] ) #inicializo mi contador de seteo al seteo del ultimo file
-                else:    
-                    setFile = -1
-            else:
-                setFile = -1 #inicializo mi contador de seteo
-        else:
-            os.mkdir(fullpath)
-            setFile = -1 #inicializo mi contador de seteo       
-        
-        setFile += 1
-                
-        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
-                                        timeTuple.tm_year,
-                                        timeTuple.tm_yday,
-                                        setFile,
-                                        ext )
-
-        filename = os.path.join( path, subfolder, file )
-
-        #Setting HDF5 File
-        fp = h5py.File(filename,'w')
-        
-        #writemetadata
-        self.writeMetadata(fp) 
-        
-        grp = fp.create_group("Data")
-#         grp.attrs['metadata'] = self.metaFile
-        
-#         grp.attrs['blocksPerFile'] = 0
-        
-        ds = []
-        data = []
-        nDimsForDs = []
-        
-        nDatas = numpy.zeros(len(self.dataList))
-        nDims = self.arrayDim[:,0]
-        
-        nDim1 = self.arrayDim[:,2]
-        nDim0 = self.arrayDim[:,3]
-        
-        for i in range(len(self.dataList)):           
-            
-            #One-dimension data
-            if nDims[i]==1:
-#                 ds0 = grp.create_dataset(self.dataList[i], (1,1), maxshape=(1,self.blocksPerFile) , chunks = True, dtype='S20')
-                ds0 = grp.create_dataset(self.dataList[i], (1,1), maxshape=(1,self.blocksPerFile) , chunks = True, dtype=numpy.float64)
-                ds.append(ds0)
-                data.append([])
-                nDimsForDs.append(nDims[i])
-            else:
-                
-                #Channel mode
-#                 if mode[i] == 0:
-#                     strMode = "channel"
-#                     
-#                     #nDatas is the number of arrays per variable
-#                     if nDims[i] == 1:
-#                         nDatas[i] = self.arrayDim[i,1]
-#                     elif nDims[i] == 2:
-#                         nDatas[i] = self.arrayDim[i,2]
-                
-                #Parameters mode
-                if mode[i] == 1:
-                    strMode = "param"
-                    nDatas[i] = self.arrayDim[i,2]
-                
-                #Meteors mode
-                elif mode[i] == 2:
-                    strMode = "table"
-                    nDatas[i] = 1 
-                        
-                grp0 = grp.create_group(self.dataList[i])
-            
-                for j in range(int(nDatas[i])):
-                    tableName = strMode + str(j)
-                    
-                    if nDims[i] == 3:
-                        ds0 = grp0.create_dataset(tableName, (nDim1[i],nDim0[i],1) , data = numpy.zeros((nDim1[i],nDim0[i],1)) ,maxshape=(None,nDim0[i],None), chunks=True)
-                    
-                    else:
-                        ds0 = grp0.create_dataset(tableName, (1,nDim0[i]), data = numpy.zeros((1,nDim0[i])) , maxshape=(None,nDim0[i]), chunks=True)
-                    
-                    ds.append(ds0)
-                    data.append([])
-                    nDimsForDs.append(nDims[i])
-        
-        fp.flush()
-        fp.close()
-        
-        self.nDatas = nDatas
-        self.nDims = nDims
-        self.nDimsForDs = nDimsForDs
-        #Saving variables        
-        print 'Writing the file: %s'%filename
-        self.filename = filename
-#         self.fp = fp
-#         self.grp = grp
-#         self.grp.attrs.modify('nRecords', 1)
-        self.ds = ds
-        self.data = data
-#         
-#         self.setFile = setFile
-        self.firsttime = True
-        self.blockIndex = 0
-        return     
-    
     def putData(self):
 
         if self.blockIndex == self.blocksPerFile or self.dateFlag():
@@ -1147,7 +1012,8 @@ class HDF5Writer(Operation):
                     if nDim == 3:
                         self.data[i] = self.data[i].reshape((self.data[i].shape[0],self.data[i].shape[1],1))
                         self.ds[i].resize(self.data[i].shape)
-                
+                    if mode == 2:
+                        self.ds[i].resize(self.data[i].shape)
                 self.ds[i][:] = self.data[i]       
             else:      
                 
