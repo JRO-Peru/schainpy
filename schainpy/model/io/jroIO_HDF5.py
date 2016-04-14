@@ -406,12 +406,10 @@ class HDF5Reader(ProcessingUnit):
         blocksPerFile = self.blocksPerFile
         
         #Depending on what mode the data was stored
-#         if mode == 0:       #Divided in channels
-#             strds = 'channel'
-#             nDatas = nDim2
-#             newShapes = (blocksPerFile,nDim1,nDim0)
+        if mode == 0:       #Divided in channels
+            arrayData = dataset.value.astype(numpy.float)[0][blockList]
         if mode == 1:     #Divided in parameter
-            strds = 'param'
+            strds = 'table'
             nDatas = nDim1
             newShapes = (blocksPerFile,nDim2,nDim0)
         elif mode==2:       #Concatenated in a table
@@ -428,7 +426,7 @@ class HDF5Reader(ProcessingUnit):
             return arrayData
         
         #-------    One dimension ---------------
-        if nDims == 1:
+        if nDims == 0:
             arrayData = dataset.value.astype(numpy.float)[0][blockList]
                         
         #-------    Two dimensions    -----------
@@ -476,6 +474,8 @@ class HDF5Reader(ProcessingUnit):
                 setattr(self.dataOut,listDataname[j],listData[j][blockIndex])
             elif nShapes > 1:
                 setattr(self.dataOut,listDataname[j],listData[j][blockIndex,:])
+            elif mode==0:
+                setattr(self.dataOut,listDataname[j],listData[j][blockIndex])
             #Mode Meteors
             elif mode ==2:
                 selectedData = self.__selectDataMode2(listData[j], blockIndex)
