@@ -90,6 +90,10 @@ class HDF5Reader(ProcessingUnit):
             ext = kwargs['ext']
         else:
             ext = '.hdf5'
+        if kwargs.has_key('timezone'):
+            self.timezone = kwargs['timezone']
+        else:
+            self.timezone = 'lt'
             
         print "[Reading] Searching files in offline mode ..."
         pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
@@ -222,7 +226,11 @@ class HDF5Reader(ProcessingUnit):
 
         fp.close()
         
-        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0])
+        if self.timezone == 'lt':
+            thisUtcTime -= 5*3600
+ 
+        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0] + 5*3600)
+#         thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0])
         thisDate = thisDatetime.date()
         thisTime = thisDatetime.time()
         
@@ -302,10 +310,12 @@ class HDF5Reader(ProcessingUnit):
         grp = fp['Data']
         thisUtcTime = grp['utctime'].value.astype(numpy.float)[0]
         
+        #ERROOOOR
         if self.timezone == 'lt':
             thisUtcTime -= 5*3600
+ 
+        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0] + 5*3600)
         
-        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0])
         thisDate = thisDatetime.date()
         thisTime = thisDatetime.time()
         
@@ -421,7 +431,10 @@ class HDF5Reader(ProcessingUnit):
             
             if blockList.size != indices.size:
                 indMin = indices[blockList[0]]
-                indMax = indices[blockList[-1] + 1]
+                if blockList[-1] + 1 >= indices.size:
+                    indMax = indices[blockList[-1]]
+                else:
+                    indMax = indices[blockList[-1] + 1]
                 arrayData = arrayData[indMin:indMax,:]
             return arrayData
         

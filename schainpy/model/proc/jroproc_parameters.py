@@ -583,8 +583,8 @@ class ParametersProc(ProcessingUnit):
         
         arrayParameters = self.dataOut.data_param
         pairsList = []
-        pairx = (0,3)
-        pairy = (1,2)
+        pairx = (0,1)
+        pairy = (2,3)
         pairsList.append(pairx)
         pairsList.append(pairy)
         jph = numpy.zeros(4)
@@ -1988,7 +1988,7 @@ class PhaseCalibration(Operation):
         return phOffset
             
        
-    def run(self, dataOut, hmin, hmax, direction_25X=-1, direction_20X=1, direction_25Y=-1, direction_20Y=1, nHours = 1):
+    def run(self, dataOut, hmin, hmax, direction25X=-1, direction20X=1, direction25Y=-1, direction20Y=1, nHours = 1):
         
         dataOut.flagNoData = True
         self.__dataReady = False                             
@@ -2021,7 +2021,7 @@ class PhaseCalibration(Operation):
             azimuth = 0
             h = (hmin, hmax)
             pairs = ((0,1),(2,3))
-            distances = [direction_25X*2.5*lamb, direction_20X*2*lamb, direction_25Y*2.5*lamb, direction_20Y*2*lamb]
+            distances = [direction25X*2.5*lamb, direction20X*2*lamb, direction25Y*2.5*lamb, direction20Y*2*lamb]
             
             meteorsArray = self.__buffer
             error = meteorsArray[:,-1]
@@ -2140,7 +2140,7 @@ class MeteorOperations():
     
     def __calculateAOA(self, cosdir, azimuth):
         cosdirX = cosdir[:,0]
-        cosdirY = cosdir[:,1]
+        cosdirY = -cosdir[:,1]
         
         zenithAngle = numpy.arccos(numpy.sqrt(1 - cosdirX**2 - cosdirY**2))*180/numpy.pi
         azimuthAngle = numpy.arctan2(cosdirX,cosdirY)*180/numpy.pi + azimuth #0 deg north, 90 deg east
