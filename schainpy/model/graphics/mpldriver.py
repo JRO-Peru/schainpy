@@ -18,16 +18,18 @@ from matplotlib.ticker import FuncFormatter, LinearLocator
 #Actualizacion de las funciones del driver
 ###########################################
 
-def createFigure(id, wintitle, width, height, facecolor="w", show=True):
+def createFigure(id, wintitle, width, height, facecolor="w", show=True, dpi = 80):
     
     matplotlib.pyplot.ioff()
-    fig = matplotlib.pyplot.figure(num=id, facecolor=facecolor)
+    
+    fig = matplotlib.pyplot.figure(num=id, facecolor=facecolor, figsize=(1.0*width/dpi, 1.0*height/dpi))
     fig.canvas.manager.set_window_title(wintitle)
-    fig.canvas.manager.resize(width, height)
+#     fig.canvas.manager.resize(width, height)
     matplotlib.pyplot.ion()
+    
     if show:
         matplotlib.pyplot.show()
-    
+        
     return fig
 
 def closeFigure(show=False, fig=None):
@@ -54,7 +56,7 @@ def closeFigure(show=False, fig=None):
 def saveFigure(fig, filename):
     
 #     matplotlib.pyplot.ioff()
-    fig.savefig(filename)
+    fig.savefig(filename, dpi=matplotlib.pyplot.gcf().dpi)
 #     matplotlib.pyplot.ion()
 
 def clearFigure(fig):
