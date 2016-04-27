@@ -77,3 +77,8 @@ properly but the next days did not.
 -jroIO_usrp.py is update to read Sandra's data 
 -decimation in Spectra and RTI plots is always enabled.
 -time-window option added to GUI
+
+2.2.5:
+-splitProfiles and combineProfiles modules were added to VoltageProc and Signal Chain GUI.
+-nProfiles of USRP data (hdf5) is the number of profiles thera are in one second.
+-jroPlotter works directly with data objects instead of dictionaries

@@ -1,5 +1,5 @@
 import threading
-import Queue
+from Queue import Queue
 
 from schainpy.controller import Project
 from schainpy.model.graphics.jroplotter import PlotManager
@@ -102,7 +102,7 @@ class ControllerThread(threading.Thread, Project):
 
     def useExternalPlotter(self):
         
-        self.plotterQueue = Queue.Queue(10)
+        self.plotterQueue = Queue(10)
         self.setPlotters()
         
         plotManagerObj = PlotManager(self.plotterQueue)
