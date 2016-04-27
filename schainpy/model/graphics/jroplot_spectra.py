@@ -86,7 +86,7 @@ class SpectraPlot(Figure):
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
-            xaxis="velocity"):
+            xaxis="frequency"):
         
         """
         
@@ -122,7 +122,7 @@ class SpectraPlot(Figure):
         
         if xaxis == "frequency":
             x = dataOut.getFreqRange(1)/1000.
-            xlabel = "Frquency (kHz)"
+            xlabel = "Frequency (kHz)"
             
         elif xaxis == "time":
             x = dataOut.getAcfRange(1)
@@ -280,7 +280,8 @@ class CrossSpectraPlot(Figure):
             save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0,
+            xaxis='frequency'):
         
         """
         
@@ -337,9 +338,21 @@ class CrossSpectraPlot(Figure):
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Velocity (m/s)"
+#         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
         
+        if xaxis == "frequency":
+            x = dataOut.getFreqRange(1)/1000.
+            xlabel = "Frequency (kHz)"
+            
+        elif xaxis == "time":
+            x = dataOut.getAcfRange(1)
+            xlabel = "Time (ms)"
+            
+        else:
+            x = dataOut.getVelRange(1)
+            xlabel = "Velocity (m/s)"
+            
         if not self.isConfig:
             
             nplots = len(pairsIndexList)
@@ -998,7 +1011,7 @@ class SpectraCutPlot(Figure):
             save=False, figpath='./', figfile=None, show=True,
             ftp=False, wr_period=1, server=None,
             folder=None, username=None, password=None,
-            xaxis="velocity"):
+            xaxis="frequency"):
         
         
         if channelList == None:

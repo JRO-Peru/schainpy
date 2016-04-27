@@ -130,7 +130,7 @@ class Figure(Operation):
     
     def init(self, id, nplots, wintitle):
     
-        raise NotImplementedError, "This method has been replaced with createFigure"
+        raise NotImplementedError, "This method has been replaced by createFigure"
     
     def createFigure(self, id, wintitle, widthplot=None, heightplot=None, show=True):
         
