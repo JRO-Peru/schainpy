@@ -9,7 +9,6 @@ import numpy
 import traceback
 
 from time import sleep
-from Queue import Queue
 from threading import Lock
 # from threading import Thread
 
@@ -65,7 +64,8 @@ class Plotter(Operation):
         packDict['name'] = self.name
         packDict['kwargs'] = kwargs
         
-        packDict['data'] = obj2Dict(dataOut)
+#         packDict['data'] = obj2Dict(dataOut)
+        packDict['data'] = dataOut
         
         self.__queue.put(packDict)
 
@@ -162,9 +162,11 @@ class PlotManager():
             plot_id = serial_data['id']
             plot_name = serial_data['name']
             kwargs = serial_data['kwargs']
-            dataDict = serial_data['data']
+#             dataDict = serial_data['data']
+#             
+#             dataPlot = dict2Obj(dataDict)
             
-            dataPlot = dict2Obj(dataDict)
+            dataPlot = serial_data['data']
             
             if plot_id not in self.plotInstanceDict.keys():
                 className = eval(plot_name)
