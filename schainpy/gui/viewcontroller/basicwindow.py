@@ -738,6 +738,28 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpComHeights.setEnabled(False)
 
     @pyqtSignature("int")
+    def on_volOpCebSplitter_stateChanged(self, p0):
+         """
+         Name='Splitter', optype='other'
+         """
+         if  p0 == 2:
+            self.volOpSplitter.setEnabled(True)
+  
+         if  p0 == 0:
+            self.volOpSplitter.setEnabled(False)
+
+    @pyqtSignature("int")
+    def on_volOpCebCombiner_stateChanged(self, p0):
+         """
+         Name='Combiner', optype='other'
+         """
+         if  p0 == 2:
+            self.volOpCombiner.setEnabled(True)
+  
+         if  p0 == 0:
+            self.volOpCombiner.setEnabled(False)
+            
+    @pyqtSignature("int")
     def on_volOpCebFilter_stateChanged(self, p0):
          """
          Name='Decoder', optype='other'
@@ -991,20 +1013,17 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            opObj = puObj.addOperation(name=name_operation)
            opObj.addParameter(name=name_parameter1, value=valueList[0], format=format)
            opObj.addParameter(name=name_parameter2, value=valueList[1], format=format)
-           
-        if self.volOpCebFilter.isChecked():
-           value = str(self.volOpFilter.text())
-           
-           if not isInt(value):
-                self.console.append("Invalid value '%s' for Filter" %value)
-                return 0
+        
+        if self.volOpCebSplitter.isChecked():
+            value = str(self.volOpSplitter.text())
             
-           format = 'int'
-           name_operation = 'filterByHeights'
-           name_parameter = 'window'
-           opObj = puObj.addOperation(name=name_operation)
-           opObj.addParameter(name=name_parameter, value=value, format=format)
-
+            if not isInt(value):
+                self.console.append("Invalid value '%s' for Profile Splitter" %value)
+                return 0
+                
+            opObj = puObj.addOperation(name="SplitProfiles", optype='external')
+            opObj.addParameter(name='n', value=value, format='int')
+            
         if self.volOpCebProfile.isChecked():
             value = str(self.volOpProfile.text())
             
@@ -1025,6 +1044,29 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             
             opObj = puObj.addOperation(name='ProfileSelector', optype='other')
             opObj.addParameter(name=name_parameter, value=value, format=format)
+        
+        if self.volOpCebCombiner.isChecked():
+            value = str(self.volOpCombiner.text())
+            
+            if not isInt(value):
+                self.console.append("Invalid value '%s' for Profile Combiner" %value)
+                return 0
+                
+            opObj = puObj.addOperation(name="CombineProfiles", optype='external')
+            opObj.addParameter(name='n', value=value, format='int')
+            
+        if self.volOpCebFilter.isChecked():
+           value = str(self.volOpFilter.text())
+           
+           if not isInt(value):
+                self.console.append("Invalid value '%s' for Filter" %value)
+                return 0
+            
+           format = 'int'
+           name_operation = 'filterByHeights'
+           name_parameter = 'window'
+           opObj = puObj.addOperation(name=name_operation)
+           opObj.addParameter(name=name_parameter, value=value, format=format)
         
         if self.volOpCebDecodification.isChecked():
             name_operation = 'Decoder'
@@ -2910,6 +2952,28 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
            self.volOpHeights.setEnabled(True)
            self.volOpCebHeights.setCheckState(QtCore.Qt.Checked)
         
+        opObj = puObj.getOperationObj(name="SplitProfiles")           
+        if opObj == None:
+            self.volOpSplitter.clear()
+            self.volOpCebSplitter.setCheckState(0)
+        else:
+            value = opObj.getParameterValue(parameterName='n')             
+            value = str(value)
+            self.volOpSplitter.setText(value)
+            self.volOpSplitter.setEnabled(True)
+            self.volOpCebSplitter.setCheckState(QtCore.Qt.Checked)
+        
+        opObj = puObj.getOperationObj(name="CombineProfiles")           
+        if opObj == None:
+            self.volOpCombiner.clear()
+            self.volOpCebCombiner.setCheckState(0)
+        else:
+            value = opObj.getParameterValue(parameterName='n')             
+            value = str(value)
+            self.volOpCombiner.setText(value)
+            self.volOpCombiner.setEnabled(True)
+            self.volOpCebCombiner.setCheckState(QtCore.Qt.Checked)
+            
         opObj = puObj.getOperationObj(name="filterByHeights")           
         if opObj == None:
             self.volOpFilter.clear()
@@ -5099,14 +5163,19 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpChannel.setEnabled(False)
             self.volOpHeights.setEnabled(False)
             self.volOpProfile.setEnabled(False)   
-            self.volOpRadarfrequency.setEnabled(False)   
+            self.volOpRadarfrequency.setEnabled(False)  
+            self.volOpSplitter.setEnabled(False) 
+            self.volOpCombiner.setEnabled(False)
+            
             self.volOpCebChannels.setCheckState(0)
             self.volOpCebRadarfrequency.setCheckState(0)
             self.volOpCebHeights.setCheckState(0)
             self.volOpCebFilter.setCheckState(0)
             self.volOpCebProfile.setCheckState(0)
             self.volOpCebDecodification.setCheckState(0)
-            self.volOpCebCohInt.setCheckState(0)       
+            self.volOpCebCohInt.setCheckState(0)  
+            self.volOpCebSplitter.setCheckState(0)
+            self.volOpCebCombiner.setCheckState(0)     
             
             self.volOpChannel.clear()
             self.volOpHeights.clear()
@@ -5114,6 +5183,8 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.volOpFilter.clear()
             self.volOpCohInt.clear()
             self.volOpRadarfrequency.clear()
+            self.volOpSplitter.clear()
+            self.volOpCombiner.clear()
         
         if datatype == 'Spectra':
 
@@ -5651,10 +5722,10 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         self.volOpProfile.setEnabled(False)
         self.volOpComMode.setEnabled(False)
         
-        self.volOpReshaper.setEnabled(False)
+        self.volOpSplitter.setEnabled(False)
+        self.volOpCombiner.setEnabled(False)
         self.volOpAdjustHei.setEnabled(False)
         
-        self.volOpCebReshaper.setEnabled(False)
         self.volOpCebAdjustHei.setEnabled(False)
         
         self.volGraphPath.setEnabled(False)

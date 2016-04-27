@@ -85,38 +85,44 @@ class Ui_VoltageTab(object):
         self.volOpHeights.setObjectName(_fromUtf8("volOpHeights"))
         self.gridLayout.addWidget(self.volOpHeights, 3, 3, 1, 2)
         
+        self.volOpCebSplitter = QtGui.QCheckBox(self.tabopVoltage)
+        self.volOpCebSplitter.setObjectName(_fromUtf8("volOpCebSplitter"))
+        self.gridLayout.addWidget(self.volOpCebSplitter, 5, 0, 1, 1)
         
+        self.volOpSplitter = QtGui.QLineEdit(self.tabopVoltage)
+        self.volOpSplitter.setObjectName(_fromUtf8("volOpSplitter"))
+        self.gridLayout.addWidget(self.volOpSplitter, 5, 1, 1, 4)
         
         self.volOpCebProfile = QtGui.QCheckBox(self.tabopVoltage)
         self.volOpCebProfile.setObjectName(_fromUtf8("volOpCebProfile"))
-        self.gridLayout.addWidget(self.volOpCebProfile, 5, 0, 1, 1)
+        self.gridLayout.addWidget(self.volOpCebProfile, 6, 0, 1, 1)
         
         self.volOpComProfile = QtGui.QComboBox(self.tabopVoltage)
         self.volOpComProfile.setObjectName(_fromUtf8("volOpComProfile"))
         self.volOpComProfile.addItem(_fromUtf8(""))
         self.volOpComProfile.addItem(_fromUtf8(""))
         self.volOpComProfile.addItem(_fromUtf8(""))
-        self.gridLayout.addWidget(self.volOpComProfile, 5, 1, 1, 2)
+        self.gridLayout.addWidget(self.volOpComProfile, 6, 1, 1, 2)
         
         self.volOpProfile = QtGui.QLineEdit(self.tabopVoltage)
         self.volOpProfile.setObjectName(_fromUtf8("volOpProfile"))
-        self.gridLayout.addWidget(self.volOpProfile, 5, 3, 1, 2)
-
-        self.volOpCebReshaper = QtGui.QCheckBox(self.tabopVoltage)
-        self.volOpCebReshaper.setObjectName(_fromUtf8("volOpCebReshaper"))
-        self.gridLayout.addWidget(self.volOpCebReshaper, 6, 0, 1, 1)
+        self.gridLayout.addWidget(self.volOpProfile, 6, 3, 1, 2)
         
-        self.volOpReshaper = QtGui.QLineEdit(self.tabopVoltage)
-        self.volOpReshaper.setObjectName(_fromUtf8("volOpReshaper"))
-        self.gridLayout.addWidget(self.volOpReshaper, 6, 1, 1, 4)
+        self.volOpCebCombiner = QtGui.QCheckBox(self.tabopVoltage)
+        self.volOpCebCombiner.setObjectName(_fromUtf8("volOpCebCombiner"))
+        self.gridLayout.addWidget(self.volOpCebCombiner, 7, 0, 1, 1)
+        
+        self.volOpCombiner = QtGui.QLineEdit(self.tabopVoltage)
+        self.volOpCombiner.setObjectName(_fromUtf8("volOpCombiner"))
+        self.gridLayout.addWidget(self.volOpCombiner, 7, 1, 1, 4)
         
         self.volOpCebFilter = QtGui.QCheckBox(self.tabopVoltage)
         self.volOpCebFilter.setObjectName(_fromUtf8("volOpCebFilter"))
-        self.gridLayout.addWidget(self.volOpCebFilter, 7, 0, 1, 1)
+        self.gridLayout.addWidget(self.volOpCebFilter, 8, 0, 1, 1)
         
         self.volOpFilter = QtGui.QLineEdit(self.tabopVoltage)
         self.volOpFilter.setObjectName(_fromUtf8("volOpFilter"))
-        self.gridLayout.addWidget(self.volOpFilter, 7, 1, 1, 4)
+        self.gridLayout.addWidget(self.volOpFilter, 8, 1, 1, 4)
         
 #         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
 #         self.gridLayout.addItem(spacerItem, 6, 4, 1, 1)
@@ -133,21 +139,21 @@ class Ui_VoltageTab(object):
         
         self.volOpCebDecodification = QtGui.QCheckBox(self.tabopVoltage)
         self.volOpCebDecodification.setObjectName(_fromUtf8("volOpCebDecodification"))
-        self.gridLayout.addWidget(self.volOpCebDecodification, 8, 0, 1, 1)
+        self.gridLayout.addWidget(self.volOpCebDecodification, 9, 0, 1, 1)
         
         self.volLabCodeMode = QtGui.QLabel(self.tabopVoltage)
         self.volLabCodeMode.setObjectName(_fromUtf8("volLabCodeMode"))
-        self.gridLayout.addWidget(self.volLabCodeMode, 8, 1, 1, 1)
+        self.gridLayout.addWidget(self.volLabCodeMode, 9, 1, 1, 1)
         
         self.volOpComMode = QtGui.QComboBox(self.tabopVoltage)
         self.volOpComMode.setObjectName(_fromUtf8("volOpComMode"))
         self.volOpComMode.addItem(_fromUtf8(""))
         self.volOpComMode.addItem(_fromUtf8(""))
-        self.gridLayout.addWidget(self.volOpComMode, 8, 2, 1, 3)
+        self.gridLayout.addWidget(self.volOpComMode, 9, 2, 1, 3)
         
         self.volLabCodeType = QtGui.QLabel(self.tabopVoltage)
         self.volLabCodeType.setObjectName(_fromUtf8("volLabCodeType"))
-        self.gridLayout.addWidget(self.volLabCodeType, 9, 1, 1, 1)
+        self.gridLayout.addWidget(self.volLabCodeType, 10, 1, 1, 1)
         
         self.volOpComCode = QtGui.QComboBox(self.tabopVoltage)
         self.volOpComCode.setObjectName(_fromUtf8("volOpComCode"))
@@ -165,39 +171,39 @@ class Ui_VoltageTab(object):
         self.volOpComCode.addItem(_fromUtf8(""))
         self.volOpComCode.addItem(_fromUtf8(""))
         self.volOpComCode.addItem(_fromUtf8(""))
-        self.gridLayout.addWidget(self.volOpComCode, 9, 2, 1, 3)
+        self.gridLayout.addWidget(self.volOpComCode, 10, 2, 1, 3)
         
         self.volLabCode = QtGui.QLabel(self.tabopVoltage)
         self.volLabCode.setObjectName(_fromUtf8("volLabCode"))
-        self.gridLayout.addWidget(self.volLabCode, 10, 1, 1, 1)
+        self.gridLayout.addWidget(self.volLabCode, 11, 1, 1, 1)
         
         self.volOpCode = QtGui.QLineEdit(self.tabopVoltage)
         self.volOpCode.setObjectName(_fromUtf8("volOpCode"))
-        self.gridLayout.addWidget(self.volOpCode, 10, 2, 1, 3)
+        self.gridLayout.addWidget(self.volOpCode, 11, 2, 1, 3)
         
         self.volOpCebFlip = QtGui.QCheckBox(self.tabopVoltage)
         self.volOpCebFlip.setObjectName(_fromUtf8("volOpCebFlip"))
-        self.gridLayout.addWidget(self.volOpCebFlip, 11, 0, 1, 1)
+        self.gridLayout.addWidget(self.volOpCebFlip, 12, 0, 1, 1)
         
         self.volOpFlip = QtGui.QLineEdit(self.tabopVoltage)
         self.volOpFlip.setObjectName(_fromUtf8("volOpFlip"))
-        self.gridLayout.addWidget(self.volOpFlip, 11, 1, 1, 4)
+        self.gridLayout.addWidget(self.volOpFlip, 13, 1, 1, 4)
         
         self.volOpCebCohInt = QtGui.QCheckBox(self.tabopVoltage)
         self.volOpCebCohInt.setObjectName(_fromUtf8("volOpCebCohInt"))
-        self.gridLayout.addWidget(self.volOpCebCohInt, 12, 0, 1, 1)
+        self.gridLayout.addWidget(self.volOpCebCohInt, 13, 0, 1, 1)
         
         self.volOpCohInt = QtGui.QLineEdit(self.tabopVoltage)
         self.volOpCohInt.setObjectName(_fromUtf8("volOpCohInt"))
-        self.gridLayout.addWidget(self.volOpCohInt, 12, 1, 1, 4)
+        self.gridLayout.addWidget(self.volOpCohInt, 13, 1, 1, 4)
         
         self.volOpCebAdjustHei = QtGui.QCheckBox(self.tabopVoltage)
         self.volOpCebAdjustHei.setObjectName(_fromUtf8("volOpCebAdjustHei"))
-        self.gridLayout.addWidget(self.volOpCebAdjustHei, 13, 0, 1, 1)
+        self.gridLayout.addWidget(self.volOpCebAdjustHei, 14, 0, 1, 1)
         
         self.volOpAdjustHei = QtGui.QLineEdit(self.tabopVoltage)
         self.volOpAdjustHei.setObjectName(_fromUtf8("volOpAdjustHei"))
-        self.gridLayout.addWidget(self.volOpAdjustHei, 13, 1, 1, 4)
+        self.gridLayout.addWidget(self.volOpAdjustHei, 14, 1, 1, 4)
         
         self.tabWidgetVoltage.addTab(self.tabopVoltage, _fromUtf8(""))
         
@@ -338,8 +344,9 @@ class Ui_VoltageTab(object):
         self.volLabCodeType.setText(_translate("MainWindow", "Code type:", None))
         self.volOpCebChannels.setText(_translate("MainWindow", "Select Channels:", None))
         self.volOpCebHeights.setText(_translate("MainWindow", "Select  Heights:", None))
-        self.volOpCebFilter.setText(_translate("MainWindow", "Filter:", None))
-        self.volOpCebReshaper.setText(_translate("MainWindow", "Reshape data: ", None))
+        self.volOpCebFilter.setText(_translate("MainWindow", "Range Window Filter:", None))
+        self.volOpCebSplitter.setText(_translate("MainWindow", "Split Profiles: ", None))
+        self.volOpCebCombiner.setText(_translate("MainWindow", "Combine Profiles: ", None))
         self.volOpCebRadarfrequency.setText(_translate("MainWindow", "Radar frequency (MHz):", None))
         self.volLabCodeMode.setText(_translate("MainWindow", "Mode:", None))
         self.volLabCode.setText(_translate("MainWindow", "Code:", None))
