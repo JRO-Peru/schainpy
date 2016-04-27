@@ -869,7 +869,7 @@ class ProfileSelector(Operation):
             maxIndex = profileRangeList[1]
             
             if self.isThisProfileInRange(dataOut.profileIndex, minIndex, maxIndex):
-                
+                    
                 self.nProfiles = maxIndex - minIndex + 1
                 dataOut.nProfiles = self.nProfiles
                 dataOut.profileIndex = self.profileIndex
@@ -918,9 +918,7 @@ class ProfileSelector(Operation):
         
         raise ValueError, "ProfileSelector needs profileList, profileRangeList or rangeList parameter"
         
-        return False    
-
-        
+        return False
         
 class Reshaper(Operation):
     
@@ -1024,7 +1022,109 @@ class Reshaper(Operation):
         dataOut.profileIndex = profileIndex
         
         dataOut.ippSeconds /= self.__nTxs
-#             
+        
+class SplitProfiles(Operation):
+    
+    def __init__(self):
+        
+        Operation.__init__(self)
+    
+    def run(self, dataOut, n):
+        
+        dataOut.flagNoData = True
+        profileIndex = None
+        
+        if dataOut.flagDataAsBlock:
+            
+            #nchannels, nprofiles, nsamples
+            shape = dataOut.data.shape
+            
+            if shape[2] % n != 0:
+                raise ValueError, "Could not split the data, n=%d has to be multiple of %d" %(n, shape[2])
+            
+            new_shape = shape[0], shape[1]*n, shape[2]/n
+            
+            dataOut.data = numpy.reshape(dataOut.data, new_shape)
+            dataOut.flagNoData = False
+            
+            profileIndex = int(dataOut.nProfiles/n) - 1
+            
+        else:
+            
+            raise ValueError, "Could not split the data when is read Profile by Profile. Use VoltageReader(..., getblock=True)"
+        
+        deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
+        
+        dataOut.heightList = numpy.arange(dataOut.nHeights/n) * deltaHeight + dataOut.heightList[0]
+        
+        dataOut.nProfiles = int(dataOut.nProfiles*n)
+        
+        dataOut.profileIndex = profileIndex
+        
+        dataOut.ippSeconds /= n
+        
+class CombineProfiles(Operation):
+    
+    def __init__(self):
+        
+        Operation.__init__(self)
+        
+        self.__remData = None
+        self.__profileIndex = 0
+
+    def run(self, dataOut, n):
+        
+        dataOut.flagNoData = True
+        profileIndex = None
+        
+        if dataOut.flagDataAsBlock:
+            
+            #nchannels, nprofiles, nsamples
+            shape = dataOut.data.shape
+            new_shape = shape[0], shape[1]/n, shape[2]*n
+            
+            if shape[1] % n != 0:
+                raise ValueError, "Could not split the data, n=%d has to be multiple of %d" %(n, shape[1])
+            
+            dataOut.data = numpy.reshape(dataOut.data, new_shape)
+            dataOut.flagNoData = False
+            
+            profileIndex = int(dataOut.nProfiles*n) - 1
+            
+        else:
+            
+            #nchannels, nsamples
+            if self.__remData is None:
+                newData = dataOut.data
+            else:
+                newData = numpy.concatenate((self.__remData, dataOut.data), axis=1)
+            
+            self.__profileIndex += 1
+            
+            if self.__profileIndex < n:
+                self.__remData = newData
+                #continue
+                return
+            
+            self.__profileIndex = 0
+            self.__remData = None
+            
+            dataOut.data = newData
+            dataOut.flagNoData = False
+        
+            profileIndex = dataOut.profileIndex/n
+            
+            
+        deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
+        
+        dataOut.heightList = numpy.arange(dataOut.nHeights*n) * deltaHeight + dataOut.heightList[0]
+        
+        dataOut.nProfiles = int(dataOut.nProfiles/n)
+        
+        dataOut.profileIndex = profileIndex
+        
+        dataOut.ippSeconds *= n
+        
 # import collections
 # from scipy.stats import mode
 # 

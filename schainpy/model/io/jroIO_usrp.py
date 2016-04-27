@@ -54,7 +54,9 @@ class USRPReader(ProcessingUnit):
         '''
         In this method will be initialized every parameter of dataOut object (header, no data)
         '''
-        nProfiles = self.__sample_rate  #Number of profiles by second
+        ippSeconds = 1.0*self.__nSamples/self.__sample_rate
+        
+        nProfiles = 1.0/ippSeconds  #Number of profiles in one second
         
         self.dataOut.radarControllerHeaderObj = RadarControllerHeader(ippKm=self.__ippKm,
                                                                       txA=0,
@@ -113,7 +115,7 @@ class USRPReader(ProcessingUnit):
         
         self.dataOut.flagShiftFFT = False
         
-        self.dataOut.ippSeconds = 1.0*self.__nSamples/self.__sample_rate
+        self.dataOut.ippSeconds = ippSeconds
         
         #Time interval between profiles 
         #self.dataOut.timeInterval = self.dataOut.ippSeconds * self.dataOut.nCohInt
@@ -505,9 +507,13 @@ class USRPReader(ProcessingUnit):
         self.dataOut.utctime = (self.__thisUnixSample + self.__bufferIndex)/self.__sample_rate
         self.dataOut.flagNoData = False
         self.dataOut.flagDiscontinuousBlock = self.__flagDiscontinuousBlock
+        self.dataOut.profileIndex = self.profileIndex
         
         self.__bufferIndex += self.__nSamples       
         self.profileIndex += 1
+        
+        if self.profileIndex == self.dataOut.nProfiles:
+            self.profileIndex = 0
         
         return True
     
