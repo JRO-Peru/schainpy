@@ -1626,7 +1626,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             wrperiod = None
         
         #-----Spectra Plot-----
-        if self.specGraphCebSpectraplot.isChecked():
+        if self.specGraphCebSpectraplot.isChecked() or self.specGraphSaveSpectra.isChecked():
                          
             opObj = puObj.addOperation(name='SpectraPlot', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')      
@@ -1677,7 +1677,11 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name='zmin', value=value1, format='float')
                 opObj.addParameter(name='zmax', value=value2, format='float')      
-
+            
+            if not self.specGraphCebSpectraplot.isChecked():
+                
+                opObj.addParameter(name='show', value=0 , format='bool')
+                
             if self.specGraphSaveSpectra.isChecked():
                 
                 checkPath = True
@@ -1694,7 +1698,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 self.addFTPConf2Operation(puObj, opObj)
                 addFTP = True
                
-        if self.specGraphCebCrossSpectraplot.isChecked():
+        if self.specGraphCebCrossSpectraplot.isChecked() or self.specGraphSaveCross.isChecked():
             
             opObj = puObj.addOperation(name='CrossSpectraPlot', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')
@@ -1763,8 +1767,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name='phase_min', value=value1, format='float')
                 opObj.addParameter(name='phase_max', value=value2, format='float')
-                 
+            
+            if not self.specGraphCebCrossSpectraplot.isChecked():
+                
+                opObj.addParameter(name='show', value=0 , format='bool')
+                
             if self.specGraphSaveCross.isChecked():
+                
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
                 opObj.addParameter(name='figpath', value=figpath, format='str')
@@ -1774,11 +1783,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     opObj.addParameter(name='wr_period', value=wrperiod,format='int')
                     
             if self.specGraphftpCross.isChecked():
+                
                opObj.addParameter(name='ftp', value='1', format='int')
                self.addFTPConf2Operation(puObj, opObj)
                addFTP = True
                      
-        if self.specGraphCebRTIplot.isChecked():
+        if self.specGraphCebRTIplot.isChecked() or self.specGraphSaveRTIplot.isChecked():
             
             opObj = puObj.addOperation(name='RTIPlot', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')
@@ -1836,8 +1846,13 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name='zmin', value=value1, format='float')
                 opObj.addParameter(name='zmax', value=value2, format='float')    
+            
+            if not self.specGraphCebRTIplot.isChecked():
+                
+                opObj.addParameter(name='show', value=0 , format='bool')
                 
             if self.specGraphSaveRTIplot.isChecked():
+                
                 checkPath = True
                 opObj.addParameter(name='save', value='1', format='bool')
                 opObj.addParameter(name='figpath', value=figpath, format='str')
@@ -1847,11 +1862,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                     opObj.addParameter(name='wr_period', value=wrperiod,format='int')
                     
             if self.specGraphftpRTIplot.isChecked():
+                
                opObj.addParameter(name='ftp', value='1', format='int')
                self.addFTPConf2Operation(puObj, opObj)
                addFTP = True
                                  
-        if self.specGraphCebCoherencmap.isChecked():
+        if self.specGraphCebCoherencmap.isChecked() or self.specGraphSaveCoherencemap.isChecked():
            
             opObj = puObj.addOperation(name='CoherenceMap', optype='other')    
             opObj.addParameter(name='id', value=opObj.id, format='int')
@@ -1907,6 +1923,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name='phase_min', value=value1, format='float')
                 opObj.addParameter(name='phase_max', value=value2, format='float')
+            
+            if not self.specGraphCebCoherencmap.isChecked():
+                opObj.addParameter(name='show', value=0 , format='bool')
                 
             if self.specGraphSaveCoherencemap.isChecked():
                 checkPath = True
@@ -1922,7 +1941,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                self.addFTPConf2Operation(puObj, opObj)       
                addFTP = True    
            
-        if self.specGraphPowerprofile.isChecked():
+        if self.specGraphPowerprofile.isChecked() or self.specGraphSavePowerprofile.isChecked():
             
             opObj = puObj.addOperation(name='PowerProfilePlot', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')
@@ -1960,6 +1979,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name='xmin', value=value1, format='float')
                 opObj.addParameter(name='xmax', value=value2, format='float')  
+            
+            if not self.specGraphPowerprofile.isChecked():
+                opObj.addParameter(name='show', value=0 , format='bool')
                 
             if self.specGraphSavePowerprofile.isChecked():
                  checkPath = True
@@ -1976,7 +1998,7 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                addFTP = True
            # rti noise
               
-        if self.specGraphCebRTInoise.isChecked():
+        if self.specGraphCebRTInoise.isChecked() or self.specGraphSaveRTInoise.isChecked():
             
             opObj = puObj.addOperation(name='Noise', optype='other')
             opObj.addParameter(name='id', value=opObj.id, format='int')
@@ -2014,6 +2036,9 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
                 
                 opObj.addParameter(name='ymin', value=value1, format='float')
                 opObj.addParameter(name='ymax', value=value2, format='float')
+            
+            if not self.specGraphCebRTInoise.isChecked():
+                opObj.addParameter(name='show', value=0 , format='bool')
                 
             if self.specGraphSaveRTInoise.isChecked():
                 checkPath = True
@@ -3437,8 +3462,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specGraphSaveSpectra.setCheckState(0)
             self.specGraphftpSpectra.setCheckState(0)
         else:
-            operationSpectraPlot = "Enable"
+#             operationSpectraPlot = "Enable"
             self.specGraphCebSpectraplot.setCheckState(QtCore.Qt.Checked)
+            
+            parmObj = opObj.getParameterObj(parameterName='show')
+            if parmObj:
+                if not parmObj.getValue():
+                    self.specGraphCebSpectraplot.setCheckState(0)
+                    
             parmObj = opObj.getParameterObj(parameterName='channelList')
             if parmObj == None:
                 self.specGgraphChannelList.clear()
@@ -3513,8 +3544,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specGraphSaveCross.setCheckState(0)
             self.specGraphftpCross.setCheckState(0)
         else:
-            operationCrossSpectraPlot = "Enable"
+#             operationCrossSpectraPlot = "Enable"
             self.specGraphCebCrossSpectraplot.setCheckState(QtCore.Qt.Checked)
+            
+            parmObj = opObj.getParameterObj(parameterName='show')
+            if parmObj:
+                if not parmObj.getValue():
+                    self.specGraphCebCrossSpectraplot.setCheckState(0)
+                    
             parmObj = opObj.getParameterObj(parameterName='xmin')
             if parmObj == None:
                 self.specGgraphFreq.clear()
@@ -3605,6 +3642,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specGraphftpRTIplot.setCheckState(0)
         else:
             self.specGraphCebRTIplot.setCheckState(QtCore.Qt.Checked)
+            
+            parmObj = opObj.getParameterObj(parameterName='show')
+            if parmObj:
+                if not parmObj.getValue():
+                    self.specGraphCebRTIplot.setCheckState(0)
+                    
             parmObj = opObj.getParameterObj(parameterName='channelList')
             if parmObj == None:
                 self.specGgraphChannelList.clear()
@@ -3688,8 +3731,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specGraphSaveCoherencemap.setCheckState(0)
             self.specGraphftpCoherencemap.setCheckState(0)
         else:
-            operationCoherenceMap = "Enable"
+#             operationCoherenceMap = "Enable"
             self.specGraphCebCoherencmap.setCheckState(QtCore.Qt.Checked)
+            
+            parmObj = opObj.getParameterObj(parameterName='show')
+            if parmObj:
+                if not parmObj.getValue():
+                    self.specGraphCebCoherencmap.setCheckState(0)
+                    
             parmObj = opObj.getParameterObj(parameterName='xmin')
             if parmObj == None:
                 self.specGgraphTminTmax.clear()
@@ -3792,8 +3841,14 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             freq_vel = None
             heightsrange = None
         else:
-            operationPowerProfilePlot = "Enable"
+#             operationPowerProfilePlot = "Enable"
             self.specGraphPowerprofile.setCheckState(QtCore.Qt.Checked)
+            
+            parmObj = opObj.getParameterObj(parameterName='show')
+            if parmObj:
+                if not parmObj.getValue():
+                    self.specGraphPowerprofile.setCheckState(0)
+                    
             parmObj = opObj.getParameterObj(parameterName='xmin')
             if parmObj == None:
                 self.specGgraphDbsrange.clear()
@@ -3848,6 +3903,12 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
             self.specGraphftpRTInoise.setCheckState(0)
         else:
             self.specGraphCebRTInoise.setCheckState(QtCore.Qt.Checked)
+            
+            parmObj = opObj.getParameterObj(parameterName='show')
+            if parmObj:
+                if not parmObj.getValue():
+                    self.specGraphCebRTInoise.setCheckState(0)
+                    
             parmObj = opObj.getParameterObj(parameterName='channelList')
             if parmObj == None:
                    self.specGgraphChannelList.clear()
