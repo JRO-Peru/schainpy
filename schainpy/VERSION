@@ -82,3 +82,4 @@ properly but the next days did not.
 -splitProfiles and combineProfiles modules were added to VoltageProc and Signal Chain GUI.
 -nProfiles of USRP data (hdf5) is the number of profiles thera are in one second.
 -jroPlotter works directly with data objects instead of dictionaries
+-script "schain" was added to Signal Chain installer

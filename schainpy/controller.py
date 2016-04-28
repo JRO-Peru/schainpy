@@ -1000,11 +1000,15 @@ class Project():
         return 1
 
     def readXml(self, filename = None):
-            
+        
+        if not filename:
+            print "filename is not defined"
+            return 0
+        
         abs_file = os.path.abspath(filename)
         
         if not os.path.isfile(abs_file):
-            print "%s does not exist" %abs_file
+            print "%s file does not exist" %abs_file
             return 0
         
         self.projectElement = None
