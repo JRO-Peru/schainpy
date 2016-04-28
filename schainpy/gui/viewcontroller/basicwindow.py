@@ -2139,31 +2139,37 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
     def on_specGraphSaveSpectra_stateChanged(self, p0):
         """
         """
+        self.__checkSpecGraphFilters() 
         self.__checkSpecGraphSaving()
         
     @pyqtSignature("int")
     def on_specGraphSaveCross_stateChanged(self, p0):       
         
+        self.__checkSpecGraphFilters() 
         self.__checkSpecGraphSaving()
         
     @pyqtSignature("int")
     def on_specGraphSaveRTIplot_stateChanged(self, p0):       
         
+        self.__checkSpecGraphFilters() 
         self.__checkSpecGraphSaving()
             
     @pyqtSignature("int")
     def on_specGraphSaveRTInoise_stateChanged(self, p0):       
         
+        self.__checkSpecGraphFilters() 
         self.__checkSpecGraphSaving()
             
     @pyqtSignature("int")
     def on_specGraphSaveCoherencemap_stateChanged(self, p0):       
         
+        self.__checkSpecGraphFilters() 
         self.__checkSpecGraphSaving()
             
     @pyqtSignature("int")
     def on_specGraphSavePowerprofile_stateChanged(self, p0):       
         
+        self.__checkSpecGraphFilters() 
         self.__checkSpecGraphSaving()
     
     @pyqtSignature("int")
@@ -2614,37 +2620,37 @@ class BasicWindow(QMainWindow, Ui_BasicWindow):
         phase = False
         channelList = False
         
-        if self.specGraphCebSpectraplot.checkState():
+        if self.specGraphCebSpectraplot.checkState() or self.specGraphSaveSpectra.checkState():
             freq = True
             height = True
             db = True
             channelList = True
         
-        if self.specGraphCebCrossSpectraplot.checkState():
+        if self.specGraphCebCrossSpectraplot.checkState() or self.specGraphSaveCross.checkState():
             freq = True
             height = True
             db = True
             magnitud = True
             phase = True
         
-        if self.specGraphCebRTIplot.checkState():
+        if self.specGraphCebRTIplot.checkState() or self.specGraphSaveRTIplot.checkState():
             height = True
             db = True
             timerange = True
             channelList = True
         
-        if self.specGraphCebCoherencmap.checkState():
+        if self.specGraphCebCoherencmap.checkState() or self.specGraphSaveCoherencemap.checkState():
             height = True
             timerange = True
             magnitud = True
             phase = True
             
-        if self.specGraphPowerprofile.checkState():
+        if self.specGraphPowerprofile.checkState() or self.specGraphSavePowerprofile.checkState():
             height = True
             db = True
             channelList = True
         
-        if self.specGraphCebRTInoise.checkState():
+        if self.specGraphCebRTInoise.checkState() or self.specGraphSaveRTInoise.checkState():
             db = True
             timerange = True
             channelList = True
