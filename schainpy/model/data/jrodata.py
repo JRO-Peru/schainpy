@@ -498,14 +498,17 @@ class Voltage(JROData):
     
 class Spectra(JROData):
     
-    #data es un numpy array de 2 dmensiones (canales, perfiles, alturas)
+    #data spc es un numpy array de 2 dmensiones (canales, perfiles, alturas)
     data_spc = None
     
-    #data es un numpy array de 2 dmensiones (canales, pares, alturas)
+    #data cspc es un numpy array de 2 dmensiones (canales, pares, alturas)
     data_cspc = None
     
-    #data es un numpy array de 2 dmensiones (canales, alturas)
+    #data dc es un numpy array de 2 dmensiones (canales, alturas)
     data_dc = None
+    
+    #data power
+    data_pwr = None
     
     nFFTPoints = None
     
@@ -677,6 +680,15 @@ class Spectra(JROData):
         timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles
         
         return timeInterval
+    
+    def getPower(self):
+        
+        factor = self.normFactor
+        z = self.data_spc/factor
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
+        avg = numpy.average(z, axis=1)
+        
+        return 10*numpy.log10(avg)
     
     def setValue(self, value):
         
@@ -1094,6 +1106,8 @@ class Correlation(JROData):
     
 class Parameters(JROData):
 
+    experimentInfo = None   #Information about the experiment
+    
     #Information from previous data
     
     inputUnit = None        #Type of data to be processed

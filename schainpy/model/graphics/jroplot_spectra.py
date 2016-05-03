@@ -547,15 +547,20 @@ class RTIPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
         
-        factor = dataOut.normFactor
+        if hasattr(dataOut, 'normFactor'):
+            factor = dataOut.normFactor
+        else:
+            factor = 1
+        
+#         factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
         
-        z = dataOut.data_spc/factor
-        z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
-        avg = numpy.average(z, axis=1)
-        
-        avgdB = 10.*numpy.log10(avg)
+#         z = dataOut.data_spc/factor
+#         z = numpy.where(numpy.isfinite(z), z, numpy.NAN) 
+#         avg = numpy.average(z, axis=1)
+#         avgdB = 10.*numpy.log10(avg)
+        avgdB = dataOut.getPower()
         
         thisDatetime = dataOut.datatime
 #         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
