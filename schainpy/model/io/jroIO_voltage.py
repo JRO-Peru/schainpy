@@ -57,7 +57,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
     optchar = "D"
     dataOut = None
     
-    
     def __init__(self):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
@@ -373,15 +372,41 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             
             self.profileIndex += 1
                 
+#         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
+#             """
+#             Return all block
+#             """
+#             self.dataOut.flagDataAsBlock = True
+#             self.dataOut.data = self.datablock
+#             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
+#             
+#             self.profileIndex = self.dataOut.nProfiles
+        
         else:
             """
-            Return all block
+            Return a block
             """
-            self.dataOut.flagDataAsBlock = True
-            self.dataOut.data = self.datablock
-            self.dataOut.profileIndex = self.dataOut.nProfiles - 1
+            if self.selBlocksize == None:   self.selBlocksize = self.dataOut.nProfiles
+            if self.selBlocktime != None:   self.selBlocksize = int(self.dataOut.nProfiles*round(self.selBlocktime/(self.dataOut.ippSeconds*self.dataOut.nProfiles)))
             
-            self.profileIndex = self.dataOut.nProfiles
+            self.dataOut.data = self.datablock[:,self.profileIndex:self.profileIndex+self.selBlocksize,:]
+            self.profileIndex += self.selBlocksize
+                    
+            while self.dataOut.data.shape[1] < self.selBlocksize: #Not enough profiles to fill the block
+                if not( self.readNextBlock() ):
+                    return 0    
+                self.getFirstHeader()
+                self.reshapeData()
+                if self.datablock is None:
+                    self.dataOut.flagNoData = True
+                    return 0
+                #stack data
+                indMax = self.selBlocksize - self.dataOut.data.shape[1] 
+                self.dataOut.data = numpy.hstack((self.dataOut.data,self.datablock[:,:indMax,:]))
+                self.profileIndex = indMax
+ 
+            self.dataOut.flagDataAsBlock = True
+            self.dataOut.nProfiles = self.selBlocksize
         
         self.dataOut.flagNoData = False
         

@@ -569,6 +569,13 @@ class JRODataReader(JRODataIO):
     
     txIndex = None
     
+    #Added--------------------
+    
+    selBlocksize = None
+    
+    selBlocktime = None
+    
+    
     def __init__(self):
         
         """
@@ -1237,7 +1244,9 @@ class JRODataReader(JRODataIO):
                 walk = True,
                 getblock = False,
                 nTxs = 1,
-                realtime=False):
+                realtime=False,
+                blocksize=None,
+                blocktime=None):
 
         if path == None:
             raise ValueError, "[Reading] The path is not valid"
@@ -1304,6 +1313,11 @@ class JRODataReader(JRODataIO):
         self.startTime = startTime
         self.endTime = endTime
         
+        #Added-----------------
+        self.selBlocksize = blocksize
+        self.selBlocktime = blocktime
+        
+        
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):
                 print "[Reading] No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
@@ -1339,7 +1353,7 @@ class JRODataReader(JRODataIO):
         
         self.dataOut.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
         
-        self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
+#         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
         
         
     def getFirstHeader(self):
