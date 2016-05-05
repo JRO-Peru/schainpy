@@ -10,6 +10,7 @@ from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Voltage
+# from _sha import blocksize
 
 class VoltageReader(JRODataReader, ProcessingUnit):
     """
@@ -391,20 +392,30 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             
             self.dataOut.data = self.datablock[:,self.profileIndex:self.profileIndex+self.selBlocksize,:]
             self.profileIndex += self.selBlocksize
+            datasize = self.dataOut.data.shape[1]
+            
+            if datasize < self.selBlocksize:    
+                buffer = numpy.zeros((self.dataOut.data.shape[0],self.selBlocksize,self.dataOut.data.shape[2]), dtype = 'complex')
+                buffer[:,:datasize,:] = self.dataOut.data
                     
-            while self.dataOut.data.shape[1] < self.selBlocksize: #Not enough profiles to fill the block
-                if not( self.readNextBlock() ):
-                    return 0    
-                self.getFirstHeader()
-                self.reshapeData()
-                if self.datablock is None:
-                    self.dataOut.flagNoData = True
-                    return 0
-                #stack data
-                indMax = self.selBlocksize - self.dataOut.data.shape[1] 
-                self.dataOut.data = numpy.hstack((self.dataOut.data,self.datablock[:,:indMax,:]))
-                self.profileIndex = indMax
- 
+                while datasize < self.selBlocksize: #Not enough profiles to fill the block
+                    if not( self.readNextBlock() ):
+                        return 0    
+                    self.getFirstHeader()
+                    self.reshapeData()
+                    if self.datablock is None:
+                        self.dataOut.flagNoData = True
+                        return 0
+                    #stack data
+                    blockIndex = self.selBlocksize - datasize
+                    datablock1 = self.datablock[:,:blockIndex,:]
+                    
+                    buffer[:,datasize:datasize+datablock1.shape[1],:] = datablock1
+                    datasize += datablock1.shape[1]
+                
+                self.dataOut.data = buffer
+                self.profileIndex = blockIndex
+
             self.dataOut.flagDataAsBlock = True
             self.dataOut.nProfiles = self.selBlocksize
         
