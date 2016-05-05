@@ -49,7 +49,8 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.code = self.dataIn.code
 #        self.dataOut.nProfiles = self.dataOut.nFFTPoints
         self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
-        self.dataOut.utctime = self.firstdatatime
+#         self.dataOut.utctime = self.firstdatatime
+        self.dataOut.utctime = self.dataIn.utctime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
 #        self.dataOut.nCohInt = self.dataIn.nCohInt
@@ -60,45 +61,18 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.heightList = self.dataIn.getHeiRange()   
         self.dataOut.frequency = self.dataIn.frequency
         
-    def run(self, nSeconds = 100, nProfiles = None):
-        
-        
-        
-        if self.firstdatatime == None:
-            self.firstdatatime = self.dataIn.utctime
+    def run(self):
         
         #----------------------    Voltage Data    ---------------------------
         
         if self.dataIn.type == "Voltage":
-            self.dataOut.flagNoData = True
 
-            
-            if self.buffer == None:
-                self.nSeconds = nSeconds
-                self.nProfiles= int(numpy.floor(nSeconds/(self.dataIn.ippSeconds*self.dataIn.nCohInt)))
-                
-                self.buffer = numpy.zeros((self.dataIn.nChannels,
-                                           self.nProfiles,
-                                           self.dataIn.nHeights), 
-                                           dtype='complex')
-            
-            if self.profIndex == 7990:
-                a = 1
-                
-            self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
-            self.profIndex += 1
-            
-            if self.profIndex == self.nProfiles:
-    
-                self.__updateObjFromInput()
-                self.dataOut.data_pre = self.buffer.copy()
-                self.dataOut.paramInterval = nSeconds
-                self.dataOut.flagNoData = False
-                
-                self.buffer = None
-                self.firstdatatime = None
-                self.profIndex = 0
-                return
+            self.__updateObjFromInput()
+            self.dataOut.data_pre = self.dataIn.data.copy()
+            self.dataOut.flagNoData = False
+            self.dataOut.utctimeInit = self.dataIn.utctime
+            self.dataOut.paramInterval = self.dataIn.nProfiles*self.dataIn.nCohInt*self.dataIn.ippSeconds  
+            return
         
         #----------------------    Spectra Data    ---------------------------
         
@@ -133,7 +107,6 @@ class ParametersProc(ProcessingUnit):
             return True
             
         self.__updateObjFromInput()
-        self.firstdatatime = None
         self.dataOut.utctimeInit = self.dataIn.utctime
         self.dataOut.paramInterval = self.dataIn.timeInterval
             
@@ -2140,7 +2113,7 @@ class MeteorOperations():
     
     def __calculateAOA(self, cosdir, azimuth):
         cosdirX = cosdir[:,0]
-        cosdirY = -cosdir[:,1]
+        cosdirY = cosdir[:,1]
         
         zenithAngle = numpy.arccos(numpy.sqrt(1 - cosdirX**2 - cosdirY**2))*180/numpy.pi
         azimuthAngle = numpy.arctan2(cosdirX,cosdirY)*180/numpy.pi + azimuth #0 deg north, 90 deg east
