@@ -417,7 +417,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
                 self.profileIndex = blockIndex
 
             self.dataOut.flagDataAsBlock = True
-            self.dataOut.nProfiles = self.selBlocksize
+            self.dataOut.nProfiles = self.dataOut.data.shape[1]
         
         self.dataOut.flagNoData = False
         

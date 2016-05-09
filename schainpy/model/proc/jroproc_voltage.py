@@ -18,7 +18,7 @@ class VoltageProc(ProcessingUnit):
     def run(self):
         if self.dataIn.type == 'AMISR':
             self.__updateObjFromAmisrInput()
-        
+ 
         if self.dataIn.type == 'Voltage':
             self.dataOut.copy(self.dataIn)
             
@@ -292,6 +292,20 @@ class VoltageProc(ProcessingUnit):
             self.dataOut.frequency = frequency
         
         return 1
+    
+    def interpolateHeights(self, topLim, botLim):
+        #69 al 72 para julia
+        #82-84 para meteoros
+        if len(numpy.shape(self.dataOut.data))==2:
+            sampInterp = (self.dataOut.data[:,botLim-1] + self.dataOut.data[:,topLim+1])/2
+            sampInterp = numpy.transpose(numpy.tile(sampInterp,(topLim-botLim + 1,1)))
+            self.dataOut.data[:,botLim:limSup+1] = sampInterp
+        else:
+            sampInterp = (self.dataOut.data[:,:,botLim-1] + self.dataOut.data[:,:,topLim+1])/2
+            nInt = topLim - botLim + 1
+            for i in range(nInt):
+                self.dataOut.data[:,:,botLim+i] = sampInterp
+# import collections
     
 class CohInt(Operation):
     
@@ -1124,7 +1138,7 @@ class CombineProfiles(Operation):
         dataOut.profileIndex = profileIndex
         
         dataOut.ippSeconds *= n
-        
+
 # import collections
 # from scipy.stats import mode
 # 
