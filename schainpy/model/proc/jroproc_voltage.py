@@ -1,5 +1,6 @@
 import sys
 import numpy
+from scipy import interpolate
 
 from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
@@ -299,12 +300,18 @@ class VoltageProc(ProcessingUnit):
         if len(numpy.shape(self.dataOut.data))==2:
             sampInterp = (self.dataOut.data[:,botLim-1] + self.dataOut.data[:,topLim+1])/2
             sampInterp = numpy.transpose(numpy.tile(sampInterp,(topLim-botLim + 1,1)))
-            self.dataOut.data[:,botLim:limSup+1] = sampInterp
+            #self.dataOut.data[:,botLim:limSup+1] = sampInterp
+            self.dataOut.data[:,botLim:topLim+1] = sampInterp
         else:
-            sampInterp = (self.dataOut.data[:,:,botLim-1] + self.dataOut.data[:,:,topLim+1])/2
-            nInt = topLim - botLim + 1
-            for i in range(nInt):
-                self.dataOut.data[:,:,botLim+i] = sampInterp
+            nHeights = self.dataOut.data.shape[2]
+            x = numpy.hstack((numpy.arange(botLim),numpy.arange(topLim+1,nHeights)))
+            y = self.dataOut.data[:,:,range(botLim)+range(topLim+1,nHeights)]
+            f = interpolate.interp1d(x, y, axis = 2)
+            xnew = numpy.arange(botLim,topLim+1)
+            ynew = f(xnew)
+            
+            self.dataOut.data[:,:,botLim:topLim+1]  = ynew
+
 # import collections
     
 class CohInt(Operation):
