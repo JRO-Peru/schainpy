@@ -12,7 +12,7 @@ from schainpy.model.io.jroIO_base import *
 import schainpy
 
 
-class HDF5Reader(ProcessingUnit):
+class ParamReader(ProcessingUnit):
     '''
     Reads HDF5 format files
     
@@ -432,10 +432,10 @@ class HDF5Reader(ProcessingUnit):
             if blockList.size != indices.size:
                 indMin = indices[blockList[0]]
                 if blockList[-1] + 1 >= indices.size:
-                    indMax = indices[blockList[-1]]
+                    arrayData = arrayData[indMin:,:]
                 else:
                     indMax = indices[blockList[-1] + 1]
-                arrayData = arrayData[indMin:indMax,:]
+                    arrayData = arrayData[indMin:indMax,:]
             return arrayData
         
         #-------    One dimension ---------------
@@ -458,12 +458,9 @@ class HDF5Reader(ProcessingUnit):
             for i in range(nDatas):
                 
                 data = dataset[strds + str(i)].value
-                data = data[blockList,:,:]
-                data = data.reshape(newShapes)
-#                 if mode == 0:
-#                     arrayData[:,i,:,:] = data
-#                 else:
-                arrayData[:,:,i,:] = data
+                
+                for b in range(blockList.size):
+                    arrayData[b,:,i,:] = data[:,:,blockList[b]]
                 
         return arrayData
         
@@ -537,7 +534,7 @@ class HDF5Reader(ProcessingUnit):
     
         return
 
-class HDF5Writer(Operation):
+class ParamWriter(Operation):
     '''
     HDF5 Writer, stores parameters data in HDF5 format files 
     
