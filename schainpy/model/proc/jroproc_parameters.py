@@ -345,10 +345,11 @@ class ParametersProc(ProcessingUnit):
                       cohDetection = False, cohDet_timeStep = 1, cohDet_thresh = 25, 
                       noise_timeStep = 4, noise_multiple = 4,
                       multDet_timeLimit = 1, multDet_rangeLimit = 3,
-                      phaseThresh = 20, SNRThresh = 8,
+                      phaseThresh = 20, SNRThresh = 5,
                       hmin = 50, hmax=150, azimuth = 0,
-                      channel25X = 0, channel20X = 4, channelCentX = 2,
-                      channel25Y = 1, channel20Y = 3, channelCentY = 2) :
+#                       channel25X = 0, channel20X = 4, channelCentX = 2,
+#                       channel25Y = 1, channel20Y = 3, channelCentY = 2,
+                      channelPositions = None) :
         
         '''
         Function DetectMeteors()
@@ -413,7 +414,14 @@ class ParametersProc(ProcessingUnit):
             Phase0 Phase1 Phase2 Phase3
             TypeError
         
-         '''       
+         '''    
+        #Getting Pairslist
+        if channelPositions == None:
+#             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
+            channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
+        meteorOps = MeteorOperations()
+        pairslist0, distances = meteorOps.getPhasePairs(channelPositions)
+        
         #Get Beacon signal
         newheis = numpy.where(self.dataOut.heightList>self.dataOut.radarControllerHeaderObj.Taus[tauindex])
         
@@ -421,12 +429,7 @@ class ParametersProc(ProcessingUnit):
             newheis = numpy.where(self.dataOut.heightList>hei_ref)
         
         heiRang = self.dataOut.getHeiRange()
-        #Pairs List
-        '''
-        Cambiar este pairslist
-        '''
-        pairslist = [(channelCentX, channel25X),(channelCentX, channel20X),(channelCentY,channel25Y),(channelCentY, channel20Y)]
-        
+             
 #         nChannel = self.dataOut.nChannels
 #         for i in range(nChannel):
 #             if i != centerReceiverIndex:
@@ -467,7 +470,7 @@ class ParametersProc(ProcessingUnit):
         if cohDetection:
             #use coherent detection to get the net power
             cohDet_thresh = cohDet_thresh*numpy.pi/180
-            voltsPShift = self.__coherentDetection(voltsPShift, cohDet_timeStep, self.dataOut.timeInterval, pairslist, cohDet_thresh)
+            voltsPShift = self.__coherentDetection(voltsPShift, cohDet_timeStep, self.dataOut.timeInterval, pairslist0, cohDet_thresh)
         
         #Non-coherent detection!
         powerNet = numpy.nansum(numpy.abs(voltsPShift[:,:,:])**2,0)
@@ -498,7 +501,7 @@ class ParametersProc(ProcessingUnit):
         phaseThresh = phaseThresh*numpy.pi/180
         thresh = [phaseThresh, noise_multiple, SNRThresh]
         #Meteor reestimation  (Errors N 1, 6, 12, 17)
-        listMeteors2, listMeteorsPower, listMeteorsVolts = self.__meteorReestimation(listMeteors1, voltsPShift, pairslist, thresh, noise, self.dataOut.timeInterval, self.dataOut.frequency)
+        listMeteors2, listMeteorsPower, listMeteorsVolts = self.__meteorReestimation(listMeteors1, voltsPShift, pairslist0, thresh, noise, self.dataOut.timeInterval, self.dataOut.frequency)
 #         listMeteors2, listMeteorsPower, listMeteorsVolts = self.meteorReestimation3(listMeteors2, listMeteorsPower, listMeteorsVolts, voltsPShift, pairslist, thresh, noise)
         #Estimation of decay times (Errors N 7, 8, 11)
         listMeteors3 = self.__estimateDecayTime(listMeteors2, listMeteorsPower, self.dataOut.timeInterval, self.dataOut.frequency)
@@ -507,7 +510,7 @@ class ParametersProc(ProcessingUnit):
         #*********************    METEOR PARAMETERS CALCULATION (3.11, 3.12, 3.13)    **************************
         #Calculating Radial Velocity (Error N 15)
         radialStdThresh = 10
-        listMeteors4 = self.__getRadialVelocity(listMeteors3, listMeteorsVolts, radialStdThresh, pairslist, self.dataOut.timeInterval)    
+        listMeteors4 = self.__getRadialVelocity(listMeteors3, listMeteorsVolts, radialStdThresh, pairslist0, self.dataOut.timeInterval)    
 
         if len(listMeteors4) > 0:
             #Setting New Array
@@ -526,10 +529,9 @@ class ParametersProc(ProcessingUnit):
             pairsList.append(pairx)
             pairsList.append(pairy)
             
-            meteorOps = MeteorOperations()
             jph = numpy.array([0,0,0,0])
             h = (hmin,hmax)
-            arrayParameters = meteorOps.getMeteorParams(arrayParameters, azimuth, h, pairsList, jph)
+            arrayParameters = meteorOps.getMeteorParams(arrayParameters, azimuth, h, pairsList, distances, jph)
             
 #             #Calculate AOA (Error N 3, 4)
 #             #JONES ET AL. 1998
@@ -552,10 +554,12 @@ class ParametersProc(ProcessingUnit):
             
             if arrayParameters == None:
                 self.dataOut.flagNoData = True
+        else:
+            self.dataOut.flagNoData = True
             
         return
     
-    def CorrectMeteorPhases(self, phaseOffsets, hmin = 50, hmax = 150, azimuth = 45):
+    def CorrectMeteorPhases(self, phaseOffsets, hmin = 50, hmax = 150, azimuth = 45, channelPositions = None):
         
         arrayParameters = self.dataOut.data_param
         pairsList = []
@@ -566,12 +570,19 @@ class ParametersProc(ProcessingUnit):
         jph = numpy.zeros(4)
         
         phaseOffsets = numpy.array(phaseOffsets)*numpy.pi/180
-        arrayParameters[:,8:12] = numpy.unwrap(arrayParameters[:,8:12] + phaseOffsets)
+#         arrayParameters[:,8:12] = numpy.unwrap(arrayParameters[:,8:12] + phaseOffsets)
+        arrayParameters[:,8:12] = numpy.angle(numpy.exp(1j*(arrayParameters[:,8:12] + phaseOffsets)))
         
         meteorOps = MeteorOperations()
+        if channelPositions == None:
+#             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
+            channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
+    
+        pairslist0, distances = meteorOps.getPhasePairs(channelPositions)
         h = (hmin,hmax)
+
+        arrayParameters = meteorOps.getMeteorParams(arrayParameters, azimuth, h, pairsList, distances, jph)
         
-        arrayParameters = meteorOps.getMeteorParams(arrayParameters, azimuth, h, pairsList, jph)
         self.dataOut.data_param = arrayParameters
         return
     
@@ -641,10 +652,11 @@ class ParametersProc(ProcessingUnit):
         phaseArrival = phaseInt.reshape(phaseInt.size)
         
         #Dealias
-        indAlias = numpy.where(phaseArrival > numpy.pi)
-        phaseArrival[indAlias] -= 2*numpy.pi
-        indAlias = numpy.where(phaseArrival < -numpy.pi)
-        phaseArrival[indAlias] += 2*numpy.pi
+        phaseArrival = numpy.angle(numpy.exp(1j*phaseArrival))
+#         indAlias = numpy.where(phaseArrival > numpy.pi)
+#         phaseArrival[indAlias] -= 2*numpy.pi
+#         indAlias = numpy.where(phaseArrival < -numpy.pi)
+#         phaseArrival[indAlias] += 2*numpy.pi
         
         return phaseDiff, phaseArrival
     
@@ -2293,17 +2305,25 @@ class PhaseCalibration(Operation):
         
         return False
     
-    def __getGammas(self, pairs, k, d, phases):
+    def __getGammas(self, pairs, d, phases):
         gammas = numpy.zeros(2)
     
         for i in range(len(pairs)):
      
             pairi = pairs[i]
             
+            phip3 = phases[:,pairi[1]]
+            d3 = d[pairi[1]]
+            phip2 = phases[:,pairi[0]]
+            d2 = d[pairi[0]]
             #Calculating gamma
-            jdcos = phases[:,pairi[1]]/(k*d[pairi[1]])
-            jgamma = numpy.angle(numpy.exp(1j*(k*d[pairi[0]]*jdcos - phases[:,pairi[0]])))
-             
+#             jdcos = alp1/(k*d1)
+#             jgamma = numpy.angle(numpy.exp(1j*(d0*alp1/d1 - alp0)))
+            jgamma = -phip2*d3/d2 - phip3
+            jgamma = numpy.angle(numpy.exp(1j*jgamma))
+#             jgamma[jgamma>numpy.pi] -= 2*numpy.pi
+#             jgamma[jgamma<-numpy.pi] += 2*numpy.pi
+            
             #Revised distribution
             jgammaArray = numpy.hstack((jgamma,jgamma+0.5*numpy.pi,jgamma-0.5*numpy.pi))
 
@@ -2346,7 +2366,7 @@ class PhaseCalibration(Operation):
     def __gauss_function(self, t, coeffs):
     
         return coeffs[0]*numpy.exp(-0.5*((t - coeffs[1]) / coeffs[2])**2)
-    
+
     def __getPhases(self, azimuth, h, pairsList, d, gammas, meteorsArray):
         meteorOps = MeteorOperations()
         nchan = 4
@@ -2379,14 +2399,14 @@ class PhaseCalibration(Operation):
             for iy in range(int(nstepsy)):
                 for ix in range(int(nstepsx)):
                     jph[pairy[1]] = alpha_y[iy]
-                    jph[pairy[0]] = -gammas[1] + alpha_y[iy]*d[pairy[0]]/d[pairy[1]] 
+                    jph[pairy[0]] = -gammas[1] - alpha_y[iy]*d[pairy[1]]/d[pairy[0]] 
                        
                     jph[pairx[1]] = alpha_x[ix]
-                    jph[pairx[0]] = -gammas[0] + alpha_x[ix]*d[pairx[0]]/d[pairx[1]]
+                    jph[pairx[0]] = -gammas[0] - alpha_x[ix]*d[pairx[1]]/d[pairx[0]]
                         
                     jph_array[:,ix,iy] = jph
                         
-                    meteorsArray1 = meteorOps.getMeteorParams(meteorsArray, azimuth, h, pairsList, jph)
+                    meteorsArray1 = meteorOps.getMeteorParams(meteorsArray, azimuth, h, pairsList, d, jph)
                     error = meteorsArray1[:,-1]
                     ind1 = numpy.where(error==0)[0]
                     penalty[ix,iy] = ind1.size
@@ -2402,7 +2422,7 @@ class PhaseCalibration(Operation):
         return phOffset
             
        
-    def run(self, dataOut, hmin, hmax, direction25X=-1, direction20X=1, direction25Y=-1, direction20Y=1, nHours = 1):
+    def run(self, dataOut, hmin, hmax, channelPositions=None, nHours = 1):
         
         dataOut.flagNoData = True
         self.__dataReady = False                             
@@ -2435,7 +2455,14 @@ class PhaseCalibration(Operation):
             azimuth = 0
             h = (hmin, hmax)
             pairs = ((0,1),(2,3))
-            distances = [direction25X*2.5*lamb, direction20X*2*lamb, direction25Y*2.5*lamb, direction20Y*2*lamb]
+            
+            if channelPositions == None:
+#             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
+                channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
+            meteorOps = MeteorOperations()
+            pairslist0, distances = meteorOps.getPhasePairs(channelPositions)
+        
+#             distances1 = [-distances[0]*lamb, distances[1]*lamb, -distances[2]*lamb, distances[3]*lamb]
             
             meteorsArray = self.__buffer
             error = meteorsArray[:,-1]
@@ -2446,7 +2473,7 @@ class PhaseCalibration(Operation):
             phases = meteorsArray[:,8:12]
             
             #Calculate Gammas
-            gammas = self.__getGammas(pairs, k, distances, phases)
+            gammas = self.__getGammas(pairs, distances, phases)
 #             gammas = numpy.array([-21.70409463,45.76935864])*numpy.pi/180
             #Calculate Phases
             phasesOff = self.__getPhases(azimuth, h, pairs, distances, gammas, meteorsArray)
@@ -2464,7 +2491,7 @@ class MeteorOperations():
         
         return
     
-    def getMeteorParams(self, arrayParameters0, azimuth, h, pairsList, jph):
+    def getMeteorParams(self, arrayParameters0, azimuth, h, pairsList, distances, jph):
         
         arrayParameters = arrayParameters0.copy()
         hmin = h[0]
@@ -2476,7 +2503,7 @@ class MeteorOperations():
         error = arrayParameters[:,-1]
         phases = -arrayParameters[:,8:12] + jph
 #         phases = numpy.unwrap(phases)
-        arrayParameters[:,3:6], arrayParameters[:,-1] = self.__getAOA(phases, pairsList, error, AOAthresh, azimuth)
+        arrayParameters[:,3:6], arrayParameters[:,-1] = self.__getAOA(phases, pairsList, distances, error, AOAthresh, azimuth)
         
         #Calculate Heights (Error N 13 and 14)
         error = arrayParameters[:,-1]
@@ -2491,10 +2518,10 @@ class MeteorOperations():
         
         return arrayParameters
     
-    def getAOA(self, phases, pairsList, error, AOAthresh, azimuth):
+    def __getAOA(self, phases, pairsList, directions, error, AOAthresh, azimuth):
         
         arrayAOA = numpy.zeros((phases.shape[0],3))
-        cosdir0, cosdir = self.__getDirectionCosines(phases, pairsList)
+        cosdir0, cosdir = self.__getDirectionCosines(phases, pairsList,directions)
         
         arrayAOA[:,:2] = self.__calculateAOA(cosdir, azimuth)
         cosDirError = numpy.sum(numpy.abs(cosdir0 - cosdir), axis = 1)
@@ -2514,7 +2541,7 @@ class MeteorOperations():
         error[indInvalid] = 4 
         return arrayAOA, error
     
-    def __getDirectionCosines(self, arrayPhase, pairsList):
+    def __getDirectionCosines(self, arrayPhase, pairsList, distances):
     
         #Initializing some variables
         ang_aux = numpy.array([-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8])*2*numpy.pi
@@ -2525,21 +2552,23 @@ class MeteorOperations():
         
         
         for i in range(2):
+            ph0 = arrayPhase[:,pairsList[i][0]]
+            ph1 = arrayPhase[:,pairsList[i][1]]
+            d0 = distances[pairsList[i][0]]
+            d1 = distances[pairsList[i][1]]
+            
+            ph0_aux = ph0 + ph1 
+            ph0_aux = numpy.angle(numpy.exp(1j*ph0_aux))
+#             ph0_aux[ph0_aux > numpy.pi] -= 2*numpy.pi
+#             ph0_aux[ph0_aux < -numpy.pi] += 2*numpy.pi 
             #First Estimation
-            phi0_aux = arrayPhase[:,pairsList[i][0]] + arrayPhase[:,pairsList[i][1]]
-            #Dealias
-            indcsi = numpy.where(phi0_aux > numpy.pi)
-            phi0_aux[indcsi] -= 2*numpy.pi 
-            indcsi = numpy.where(phi0_aux < -numpy.pi)
-            phi0_aux[indcsi] += 2*numpy.pi 
-            #Direction Cosine 0
-            cosdir0[:,i] = -(phi0_aux)/(2*numpy.pi*0.5)
+            cosdir0[:,i] = (ph0_aux)/(2*numpy.pi*(d0 - d1))
         
             #Most-Accurate Second Estimation
-            phi1_aux =  arrayPhase[:,pairsList[i][0]] - arrayPhase[:,pairsList[i][1]]
+            phi1_aux =  ph0 - ph1
             phi1_aux = phi1_aux.reshape(phi1_aux.size,1)
             #Direction Cosine 1
-            cosdir1 = -(phi1_aux + ang_aux)/(2*numpy.pi*4.5)
+            cosdir1 = (phi1_aux + ang_aux)/(2*numpy.pi*(d0 + d1))
             
             #Searching the correct Direction Cosine
             cosdir0_aux = cosdir0[:,i]
@@ -2557,7 +2586,7 @@ class MeteorOperations():
         cosdirY = cosdir[:,1]
         
         zenithAngle = numpy.arccos(numpy.sqrt(1 - cosdirX**2 - cosdirY**2))*180/numpy.pi
-        azimuthAngle = numpy.arctan2(cosdirX,cosdirY)*180/numpy.pi + azimuth #0 deg north, 90 deg east
+        azimuthAngle = numpy.arctan2(cosdirX,cosdirY)*180/numpy.pi + azimuth#0 deg north, 90 deg east
         angles = numpy.vstack((azimuthAngle, zenithAngle)).transpose()
         
         return angles
@@ -2597,3 +2626,87 @@ class MeteorOperations():
         error[indInvalid1] = 13 
         
         return heights, error
+    
+    def getPhasePairs(self, channelPositions):
+        chanPos = numpy.array(channelPositions)
+        listOper = list(itertools.combinations(range(5),2))
+        
+        distances = numpy.zeros(4)
+        axisX = []
+        axisY = []
+        distX = numpy.zeros(3)
+        distY = numpy.zeros(3)
+        ix = 0
+        iy = 0
+        
+        pairX = numpy.zeros((2,2))
+        pairY = numpy.zeros((2,2))
+        
+        for i in range(len(listOper)):
+            pairi = listOper[i]
+                
+            posDif = numpy.abs(chanPos[pairi[0],:] - chanPos[pairi[1],:])
+            
+            if posDif[0] == 0:
+                axisY.append(pairi)
+                distY[iy] = posDif[1]
+                iy += 1
+            elif posDif[1] == 0:
+                axisX.append(pairi)
+                distX[ix] = posDif[0]
+                ix += 1
+ 
+        for i in range(2):
+            if i==0:
+                dist0 = distX
+                axis0 = axisX
+            else:
+                dist0 = distY
+                axis0 = axisY
+            
+            side = numpy.argsort(dist0)[:-1]
+            axis0 = numpy.array(axis0)[side,:]
+            chanC = int(numpy.intersect1d(axis0[0,:], axis0[1,:])[0])
+            axis1 = numpy.unique(numpy.reshape(axis0,4))
+            side = axis1[axis1 != chanC]
+            diff1 = chanPos[chanC,i] - chanPos[side[0],i]
+            diff2 = chanPos[chanC,i] - chanPos[side[1],i]
+            if diff1<0: 
+                chan2 = side[0]
+                d2 = numpy.abs(diff1)
+                chan1 = side[1]
+                d1 = numpy.abs(diff2)
+            else:
+                chan2 = side[1]
+                d2 = numpy.abs(diff2)
+                chan1 = side[0]
+                d1 = numpy.abs(diff1)
+                
+            if i==0:
+                chanCX = chanC
+                chan1X = chan1
+                chan2X = chan2
+                distances[0:2] = numpy.array([d1,d2])
+            else:
+                chanCY = chanC
+                chan1Y = chan1
+                chan2Y = chan2
+                distances[2:4] = numpy.array([d1,d2])
+#         axisXsides = numpy.reshape(axisX[ix,:],4)
+#         
+#         channelCentX = int(numpy.intersect1d(pairX[0,:], pairX[1,:])[0])
+#         channelCentY = int(numpy.intersect1d(pairY[0,:], pairY[1,:])[0])
+#         
+#         ind25X = numpy.where(pairX[0,:] != channelCentX)[0][0]
+#         ind20X = numpy.where(pairX[1,:] != channelCentX)[0][0]
+#         channel25X = int(pairX[0,ind25X])
+#         channel20X = int(pairX[1,ind20X])
+#         ind25Y = numpy.where(pairY[0,:] != channelCentY)[0][0]
+#         ind20Y = numpy.where(pairY[1,:] != channelCentY)[0][0]
+#         channel25Y = int(pairY[0,ind25Y])
+#         channel20Y = int(pairY[1,ind20Y])
+        
+#         pairslist = [(channelCentX, channel25X),(channelCentX, channel20X),(channelCentY,channel25Y),(channelCentY, channel20Y)]
+        pairslist = [(chanCX, chan1X),(chanCX, chan2X),(chanCY,chan1Y),(chanCY, chan2Y)]      
+        
+        return pairslist, distances
