@@ -1,9 +1,6 @@
 import numpy
 import math
-from scipy import optimize
-from scipy import interpolate
-from scipy import signal
-from scipy import stats
+from scipy import optimize, interpolate, signal, stats, ndimage
 import re
 import datetime
 import copy
@@ -12,7 +9,7 @@ import importlib
 import itertools
 
 from jroproc_base import ProcessingUnit, Operation
-from schainpy.model.data.jrodata import Parameters
+from schainpy.model.data.jrodata import Parameters, hildebrand_sekhon
 
 
 class ParametersProc(ProcessingUnit):
@@ -53,13 +50,14 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.utctime = self.dataIn.utctime
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData #asumo q la data esta decodificada
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
-#        self.dataOut.nCohInt = self.dataIn.nCohInt
+        self.dataOut.nCohInt = self.dataIn.nCohInt
 #        self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
 #        self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         self.dataOut.timeInterval = self.dataIn.timeInterval
         self.dataOut.heightList = self.dataIn.getHeiRange()   
         self.dataOut.frequency = self.dataIn.frequency
+        self.dataOut.noise = self.dataIn.noise
         
     def run(self):
         
@@ -77,7 +75,8 @@ class ParametersProc(ProcessingUnit):
         #----------------------    Spectra Data    ---------------------------
         
         if self.dataIn.type == "Spectra":
-            self.dataOut.data_pre = self.dataIn.data_spc.copy()
+
+            self.dataOut.data_pre = (self.dataIn.data_spc,self.dataIn.data_cspc)
             self.dataOut.abscissaList = self.dataIn.getVelRange(1)
             self.dataOut.noise = self.dataIn.getNoise()
             self.dataOut.normFactor = self.dataIn.normFactor
@@ -87,18 +86,21 @@ class ParametersProc(ProcessingUnit):
         #----------------------    Correlation Data    ---------------------------
         
         if self.dataIn.type == "Correlation":
-            lagRRange = self.dataIn.lagR
-            indR = numpy.where(lagRRange == 0)[0][0]
             
-            self.dataOut.data_pre = self.dataIn.data_corr.copy()[:,:,indR,:]
-            self.dataOut.abscissaList = self.dataIn.getLagTRange(1)
+            if self.dataIn.data_ccf is not None:
+                self.dataOut.data_pre = (self.dataIn.data_acf,self.dataIn.data_ccf)
+            else:
+                self.dataOut.data_pre = self.dataIn.data_acf.copy()
+            
+            self.dataOut.abscissaList = self.dataIn.lagRange
             self.dataOut.noise = self.dataIn.noise
             self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.data_SNR = self.dataIn.SNR
             self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
+            self.dataOut.nAvg = self.dataIn.nAvg
         
-                #----------------------    Correlation Data    ---------------------------
+                #----------------------    Parameters Data    ---------------------------
         
         if self.dataIn.type == "Parameters":
             self.dataOut.copy(self.dataIn)
@@ -126,6 +128,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.data_SNR
             
         '''
+        self.dataOut.data_pre = self.dataOut.data_pre[0]
         data = self.dataOut.data_pre
         absc = self.dataOut.abscissaList[:-1]
         noise = self.dataOut.noise
@@ -1324,7 +1327,223 @@ class ParametersProc(ProcessingUnit):
         fmp=numpy.dot(LT,fm)
         chisq=numpy.dot((dp-fmp).T,(dp-fmp))
         return chisq
+    
+    def NonSpecularMeteorDetection(self, mode, SNRthresh=8, phaseDerThresh=0.5, cohThresh=0.8, allData = False):
+        data_acf = self.dataOut.data_pre[0]
+        data_ccf = self.dataOut.data_pre[1]
         
+        lamb = self.dataOut.C/self.dataOut.frequency
+        tSamp = self.dataOut.ippSeconds*self.dataOut.nCohInt
+        paramInterval = self.dataOut.paramInterval
+        
+        nChannels = data_acf.shape[0]
+        nLags = data_acf.shape[1]
+        nProfiles = data_acf.shape[2]
+        nHeights = self.dataOut.nHeights
+        nCohInt = self.dataOut.nCohInt
+        sec = numpy.round(nProfiles/self.dataOut.paramInterval)
+        heightList = self.dataOut.heightList
+        ippSeconds = self.dataOut.ippSeconds*self.dataOut.nCohInt*self.dataOut.nAvg
+        utctime = self.dataOut.utctime
+        
+        self.dataOut.abscissaList = numpy.arange(0,paramInterval+ippSeconds,ippSeconds)
+        
+        #------------------------    SNR    --------------------------------------
+        power = data_acf[:,0,:,:].real
+        noise = numpy.zeros(nChannels)
+        SNR = numpy.zeros(power.shape)
+        for i in range(nChannels):
+            noise[i] = hildebrand_sekhon(power[i,:], nCohInt)
+            SNR[i] = (power[i]-noise[i])/noise[i]
+        SNRm = numpy.nanmean(SNR, axis = 0)
+        SNRdB = 10*numpy.log10(SNR)
+            
+        if mode == 'SA':
+            nPairs = data_ccf.shape[0]  
+            #----------------------    Coherence and Phase   --------------------------
+            phase = numpy.zeros(data_ccf[:,0,:,:].shape)
+#             phase1 = numpy.copy(phase)
+            coh1 = numpy.zeros(data_ccf[:,0,:,:].shape)
+            
+            for p in range(nPairs):
+                ch0 = self.dataOut.groupList[p][0]
+                ch1 = self.dataOut.groupList[p][1]
+                ccf = data_ccf[p,0,:,:]/numpy.sqrt(data_acf[ch0,0,:,:]*data_acf[ch1,0,:,:])
+                phase[p,:,:] = ndimage.median_filter(numpy.angle(ccf), size = (5,1)) #median filter 
+#                 phase1[p,:,:] = numpy.angle(ccf) #median filter 
+                coh1[p,:,:] = ndimage.median_filter(numpy.abs(ccf), 5) #median filter 
+#                 coh1[p,:,:] = numpy.abs(ccf) #median filter 
+            coh = numpy.nanmax(coh1, axis = 0)
+#             struc = numpy.ones((5,1))
+#             coh = ndimage.morphology.grey_dilation(coh, size=(10,1))
+            #----------------------    Radial Velocity    ----------------------------
+            phaseAux = numpy.mean(numpy.angle(data_acf[:,1,:,:]), axis = 0)
+            velRad = phaseAux*lamb/(4*numpy.pi*tSamp)
+            
+            if allData:
+                boolMetFin = ~numpy.isnan(SNRm)
+#                 coh[:-1,:] = numpy.nanmean(numpy.abs(phase[:,1:,:] - phase[:,:-1,:]),axis=0)
+            else:
+                #------------------------    Meteor mask    ---------------------------------
+#                 #SNR mask
+#                 boolMet = (SNRdB>SNRthresh)#|(~numpy.isnan(SNRdB))
+#                 
+#                 #Erase small objects
+#                 boolMet1 = self.__erase_small(boolMet, 2*sec, 5)   
+#                 
+#                 auxEEJ = numpy.sum(boolMet1,axis=0)
+#                 indOver = auxEEJ>nProfiles*0.8  #Use this later
+#                 indEEJ = numpy.where(indOver)[0]
+#                 indNEEJ = numpy.where(~indOver)[0]
+#                 
+#                 boolMetFin = boolMet1
+#                 
+#                 if indEEJ.size > 0:
+#                     boolMet1[:,indEEJ] = False  #Erase heights with EEJ            
+#                     
+#                     boolMet2 = coh > cohThresh
+#                     boolMet2 = self.__erase_small(boolMet2, 2*sec,5)
+#                                   
+#                     #Final Meteor mask
+#                     boolMetFin = boolMet1|boolMet2
+                
+                #Coherence mask
+                boolMet1 = coh > 0.75
+                struc = numpy.ones((30,1))
+                boolMet1 = ndimage.morphology.binary_dilation(boolMet1, structure=struc)
+                
+                #Derivative mask
+                derPhase = numpy.nanmean(numpy.abs(phase[:,1:,:] - phase[:,:-1,:]),axis=0)
+                boolMet2 = derPhase < 0.2
+#                 boolMet2 = ndimage.morphology.binary_opening(boolMet2)
+#                 boolMet2 = ndimage.morphology.binary_closing(boolMet2, structure = numpy.ones((10,1)))
+                boolMet2 = ndimage.median_filter(boolMet2,size=5)
+                boolMet2 = numpy.vstack((boolMet2,numpy.full((1,nHeights), True, dtype=bool)))
+#                 #Final mask
+#                 boolMetFin = boolMet2
+                boolMetFin = boolMet1&boolMet2
+#                 boolMetFin = ndimage.morphology.binary_dilation(boolMetFin)
+            #Creating data_param
+            coordMet = numpy.where(boolMetFin)
+
+            tmet = coordMet[0]
+            hmet = coordMet[1]
+            
+            data_param = numpy.zeros((tmet.size, 6 + nPairs))
+            data_param[:,0] = utctime
+            data_param[:,1] = tmet
+            data_param[:,2] = hmet
+            data_param[:,3] = SNRm[tmet,hmet]
+            data_param[:,4] = velRad[tmet,hmet]
+            data_param[:,5] = coh[tmet,hmet]
+            data_param[:,6:] = phase[:,tmet,hmet].T
+        
+        elif mode == 'DBS':
+            self.dataOut.groupList = numpy.arange(nChannels)
+            
+            #Radial Velocities
+#             phase = numpy.angle(data_acf[:,1,:,:])
+            phase = ndimage.median_filter(numpy.angle(data_acf[:,1,:,:]), size = (1,5,1))
+            velRad = phase*lamb/(4*numpy.pi*tSamp)
+            
+            #Spectral width
+            acf1 = ndimage.median_filter(numpy.abs(data_acf[:,1,:,:]), size = (1,5,1))
+            acf2 = ndimage.median_filter(numpy.abs(data_acf[:,2,:,:]), size = (1,5,1))
+            
+            spcWidth = (lamb/(2*numpy.sqrt(6)*numpy.pi*tSamp))*numpy.sqrt(numpy.log(acf1/acf2))
+#             velRad = ndimage.median_filter(velRad, size = (1,5,1))
+            if allData:
+                boolMetFin = ~numpy.isnan(SNRdB)
+            else:
+                #SNR
+                boolMet1 = (SNRdB>SNRthresh) #SNR mask
+                boolMet1 = ndimage.median_filter(boolMet1, size=(1,5,5))
+              
+                #Radial velocity
+                boolMet2 = numpy.abs(velRad) < 30
+                boolMet2 = ndimage.median_filter(boolMet2, (1,5,5))
+                
+                #Spectral Width
+                boolMet3 = spcWidth < 30
+                boolMet3 = ndimage.median_filter(boolMet3, (1,5,5))
+#                 boolMetFin = self.__erase_small(boolMet1, 10,5)
+                boolMetFin = boolMet1&boolMet2&boolMet3
+                
+            #Creating data_param
+            coordMet = numpy.where(boolMetFin)
+
+            cmet = coordMet[0]
+            tmet = coordMet[1]
+            hmet = coordMet[2]
+            
+            data_param = numpy.zeros((tmet.size, 7))
+            data_param[:,0] = utctime
+            data_param[:,1] = cmet
+            data_param[:,2] = tmet
+            data_param[:,3] = hmet
+            data_param[:,4] = SNR[cmet,tmet,hmet].T
+            data_param[:,5] = velRad[cmet,tmet,hmet].T
+            data_param[:,6] = spcWidth[cmet,tmet,hmet].T
+            
+#         self.dataOut.data_param = data_int
+        if len(data_param) == 0:
+            self.dataOut.flagNoData = True
+        else:
+            self.dataOut.data_param = data_param
+
+    def __erase_small(self, binArray, threshX, threshY):
+        labarray, numfeat = ndimage.measurements.label(binArray)
+        binArray1 = numpy.copy(binArray)
+        
+        for i in range(1,numfeat + 1):
+            auxBin = (labarray==i)
+            auxSize = auxBin.sum()
+            
+            x,y = numpy.where(auxBin)
+            widthX = x.max() - x.min()
+            widthY = y.max() - y.min()
+            
+            #width X: 3 seg -> 12.5*3
+            #width Y: 
+            
+            if (auxSize < 50) or (widthX < threshX) or (widthY < threshY):
+                binArray1[auxBin] = False
+            
+        return binArray1
+        
+    def WeirdEcho(self):
+#         data_pre = self.dataOut.data_pre
+#         nHeights = self.dataOut.nHeights
+# #         nProfiles = self.dataOut.data_pre.shape[1]
+# #         data_param = numpy.zeros((len(pairslist),nProfiles,nHeights))
+#         data_param = numpy.zeros((len(pairslist),nHeights))
+#          
+#         for i in range(len(pairslist)):
+#             chan0 = data_pre[pairslist[i][0],:]
+#             chan1 = data_pre[pairslist[i][1],:]
+#             #calcular correlacion cruzada
+#             #magnitud es coherencia
+#             #fase es dif fase
+#             correl = chan0*numpy.conj(chan1)
+#             coherence = numpy.abs(correl)/(numpy.abs(chan0)*numpy.abs(chan1))
+#             phase = numpy.angle(correl)
+# #             data_param[2*i,:,:] = coherence
+#             data_param[i,:] = phase
+#             
+#         self.dataOut.data_param = data_param
+#         self.dataOut.groupList = pairslist
+        data_cspc = self.dataOut.data_pre[1]
+        ccf = numpy.average(data_cspc,axis=1)
+        phases = numpy.angle(ccf).T
+        
+        meteorOps = MeteorOperations()
+        pairsList = ((0,1),(2,3))
+        jph = numpy.array([0,0,0,0])
+        AOAthresh = numpy.pi/8
+        azimuth = 45
+        error = numpy.zeros((phases.shape[0],1))
+        AOA,error = meteorOps.getAOA(phases, pairsList, error, AOAthresh, azimuth)
+        self.dataOut.data_param = AOA.T
         
 class WindProfiler(Operation):
        
@@ -1647,6 +1866,165 @@ class WindProfiler(Operation):
                 
         return winds, heightPerI[:-1]
     
+    def techniqueNSM_SA(self, **kwargs):
+        metArray = kwargs['metArray']
+        heightList = kwargs['heightList']
+        timeList = kwargs['timeList']
+        
+        rx_location = kwargs['rx_location']
+        groupList = kwargs['groupList']
+        azimuth = kwargs['azimuth']
+        dfactor = kwargs['dfactor']
+        k = kwargs['k']
+        
+        azimuth1, dist = self.__calculateAzimuth1(rx_location, groupList, azimuth)
+        d = dist*dfactor
+        #Phase calculation
+        metArray1 = self.__getPhaseSlope(metArray, heightList, timeList)
+        
+        metArray1[:,-2] = metArray1[:,-2]*metArray1[:,2]*1000/(k*d[metArray1[:,1].astype(int)]) #angles into velocities
+        
+        velEst = numpy.zeros((heightList.size,2))*numpy.nan
+        azimuth1 = azimuth1*numpy.pi/180
+        
+        for i in range(heightList.size):
+            h = heightList[i]
+            indH = numpy.where((metArray1[:,2] == h)&(numpy.abs(metArray1[:,-2]) < 100))[0]
+            metHeight = metArray1[indH,:]
+            if metHeight.shape[0] >= 2:
+                velAux = numpy.asmatrix(metHeight[:,-2]).T    #Radial Velocities
+                iazim = metHeight[:,1].astype(int)
+                azimAux = numpy.asmatrix(azimuth1[iazim]).T    #Azimuths
+                A = numpy.hstack((numpy.cos(azimAux),numpy.sin(azimAux)))
+                A = numpy.asmatrix(A)
+                A1 = numpy.linalg.pinv(A.transpose()*A)*A.transpose()
+                velHor = numpy.dot(A1,velAux)
+                
+                velEst[i,:] = numpy.squeeze(velHor)
+        return velEst
+    
+    def __getPhaseSlope(self, metArray, heightList, timeList):
+        meteorList = []
+        #utctime sec1 height SNR velRad ph0 ph1 ph2 coh0 coh1 coh2
+        #Putting back together the meteor matrix
+        utctime = metArray[:,0]
+        uniqueTime = numpy.unique(utctime)
+        
+        phaseDerThresh = 0.5
+        ippSeconds = timeList[1] - timeList[0]
+        sec = numpy.where(timeList>1)[0][0]
+        nPairs = metArray.shape[1] - 6
+        nHeights = len(heightList)
+        
+        for t in uniqueTime:
+            metArray1 = metArray[utctime==t,:]
+#         phaseDerThresh = numpy.pi/4 #reducir Phase thresh
+            tmet = metArray1[:,1].astype(int)
+            hmet = metArray1[:,2].astype(int)
+            
+            metPhase = numpy.zeros((nPairs, heightList.size, timeList.size - 1))
+            metPhase[:,:] = numpy.nan
+            metPhase[:,hmet,tmet] = metArray1[:,6:].T
+            
+            #Delete short trails
+            metBool = ~numpy.isnan(metPhase[0,:,:])
+            heightVect = numpy.sum(metBool, axis = 1)
+            metBool[heightVect<sec,:] = False
+            metPhase[:,heightVect<sec,:] = numpy.nan
+            
+            #Derivative
+            metDer = numpy.abs(metPhase[:,:,1:] - metPhase[:,:,:-1])
+            phDerAux = numpy.dstack((numpy.full((nPairs,nHeights,1), False, dtype=bool),metDer > phaseDerThresh))
+            metPhase[phDerAux] = numpy.nan
+                
+            #--------------------------METEOR DETECTION    -----------------------------------------
+            indMet = numpy.where(numpy.any(metBool,axis=1))[0]
+            
+            for p in numpy.arange(nPairs):
+                phase = metPhase[p,:,:]
+                phDer = metDer[p,:,:]
+                
+                for h in indMet:
+                    height = heightList[h]
+                    phase1 = phase[h,:] #82
+                    phDer1 = phDer[h,:]
+                       
+                    phase1[~numpy.isnan(phase1)] = numpy.unwrap(phase1[~numpy.isnan(phase1)])   #Unwrap
+                       
+                    indValid = numpy.where(~numpy.isnan(phase1))[0]
+                    initMet = indValid[0]
+                    endMet = 0
+                                           
+                    for i in range(len(indValid)-1):
+                           
+                        #Time difference
+                        inow = indValid[i]
+                        inext = indValid[i+1]
+                        idiff = inext - inow
+                        #Phase difference
+                        phDiff = numpy.abs(phase1[inext] - phase1[inow]) 
+                       
+                        if idiff>sec or phDiff>numpy.pi/4 or inext==indValid[-1]:   #End of Meteor
+                            sizeTrail = inow - initMet + 1
+                            if sizeTrail>3*sec:  #Too short meteors
+                                x = numpy.arange(initMet,inow+1)*ippSeconds
+                                y = phase1[initMet:inow+1]
+                                ynnan = ~numpy.isnan(y)
+                                x = x[ynnan]
+                                y = y[ynnan]
+                                slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+                                ylin = x*slope + intercept
+                                rsq = r_value**2
+                                if rsq > 0.5:
+                                    vel = slope#*height*1000/(k*d)
+                                    estAux = numpy.array([utctime,p,height, vel, rsq])
+                                    meteorList.append(estAux)
+                            initMet = inext         
+        metArray2 = numpy.array(meteorList)
+        
+        return metArray2
+    
+    def __calculateAzimuth1(self, rx_location, pairslist, azimuth0):
+        
+        azimuth1 = numpy.zeros(len(pairslist))
+        dist = numpy.zeros(len(pairslist))
+        
+        for i in range(len(rx_location)):
+            ch0 = pairslist[i][0]
+            ch1 = pairslist[i][1]
+            
+            diffX = rx_location[ch0][0] - rx_location[ch1][0]
+            diffY = rx_location[ch0][1] - rx_location[ch1][1]
+            azimuth1[i] = numpy.arctan2(diffY,diffX)*180/numpy.pi
+            dist[i] = numpy.sqrt(diffX**2 + diffY**2)
+        
+        azimuth1 -= azimuth0
+        return azimuth1, dist
+    
+    def techniqueNSM_DBS(self, **kwargs):
+        metArray = kwargs['metArray']
+        heightList = kwargs['heightList']
+        timeList = kwargs['timeList']
+        zenithList = kwargs['zenithList']
+        nChan = numpy.max(cmet) + 1
+        nHeights = len(heightList)
+        
+        utctime = metArray[:,0]
+        cmet = metArray[:,1]
+        hmet = metArray1[:,3].astype(int)
+        h1met = heightList[hmet]*zenithList[cmet]
+        vmet = metArray1[:,5]
+        
+        for i in range(nHeights - 1):
+            hmin = heightList[i]
+            hmax = heightList[i + 1]
+            
+            vthisH = vmet[(h1met>=hmin) & (h1met<hmax)]
+            
+            
+            
+        return data_output
+            
     def run(self, dataOut, technique, **kwargs):
         
         param = dataOut.data_param
@@ -1684,7 +2062,7 @@ class WindProfiler(Operation):
             velRadial0 = param[:,1,:] #Radial velocity
             dataOut.data_output, dataOut.heightList, dataOut.data_SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightList, SNR) #DBS Function
             dataOut.utctimeInit = dataOut.utctime
-            dataOut.outputInterval = dataOut.timeInterval
+            dataOut.outputInterval = dataOut.paramInterval
             
         elif technique == 'SA':
         
@@ -1760,12 +2138,75 @@ class WindProfiler(Operation):
                 dataOut.data_output, dataOut.heightList = self.techniqueMeteors(self.__buffer, meteorThresh, hmin, hmax)
                 dataOut.flagNoData = False
                 self.__buffer = None
+                
+        elif technique == 'Meteors1':
+            dataOut.flagNoData = True
+            self.__dataReady = False
+            
+            if kwargs.has_key('nMins'):
+                nMins = kwargs['nMins']
+            else: nMins = 20
+            if kwargs.has_key('rx_location'):
+                rx_location = kwargs['rx_location']
+            else: rx_location = [(0,1),(1,1),(1,0)]
+            if kwargs.has_key('azimuth'):
+                azimuth = kwargs['azimuth']
+            else: azimuth = 51
+            if kwargs.has_key('dfactor'):
+                dfactor = kwargs['dfactor']
+            if kwargs.has_key('mode'):
+                mode = kwargs['mode']
+            else: mode = 'SA' 
+            
+            #Borrar luego esto
+            if dataOut.groupList == None:
+                dataOut.groupList = [(0,1),(0,2),(1,2)]
+            groupList = dataOut.groupList
+            C = 3e8
+            freq = 50e6
+            lamb = C/freq
+            k = 2*numpy.pi/lamb
+            
+            timeList = dataOut.abscissaList
+            heightList = dataOut.heightList
+            
+            if self.__isConfig == False:
+                dataOut.outputInterval = nMins*60
+#                 self.__initime = dataOut.datatime.replace(minute = 0, second = 0, microsecond = 03)
+                #Get Initial LTC time
+                initime = datetime.datetime.utcfromtimestamp(dataOut.utctime)
+                minuteAux = initime.minute
+                minuteNew = int(numpy.floor(minuteAux/nMins)*nMins)
+                self.__initime = (initime.replace(minute = minuteNew, second = 0, microsecond = 0) - datetime.datetime(1970, 1, 1)).total_seconds()
+
+                self.__isConfig = True
+                
+            if self.__buffer == None:
+                self.__buffer = dataOut.data_param
+                self.__firstdata = copy.copy(dataOut)
+
+            else:
+                self.__buffer = numpy.vstack((self.__buffer, dataOut.data_param))
+            
+            self.__checkTime(dataOut.utctime, dataOut.paramInterval, dataOut.outputInterval) #Check if the buffer is ready
+            
+            if self.__dataReady:
+                dataOut.utctimeInit = self.__initime
+                self.__initime += dataOut.outputInterval #to erase time offset
+                
+                metArray = self.__buffer
+                if mode == 'SA':
+                    dataOut.data_output = self.techniqueNSM_SA(rx_location=rx_location, groupList=groupList, azimuth=azimuth, dfactor=dfactor, k=k,metArray=metArray, heightList=heightList,timeList=timeList)
+                elif mode == 'DBS':
+                    dataOut.data_output = self.techniqueNSM_DBS(metArray=metArray,heightList=heightList,timeList=timeList)
+                dataOut.data_output = dataOut.data_output.T
+                dataOut.flagNoData = False
+                self.__buffer = None
 
         return
     
 class EWDriftsEstimation(Operation):
        
-    
     def __init__(self):    
         Operation.__init__(self)    
     
@@ -2050,7 +2491,7 @@ class MeteorOperations():
         
         return arrayParameters
     
-    def __getAOA(self, phases, pairsList, error, AOAthresh, azimuth):
+    def getAOA(self, phases, pairsList, error, AOAthresh, azimuth):
         
         arrayAOA = numpy.zeros((phases.shape[0],3))
         cosdir0, cosdir = self.__getDirectionCosines(phases, pairsList)
