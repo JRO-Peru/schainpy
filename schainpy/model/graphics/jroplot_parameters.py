@@ -366,7 +366,7 @@ class WindProfilerPlot(Figure):
         self.__nsubplots = 1
         
         self.WIDTH = 800
-        self.HEIGHT = 150
+        self.HEIGHT = 300
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -474,7 +474,7 @@ class WindProfilerPlot(Figure):
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
         title = wintitle + "Wind"
         xlabel = ""
-        ylabel = "Range (Km)"
+        ylabel = "Height (km)"
         update_figfile = False 
          
         if not self.isConfig:
@@ -669,7 +669,7 @@ class ParametersPlot(Figure):
             return
         
         if channelList == None:
-            channelIndexList = dataOut.channelIndexList
+            channelIndexList = range(dataOut.data_param.shape[0])
         else:
             channelIndexList = []
             for channel in channelList:
@@ -679,8 +679,12 @@ class ParametersPlot(Figure):
         
         x = dataOut.getTimeRange1(dataOut.paramInterval)
         y = dataOut.getHeiRange()
-        z = dataOut.data_param[channelIndexList,paramIndex,:]
         
+        if dataOut.data_param.ndim == 3:
+            z = dataOut.data_param[channelIndexList,paramIndex,:]
+        else:
+            z = dataOut.data_param[channelIndexList,:]
+            
         if showSNR:
             #SNR data
             SNRarray = dataOut.data_SNR[channelIndexList,:]
@@ -721,8 +725,8 @@ class ParametersPlot(Figure):
             
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = dataOut.abscissaList[0]
-            if zmax == None: zmax = dataOut.abscissaList[-1]
+            if zmin == None: zmin = numpy.nanmin(z)
+            if zmax == None: zmax = numpy.nanmax(z)
             
             self.FTP_WEI = ftp_wei
             self.EXP_CODE = exp_code
@@ -1567,3 +1571,377 @@ class PhasePlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
+        
+        
+class NSMeteorDetection1Plot(Figure):
+    
+    isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'nsm'
+    
+    zminList = None
+    zmaxList = None
+    cmapList = None
+    titleList = None
+    nPairs = None
+    nChannels = None
+    nParam = None
+   
+    def __init__(self):
+        
+        self.isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 750
+        self.HEIGHT = 250
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.counter_imagwr = 0
+        
+        self.PLOT_CODE = SPEC_CODE
+        
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        
+        self.__xfilter_ena = False
+        self.__yfilter_ena = False
+        
+    def getSubplots(self):
+        
+        ncol = 3
+        nrow = int(numpy.ceil(self.nplots/3.0))
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, show=True):
+            
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+        
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+                
+                if counter >= self.nplots:
+                    break
+                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+                    
+                counter += 1
+    
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile=True,
+            xmin=None, xmax=None, ymin=None, ymax=None, SNRmin=None, SNRmax=None, 
+            vmin=None, vmax=None, wmin=None, wmax=None, mode = 'SA',
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
+            xaxis="frequency"):
+        
+        """
+        
+        Input:
+            dataOut         :
+            id        :
+            wintitle        :
+            channelList     :
+            showProfile     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+            zmin            :    None,
+            zmax            :    None
+        """
+        #SEPARAR EN DOS PLOTS
+        nParam = dataOut.data_param.shape[1] - 3
+        
+        utctime = dataOut.data_param[0,0] 
+        tmet = dataOut.data_param[:,1].astype(int)
+        hmet = dataOut.data_param[:,2].astype(int)
+                
+        x = dataOut.abscissaList
+        y = dataOut.heightList
+        
+        z = numpy.zeros((nParam, y.size, x.size - 1))
+        z[:,:] = numpy.nan
+        z[:,hmet,tmet] = dataOut.data_param[:,3:].T
+        z[0,:,:] = 10*numpy.log10(z[0,:,:])
+        
+        xlabel = "Time (s)"
+        ylabel = "Range (km)"
+        
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
+                    
+        if not self.isConfig:
+            
+            nplots = nParam
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       show=show)
+            
+            if xmin is None: xmin = numpy.nanmin(x)
+            if xmax is None: xmax = numpy.nanmax(x)
+            if ymin is None: ymin = numpy.nanmin(y)
+            if ymax is None: ymax = numpy.nanmax(y)
+            if SNRmin is None: SNRmin = numpy.nanmin(z[0,:])
+            if SNRmax is None: SNRmax = numpy.nanmax(z[0,:])
+            if vmax is None: vmax = numpy.nanmax(numpy.abs(z[1,:]))
+            if vmin is None: vmin = -vmax
+            if wmin is None: wmin = 0
+            if wmax is None: wmax = 50
+            
+            pairsList = dataOut.groupList
+            self.nPairs = len(dataOut.groupList)
+            
+            zminList = [SNRmin, vmin, cmin] + [pmin]*self.nPairs
+            zmaxList = [SNRmax, vmax, cmax] + [pmax]*self.nPairs
+            titleList = ["SNR","Radial Velocity","Coherence"]
+            cmapList = ["jet","RdBu_r","jet"]
+        
+            for i in range(self.nPairs):
+                strAux1 = "Phase Difference "+ str(pairsList[i][0]) + str(pairsList[i][1])
+                titleList = titleList + [strAux1]
+                cmapList = cmapList + ["RdBu_r"]
+                    
+            self.zminList = zminList
+            self.zmaxList = zmaxList
+            self.cmapList = cmapList
+            self.titleList = titleList
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
+            self.isConfig = True
+                 
+        str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
+
+        for i in range(nParam):
+            title = self.titleList[i] + ": " +str_datetime
+            axes = self.axesList[i]
+            axes.pcolor(x, y, z[i,:].T,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=self.zminList[i], zmax=self.zmaxList[i],
+                        xlabel=xlabel, ylabel=ylabel, title=title, colormap=self.cmapList[i],ticksize=9, cblabel='')
+        self.draw()
+        
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            name = str_datetime
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith) 
+            figfile = self.getFilename(name)
+                
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
+   
+
+class NSMeteorDetection2Plot(Figure):
+    
+    isConfig = None
+    __nsubplots = None
+    
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'nsm'
+    
+    zminList = None
+    zmaxList = None
+    cmapList = None
+    titleList = None
+    nPairs = None
+    nChannels = None
+    nParam = None
+   
+    def __init__(self):
+        
+        self.isConfig = False
+        self.__nsubplots = 1
+        
+        self.WIDTH = 750
+        self.HEIGHT = 250
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.counter_imagwr = 0
+        
+        self.PLOT_CODE = SPEC_CODE
+        
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+        
+        self.__xfilter_ena = False
+        self.__yfilter_ena = False
+        
+    def getSubplots(self):
+        
+        ncol = 3
+        nrow = int(numpy.ceil(self.nplots/3.0))
+        
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, show=True):
+            
+        self.nplots = nplots
+        
+        ncolspan = 1
+        colspan = 1
+        
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
+        
+        nrow, ncol = self.getSubplots()
+        
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+                
+                if counter >= self.nplots:
+                    break
+                
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+                    
+                counter += 1
+    
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile=True,
+            xmin=None, xmax=None, ymin=None, ymax=None, SNRmin=None, SNRmax=None, 
+            vmin=None, vmax=None, wmin=None, wmax=None, mode = 'SA',
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
+            xaxis="frequency"):
+        
+        """
+        
+        Input:
+            dataOut         :
+            id        :
+            wintitle        :
+            channelList     :
+            showProfile     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+            zmin            :    None,
+            zmax            :    None
+        """
+        #Rebuild matrix        
+        utctime = dataOut.data_param[0,0] 
+        cmet = dataOut.data_param[:,1].astype(int)
+        tmet = dataOut.data_param[:,2].astype(int)
+        hmet = dataOut.data_param[:,3].astype(int)
+                
+        nParam = 3
+        nChan = len(dataOut.groupList)
+        x = dataOut.abscissaList
+        y = dataOut.heightList
+        
+        z = numpy.full((nChan, nParam, y.size, x.size - 1),numpy.nan)
+        z[cmet,:,hmet,tmet] = dataOut.data_param[:,4:]
+        z[:,0,:,:] = 10*numpy.log10(z[:,0,:,:]) #logarithmic scale
+        z = numpy.reshape(z, (nChan*nParam, y.size, x.size-1))
+        
+        xlabel = "Time (s)"
+        ylabel = "Range (km)"
+        
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
+                    
+        if not self.isConfig:
+            
+            nplots = nParam*nChan
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       show=show)
+            
+            if xmin is None: xmin = numpy.nanmin(x)
+            if xmax is None: xmax = numpy.nanmax(x)
+            if ymin is None: ymin = numpy.nanmin(y)
+            if ymax is None: ymax = numpy.nanmax(y)
+            if SNRmin is None: SNRmin = numpy.nanmin(z[0,:])
+            if SNRmax is None: SNRmax = numpy.nanmax(z[0,:])
+            if vmax is None: vmax = numpy.nanmax(numpy.abs(z[1,:]))
+            if vmin is None: vmin = -vmax
+            if wmin is None: wmin = 0
+            if wmax is None: wmax = 50
+    
+            self.nChannels = nChan
+            
+            zminList = [] 
+            zmaxList = []
+            titleList = []
+            cmapList = []
+            for i in range(self.nChannels):
+                strAux1 = "SNR Channel "+ str(i)
+                strAux2 = "Radial Velocity Channel "+ str(i)
+                strAux3 = "Spectral Width Channel "+ str(i)
+                
+                titleList = titleList + [strAux1,strAux2,strAux3]
+                cmapList = cmapList + ["jet","RdBu_r","jet"]
+                zminList = zminList + [SNRmin,vmin,wmin]
+                zmaxList = zmaxList + [SNRmax,vmax,wmax]
+                    
+            self.zminList = zminList
+            self.zmaxList = zmaxList
+            self.cmapList = cmapList
+            self.titleList = titleList
+            
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+            
+            self.isConfig = True
+        
+        str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
+
+        for i in range(self.nplots):
+            title = self.titleList[i] + ": " +str_datetime
+            axes = self.axesList[i]
+            axes.pcolor(x, y, z[i,:].T,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=self.zminList[i], zmax=self.zmaxList[i],
+                        xlabel=xlabel, ylabel=ylabel, title=title, colormap=self.cmapList[i],ticksize=9, cblabel='')
+        self.draw()
+        
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            name = str_datetime
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith) 
+            figfile = self.getFilename(name)
+                
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)     
+        
+        
