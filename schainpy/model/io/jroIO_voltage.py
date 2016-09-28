@@ -388,7 +388,12 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             Return a block
             """
             if self.selBlocksize == None:   self.selBlocksize = self.dataOut.nProfiles
-            if self.selBlocktime != None:   self.selBlocksize = int(self.dataOut.nProfiles*round(self.selBlocktime/(self.dataOut.ippSeconds*self.dataOut.nProfiles)))
+            if self.selBlocktime != None:
+                if self.dataOut.nCohInt is not None:
+                    nCohInt = self.dataOut.nCohInt
+                else:
+                    nCohInt = 1    
+                self.selBlocksize = int(self.dataOut.nProfiles*round(self.selBlocktime/(nCohInt*self.dataOut.ippSeconds*self.dataOut.nProfiles)))
             
             self.dataOut.data = self.datablock[:,self.profileIndex:self.profileIndex+self.selBlocksize,:]
             self.profileIndex += self.selBlocksize
