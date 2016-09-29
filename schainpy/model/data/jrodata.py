@@ -305,7 +305,7 @@ class JROData(GenericData):
         
         _lambda = self.C/self.frequency
         
-        vmax = self.getFmax() * _lambda
+        vmax = self.getFmax() * _lambda/2
         
         return vmax
     
@@ -484,8 +484,10 @@ class Voltage(JROData):
             data = self.data
             
         power = data * numpy.conjugate(data)
+        powerdB = 10*numpy.log10(power.real)
+        powerdB = numpy.squeeze(powerdB)
         
-        return 10*numpy.log10(power.real)
+        return powerdB
        
     def getTimeInterval(self):
         
@@ -638,7 +640,7 @@ class Spectra(JROData):
     def getVelRange(self, extrapoints=0):
         
         deltav = self.getVmax() / (self.nFFTPoints*self.ippFactor)
-        velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltav/2       
+        velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) #- deltav/2       
         
         return velrange
     
@@ -926,33 +928,39 @@ class Fits(JROData):
     ltctime = property(getltctime, "I'm the 'ltctime' property")
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
     
+    
 class Correlation(JROData):
     
     noise = None
     
     SNR = None
     
-    pairsAutoCorr = None    #Pairs of Autocorrelation
-    
     #--------------------------------------------------
     
-    data_corr = None
+    mode = None
     
-    data_volt = None
+    split = False
+
+    data_cf = None
     
-    lagT = None # each element value is a profileIndex
+    lags = None
     
-    lagR = None # each element value is in km
+    lagRange = None
     
     pairsList = None
     
-    calculateVelocity = None
+    normFactor = None
     
-    nPoints = None
+    #--------------------------------------------------
     
+#     calculateVelocity = None
+    
+    nLags = None
+    
+    nPairs = None
+        
     nAvg = None
-    
-    bufferSize = None
+
     
     def __init__(self):
         '''
@@ -995,56 +1003,11 @@ class Correlation(JROData):
         self.pairsList = None
         
         self.nPoints = None
-    
-    def getLagTRange(self, extrapoints=0):
-        
-        lagTRange = self.lagT
-        diff = lagTRange[1] - lagTRange[0]
-        extra = numpy.arange(1,extrapoints + 1)*diff + lagTRange[-1]
-        lagTRange = numpy.hstack((lagTRange, extra))
-        
-        return lagTRange
-    
-    def getLagRRange(self, extrapoints=0):
-        
-        return self.lagR
-    
+
     def getPairsList(self):
          
         return self.pairsList
-     
-    def getCalculateVelocity(self):
-         
-        return self.calculateVelocity
-     
-    def getNPoints(self):
-         
-        return self.nPoints
-     
-    def getNAvg(self):
-         
-        return self.nAvg
-     
-    def getBufferSize(self):
-         
-        return self.bufferSize
-    
-    def getPairsAutoCorr(self):
-        pairsList = self.pairsList        
-        pairsAutoCorr = numpy.zeros(self.nChannels, dtype = 'int')*numpy.nan
-            
-        for l in range(len(pairsList)):    
-            firstChannel = pairsList[l][0]
-            secondChannel = pairsList[l][1]
-                
-            #Obteniendo pares de Autocorrelacion     
-            if firstChannel == secondChannel:
-                pairsAutoCorr[firstChannel] = int(l)
-             
-        pairsAutoCorr = pairsAutoCorr.astype(int)
-    
-        return pairsAutoCorr
-    
+       
     def getNoise(self, mode = 2):
         
         indR = numpy.where(self.lagR == 0)[0][0]
@@ -1092,17 +1055,53 @@ class Correlation(JROData):
 
     def getTimeInterval(self):
         
-        timeInterval = self.ippSeconds * self.nCohInt * self.nPoints
+        timeInterval = self.ippSeconds * self.nCohInt * self.nProfiles
         
         return timeInterval
     
+    def splitFunctions(self):
+        
+        pairsList = self.pairsList
+        ccf_pairs = []
+        acf_pairs = []
+        ccf_ind = []
+        acf_ind = []
+        for l in range(len(pairsList)):    
+            chan0 = pairsList[l][0]
+            chan1 = pairsList[l][1]
+                
+            #Obteniendo pares de Autocorrelacion     
+            if chan0 == chan1:
+                acf_pairs.append(chan0)
+                acf_ind.append(l)
+            else:
+                ccf_pairs.append(pairsList[l])
+                ccf_ind.append(l)
+        
+        data_acf = self.data_cf[acf_ind]
+        data_ccf = self.data_cf[ccf_ind]
+
+        return acf_ind, ccf_ind, acf_pairs, ccf_pairs, data_acf, data_ccf
+
+    def getNormFactor(self):
+        acf_ind, ccf_ind, acf_pairs, ccf_pairs, data_acf, data_ccf = self.splitFunctions()
+        acf_pairs = numpy.array(acf_pairs)
+        normFactor = numpy.zeros((self.nPairs,self.nHeights))
+        
+        for p in range(self.nPairs):
+            pair = self.pairsList[p]
+            
+            ch0 = pair[0]
+            ch1 = pair[1]
+             
+            ch0_max = numpy.max(data_acf[acf_pairs==ch0,:,:], axis=1)
+            ch1_max = numpy.max(data_acf[acf_pairs==ch1,:,:], axis=1)
+            normFactor[p,:] = numpy.sqrt(ch0_max*ch1_max)
+            
+        return normFactor
+        
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
-#     pairsList = property(getPairsList, "I'm the 'pairsList' property.")
-#     nPoints = property(getNPoints, "I'm the 'nPoints' property.")
-    calculateVelocity = property(getCalculateVelocity, "I'm the 'calculateVelocity' property.")
-    nAvg = property(getNAvg, "I'm the 'nAvg' property.")
-    bufferSize = property(getBufferSize, "I'm the 'bufferSize' property.")
-    
+    normFactor = property(getNormFactor, "I'm the 'normFactor property'")
     
 class Parameters(JROData):
 
@@ -1152,6 +1151,7 @@ class Parameters(JROData):
     
     data_output = None       #Out signal
     
+    nAvg = None
     
     
     def __init__(self):
