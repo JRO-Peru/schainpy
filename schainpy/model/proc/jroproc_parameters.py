@@ -86,21 +86,19 @@ class ParametersProc(ProcessingUnit):
         #----------------------    Correlation Data    ---------------------------
         
         if self.dataIn.type == "Correlation":
+            acf_ind, ccf_ind, acf_pairs, ccf_pairs, data_acf, data_ccf = self.dataIn.splitFunctions()
             
-            if self.dataIn.data_ccf is not None:
-                self.dataOut.data_pre = (self.dataIn.data_acf,self.dataIn.data_ccf)
-            else:
-                self.dataOut.data_pre = self.dataIn.data_acf.copy()
+            self.dataOut.data_pre = (self.dataIn.data_cf[acf_ind,:], self.dataIn.data_cf[ccf_ind,:,:])
+            self.dataOut.normFactor = (self.dataIn.normFactor[acf_ind,:], self.dataIn.normFactor[ccf_ind,:])
+            self.dataOut.groupList = (acf_pairs, ccf_pairs)
             
             self.dataOut.abscissaList = self.dataIn.lagRange
             self.dataOut.noise = self.dataIn.noise
-            self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.data_SNR = self.dataIn.SNR
-            self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
             self.dataOut.nAvg = self.dataIn.nAvg
         
-                #----------------------    Parameters Data    ---------------------------
+        #----------------------    Parameters Data    ---------------------------
         
         if self.dataIn.type == "Parameters":
             self.dataOut.copy(self.dataIn)
@@ -123,11 +121,19 @@ class SpectralMoments(Operation):
         
         Type of dataIn:    Spectra
         
+        Configuration Parameters:
+        
+            dirCosx    :     Cosine director in X axis
+            dirCosy    :     Cosine director in Y axis
+            
+            elevation  :
+            azimuth    :
+        
         Input:
             channelList    :    simple channel list to select e.g. [2,3,7] 
             self.dataOut.data_pre        :    Spectral data
             self.dataOut.abscissaList    :    List of frequencies
-            self.dataOut.noise            :    Noise level per channel
+            self.dataOut.noise           :    Noise level per channel
             
         Affected:
             self.dataOut.data_param      :    Parameters per channel
@@ -135,20 +141,16 @@ class SpectralMoments(Operation):
             
     '''
     
-    def run(self, dataOut, channelList=None):
+    def run(self, dataOut):
         
         dataOut.data_pre = dataOut.data_pre[0]
         data = dataOut.data_pre
         absc = dataOut.abscissaList[:-1]
         noise = dataOut.noise
-        
-        data_param = numpy.zeros((data.shape[0], 4, data.shape[2]))
-        
-        if channelList== None:  
-            channelList = dataOut.channelList
-        dataOut.channelList = channelList
-        
-        for ind in channelList:
+        nChannel = data.shape[0]
+        data_param = numpy.zeros((nChannel, 4, data.shape[2]))
+                
+        for ind in range(nChannel):
             data_param[ind,:,:] = self.__calculateMoments(data[ind,:,:], absc, noise[ind])
         
         dataOut.data_param = data_param[:,1:,:]
@@ -277,26 +279,30 @@ class SALags(Operation):
     
     '''
     def run(self, dataOut):    
-        data = dataOut.data_pre
         data_acf = dataOut.data_pre[0]
         data_ccf = dataOut.data_pre[1]
+        normFactor_acf = dataOut.normFactor[0]
+        normFactor_ccf = dataOut.normFactor[1]
+        pairs_acf = dataOut.groupList[0]
+        pairs_ccf = dataOut.groupList[1]
         
-        normFactor = dataOut.normFactor
         nHeights = dataOut.nHeights
-        absc = dataOut.abscissaList[:-1]
+        absc = dataOut.abscissaList
         noise = dataOut.noise
         SNR = dataOut.data_SNR
-#         pairsList = dataOut.groupList
         nChannels = dataOut.nChannels
+#         pairsList = dataOut.groupList
 #         pairsAutoCorr, pairsCrossCorr = self.__getPairsAutoCorr(pairsList, nChannels)
-        dataOut.data_param = numpy.zeros((len(pairsCrossCorr)*2 + 1, nHeights))
+
+        for l in range(len(pairs_acf)):
+            data_acf[l,:,:] = data_acf[l,:,:]/normFactor_acf[l,:]
+            
+        for l in range(len(pairs_ccf)):
+            data_ccf[l,:,:] = data_ccf[l,:,:]/normFactor_ccf[l,:]
         
-        dataNorm = numpy.abs(data)
-        for l in range(len(pairsList)):
-            dataNorm[l,:,:] = dataNorm[l,:,:]/normFactor[l,:]
-        
-        self.dataOut.data_param[:-1,:] = self.__calculateTaus(dataNorm, pairsCrossCorr, pairsAutoCorr, absc)
-        self.dataOut.data_param[-1,:] = self.__calculateLag1Phase(data_acf, absc)
+        dataOut.data_param = numpy.zeros((len(pairs_ccf)*2 + 1, nHeights))
+        dataOut.data_param[:-1,:] = self.__calculateTaus(data_acf, data_ccf, absc)
+        dataOut.data_param[-1,:] = self.__calculateLag1Phase(data_acf, absc)
         return
     
 #     def __getPairsAutoCorr(self, pairsList, nChannels):
@@ -318,29 +324,30 @@ class SALags(Operation):
 #         
 #         return pairsAutoCorr, pairsCrossCorr
     
-    def __calculateTaus(self, data, pairsCrossCorr, pairsAutoCorr, lagTRange):
+    def __calculateTaus(self, data_acf, data_ccf, lagRange):
         
-        Pt0 = data.shape[1]/2
+        lag0 = data_acf.shape[1]/2
         #Funcion de Autocorrelacion
-        dataAutoCorr = stats.nanmean(data[pairsAutoCorr,:,:], axis = 0)
+        mean_acf = stats.nanmean(data_acf, axis = 0)
         
         #Obtencion Indice de TauCross
-        indCross = data[pairsCrossCorr,:,:].argmax(axis = 1)
+        ind_ccf = data_ccf.argmax(axis = 1)
         #Obtencion Indice de TauAuto
-        indAuto = numpy.zeros(indCross.shape,dtype = 'int')
-        CCValue = data[pairsCrossCorr,Pt0,:]
-        for i in range(pairsCrossCorr.size):
-            indAuto[i,:] = numpy.abs(dataAutoCorr - CCValue[i,:]).argmin(axis = 0)
+        ind_acf = numpy.zeros(ind_ccf.shape,dtype = 'int')
+        ccf_lag0 = data_ccf[:,lag0,:]
+        
+        for i in range(ccf_lag0.shape[0]):
+            ind_acf[i,:] = numpy.abs(mean_acf - ccf_lag0[i,:]).argmin(axis = 0)
             
         #Obtencion de TauCross y TauAuto
-        tauCross = lagTRange[indCross]
-        tauAuto  = lagTRange[indAuto]
+        tau_ccf = lagRange[ind_ccf]
+        tau_acf  = lagRange[ind_acf]
         
-        Nan1, Nan2 = numpy.where(tauCross == lagTRange[0])
+        Nan1, Nan2 = numpy.where(tau_ccf == lagRange[0])
         
-        tauCross[Nan1,Nan2] = numpy.nan
-        tauAuto[Nan1,Nan2] = numpy.nan
-        tau = numpy.vstack((tauCross,tauAuto))
+        tau_ccf[Nan1,Nan2] = numpy.nan
+        tau_acf[Nan1,Nan2] = numpy.nan
+        tau = numpy.vstack((tau_ccf,tau_acf))
         
         return tau
     
@@ -595,7 +602,8 @@ class WindProfiler(Operation):
         return velUVW
     
 #     def techniqueDBS(self, velRadial0, dirCosx, disrCosy, azimuth, correct, horizontalOnly, heiRang, SNR0):
-    def techniqueDBS(self, velRadial0, heiRang, SNR0, kwargs):
+    
+    def techniqueDBS(self, kwargs):
         """
         Function that implements Doppler Beam Swinging (DBS) technique.
         
@@ -606,6 +614,9 @@ class WindProfiler(Operation):
         
         Parameters affected:    Winds, height range, SNR
         """
+        velRadial0 = kwargs['velRadial']
+        heiRang = kwargs['heightList']
+        SNR0 = kwargs['SNR']
         
         if kwargs.has_key('dirCosx') and kwargs.has_key('dirCosy'):
             theta_x = numpy.array(kwargs['dirCosx'])
@@ -639,8 +650,9 @@ class WindProfiler(Operation):
         
         return winds, heiRang1, SNR1
     
-    def __calculateDistance(self, posx, posy, pairsCrossCorr, pairsList, pairs, azimuth = None):
+    def __calculateDistance(self, posx, posy, pairs_ccf, azimuth = None):
         
+        nPairs = len(pairs_ccf)
         posx = numpy.asarray(posx)
         posy = numpy.asarray(posy)
         
@@ -654,28 +666,31 @@ class WindProfiler(Operation):
             posy1 = posy
         
         #Calculo de Distancias
-        distx = numpy.zeros(pairsCrossCorr.size)
-        disty = numpy.zeros(pairsCrossCorr.size)
-        dist = numpy.zeros(pairsCrossCorr.size)
-        ang = numpy.zeros(pairsCrossCorr.size)
+        distx = numpy.zeros(nPairs)
+        disty = numpy.zeros(nPairs)
+        dist = numpy.zeros(nPairs)
+        ang = numpy.zeros(nPairs)
         
-        for i in range(pairsCrossCorr.size):
-            distx[i] = posx1[pairsList[pairsCrossCorr[i]][1]] - posx1[pairsList[pairsCrossCorr[i]][0]] 
-            disty[i] = posy1[pairsList[pairsCrossCorr[i]][1]] - posy1[pairsList[pairsCrossCorr[i]][0]] 
+        for i in range(nPairs):
+            distx[i] = posx1[pairs_ccf[i][1]] - posx1[pairs_ccf[i][0]]
+            disty[i] = posy1[pairs_ccf[i][1]] - posy1[pairs_ccf[i][0]] 
             dist[i] = numpy.sqrt(distx[i]**2 + disty[i]**2)
             ang[i] = numpy.arctan2(disty[i],distx[i])
-        #Calculo de Matrices   
-        nPairs = len(pairs)
-        ang1 = numpy.zeros((nPairs, 2, 1))
-        dist1 = numpy.zeros((nPairs, 2, 1))
         
-        for j in range(nPairs):
-            dist1[j,0,0] = dist[pairs[j][0]]
-            dist1[j,1,0] = dist[pairs[j][1]]
-            ang1[j,0,0] = ang[pairs[j][0]]
-            ang1[j,1,0] = ang[pairs[j][1]]
-            
-        return distx,disty, dist1,ang1
+        return distx, disty, dist, ang
+        #Calculo de Matrices   
+#         nPairs = len(pairs)
+#         ang1 = numpy.zeros((nPairs, 2, 1))
+#         dist1 = numpy.zeros((nPairs, 2, 1))
+#         
+#         for j in range(nPairs):
+#             dist1[j,0,0] = dist[pairs[j][0]]
+#             dist1[j,1,0] = dist[pairs[j][1]]
+#             ang1[j,0,0] = ang[pairs[j][0]]
+#             ang1[j,1,0] = ang[pairs[j][1]]
+#             
+#         return distx,disty, dist1,ang1
+
     
     def __calculateVelVer(self, phase, lagTRange, _lambda):
 
@@ -686,12 +701,14 @@ class WindProfiler(Operation):
     
     def __calculateVelHorDir(self, dist, tau1, tau2, ang):
         nPairs = tau1.shape[0]
-        vel = numpy.zeros((nPairs,3,tau1.shape[2]))       
+        nHeights = tau1.shape[1]
+        vel = numpy.zeros((nPairs,3,nHeights))       
+        dist1 = numpy.reshape(dist, (dist.size,1))
         
         angCos = numpy.cos(ang)
         angSin = numpy.sin(ang)
         
-        vel0 = dist*tau1/(2*tau2**2) 
+        vel0 = dist1*tau1/(2*tau2**2) 
         vel[:,0,:] = (vel0*angCos).sum(axis = 1)
         vel[:,1,:] = (vel0*angSin).sum(axis = 1)
         
@@ -700,26 +717,28 @@ class WindProfiler(Operation):
                 
         return vel
     
-    def __getPairsAutoCorr(self, pairsList, nChannels):
-
-        pairsAutoCorr = numpy.zeros(nChannels, dtype = 'int')*numpy.nan
-            
-        for l in range(len(pairsList)):    
-            firstChannel = pairsList[l][0]
-            secondChannel = pairsList[l][1]
-                
-            #Obteniendo pares de Autocorrelacion     
-            if firstChannel == secondChannel:
-                pairsAutoCorr[firstChannel] = int(l)
-             
-        pairsAutoCorr = pairsAutoCorr.astype(int)
-        
-        pairsCrossCorr = range(len(pairsList))
-        pairsCrossCorr = numpy.delete(pairsCrossCorr,pairsAutoCorr)
-        
-        return pairsAutoCorr, pairsCrossCorr
+#     def __getPairsAutoCorr(self, pairsList, nChannels):
+# 
+#         pairsAutoCorr = numpy.zeros(nChannels, dtype = 'int')*numpy.nan
+#             
+#         for l in range(len(pairsList)):    
+#             firstChannel = pairsList[l][0]
+#             secondChannel = pairsList[l][1]
+#                 
+#             #Obteniendo pares de Autocorrelacion     
+#             if firstChannel == secondChannel:
+#                 pairsAutoCorr[firstChannel] = int(l)
+#              
+#         pairsAutoCorr = pairsAutoCorr.astype(int)
+#         
+#         pairsCrossCorr = range(len(pairsList))
+#         pairsCrossCorr = numpy.delete(pairsCrossCorr,pairsAutoCorr)
+#         
+#         return pairsAutoCorr, pairsCrossCorr
     
-    def techniqueSA(self, pairsSelected, pairsList, nChannels, tau, azimuth, _lambda, position_x, position_y, lagTRange, correctFactor):
+#     def techniqueSA(self, pairsSelected, pairsList, nChannels, tau, azimuth, _lambda, position_x, position_y, lagTRange, correctFactor):
+    def techniqueSA(self, kwargs):
+        
         """ 
         Function that implements Spaced Antenna (SA) technique.
         
@@ -730,28 +749,42 @@ class WindProfiler(Operation):
         
         Parameters affected:    Winds
         """
-        #Cross Correlation pairs obtained
-        pairsAutoCorr, pairsCrossCorr = self.__getPairsAutoCorr(pairsList, nChannels)
-        pairsArray = numpy.array(pairsList)[pairsCrossCorr]
-        pairsSelArray = numpy.array(pairsSelected)
-        pairs = []
+        position_x = kwargs['positionX']
+        position_y = kwargs['positionY']
+        azimuth = kwargs['azimuth']
         
-        #Wind estimation pairs obtained
-        for i in range(pairsSelArray.shape[0]/2):
-            ind1 = numpy.where(numpy.all(pairsArray == pairsSelArray[2*i], axis = 1))[0][0]
-            ind2 = numpy.where(numpy.all(pairsArray == pairsSelArray[2*i + 1], axis = 1))[0][0]
-            pairs.append((ind1,ind2))
+        if kwargs.has_key('correctFactor'):
+            correctFactor = kwargs['correctFactor']
+        else:
+            correctFactor = 1
+        
+        groupList = kwargs['groupList']
+        pairs_ccf = groupList[1]
+        tau = kwargs['tau']
+        _lambda = kwargs['_lambda']
+        
+        #Cross Correlation pairs obtained
+#         pairsAutoCorr, pairsCrossCorr = self.__getPairsAutoCorr(pairssList, nChannels)
+#         pairsArray = numpy.array(pairsList)[pairsCrossCorr]
+#         pairsSelArray = numpy.array(pairsSelected)
+#         pairs = []
+#         
+#         #Wind estimation pairs obtained
+#         for i in range(pairsSelArray.shape[0]/2):
+#             ind1 = numpy.where(numpy.all(pairsArray == pairsSelArray[2*i], axis = 1))[0][0]
+#             ind2 = numpy.where(numpy.all(pairsArray == pairsSelArray[2*i + 1], axis = 1))[0][0]
+#             pairs.append((ind1,ind2))
         
         indtau = tau.shape[0]/2
         tau1 = tau[:indtau,:]
         tau2 = tau[indtau:-1,:]
-        tau1 = tau1[pairs,:]
-        tau2 = tau2[pairs,:]
+#         tau1 = tau1[pairs,:]
+#         tau2 = tau2[pairs,:]
         phase1 = tau[-1,:]
         
         #---------------------------------------------------------------------
         #Metodo Directo    
-        distx, disty, dist, ang = self.__calculateDistance(position_x, position_y, pairsCrossCorr, pairsList, pairs,azimuth)
+        distx, disty, dist, ang = self.__calculateDistance(position_x, position_y, pairs_ccf,azimuth)
         winds = self.__calculateVelHorDir(dist, tau1, tau2, ang)
         winds = stats.nanmean(winds, axis=0)
         #---------------------------------------------------------------------
@@ -1008,58 +1041,42 @@ class WindProfiler(Operation):
         SNR = dataOut.data_SNR
         
         if technique == 'DBS':
-#             if kwargs.has_key('dirCosx') and kwargs.has_key('dirCosy'):
-#                 theta_x = numpy.array(kwargs['dirCosx'])
-#                 theta_y = numpy.array(kwargs['dirCosy'])
-#             else:
-#                 elev = numpy.array(kwargs['elevation'])
-#                 azim = numpy.array(kwargs['azimuth'])
-#                 theta_x, theta_y = self.__calculateCosDir(elev, azim)
-#             azimuth = kwargs['correctAzimuth']    
-#             if kwargs.has_key('horizontalOnly'):
-#                 horizontalOnly = kwargs['horizontalOnly']
-#             else:   horizontalOnly = False
-#             if kwargs.has_key('correctFactor'):
-#                 correctFactor = kwargs['correctFactor']
-#             else:   correctFactor = 1
-#             if kwargs.has_key('channelList'):
-#                 channelList = kwargs['channelList']
-#                 if len(channelList) == 2:
-#                     horizontalOnly = True
-#                 arrayChannel = numpy.array(channelList)
-#                 param = param[arrayChannel,:,:]
-#                 theta_x = theta_x[arrayChannel]
-#                 theta_y = theta_y[arrayChannel]
-                
-            velRadial0 = param[:,1,:] #Radial velocity
-#             dataOut.data_output, dataOut.heightList, dataOut.data_SNR = self.techniqueDBS(velRadial0, theta_x, theta_y, azimuth, correctFactor, horizontalOnly, heightList, SNR) #DBS Function
-            dataOut.data_output, dataOut.heightList, dataOut.data_SNR = self.techniqueDBS(velRadial0, heightList, SNR, kwargs) #DBS Function
+     
+            kwargs['velRadial'] = param[:,1,:] #Radial velocity  
+            kwargs['heightList'] = heightList
+            kwargs['SNR'] = SNR
+    
+            dataOut.data_output, dataOut.heightList, dataOut.data_SNR = self.techniqueDBS(kwargs) #DBS Function
             dataOut.utctimeInit = dataOut.utctime
             dataOut.outputInterval = dataOut.paramInterval
             
         elif technique == 'SA':
         
             #Parameters
-            position_x = kwargs['positionX']
-            position_y = kwargs['positionY']
-            azimuth = kwargs['azimuth']
-            
-            if kwargs.has_key('crosspairsList'):
-                pairs = kwargs['crosspairsList']
-            else:
-                pairs = None   
-
-            if kwargs.has_key('correctFactor'):
-                correctFactor = kwargs['correctFactor']
-            else:
-                correctFactor = 1
+#             position_x = kwargs['positionX']
+#             position_y = kwargs['positionY']
+#             azimuth = kwargs['azimuth']
+#             
+#             if kwargs.has_key('crosspairsList'):
+#                 pairs = kwargs['crosspairsList']
+#             else:
+#                 pairs = None   
+# 
+#             if kwargs.has_key('correctFactor'):
+#                 correctFactor = kwargs['correctFactor']
+#             else:
+#                 correctFactor = 1
         
-            tau = dataOut.data_param
-            _lambda = dataOut.C/dataOut.frequency
-            pairsList = dataOut.groupList
-            nChannels = dataOut.nChannels
-
-            dataOut.data_output = self.techniqueSA(pairs, pairsList, nChannels, tau, azimuth, _lambda, position_x, position_y, absc, correctFactor)
+#             tau = dataOut.data_param
+#             _lambda = dataOut.C/dataOut.frequency
+#             pairsList = dataOut.groupList
+#             nChannels = dataOut.nChannels
+            
+            kwargs['groupList'] = dataOut.groupList
+            kwargs['tau'] = dataOut.data_param
+            kwargs['_lambda'] = dataOut.C/dataOut.frequency
+#             dataOut.data_output = self.techniqueSA(pairs, pairsList, nChannels, tau, azimuth, _lambda, position_x, position_y, absc, correctFactor)
+            dataOut.data_output = self.techniqueSA(kwargs)
             dataOut.utctimeInit = dataOut.utctime
             dataOut.outputInterval = dataOut.timeInterval
             
@@ -1435,7 +1452,7 @@ class NonSpecularMeteorDetection(Operation):
 
 #---------------    Specular Meteor    ----------------
 
-class MeteorDetection(Operation):
+class SMDetection(Operation):
     '''
         Function DetectMeteors()
             Project developed with paper:
@@ -1515,20 +1532,20 @@ class MeteorDetection(Operation):
         if channelPositions == None:
 #             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
             channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
-        meteorOps = MeteorOperations()
+        meteorOps = SMOperations()
         pairslist0, distances = meteorOps.getPhasePairs(channelPositions)
-        
-        #Get Beacon signal
-        newheis = numpy.where(self.dataOut.heightList>self.dataOut.radarControllerHeaderObj.Taus[tauindex])
-        
-        if hei_ref != None:
-            newheis = numpy.where(self.dataOut.heightList>hei_ref)
-        
         heiRang = dataOut.getHeiRange()
+        #Get Beacon signal - No Beacon signal anymore
+#         newheis = numpy.where(self.dataOut.heightList>self.dataOut.radarControllerHeaderObj.Taus[tauindex])
+#         
+#         if hei_ref != None:
+#             newheis = numpy.where(self.dataOut.heightList>hei_ref)
+#         
+        
             
         #****************REMOVING HARDWARE PHASE DIFFERENCES***************
         # see if the user put in pre defined phase shifts
-        voltsPShift = self.dataOut.data_pre.copy()
+        voltsPShift = dataOut.data_pre.copy()
         
 #         if predefinedPhaseShifts != None:
 #             hardwarePhaseShifts = numpy.array(predefinedPhaseShifts)*numpy.pi/180
@@ -1554,14 +1571,14 @@ class MeteorDetection(Operation):
             voltsPShift[i] = voltsPShift[i] - voltsDC[i]
             
         #Don't considerate last heights, theyre used to calculate Hardware Phase Shift    
-        voltsPShift = voltsPShift[:,:,:newheis[0][0]]
+#         voltsPShift = voltsPShift[:,:,:newheis[0][0]]
         
         #************ FIND POWER OF DATA W/COH OR NON COH DETECTION (3.4) **********
         #Coherent Detection
         if cohDetection:
             #use coherent detection to get the net power
             cohDet_thresh = cohDet_thresh*numpy.pi/180
-            voltsPShift = self.__coherentDetection(voltsPShift, cohDet_timeStep, self.dataOut.timeInterval, pairslist0, cohDet_thresh)
+            voltsPShift = self.__coherentDetection(voltsPShift, cohDet_timeStep, dataOut.timeInterval, pairslist0, cohDet_thresh)
         
         #Non-coherent detection!
         powerNet = numpy.nansum(numpy.abs(voltsPShift[:,:,:])**2,0)
@@ -1569,7 +1586,7 @@ class MeteorDetection(Operation):
     
         #********** FIND THE NOISE LEVEL AND POSSIBLE METEORS ****************
         #Get noise
-        noise, noise1 = self.__getNoise(powerNet, noise_timeStep, self.dataOut.timeInterval)
+        noise, noise1 = self.__getNoise(powerNet, noise_timeStep, dataOut.timeInterval)
 #         noise = self.getNoise1(powerNet, noise_timeStep, self.dataOut.timeInterval)
         #Get signal threshold
         signalThresh = noise_multiple*noise
@@ -1579,10 +1596,10 @@ class MeteorDetection(Operation):
         
         #************** REMOVE MULTIPLE DETECTIONS (3.5) ***************************
         #Parameters
-        heiRange = self.dataOut.getHeiRange()
+        heiRange = dataOut.getHeiRange()
         rangeInterval = heiRange[1] - heiRange[0]
         rangeLimit = multDet_rangeLimit/rangeInterval
-        timeLimit = multDet_timeLimit/self.dataOut.timeInterval
+        timeLimit = multDet_timeLimit/dataOut.timeInterval
         #Multiple detection removals
         listMeteors1 = self.__removeMultipleDetections(listMeteors, rangeLimit, timeLimit)
         #************ END OF REMOVE MULTIPLE DETECTIONS **********************
@@ -1592,20 +1609,20 @@ class MeteorDetection(Operation):
         phaseThresh = phaseThresh*numpy.pi/180
         thresh = [phaseThresh, noise_multiple, SNRThresh]
         #Meteor reestimation  (Errors N 1, 6, 12, 17)
-        listMeteors2, listMeteorsPower, listMeteorsVolts = self.__meteorReestimation(listMeteors1, voltsPShift, pairslist0, thresh, noise, self.dataOut.timeInterval, self.dataOut.frequency)
+        listMeteors2, listMeteorsPower, listMeteorsVolts = self.__meteorReestimation(listMeteors1, voltsPShift, pairslist0, thresh, noise, dataOut.timeInterval, dataOut.frequency)
 #         listMeteors2, listMeteorsPower, listMeteorsVolts = self.meteorReestimation3(listMeteors2, listMeteorsPower, listMeteorsVolts, voltsPShift, pairslist, thresh, noise)
         #Estimation of decay times (Errors N 7, 8, 11)
-        listMeteors3 = self.__estimateDecayTime(listMeteors2, listMeteorsPower, self.dataOut.timeInterval, self.dataOut.frequency)
+        listMeteors3 = self.__estimateDecayTime(listMeteors2, listMeteorsPower, dataOut.timeInterval, dataOut.frequency)
         #*******************     END OF METEOR REESTIMATION    *******************
         
         #*********************    METEOR PARAMETERS CALCULATION (3.11, 3.12, 3.13)    **************************
         #Calculating Radial Velocity (Error N 15)
         radialStdThresh = 10
-        listMeteors4 = self.__getRadialVelocity(listMeteors3, listMeteorsVolts, radialStdThresh, pairslist0, self.dataOut.timeInterval)    
+        listMeteors4 = self.__getRadialVelocity(listMeteors3, listMeteorsVolts, radialStdThresh, pairslist0, dataOut.timeInterval)    
 
         if len(listMeteors4) > 0:
             #Setting New Array
-            date = self.dataOut.utctime
+            date = dataOut.utctime
             arrayParameters = self.__setNewArrays(listMeteors4, date, heiRang)
             
             #Correcting phase offset
@@ -1641,12 +1658,12 @@ class MeteorDetection(Operation):
                 
         #***************************+     PASS DATA TO NEXT STEP    **********************                       
 #             arrayFinal = arrayParameters.reshape((1,arrayParameters.shape[0],arrayParameters.shape[1]))
-            self.dataOut.data_param = arrayParameters
+            dataOut.data_param = arrayParameters
             
             if arrayParameters == None:
-                self.dataOut.flagNoData = True
+                dataOut.flagNoData = True
         else:
-            self.dataOut.flagNoData = True
+            dataOut.flagNoData = True
             
         return
         
@@ -2162,7 +2179,7 @@ class MeteorDetection(Operation):
         
         return arrayParameters
            
-class CorrectMeteorPhases(Operation):
+class CorrectSMPhases(Operation):
     
     def run(self, dataOut, phaseOffsets, hmin = 50, hmax = 150, azimuth = 45, channelPositions = None):
     
@@ -2178,7 +2195,7 @@ class CorrectMeteorPhases(Operation):
     #         arrayParameters[:,8:12] = numpy.unwrap(arrayParameters[:,8:12] + phaseOffsets)
         arrayParameters[:,8:12] = numpy.angle(numpy.exp(1j*(arrayParameters[:,8:12] + phaseOffsets)))
         
-        meteorOps = MeteorOperations()
+        meteorOps = SMOperations()
         if channelPositions == None:
     #             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
             channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
@@ -2191,7 +2208,7 @@ class CorrectMeteorPhases(Operation):
         dataOut.data_param = arrayParameters
         return
 
-class PhaseCalibration(Operation):
+class SMPhaseCalibration(Operation):
     
     __buffer = None
 
@@ -2274,7 +2291,7 @@ class PhaseCalibration(Operation):
         return coeffs[0]*numpy.exp(-0.5*((t - coeffs[1]) / coeffs[2])**2)
 
     def __getPhases(self, azimuth, h, pairsList, d, gammas, meteorsArray):
-        meteorOps = MeteorOperations()
+        meteorOps = SMOperations()
         nchan = 4
         pairx = pairsList[0]
         pairy = pairsList[1]
@@ -2365,7 +2382,7 @@ class PhaseCalibration(Operation):
             if channelPositions == None:
 #             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
                 channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
-            meteorOps = MeteorOperations()
+            meteorOps = SMOperations()
             pairslist0, distances = meteorOps.getPhasePairs(channelPositions)
         
 #             distances1 = [-distances[0]*lamb, distances[1]*lamb, -distances[2]*lamb, distances[3]*lamb]
@@ -2391,7 +2408,7 @@ class PhaseCalibration(Operation):
         
         return
     
-class MeteorOperations():
+class SMOperations():
     
     def __init__(self):
         
