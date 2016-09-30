@@ -553,11 +553,6 @@ class WindProfilerPlot(Figure):
                            
         self.draw()
         
-        if dataOut.ltctime >= self.xmax:
-            self.counter_imagwr = wr_period
-            self.isConfig = False
-            update_figfile = True
-            
         self.save(figpath=figpath,
                   figfile=figfile,
                   save=save,
@@ -565,6 +560,12 @@ class WindProfilerPlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
+                
+        if dataOut.ltctime + dataOut.outputInterval >= self.xmax:
+            self.counter_imagwr = wr_period
+            self.isConfig = False
+            update_figfile = True
+        
 
 class ParametersPlot(Figure):
     
@@ -1485,7 +1486,7 @@ class PhasePlot(Figure):
 
         
         #thisDatetime = dataOut.datatime
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[1])
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
         title = wintitle + " Phase of Beacon Signal" # : %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = "Local Time"
         ylabel = "Phase"
@@ -1559,19 +1560,20 @@ class PhasePlot(Figure):
              
         self.draw()
         
-        if dataOut.ltctime >= self.xmax:
+        self.save(figpath=figpath,
+          figfile=figfile,
+          save=save,
+          ftp=ftp,
+          wr_period=wr_period,
+          thisDatetime=thisDatetime,
+          update_figfile=update_figfile)
+        
+        if dataOut.ltctime + dataOut.outputInterval >= self.xmax:
             self.counter_imagwr = wr_period
             self.isConfig = False
             update_figfile = True
             
-        self.save(figpath=figpath,
-                  figfile=figfile,
-                  save=save,
-                  ftp=ftp,
-                  wr_period=wr_period,
-                  thisDatetime=thisDatetime,
-                  update_figfile=update_figfile)
-        
+
         
 class NSMeteorDetection1Plot(Figure):
     
