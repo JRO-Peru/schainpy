@@ -1,5 +1,3 @@
-#    DIAS 19 Y 20 FEB 2014
-#    Comprobacion de Resultados DBS con SA
 
 import os, sys
 
@@ -10,33 +8,38 @@ sys.path.insert(0, path)
 
 from schainpy.controller import Project
 
-desc = "JASMET Experiment Test"
-filename = "JASMETtest.xml"
-
 controllerObj = Project()
+controllerObj.setup(id = '002', name='script02', description="JASMET Meteor Detection")
 
-controllerObj.setup(id = '191', name='test01', description=desc)
+#--------------------------------------    Setup    -----------------------------------------
+#Verificar estas variables
 
-pathfile1 = os.path.join(os.environ['HOME'],'Pictures/last_campaign/meteor')
-pathfig = os.path.join(os.environ['HOME'],'Pictures/last_campaign/graphics')
-
-path = '/mnt/jars/2016_08/NOCHE'
-startTime = '00:00:00'
-endTime = '08:59:59'
-# 
-# path = '/mnt/jars/2016_08/DIA'
-# startTime = '12:13:00'
-# endTime = '23:59:59'
-
+#Path para los archivos
 # path = '/mnt/jars/2016_08/NOCHE'
-# startTime = '15:00:00'
-# endTime = '23:59:59'
+# path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/DIA' 
+# path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/NOCHE' 
+path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/DIA' 
+
+#Path para los graficos
+pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
+
+#Path para los archivos HDF5 de meteoros
+pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/meteor')
+
+#Fechas para busqueda de archivos
+startDate = '2016/08/29'
+endDate = '2016/09/11'
+#Horas para busqueda de archivos
+startTime = '00:00:00'
+endTime = '23:59:59'
+                            
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
-#------------------------------------------------------------------------------------------------
+#------------------------------    Voltage Reading Unit    ----------------------------------
+
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
-                                            startDate='2016/08/26',
-                                            endDate='2016/08/26',
+                                            startDate=startDate,
+                                            endDate=endDate,
                                             startTime=startTime,
                                             endTime=endTime,
                                             online=0,
@@ -47,7 +50,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
 
 opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 
-#--------------------------------------------------------------------------------------------------
+#--------------------------    Voltage Processing Unit    ------------------------------------
 
 procUnitConfObj0 = controllerObj.addProcUnit(datatype='VoltageProc', inputId=readUnitConfObj.getId())
 
@@ -57,38 +60,37 @@ opObj00.addParameter(name='channelList', value='0,1,2,3,4', format='intlist')
 opObj01 = procUnitConfObj0.addOperation(name='setRadarFrequency')
 opObj01.addParameter(name='frequency', value='30.e6', format='float')
 
-opObj00 = procUnitConfObj0.addOperation(name='interpolateHeights')
-opObj00.addParameter(name='topLim', value='73', format='int')
-opObj00.addParameter(name='botLim', value='69', format='int')
+opObj01 = procUnitConfObj0.addOperation(name='interpolateHeights')
+opObj01.addParameter(name='topLim', value='73', format='int')
+opObj01.addParameter(name='botLim', value='71', format='int')
 
-opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
+opObj02 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
 
-opObj12 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
-opObj12.addParameter(name='n', value='2', format='int')
+opObj03 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
+opObj03.addParameter(name='n', value='2', format='int')
 
-#--------------------------------------------------------------------------------------------------
+#---------------------------    Parameters Processing Unit    ------------------------------------
 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=procUnitConfObj0.getId())
 #     
-opObj10 = procUnitConfObj1.addOperation(name='MeteorDetection')
+opObj10 = procUnitConfObj1.addOperation(name='SMDetection', optype='other')
 opObj10.addParameter(name='azimuth', value='45', format='float') 
 opObj10.addParameter(name='hmin', value='60', format='float') 
 opObj10.addParameter(name='hmax', value='120', format='float')
 
 opObj12 = procUnitConfObj1.addOperation(name='ParamWriter', optype='other')
-opObj12.addParameter(name='path', value=pathfile1)
+opObj12.addParameter(name='path', value=pathfile)
 opObj12.addParameter(name='blocksPerFile', value='1000', format='int')
 opObj12.addParameter(name='metadataList',value='type,heightList,paramInterval,timeZone',format='list')
 opObj12.addParameter(name='dataList',value='data_param,utctime',format='list')
 opObj12.addParameter(name='mode',value='2',format='int')
-# # Tiene que ser de 3 dimensiones, append en lugar de aumentar una dimension
-#      
+     
 #--------------------------------------------------------------------------------------------------
 
 print "Escribiendo el archivo XML"
-controllerObj.writeXml(filename)
+controllerObj.writeXml("JASMET02.xml")
 print "Leyendo el archivo XML"
-controllerObj.readXml(filename)
+controllerObj.readXml("JASMET02.xml")
 
 controllerObj.createObjects()
 controllerObj.connectObjects()

@@ -1,5 +1,3 @@
-#    DIAS 19 Y 20 FEB 2014
-#    Comprobacion de Resultados DBS con SA
 
 import os, sys
 
@@ -10,24 +8,27 @@ sys.path.insert(0, path)
 
 from schainpy.controller import Project
 
-desc = "JASMET Experiment Test"
-filename = "JASMETtest.xml"
-
 controllerObj = Project()
+controllerObj.setup(id = '004', name='script04', description="JASMET Phase Calibration")
 
-controllerObj.setup(id = '191', name='test01', description=desc)
+#--------------------------------------    Setup    -----------------------------------------
+#Verificar estas variables
 
-path= os.path.join(os.environ['HOME'],'Pictures/last_campaign/meteor')
+#Path para los archivos
+path = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/meteor')
 
-pathfile2 = os.path.join(os.environ['HOME'],'Pictures/last_campaign/phase')
-pathfig = os.path.join(os.environ['HOME'],'Pictures/last_campaign/graphics')
+#Path para los graficos
+pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
 
+#Path para los archivos HDF5 de meteoros
+pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/phase')
 
+#Fechas para busqueda de archivos
+startDate = '2016/08/24'
+endDate = '2016/08/29'
+#Horas para busqueda de archivos
 startTime = '00:00:00'
 endTime = '23:59:59'
-# endTime = '00:01:01'
-xmin ='0'
-xmax = '24'
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
 #------------------------------------------------------------------------------------------------
 readUnitConfObj = controllerObj.addReadUnit(datatype='ParamReader',
@@ -42,7 +43,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='ParamReader',
 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
 # #      
-opObj31 = procUnitConfObj1.addOperation(name='PhaseCalibration', optype='other')
+opObj31 = procUnitConfObj1.addOperation(name='SMPhaseCalibration', optype='other')
 opObj31.addParameter(name='nHours', value='1', format='float')
 opObj31.addParameter(name='hmin', value='60', format='float') 
 opObj31.addParameter(name='hmax', value='120', format='float')
@@ -52,14 +53,14 @@ opObj32 = procUnitConfObj1.addOperation(name='PhasePlot', optype='other')
 opObj32.addParameter(name='id', value='201', format='int')
 opObj32.addParameter(name='wintitle', value='PhaseCalibration', format='str')
 opObj32.addParameter(name='save', value='1', format='bool')
-opObj32.addParameter(name='xmin', value=xmin, format='float')
-opObj32.addParameter(name='xmax', value=xmax, format='float')
+opObj32.addParameter(name='xmin', value='0', format='float')
+opObj32.addParameter(name='xmax', value='24', format='float')
 opObj32.addParameter(name='ymin', value='-180', format='float')
 opObj32.addParameter(name='ymax', value='180', format='float')
 opObj32.addParameter(name='figpath', value=pathfig, format='str')
 # # 
 opObj33 = procUnitConfObj1.addOperation(name='ParamWriter', optype='other')
-opObj33.addParameter(name='path', value=pathfile2)
+opObj33.addParameter(name='path', value=pathfile)
 opObj33.addParameter(name='blocksPerFile', value='1000', format='int')
 opObj33.addParameter(name='metadataList',value='type,outputInterval,timeZone',format='list')
 opObj33.addParameter(name='dataList',value='data_output,utctime',format='list')
@@ -68,9 +69,9 @@ opObj33.addParameter(name='dataList',value='data_output,utctime',format='list')
 #--------------------------------------------------------------------------------------------------
 
 print "Escribiendo el archivo XML"
-controllerObj.writeXml(filename)
+controllerObj.writeXml("JASMET04.xml")
 print "Leyendo el archivo XML"
-controllerObj.readXml(filename)
+controllerObj.readXml("JASMET04.xml")
 
 controllerObj.createObjects()
 controllerObj.connectObjects()
