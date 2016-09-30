@@ -599,6 +599,8 @@ class ParamWriter(Operation):
 
     currentDay = None
     
+    lastTime = None
+    
     def __init__(self):
         
         Operation.__init__(self)
@@ -792,16 +794,29 @@ class ParamWriter(Operation):
             grp.create_dataset(self.metadataList[i], data=getattr(self.dataOut, self.metadataList[i]))
         return
         
-    def dateFlag(self):
+    def timeFlag(self):
+        currentTime = self.dataOut.utctime
         
-        timeTuple = time.localtime(self.dataOut.utctime)
+        if self.lastTime is None:
+            self.lastTime = currentTime
+            
+        #Day
+        timeTuple = time.localtime(currentTime)
         dataDay = timeTuple.tm_yday
         
-        if dataDay == self.currentDay:
-            return False
+        #Time
+        timeDiff = currentTime - self.lastTime
         
-        self.currentDay = dataDay
-        return True
+        #Si el dia es diferente o si la diferencia entre un dato y otro supera la hora
+        if dataDay != self.currentDay:
+            self.currentDay = dataDay
+            return True
+        elif timeDiff > 3*60*60:
+            self.lastTime = currentTime
+            return True
+        else:
+            self.lastTime = currentTime
+            return False
 
     def setNextFile(self):
         
@@ -916,7 +931,7 @@ class ParamWriter(Operation):
     
     def putData(self):
 
-        if self.blockIndex == self.blocksPerFile or self.dateFlag():
+        if self.blockIndex == self.blocksPerFile or self.timeFlag():
             self.setNextFile()  
         
 #         if not self.firsttime:
