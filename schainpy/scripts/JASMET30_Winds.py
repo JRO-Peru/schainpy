@@ -1,6 +1,3 @@
-#    DIAS 19 Y 20 FEB 2014
-#    Comprobacion de Resultados DBS con SA
-
 import os, sys
 
 path = os.path.split(os.getcwd())[0]
@@ -10,36 +7,43 @@ sys.path.insert(0, path)
 
 from schainpy.controller import Project
 
-desc = "JASMET Experiment Test"
-filename = "JASMETtest.xml"
-
 controllerObj = Project()
+controllerObj.setup(id = '005', name='script05', description="JASMET Wind Estimation")
 
-controllerObj.setup(id = '191', name='test01', description=desc)
+#--------------------------------------    Setup    -----------------------------------------
+#Verificar estas variables
 
-#Verificar
-path= os.path.join(os.environ['HOME'],'Pictures/last_campaign/meteor')
-pathfile2 = os.path.join(os.environ['HOME'],'Pictures/last_campaign/winds')    
-pathfig = os.path.join(os.environ['HOME'],'Pictures/last_campaign/graphics')
+#Path donde estan los archivos HDF5 de meteoros
+path = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/meteor')
 
+#Path para los graficos
+pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
+
+#Path donde se almacenaran las estimaciones de vientos
+pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/phase')
+
+#Fechas para busqueda de archivos
+startDate = '2016/08/20'
+endDate = '2016/08/30'
+#Horas para busqueda de archivos
 startTime = '00:00:00'
 endTime = '23:59:59'
-xmin ='0.0'
-xmax = '24.0'
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+#Offsets optimos obtenidos con OptimumOffset.py
+phaseOffsets = '-2.84, -1.77, 11.94, 9.71'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
 #------------------------------------------------------------------------------------------------
 readUnitConfObj = controllerObj.addReadUnit(datatype='ParamReader',
                                             path=path,
-                                            startDate='2016/06/02',
-                                            endDate='2017/06/03',
+                                            startDate=startDate,
+                                            endDate=endDate,
                                             startTime=startTime,
                                             endTime=endTime,
                                             walk=1)
 #--------------------------------------------------------------------------------------------------
 
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
-opObj10 = procUnitConfObj1.addOperation(name='CorrectMeteorPhases')
-opObj10.addParameter(name='phaseOffsets', value='3.4,-3.6,19.4,0.1', format='floatlist')
+opObj10 = procUnitConfObj1.addOperation(name='CorrectSMPhases',optype='other')
+opObj10.addParameter(name='phaseOffsets', value=phaseOffsets, format='floatlist')
 
 opObj13 = procUnitConfObj1.addOperation(name='SkyMapPlot', optype='other')
 opObj13.addParameter(name='id', value='1', format='int')
@@ -65,31 +69,22 @@ opObj23.addParameter(name='save', value='1', format='bool')
 opObj23.addParameter(name='figpath', value = pathfig, format='str')
 opObj23.addParameter(name='zmin', value='-140', format='int')
 opObj23.addParameter(name='zmax', value='140', format='int')
-# opObj12.addParameter(name='zmin_ver', value='-0.8', format='float')
-# opObj12.addParameter(name='zmax_ver', value='0.8', format='float')
-# opObj23.addParameter(name='SNRmin', value='-10', format='int')
-# opObj23.addParameter(name='SNRmax', value='60', format='int')
-# opObj23.addParameter(name='SNRthresh', value='0', format='float')
-opObj23.addParameter(name='xmin', value=xmin, format='float')
-opObj23.addParameter(name='xmax', value=xmax, format='float')
+opObj23.addParameter(name='xmin', value='0', format='float')
+opObj23.addParameter(name='xmax', value='24', format='float')
 opObj23.addParameter(name='ymin', value='70', format='float')
 opObj23.addParameter(name='ymax', value='110', format='float')
-# opObj23.addParameter(name='ftp', value='1', format='int')
-# opObj23.addParameter(name='exp_code', value='15', format='int')
-# opObj23.addParameter(name='sub_exp_code', value='1', format='int') 
  
-# opObj24 = procUnitConfObj1.addOperation(name='HDF5Writer', optype='other')
-# opObj24.addParameter(name='path', value=pathfile2)
-# opObj24.addParameter(name='blocksPerFile', value='1000', format='int')
-# opObj24.addParameter(name='metadataList',value='type,outputInterval,heightList,timeZone',format='list')
-# opObj24.addParameter(name='dataList',value='data_output,utctime,utctimeInit',format='list')
-
+opObj33 = procUnitConfObj1.addOperation(name='ParamWriter', optype='other')
+opObj33.addParameter(name='path', value=pathfile)
+opObj33.addParameter(name='blocksPerFile', value='1000', format='int')
+opObj33.addParameter(name='metadataList',value='type,outputInterval,timeZone',format='list')
+opObj33.addParameter(name='dataList',value='data_output,utctime',format='list')
 #--------------------------------------------------------------------------------------------------
 
 print "Escribiendo el archivo XML"
-controllerObj.writeXml(filename)
+controllerObj.writeXml("JASMET05.xml")
 print "Leyendo el archivo XML"
-controllerObj.readXml(filename)
+controllerObj.readXml("JASMET05.xml")
 
 controllerObj.createObjects()
 controllerObj.connectObjects()

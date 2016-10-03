@@ -1,4 +1,3 @@
-
 import os, sys
 
 path = os.path.split(os.getcwd())[0]
@@ -14,18 +13,18 @@ controllerObj.setup(id = '004', name='script04', description="JASMET Phase Calib
 #--------------------------------------    Setup    -----------------------------------------
 #Verificar estas variables
 
-#Path para los archivos
+#Path donde estan los archivos HDF5 de meteoros
 path = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/meteor')
 
 #Path para los graficos
 pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
 
-#Path para los archivos HDF5 de meteoros
+#Path donde se almacenaran las fases calculadas
 pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/phase')
 
 #Fechas para busqueda de archivos
-startDate = '2016/08/24'
-endDate = '2016/08/29'
+startDate = '2016/08/20'
+endDate = '2016/08/30'
 #Horas para busqueda de archivos
 startTime = '00:00:00'
 endTime = '23:59:59'
