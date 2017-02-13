@@ -501,8 +501,9 @@ class Axes:
         xlen = len(x)
         ylen = len(y)
         
-        decimationx = numpy.floor(xlen/self.__MAXNUMX) + 1
+        decimationx = numpy.floor(xlen/self.__MAXNUMX) - 1 if numpy.floor(xlen/self.__MAXNUMX)>1 else 1 
         decimationy = numpy.floor(ylen/self.__MAXNUMY) + 1
+                
         
         x_buffer = x[::decimationx]
         y_buffer = y[::decimationy]    
@@ -562,9 +563,9 @@ class Axes:
             maxNumX = self.__MAXNUMTIME
         
         if maxNumY == None:
-            maxNumY = self.__MAXNUMY
+            maxNumY = self.__MAXNUMY            
         
-        if self.__firsttime:
+        if self.__firsttime:            
             self.z_buffer = z
             self.x_buffer = numpy.hstack((self.x_buffer, x))
             
@@ -574,7 +575,6 @@ class Axes:
             if ymax == None: ymax = numpy.nanmax(y)
             if zmin == None: zmin = numpy.nanmin(z)
             if zmax == None: zmax = numpy.nanmax(z)
-            
             
             self.plot = self.__driver.createPcolor(self.ax, self.x_buffer, y, z,
                                                    xmin, xmax,
