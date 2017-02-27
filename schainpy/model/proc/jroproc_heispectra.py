@@ -33,6 +33,8 @@ class SpectraHeisProc(ProcessingUnit):
         self.dataOut.nCode = self.dataIn.nCode
         self.dataOut.code = self.dataIn.code
 #        self.dataOut.nProfiles = 1
+        self.dataOut.ippFactor = 1
+        self.dataOut.noise_estimation = None
 #        self.dataOut.nProfiles = self.dataOut.nFFTPoints
         self.dataOut.nFFTPoints = self.dataIn.nHeights
 #        self.dataOut.channelIndexList = self.dataIn.channelIndexList

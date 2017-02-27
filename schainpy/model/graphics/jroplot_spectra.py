@@ -86,7 +86,7 @@ class SpectraPlot(Figure):
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
-            xaxis="frequency", colormap='jet'):
+            xaxis="velocity", **kwargs):
 
         """
 
@@ -103,6 +103,8 @@ class SpectraPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
+
+        colormap = kwargs.get('colormap','jet') 
 
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
@@ -514,10 +516,10 @@ class RTIPlot(Figure):
 
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            timerange=None, colormap='jet',
+            timerange=None,
             save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, **kwargs):
 
         """
 
@@ -535,6 +537,7 @@ class RTIPlot(Figure):
             zmax            :    None
         """
 
+        colormap = kwargs.get('colormap', 'jet')
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
 

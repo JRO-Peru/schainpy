@@ -18,6 +18,8 @@ from matplotlib.ticker import FuncFormatter, LinearLocator
 #Actualizacion de las funciones del driver
 ###########################################
 
+# create jro colormap
+
 jet_values = matplotlib.pyplot.get_cmap("jet", 100)(numpy.arange(100))[10:90]
 blu_values = matplotlib.pyplot.get_cmap("seismic_r", 20)(numpy.arange(20))[10:15]
 ncmap = matplotlib.colors.LinearSegmentedColormap.from_list("jro", numpy.vstack((blu_values, jet_values)))
@@ -202,7 +204,7 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
 
     z = numpy.ma.masked_invalid(z)
     cmap=matplotlib.pyplot.get_cmap(colormap)
-    cmap.set_bad('white',1.)
+    cmap.set_bad('white', 1.)
     imesh = ax.pcolormesh(x,y,z.T, vmin=zmin, vmax=zmax, cmap=cmap)
     cb =  matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
     cb.set_label(cblabel)
@@ -262,7 +264,7 @@ def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', col
     z = numpy.ma.masked_invalid(z)
     
     cmap=matplotlib.pyplot.get_cmap(colormap)
-    cmap.set_bad('white',1.)
+    cmap.set_bad('white', 1.)
 
     
     ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=cmap)

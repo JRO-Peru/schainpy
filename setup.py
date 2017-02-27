@@ -33,8 +33,12 @@ setup(name="schainpy",
         include_package_data=False,
         scripts =['schainpy/gui/schainGUI',
                   'schainpy/scripts/schain'],
-        install_requires=["numpy >= 1.6.0",
+        install_requires=[
                           "scipy >= 0.9.0",
+                          "h5py >= 2.0.1",
                           "matplotlib >= 1.0.0",
+                          "pyfits >= 2.0.0",
+                          "numpy >= 1.6.0",
+                          "paramiko",                          
                           ],
       )

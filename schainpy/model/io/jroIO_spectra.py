@@ -571,8 +571,10 @@ class SpectraWriter(JRODataWriter, Operation):
         
         if self.dataOut.flagDiscontinuousBlock:
             self.data_spc.fill(0)
-            self.data_cspc.fill(0)
-            self.data_dc.fill(0)
+            if self.dataOut.data_cspc is not None:
+                self.data_cspc.fill(0)
+            if self.dataOut.data_dc is not None:
+                self.data_dc.fill(0)
             self.setNextFile()
         
         if self.flagIsNewFile == 0:

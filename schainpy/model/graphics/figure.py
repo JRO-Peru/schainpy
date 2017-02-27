@@ -312,7 +312,7 @@ class Axes:
     decimationy = None
     
     __MAXNUMX = 200
-    __MAXNUMY = 400
+    __MAXNUMY = 100
     
     __MAXNUMTIME = 500
     
@@ -501,13 +501,15 @@ class Axes:
         xlen = len(x)
         ylen = len(y)
         
-        decimationx = numpy.floor(xlen/self.__MAXNUMX) - 1 if numpy.floor(xlen/self.__MAXNUMX)>1 else 1 
-        decimationy = numpy.floor(ylen/self.__MAXNUMY) + 1
-                
+        decimationx = int(xlen/self.__MAXNUMX)+1 \
+                      if int(xlen/self.__MAXNUMX)>1 else 1 
+        decimationy = int(ylen/self.__MAXNUMY) \
+                      if int(ylen/self.__MAXNUMY)>1 else 1        
         
-        x_buffer = x[::decimationx]
-        y_buffer = y[::decimationy]    
-        z_buffer = z[::decimationx, ::decimationy]
+        x_buffer = x#[::decimationx]
+        y_buffer = y#[::decimationy]    
+        z_buffer = z#[::decimationx, ::decimationy]
+        
         #===================================================
         
         if self.__firsttime:
@@ -563,9 +565,9 @@ class Axes:
             maxNumX = self.__MAXNUMTIME
         
         if maxNumY == None:
-            maxNumY = self.__MAXNUMY            
+            maxNumY = self.__MAXNUMY
         
-        if self.__firsttime:            
+        if self.__firsttime:
             self.z_buffer = z
             self.x_buffer = numpy.hstack((self.x_buffer, x))
             
@@ -604,12 +606,14 @@ class Axes:
         xlen = len(self.x_buffer)
         ylen = len(y)
         
-        decimationx = numpy.floor(xlen/maxNumX) + 1
-        decimationy = numpy.floor(ylen/maxNumY) + 1
+        decimationx = int(xlen/self.__MAXNUMX) \
+                      if int(xlen/self.__MAXNUMX)>1 else 1 
+        decimationy = int(ylen/self.__MAXNUMY) \
+                      if int(ylen/self.__MAXNUMY)>1 else 1 
         
-        x_buffer = self.x_buffer[::decimationx]
-        y_buffer = y[::decimationy]    
-        z_buffer = z_buffer[::decimationx, ::decimationy]
+        x_buffer = self.x_buffer#[::decimationx]
+        y_buffer = y#[::decimationy]    
+        z_buffer = z_buffer#[::decimationx, ::decimationy]
         #===================================================
         
         x_buffer, y_buffer, z_buffer = self.__fillGaps(x_buffer, y_buffer, z_buffer)

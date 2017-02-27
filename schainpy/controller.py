@@ -343,7 +343,7 @@ class OperationConf():
             
         self.parmConfObjList = []
         
-        parmElementList = opElement.getiterator(ParameterConf().getElementName())
+        parmElementList = opElement.iter(ParameterConf().getElementName())
         
         for parmElement in parmElementList:
             parmConfObj = ParameterConf()
@@ -568,7 +568,7 @@ class ProcUnitConf():
             
         self.opConfObjList = []
         
-        opElementList = upElement.getiterator(OperationConf().getElementName())
+        opElementList = upElement.iter(OperationConf().getElementName())
         
         for opElement in opElementList:
             opConfObj = OperationConf()
@@ -798,7 +798,7 @@ class ReadUnitConf(ProcUnitConf):
             
         self.opConfObjList = []
         
-        opElementList = upElement.getiterator(OperationConf().getElementName())
+        opElementList = upElement.iter(OperationConf().getElementName())
         
         for opElement in opElementList:
             opConfObj = OperationConf()
@@ -1026,7 +1026,7 @@ class Project():
         self.name = self.projectElement.get('name')
         self.description = self.projectElement.get('description')       
         
-        readUnitElementList = self.projectElement.getiterator(ReadUnitConf().getElementName())
+        readUnitElementList = self.projectElement.iter(ReadUnitConf().getElementName())
         
         for readUnitElement in readUnitElementList:
             readUnitConfObj = ReadUnitConf()
@@ -1037,7 +1037,7 @@ class Project():
             
             self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
-        procUnitElementList = self.projectElement.getiterator(ProcUnitConf().getElementName())
+        procUnitElementList = self.projectElement.iter(ProcUnitConf().getElementName())
         
         for procUnitElement in procUnitElementList:
             procUnitConfObj = ProcUnitConf()

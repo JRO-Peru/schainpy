@@ -399,70 +399,7 @@ class ParamReader(ProcessingUnit):
         self.listData = listdata
         return
     
-    def __setDataArray(self, dataset, shapes):
-                
-        nDims = shapes[0]        
-                
-        nDim2 = shapes[1]      #Dimension 0
     
-        nDim1 = shapes[2]      #Dimension 1, number of Points or Parameters
-    
-        nDim0 = shapes[3]      #Dimension 2, number of samples or ranges
-        
-        mode = shapes[4]        #Mode of storing
-        
-        blockList = self.blockList
-        
-        blocksPerFile = self.blocksPerFile
-        
-        #Depending on what mode the data was stored
-        if mode == 0:       #Divided in channels
-            arrayData = dataset.value.astype(numpy.float)[0][blockList]
-        if mode == 1:     #Divided in parameter
-            strds = 'table'
-            nDatas = nDim1
-            newShapes = (blocksPerFile,nDim2,nDim0)
-        elif mode==2:       #Concatenated in a table
-            strds = 'table0'
-            arrayData = dataset[strds].value
-            #Selecting part of the dataset
-            utctime = arrayData[:,0]
-            u, indices = numpy.unique(utctime, return_index=True)
-            
-            if blockList.size != indices.size:
-                indMin = indices[blockList[0]]
-                if blockList[-1] + 1 >= indices.size:
-                    arrayData = arrayData[indMin:,:]
-                else:
-                    indMax = indices[blockList[-1] + 1]
-                    arrayData = arrayData[indMin:indMax,:]
-            return arrayData
-        
-        #-------    One dimension ---------------
-        if nDims == 0:
-            arrayData = dataset.value.astype(numpy.float)[0][blockList]
-                        
-        #-------    Two dimensions    -----------
-        elif nDims == 2:
-            arrayData = numpy.zeros((blocksPerFile,nDim1,nDim0))
-            newShapes = (blocksPerFile,nDim0)
-            nDatas = nDim1    
-             
-            for i in range(nDatas): 
-                data = dataset[strds + str(i)].value
-                arrayData[:,i,:] = data[blockList,:]    
-                
-        #-------    Three dimensions    ---------
-        else:
-            arrayData = numpy.zeros((blocksPerFile,nDim2,nDim1,nDim0))               
-            for i in range(nDatas):
-                
-                data = dataset[strds + str(i)].value
-                
-                for b in range(blockList.size):
-                    arrayData[b,:,i,:] = data[:,:,blockList[b]]
-                
-        return arrayData
         
     def __setDataOut(self):
         listMeta = self.listMeta
