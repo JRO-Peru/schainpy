@@ -39,6 +39,7 @@ setup(name="schainpy",
                           "matplotlib >= 1.0.0",
                           "pyfits >= 2.0.0",
                           "numpy >= 1.6.0",
-                          "paramiko",                          
+                          "paramiko",
+                          "paho-mqtt"                       
                           ],
       )
