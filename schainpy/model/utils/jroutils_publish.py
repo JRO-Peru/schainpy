@@ -6,7 +6,6 @@ import time
 import json
 import numpy
 import paho.mqtt.client as mqtt
-from pymongo import MongoClient
 
 from schainpy.model.proc.jroproc_base import Operation
 
@@ -66,9 +65,8 @@ class PublishData(Operation):
             print "MQTT Conection error."
             self.client = False
 
-    def setup(self, host, port=1883, username=None, password=None, mongo=0, clientId="user", **kwargs):
+    def setup(self, host, port=1883, username=None, password=None, clientId="user", **kwargs):
 
-        self.mongo = mongo
         self.topic = kwargs.get('topic', 'schain')
         self.delay = kwargs.get('delay', 0)
         self.plottype = kwargs.get('plottype', 'spectra')
@@ -77,9 +75,6 @@ class PublishData(Operation):
         self.clientId = clientId
         self.cnt = 0
         setup = []
-        if (self.mongo):
-            self.MongoClient = MongoClient("mongodb://127.0.0.1:3003")
-            self.MongoDB = self.MongoClient['meteor']
         for plot in self.plottype:
             setup.append({
                 'plot': plot,
@@ -159,12 +154,7 @@ class PublishData(Operation):
             }
         print 'Publishing data to {}'.format(self.host)
         print '*************************'
-        print self.client
         self.client.publish(self.topic + plottype, json.dumps(payload), qos=0)
-        if (self.mongo):
-            print 'Publishing data to Mongo'
-            result = self.MongoDB.realtime.insert_one(payload)
-            print result.inserted_id
 
 
     def run(self, dataOut, host, **kwargs):
