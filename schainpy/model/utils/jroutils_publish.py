@@ -6,6 +6,7 @@ import time
 import json
 import numpy
 import paho.mqtt.client as mqtt
+from pymongo import MongoClient
 
 from schainpy.model.proc.jroproc_base import Operation
 
@@ -13,6 +14,11 @@ class PrettyFloat(float):
     def __repr__(self):
         return '%.2f' % self
 
+def roundFloats(obj):
+    if isinstance(obj, list):
+        return map(roundFloats, obj)
+    elif isinstance(obj, float):
+        return round(obj, 2)
 
 def pretty_floats(obj):
     if isinstance(obj, float):
@@ -60,15 +66,20 @@ class PublishData(Operation):
             print "MQTT Conection error."
             self.client = False
 
-    def setup(self, host, port=1883, username=None, password=None, **kwargs):
+    def setup(self, host, port=1883, username=None, password=None, mongo=0, clientId="user", **kwargs):
 
+        self.mongo = mongo
         self.topic = kwargs.get('topic', 'schain')
         self.delay = kwargs.get('delay', 0)
         self.plottype = kwargs.get('plottype', 'spectra')
         self.host = host
         self.port = port
+        self.clientId = clientId
         self.cnt = 0
         setup = []
+        if (self.mongo):
+            self.MongoClient = MongoClient("mongodb://127.0.0.1:3003")
+            self.MongoDB = self.MongoClient['meteor']
         for plot in self.plottype:
             setup.append({
                 'plot': plot,
@@ -81,13 +92,14 @@ class PublishData(Operation):
                 'zrange': getattr(self, plot + '_' + 'zrange', False),
             })
         self.client = mqtt.Client(
-            client_id='jc'+self.topic + 'SCHAIN',
+            client_id=self.clientId + self.topic + 'SCHAIN',
             clean_session=True)
         self.client.on_disconnect = self.on_disconnect
         self.connect()
 
     def publish_data(self, plottype):
         data = getattr(self.dataOut, 'data_spc')
+        yData = self.dataOut.heightList[:2].tolist()
         if plottype == 'spectra':
             z = data/self.dataOut.normFactor
             zdB = 10*numpy.log10(z)
@@ -99,11 +111,14 @@ class PublishData(Operation):
                 Z[i] = zdB[i][::dx, ::dy].tolist()
             payload = {
                 'timestamp': self.dataOut.utctime,
-                'data': pretty_floats(Z),
+                'data': roundFloats(Z),
                 'channels': ['Ch %s' % ch for ch in self.dataOut.channelList],
                 'interval': self.dataOut.getTimeInterval(),
-                'xRange': [0, 80]
+                'xRange': [0, 80],
+                'type': plottype,
+                'yData': yData
             }
+            # print payload
 
         elif plottype in ('rti', 'power'):
             z = data/self.dataOut.normFactor
@@ -116,25 +131,40 @@ class PublishData(Operation):
                 AVG[i] = avgdB[i][::dy].tolist()
             payload = {
                 'timestamp': self.dataOut.utctime,
-                'data': pretty_floats(AVG),
+                'data': roundFloats(AVG),
                 'channels': ['Ch %s' % ch for ch in self.dataOut.channelList],
                 'interval': self.dataOut.getTimeInterval(),
-                'xRange': [0, 80]
+                'xRange': [0, 80],
+                'type': plottype,
+                'yData': yData
             }
         elif plottype == 'noise':
             noise = self.dataOut.getNoise()/self.dataOut.normFactor
             noisedB = 10*numpy.log10(noise)
             payload = {
                 'timestamp': self.dataOut.utctime,
-                'data': pretty_floats(noisedB.reshape(-1, 1).tolist()),
+                'data': roundFloats(noisedB.reshape(-1, 1).tolist()),
                 'channels': ['Ch %s' % ch for ch in self.dataOut.channelList],
                 'interval': self.dataOut.getTimeInterval(),
-                'xRange': [0, 80]
+                'xRange': [0, 80],
+                'type': plottype,
+                'yData': yData
             }
-
+        else:
+            print "Tipo de grafico invalido"
+            payload = {
+                'data': 'None',
+                'timestamp': 'None',
+                'type': None
+            }
         print 'Publishing data to {}'.format(self.host)
         print '*************************'
+        print self.client
         self.client.publish(self.topic + plottype, json.dumps(payload), qos=0)
+        if (self.mongo):
+            print 'Publishing data to Mongo'
+            result = self.MongoDB.realtime.insert_one(payload)
+            print result.inserted_id
 
 
     def run(self, dataOut, host, **kwargs):
