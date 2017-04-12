@@ -18,8 +18,6 @@ from matplotlib.ticker import FuncFormatter, LinearLocator
 #Actualizacion de las funciones del driver
 ###########################################
 
-# create jro colormap
-
 jet_values = matplotlib.pyplot.get_cmap("jet", 100)(numpy.arange(100))[10:90]
 blu_values = matplotlib.pyplot.get_cmap("seismic_r", 20)(numpy.arange(20))[10:15]
 ncmap = matplotlib.colors.LinearSegmentedColormap.from_list("jro", numpy.vstack((blu_values, jet_values)))
@@ -33,6 +31,7 @@ def createFigure(id, wintitle, width, height, facecolor="w", show=True, dpi = 80
     fig.canvas.manager.set_window_title(wintitle)
 #     fig.canvas.manager.resize(width, height)
     matplotlib.pyplot.ion()
+    
 
     if show:
         matplotlib.pyplot.show()
@@ -88,6 +87,7 @@ def createAxes(fig, nrow, ncol, xpos, ypos, colspan, rowspan, polar=False):
                                         rowspan=rowspan,
                                         polar=polar)
 
+    axes.grid(True)
     matplotlib.pyplot.ion()
     return axes
 
@@ -204,7 +204,7 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
 
     z = numpy.ma.masked_invalid(z)
     cmap=matplotlib.pyplot.get_cmap(colormap)
-    cmap.set_bad('white', 1.)
+    cmap.set_bad('white',1.)
     imesh = ax.pcolormesh(x,y,z.T, vmin=zmin, vmax=zmax, cmap=cmap)
     cb =  matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
     cb.set_label(cblabel)
@@ -238,7 +238,7 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
         func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
         ax.xaxis.set_major_formatter(FuncFormatter(func))
         ax.xaxis.set_major_locator(LinearLocator(7))
-
+    ax.grid(True)
     matplotlib.pyplot.ion()
     return imesh
 
@@ -248,12 +248,13 @@ def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     ax = imesh.get_axes()
     printLabels(ax, xlabel, ylabel, title)
     imesh.set_array(z.ravel())
+    ax.grid(True)
 
 def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
 
     printLabels(ax, xlabel, ylabel, title)
-
     ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
+    ax.grid(True)
 
 def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
 
@@ -264,10 +265,10 @@ def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', col
     z = numpy.ma.masked_invalid(z)
     
     cmap=matplotlib.pyplot.get_cmap(colormap)
-    cmap.set_bad('white', 1.)
+    cmap.set_bad('white',1.)
 
-    
     ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=cmap)
+    ax.grid(True)
 
 def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
                 ticksize=9, xtick_visible=True, ytick_visible=True,
