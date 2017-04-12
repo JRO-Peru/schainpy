@@ -4,8 +4,7 @@ import numpy
 
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
-
-import matplotlib.pyplot as plt
+from numpy import NaN
 
 class MomentsPlot(Figure):
     
@@ -446,34 +445,38 @@ class WindProfilerPlot(Figure):
 #          
 #         tmin = None
 #         tmax = None
- 
-        x = dataOut.getTimeRange1(dataOut.outputInterval)
-        y = dataOut.heightList
-        z = dataOut.data_output.copy()
-        nplots = z.shape[0]    #Number of wind dimensions estimated
+
         
+        x = dataOut.getTimeRange()
+        y = dataOut.getHeiRange()
+        #x = dataOut.getTimeRange1(dataOut.outputInterval)
+        #y = dataOut.heightList
+            
+        z = dataOut.data_output.copy()
+        #print 'dataOut_JI',z 
+        nplots = z.shape[0]    #Number of wind dimensions estimated
         nplotsw = nplots
+        
          
         #If there is a SNR function defined
         if dataOut.data_SNR is not None:
             nplots += 1
             SNR = dataOut.data_SNR
             SNRavg = numpy.average(SNR, axis=0)
-               
+             
             SNRdB = 10*numpy.log10(SNR)
             SNRavgdB = 10*numpy.log10(SNRavg)
-               
+             
             if SNRthresh == None: SNRthresh = -5.0
             ind = numpy.where(SNRavg < 10**(SNRthresh/10))[0]
-           
+         
             for i in range(nplotsw):
                 z[i,ind] = numpy.nan
-     
+ 
  
 #         showprofile = False 
 #        thisDatetime = dataOut.datatime
-        #thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
-        thisDatetime = datetime.datetime.now()
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
         title = wintitle + "Wind"
         xlabel = ""
         ylabel = "Height (km)"
@@ -492,8 +495,8 @@ class WindProfilerPlot(Figure):
             
             self.xmin, self.xmax = self.getTimeLim(x, xmin, xmax, timerange)
  
-            #if ymin == None: ymin = numpy.nanmin(y)
-            #if ymax == None: ymax = numpy.nanmax(y)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
                   
             if zmax == None: zmax = numpy.nanmax(abs(z[range(2),:]))
             #if numpy.isnan(zmax): zmax = 50
@@ -503,9 +506,9 @@ class WindProfilerPlot(Figure):
                 if zmax_ver == None: zmax_ver = numpy.nanmax(abs(z[2,:]))
                 if zmin_ver == None: zmin_ver = -zmax_ver
              
-#             if dataOut.data_SNR is not None:
-#                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
-#                 if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
+            if dataOut.data_SNR is not None:
+                if SNRmin == None:  SNRmin = numpy.nanmin(SNRavgdB)
+                if SNRmax == None:  SNRmax = numpy.nanmax(SNRavgdB) 
              
             
             self.FTP_WEI = ftp_wei
@@ -520,8 +523,8 @@ class WindProfilerPlot(Figure):
         
         self.setWinTitle(title)
         
-        #if ((self.xmax - x[1]) < (x[1]-x[0])):
-        #    x[1] = self.xmax
+        if ((self.xmax - x[1]) < (x[1]-x[0])):
+            x[1] = self.xmax
          
         strWind = ['Zonal', 'Meridional', 'Vertical']
         strCb = ['Velocity (m/s)','Velocity (m/s)','Velocity (cm/s)']
@@ -533,26 +536,27 @@ class WindProfilerPlot(Figure):
                     
             title = "%s Wind: %s" %(strWind[i], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
- 
-            z1 = z[i,:].reshape((1,-1))*windFactor[i]                    
+            
+            z1 = z[i,:].reshape((1,-1))*windFactor[i]
+            #z1=numpy.ma.masked_where(z1==0.,z1)  
             
             axes.pcolorbuffer(x, y, z1,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zminVector[i], zmax=zmaxVector[i],
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel=strCb[i], cbsize="1%", colormap="RdBu_r" )
+                        ticksize=9, cblabel=strCb[i], cbsize="1%", colormap="seismic" )
                      
         if dataOut.data_SNR is not None:
             i += 1              
             title = "Signal Noise Ratio (SNR): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
-              
+             
             SNRavgdB = SNRavgdB.reshape((1,-1))                
-              
+             
             axes.pcolorbuffer(x, y, SNRavgdB,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
                         ticksize=9, cblabel='', cbsize="1%", colormap="jet")
-                           
+                         
         self.draw()
         
         self.save(figpath=figpath,
@@ -563,8 +567,8 @@ class WindProfilerPlot(Figure):
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
                 
-        if False and dataOut.ltctime + dataOut.outputInterval >= self.xmax:
-            self.counter_imagwr = wr_period            
+        if dataOut.ltctime + dataOut.outputInterval >= self.xmax:
+            self.counter_imagwr = wr_period
             self.isConfig = False
             update_figfile = True
         
@@ -780,7 +784,7 @@ class ParametersPlot(Figure):
 
             
             
-class ParametersPlot(Figure):
+class Parameters1Plot(Figure):
     
     __isConfig = None
     __nsubplots = None
