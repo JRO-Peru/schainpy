@@ -618,7 +618,7 @@ class ProcUnitConf():
                     
                 kwargs[parmConfObj.name] = parmConfObj.getValue()
             
-            ini = time.time()
+            #ini = time.time()
             
             #print "\tRunning the '%s' operation with %s" %(opConfObj.name, opConfObj.id)
             sts = self.procUnitObj.call(opType = opConfObj.type,
