@@ -102,6 +102,7 @@ class ParametersProc(ProcessingUnit):
         
         if self.dataIn.type == "Parameters":
             self.dataOut.copy(self.dataIn)
+            self.dataOut.utctimeInit = self.dataIn.utctime
             self.dataOut.flagNoData = False
             
             return True
@@ -809,7 +810,7 @@ class WindProfiler(Operation):
             self.__dataReady = True
         return 
     
-    def techniqueMeteors(self, arrayMeteor, meteorThresh, heightMin, heightMax):
+    def techniqueMeteors(self, arrayMeteor, meteorThresh, heightMin, heightMax, binkm=2):
         '''
         Function that implements winds estimation technique with detected meteors.
         
@@ -821,7 +822,7 @@ class WindProfiler(Operation):
         '''      
 #         print arrayMeteor.shape  
         #Settings
-        nInt = (heightMax - heightMin)/2
+        nInt = (heightMax - heightMin)/binkm
 #         print nInt
         nInt = int(nInt)
 #         print nInt
@@ -1100,6 +1101,11 @@ class WindProfiler(Operation):
             if kwargs.has_key('hmax'):
                 hmax = kwargs['hmax']
             else:   hmax = 110
+            
+            if kwargs.has_key('BinKm'):
+                binkm = kwargs['BinKm']
+            else:
+                binkm = 2
                      
             dataOut.outputInterval = nHours*3600
             
@@ -1125,7 +1131,7 @@ class WindProfiler(Operation):
                 
                 self.__initime += dataOut.outputInterval #to erase time offset
                 
-                dataOut.data_output, dataOut.heightList = self.techniqueMeteors(self.__buffer, meteorThresh, hmin, hmax)
+                dataOut.data_output, dataOut.heightList = self.techniqueMeteors(self.__buffer, meteorThresh, hmin, hmax, binkm)
                 dataOut.flagNoData = False
                 self.__buffer = None
                 
@@ -1909,15 +1915,15 @@ class SMDetection(Operation):
         indSides = pairsarray[:,1]
         
         pairslist1 = list(pairslist)
-        pairslist1.append((0,1))
-        pairslist1.append((3,4))
+        pairslist1.append((0,4))
+        pairslist1.append((1,3))
 
         listMeteors1 = []
         listPowerSeries = []
         listVoltageSeries = []
         #volts has the war data
         
-        if frequency == 30e6:
+        if frequency == 30.175e6:
             timeLag = 45*10**-3
         else:
             timeLag = 15*10**-3
@@ -2021,7 +2027,7 @@ class SMDetection(Operation):
         
         threshError = 10
         #Depending if it is 30 or 50 MHz
-        if frequency == 30e6:
+        if frequency == 30.175e6:
             timeLag = 45*10**-3
         else:
             timeLag = 15*10**-3
@@ -2081,14 +2087,14 @@ class SMDetection(Operation):
     def __getRadialVelocity(self, listMeteors, listVolts, radialStdThresh, pairslist,  timeInterval):
         
         pairslist1 = list(pairslist)
-        pairslist1.append((0,1))
-        pairslist1.append((3,4))
+        pairslist1.append((0,4))
+        pairslist1.append((1,3))
         numPairs = len(pairslist1)
         #Time Lag
         timeLag = 45*10**-3
         c = 3e8
         lag = numpy.ceil(timeLag/timeInterval)
-        freq = 30e6
+        freq = 30.175e6
         
         listMeteors1 = []
         
@@ -2109,7 +2115,7 @@ class SMDetection(Operation):
                 #Method 2
                 slopes = numpy.zeros(numPairs)
                 time = numpy.array([-2,-1,1,2])*timeInterval
-                angAllCCF = numpy.angle(allCCFs[:,[0,1,3,4],0])
+                angAllCCF = numpy.angle(allCCFs[:,[0,4,2,3],0])
                 
                 #Correct phases
                 derPhaseCCF = angAllCCF[:,1:] - angAllCCF[:,0:-1]
@@ -2384,7 +2390,7 @@ class SMPhaseCalibration(Operation):
                 channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
             meteorOps = SMOperations()
             pairslist0, distances = meteorOps.getPhasePairs(channelPositions)
-        
+
 #             distances1 = [-distances[0]*lamb, distances[1]*lamb, -distances[2]*lamb, distances[3]*lamb]
             
             meteorsArray = self.__buffer
@@ -2403,6 +2409,7 @@ class SMPhaseCalibration(Operation):
             phasesOff = phasesOff.reshape((1,phasesOff.size))
             dataOut.data_output = -phasesOff
             dataOut.flagNoData = False
+            dataOut.channelList = pairslist0
             self.__buffer = None
         
         
