@@ -501,8 +501,8 @@ class Axes:
         xlen = len(x)
         ylen = len(y)
         
-        decimationx = numpy.floor(xlen/self.__MAXNUMX) - 1 if numpy.floor(xlen/self.__MAXNUMX)>1 else 1 
-        decimationy = numpy.floor(ylen/self.__MAXNUMY) + 1
+        decimationx = int(xlen/self.__MAXNUMX) + 1 
+        decimationy = int(ylen/self.__MAXNUMY) + 1
                 
         
         x_buffer = x#[::decimationx]
@@ -604,8 +604,8 @@ class Axes:
         xlen = len(self.x_buffer)
         ylen = len(y)
         
-        decimationx = numpy.floor(xlen/maxNumX) + 1
-        decimationy = numpy.floor(ylen/maxNumY) + 1
+        decimationx = int(xlen/maxNumX) + 1
+        decimationy = int(ylen/maxNumY) + 1
         
         x_buffer = self.x_buffer#[::decimationx]
         y_buffer = y#[::decimationy]    
