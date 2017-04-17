@@ -4,7 +4,7 @@ import numpy
 
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
-from numpy import NaN
+
 
 class MomentsPlot(Figure):
     
@@ -446,14 +446,10 @@ class WindProfilerPlot(Figure):
 #         tmin = None
 #         tmax = None
 
-        
-        x = dataOut.getTimeRange()
-        y = dataOut.getHeiRange()
-        #x = dataOut.getTimeRange1(dataOut.outputInterval)
-        #y = dataOut.heightList
-            
-        z = dataOut.data_output.copy()
-        #print 'dataOut_JI',z 
+
+        x = dataOut.getTimeRange1(dataOut.outputInterval)
+        y = dataOut.heightList            
+        z = dataOut.data_output.copy()         
         nplots = z.shape[0]    #Number of wind dimensions estimated
         nplotsw = nplots
         
@@ -472,11 +468,9 @@ class WindProfilerPlot(Figure):
          
             for i in range(nplotsw):
                 z[i,ind] = numpy.nan
- 
- 
-#         showprofile = False 
-#        thisDatetime = dataOut.datatime
+
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.ltctime)
+        #thisDatetime = datetime.datetime.now()
         title = wintitle + "Wind"
         xlabel = ""
         ylabel = "Height (km)"
@@ -539,7 +533,7 @@ class WindProfilerPlot(Figure):
             
             z1 = z[i,:].reshape((1,-1))*windFactor[i]
             #z1=numpy.ma.masked_where(z1==0.,z1)  
-            
+
             axes.pcolorbuffer(x, y, z1,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zminVector[i], zmax=zmaxVector[i],
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
@@ -549,9 +543,7 @@ class WindProfilerPlot(Figure):
             i += 1              
             title = "Signal Noise Ratio (SNR): %s" %(thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
             axes = self.axesList[i*self.__nsubplots]
-             
-            SNRavgdB = SNRavgdB.reshape((1,-1))                
-             
+            SNRavgdB = SNRavgdB.reshape((1,-1))
             axes.pcolorbuffer(x, y, SNRavgdB,
                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
