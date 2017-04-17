@@ -9,6 +9,8 @@ import numpy
 import datetime
 
 from jroheaderIO import SystemHeader, RadarControllerHeader
+from schainpy import cSchain
+
 
 def getNumpyDtype(dataTypeCode):
     
@@ -64,41 +66,45 @@ def hildebrand_sekhon(data, navg):
     """
     
     sortdata = numpy.sort(data,axis=None)
-    lenOfData = len(sortdata)
-    nums_min = lenOfData*0.2
-    
-    if nums_min <= 5:
-        nums_min = 5
+#     lenOfData = len(sortdata)
+#     nums_min = lenOfData*0.2
+#     
+#     if nums_min <= 5:
+#         nums_min = 5
+# 
+#     sump = 0.
+#     
+#     sumq = 0.
+#     
+#     j = 0
+#     
+#     cont = 1
+#     
+#     while((cont==1)and(j<lenOfData)):
+#         
+#         sump += sortdata[j]
+#         
+#         sumq += sortdata[j]**2
+#         
+#         if j > nums_min:
+#             rtest = float(j)/(j-1) + 1.0/navg
+#             if ((sumq*j) > (rtest*sump**2)):
+#                 j = j - 1
+#                 sump  = sump - sortdata[j]
+#                 sumq =  sumq - sortdata[j]**2
+#                 cont = 0
+#         
+#         j += 1
+#         
+#     lnoise = sump /j
+# 
+#     return lnoise
 
-    sump = 0.
-    
-    sumq = 0.
-    
-    j = 0
-    
-    cont = 1
-    
-    while((cont==1)and(j<lenOfData)):
-        
-        sump += sortdata[j]
-        
-        sumq += sortdata[j]**2
-        
-        if j > nums_min:
-            rtest = float(j)/(j-1) + 1.0/navg
-            if ((sumq*j) > (rtest*sump**2)):
-                j = j - 1
-                sump  = sump - sortdata[j]
-                sumq =  sumq - sortdata[j]**2
-                cont = 0
-        
-        j += 1
-        
-    lnoise = sump /j
-#     stdv = numpy.sqrt((sumq - lnoise**2)/(j - 1))
-    return lnoise   
+    return cSchain.hildebrand_sekhon(sortdata, navg)
+
 
 class Beam:
+    
     def __init__(self):
         self.codeList = []
         self.azimuthList = []
