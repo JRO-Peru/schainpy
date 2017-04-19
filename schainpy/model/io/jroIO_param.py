@@ -645,7 +645,7 @@ class ParamWriter(Operation):
             dsDict['variable'] = self.dataList[i]
             #---------------------    Conditionals    ------------------------
             #There is no data
-            if dataAux == None: 
+            if dataAux is None: 
                 return 0
             
             #Not array, just a number
@@ -898,7 +898,7 @@ class ParamWriter(Operation):
                 for j in range(dsInfo['dsNumber']):
                     dsInfo = dsList[i]
                     tableName = dsInfo['dsName']
-                    shape = dsInfo['shape']
+                    shape = int(dsInfo['shape'])
                     
                     if dsInfo['nDim'] == 3:    
                         ds0 = grp0.create_dataset(tableName, (shape[0],shape[1],1) , data = numpy.zeros((shape[0],shape[1],1)), maxshape = (None,shape[1],None), chunks=True)

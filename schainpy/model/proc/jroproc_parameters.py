@@ -160,18 +160,18 @@ class SpectralMoments(Operation):
     
     def __calculateMoments(self, oldspec, oldfreq, n0, nicoh = None, graph = None, smooth = None, type1 = None, fwindow = None, snrth = None, dc = None, aliasing = None, oldfd = None, wwauto = None):
         
-        if (nicoh == None): nicoh = 1
-        if (graph == None): graph = 0    
-        if (smooth == None): smooth = 0
+        if (nicoh is None): nicoh = 1
+        if (graph is None): graph = 0    
+        if (smooth is None): smooth = 0
         elif (self.smooth < 3): smooth = 0
 
-        if (type1 == None): type1 = 0
-        if (fwindow == None): fwindow = numpy.zeros(oldfreq.size) + 1
-        if (snrth == None): snrth = -3
-        if (dc == None): dc = 0
-        if (aliasing == None): aliasing = 0
-        if (oldfd == None): oldfd = 0
-        if (wwauto == None): wwauto = 0
+        if (type1 is None): type1 = 0
+        if (fwindow is None): fwindow = numpy.zeros(oldfreq.size) + 1
+        if (snrth is None): snrth = -3
+        if (dc is None): dc = 0
+        if (aliasing is None): aliasing = 0
+        if (oldfd is None): oldfd = 0
+        if (wwauto is None): wwauto = 0
          
         if (n0 < 1.e-20):   n0 = 1.e-20
         
@@ -471,7 +471,7 @@ class SpectralFitting(Operation):
                     error1 = p0*numpy.nan
                                          
                 #Save
-                if self.dataOut.data_param == None:
+                if self.dataOut.data_param is None:
                     self.dataOut.data_param = numpy.zeros((nGroups, p0.size, nHeights))*numpy.nan
                     self.dataOut.data_error = numpy.zeros((nGroups, p0.size + 1, nHeights))*numpy.nan
                 
@@ -1117,7 +1117,7 @@ class WindProfiler(Operation):
 
                 self.__isConfig = True
                 
-            if self.__buffer == None:
+            if self.__buffer is None:
                 self.__buffer = dataOut.data_param
                 self.__firstdata = copy.copy(dataOut)
 
@@ -1155,7 +1155,7 @@ class WindProfiler(Operation):
             else: mode = 'SA' 
             
             #Borrar luego esto
-            if dataOut.groupList == None:
+            if dataOut.groupList is None:
                 dataOut.groupList = [(0,1),(0,2),(1,2)]
             groupList = dataOut.groupList
             C = 3e8
@@ -1177,7 +1177,7 @@ class WindProfiler(Operation):
 
                 self.__isConfig = True
                 
-            if self.__buffer == None:
+            if self.__buffer is None:
                 self.__buffer = dataOut.data_param
                 self.__firstdata = copy.copy(dataOut)
 
@@ -1535,7 +1535,7 @@ class SMDetection(Operation):
         
            
         #Getting Pairslist
-        if channelPositions == None:
+        if channelPositions is None:
 #             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
             channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
         meteorOps = SMOperations()
@@ -1666,7 +1666,7 @@ class SMDetection(Operation):
 #             arrayFinal = arrayParameters.reshape((1,arrayParameters.shape[0],arrayParameters.shape[1]))
             dataOut.data_param = arrayParameters
             
-            if arrayParameters == None:
+            if arrayParameters is None:
                 dataOut.flagNoData = True
         else:
             dataOut.flagNoData = True
@@ -1860,7 +1860,7 @@ class SMDetection(Operation):
                     
                     if (indDNthresh.size > 0):
                         indEnd = indDNthresh[0] - 1
-                        indInit = indUPthresh[j]
+                        indInit = indUPthresh[j] if isinstance(indUPthresh[j], (int, float)) else indUPthresh[j][0] ##CHECK!!!!
                         
                         meteor = powerAux[indInit:indEnd + 1]
                         indPeak = meteor.argmax() + indInit
@@ -1927,7 +1927,7 @@ class SMDetection(Operation):
             timeLag = 45*10**-3
         else:
             timeLag = 15*10**-3
-        lag = numpy.ceil(timeLag/timeInterval)
+        lag = int(numpy.ceil(timeLag/timeInterval))
         
         for i in range(len(listMeteors)):
             
@@ -1935,10 +1935,10 @@ class SMDetection(Operation):
             meteorAux = numpy.zeros(16)
             
             #Loading meteor Data (mHeight, mStart, mPeak, mEnd)
-            mHeight = listMeteors[i][0]
-            mStart = listMeteors[i][1]
-            mPeak = listMeteors[i][2]
-            mEnd = listMeteors[i][3]
+            mHeight = int(listMeteors[i][0])
+            mStart = int(listMeteors[i][1])
+            mPeak = int(listMeteors[i][2])
+            mEnd = int(listMeteors[i][3])
             
             #get the volt data between the start and end times of the meteor
             meteorVolts = volts[:,mStart:mEnd+1,mHeight]
@@ -2202,7 +2202,7 @@ class CorrectSMPhases(Operation):
         arrayParameters[:,8:12] = numpy.angle(numpy.exp(1j*(arrayParameters[:,8:12] + phaseOffsets)))
         
         meteorOps = SMOperations()
-        if channelPositions == None:
+        if channelPositions is None:
     #             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
             channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
     
@@ -2365,7 +2365,7 @@ class SMPhaseCalibration(Operation):
 
             self.__isConfig = True
             
-        if self.__buffer == None:
+        if self.__buffer is None:
             self.__buffer = dataOut.data_param.copy()
 
         else:
@@ -2385,7 +2385,7 @@ class SMPhaseCalibration(Operation):
             h = (hmin, hmax)
             pairs = ((0,1),(2,3))
             
-            if channelPositions == None:
+            if channelPositions is None:
 #             channelPositions = [(2.5,0), (0,2.5), (0,0), (0,4.5), (-2,0)]   #T
                 channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
             meteorOps = SMOperations()
