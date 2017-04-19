@@ -78,7 +78,7 @@ class ParametersProc(ProcessingUnit):
 
             self.dataOut.data_pre = (self.dataIn.data_spc,self.dataIn.data_cspc)
             self.dataOut.abscissaList = self.dataIn.getVelRange(1)
-            self.dataOut.noise = self.dataIn.getNoise()
+            # self.dataOut.noise = self.dataIn.getNoise()
             self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
