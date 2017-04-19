@@ -1,9 +1,6 @@
 import os, sys
 
-path = os.path.split(os.getcwd())[0]
-sys.path.append(path)
-
-from controller import *
+from schainpy.controller import Project
 
 if __name__ == '__main__':
     
@@ -27,8 +24,6 @@ if __name__ == '__main__':
     
     procUnitConfObj0 = controllerObj.addProcUnit(datatype='VoltageProc',
                                                  inputId=readUnitConfObj.getId())
-
-#     opObj10 = procUnitConfObj0.addOperation(name='Synchronize', optype='external')
 
     opObj10 = procUnitConfObj0.addOperation(name='selectHeights')
     opObj10.addParameter(name='minHei', value='0', format='float')
@@ -95,14 +90,4 @@ if __name__ == '__main__':
     opObj11.addParameter(name='xmax', value='23.9', format='float')    
     opObj11.addParameter(name='save', value='1', format='int')
       
-    print "Escribiendo el archivo XML"
-    
-    controllerObj.writeXml(filename)
-    
-    print "Leyendo el archivo XML"
-    controllerObj.readXml(filename)
-    #controllerObj.printattr()
-    
-    controllerObj.createObjects()
-    controllerObj.connectObjects()
-    controllerObj.run()
+    controllerObj.start()

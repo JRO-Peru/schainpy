@@ -1,6 +1,6 @@
 Signal Chain Installation:
 
-	1. Install system dependencies: python-pip python-dev gfortran libpng-dev freetype* libblas-dev liblapack-dev libatlas-base-dev python-qt4
+	1. Install system dependencies: python-pip python-dev gfortran libpng-dev freetype* libblas-dev liblapack-dev libatlas-base-dev python-qt4 python-tk libssl-dev libhdf5-dev
 	2. Install digital_rf_hdf5 module (developed by Haystack Observatory)
 	   if you want to use USRP data
 	3. untar schainpy-x.x.x.tar.gz
