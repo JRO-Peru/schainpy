@@ -51,5 +51,8 @@ static PyObject *hildebrand_sekhon(PyObject *self, PyObject *args) {
   }
 
   double lnoise = sump / j;
+
+  Py_DECREF(data_array);
+
   return Py_BuildValue("d", lnoise);
 }
