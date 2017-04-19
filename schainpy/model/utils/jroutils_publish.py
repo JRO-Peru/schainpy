@@ -16,7 +16,7 @@ from multiprocessing import Process
 
 from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
 
-throttle_value = 10
+throttle_value = 5
 
 class PrettyFloat(float):
     def __repr__(self):
@@ -147,7 +147,7 @@ class PublishData(Operation):
             self.zmq_socket = context.socket(zmq.PUSH)
             server = kwargs.get('server', 'zmq.pipe')
             
-            if 'http://' in server:
+            if 'tcp://' in server:
                 address = server
             else:
                 address = 'ipc:///tmp/%s' % server
