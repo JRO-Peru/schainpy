@@ -125,8 +125,8 @@ class PlotData(Operation, Process):
                 self.__plot()
 
                 if 'ENDED' in self.data:
-                    #self.setup()
-                    #self.__plot()
+                    # self.setup()
+                    # self.__plot()
                     pass
 
             except zmq.Again as e:

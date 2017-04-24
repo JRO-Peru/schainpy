@@ -12,7 +12,7 @@ if __name__ == '__main__':
     desc = "Segundo Test"
 
     controllerObj = Project()
-    controllerObj.setup(id = '191', name='test01', description=desc)
+    controllerObj.setup(id='191', name='test01', description=desc)
 
     proc1 = controllerObj.addProcUnit(name='ReceiverData')
     # proc1.addParameter(name='server', value='tcp://10.10.10.87:3000', format='str')
