@@ -43,7 +43,10 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None):
         dt = (dt1 + datetime.timedelta(day)).strftime('%Y/%m/%d')
         firstProcess = Process(target=child, args=(cursor, skip, q, dt))
         firstProcess.start()
+        print 'a'
         nFiles = q.get()
+
+        print nFiles
         firstProcess.terminate()
         skip = int(math.ceil(nFiles/nProcess))
         try:
@@ -826,6 +829,7 @@ class ReadUnitConf(ProcUnitConf):
         opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
         opObj.addParameter(name='startTime' , value=self.startTime, format='time')
         opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
+        opObj.addParameter(name='queue'   , value=self.queue, format='obj')
 
         for key, value in kwargs.items():
             opObj.addParameter(name=key, value=value, format=type(value).__name__)
