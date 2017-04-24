@@ -84,7 +84,8 @@ class PlotData(Operation, Process):
         print 'plotting...{}'.format(self.CODE)
 
         self.plot()
-        self.figure.suptitle('{} {}'.format(self.title, self.CODE.upper()))
+        self.figure.suptitle('{} {} - Date:{}'.format(self.title, self.CODE.upper(),
+                                                      datetime.datetime.utcfromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')))
 
         if self.save:
             figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
@@ -234,17 +235,17 @@ class PlotSpectraData(PlotData):
                     ax.ax_profile.set_ylim(self.ymin, self.ymax)
                     ax.ax_profile.set_xlabel('dB')
                     ax.ax_profile.grid(b=True, axis='x')
+                    ax.plot_noise = ax.ax_profile.plot(numpy.repeat(self.data['noise'][self.max_time][n], len(y)), y,
+                                                       color="k", linestyle="dashed", lw=2)[0]
                     [tick.set_visible(False) for tick in ax.ax_profile.get_yticklabels()]
-                    noise = 10*numpy.log10(self.data['rti'][self.max_time][n]/self.dataOut.normFactor)
-                    ax.ax_profile.vlines(noise, self.ymin, self.ymax, colors="k", linestyle="dashed", lw=2)
             else:
                 ax.plot.set_array(z[n].T.ravel())
-                ax.set_title('{} {}'.format(self.titles[n],
-                                            datetime.datetime.utcfromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')),
-                             size=8)
                 if self.showprofile:
                     ax.plot_profile.set_data(self.data['rti'][self.max_time][n], y)
+                    ax.plot_noise.set_data(numpy.repeat(self.data['noise'][self.max_time][n], len(y)), y)
 
+            ax.set_title('{} - Noise: {:.2f} dB'.format(self.titles[n], self.data['noise'][self.max_time][n]),
+                         size=8)
 
 class PlotRTIData(PlotData):
 

@@ -279,7 +279,7 @@ class ReceiverData(ProcessingUnit, Process):
         self.data['times'] = []
         for plottype in self.plottypes:
             self.data[plottype] = {}
-
+        self.data['noise'] = {}
         self.isConfig = True
 
     def event_monitor(self, monitor):
@@ -325,8 +325,8 @@ class ReceiverData(ProcessingUnit, Process):
 
             if plottype == 'spc':
                 z = self.dataOut.data_spc/self.dataOut.normFactor
-                zdB = 10*numpy.log10(z)
-                self.data[plottype] = zdB
+                self.data[plottype] = 10*numpy.log10(z)
+                self.data['noise'][t] = 10*numpy.log10(self.dataOut.getNoise()/self.dataOut.normFactor)
             if plottype == 'rti':
                 self.data[plottype][t] = self.dataOut.getPower()
             if plottype == 'snr':
