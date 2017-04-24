@@ -13,10 +13,10 @@ def main(date):
 
     controllerObj = Project()
 
-    controllerObj.setup(id = '191', name='test01', description='')
+    controllerObj.setup(id='191', name='test01', description='')
 
     readUnitConfObj = controllerObj.addReadUnit(datatype='Spectra',
-                                                path='/data/workspace/data/zeus/',
+                                                path='/home/nanosat/data/zeus',
                                                 startDate=date,
                                                 endDate=date,
                                                 startTime='00:00:00',
@@ -44,7 +44,7 @@ def main(date):
 #     opObj11.addParameter(name='zmin', value='10', format='int')
 #     opObj11.addParameter(name='zmax', value='35', format='int')
 
-    
+
 
 
     opObj11 = procUnitConfObj1.addOperation(name='PlotRTIData', optype='other')
@@ -66,12 +66,10 @@ def main(date):
     controllerObj.start()
 
 if __name__=='__main__':
-    
+
     dt = datetime(2017, 1, 12)
-    
-    dates = [(dt+timedelta(x)).strftime('%Y/%m/%d')  for x in range(20)]
-    
+
+    dates = [(dt+timedelta(x)).strftime('%Y/%m/%d') for x in range(20)]
+
     p = multiprocessing.Pool(4)
     p.map(main, dates)
-    
-    

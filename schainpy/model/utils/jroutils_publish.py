@@ -363,7 +363,7 @@ class ReceiverData(ProcessingUnit, Process):
             if self.dataOut.finished is True:
                 self.send(self.data)
                 self.connections -= 1
-                if self.connections==0 and self.started:
+                if self.connections == 0 and self.started:
                     self.ended = True
                     self.data['ENDED'] = True
                     self.send(self.data)
