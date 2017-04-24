@@ -27,7 +27,7 @@ class ProcessingUnit(object):
     isConfig = False
 
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
 
         self.dataIn = None
         self.dataInList = []
@@ -37,6 +37,9 @@ class ProcessingUnit(object):
         self.operations2RunDict = {}
 
         self.isConfig = False
+
+        self.args = args
+        self.kwargs = kwargs
 
     def addOperation(self, opObj, objId):
 
@@ -104,17 +107,13 @@ class ProcessingUnit(object):
         methodToCall = getattr(self, name)
 
         #Executing the self method
-        methodToCall(**kwargs)
 
-        #Checkin the outputs
-
-#         if name == 'run':
-#             pass
-#         else:
-#             pass
-#
-#         if name != 'run':
-#             return True
+        if hasattr(self, 'mp'):
+            if self.mp is False:
+                self.mp = True
+                self.start()
+        else:
+            methodToCall(**kwargs)
 
         if self.dataOut is None:
             return False
@@ -124,7 +123,7 @@ class ProcessingUnit(object):
 
         return True
 
-    def callObject(self, objId, **kwargs):
+    def callObject(self, objId):
 
         """
         Ejecuta la operacion asociada al identificador del objeto "objId"
@@ -140,16 +139,21 @@ class ProcessingUnit(object):
             None
         """
 
-        if self.dataOut.isEmpty():
+        if self.dataOut is not None and self.dataOut.isEmpty():
             return False
 
         externalProcObj = self.operations2RunDict[objId]
 
-        externalProcObj.run(self.dataOut, **kwargs)
+        if hasattr(externalProcObj, 'mp'):
+            if externalProcObj.mp is False:
+                externalProcObj.mp = True
+                externalProcObj.start()
+        else:
+            externalProcObj.run(self.dataOut, **externalProcObj.kwargs)
 
         return True
 
-    def call(self, opType, opName=None, opId=None, **kwargs):
+    def call(self, opType, opName=None, opId=None):
 
         """
         Return True si ejecuta la operacion interna nombrada "opName" o la operacion externa
@@ -194,7 +198,7 @@ class ProcessingUnit(object):
             if not opName:
                 raise ValueError, "opName parameter should be defined"
 
-            sts = self.callMethod(opName, **kwargs)
+            sts = self.callMethod(opName, **self.kwargs)
 
         elif opType == 'other' or opType == 'external' or opType == 'plotter':
 
@@ -204,7 +208,7 @@ class ProcessingUnit(object):
             if opId not in self.operations2RunDict.keys():
                 raise ValueError, "Any operation with id=%s has been added" %str(opId)
 
-            sts = self.callObject(opId, **kwargs)
+            sts = self.callObject(opId)
 
         else:
             raise ValueError, "opType should be 'self', 'external' or 'plotter'; and not '%s'" %opType
@@ -221,7 +225,7 @@ class ProcessingUnit(object):
         return self.dataOut
 
     def checkInputs(self):
-        
+
         for thisDataIn in self.dataInList:
 
             if thisDataIn.isEmpty():
@@ -255,10 +259,11 @@ class Operation(object):
     __buffer = None
     isConfig = False
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         self.__buffer = None
         self.isConfig = False
+        self.kwargs = kwargs
 
     def setup(self):
 

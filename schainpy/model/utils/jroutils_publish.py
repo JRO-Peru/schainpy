@@ -16,6 +16,8 @@ from multiprocessing import Process
 
 from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
 
+MAXNUMX = 100
+MAXNUMY = 100
 throttle_value = 5
 
 class PrettyFloat(float):
@@ -28,14 +30,6 @@ def roundFloats(obj):
     elif isinstance(obj, float):
         return round(obj, 2)
 
-def pretty_floats(obj):
-    if isinstance(obj, float):
-        return PrettyFloat(obj)
-    elif isinstance(obj, dict):
-        return dict((k, pretty_floats(v)) for k, v in obj.items())
-    elif isinstance(obj, (list, tuple)):
-        return map(pretty_floats, obj)
-    return obj
 
 class throttle(object):
     """Decorator that prevents a function from being called more than once every
@@ -75,9 +69,6 @@ class throttle(object):
 
 class PublishData(Operation):
     """Clase publish."""
-
-    __MAXNUMX = 100
-    __MAXNUMY = 100
 
     def __init__(self, **kwargs):
         """Inicio."""
@@ -146,12 +137,12 @@ class PublishData(Operation):
             context = zmq.Context()
             self.zmq_socket = context.socket(zmq.PUSH)
             server = kwargs.get('server', 'zmq.pipe')
-            
+
             if 'tcp://' in server:
                 address = server
             else:
                 address = 'ipc:///tmp/%s' % server
-            
+
             self.zmq_socket.connect(address)
             time.sleep(1)
             print 'zeromq configured'
@@ -166,8 +157,8 @@ class PublishData(Operation):
                 z = data/self.dataOut.normFactor
                 zdB = 10*numpy.log10(z)
                 xlen, ylen = zdB[0].shape
-                dx = numpy.floor(xlen/self.__MAXNUMX) + 1
-                dy = numpy.floor(ylen/self.__MAXNUMY) + 1
+                dx = int(xlen/MAXNUMX) + 1
+                dy = int(ylen/MAXNUMY) + 1
                 Z = [0 for i in self.dataOut.channelList]
                 for i in self.dataOut.channelList:
                     Z[i] = zdB[i][::dx, ::dy].tolist()
@@ -237,7 +228,7 @@ class PublishData(Operation):
             self.client.publish(self.topic + self.plottype, json.dumps(payload), qos=0)
 
         if self.zeromq is 1:
-            print '[Sending] {} - {}'.format(self.dataOut.type, self.dataOut.datatime) 
+            print '[Sending] {} - {}'.format(self.dataOut.type, self.dataOut.datatime)
             self.zmq_socket.send_pyobj(self.dataOut)
 
     def run(self, dataOut, **kwargs):
@@ -257,3 +248,131 @@ class PublishData(Operation):
         if self.client:
             self.client.loop_stop()
             self.client.disconnect()
+
+
+class ReceiverData(ProcessingUnit, Process):
+
+    def __init__(self, **kwargs):
+
+        ProcessingUnit.__init__(self, **kwargs)
+        Process.__init__(self)
+        self.mp = False
+        self.isConfig = False
+        self.plottypes =[]
+        self.connections = 0
+        server = kwargs.get('server', 'zmq.pipe')
+        if 'tcp://' in server:
+            address = server
+        else:
+            address = 'ipc:///tmp/%s' % server
+
+        self.address = address
+        self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
+        self.realtime = kwargs.get('realtime', False)
+        global throttle_value
+        throttle_value = kwargs.get('throttle', 10)
+        self.setup()
+
+    def setup(self):
+
+        self.data = {}
+        self.data['times'] = []
+        for plottype in self.plottypes:
+            self.data[plottype] = {}
+
+        self.isConfig = True
+
+    def event_monitor(self, monitor):
+
+        events = {}
+
+        for name in dir(zmq):
+            if name.startswith('EVENT_'):
+                value = getattr(zmq, name)
+                events[value] = name
+
+        while monitor.poll():
+            evt = recv_monitor_message(monitor)
+            if evt['event'] == 32:
+                self.connections += 1
+            if evt['event'] == 512:
+                pass
+            if self.connections == 0 and self.started is True:
+                self.ended = True
+                # send('ENDED')
+            evt.update({'description': events[evt['event']]})
+
+            if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
+                break
+        monitor.close()
+        print("event monitor thread done!")
+
+    @throttle(seconds=throttle_value)
+    def sendData(self, data):
+        self.send(data)
+
+    def send(self, data):
+        print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
+        self.sender.send_pyobj(data)
+
+    def update(self):
+
+        t = self.dataOut.ltctime
+        self.data['times'].append(t)
+        self.data['dataOut'] = self.dataOut
+
+        for plottype in self.plottypes:
+
+            if plottype == 'spc':
+                z = self.dataOut.data_spc/self.dataOut.normFactor
+                zdB = 10*numpy.log10(z)
+                self.data[plottype] = zdB
+            if plottype == 'rti':
+                self.data[plottype][t] = self.dataOut.getPower()
+            if plottype == 'snr':
+                self.data[plottype][t] = 10*numpy.log10(self.dataOut.data_SNR)
+            if plottype == 'dop':
+                self.data[plottype][t] = 10*numpy.log10(self.dataOut.data_DOP)
+            if plottype == 'coh':
+                self.data[plottype][t] = self.dataOut.getCoherence()
+            if plottype == 'phase':
+                self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
+
+    def run(self):
+
+        print '[Starting] {} from {}'.format(self.name, self.address)
+
+        self.context = zmq.Context()
+        self.receiver = self.context.socket(zmq.PULL)
+        self.receiver.bind(self.address)
+        monitor = self.receiver.get_monitor_socket()
+        self.sender = self.context.socket(zmq.PUB)
+
+        self.sender.bind("ipc:///tmp/zmq.plots")
+
+        t = Thread(target=self.event_monitor, args=(monitor,))
+        t.start()
+
+        while True:
+            self.dataOut = self.receiver.recv_pyobj()
+            print '[Receiving] {} - {}'.format(self.dataOut.type,
+                                               self.dataOut.datatime.ctime())
+
+            self.update()
+
+            if self.dataOut.finished is True:
+                self.send(self.data)
+                self.connections -= 1
+                if self.connections==0 and self.started:
+                    self.ended = True
+                    self.data['ENDED'] = True
+                    self.send(self.data)
+                    self.setup()
+            else:
+                if self.realtime:
+                    self.send(self.data)
+                else:
+                    self.sendData(self.data)
+                self.started = True
+
+        return
