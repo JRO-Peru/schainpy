@@ -7,6 +7,8 @@ import sys
 import ast
 import datetime
 import traceback
+from multiprocessing import Process, Queue, cpu_count
+
 import schainpy
 import schainpy.admin
 
@@ -22,6 +24,51 @@ def prettify(elem):
     rough_string = tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
+
+def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None):
+    skip = 0
+    cursor = 0
+    nFiles = None
+    processes = []
+
+    dt1 = datetime.datetime.strptime(startDate, '%Y/%m/%d')
+    dt2 = datetime.datetime.strptime(endDate, '%Y/%m/%d')
+    days = (dt2 - dt1).days
+    print days
+    for day in range(days+1):
+        skip = 0
+        cursor = 0
+        q = Queue()
+        processes = []
+        dt = (dt1 + datetime.timedelta(day)).strftime('%Y/%m/%d')
+        firstProcess = Process(target=child, args=(cursor, skip, q, dt))
+        firstProcess.start()
+        nFiles = q.get()
+        firstProcess.terminate()
+        skip = int(math.ceil(nFiles/nProcess))
+        try:
+            while True:
+                processes.append(Process(target=child, args=(cursor, skip, q, dt)))
+                processes[cursor].start()
+                if nFiles < cursor*skip:
+                    break
+                cursor += 1
+        except KeyboardInterrupt:
+            for process in processes:
+                process.terminate()
+                process.join()
+        for process in processes:
+            process.join()
+            #process.terminate()
+        sleep(3)
+
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        for process in processes:
+            process.terminate()
+            process.join()
 
 class ParameterConf():
 
@@ -50,6 +97,9 @@ class ParameterConf():
         if self.__formated_value != None:
 
             return self.__formated_value
+
+        if format == 'obj':
+            return value
 
         if format == 'str':
             self.__formated_value = str(value)
@@ -171,7 +221,10 @@ class ParameterConf():
 
         self.id = str(id)
         self.name = name
-        self.value = str(value)
+        if format == 'obj':
+            self.value = value
+        else:
+            self.value = str(value)
         self.format = str.lower(format)
 
         self.getValue()
@@ -698,7 +751,7 @@ class ReadUnitConf(ProcUnitConf):
 
         return self.ELEMENTNAME
 
-    def setup(self, id, name, datatype, path, startDate="", endDate="", startTime="", endTime="", parentId=None, **kwargs):
+    def setup(self, id, name, datatype, path, startDate="", endDate="", startTime="", endTime="", parentId=None, queue=None, **kwargs):
 
         #Compatible with old signal chain version
         if datatype==None and name==None:
@@ -725,7 +778,7 @@ class ReadUnitConf(ProcUnitConf):
 
         self.inputId = '0'
         self.parentId = parentId
-
+        self.queue = queue
         self.addRunOperation(**kwargs)
 
     def update(self, datatype, path, startDate, endDate, startTime, endTime, parentId=None, name=None, **kwargs):
