@@ -39,8 +39,6 @@ class ProcessingUnit(object):
         self.isConfig = False
 
         self.args = args
-        # if (kwargs):
-        #     self.kwargs = kwargs
         self.kwargs = kwargs
 
     def addOperation(self, opObj, objId):

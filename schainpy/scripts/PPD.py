@@ -11,7 +11,7 @@ def fiber(cursor, skip, q, dt):
     controllerObj.setup(id='191', name='test01', description=desc)
 
     readUnitConfObj = controllerObj.addReadUnit(datatype='SpectraReader',
-                                                 path='/data/workspace/data/julia/',
+                                                 path='/home/nanosat/data/julia',
                                                  startDate=dt,
                                                  endDate=dt,
                                                  startTime="00:00:00",
@@ -45,20 +45,20 @@ def fiber(cursor, skip, q, dt):
     #     opObj11.addParameter(name='save', value='1', format='int')
     #     opObj11.addParameter(name='figpath', value=figpath, format='str')
 
-    # opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-    # opObj11.addParameter(name='id', value='2000', format='int')
-    # opObj11.addParameter(name='wintitle', value='HF_Jicamarca', format='str')
-    # opObj11.addParameter(name='showprofile', value='0', format='int')
+    opObj11 = procUnitConfObj2.addOperation(name='RTIPlot', optype='other')
+    opObj11.addParameter(name='id', value='2000', format='int')
+    opObj11.addParameter(name='wintitzmaxle', value='HF_Jicamarca', format='str')
+    opObj11.addParameter(name='showprofile', value='0', format='int')
     # opObj11.addParameter(name='channelList', value='0', format='intlist')
-    # #     opObj11.addParameter(name='xmin', value='0', format='float')
-    # opObj11.addParameter(name='xmin', value='0', format='float')
-    # opObj11.addParameter(name='xmax', value='24', format='float')
-    #
+    #     opObj11.addParameter(name='xmin', value='0', format='float')
+    opObj11.addParameter(name='xmin', value='0', format='float')
+    opObj11.addParameter(name='xmax', value='24', format='float')
+
     # opObj11.addParameter(name='zmin', value='-110', format='float')
     # opObj11.addParameter(name='zmax', value='-70', format='float')
     # opObj11.addParameter(name='save', value='0', format='int')
-    # opObj11.addParameter(name='figpath', value='/tmp/', format='str')
-
+    # # opObj11.addParameter(name='figpath', value='/tmp/', format='str')
+    #
     opObj12 = procUnitConfObj2.addOperation(name='PublishData', optype='other')
     opObj12.addParameter(name='zeromq', value=1, format='int')
 
@@ -77,6 +77,6 @@ def fiber(cursor, skip, q, dt):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Set number of parallel processes')
-    parser.add_argument('--nProcess', default=2, type=int)
+    parser.add_argument('--nProcess', default=1, type=int)
     args = parser.parse_args()
     multiSchain(fiber, nProcess=args.nProcess, startDate='2016/08/19', endDate='2016/08/20')

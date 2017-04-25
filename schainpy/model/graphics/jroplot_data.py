@@ -22,13 +22,14 @@ class PlotData(Operation, Process):
 
     CODE = 'Figure'
     colormap = 'jet'
+    CONFLATE = True
     __MAXNUMX = 80
     __MAXNUMY = 80
     __missing = 1E30
 
     def __init__(self, **kwargs):
 
-        Operation.__init__(self)
+        Operation.__init__(self, **kwargs)
         Process.__init__(self)
         self.mp = False
         self.dataOut = None
@@ -61,7 +62,7 @@ class PlotData(Operation, Process):
         index = np.where(deltas > 5*x_median)
 
         if len(index[0]) != 0:
-            z_buffer[::,index[0],::] = self.__missing
+            z_buffer[::, index[0], ::] = self.__missing
             z_buffer = np.ma.masked_inside(z_buffer,
                                            0.99*self.__missing,
                                            1.01*self.__missing)
@@ -106,7 +107,7 @@ class PlotData(Operation, Process):
         context = zmq.Context()
         receiver = context.socket(zmq.SUB)
         receiver.setsockopt(zmq.SUBSCRIBE, '')
-        receiver.setsockopt(zmq.CONFLATE, True)
+        receiver.setsockopt(zmq.CONFLATE, self.CONFLATE)
         receiver.connect("ipc:///tmp/zmq.plots")
 
         while True:
@@ -144,7 +145,7 @@ class PlotSpectraData(PlotData):
 
     CODE = 'spc'
     colormap = 'jro'
-
+    CONFLATE = False
     def setup(self):
 
         ncolspan = 1
@@ -171,7 +172,7 @@ class PlotSpectraData(PlotData):
         n = 0
         for y in range(self.nrows):
             for x in range(self.ncols):
-                if n>=self.dataOut.nChannels:
+                if n >= self.dataOut.nChannels:
                     break
                 ax = plt.subplot2grid((self.nrows, self.ncols*ncolspan), (y, x*ncolspan), 1, colspan)
                 if self.showprofile:

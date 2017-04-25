@@ -413,7 +413,7 @@ class SpectraWriter(JRODataWriter, Operation):
 
 #    dataOut = None
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
 
@@ -427,7 +427,7 @@ class SpectraWriter(JRODataWriter, Operation):
         Return: None
         """
 
-        Operation.__init__(self)
+        Operation.__init__(self, **kwargs)
 
         self.isConfig = False
 

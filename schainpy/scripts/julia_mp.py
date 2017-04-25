@@ -32,23 +32,8 @@ def main(date):
     #opObj11 = procUnitConfObj1.addOperation(name='removeInterference')
 
 
-#     opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-#     opObj11.addParameter(name='id', value='10', format='int')
-#     opObj11.addParameter(name='wintitle', value='150Km', format='str')
-#     opObj11.addParameter(name='colormap', value='jro', format='str')
-#     opObj11.addParameter(name='xaxis', value='time', format='str')
-#     opObj11.addParameter(name='xmin', value='0', format='int')
-#     opObj11.addParameter(name='xmax', value='23', format='int')
-#     #opObj11.addParameter(name='ymin', value='100', format='int')
-#     #opObj11.addParameter(name='ymax', value='150', format='int')
-#     opObj11.addParameter(name='zmin', value='10', format='int')
-#     opObj11.addParameter(name='zmax', value='35', format='int')
-
-
-
-
-    opObj11 = procUnitConfObj1.addOperation(name='PlotRTIData', optype='other')
-    opObj11.addParameter(name='id', value='12', format='int')
+    opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
+    opObj11.addParameter(name='id', value='10', format='int')
     opObj11.addParameter(name='wintitle', value='150Km', format='str')
     opObj11.addParameter(name='colormap', value='jro', format='str')
     opObj11.addParameter(name='xaxis', value='time', format='str')
@@ -58,9 +43,24 @@ def main(date):
     #opObj11.addParameter(name='ymax', value='150', format='int')
     opObj11.addParameter(name='zmin', value='10', format='int')
     opObj11.addParameter(name='zmax', value='35', format='int')
-    #opObj11.addParameter(name='pause', value='1', format='bool')
-    opObj11.addParameter(name='show', value='0', format='bool')
-    opObj11.addParameter(name='save', value='/tmp', format='str')
+
+
+
+
+    opObject12 = procUnitConfObj1.addOperation(name='PlotRTIData', optype='other')
+    opObject12.addParameter(name='id', value='12', format='int')
+    opObject12.addParameter(name='wintitle', value='150Km', format='str')
+    opObject12.addParameter(name='colormap', value='jro', format='str')
+    opObject12.addParameter(name='xaxis', value='time', format='str')
+    opObject12.addParameter(name='xmin', value='0', format='int')
+    opObject12.addParameter(name='xmax', value='23', format='int')
+    #opObject12.addParameter(name='ymin', value='100', format='int')
+    #opObject12.addParameter(name='ymax', value='150', format='int')
+    opObject12.addParameter(name='zmin', value='10', format='int')
+    opObject12.addParameter(name='zmax', value='35', format='int')
+    #opObject12.addParameter(name='pause', value='1', format='bool')
+    opObject12.addParameter(name='show', value='0', format='bool')
+    opObject12.addParameter(name='save', value='/tmp', format='str')
 
 
     controllerObj.start()

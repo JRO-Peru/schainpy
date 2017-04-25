@@ -451,8 +451,10 @@ class OperationConf():
             opObj = Plotter(self.name, plotter_queue)
 
         if self.type == 'external' or self.type == 'other':
+            print self.name
             className = eval(self.name)
             kwargs = self.getKwargs()
+            print kwargs
             opObj = className(**kwargs)
 
         return opObj

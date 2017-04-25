@@ -19,8 +19,8 @@ class SpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc'
 
-    def __init__(self):
-
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -104,7 +104,7 @@ class SpectraPlot(Figure):
             zmax            :    None
         """
 
-        colormap = kwargs.get('colormap','jet') 
+        colormap = kwargs.get('colormap','jet')
 
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
@@ -230,8 +230,8 @@ class CrossSpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'cspc'
 
-    def __init__(self):
-
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 4
         self.counter_imagwr = 0
@@ -447,8 +447,9 @@ class RTIPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'rti'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
+        Figure.__init__(self, **kwargs)
         self.timerange = None
         self.isConfig = False
         self.__nsubplots = 1
@@ -651,7 +652,8 @@ class CoherenceMap(Figure):
     HEIGHTPROF = None
     PREFIX = 'cmap'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.timerange = 2*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -855,7 +857,8 @@ class PowerProfilePlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spcprofile'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -978,7 +981,8 @@ class SpectraCutPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc_cut'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -1107,8 +1111,8 @@ class Noise(Figure):
 
     PREFIX = 'noise'
 
-    def __init__(self):
-
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -1307,8 +1311,8 @@ class BeaconPhase(Figure):
 
     PREFIX = 'beacon_phase'
 
-    def __init__(self):
-
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
