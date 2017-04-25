@@ -15,27 +15,35 @@ if __name__ == '__main__':
     controllerObj.setup(id='191', name='test01', description=desc)
 
     proc1 = controllerObj.addProcUnit(name='ReceiverData')
-    # proc1.addParameter(name='server', value='tcp://10.10.10.87:3000', format='str')
-    proc1.addParameter(name='realtime', value='1', format='bool')
-    proc1.addParameter(name='plottypes', value='spc', format='str')
+    proc1.addParameter(name='realtime', value='0', format='bool')
+    proc1.addParameter(name='plottypes', value='rti,coh,phase', format='str')
+    proc1.addParameter(name='throttle', value='10', format='int')
 
-    # op1 = proc1.addOperation(name='PlotRTIData', optype='other')
-    # op1.addParameter(name='wintitle', value='Julia 150Km', format='str')
-    #
-    op2 = proc1.addOperation(name='PlotSpectraData', optype='other')
+    op1 = proc1.addOperation(name='PlotRTIData', optype='other')
+    op1.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op1.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+    op1.addParameter(name='colormap', value='jet', format='str')
+
+    op2 = proc1.addOperation(name='PlotCOHData', optype='other')
     op2.addParameter(name='wintitle', value='Julia 150Km', format='str')
-    # op2.addParameter(name='xaxis', value='velocity', format='str')
-    # op2.addParameter(name='showprofile', value='1', format='bool')
-    #op2.addParameter(name='xmin', value='-0.1', format='float')
-    #op2.addParameter(name='xmax', value='0.1', format='float')
+    op2.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
 
-    # op1 = proc1.addOperation(name='PlotPHASEData', optype='other')
-    # op1.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op6 = proc1.addOperation(name='PlotPHASEData', optype='other')
+    op6.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op6.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
 
-#     proc1 = controllerObj.addProcUnit(name='ReceiverData')
-#     proc1.addParameter(name='server', value='pipe2', format='str')
-#     proc1.addParameter(name='mode', value='buffer', format='str')
-#     proc1.addParameter(name='plottypes', value='snr', format='str')
+    proc2 = controllerObj.addProcUnit(name='ReceiverData')
+    proc2.addParameter(name='server', value='juanca', format='str')
+    proc2.addParameter(name='plottypes', value='snr,dop', format='str')
+
+    op3 = proc2.addOperation(name='PlotSNRData', optype='other')
+    op3.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op3.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+
+    op4 = proc2.addOperation(name='PlotDOPData', optype='other')
+    op4.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op4.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+
 
 
     controllerObj.start()

@@ -18,7 +18,6 @@ from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
 
 MAXNUMX = 100
 MAXNUMY = 100
-throttle_value = 5
 
 class PrettyFloat(float):
     def __repr__(self):
@@ -49,6 +48,7 @@ class throttle(object):
         self.throttle_period = datetime.timedelta(
             seconds=seconds, minutes=minutes, hours=hours
         )
+
         self.time_of_last_call = datetime.datetime.min
 
     def __call__(self, fn):
@@ -91,7 +91,6 @@ class PublishData(Operation):
                 port=self.port,
                 keepalive=60*10,
                 bind_address='')
-            print "connected"
             self.client.loop_start()
             # self.client.publish(
             #     self.topic + 'SETUP',
@@ -116,7 +115,6 @@ class PublishData(Operation):
         self.client = None
         setup = []
         if mqtt is 1:
-            print 'mqqt es 1'
             self.client = mqtt.Client(
                 client_id=self.clientId + self.topic + 'SCHAIN',
                 clean_session=True)
@@ -145,7 +143,6 @@ class PublishData(Operation):
 
             self.zmq_socket.connect(address)
             time.sleep(1)
-            print 'zeromq configured'
 
 
     def publish_data(self):
@@ -252,6 +249,8 @@ class PublishData(Operation):
 
 class ReceiverData(ProcessingUnit, Process):
 
+    throttle_value = 5
+
     def __init__(self, **kwargs):
 
         ProcessingUnit.__init__(self, **kwargs)
@@ -269,8 +268,8 @@ class ReceiverData(ProcessingUnit, Process):
         self.address = address
         self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
         self.realtime = kwargs.get('realtime', False)
-        global throttle_value
-        throttle_value = kwargs.get('throttle', 10)
+        self.throttle_value = kwargs.get('throttle', 10)
+        self.sendData = self.initThrottle(self.throttle_value)
         self.setup()
 
     def setup(self):
@@ -280,6 +279,8 @@ class ReceiverData(ProcessingUnit, Process):
         for plottype in self.plottypes:
             self.data[plottype] = {}
         self.data['noise'] = {}
+        self.data['throttle'] = self.throttle_value
+        self.data['ENDED'] = False
         self.isConfig = True
 
     def event_monitor(self, monitor):
@@ -305,11 +306,14 @@ class ReceiverData(ProcessingUnit, Process):
             if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
                 break
         monitor.close()
-        print("event monitor thread done!")
 
-    @throttle(seconds=throttle_value)
-    def sendData(self, data):
-        self.send(data)
+    def initThrottle(self, throttle_value):
+
+        @throttle(seconds=throttle_value)
+        def sendDataThrottled(fn_sender, data):
+            fn_sender(data)
+
+        return sendDataThrottled
 
     def send(self, data):
         print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
@@ -355,8 +359,8 @@ class ReceiverData(ProcessingUnit, Process):
 
         while True:
             self.dataOut = self.receiver.recv_pyobj()
-            print '[Receiving] {} - {}'.format(self.dataOut.type,
-                                               self.dataOut.datatime.ctime())
+            # print '[Receiving] {} - {}'.format(self.dataOut.type,
+            #                                    self.dataOut.datatime.ctime())
 
             self.update()
 
@@ -372,7 +376,7 @@ class ReceiverData(ProcessingUnit, Process):
                 if self.realtime:
                     self.send(self.data)
                 else:
-                    self.sendData(self.data)
+                    self.sendData(self.send, self.data)
                 self.started = True
 
         return

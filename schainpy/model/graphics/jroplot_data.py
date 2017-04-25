@@ -50,7 +50,7 @@ class PlotData(Operation, Process):
         self.xrange = kwargs.get('xrange', 24)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
-
+        self.throttle_value = 1
     def fill_gaps(self, x_buffer, y_buffer, z_buffer):
 
         if x_buffer.shape[0] < 2:
@@ -71,12 +71,13 @@ class PlotData(Operation, Process):
 
     def decimate(self):
 
-        dx = int(len(self.x)/self.__MAXNUMX) + 1
+        # dx = int(len(self.x)/self.__MAXNUMX) + 1
         dy = int(len(self.y)/self.__MAXNUMY) + 1
 
-        x = self.x[::dx]
+        # x = self.x[::dx]
+        x = self.x
         y = self.y[::dy]
-        z = self.z[::, ::dx, ::dy]
+        z = self.z[::, ::, ::dy]
 
         return x, y, z
 
@@ -90,7 +91,7 @@ class PlotData(Operation, Process):
 
         if self.save:
             figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
-                                                                 datetime.datetime.utcfromtimestamp(self.times[-1]).strftime('%y%m%d_%H%M%S')))
+                                                                 datetime.datetime.utcfromtimestamp(self.times[0]).strftime('%y%m%d_%H%M%S')))
             print 'Saving figure: {}'.format(figname)
             self.figure.savefig(figname)
 
@@ -117,24 +118,23 @@ class PlotData(Operation, Process):
                 self.dataOut = self.data['dataOut']
                 self.times = self.data['times']
                 self.times.sort()
+                self.throttle_value = self.data['throttle']
                 self.min_time = self.times[0]
                 self.max_time = self.times[-1]
 
                 if self.isConfig is False:
                     self.setup()
                     self.isConfig = True
-
                 self.__plot()
 
-                if 'ENDED' in self.data:
-                    # self.setup()
+                if self.data['ENDED'] is True:
                     # self.__plot()
-                    pass
+                    self.isConfig = False
 
             except zmq.Again as e:
                 print 'Waiting for data...'
-                plt.pause(5)
-                #time.sleep(3)
+                plt.pause(self.throttle_value)
+                # time.sleep(3)
 
     def close(self):
         if self.dataOut:
@@ -254,7 +254,6 @@ class PlotRTIData(PlotData):
     colormap = 'jro'
 
     def setup(self):
-
         self.ncols = 1
         self.nrows = self.dataOut.nChannels
         self.width = 10
@@ -268,12 +267,12 @@ class PlotRTIData(PlotData):
                                      facecolor='w')
         else:
             self.figure.clf()
+            self.axes = []
 
         for n in range(self.nrows):
             ax = self.figure.add_subplot(self.nrows, self.ncols, n+1)
             ax.firsttime = True
             self.axes.append(ax)
-
         self.figure.subplots_adjust(hspace=0.5)
         self.figure.show()
 
@@ -287,16 +286,16 @@ class PlotRTIData(PlotData):
             self.z.append([self.data[self.CODE][t][ch] for t in self.times])
 
         self.z = np.array(self.z)
-
         for n, ax in enumerate(self.axes):
 
             x, y, z = self.fill_gaps(*self.decimate())
-
+            xmin = self.min_time
+            xmax = xmin+self.xrange*60*60
             if ax.firsttime:
                 self.ymin = self.ymin if self.ymin else np.nanmin(self.y)
                 self.ymax = self.ymax if self.ymax else np.nanmax(self.y)
                 self.zmin = self.zmin if self.zmin else np.nanmin(self.z)
-                zmax = self.zmax if self.zmax else np.nanmax(self.z)
+                self.zmax = self.zmax if self.zmax else np.nanmax(self.z)
                 plot = ax.pcolormesh(x, y, z[n].T,
                                      vmin=self.zmin,
                                      vmax=self.zmax,
@@ -307,28 +306,25 @@ class PlotRTIData(PlotData):
                 self.figure.add_axes(cax)
                 plt.colorbar(plot, cax)
                 ax.set_ylim(self.ymin, self.ymax)
-                if self.xaxis=='time':
+                if self.xaxis == 'time':
                     ax.xaxis.set_major_formatter(FuncFormatter(func))
                     ax.xaxis.set_major_locator(LinearLocator(6))
 
-                ax.yaxis.set_major_locator(LinearLocator(4))
+                # ax.yaxis.set_major_locator(LinearLocator(4))
 
                 ax.set_ylabel(self.ylabel)
 
-                if self.xmin is None:
-                    print 'is none'
-                    xmin = self.min_time
-                else:
-
-                    xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
-                                                     datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
-
-                xmax = xmin+self.xrange*60*60
+                # if self.xmin is None:
+                #     xmin = self.min_time
+                # else:
+                #     xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
+                #                                      datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
 
                 ax.set_xlim(xmin, xmax)
                 ax.firsttime = False
             else:
                 ax.collections.remove(ax.collections[0])
+                ax.set_xlim(xmin, xmax)
                 plot = ax.pcolormesh(x, y, z[n].T,
                                      vmin=self.zmin,
                                      vmax=self.zmax,
@@ -369,8 +365,11 @@ class PlotCOHData(PlotRTIData):
 
 class PlotSNRData(PlotRTIData):
 
-    CODE = 'coh'
+    CODE = 'snr'
 
+class PlotDOPData(PlotRTIData):
+    CODE = 'dop'
+    colormap = 'jet'
 
 class PlotPHASEData(PlotCOHData):
 

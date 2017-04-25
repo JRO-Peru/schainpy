@@ -7,6 +7,7 @@ import sys
 import ast
 import datetime
 import traceback
+import math
 from multiprocessing import Process, Queue, cpu_count
 
 import schainpy
@@ -25,7 +26,7 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None):
+def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, receiver=None):
     skip = 0
     cursor = 0
     nFiles = None
@@ -43,10 +44,7 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None):
         dt = (dt1 + datetime.timedelta(day)).strftime('%Y/%m/%d')
         firstProcess = Process(target=child, args=(cursor, skip, q, dt))
         firstProcess.start()
-        print 'a'
         nFiles = q.get()
-
-        print nFiles
         firstProcess.terminate()
         skip = int(math.ceil(nFiles/nProcess))
         try:
@@ -62,7 +60,7 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None):
                 process.join()
         for process in processes:
             process.join()
-            #process.terminate()
+            # process.terminate()
         sleep(3)
 
     try:
@@ -241,12 +239,12 @@ class ParameterConf():
         self.format = format
 
     def makeXml(self, opElement):
-
-        parmElement = SubElement(opElement, self.ELEMENTNAME)
-        parmElement.set('id', str(self.id))
-        parmElement.set('name', self.name)
-        parmElement.set('value', self.value)
-        parmElement.set('format', self.format)
+        if self.name not in ('queue',):
+            parmElement = SubElement(opElement, self.ELEMENTNAME)
+            parmElement.set('id', str(self.id))
+            parmElement.set('name', self.name)
+            parmElement.set('value', self.value)
+            parmElement.set('format', self.format)
 
     def readXml(self, parmElement):
 
