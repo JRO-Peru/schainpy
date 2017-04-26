@@ -31,9 +31,8 @@ def fiber(cursor, skip, q, dt):
     procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
     # opObj11 = procUnitConfObj2.addParameter(name='pairsList', value='(0,1)', format='pairslist')
     #
-    procUnitConfObj3 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
-
-    opObj11 = procUnitConfObj3.addOperation(name='SpectralMoments', optype='other')
+    # procUnitConfObj3 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
+    # opObj11 = procUnitConfObj3.addOperation(name='SpectralMoments', optype='other')
 
     #
     #     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
@@ -62,9 +61,9 @@ def fiber(cursor, skip, q, dt):
     opObj12 = procUnitConfObj2.addOperation(name='PublishData', optype='other')
     opObj12.addParameter(name='zeromq', value=1, format='int')
 
-    opObj13 = procUnitConfObj3.addOperation(name='PublishData', optype='other')
-    opObj13.addParameter(name='zeromq', value=1, format='int')
-    opObj13.addParameter(name='server', value="juanca", format='str')
+    # opObj13 = procUnitConfObj3.addOperation(name='PublishData', optype='other')
+    # opObj13.addParameter(name='zeromq', value=1, format='int')
+    # opObj13.addParameter(name='server', value="juanca", format='str')
 
     # opObj12.addParameter(name='delay', value=1, format='int')
 
@@ -82,6 +81,6 @@ def fiber(cursor, skip, q, dt):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Set number of parallel processes')
-    parser.add_argument('--nProcess', default=16, type=int)
+    parser.add_argument('--nProcess', default=2, type=int)
     args = parser.parse_args()
     multiSchain(fiber, nProcess=args.nProcess, startDate='2015/09/26', endDate='2015/09/26')

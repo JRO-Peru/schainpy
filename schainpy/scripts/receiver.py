@@ -22,27 +22,26 @@ if __name__ == '__main__':
     op1 = proc1.addOperation(name='PlotRTIData', optype='other')
     op1.addParameter(name='wintitle', value='Julia 150Km', format='str')
     op1.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
-    op1.addParameter(name='colormap', value='jet', format='str')
 
     op2 = proc1.addOperation(name='PlotCOHData', optype='other')
     op2.addParameter(name='wintitle', value='Julia 150Km', format='str')
     op2.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
-
+    #
     op6 = proc1.addOperation(name='PlotPHASEData', optype='other')
     op6.addParameter(name='wintitle', value='Julia 150Km', format='str')
     op6.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
-
-    proc2 = controllerObj.addProcUnit(name='ReceiverData')
-    proc2.addParameter(name='server', value='juanca', format='str')
-    proc2.addParameter(name='plottypes', value='snr,dop', format='str')
-
-    op3 = proc2.addOperation(name='PlotSNRData', optype='other')
-    op3.addParameter(name='wintitle', value='Julia 150Km', format='str')
-    op3.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
-
-    op4 = proc2.addOperation(name='PlotDOPData', optype='other')
-    op4.addParameter(name='wintitle', value='Julia 150Km', format='str')
-    op4.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+    #
+    # proc2 = controllerObj.addProcUnit(name='ReceiverData')
+    # proc2.addParameter(name='server', value='juanca', format='str')
+    # proc2.addParameter(name='plottypes', value='snr,dop', format='str')
+    #
+    # op3 = proc2.addOperation(name='PlotSNRData', optype='other')
+    # op3.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    # op3.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+    #
+    # op4 = proc2.addOperation(name='PlotDOPData', optype='other')
+    # op4.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    # op4.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
 
 
 

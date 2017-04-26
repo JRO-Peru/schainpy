@@ -145,6 +145,7 @@ class PublishData(Operation):
             time.sleep(1)
 
 
+
     def publish_data(self):
         self.dataOut.finished = False
         if self.mqtt is 1:
@@ -306,6 +307,7 @@ class ReceiverData(ProcessingUnit, Process):
             if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
                 break
         monitor.close()
+        print("event monitor thread done!")
 
     def initThrottle(self, throttle_value):
 
@@ -324,7 +326,6 @@ class ReceiverData(ProcessingUnit, Process):
         t = self.dataOut.ltctime
         self.data['times'].append(t)
         self.data['dataOut'] = self.dataOut
-
         for plottype in self.plottypes:
 
             if plottype == 'spc':

@@ -1,8 +1,7 @@
-## ROADMAP
-## SCHAIN BRANCHES
-
+ROADMAP FOR SCHAIN BRANCHES
+===============================
+<Enter> 
 ### BRANCH - SCHAIN_MP
-
 * Revisar si funciona con varios publishers.
 * Revisar xRange y reinicialización de gráfico.
 * Grabar cada spectra independientemente.
