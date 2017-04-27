@@ -283,6 +283,7 @@ class ReceiverData(ProcessingUnit, Process):
         self.data['throttle'] = self.throttle_value
         self.data['ENDED'] = False
         self.isConfig = True
+        self.data_web = {}
 
     def event_monitor(self, monitor):
 
@@ -327,7 +328,6 @@ class ReceiverData(ProcessingUnit, Process):
         self.data['times'].append(t)
         self.data['dataOut'] = self.dataOut
         for plottype in self.plottypes:
-
             if plottype == 'spc':
                 z = self.dataOut.data_spc/self.dataOut.normFactor
                 self.data[plottype] = 10*numpy.log10(z)
@@ -342,7 +342,9 @@ class ReceiverData(ProcessingUnit, Process):
                 self.data[plottype][t] = self.dataOut.getCoherence()
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
-
+            if self.realtime:
+                self.data_web[plottype] = self.data[plottype][t]
+                self.data_web['time'] = t
     def run(self):
 
         print '[Starting] {} from {}'.format(self.name, self.address)
@@ -352,10 +354,12 @@ class ReceiverData(ProcessingUnit, Process):
         self.receiver.bind(self.address)
         monitor = self.receiver.get_monitor_socket()
         self.sender = self.context.socket(zmq.PUB)
-
+        if self.realtime:
+            self.sender_web = self.context.socket(zmq.PUB)
+            self.sender.bind("ipc:///tmp/zmq.web")
         self.sender.bind("ipc:///tmp/zmq.plots")
 
-        t = Thread(target=self.event_monitor, args=(monitor,))
+        t = Thread(target=self.event_monitor)
         t.start()
 
         while True:
@@ -376,6 +380,7 @@ class ReceiverData(ProcessingUnit, Process):
             else:
                 if self.realtime:
                     self.send(self.data)
+                    self.sender_web.send_json(json.dumps(self.data_web))
                 else:
                     self.sendData(self.send, self.data)
                 self.started = True
