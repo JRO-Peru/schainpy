@@ -2032,7 +2032,7 @@ class SMDetection(Operation):
             timeLag = 45*10**-3
         else:
             timeLag = 15*10**-3
-        lag = numpy.ceil(timeLag/timeInterval)
+        lag = int(numpy.ceil(timeLag/timeInterval))
 
         listMeteors1 = []
 
