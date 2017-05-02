@@ -518,9 +518,6 @@ class WindProfiler(Operation):
 
     n = None
 
-    def __init__(self):
-        Operation.__init__(self)
-
     def __calculateCosDir(self, elev, azim):
         zen = (90 - elev)*numpy.pi/180
         azim = azim*numpy.pi/180
@@ -1204,8 +1201,6 @@ class WindProfiler(Operation):
 
 class EWDriftsEstimation(Operation):
 
-    def __init__(self):
-        Operation.__init__(self)
 
     def __correctValues(self, heiRang, phi, velRadial, SNR):
         listPhi = phi.tolist()
@@ -2032,7 +2027,7 @@ class SMDetection(Operation):
             timeLag = 45*10**-3
         else:
             timeLag = 15*10**-3
-        lag = numpy.ceil(timeLag/timeInterval)
+        lag = int(numpy.ceil(timeLag/timeInterval))
 
         listMeteors1 = []
 

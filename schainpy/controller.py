@@ -438,7 +438,8 @@ class OperationConf():
 
     def createObject(self, plotter_queue=None):
 
-        if self.type == 'self':
+        
+        if self.type == 'self':            
             raise ValueError, "This operation type cannot be created"
 
         if self.type == 'plotter':
@@ -449,10 +450,10 @@ class OperationConf():
             opObj = Plotter(self.name, plotter_queue)
 
         if self.type == 'external' or self.type == 'other':
-            print self.name
+            
             className = eval(self.name)
             kwargs = self.getKwargs()
-            print kwargs
+            
             opObj = className(**kwargs)
 
         return opObj
@@ -671,14 +672,18 @@ class ProcUnitConf():
         kwargs = self.getKwargs()
         procUnitObj = className(**kwargs)
 
-        for opConfObj in self.opConfObjList:
-
-            if opConfObj.type == 'self':
+        for opConfObj in self.opConfObjList:                        
+            
+            if opConfObj.type=='self' and self.name=='run':
+                continue
+            elif opConfObj.type=='self':                
+                procUnitObj.addOperationKwargs(opConfObj.id, **opConfObj.getKwargs())
                 continue
 
             opObj = opConfObj.createObject(plotter_queue)
 
             self.opObjDict[opConfObj.id] = opObj
+            
             procUnitObj.addOperation(opObj, opConfObj.id)
 
         self.procUnitObj = procUnitObj

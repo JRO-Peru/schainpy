@@ -29,8 +29,9 @@ class PlotData(Operation, Process):
 
     def __init__(self, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self, plot=True, **kwargs)
         Process.__init__(self)
+        self.kwargs['code'] = self.CODE
         self.mp = False
         self.dataOut = None
         self.isConfig = False

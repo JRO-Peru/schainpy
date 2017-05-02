@@ -29,6 +29,10 @@ def roundFloats(obj):
     elif isinstance(obj, float):
         return round(obj, 2)
 
+def decimate(z):
+    # dx = int(len(self.x)/self.__MAXNUMX) + 1
+    dy = int(len(z[0])/MAXNUMY) + 1
+    return z[::, ::dy]
 
 class throttle(object):
     """Decorator that prevents a function from being called more than once every
@@ -258,15 +262,23 @@ class ReceiverData(ProcessingUnit, Process):
         Process.__init__(self)
         self.mp = False
         self.isConfig = False
+        self.isWebConfig = False
         self.plottypes =[]
         self.connections = 0
         server = kwargs.get('server', 'zmq.pipe')
+        plot_server = kwargs.get('plot_server', 'zmq.web')
         if 'tcp://' in server:
             address = server
         else:
             address = 'ipc:///tmp/%s' % server
 
+        if 'tcp://' in plot_server:
+            plot_address = plot_server
+        else:
+            plot_address = 'ipc:///tmp/%s' % plot_server
+
         self.address = address
+        self.plot_address = plot_address
         self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
         self.realtime = kwargs.get('realtime', False)
         self.throttle_value = kwargs.get('throttle', 10)
@@ -283,6 +295,7 @@ class ReceiverData(ProcessingUnit, Process):
         self.data['throttle'] = self.throttle_value
         self.data['ENDED'] = False
         self.isConfig = True
+        self.data_web = {}
 
     def event_monitor(self, monitor):
 
@@ -318,7 +331,7 @@ class ReceiverData(ProcessingUnit, Process):
         return sendDataThrottled
 
     def send(self, data):
-        print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
+        # print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
         self.sender.send_pyobj(data)
 
     def update(self):
@@ -327,7 +340,6 @@ class ReceiverData(ProcessingUnit, Process):
         self.data['times'].append(t)
         self.data['dataOut'] = self.dataOut
         for plottype in self.plottypes:
-
             if plottype == 'spc':
                 z = self.dataOut.data_spc/self.dataOut.normFactor
                 self.data[plottype] = 10*numpy.log10(z)
@@ -342,7 +354,9 @@ class ReceiverData(ProcessingUnit, Process):
                 self.data[plottype][t] = self.dataOut.getCoherence()
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
-
+            if self.realtime:
+                self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
+                self.data_web['time'] = t
     def run(self):
 
         print '[Starting] {} from {}'.format(self.name, self.address)
@@ -352,7 +366,9 @@ class ReceiverData(ProcessingUnit, Process):
         self.receiver.bind(self.address)
         monitor = self.receiver.get_monitor_socket()
         self.sender = self.context.socket(zmq.PUB)
-
+        if self.realtime:            
+            self.sender_web = self.context.socket(zmq.PUB)            
+            self.sender_web.bind(self.plot_address)
         self.sender.bind("ipc:///tmp/zmq.plots")
 
         t = Thread(target=self.event_monitor, args=(monitor,))
@@ -376,8 +392,29 @@ class ReceiverData(ProcessingUnit, Process):
             else:
                 if self.realtime:
                     self.send(self.data)
+                    self.sender_web.send_string(json.dumps(self.data_web))
                 else:
                     self.sendData(self.send, self.data)
                 self.started = True
 
         return
+    
+    def sendToWeb(self):
+        
+        if not self.isWebConfig:
+            context = zmq.Context()
+            sender_web_config = context.socket(zmq.PUB)
+            if 'tcp://' in self.plot_address:
+                print self.plot_address
+                dum, address, port = self.plot_address.split(':')
+                conf_address = '{}:{}:{}'.format(dum, address, int(port)+1)
+            else:
+                conf_address = self.plot_address + '.config'
+            sender_web_config.bind(conf_address)            
+            
+            for kwargs in self.operationKwargs.values():
+                if 'plot' in kwargs:
+                    sender_web_config.send_string(json.dumps(kwargs))
+                    print kwargs
+            self.isWebConfig = True
+                    
