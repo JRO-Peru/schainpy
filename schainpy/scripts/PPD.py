@@ -65,7 +65,7 @@ def fiber(cursor, skip, q, dt):
     # opObj13.addParameter(name='zeromq', value=1, format='int')
     # opObj13.addParameter(name='server', value="juanca", format='str')
 
-    # opObj12.addParameter(name='delay', value=1, format='int')
+    opObj12.addParameter(name='delay', value=1, format='int')
 
 
     # print "Escribiendo el archivo XML"
@@ -81,6 +81,6 @@ def fiber(cursor, skip, q, dt):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Set number of parallel processes')
-    parser.add_argument('--nProcess', default=2, type=int)
+    parser.add_argument('--nProcess', default=1, type=int)
     args = parser.parse_args()
     multiSchain(fiber, nProcess=args.nProcess, startDate='2015/09/26', endDate='2015/09/26')

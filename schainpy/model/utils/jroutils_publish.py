@@ -29,6 +29,10 @@ def roundFloats(obj):
     elif isinstance(obj, float):
         return round(obj, 2)
 
+def decimate(z):
+    # dx = int(len(self.x)/self.__MAXNUMX) + 1
+    dy = int(len(z[0])/MAXNUMY) + 1
+    return z[::, ::dy]
 
 class throttle(object):
     """Decorator that prevents a function from being called more than once every
@@ -319,7 +323,7 @@ class ReceiverData(ProcessingUnit, Process):
         return sendDataThrottled
 
     def send(self, data):
-        print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
+        # print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
         self.sender.send_pyobj(data)
 
     def update(self):
@@ -343,7 +347,7 @@ class ReceiverData(ProcessingUnit, Process):
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
             if self.realtime:
-                self.data_web[plottype] = self.data[plottype][t]
+                self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
                 self.data_web['time'] = t
     def run(self):
 
@@ -356,10 +360,11 @@ class ReceiverData(ProcessingUnit, Process):
         self.sender = self.context.socket(zmq.PUB)
         if self.realtime:
             self.sender_web = self.context.socket(zmq.PUB)
-            self.sender.bind("ipc:///tmp/zmq.web")
+            # self.sender_web.setsockopt(zmq.PUBLISH, 'realtime')
+            self.sender_web.bind("ipc:///tmp/zmq.web")
         self.sender.bind("ipc:///tmp/zmq.plots")
 
-        t = Thread(target=self.event_monitor)
+        t = Thread(target=self.event_monitor, args=(monitor,))
         t.start()
 
         while True:
@@ -380,7 +385,7 @@ class ReceiverData(ProcessingUnit, Process):
             else:
                 if self.realtime:
                     self.send(self.data)
-                    self.sender_web.send_json(json.dumps(self.data_web))
+                    self.sender_web.send_string(json.dumps(self.data_web))
                 else:
                     self.sendData(self.send, self.data)
                 self.started = True
