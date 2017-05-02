@@ -40,7 +40,7 @@ class PlotData(Operation, Process):
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
         self.colormap = kwargs.get('colormap', self.colormap)
-        self.showprofile = kwargs.get('showprofile', False)
+        self.showprofile = kwargs.get('showprofile', True)
         self.title = kwargs.get('wintitle', '')
         self.xaxis = kwargs.get('xaxis', 'time')
         self.zmin = kwargs.get('zmin', None)
@@ -182,7 +182,7 @@ class PlotSpectraData(PlotData):
                 self.axes.append(ax)
                 n += 1
 
-        self.figure.subplots_adjust(wspace=0.9, hspace=0.5)
+        self.figure.subplots_adjust(left=0.1, right=0.95, bottom=0.15, top=0.85, wspace=0.9, hspace=0.5)
         self.figure.show()
 
     def plot(self):
@@ -258,6 +258,8 @@ class PlotRTIData(PlotData):
         self.nrows = self.dataOut.nChannels
         self.width = 10
         self.height = 2.2*self.nrows
+        if self.nrows==1:
+            self.height += 1
         self.ylabel = 'Range [Km]'
         self.titles = ['Channel {}'.format(x) for x in self.dataOut.channelList]
 
@@ -345,6 +347,8 @@ class PlotCOHData(PlotRTIData):
         self.nrows = self.dataOut.nPairs
         self.width = 10
         self.height = 2.2*self.nrows
+        if self.nrows==1:
+            self.height += 1
         self.ylabel = 'Range [Km]'
         self.titles = ['Channels {}'.format(x) for x in self.dataOut.pairsList]
 
@@ -354,6 +358,7 @@ class PlotCOHData(PlotRTIData):
                                      facecolor='w')
         else:
             self.figure.clf()
+            self.axes = []
 
         for n in range(self.nrows):
             ax = self.figure.add_subplot(self.nrows, self.ncols, n+1)
@@ -363,8 +368,54 @@ class PlotCOHData(PlotRTIData):
         self.figure.subplots_adjust(hspace=0.5)
         self.figure.show()
 
-class PlotSNRData(PlotRTIData):
+class PlotNoiseData(PlotData):
+    CODE = 'noise'
 
+    def setup(self):
+
+        self.ncols = 1
+        self.nrows = 1
+        self.width = 10
+        self.height = 3.2
+        self.ylabel = 'Intensity [dB]'
+        self.titles = ['Noise']
+
+        if self.figure is None:
+            self.figure = plt.figure(figsize=(self.width, self.height),
+                                     edgecolor='k',
+                                     facecolor='w')
+        else:
+            self.figure.clf()
+            self.axes = []
+
+        self.ax = self.figure.add_subplot(self.nrows, self.ncols, 1)
+        self.ax.firsttime = True
+
+        self.figure.show()
+
+    def plot(self):
+
+        x = self.times
+        xmin = self.min_time
+        xmax = xmin+self.xrange*60*60
+        if self.ax.firsttime:
+            for ch in self.dataOut.channelList:
+                y = [self.data[self.CODE][t][ch] for t in self.times]
+                self.ax.plot(x, y, lw=1, label='Ch{}'.format(ch))
+            self.ax.firsttime = False
+            self.ax.xaxis.set_major_formatter(FuncFormatter(func))
+            self.ax.xaxis.set_major_locator(LinearLocator(6))
+            self.ax.set_ylabel(self.ylabel)
+            plt.legend()
+        else:
+            for ch in self.dataOut.channelList:
+                y = [self.data[self.CODE][t][ch] for t in self.times]
+                self.ax.lines[ch].set_data(x, y)
+
+        self.ax.set_xlim(xmin, xmax)
+        self.ax.set_ylim(min(y)-5, max(y)+5)
+
+class PlotSNRData(PlotRTIData):
     CODE = 'snr'
 
 class PlotDOPData(PlotRTIData):
@@ -372,6 +423,5 @@ class PlotDOPData(PlotRTIData):
     colormap = 'jet'
 
 class PlotPHASEData(PlotCOHData):
-
     CODE = 'phase'
     colormap = 'seismic'
