@@ -262,15 +262,23 @@ class ReceiverData(ProcessingUnit, Process):
         Process.__init__(self)
         self.mp = False
         self.isConfig = False
+        self.isWebConfig = False
         self.plottypes =[]
         self.connections = 0
         server = kwargs.get('server', 'zmq.pipe')
+        plot_server = kwargs.get('plot_server', 'zmq.web')
         if 'tcp://' in server:
             address = server
         else:
             address = 'ipc:///tmp/%s' % server
 
+        if 'tcp://' in plot_server:
+            plot_address = plot_server
+        else:
+            plot_address = 'ipc:///tmp/%s' % plot_server
+
         self.address = address
+        self.plot_address = plot_address
         self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
         self.realtime = kwargs.get('realtime', False)
         self.throttle_value = kwargs.get('throttle', 10)
@@ -358,10 +366,9 @@ class ReceiverData(ProcessingUnit, Process):
         self.receiver.bind(self.address)
         monitor = self.receiver.get_monitor_socket()
         self.sender = self.context.socket(zmq.PUB)
-        if self.realtime:
-            self.sender_web = self.context.socket(zmq.PUB)
-            # self.sender_web.setsockopt(zmq.PUBLISH, 'realtime')
-            self.sender_web.bind("ipc:///tmp/zmq.web")
+        if self.realtime:            
+            self.sender_web = self.context.socket(zmq.PUB)            
+            self.sender_web.bind(self.plot_address)
         self.sender.bind("ipc:///tmp/zmq.plots")
 
         t = Thread(target=self.event_monitor, args=(monitor,))
@@ -391,3 +398,23 @@ class ReceiverData(ProcessingUnit, Process):
                 self.started = True
 
         return
+    
+    def sendToWeb(self):
+        
+        if not self.isWebConfig:
+            context = zmq.Context()
+            sender_web_config = context.socket(zmq.PUB)
+            if 'tcp://' in self.plot_address:
+                print self.plot_address
+                dum, address, port = self.plot_address.split(':')
+                conf_address = '{}:{}:{}'.format(dum, address, int(port)+1)
+            else:
+                conf_address = self.plot_address + '.config'
+            sender_web_config.bind(conf_address)            
+            
+            for kwargs in self.operationKwargs.values():
+                if 'plot' in kwargs:
+                    sender_web_config.send_string(json.dumps(kwargs))
+                    print kwargs
+            self.isWebConfig = True
+                    
