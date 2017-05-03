@@ -51,7 +51,7 @@ class PlotData(Operation, Process):
         self.xrange = kwargs.get('xrange', 24)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
-        self.throttle_value = 1
+        self.throttle_value = 5
     def fill_gaps(self, x_buffer, y_buffer, z_buffer):
 
         if x_buffer.shape[0] < 2:

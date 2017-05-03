@@ -354,6 +354,8 @@ class ReceiverData(ProcessingUnit, Process):
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
             if self.realtime:
+                self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
+                self.data_web['timestamp'] = t
                 if plottype == 'spc':
                     self.data_web[plottype] = roundFloats(decimate(self.data[plottype]).tolist())
                 else:
@@ -372,7 +374,8 @@ class ReceiverData(ProcessingUnit, Process):
         self.sender = self.context.socket(zmq.PUB)
         if self.realtime:
             self.sender_web = self.context.socket(zmq.PUB)
-            self.sender_web.bind(self.plot_address)
+            self.sender_web.connect(self.plot_address)
+            time.sleep(1)
         self.sender.bind("ipc:///tmp/zmq.plots")
 
         t = Thread(target=self.event_monitor, args=(monitor,))
