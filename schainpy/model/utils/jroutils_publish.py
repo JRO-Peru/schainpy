@@ -349,6 +349,8 @@ class ReceiverData(ProcessingUnit, Process):
             if self.realtime:
                 self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
                 self.data_web['time'] = t
+                self.data_web['interval'] = self.dataOut.getTimeInterval()
+                self.data_web['type'] = plottype
     def run(self):
 
         print '[Starting] {} from {}'.format(self.name, self.address)
