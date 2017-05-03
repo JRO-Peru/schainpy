@@ -335,7 +335,7 @@ class ReceiverData(ProcessingUnit, Process):
         self.sender.send_pyobj(data)
 
     def update(self):
-        t = self.dataOut.ltctime
+        t = self.dataOut.utctime
         self.data['times'].append(t)
         self.data['dataOut'] = self.dataOut
         for plottype in self.plottypes:
