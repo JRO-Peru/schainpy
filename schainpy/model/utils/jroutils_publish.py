@@ -354,16 +354,10 @@ class ReceiverData(ProcessingUnit, Process):
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
             if self.realtime:
-<<<<<<< HEAD
-                self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
-                self.data_web['timestamp'] = t
-=======
                 if plottype == 'spc':
                     self.data_web[plottype] = roundFloats(decimate(self.data[plottype]).tolist())
                 else:
                     self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
-                self.data_web['time'] = t
->>>>>>> f65929d2cf32d4dddb2d5fa2a72f3970d4d51812
                 self.data_web['interval'] = self.dataOut.getTimeInterval()
                 self.data_web['type'] = plottype
 
@@ -420,11 +414,7 @@ class ReceiverData(ProcessingUnit, Process):
             else:
                 conf_address = self.plot_address + '.config'
             sender_web_config.bind(conf_address)
-<<<<<<< HEAD
-
-=======
             time.sleep(1)
->>>>>>> f65929d2cf32d4dddb2d5fa2a72f3970d4d51812
             for kwargs in self.operationKwargs.values():
                 if 'plot' in kwargs:
                     print '[Sending] Config data to web for {}'.format(kwargs['code'].upper())
