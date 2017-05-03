@@ -31,7 +31,9 @@ def roundFloats(obj):
 
 def decimate(z):
     # dx = int(len(self.x)/self.__MAXNUMX) + 1
+
     dy = int(len(z[0])/MAXNUMY) + 1
+
     return z[::, ::dy]
 
 class throttle(object):
@@ -147,8 +149,6 @@ class PublishData(Operation):
 
             self.zmq_socket.connect(address)
             time.sleep(1)
-
-
 
     def publish_data(self):
         self.dataOut.finished = False
@@ -354,10 +354,19 @@ class ReceiverData(ProcessingUnit, Process):
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
             if self.realtime:
+<<<<<<< HEAD
                 self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
                 self.data_web['timestamp'] = t
+=======
+                if plottype == 'spc':
+                    self.data_web[plottype] = roundFloats(decimate(self.data[plottype]).tolist())
+                else:
+                    self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
+                self.data_web['time'] = t
+>>>>>>> f65929d2cf32d4dddb2d5fa2a72f3970d4d51812
                 self.data_web['interval'] = self.dataOut.getTimeInterval()
                 self.data_web['type'] = plottype
+
     def run(self):
 
         print '[Starting] {} from {}'.format(self.name, self.address)
@@ -406,15 +415,18 @@ class ReceiverData(ProcessingUnit, Process):
             context = zmq.Context()
             sender_web_config = context.socket(zmq.PUB)
             if 'tcp://' in self.plot_address:
-                print self.plot_address
                 dum, address, port = self.plot_address.split(':')
                 conf_address = '{}:{}:{}'.format(dum, address, int(port)+1)
             else:
                 conf_address = self.plot_address + '.config'
             sender_web_config.bind(conf_address)
+<<<<<<< HEAD
 
+=======
+            time.sleep(1)
+>>>>>>> f65929d2cf32d4dddb2d5fa2a72f3970d4d51812
             for kwargs in self.operationKwargs.values():
                 if 'plot' in kwargs:
+                    print '[Sending] Config data to web for {}'.format(kwargs['code'].upper())
                     sender_web_config.send_string(json.dumps(kwargs))
-                    print kwargs
             self.isWebConfig = True

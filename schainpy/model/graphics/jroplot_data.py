@@ -86,6 +86,9 @@ class PlotData(Operation, Process):
 
         print 'plotting...{}'.format(self.CODE)
 
+        if self.show:
+            self.figure.show()
+
         self.plot()
         self.figure.suptitle('{} {} - Date:{}'.format(self.title, self.CODE.upper(),
                                                       datetime.datetime.utcfromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')))
@@ -184,7 +187,6 @@ class PlotSpectraData(PlotData):
                 n += 1
 
         self.figure.subplots_adjust(left=0.1, right=0.95, bottom=0.15, top=0.85, wspace=0.9, hspace=0.5)
-        self.figure.show()
 
     def plot(self):
 
@@ -277,7 +279,6 @@ class PlotRTIData(PlotData):
             ax.firsttime = True
             self.axes.append(ax)
         self.figure.subplots_adjust(hspace=0.5)
-        self.figure.show()
 
     def plot(self):
 
@@ -367,7 +368,6 @@ class PlotCOHData(PlotRTIData):
             self.axes.append(ax)
 
         self.figure.subplots_adjust(hspace=0.5)
-        self.figure.show()
 
 class PlotNoiseData(PlotData):
     CODE = 'noise'
@@ -391,8 +391,6 @@ class PlotNoiseData(PlotData):
 
         self.ax = self.figure.add_subplot(self.nrows, self.ncols, 1)
         self.ax.firsttime = True
-
-        self.figure.show()
 
     def plot(self):
 
