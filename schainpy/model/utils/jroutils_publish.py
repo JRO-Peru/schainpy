@@ -31,7 +31,9 @@ def roundFloats(obj):
 
 def decimate(z):
     # dx = int(len(self.x)/self.__MAXNUMX) + 1
+
     dy = int(len(z[0])/MAXNUMY) + 1
+
     return z[::, ::dy]
 
 class throttle(object):
@@ -147,8 +149,6 @@ class PublishData(Operation):
 
             self.zmq_socket.connect(address)
             time.sleep(1)
-
-
 
     def publish_data(self):
         self.dataOut.finished = False
@@ -355,8 +355,12 @@ class ReceiverData(ProcessingUnit, Process):
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
             if self.realtime:
-                self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
+                if plottype == 'spc':
+                    self.data_web[plottype] = roundFloats(decimate(self.data[plottype]).tolist())
+                else:
+                    self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
                 self.data_web['time'] = t
+                
     def run(self):
 
         print '[Starting] {} from {}'.format(self.name, self.address)
@@ -366,8 +370,8 @@ class ReceiverData(ProcessingUnit, Process):
         self.receiver.bind(self.address)
         monitor = self.receiver.get_monitor_socket()
         self.sender = self.context.socket(zmq.PUB)
-        if self.realtime:            
-            self.sender_web = self.context.socket(zmq.PUB)            
+        if self.realtime:
+            self.sender_web = self.context.socket(zmq.PUB)
             self.sender_web.bind(self.plot_address)
         self.sender.bind("ipc:///tmp/zmq.plots")
 
@@ -398,23 +402,21 @@ class ReceiverData(ProcessingUnit, Process):
                 self.started = True
 
         return
-    
+
     def sendToWeb(self):
-        
+
         if not self.isWebConfig:
             context = zmq.Context()
             sender_web_config = context.socket(zmq.PUB)
             if 'tcp://' in self.plot_address:
-                print self.plot_address
                 dum, address, port = self.plot_address.split(':')
                 conf_address = '{}:{}:{}'.format(dum, address, int(port)+1)
             else:
                 conf_address = self.plot_address + '.config'
-            sender_web_config.bind(conf_address)            
-            
+            sender_web_config.bind(conf_address)
+            time.sleep(1)
             for kwargs in self.operationKwargs.values():
                 if 'plot' in kwargs:
+                    print '[Sending] Config data to web for {}'.format(kwargs['code'].upper())
                     sender_web_config.send_string(json.dumps(kwargs))
-                    print kwargs
             self.isWebConfig = True
-                    
