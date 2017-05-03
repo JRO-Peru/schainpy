@@ -335,7 +335,6 @@ class ReceiverData(ProcessingUnit, Process):
         self.sender.send_pyobj(data)
 
     def update(self):
-
         t = self.dataOut.ltctime
         self.data['times'].append(t)
         self.data['dataOut'] = self.dataOut
@@ -356,7 +355,7 @@ class ReceiverData(ProcessingUnit, Process):
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
             if self.realtime:
                 self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
-                self.data_web['time'] = t
+                self.data_web['timestamp'] = t
                 self.data_web['interval'] = self.dataOut.getTimeInterval()
                 self.data_web['type'] = plottype
     def run(self):
@@ -368,8 +367,8 @@ class ReceiverData(ProcessingUnit, Process):
         self.receiver.bind(self.address)
         monitor = self.receiver.get_monitor_socket()
         self.sender = self.context.socket(zmq.PUB)
-        if self.realtime:            
-            self.sender_web = self.context.socket(zmq.PUB)            
+        if self.realtime:
+            self.sender_web = self.context.socket(zmq.PUB)
             self.sender_web.bind(self.plot_address)
         self.sender.bind("ipc:///tmp/zmq.plots")
 
@@ -400,9 +399,9 @@ class ReceiverData(ProcessingUnit, Process):
                 self.started = True
 
         return
-    
+
     def sendToWeb(self):
-        
+
         if not self.isWebConfig:
             context = zmq.Context()
             sender_web_config = context.socket(zmq.PUB)
@@ -412,11 +411,10 @@ class ReceiverData(ProcessingUnit, Process):
                 conf_address = '{}:{}:{}'.format(dum, address, int(port)+1)
             else:
                 conf_address = self.plot_address + '.config'
-            sender_web_config.bind(conf_address)            
-            
+            sender_web_config.bind(conf_address)
+
             for kwargs in self.operationKwargs.values():
                 if 'plot' in kwargs:
                     sender_web_config.send_string(json.dumps(kwargs))
                     print kwargs
             self.isWebConfig = True
-                    
