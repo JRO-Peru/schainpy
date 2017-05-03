@@ -61,6 +61,7 @@ def fiber(cursor, skip, q, dt):
     opObj12 = procUnitConfObj2.addOperation(name='PublishData', optype='other')
     opObj12.addParameter(name='zeromq', value=1, format='int')
 
+
     # opObj13 = procUnitConfObj3.addOperation(name='PublishData', optype='other')
     # opObj13.addParameter(name='zeromq', value=1, format='int')
     # opObj13.addParameter(name='server', value="juanca", format='str')
