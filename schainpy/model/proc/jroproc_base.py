@@ -35,12 +35,20 @@ class ProcessingUnit(object):
         self.dataOut = None
 
         self.operations2RunDict = {}
+        self.operationKwargs = {}
 
         self.isConfig = False
 
         self.args = args
         self.kwargs = kwargs
 
+    def addOperationKwargs(self, objId, **kwargs):
+        '''
+        '''
+        
+        self.operationKwargs[objId] = kwargs
+        
+    
     def addOperation(self, opObj, objId):
 
         """
@@ -80,7 +88,7 @@ class ProcessingUnit(object):
 
         raise NotImplementedError
 
-    def callMethod(self, name, **kwargs):
+    def callMethod(self, name, opId):
 
         """
         Ejecuta el metodo con el nombre "name" y con argumentos **kwargs de la propia clase.
@@ -100,7 +108,7 @@ class ProcessingUnit(object):
                 return False
         else:
             #Si no es un metodo RUN la entrada es la misma dataOut (interna)
-            if self.dataOut.isEmpty():
+            if self.dataOut is not None and self.dataOut.isEmpty():
                 return False
 
         #Getting the pointer to method
@@ -109,11 +117,17 @@ class ProcessingUnit(object):
         #Executing the self method
 
         if hasattr(self, 'mp'):
-            if self.mp is False:
-                self.mp = True
-                self.start()
+            if name=='run':                        
+                if self.mp is False:                 
+                    self.mp = True
+                    self.start()
+            else:                
+                methodToCall(**self.operationKwargs[opId])            
         else:
-            methodToCall(**kwargs)
+            if name=='run':                        
+                methodToCall(**self.kwargs)
+            else:                
+                methodToCall(**self.operationKwargs[opId])
 
         if self.dataOut is None:
             return False
@@ -146,10 +160,12 @@ class ProcessingUnit(object):
 
         if hasattr(externalProcObj, 'mp'):
             if externalProcObj.mp is False:
+                self.operationKwargs[objId] = externalProcObj.kwargs
                 externalProcObj.mp = True
                 externalProcObj.start()
         else:
             externalProcObj.run(self.dataOut, **externalProcObj.kwargs)
+            self.operationKwargs[objId] = externalProcObj.kwargs
 
         return True
 
@@ -198,7 +214,7 @@ class ProcessingUnit(object):
             if not opName:
                 raise ValueError, "opName parameter should be defined"
 
-            sts = self.callMethod(opName, **self.kwargs)
+            sts = self.callMethod(opName, opId)
 
         elif opType == 'other' or opType == 'external' or opType == 'plotter':
 
