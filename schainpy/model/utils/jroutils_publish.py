@@ -281,7 +281,7 @@ class ReceiverData(ProcessingUnit, Process):
         self.plot_address = plot_address
         self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
         self.realtime = kwargs.get('realtime', False)
-        self.throttle_value = kwargs.get('throttle', 10)
+        self.throttle_value = kwargs.get('throttle', 5)
         self.sendData = self.initThrottle(self.throttle_value)
         self.setup()
 
@@ -343,21 +343,33 @@ class ReceiverData(ProcessingUnit, Process):
                 z = self.dataOut.data_spc/self.dataOut.normFactor
                 self.data[plottype] = 10*numpy.log10(z)
                 self.data['noise'][t] = 10*numpy.log10(self.dataOut.getNoise()/self.dataOut.normFactor)
+            if plottype == 'cspc':
+                jcoherence = self.dataOut.data_cspc/numpy.sqrt(self.dataOut.data_spc*self.dataOut.data_spc)
+                self.data['cspc_coh'] = numpy.abs(jcoherence)
+                self.data['cspc_phase'] = numpy.arctan2(jcoherence.imag, jcoherence.real)*180/numpy.pi
             if plottype == 'rti':
                 self.data[plottype][t] = self.dataOut.getPower()
             if plottype == 'snr':
                 self.data[plottype][t] = 10*numpy.log10(self.dataOut.data_SNR)
             if plottype == 'dop':
                 self.data[plottype][t] = 10*numpy.log10(self.dataOut.data_DOP)
+            if plottype == 'mean':
+                self.data[plottype][t] = self.dataOut.data_MEAN
+            if plottype == 'std':
+                self.data[plottype][t] = self.dataOut.data_STD
             if plottype == 'coh':
                 self.data[plottype][t] = self.dataOut.getCoherence()
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
             if self.realtime:
-                self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
-                self.data_web['timestamp'] = t
+                self.data_web['timestamp'] = t                
                 if plottype == 'spc':
                     self.data_web[plottype] = roundFloats(decimate(self.data[plottype]).tolist())
+                elif plottype == 'cspc':
+                    self.data_web['cspc_coh'] = roundFloats(decimate(self.data['cspc_coh']).tolist())
+                    self.data_web['cspc_phase'] = roundFloats(decimate(self.data['cspc_phase']).tolist())
+                elif plottype == 'noise':
+                    self.data_web['noise'] = roundFloats(self.data['noise'][t].tolist())
                 else:
                     self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
                 self.data_web['interval'] = self.dataOut.getTimeInterval()

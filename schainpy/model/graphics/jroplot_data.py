@@ -14,14 +14,14 @@ from schainpy.model.proc.jroproc_base import Operation
 
 #plt.ion()
 
-func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime('%H:%M'))
+func = lambda x, pos: ('%s') %(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
 
 d1970 = datetime.datetime(1970,1,1)
 
 class PlotData(Operation, Process):
 
     CODE = 'Figure'
-    colormap = 'jet'
+    colormap = 'jro'
     CONFLATE = True
     __MAXNUMX = 80
     __MAXNUMY = 80
@@ -41,9 +41,11 @@ class PlotData(Operation, Process):
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
         self.colormap = kwargs.get('colormap', self.colormap)
+        self.colormap_coh = kwargs.get('colormap_coh', 'jet')
+        self.colormap_phase = kwargs.get('colormap_phase', 'RdBu_r')
         self.showprofile = kwargs.get('showprofile', True)
         self.title = kwargs.get('wintitle', '')
-        self.xaxis = kwargs.get('xaxis', 'time')
+        self.xaxis = kwargs.get('xaxis', 'frequency')
         self.zmin = kwargs.get('zmin', None)
         self.zmax = kwargs.get('zmax', None)
         self.xmin = kwargs.get('xmin', None)
@@ -52,6 +54,7 @@ class PlotData(Operation, Process):
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
         self.throttle_value = 5
+
     def fill_gaps(self, x_buffer, y_buffer, z_buffer):
 
         if x_buffer.shape[0] < 2:
@@ -90,12 +93,13 @@ class PlotData(Operation, Process):
             self.figure.show()
 
         self.plot()
-        self.figure.suptitle('{} {} - Date:{}'.format(self.title, self.CODE.upper(),
-                                                      datetime.datetime.utcfromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')))
+        plt.tight_layout()
+        self.figure.canvas.manager.set_window_title('{} {} - Date:{}'.format(self.title, self.CODE.upper(),
+                                                                             datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')))
 
         if self.save:
             figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
-                                                                 datetime.datetime.utcfromtimestamp(self.times[0]).strftime('%y%m%d_%H%M%S')))
+                                                                 datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
             print 'Saving figure: {}'.format(figname)
             self.figure.savefig(figname)
 
@@ -117,7 +121,6 @@ class PlotData(Operation, Process):
 
         while True:
             try:
-            #if True:
                 self.data = receiver.recv_pyobj(flags=zmq.NOBLOCK)
                 self.dataOut = self.data['dataOut']
                 self.times = self.data['times']
@@ -132,17 +135,15 @@ class PlotData(Operation, Process):
                 self.__plot()
 
                 if self.data['ENDED'] is True:
-                    # self.__plot()
                     self.isConfig = False
 
             except zmq.Again as e:
                 print 'Waiting for data...'
                 plt.pause(self.throttle_value)
-                # time.sleep(3)
 
     def close(self):
         if self.dataOut:
-            self._plot()
+            self.__plot()
 
 
 class PlotSpectraData(PlotData):
@@ -150,6 +151,7 @@ class PlotSpectraData(PlotData):
     CODE = 'spc'
     colormap = 'jro'
     CONFLATE = False
+
     def setup(self):
 
         ncolspan = 1
@@ -185,8 +187,6 @@ class PlotSpectraData(PlotData):
                 ax.firsttime = True
                 self.axes.append(ax)
                 n += 1
-
-        self.figure.subplots_adjust(left=0.1, right=0.95, bottom=0.15, top=0.85, wspace=0.9, hspace=0.5)
 
     def plot(self):
 
@@ -225,9 +225,6 @@ class PlotSpectraData(PlotData):
                 ax.set_xlim(self.xmin, self.xmax)
                 ax.set_ylim(self.ymin, self.ymax)
 
-                ax.xaxis.set_major_locator(LinearLocator(5))
-                #ax.yaxis.set_major_locator(LinearLocator(4))
-
                 ax.set_ylabel(self.ylabel)
                 ax.set_xlabel(xlabel)
 
@@ -250,6 +247,185 @@ class PlotSpectraData(PlotData):
 
             ax.set_title('{} - Noise: {:.2f} dB'.format(self.titles[n], self.data['noise'][self.max_time][n]),
                          size=8)
+            self.saveTime = self.max_time
+
+
+class PlotCrossSpectraData(PlotData):
+
+    CODE = 'cspc'
+    zmin_coh = None
+    zmax_coh = None
+    zmin_phase = None
+    zmax_phase = None
+    CONFLATE = False
+
+    def setup(self):
+
+        ncolspan = 1
+        colspan = 1
+        self.ncols = 2
+        self.nrows = self.dataOut.nPairs
+        self.width = 3.6*self.ncols
+        self.height = 3.2*self.nrows
+
+        self.ylabel = 'Range [Km]'
+        self.titles = ['Channel {}'.format(x) for x in self.dataOut.channelList]
+
+        if self.figure is None:
+            self.figure = plt.figure(figsize=(self.width, self.height),
+                                     edgecolor='k',
+                                     facecolor='w')
+        else:
+            self.figure.clf()
+
+        for y in range(self.nrows):
+            for x in range(self.ncols):
+                ax = plt.subplot2grid((self.nrows, self.ncols), (y, x), 1, 1)
+                ax.firsttime = True
+                self.axes.append(ax)
+
+    def plot(self):
+
+        if self.xaxis == "frequency":
+            x = self.dataOut.getFreqRange(1)/1000.
+            xlabel = "Frequency (kHz)"
+        elif self.xaxis == "time":
+            x = self.dataOut.getAcfRange(1)
+            xlabel = "Time (ms)"
+        else:
+            x = self.dataOut.getVelRange(1)
+            xlabel = "Velocity (m/s)"
+
+        y = self.dataOut.getHeiRange()
+        z_coh = self.data['cspc_coh']
+        z_phase = self.data['cspc_phase']
+
+        for n in range(self.nrows):
+            ax = self.axes[2*n]
+            ax1 = self.axes[2*n+1]
+            if ax.firsttime:
+                self.xmax = self.xmax if self.xmax else np.nanmax(x)
+                self.xmin = self.xmin if self.xmin else -self.xmax
+                self.ymin = self.ymin if self.ymin else np.nanmin(y)
+                self.ymax = self.ymax if self.ymax else np.nanmax(y)
+                self.zmin_coh = self.zmin_coh if self.zmin_coh else 0.0
+                self.zmax_coh = self.zmax_coh if self.zmax_coh else 1.0
+                self.zmin_phase = self.zmin_phase if self.zmin_phase else -180
+                self.zmax_phase = self.zmax_phase if self.zmax_phase else 180
+
+                ax.plot = ax.pcolormesh(x, y, z_coh[n].T,
+                                        vmin=self.zmin_coh,
+                                        vmax=self.zmax_coh,
+                                        cmap=plt.get_cmap(self.colormap_coh)
+                                       )
+                divider = make_axes_locatable(ax)
+                cax = divider.new_horizontal(size='3%', pad=0.05)
+                self.figure.add_axes(cax)
+                plt.colorbar(ax.plot, cax)
+
+                ax.set_xlim(self.xmin, self.xmax)
+                ax.set_ylim(self.ymin, self.ymax)
+                
+                ax.set_ylabel(self.ylabel)
+                ax.set_xlabel(xlabel)
+                ax.firsttime = False
+
+                ax1.plot = ax1.pcolormesh(x, y, z_phase[n].T,
+                                        vmin=self.zmin_phase,
+                                        vmax=self.zmax_phase,
+                                        cmap=plt.get_cmap(self.colormap_phase)
+                                       )
+                divider = make_axes_locatable(ax1)
+                cax = divider.new_horizontal(size='3%', pad=0.05)
+                self.figure.add_axes(cax)
+                plt.colorbar(ax1.plot, cax)
+
+                ax1.set_xlim(self.xmin, self.xmax)
+                ax1.set_ylim(self.ymin, self.ymax)
+
+                ax1.set_ylabel(self.ylabel)
+                ax1.set_xlabel(xlabel)
+                ax1.firsttime = False
+            else:
+                ax.plot.set_array(z_coh[n].T.ravel())
+                ax1.plot.set_array(z_phase[n].T.ravel())
+
+            ax.set_title('Coherence Ch{} * Ch{}'.format(self.dataOut.pairsList[n][0], self.dataOut.pairsList[n][1]), size=8)
+            ax1.set_title('Phase Ch{} * Ch{}'.format(self.dataOut.pairsList[n][0], self.dataOut.pairsList[n][1]), size=8)
+            self.saveTime = self.max_time
+
+
+class PlotSpectraMeanData(PlotSpectraData):
+
+    CODE = 'spc_mean'
+    colormap = 'jet'
+
+    def plot(self):
+
+        if self.xaxis == "frequency":
+            x = self.dataOut.getFreqRange(1)/1000.
+            xlabel = "Frequency (kHz)"
+        elif self.xaxis == "time":
+            x = self.dataOut.getAcfRange(1)
+            xlabel = "Time (ms)"
+        else:
+            x = self.dataOut.getVelRange(1)
+            xlabel = "Velocity (m/s)"
+
+        y = self.dataOut.getHeiRange()
+        z = self.data['spc']
+        mean = self.data['mean'][self.max_time]
+
+        for n, ax in enumerate(self.axes):
+
+            if ax.firsttime:
+                self.xmax = self.xmax if self.xmax else np.nanmax(x)
+                self.xmin = self.xmin if self.xmin else -self.xmax
+                self.ymin = self.ymin if self.ymin else np.nanmin(y)
+                self.ymax = self.ymax if self.ymax else np.nanmax(y)
+                self.zmin = self.zmin if self.zmin else np.nanmin(z)
+                self.zmax = self.zmax if self.zmax else np.nanmax(z)
+                ax.plt = ax.pcolormesh(x, y, z[n].T,
+                                       vmin=self.zmin,
+                                       vmax=self.zmax,
+                                       cmap=plt.get_cmap(self.colormap)
+                                       )
+                ax.plt_dop = ax.plot(mean[n], y,
+                                     color='k')[0]
+
+                divider = make_axes_locatable(ax)
+                cax = divider.new_horizontal(size='3%', pad=0.05)
+                self.figure.add_axes(cax)
+                plt.colorbar(ax.plt, cax)
+
+                ax.set_xlim(self.xmin, self.xmax)
+                ax.set_ylim(self.ymin, self.ymax)
+
+                ax.set_ylabel(self.ylabel)
+                ax.set_xlabel(xlabel)
+
+                ax.firsttime = False
+
+                if self.showprofile:
+                    ax.plt_profile= ax.ax_profile.plot(self.data['rti'][self.max_time][n], y)[0]
+                    ax.ax_profile.set_xlim(self.zmin, self.zmax)
+                    ax.ax_profile.set_ylim(self.ymin, self.ymax)
+                    ax.ax_profile.set_xlabel('dB')
+                    ax.ax_profile.grid(b=True, axis='x')
+                    ax.plt_noise = ax.ax_profile.plot(numpy.repeat(self.data['noise'][self.max_time][n], len(y)), y,
+                                                       color="k", linestyle="dashed", lw=2)[0]
+                    [tick.set_visible(False) for tick in ax.ax_profile.get_yticklabels()]
+            else:
+                ax.plt.set_array(z[n].T.ravel())
+                ax.plt_dop.set_data(mean[n], y)
+                if self.showprofile:
+                    ax.plt_profile.set_data(self.data['rti'][self.max_time][n], y)
+                    ax.plt_noise.set_data(numpy.repeat(self.data['noise'][self.max_time][n], len(y)), y)
+
+            ax.set_title('{} - Noise: {:.2f} dB'.format(self.titles[n], self.data['noise'][self.max_time][n]),
+                         size=8)
+            self.saveTime = self.max_time
+
 
 class PlotRTIData(PlotData):
 
@@ -260,7 +436,7 @@ class PlotRTIData(PlotData):
         self.ncols = 1
         self.nrows = self.dataOut.nChannels
         self.width = 10
-        self.height = 2.2*self.nrows
+        self.height = 2.2*self.nrows if self.nrows<6 else 12
         if self.nrows==1:
             self.height += 1
         self.ylabel = 'Range [Km]'
@@ -278,7 +454,6 @@ class PlotRTIData(PlotData):
             ax = self.figure.add_subplot(self.nrows, self.ncols, n+1)
             ax.firsttime = True
             self.axes.append(ax)
-        self.figure.subplots_adjust(hspace=0.5)
 
     def plot(self):
 
@@ -310,11 +485,9 @@ class PlotRTIData(PlotData):
                 self.figure.add_axes(cax)
                 plt.colorbar(plot, cax)
                 ax.set_ylim(self.ymin, self.ymax)
-                if self.xaxis == 'time':
-                    ax.xaxis.set_major_formatter(FuncFormatter(func))
-                    ax.xaxis.set_major_locator(LinearLocator(6))
 
-                # ax.yaxis.set_major_locator(LinearLocator(4))
+                ax.xaxis.set_major_formatter(FuncFormatter(func))
+                ax.xaxis.set_major_locator(LinearLocator(6))
 
                 ax.set_ylabel(self.ylabel)
 
@@ -334,9 +507,11 @@ class PlotRTIData(PlotData):
                                      vmax=self.zmax,
                                      cmap=plt.get_cmap(self.colormap)
                                     )
-                ax.set_title('{} {}'.format(self.titles[n],
-                                            datetime.datetime.utcfromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')),
-                             size=8)
+            ax.set_title('{} {}'.format(self.titles[n],
+                                        datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')),
+                         size=8)
+
+            self.saveTime = self.min_time
 
 
 class PlotCOHData(PlotRTIData):
@@ -348,11 +523,11 @@ class PlotCOHData(PlotRTIData):
         self.ncols = 1
         self.nrows = self.dataOut.nPairs
         self.width = 10
-        self.height = 2.2*self.nrows
+        self.height = 2.2*self.nrows if self.nrows<6 else 12
         if self.nrows==1:
             self.height += 1
         self.ylabel = 'Range [Km]'
-        self.titles = ['Channels {}'.format(x) for x in self.dataOut.pairsList]
+        self.titles = ['{} Ch{} * Ch{}'.format(self.CODE.upper(), x[0], x[1]) for x in self.dataOut.pairsList]
 
         if self.figure is None:
             self.figure = plt.figure(figsize=(self.width, self.height),
@@ -367,7 +542,6 @@ class PlotCOHData(PlotRTIData):
             ax.firsttime = True
             self.axes.append(ax)
 
-        self.figure.subplots_adjust(hspace=0.5)
 
 class PlotNoiseData(PlotData):
     CODE = 'noise'
@@ -413,13 +587,17 @@ class PlotNoiseData(PlotData):
 
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(min(y)-5, max(y)+5)
+        self.saveTime = self.min_time
+
 
 class PlotSNRData(PlotRTIData):
     CODE = 'snr'
+    colormap = 'jet'
 
 class PlotDOPData(PlotRTIData):
     CODE = 'dop'
     colormap = 'jet'
+
 
 class PlotPHASEData(PlotCOHData):
     CODE = 'phase'

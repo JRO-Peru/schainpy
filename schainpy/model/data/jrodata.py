@@ -1136,7 +1136,7 @@ class Correlation(JROData):
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
     normFactor = property(getNormFactor, "I'm the 'normFactor property'")
 
-class Parameters(JROData):
+class Parameters(Spectra):
 
     experimentInfo = None   #Information about the experiment
 
@@ -1146,7 +1146,7 @@ class Parameters(JROData):
 
     operation = None        #Type of operation to parametrize
 
-    normFactor = None       #Normalization Factor
+    #normFactor = None       #Normalization Factor
 
     groupList = None        #List of Pairs, Groups, etc
 
@@ -1162,7 +1162,7 @@ class Parameters(JROData):
 
     abscissaList = None    #Abscissa, can be velocities, lags or time
 
-    noise = None            #Noise Potency
+    #noise = None            #Noise Potency
 
     utctimeInit = None      #Initial UTC time
 
@@ -1185,6 +1185,8 @@ class Parameters(JROData):
     data_output = None       #Out signal
 
     nAvg = None
+
+    noise_estimation = None
 
 
     def __init__(self):
@@ -1213,4 +1215,4 @@ class Parameters(JROData):
 
         datatime = numpy.array(datatime)
 
-        return datatime    
+        return datatime

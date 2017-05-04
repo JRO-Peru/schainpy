@@ -54,10 +54,10 @@ class ParametersProc(ProcessingUnit):
 #        self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
 #        self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
-        self.dataOut.timeInterval = self.dataIn.timeInterval
+#        self.dataOut.timeInterval = self.dataIn.timeInterval
         self.dataOut.heightList = self.dataIn.getHeiRange()
         self.dataOut.frequency = self.dataIn.frequency
-        self.dataOut.noise = self.dataIn.noise
+        #self.dataOut.noise = self.dataIn.noise
 
     def run(self):
 
@@ -76,11 +76,17 @@ class ParametersProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
 
-            self.dataOut.data_pre = (self.dataIn.data_spc,self.dataIn.data_cspc)
-            self.dataOut.abscissaList = self.dataIn.getVelRange(1)
-            # self.dataOut.noise = self.dataIn.getNoise()
-            self.dataOut.normFactor = self.dataIn.normFactor
+            self.dataOut.data_pre = (self.dataIn.data_spc, self.dataIn.data_cspc)
+            self.dataOut.data_spc = self.dataIn.data_spc
+            self.dataOut.data_cspc = self.dataIn.data_cspc
+            self.dataOut.nProfiles = self.dataIn.nProfiles
+            self.dataOut.nIncohInt = self.dataIn.nIncohInt
+            self.dataOut.nFFTPoints = self.dataIn.nFFTPoints
+            self.dataOut.ippFactor = self.dataIn.ippFactor
+            #self.dataOut.normFactor = self.dataIn.getNormFactor()
+            self.dataOut.pairsList = self.dataIn.pairsList
             self.dataOut.groupList = self.dataIn.pairsList
+            self.dataOut.abscissaList = self.dataIn.getVelRange(1)
             self.dataOut.flagNoData = False
 
         #----------------------    Correlation Data    ---------------------------
@@ -144,8 +150,8 @@ class SpectralMoments(Operation):
 
     def run(self, dataOut):
 
-        dataOut.data_pre = dataOut.data_pre[0]
-        data = dataOut.data_pre
+        #dataOut.data_pre = dataOut.data_pre[0]
+        data = dataOut.data_pre[0]
         absc = dataOut.abscissaList[:-1]
         noise = dataOut.noise
         nChannel = data.shape[0]
@@ -157,6 +163,8 @@ class SpectralMoments(Operation):
         dataOut.data_param = data_param[:,1:,:]
         dataOut.data_SNR = data_param[:,0]
         dataOut.data_DOP = data_param[:,1]
+        dataOut.data_MEAN = data_param[:,2]
+        dataOut.data_STD = data_param[:,3]
         return
 
     def __calculateMoments(self, oldspec, oldfreq, n0, nicoh = None, graph = None, smooth = None, type1 = None, fwindow = None, snrth = None, dc = None, aliasing = None, oldfd = None, wwauto = None):
@@ -239,8 +247,8 @@ class SpectralMoments(Operation):
         num_pairs = len(pairslist)
 
         vel = self.dataOut.abscissaList
-        spectra = self.dataOut.data_pre
-        cspectra = self.dataIn.data_cspc
+        spectra = self.dataOut.data_pre[0]
+        cspectra = self.dataOut.data_pre[1]
         delta_v = vel[1] - vel[0]
 
         #Calculating the power spectrum
