@@ -21,7 +21,6 @@ def checkKwargs(method, kwargs):
 
     for kwarg in kwargs:
         fuzz = process.extractOne(kwarg, choices)
-        print fuzz
         if fuzz is None:
             continue
         if fuzz[1] < 100:

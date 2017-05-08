@@ -15,7 +15,7 @@ def fiber(cursor, skip, q, dt):
                                                  startDate=dt,
                                                  endDate=dt,
                                                  startTime="00:00:00",
-                                                 endTie="23:59:59",
+                                                 endTime="23:59:59",
                                                  online=0,
                                                  #set=1426485881,
                                                  delay=10,
