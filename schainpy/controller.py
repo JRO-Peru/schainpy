@@ -26,7 +26,7 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, receiver=None):
+def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_day=False):
     skip = 0
     cursor = 0
     nFiles = None
@@ -38,7 +38,7 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, recei
     dt1 = datetime.datetime.strptime(startDate, '%Y/%m/%d')
     dt2 = datetime.datetime.strptime(endDate, '%Y/%m/%d')
     days = (dt2 - dt1).days
-    print days
+
     for day in range(days+1):
         skip = 0
         cursor = 0
@@ -47,6 +47,8 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, recei
         dt = (dt1 + datetime.timedelta(day)).strftime('%Y/%m/%d')
         firstProcess = Process(target=child, args=(cursor, skip, q, dt))
         firstProcess.start()
+        if by_day:
+            continue
         nFiles = q.get()
         firstProcess.terminate()
         skip = int(math.ceil(nFiles/nProcess))
