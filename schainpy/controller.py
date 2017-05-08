@@ -31,10 +31,6 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_da
     cursor = 0
     nFiles = None
     processes = []
-
-
-
-
     dt1 = datetime.datetime.strptime(startDate, '%Y/%m/%d')
     dt2 = datetime.datetime.strptime(endDate, '%Y/%m/%d')
     days = (dt2 - dt1).days

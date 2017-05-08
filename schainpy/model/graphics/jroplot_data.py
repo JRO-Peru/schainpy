@@ -5,6 +5,8 @@ import time
 import numpy
 import datetime
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import FuncFormatter, LinearLocator
@@ -12,7 +14,7 @@ from multiprocessing import Process
 
 from schainpy.model.proc.jroproc_base import Operation
 
-#plt.ion()
+plt.ioff()
 
 func = lambda x, pos: ('%s') %(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
 
@@ -90,6 +92,7 @@ class PlotData(Operation, Process):
         print 'plotting...{}'.format(self.CODE)
 
         if self.show:
+            print 'showing'
             self.figure.show()
 
         self.plot()
@@ -628,7 +631,7 @@ class PlotWindProfilerData(PlotRTIData):
 
         self.z = np.array(self.z)
         self.z = numpy.ma.masked_invalid(self.z)
-        
+
         cmap=plt.get_cmap(self.colormap)
         cmap.set_bad('white', 1.)
 

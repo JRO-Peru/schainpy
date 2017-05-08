@@ -31,8 +31,8 @@ def fiber(cursor, skip, q, dt):
     procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
     # opObj11 = procUnitConfObj2.addParameter(name='pairsList', value='(0,1)', format='pairslist')
     #
-    # procUnitConfObj3 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
-    # opObj11 = procUnitConfObj3.addOperation(name='SpectralMoments', optype='other')
+    procUnitConfObj3 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
+    opObj11 = procUnitConfObj3.addOperation(name='SpectralMoments', optype='other')
 
     #
     #     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
@@ -58,7 +58,7 @@ def fiber(cursor, skip, q, dt):
     # opObj11.addParameter(name='save', value='0', format='int')
     # # opObj11.addParameter(name='figpath', value='/tmp/', format='str')
     #
-    opObj12 = procUnitConfObj2.addOperation(name='PublishData', optype='other')
+    opObj12 = procUnitConfObj3.addOperation(name='PublishData', optype='other')
     opObj12.addParameter(name='zeromq', value=1, format='int')
 
 

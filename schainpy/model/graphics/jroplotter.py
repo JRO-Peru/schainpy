@@ -30,10 +30,10 @@ class Plotter(Operation):
     name = None
     __queue = None
 
-    def __init__(self, plotter_name, plotter_queue=None):
+    def __init__(self, plotter_name, plotter_queue=None, **kwargs):
 
-        Operation.__init__(self)
-        
+        Operation.__init__(self, **kwargs)
+
         self.isConfig = False
         self.name = plotter_name
         self.__queue = plotter_queue
@@ -84,7 +84,7 @@ class PlotManager():
                    'CrossSpectraPlot', 'CoherenceMap',
                    'PowerProfilePlot', 'Noise', 'BeaconPhase',
                    'CorrelationPlot',
-                   'SpectraHeisScope','RTIfromSpectraHeis']
+                   'SpectraHeisScope', 'RTIfromSpectraHeis']
 
     def __init__(self, plotter_queue):
 
@@ -170,7 +170,7 @@ class PlotManager():
 
             if plot_id not in self.plotInstanceDict.keys():
                 className = eval(plot_name)
-                self.plotInstanceDict[plot_id] = className()
+                self.plotInstanceDict[plot_id] = className(**kwargs)
 
             plotter = self.plotInstanceDict[plot_id]
             try:

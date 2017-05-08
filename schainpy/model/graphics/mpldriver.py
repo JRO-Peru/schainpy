@@ -262,11 +262,11 @@ def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', col
     ax.collections.remove(ax.collections[0])
 
     z = numpy.ma.masked_invalid(z)
-    
+
     cmap=matplotlib.pyplot.get_cmap(colormap)
     cmap.set_bad('white', 1.)
 
-    
+
     ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=cmap)
 
 def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,

@@ -245,7 +245,7 @@ class PublishData(Operation):
     def close(self):
         if self.zeromq is 1:
             self.dataOut.finished = True
-            # self.zmq_socket.send_pyobj(self.dataOut) CHECK IT!!!
+            self.zmq_socket.send_pyobj(self.dataOut)
 
         if self.client:
             self.client.loop_stop()
