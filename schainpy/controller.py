@@ -32,6 +32,9 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, recei
     nFiles = None
     processes = []
 
+
+
+
     dt1 = datetime.datetime.strptime(startDate, '%Y/%m/%d')
     dt2 = datetime.datetime.strptime(endDate, '%Y/%m/%d')
     days = (dt2 - dt1).days
@@ -47,29 +50,24 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, recei
         nFiles = q.get()
         firstProcess.terminate()
         skip = int(math.ceil(nFiles/nProcess))
-        try:
-            while True:
-                processes.append(Process(target=child, args=(cursor, skip, q, dt)))
-                processes[cursor].start()
-                if nFiles < cursor*skip:
-                    break
-                cursor += 1
-        except KeyboardInterrupt:
+        while True:
+            processes.append(Process(target=child, args=(cursor, skip, q, dt)))
+            processes[cursor].start()
+            if nFiles < cursor*skip:
+                break
+            cursor += 1
+
+        def beforeExit(exctype, value, trace):
             for process in processes:
                 process.terminate()
                 process.join()
-        for process in processes:
-            process.join()
-            # process.terminate()
-        sleep(3)
+        sys.excepthook = beforeExit
 
-    try:
-        while True:
-            pass
-    except KeyboardInterrupt:
         for process in processes:
-            process.terminate()
             process.join()
+            process.terminate()
+
+
 
 class ParameterConf():
 
@@ -438,8 +436,8 @@ class OperationConf():
 
     def createObject(self, plotter_queue=None):
 
-        
-        if self.type == 'self':            
+
+        if self.type == 'self':
             raise ValueError, "This operation type cannot be created"
 
         if self.type == 'plotter':
@@ -450,10 +448,10 @@ class OperationConf():
             opObj = Plotter(self.name, plotter_queue)
 
         if self.type == 'external' or self.type == 'other':
-            
+
             className = eval(self.name)
             kwargs = self.getKwargs()
-            
+
             opObj = className(**kwargs)
 
         return opObj
@@ -672,18 +670,18 @@ class ProcUnitConf():
         kwargs = self.getKwargs()
         procUnitObj = className(**kwargs)
 
-        for opConfObj in self.opConfObjList:                        
-            
+        for opConfObj in self.opConfObjList:
+
             if opConfObj.type=='self' and self.name=='run':
                 continue
-            elif opConfObj.type=='self':                
+            elif opConfObj.type=='self':
                 procUnitObj.addOperationKwargs(opConfObj.id, **opConfObj.getKwargs())
                 continue
 
             opObj = opConfObj.createObject(plotter_queue)
 
             self.opObjDict[opConfObj.id] = opObj
-            
+
             procUnitObj.addOperation(opObj, opConfObj.id)
 
         self.procUnitObj = procUnitObj
