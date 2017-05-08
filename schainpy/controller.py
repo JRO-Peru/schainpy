@@ -26,7 +26,7 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, receiver=None):
+def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_day=False):
     skip = 0
     cursor = 0
     nFiles = None
@@ -35,7 +35,7 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, recei
     dt1 = datetime.datetime.strptime(startDate, '%Y/%m/%d')
     dt2 = datetime.datetime.strptime(endDate, '%Y/%m/%d')
     days = (dt2 - dt1).days
-    print days
+
     for day in range(days+1):
         skip = 0
         cursor = 0
@@ -44,6 +44,8 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, recei
         dt = (dt1 + datetime.timedelta(day)).strftime('%Y/%m/%d')
         firstProcess = Process(target=child, args=(cursor, skip, q, dt))
         firstProcess.start()
+        if by_day:
+            continue
         nFiles = q.get()
         firstProcess.terminate()
         skip = int(math.ceil(nFiles/nProcess))
@@ -438,8 +440,8 @@ class OperationConf():
 
     def createObject(self, plotter_queue=None):
 
-        
-        if self.type == 'self':            
+
+        if self.type == 'self':
             raise ValueError, "This operation type cannot be created"
 
         if self.type == 'plotter':
@@ -450,10 +452,10 @@ class OperationConf():
             opObj = Plotter(self.name, plotter_queue)
 
         if self.type == 'external' or self.type == 'other':
-            
+
             className = eval(self.name)
             kwargs = self.getKwargs()
-            
+
             opObj = className(**kwargs)
 
         return opObj
@@ -672,18 +674,18 @@ class ProcUnitConf():
         kwargs = self.getKwargs()
         procUnitObj = className(**kwargs)
 
-        for opConfObj in self.opConfObjList:                        
-            
+        for opConfObj in self.opConfObjList:
+
             if opConfObj.type=='self' and self.name=='run':
                 continue
-            elif opConfObj.type=='self':                
+            elif opConfObj.type=='self':
                 procUnitObj.addOperationKwargs(opConfObj.id, **opConfObj.getKwargs())
                 continue
 
             opObj = opConfObj.createObject(plotter_queue)
 
             self.opObjDict[opConfObj.id] = opObj
-            
+
             procUnitObj.addOperation(opObj, opConfObj.id)
 
         self.procUnitObj = procUnitObj

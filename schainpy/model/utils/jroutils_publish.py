@@ -245,7 +245,7 @@ class PublishData(Operation):
     def close(self):
         if self.zeromq is 1:
             self.dataOut.finished = True
-            self.zmq_socket.send_pyobj(self.dataOut)
+            # self.zmq_socket.send_pyobj(self.dataOut) CHECK IT!!!
 
         if self.client:
             self.client.loop_stop()
@@ -314,7 +314,7 @@ class ReceiverData(ProcessingUnit, Process):
                 pass
             if self.connections == 0 and self.started is True:
                 self.ended = True
-                # send('ENDED')
+
             evt.update({'description': events[evt['event']]})
 
             if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
@@ -335,9 +335,15 @@ class ReceiverData(ProcessingUnit, Process):
         self.sender.send_pyobj(data)
 
     def update(self):
+
         t = self.dataOut.utctime
+
+        if t in self.data['times']:
+            return
+
         self.data['times'].append(t)
         self.data['dataOut'] = self.dataOut
+
         for plottype in self.plottypes:
             if plottype == 'spc':
                 z = self.dataOut.data_spc/self.dataOut.normFactor
@@ -361,8 +367,10 @@ class ReceiverData(ProcessingUnit, Process):
                 self.data[plottype][t] = self.dataOut.getCoherence()
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
+            if plottype == 'wind':
+                self.data[plottype][t] = self.dataOut.data_output
             if self.realtime:
-                self.data_web['timestamp'] = t                
+                self.data_web['timestamp'] = t
                 if plottype == 'spc':
                     self.data_web[plottype] = roundFloats(decimate(self.data[plottype]).tolist())
                 elif plottype == 'cspc':

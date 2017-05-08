@@ -325,7 +325,7 @@ class PlotCrossSpectraData(PlotData):
 
                 ax.set_xlim(self.xmin, self.xmax)
                 ax.set_ylim(self.ymin, self.ymax)
-                
+
                 ax.set_ylabel(self.ylabel)
                 ax.set_xlabel(xlabel)
                 ax.firsttime = False
@@ -588,6 +588,92 @@ class PlotNoiseData(PlotData):
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(min(y)-5, max(y)+5)
         self.saveTime = self.min_time
+
+
+class PlotWindProfilerData(PlotRTIData):
+    CODE = 'wind'
+    colormap = 'seismic'
+
+    def setup(self):
+        self.ncols = 1
+        self.nrows = self.dataOut.data_output.shape[0]
+        self.width = 10
+        self.height = 2.2*self.nrows
+        self.ylabel = 'Height [Km]'
+        self.titles = ['Zonal' ,'Meridional', 'Vertical']
+        self.clabels = ['Velocity (m/s)','Velocity (m/s)','Velocity (cm/s)']
+        self.windFactor = [1, 1, 100]
+
+        if self.figure is None:
+            self.figure = plt.figure(figsize=(self.width, self.height),
+                                     edgecolor='k',
+                                     facecolor='w')
+        else:
+            self.figure.clf()
+            self.axes = []
+
+        for n in range(self.nrows):
+            ax = self.figure.add_subplot(self.nrows, self.ncols, n+1)
+            ax.firsttime = True
+            self.axes.append(ax)
+
+    def plot(self):
+
+        self.x = np.array(self.times)
+        self.y = self.dataOut.heightList
+        self.z = []
+
+        for ch in range(self.nrows):
+            self.z.append([self.data[self.CODE][t][ch] for t in self.times])
+
+        self.z = np.array(self.z)
+        self.z = numpy.ma.masked_invalid(self.z)
+        
+        cmap=plt.get_cmap(self.colormap)
+        cmap.set_bad('white', 1.)
+
+        for n, ax in enumerate(self.axes):
+            x, y, z = self.fill_gaps(*self.decimate())
+            xmin = self.min_time
+            xmax = xmin+self.xrange*60*60
+            if ax.firsttime:
+                self.ymin = self.ymin if self.ymin else np.nanmin(self.y)
+                self.ymax = self.ymax if self.ymax else np.nanmax(self.y)
+                self.zmax = self.zmax if self.zmax else numpy.nanmax(abs(self.z[:-1, :]))
+                self.zmin = self.zmin if self.zmin else -self.zmax
+
+                plot = ax.pcolormesh(x, y, z[n].T*self.windFactor[n],
+                                     vmin=self.zmin,
+                                     vmax=self.zmax,
+                                     cmap=cmap
+                                    )
+                divider = make_axes_locatable(ax)
+                cax = divider.new_horizontal(size='2%', pad=0.05)
+                cax.set_ylabel(self.clabels[n])
+                self.figure.add_axes(cax)
+                plt.colorbar(plot, cax)
+                ax.set_ylim(self.ymin, self.ymax)
+
+                ax.xaxis.set_major_formatter(FuncFormatter(func))
+                ax.xaxis.set_major_locator(LinearLocator(6))
+
+                ax.set_ylabel(self.ylabel)
+
+                ax.set_xlim(xmin, xmax)
+                ax.firsttime = False
+            else:
+                ax.collections.remove(ax.collections[0])
+                ax.set_xlim(xmin, xmax)
+                plot = ax.pcolormesh(x, y, z[n].T*self.windFactor[n],
+                                     vmin=self.zmin,
+                                     vmax=self.zmax,
+                                     cmap=plt.get_cmap(self.colormap)
+                                    )
+            ax.set_title('{} {}'.format(self.titles[n],
+                                        datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')),
+                         size=8)
+
+            self.saveTime = self.min_time
 
 
 class PlotSNRData(PlotRTIData):

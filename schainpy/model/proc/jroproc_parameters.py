@@ -1043,7 +1043,7 @@ class WindProfiler(Operation):
         param = dataOut.data_param
         if dataOut.abscissaList != None:
             absc = dataOut.abscissaList[:-1]
-        noise = dataOut.noise
+        #noise = dataOut.noise
         heightList = dataOut.heightList
         SNR = dataOut.data_SNR
 

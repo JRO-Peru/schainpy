@@ -1162,7 +1162,7 @@ class Parameters(Spectra):
 
     abscissaList = None    #Abscissa, can be velocities, lags or time
 
-    #noise = None            #Noise Potency
+#    noise = None            #Noise Potency
 
     utctimeInit = None      #Initial UTC time
 
@@ -1216,3 +1216,7 @@ class Parameters(Spectra):
         datatime = numpy.array(datatime)
 
         return datatime
+
+    def getTimeInterval(self):
+
+        return self.paramInterval
