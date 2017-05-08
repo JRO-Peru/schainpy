@@ -61,12 +61,14 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, recei
             for process in processes:
                 process.terminate()
                 process.join()
+            print traceback.print_tb(trace)
+
         sys.excepthook = beforeExit
 
         for process in processes:
             process.join()
             process.terminate()
-
+        sys.exit()
 
 
 class ParameterConf():

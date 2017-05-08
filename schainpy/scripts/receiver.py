@@ -15,15 +15,15 @@ if __name__ == '__main__':
     controllerObj.setup(id='191', name='test01', description=desc)
 
     proc1 = controllerObj.addProcUnit(name='ReceiverData')
-    proc1.addParameter(name='realtime', value='1', format='bool')
+    proc1.addParameter(name='realtime', value='0', format='bool')
     proc1.addParameter(name='plottypes', value='rti', format='str')
     # proc1.addParameter(name='throttle', value='10', format='int')
     proc1.addParameter(name='plot_server', value='tcp://10.10.10.82:7000', format='str')
     ## TODO Agregar direccion de server de publicacion a graficos como variable
 
-    # op1 = proc1.addOperation(name='PlotRTIData', optype='other')
-    # op1.addParameter(name='wintitle', value='Julia 150Km', format='str')
-    # op1.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+    op1 = proc1.addOperation(name='PlotRTIData', optype='other')
+    op1.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op1.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
     #
     # op2 = proc1.addOperation(name='PlotCOHData', optype='other')
     # op2.addParameter(name='wintitle', value='Julia 150Km', format='str')
