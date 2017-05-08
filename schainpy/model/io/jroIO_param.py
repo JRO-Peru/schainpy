@@ -846,7 +846,7 @@ class ParamWriter(Operation):
             else:
                 setFile = -1 #inicializo mi contador de seteo
         else:
-            os.mkdir(fullpath)
+            os.makedirs(fullpath)
             setFile = -1 #inicializo mi contador de seteo
 
         setFile += 1

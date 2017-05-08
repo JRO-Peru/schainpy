@@ -1208,15 +1208,18 @@ class Parameters(Spectra):
         else:
             time1 = self.utctimeInit
 
-#         datatime.append(self.utctimeInit)
-#         datatime.append(self.utctimeInit + self.outputInterval)
         datatime.append(time1)
         datatime.append(time1 + interval)
-
         datatime = numpy.array(datatime)
 
         return datatime
 
     def getTimeInterval(self):
 
-        return self.paramInterval
+        return self.timeInterval1
+
+    def getNoise(self):
+
+        return self.spc_noise
+
+    timeInterval = property(getTimeInterval)

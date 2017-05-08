@@ -54,7 +54,7 @@ class ParametersProc(ProcessingUnit):
 #        self.dataOut.nIncohInt = 1
         self.dataOut.ippSeconds = self.dataIn.ippSeconds
 #        self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
-#        self.dataOut.timeInterval = self.dataIn.timeInterval
+        self.dataOut.timeInterval1 = self.dataIn.timeInterval
         self.dataOut.heightList = self.dataIn.getHeiRange()
         self.dataOut.frequency = self.dataIn.frequency
         #self.dataOut.noise = self.dataIn.noise
