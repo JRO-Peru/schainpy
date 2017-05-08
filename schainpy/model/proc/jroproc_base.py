@@ -3,6 +3,30 @@
 $Author: murco $
 $Id: jroproc_base.py 1 2012-11-12 18:56:07Z murco $
 '''
+import inspect
+from fuzzywuzzy import process
+
+def checkKwargs(method, kwargs):
+    currentKwargs = kwargs
+    choices = inspect.getargspec(method).args
+    try:
+        choices.remove('self')
+    except Exception as e:
+        pass
+
+    try:
+        choices.remove('dataOut')
+    except Exception as e:
+        pass
+
+    for kwarg in kwargs:
+        fuzz = process.extractOne(kwarg, choices)
+        print fuzz
+        if fuzz is None:
+            continue
+        if fuzz[1] < 100:
+            raise Exception('\x1b[2;30;43mDid you mean {} instead of {} in {}? \x1b[0m'.
+                            format(fuzz[0], kwarg, method.__self__.__class__.__name__))
 
 class ProcessingUnit(object):
 
@@ -41,14 +65,18 @@ class ProcessingUnit(object):
 
         self.args = args
         self.kwargs = kwargs
+        checkKwargs(self.run, kwargs)
+
+    def getAllowedArgs(self):
+        return inspect.getargspec(self.run).args
 
     def addOperationKwargs(self, objId, **kwargs):
         '''
         '''
-        
+
         self.operationKwargs[objId] = kwargs
-        
-    
+
+
     def addOperation(self, opObj, objId):
 
         """
@@ -117,16 +145,16 @@ class ProcessingUnit(object):
         #Executing the self method
 
         if hasattr(self, 'mp'):
-            if name=='run':                        
-                if self.mp is False:                 
+            if name=='run':
+                if self.mp is False:
                     self.mp = True
                     self.start()
-            else:                
-                methodToCall(**self.operationKwargs[opId])            
+            else:
+                methodToCall(**self.operationKwargs[opId])
         else:
-            if name=='run':                        
+            if name=='run':
                 methodToCall(**self.kwargs)
-            else:                
+            else:
                 methodToCall(**self.operationKwargs[opId])
 
         if self.dataOut is None:
@@ -280,6 +308,10 @@ class Operation(object):
         self.__buffer = None
         self.isConfig = False
         self.kwargs = kwargs
+        checkKwargs(self.run, kwargs)
+
+    def getAllowedArgs(self):
+        return inspect.getargspec(self.run).args
 
     def setup(self):
 

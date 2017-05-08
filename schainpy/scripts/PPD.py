@@ -11,11 +11,11 @@ def fiber(cursor, skip, q, dt):
     controllerObj.setup(id='191', name='test01', description=desc)
 
     readUnitConfObj = controllerObj.addReadUnit(datatype='SpectraReader',
-                                                 path='/home/nanosat/data/hysell_data20/pdata',
+                                                 path='/home/nanosat/data/julia',
                                                  startDate=dt,
                                                  endDate=dt,
                                                  startTime="00:00:00",
-                                                 endTime="23:59:59",
+                                                 endTie="23:59:59",
                                                  online=0,
                                                  #set=1426485881,
                                                  delay=10,
@@ -29,8 +29,8 @@ def fiber(cursor, skip, q, dt):
     #     #opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
     #
     procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
-    # opObj11 = procUnitConfObj2.addParameter(name='pairsList', value='(0,1)', format='pairslist')
-    #
+    # procUnitConfObj2.addParameter(name='nipp', value='5', format='int')
+
     procUnitConfObj3 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
     opObj11 = procUnitConfObj3.addOperation(name='SpectralMoments', optype='other')
 
@@ -44,10 +44,19 @@ def fiber(cursor, skip, q, dt):
     #     opObj11.addParameter(name='save', value='1', format='int')
     #     opObj11.addParameter(name='figpath', value=figpath, format='str')
 
-    # opObj11 = procUnitConfObj2.addOperation(name='RTIPlot', optype='other')
-    # opObj11.addParameter(name='id', value='2000', format='int')
-    # opObj11.addParameter(name='wintitzmaxle', value='HF_Jicamarca', format='str')
-    # opObj11.addParameter(name='showprofile', value='0', format='int')
+    opObj11 = procUnitConfObj3.addOperation(name='Parameters1Plot', optype='other')
+    opObj11.addParameter(name='channelList', value='0', format='intList')
+
+    opObj11.addParameter(name='id', value='2000', format='int')
+    # opObj11.addParameter(name='colormap', value='0', format='bool')
+    opObj11.addParameter(name='onlySNR', value='1', format='bool')
+    opObj11.addParameter(name='DOP', value='0', format='bool')
+    # opObj11.addParameter(name='showSNR', value='1', format='bool')
+    # opObj11.addParameter(name='SNRthresh', value='0', format='int')
+    # opObj11.addParameter(name='SNRmin', value='-10', format='int')
+    # opObj11.addParameter(name='SNRmax', value='30', format='int')
+
+    # opObj11.addParameter(name='showSNR', value='1', format='int')
     # # opObj11.addParameter(name='channelList', value='0', format='intlist')
     # #     opObj11.addParameter(name='xmin', value='0', format='float')
     # opObj11.addParameter(name='xmin', value='0', format='float')

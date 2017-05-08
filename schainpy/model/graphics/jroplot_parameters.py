@@ -1,7 +1,7 @@
 import os
 import datetime
 import numpy
-
+import inspect
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
@@ -642,7 +642,6 @@ class ParametersPlot(Figure):
             save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
-
         """
 
         Input:
@@ -792,7 +791,7 @@ class Parameters1Plot(Figure):
         self.__nsubplots = 1
 
         self.WIDTH = 800
-        self.HEIGHT = 150
+        self.HEIGHT = 180
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -857,7 +856,7 @@ class Parameters1Plot(Figure):
             save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
-
+        #print inspect.getargspec(self.run).args
         """
 
         Input:
