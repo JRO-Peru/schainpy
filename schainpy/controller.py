@@ -66,7 +66,7 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_da
         for process in processes:
             process.join()
             process.terminate()
-        sys.exit()
+        #sys.exit()
 
 
 class ParameterConf():
