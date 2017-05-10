@@ -44,8 +44,8 @@ def fiber(cursor, skip, q, day):
 
     readUnitConf = controller.addReadUnit(datatype='SpectraReader',
                                           path="{path}",
-                                          startDate="day",
-                                          endDate="day",
+                                          startDate=day,
+                                          endDate=day,
                                           startTime="{startHour}",
                                           endTime="{endHour}",
                                           online=0,

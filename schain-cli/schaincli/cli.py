@@ -3,7 +3,9 @@ import schainpy
 import subprocess
 from multiprocessing import cpu_count
 from schaincli import templates
-import os, sys
+import os
+import sys
+import glob
 
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
@@ -14,9 +16,10 @@ def print_version(ctx, param, value):
 
 @click.command()
 @click.option('--version', '-v', is_flag=True, callback=print_version, help='SChain version', type=str)
-@click.option('--xml', '-x', default=None, help='xml file', type=click.Path(exists=True, resolve_path=True))
+@click.option('--xml', '-x', default=None, help='run an XML file', type=click.Path(exists=True, resolve_path=True))
 @click.argument('command', default='run', required=True)
-def main(command, version, xml):
+@click.argument('nextcommand', default=None, required=False, type=click.Path(exists=True, resolve_path=True))
+def main(command, nextcommand, version, xml):
     """COMMAND LINE INTERFACE FOR SIGNAL CHAIN - JICAMARCA RADIO OBSERVATORY"""
     if xml is not None:
         subprocess.call(['schain --file=' + xml], shell=True)
@@ -24,8 +27,21 @@ def main(command, version, xml):
         generate()
     elif command == 'test':
         test()
+    elif command == 'run':
+        if nextcommand is None:
+            currentfiles = glob.glob('./*.py')
+            numberfiles = len(currentfiles)
+            print currentfiles
+            if numberfiles > 1:
+                click.echo('\x1b[6;37;41m[ERROR] - There is more than one file to run\x1b[0m')
+            elif numberfiles == 1:
+                subprocess.call(['python ' + currentfiles[0]], shell=True)
+            else:
+                click.echo('\x1b[6;37;41m[ERROR] - There is no file to run.\x1b[0m')
+        else:
+            subprocess.call(['python ' + nextcommand], shell=True)
     else:
-        click.echo('\x1b[0;37;41m[ERROR] - Command is not defined.\x1b[0m')
+        click.echo('\x1b[6;37;41m[ERROR] - Command is not defined.\x1b[0m')
 
 def basicInputs():
     inputs = {}
@@ -51,9 +67,9 @@ def generate():
     script = open(scriptname, 'w')
     try:
         script.write(current)
-        click.echo('\x1b[0;37;42m[SUCCESS] Script {file} generated\x1b[0m'.format(file=scriptname))
+        click.echo('\x1b[6;37;42m[SUCCESS] Script {file} generated\x1b[0m'.format(file=scriptname))
     except Exception as e:
-        click.echo('\x1b[0;37;41m[ERROR] I cannot create the file. Do you have writing permissions?\x1b[0m')
+        click.echo('\x1b[6;37;41m[ERROR] I cannot create the file. Do you have writing permissions?\x1b[0m')
 
 
 def test():
