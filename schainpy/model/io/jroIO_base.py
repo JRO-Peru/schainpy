@@ -888,7 +888,8 @@ class JRODataReader(JRODataIO):
             print '[Reading] No more files to read'
             return 0
 
-        print '[Reading] Setting the file: %s' % self.filename
+        if self.verbose:
+            print '[Reading] Setting the file: %s' % self.filename
 
         self.__readFirstHeader()
         self.nReadBlocks = 0
@@ -1053,9 +1054,10 @@ class JRODataReader(JRODataIO):
 
             break
 
-        print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
-                                                  self.processingHeaderObj.dataBlocksPerFile,
-                                                  self.dataOut.datatime.ctime())
+        if self.verbose:
+            print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
+                                                      self.processingHeaderObj.dataBlocksPerFile,
+                                                      self.dataOut.datatime.ctime())
         return 1
 
     def __readFirstHeader(self):
@@ -1266,7 +1268,9 @@ class JRODataReader(JRODataIO):
                 blocktime=None,
                 queue=None,
                 skip=None,
-                cursor=None):
+                cursor=None,
+                warnings=True,
+                verbose=True):
 
         if path == None:
             raise ValueError, "[Reading] The path is not valid"
@@ -1338,6 +1342,9 @@ class JRODataReader(JRODataIO):
         self.selBlocksize = blocksize
         self.selBlocktime = blocktime
 
+        # Verbose-----------
+        self.verbose = verbose
+        self.warnings = warnings
 
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):

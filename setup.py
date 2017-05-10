@@ -44,5 +44,6 @@ setup(name="schainpy",
                           "paramiko >= 2.1.2",
                           "paho-mqtt >= 1.2",
                           "zmq",
+                          "fuzzywuzzy"
                           ],
       )
