@@ -18,6 +18,7 @@ if __name__ == '__main__':
     proc1.addParameter(name='realtime', value='0', format='bool')
     proc1.addParameter(name='plottypes', value='rti,coh,phase', format='str')
     proc1.addParameter(name='throttle', value='10', format='int')
+    proc1.addParameter(name='interactive', value='0', format='bool')
     # proc1.addParameter(name='server', value='tcp://10.10.10.82:7000', format='str')
     ## TODO Agregar direccion de server de publicacion a graficos como variable
 

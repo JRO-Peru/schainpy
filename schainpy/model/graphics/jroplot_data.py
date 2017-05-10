@@ -14,7 +14,7 @@ from multiprocessing import Process
 
 from schainpy.model.proc.jroproc_base import Operation
 
-plt.ioff()
+plt.ion()
 
 func = lambda x, pos: ('%s') %(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
 
@@ -57,6 +57,8 @@ class PlotData(Operation, Process):
         self.__MAXNUMY = kwargs.get('decimation', 80)
         self.throttle_value = 5
         self.times = []
+        #self.interactive = self.kwargs['parent']
+
 
     def fill_gaps(self, x_buffer, y_buffer, z_buffer):
 
