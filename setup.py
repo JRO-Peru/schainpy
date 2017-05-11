@@ -51,6 +51,7 @@ setup(name="schainpy",
                       "zmq",
                       "fuzzywuzzy",
                       "click",
-                      "colorama"
+                      "colorama",
+                      "python-Levenshtein"
                       ],
       )

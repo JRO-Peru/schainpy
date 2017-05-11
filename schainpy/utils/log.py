@@ -1,5 +1,4 @@
 """.
-
 SCHAINPY - LOG
     Simple helper for log standarization
     Usage:
@@ -25,12 +24,12 @@ def warning(message):
 
 
 def error(message):
-    click.echo(click.style('[ERROR] - ' + message, bg='red', fg='white'))
+    click.echo(click.style('[ERROR] - ' + message, fg='red'))
     pass
 
 
 def success(message):
-    click.echo(click.style('[SUCESS] - ' + message, bg='green', fg='white'))
+    click.echo(click.style(message, fg='green'))
     pass
 
 
