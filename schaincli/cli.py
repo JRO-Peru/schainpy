@@ -1,12 +1,13 @@
 import click
 import schainpy
 import subprocess
-from multiprocessing import cpu_count
-from schaincli import templates
-from schainpy import controller_api
 import os
 import sys
 import glob
+from multiprocessing import cpu_count
+from schaincli import templates
+from schainpy import controller_api
+from schainpy.utils import log
 
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
@@ -14,6 +15,7 @@ def print_version(ctx, param, value):
     click.echo(schainpy.__version__)
     ctx.exit()
 
+cliLogger = log.makelogger('schain cli')
 
 @click.command()
 @click.option('--version', '-v', is_flag=True, callback=print_version, help='SChain version', type=str)
@@ -34,15 +36,15 @@ def main(command, nextcommand, version, xml):
             numberfiles = len(currentfiles)
             print currentfiles
             if numberfiles > 1:
-                click.echo('\x1b[6;37;41m[ERROR] - There is more than one file to run\x1b[0m')
+                log.error('There is more than one file to run')
             elif numberfiles == 1:
                 subprocess.call(['python ' + currentfiles[0]], shell=True)
             else:
-                click.echo('\x1b[6;37;41m[ERROR] - There is no file to run.\x1b[0m')
+                log.error('There is no file to run.')
         else:
             subprocess.call(['python ' + nextcommand], shell=True)
     else:
-        click.echo('\x1b[6;37;41m[ERROR] - Command is not defined.\x1b[0m')
+        log.error('Command is not defined.')
 
 
 def basicInputs():
@@ -70,14 +72,13 @@ def generate():
     script = open(scriptname, 'w')
     try:
         script.write(current)
-        click.echo('\x1b[6;37;42m[SUCCESS] Script {file} generated\x1b[0m'.format(file=scriptname))
+        log.success('Script {file} generated'.format(file=scriptname))
     except Exception as e:
-        click.echo('\x1b[6;37;41m[ERROR] I cannot create the file. Do you have writing permissions?\x1b[0m')
+        log.error('I cannot create the file. Do you have writing permissions?')
 
 
 def test():
-    print templates.basic.format(name='hola', desc='desc', path='path', startDate='0', endDate='0')
-    click.echo('testing')
+    log.warning('testing')
 
 
 def runFromXML(filename):
@@ -90,9 +91,9 @@ def runFromXML(filename):
     controller.start()
     plotterObj.start()
 
-    print "Finishing all processes ..."
+    cliLogger("Finishing all processes ...")
 
     controller.join(5)
 
-    print "End of script"
+    cliLogger("End of script")
     return
