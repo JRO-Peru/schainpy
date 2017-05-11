@@ -34,7 +34,12 @@ PREFIX = 'experiment'
 @click.argument('command', default='run', required=True)
 @click.argument('nextcommand', default=None, required=False, type=str)
 def main(command, nextcommand, version, xml):
-    """COMMAND LINE INTERFACE FOR SIGNAL CHAIN - JICAMARCA RADIO OBSERVATORY"""
+    """COMMAND LINE INTERFACE FOR SIGNAL CHAIN - JICAMARCA RADIO OBSERVATORY \n
+        Available commands.\n
+        --xml: runs a schain XML generated file\n
+        run: runs any python script starting 'experiment_'\n
+        generate: generates a template schain script\n
+        search: return avilable operations, procs or arguments of the give operation/proc\n"""
     if xml is not None:
         runFromXML(xml)
     elif command == 'generate':
