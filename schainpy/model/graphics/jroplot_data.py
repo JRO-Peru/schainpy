@@ -95,13 +95,12 @@ class PlotData(Operation, Process):
         print 'plotting...{}'.format(self.CODE)
 
         if self.show:
-            print 'showing'
             self.figure.show()
 
         self.plot()
         plt.tight_layout()
-        self.figure.canvas.manager.set_window_title('{} {} - Date:{}'.format(self.title, self.CODE.upper(),
-                                                                             datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')))
+        self.figure.canvas.manager.set_window_title('{} {} - {}'.format(self.title, self.CODE.upper(),
+                                                                        datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
 
         if self.save:
             figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
@@ -119,12 +118,19 @@ class PlotData(Operation, Process):
     def run(self):
 
         print '[Starting] {}'.format(self.name)
+
         context = zmq.Context()
         receiver = context.socket(zmq.SUB)
         receiver.setsockopt(zmq.SUBSCRIBE, '')
         receiver.setsockopt(zmq.CONFLATE, self.CONFLATE)
-        receiver.connect("ipc:///tmp/zmq.plots")
+        
+        if 'server' in self.kwargs['parent']:
+            receiver.connect('ipc:///tmp/{}.plots'.format(self.kwargs['parent']['server']))
+        else:
+            receiver.connect("ipc:///tmp/zmq.plots")
+
         seconds_passed = 0
+
         while True:
             try:
                 self.data = receiver.recv_pyobj(flags=zmq.NOBLOCK)#flags=zmq.NOBLOCK
@@ -610,6 +616,7 @@ class PlotNoiseData(PlotData):
 
 
 class PlotWindProfilerData(PlotRTIData):
+
     CODE = 'wind'
     colormap = 'seismic'
 
@@ -619,7 +626,7 @@ class PlotWindProfilerData(PlotRTIData):
         self.width = 10
         self.height = 2.2*self.nrows
         self.ylabel = 'Height [Km]'
-        self.titles = ['Zonal' ,'Meridional', 'Vertical']
+        self.titles = ['Zonal Wind' ,'Meridional Wind', 'Vertical Wind']
         self.clabels = ['Velocity (m/s)','Velocity (m/s)','Velocity (cm/s)']
         self.windFactor = [1, 1, 100]
 
@@ -643,13 +650,13 @@ class PlotWindProfilerData(PlotRTIData):
         self.z = []
 
         for ch in range(self.nrows):
-            self.z.append([self.data[self.CODE][t][ch] for t in self.times])
+            self.z.append([self.data['output'][t][ch] for t in self.times])
 
         self.z = np.array(self.z)
         self.z = numpy.ma.masked_invalid(self.z)
 
         cmap=plt.get_cmap(self.colormap)
-        cmap.set_bad('white', 1.)
+        cmap.set_bad('black', 1.)
 
         for n, ax in enumerate(self.axes):
             x, y, z = self.fill_gaps(*self.decimate())
@@ -668,9 +675,9 @@ class PlotWindProfilerData(PlotRTIData):
                                     )
                 divider = make_axes_locatable(ax)
                 cax = divider.new_horizontal(size='2%', pad=0.05)
-                cax.set_ylabel(self.clabels[n])
                 self.figure.add_axes(cax)
-                plt.colorbar(plot, cax)
+                cb = plt.colorbar(plot, cax)
+                cb.set_label(self.clabels[n])
                 ax.set_ylim(self.ymin, self.ymax)
 
                 ax.xaxis.set_major_formatter(FuncFormatter(func))
@@ -707,3 +714,62 @@ class PlotDOPData(PlotRTIData):
 class PlotPHASEData(PlotCOHData):
     CODE = 'phase'
     colormap = 'seismic'
+
+
+class PlotSkyMapData(PlotData):
+
+    CODE = 'met'
+
+    def setup(self):
+
+        self.ncols = 1
+        self.nrows = 1
+        self.width = 7.2
+        self.height = 7.2
+
+        self.xlabel = 'Zonal Zenith Angle (deg)'
+        self.ylabel = 'Meridional Zenith Angle (deg)'
+
+        if self.figure is None:
+            self.figure = plt.figure(figsize=(self.width, self.height),
+                                     edgecolor='k',
+                                     facecolor='w')
+        else:
+            self.figure.clf()
+
+        self.ax = plt.subplot2grid((self.nrows, self.ncols), (0, 0), 1, 1, polar=True)
+        self.ax.firsttime = True
+
+
+    def plot(self):
+
+        arrayParameters = np.concatenate([self.data['param'][t] for t in self.times])
+        error = arrayParameters[:,-1]
+        indValid = numpy.where(error == 0)[0]
+        finalMeteor = arrayParameters[indValid,:]
+        finalAzimuth = finalMeteor[:,3]
+        finalZenith = finalMeteor[:,4]
+
+        x = finalAzimuth*numpy.pi/180
+        y = finalZenith
+
+        if self.ax.firsttime:
+            self.ax.plot = self.ax.plot(x, y, 'bo', markersize=5)[0]
+            self.ax.set_ylim(0,90)
+            self.ax.set_yticks(numpy.arange(0,90,20))
+            self.ax.set_xlabel(self.xlabel)
+            self.ax.set_ylabel(self.ylabel)
+            self.ax.yaxis.labelpad = 40
+            self.ax.firsttime = False
+        else:
+            self.ax.plot.set_data(x, y)
+
+
+        dt1 = datetime.datetime.fromtimestamp(self.min_time).strftime('%y/%m/%d %H:%M:%S')
+        dt2 = datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')
+        title = 'Meteor Detection Sky Map\n %s - %s \n Number of events: %5.0f\n' % (dt1,
+                                                                                     dt2,
+                                                                                     len(x))
+        self.ax.set_title(title, size=8)
+
+        self.saveTime = self.max_time

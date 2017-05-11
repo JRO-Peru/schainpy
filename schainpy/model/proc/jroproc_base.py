@@ -149,6 +149,7 @@ class ProcessingUnit(object):
                     self.mp = True
                     self.start()
             else:
+                self.operationKwargs[opId]['parent'] = self.kwargs
                 methodToCall(**self.operationKwargs[opId])
         else:
             if name=='run':
@@ -187,12 +188,14 @@ class ProcessingUnit(object):
 
         if hasattr(externalProcObj, 'mp'):
             if externalProcObj.mp is False:
+                externalProcObj.kwargs['parent'] = self.kwargs
                 self.operationKwargs[objId] = externalProcObj.kwargs
                 externalProcObj.mp = True
                 externalProcObj.start()
         else:
             externalProcObj.run(self.dataOut, **externalProcObj.kwargs)
             self.operationKwargs[objId] = externalProcObj.kwargs
+
 
         return True
 
