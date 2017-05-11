@@ -67,7 +67,6 @@ def clean_modules(module):
 
 
 def search(nextcommand):
-
     if nextcommand is None:
         log.error('There is no Operation/ProcessingUnit to search')
     elif nextcommand == 'procs':
@@ -91,8 +90,8 @@ def search(nextcommand):
     else:
         try:
             module = locate('schainpy.model.{}'.format(nextcommand))
-            log.warning('Use this feature with caution. It may not return all the allowed arguments')
             args = module().getAllowedArgs()
+            log.warning('Use this feature with caution. It may not return all the allowed arguments')
             try:
                 args.remove('self')
             except Exception as e:
@@ -101,13 +100,17 @@ def search(nextcommand):
                 args.remove('dataOut')
             except Exception as e:
                 pass
-            log.success('Showing arguments of {} are:\n\033[1m{}\033[0m'.format(nextcommand, '\n'.join(args)))
+            if len(args) == 0:
+                log.success('{} has no arguments'.format(nextcommand))
+            else:
+                log.success('Showing arguments of {} are:\n\033[1m{}\033[0m'.format(nextcommand, '\n'.join(args)))
         except Exception as e:
             log.error('Module {} does not exists'.format(nextcommand))
             allModules = dir(import_module('schainpy.model'))
             module = check_module(allModules, Operation)
             module.extend(check_module(allModules, ProcessingUnit))
             similar = process.extractOne(nextcommand, module)[0]
+            log.success('Searching {} instead'.format(similar))
             search(similar)
 
 
