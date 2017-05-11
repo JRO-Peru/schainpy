@@ -34,7 +34,7 @@ setup(name="schainpy",
         include_package_data=False,
         entry_points={
             'console_scripts': [
-                'schain = schaincli.schaincli.cli:main',
+                'schain = schaincli.cli:main',
             ],
         },
         scripts =['schainpy/gui/schainGUI'],
@@ -48,6 +48,7 @@ setup(name="schainpy",
                           "paramiko >= 2.1.2",
                           "paho-mqtt >= 1.2",
                           "zmq",
-                          "fuzzywuzzy"
+                          "fuzzywuzzy",
+                          "click"
                           ],
       )

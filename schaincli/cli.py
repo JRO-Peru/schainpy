@@ -2,7 +2,7 @@ import click
 import schainpy
 import subprocess
 from multiprocessing import cpu_count
-from schaincli.schaincli import templates
+from schaincli import templates
 from schainpy import controller_api
 import os
 import sys
