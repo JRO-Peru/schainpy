@@ -65,7 +65,7 @@ def hildebrand_sekhon(data, navg):
         anoise    :    noise's level
     """
 
-    sortdata = numpy.sort(data,axis=None)
+    sortdata = numpy.sort(data, axis=None)
 #     lenOfData = len(sortdata)
 #     nums_min = lenOfData*0.2
 #

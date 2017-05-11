@@ -7,7 +7,7 @@ import json
 import numpy
 import paho.mqtt.client as mqtt
 import zmq
-import cPickle as pickle
+from profilehooks import profile
 import datetime
 from zmq.utils.monitor import recv_monitor_message
 from functools import wraps
@@ -29,7 +29,7 @@ def roundFloats(obj):
     elif isinstance(obj, float):
         return round(obj, 2)
 
-def decimate(z):
+def decimate(z, MAXNUMY):
     # dx = int(len(self.x)/self.__MAXNUMX) + 1
 
     dy = int(len(z[0])/MAXNUMY) + 1
@@ -107,7 +107,7 @@ class PublishData(Operation):
             print "MQTT Conection error."
             self.client = False
 
-    def setup(self, port=1883, username=None, password=None, clientId="user", zeromq=1, **kwargs):
+    def setup(self, port=1883, username=None, password=None, clientId="user", zeromq=1, verbose=True, **kwargs):
         self.counter = 0
         self.topic = kwargs.get('topic', 'schain')
         self.delay = kwargs.get('delay', 0)
@@ -119,6 +119,8 @@ class PublishData(Operation):
         self.zeromq = zeromq
         self.mqtt = kwargs.get('plottype', 0)
         self.client = None
+        self.verbose = verbose
+        self.dataOut.firstdata = True
         setup = []
         if mqtt is 1:
             self.client = mqtt.Client(
@@ -149,6 +151,7 @@ class PublishData(Operation):
 
             self.zmq_socket.connect(address)
             time.sleep(1)
+
 
     def publish_data(self):
         self.dataOut.finished = False
@@ -230,8 +233,11 @@ class PublishData(Operation):
             self.client.publish(self.topic + self.plottype, json.dumps(payload), qos=0)
 
         if self.zeromq is 1:
-            print '[Sending] {} - {}'.format(self.dataOut.type, self.dataOut.datatime)
+            if self.verbose:
+                print '[Sending] {} - {}'.format(self.dataOut.type, self.dataOut.datatime)
             self.zmq_socket.send_pyobj(self.dataOut)
+            self.dataOut.firstdata = False
+
 
     def run(self, dataOut, **kwargs):
         self.dataOut = dataOut
@@ -246,11 +252,10 @@ class PublishData(Operation):
         if self.zeromq is 1:
             self.dataOut.finished = True
             self.zmq_socket.send_pyobj(self.dataOut)
-
+            self.zmq_socket.close()
         if self.client:
             self.client.loop_stop()
             self.client.disconnect()
-
 
 class ReceiverData(ProcessingUnit, Process):
 
@@ -330,12 +335,13 @@ class ReceiverData(ProcessingUnit, Process):
 
         return sendDataThrottled
 
+
     def send(self, data):
         # print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
         self.sender.send_pyobj(data)
 
-    def update(self):
 
+    def update(self):
         t = self.dataOut.utctime
 
         if t in self.data['times']:
@@ -398,10 +404,13 @@ class ReceiverData(ProcessingUnit, Process):
             self.sender_web = self.context.socket(zmq.PUB)
             self.sender_web.connect(self.plot_address)
             time.sleep(1)
+
         if 'server' in self.kwargs:
             self.sender.bind("ipc:///tmp/{}.plots".format(self.kwargs['server']))
         else:
             self.sender.bind("ipc:///tmp/zmq.plots")
+
+        time.sleep(3)
 
         t = Thread(target=self.event_monitor, args=(monitor,))
         t.start()
@@ -413,6 +422,10 @@ class ReceiverData(ProcessingUnit, Process):
 
             self.update()
 
+            if self.dataOut.firstdata is True:
+                self.data['STARTED'] = True
+
+
             if self.dataOut.finished is True:
                 self.send(self.data)
                 self.connections -= 1
@@ -421,6 +434,7 @@ class ReceiverData(ProcessingUnit, Process):
                     self.data['ENDED'] = True
                     self.send(self.data)
                     self.setup()
+                    self.started = False
             else:
                 if self.realtime:
                     self.send(self.data)
@@ -429,6 +443,7 @@ class ReceiverData(ProcessingUnit, Process):
                     self.sendData(self.send, self.data)
                 self.started = True
 
+            self.data['STARTED'] = False
         return
 
     def sendToWeb(self):

@@ -8,6 +8,7 @@ import ast
 import datetime
 import traceback
 import math
+import time
 from multiprocessing import Process, Queue, cpu_count
 
 import schainpy
@@ -66,8 +67,7 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_da
         for process in processes:
             process.join()
             process.terminate()
-        sys.exit()
-
+        time.sleep(3)
 
 class ParameterConf():
 
