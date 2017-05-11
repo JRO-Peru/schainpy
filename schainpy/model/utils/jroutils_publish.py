@@ -367,8 +367,10 @@ class ReceiverData(ProcessingUnit, Process):
                 self.data[plottype][t] = self.dataOut.getCoherence()
             if plottype == 'phase':
                 self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
-            if plottype == 'wind':
+            if plottype == 'output':
                 self.data[plottype][t] = self.dataOut.data_output
+            if plottype == 'param':
+                self.data[plottype][t] = self.dataOut.data_param
             if self.realtime:
                 self.data_web['timestamp'] = t
                 if plottype == 'spc':
@@ -396,7 +398,10 @@ class ReceiverData(ProcessingUnit, Process):
             self.sender_web = self.context.socket(zmq.PUB)
             self.sender_web.connect(self.plot_address)
             time.sleep(1)
-        self.sender.bind("ipc:///tmp/zmq.plots")
+        if 'server' in self.kwargs:
+            self.sender.bind("ipc:///tmp/{}.plots".format(self.kwargs['server']))
+        else:
+            self.sender.bind("ipc:///tmp/zmq.plots")
 
         t = Thread(target=self.event_monitor, args=(monitor,))
         t.start()

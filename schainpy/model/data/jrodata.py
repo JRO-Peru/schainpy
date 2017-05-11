@@ -1216,7 +1216,10 @@ class Parameters(Spectra):
 
     def getTimeInterval(self):
 
-        return self.timeInterval1
+        if hasattr(self, 'timeInterval1'):
+            return self.timeInterval1
+        else:
+            return self.paramInterval
 
     def getNoise(self):
 
