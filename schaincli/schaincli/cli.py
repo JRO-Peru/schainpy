@@ -2,7 +2,8 @@ import click
 import schainpy
 import subprocess
 from multiprocessing import cpu_count
-from schaincli import templates
+from schaincli.schaincli import templates
+from schainpy import controller_api
 import os
 import sys
 import glob
@@ -22,7 +23,7 @@ def print_version(ctx, param, value):
 def main(command, nextcommand, version, xml):
     """COMMAND LINE INTERFACE FOR SIGNAL CHAIN - JICAMARCA RADIO OBSERVATORY"""
     if xml is not None:
-        subprocess.call(['schain --file=' + xml], shell=True)
+        runFromXML(xml)
     elif command == 'generate':
         generate()
     elif command == 'test':
@@ -43,6 +44,7 @@ def main(command, nextcommand, version, xml):
     else:
         click.echo('\x1b[6;37;41m[ERROR] - Command is not defined.\x1b[0m')
 
+
 def basicInputs():
     inputs = {}
     inputs['desc'] = click.prompt('Enter a description', default="A schain project", type=str)
@@ -54,6 +56,7 @@ def basicInputs():
     inputs['endHour'] = click.prompt('End hour', default='23:59:59', type=str)
     inputs['figpath'] = inputs['path'] + '/figs'
     return inputs
+
 
 def generate():
     inputs = basicInputs()
@@ -73,5 +76,23 @@ def generate():
 
 
 def test():
-    print templates.basic.format(name='hola', desc= 'desc', path='path', startDate='0', endDate='0')
+    print templates.basic.format(name='hola', desc='desc', path='path', startDate='0', endDate='0')
     click.echo('testing')
+
+
+def runFromXML(filename):
+    controller = controller_api.ControllerThread()
+    if not controller.readXml(filename):
+        return
+
+    plotterObj = controller.useExternalPlotter()
+
+    controller.start()
+    plotterObj.start()
+
+    print "Finishing all processes ..."
+
+    controller.join(5)
+
+    print "End of script"
+    return

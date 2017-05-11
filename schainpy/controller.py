@@ -1313,9 +1313,9 @@ class Project():
 
         print "Process finished"
 
-    def start(self):
+    def start(self, filename=None):
 
-        self.writeXml()
+        self.writeXml(filename)
         self.createObjects()
         self.connectObjects()
         self.run()

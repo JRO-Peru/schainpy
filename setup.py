@@ -32,8 +32,12 @@ setup(name="schainpy",
                       'schainpy.gui.figures': ['*.png','*.jpg'],
                       },
         include_package_data=False,
-        scripts =['schainpy/gui/schainGUI',
-                  'schainpy/scripts/schain'],
+        entry_points={
+            'console_scripts': [
+                'schain = schaincli.schaincli.cli:main',
+            ],
+        },
+        scripts =['schainpy/gui/schainGUI'],
         ext_modules=[Extension("cSchain", ["schainpy/model/proc/extensions.c"])],
         install_requires=[
                           "scipy >= 0.14.0",
