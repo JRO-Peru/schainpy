@@ -94,4 +94,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Set number of parallel processes')
     parser.add_argument('--nProcess', default=1, type=int)
     args = parser.parse_args()
-    multiSchain(fiber, nProcess=args.nProcess, startDate='2017/01/26', endDate='2017/01/28')
+    multiSchain(fiber, nProcess=args.nProcess, startDate='2017/01/26', endDate='2017/01/26')

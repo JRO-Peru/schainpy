@@ -16,11 +16,23 @@ if __name__ == '__main__':
 
     proc1 = controllerObj.addProcUnit(name='ReceiverData')
     proc1.addParameter(name='realtime', value='0', format='bool')
-    proc1.addParameter(name='plottypes', value='rti,coh,phase', format='str')
+    proc1.addParameter(name='plottypes', value='rti,coh,phase,snr,dop', format='str')
     proc1.addParameter(name='throttle', value='10', format='int')
     proc1.addParameter(name='interactive', value='0', format='bool')
     # proc1.addParameter(name='server', value='tcp://10.10.10.82:7000', format='str')
     ## TODO Agregar direccion de server de publicacion a graficos como variable
+    op3 = proc1.addOperation(name='PlotSNRData', optype='other')
+    op3.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op3.addParameter(name='zmax', value='30', format='int')
+    op3.addParameter(name='zmin', value='-10', format='int')
+    op3.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+    op3.addParameter(name='show', value='0', format='bool')
+    # #
+    op4 = proc1.addOperation(name='PlotDOPData', optype='other')
+    op4.addParameter(name='wintitle', value='Julia 150Km', format='str')
+    op4.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
+    op4.addParameter(name='show', value='0', format='bool')
+    op4.addParameter(name='colormap', value='jet', format='str')
 
     op1 = proc1.addOperation(name='PlotRTIData', optype='other')
     op1.addParameter(name='wintitle', value='Julia 150Km', format='str')
@@ -43,16 +55,6 @@ if __name__ == '__main__':
     # # proc2.addParameter(name='server', value='juanca', format='str')
     # # proc2.addParameter(name='plottypes', value='snr,dop', format='str')
     # #
-    # op3 = proc1.addOperation(name='PlotSNRData', optype='other')
-    # op3.addParameter(name='wintitle', value='Julia 150Km', format='str')
-    # op3.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
-    # op3.addParameter(name='show', value='0', format='bool')
-    # #
-    # op4 = proc1.addOperation(name='PlotDOPData', optype='other')
-    # op4.addParameter(name='wintitle', value='Julia 150Km', format='str')
-    # op4.addParameter(name='save', value='/home/nanosat/Pictures', format='str')
-    # op4.addParameter(name='show', value='0', format='bool')
-    # op4.addParameter(name='colormap', value='jet', format='str')
 
 
 
