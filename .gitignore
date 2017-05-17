@@ -100,3 +100,5 @@ ENV/
 # eclipse
 .project
 .pydevproject
+
+schainpy/scripts/
