@@ -9,6 +9,7 @@ import glob
 import time
 import numpy
 import fnmatch
+import inspect
 import time, datetime
 #import h5py
 import traceback
@@ -535,6 +536,9 @@ class JRODataIO:
         dtype_width = get_dtype_width(dtype_index)
 
         return dtype_width
+
+    def getAllowedArgs(self):
+        return inspect.getargspec(self.run).args
 
 class JRODataReader(JRODataIO):
 
@@ -1432,12 +1436,52 @@ class JRODataReader(JRODataIO):
         self.__printInfo = False
 
 
-    def run(self, **kwargs):
+    def run(self,
+                path=None,
+                startDate=None,
+                endDate=None,
+                startTime=datetime.time(0,0,0),
+                endTime=datetime.time(23,59,59),
+                set=None,
+                expLabel = "",
+                ext = None,
+                online = False,
+                delay = 60,
+                walk = True,
+                getblock = False,
+                nTxs = 1,
+                realtime=False,
+                blocksize=None,
+                blocktime=None,
+                queue=None,
+                skip=None,
+                cursor=None,
+                warnings=True,
+                verbose=True, **kwargs):
 
         if not(self.isConfig):
-
 #            self.dataOut = dataOut
-            self.setup(**kwargs)
+            self.setup( path=path,
+                        startDate=startDate,
+                        endDate=endDate,
+                        startTime=startTime,
+                        endTime=endTime,
+                        set=set,
+                        expLabel=expLabel,
+                        ext=ext,
+                        online=online,
+                        delay=delay,
+                        walk=walk,
+                        getblock=getblock,
+                        nTxs=nTxs,
+                        realtime=realtime,
+                        blocksize=blocksize,
+                        blocktime=blocktime,
+                        queue=queue,
+                        skip=skip,
+                        cursor=cursor,
+                        warnings=warnings,
+                        verbose=verbose)
             self.isConfig = True
 
         self.getData()
@@ -1740,11 +1784,11 @@ class JRODataWriter(JRODataIO):
 
         return 1
 
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=None, ext=None, datatype=4, **kwargs):
 
         if not(self.isConfig):
 
-            self.setup(dataOut, **kwargs)
+            self.setup(dataOut, path, blocksPerFile, profilesPerBlock=profilesPerBlock, set=set, ext=ext, datatype=datatype, **kwargs)
             self.isConfig = True
 
         self.putData()
