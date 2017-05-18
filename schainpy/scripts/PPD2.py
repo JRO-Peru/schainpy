@@ -23,7 +23,7 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='SpectraReader',
 
 #     #opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 #
-procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
+# procUnitConfObj2 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
 # procUnitConfObj2.addParameter(name='nipp', value='5', format='int')
 
 procUnitConfObj3 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=readUnitConfObj.getId())
