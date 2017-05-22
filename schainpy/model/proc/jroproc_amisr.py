@@ -41,6 +41,9 @@ class PrintInfo(Operation):
 class BeamSelector(Operation):
     profileIndex = None
     nProfiles = None
+    parameters = { 
+        'beam': 'string',
+    }
     
     def __init__(self):
         

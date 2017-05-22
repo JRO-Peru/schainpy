@@ -10,6 +10,7 @@ import numpy
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
+
 class SpectraPlot(Figure):
 
     isConfig = None
@@ -651,6 +652,38 @@ class CoherenceMap(Figure):
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'cmap'
+
+    parameters = { 
+        'id': 'string',
+        'wintitle': 'string',
+        'pairsList': 'pairsLists',
+        'showprofile': 'boolean',
+        'xmin': 'float',
+        'xmax': 'float',
+        'ymin': 'float',
+        'ymax': 'float',
+        'zmin': 'float',
+        'zmax': 'float',
+        'timerange': 'float',
+        'phase_min': 'float',
+        'phase_max': 'float',
+        'save': 'boolean',
+        'figpath': 'string',
+        'figfile': 'string',
+        'ftp': 'boolean',
+        'wr_period': 'int',
+        'coherence_cmap': 'colormap',
+        'phase_cmap': 'colormap',
+        'show': 'boolean',
+        'server': 'string',
+        'folder': 'string',
+        'username': 'string',
+        'password': 'string',
+        'ftp_wei': 'int',
+        'exp_code': 'int',
+        'sub_exp_code': 'int',
+        'plot_pos': 'int',
+    }
 
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)
@@ -1310,6 +1343,34 @@ class BeaconPhase(Figure):
     __nsubplots = None
 
     PREFIX = 'beacon_phase'
+    
+    parameters = { 
+        'id': 'string',
+        'wintitle': 'string',
+        'pairsList': 'pairsList',
+        'showprofile': 'boolean',
+        'xmin': 'float',
+        'xmax': 'float',
+        'ymin': 'float',
+        'ymax': 'float',
+        'hmin': 'float',
+        'hmax': 'float',
+        'timerange': 'float',
+        'save': 'boolean',
+        'figpath': 'string',
+        'figfile': 'string',
+        'show': 'boolean',
+        'ftp': 'string',
+        'wr_period': 'int',
+        'server': 'string',
+        'folder': 'string',
+        'username': 'string',
+        'password': 'string',
+        'ftp_wei': 'int',
+        'exp_code': 'int',
+        'sub_exp_code': 'int',
+        'plot_pos': 'int',
+    }
 
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)

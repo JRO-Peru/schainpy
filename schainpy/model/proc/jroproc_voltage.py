@@ -332,6 +332,12 @@ class CohInt(Operation):
 
     n = None
 
+    parameters = { 
+        'n': 'int', 
+        'timeInterval':'float', 
+        'overlapping': 'boolean', 
+        'byblock': 'boolean'
+    }
 
     def __init__(self, **kwargs):
 
@@ -345,10 +351,9 @@ class CohInt(Operation):
 
         Inputs:
 
-            n        :    Number of coherent integrations
-            timeInterval   :    Time of integration. If the parameter "n" is selected this one does not work
-            overlapping    :
-
+            n               :    Number of coherent integrations
+            timeInterval    :    Time of integration. If the parameter "n" is selected this one does not work
+            overlapping     :
         """
 
         self.__initime = None
@@ -513,10 +518,10 @@ class CohInt(Operation):
         self.__dataReady = True
         return avgdata, avgdatatime
 
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, n=None, timeInterval=None, overlapping=False, byblock=False):
 
         if not self.isConfig:
-            self.setup(**kwargs)
+            self.setup(n=n, timeInterval=timeInterval, overlapping=overlapping, byblock=byblock)
             self.isConfig = True
 
         if dataOut.flagDataAsBlock:
@@ -1085,7 +1090,9 @@ class SplitProfiles(Operation):
         dataOut.ippSeconds /= n
 
 class CombineProfiles(Operation):
-
+    parameters = { 
+        'n': 'int',
+    }
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)
