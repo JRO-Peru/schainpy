@@ -605,6 +605,40 @@ class ParametersPlot(Figure):
     nplots = None
     nchan = None
 
+    parameters = { 
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'channelList': global_type_list,
+        'paramIndex': global_type_integer,
+        'colormap': global_type_colormap,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'zmin': global_type_float,
+        'zmax': global_type_float,
+        'timerange': global_type_float,
+        'showSNR': global_type_boolean,
+        'SNRthresh': global_type_float,
+        'SNRmin': global_type_float,
+        'SNRmax': global_type_float,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'lastone': global_type_integer,
+        'figfile': global_type_string,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'show': global_type_boolean,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
+    }
+
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)
         self.timerange = None
@@ -811,6 +845,46 @@ class Parameters1Plot(Figure):
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'prm'
+
+    parameters = { 
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'channelList': global_type_list,
+        'showprofile': global_type_boolean,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'zmin': global_type_float,
+        'zmax': global_type_float,
+        'timerange': global_type_float,
+        'parameterIndex': global_type_float,
+        'onlyPositive': global_type_boolean,
+        'SNRthresh': global_type_float,
+        'SNR': global_type_boolean,
+        'SNRmin': global_type_float,
+        'SNRmax': global_type_float,
+        'onlySNR': global_type_boolean,
+        'DOP': global_type_boolean,
+        'zlabel': global_type_string,
+        'parameterName': global_type_string,
+        'parameterObject': global_type_string,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'lastone': global_type_integer,
+        'figfile': global_type_string,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'show': global_type_string,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
+    }
 
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)
@@ -1480,6 +1554,32 @@ class PhasePlot(Figure):
     __nsubplots = None
 
     PREFIX = 'mphase'
+
+    parameters = { 
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'pairsList': global_type_pairsList,
+        'showprofile': global_type_boolean,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'timerange': global_type_float,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'figfile': global_type_string,
+        'show': global_type_boolean,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
+    }
 
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)

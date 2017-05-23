@@ -7,6 +7,7 @@ global_type_boolean = 'bolean'
 global_type_float = 'float'
 global_type_colormap = 'colormap'
 global_type_list = 'list'
+global_type_integer_or_list = 'integer_or_list'
 
 #BeaconPhase
 parameters = {
@@ -400,13 +401,17 @@ parameters = {
  }
 
 
-ParamWriter
+#ParamWriter
 parameters = { 
-: global_type_string,
- }
+	'path': global_type_string,
+	'blocksPerFile':global_type_integer, 
+	'metadataList': global_type_list, 
+	'dataList': global_type_list,  
+	'mode': global_type_integer,
+}
 
 
-Parameters1Plot
+#Parameters1Plot
 parameters = { 
 	'id': global_type_string,
 	'wintitle': global_type_string,
@@ -419,22 +424,22 @@ parameters = {
 	'zmin': global_type_float,
 	'zmax': global_type_float,
 	'timerange': global_type_float,
-	'parameterIndex': global_type_string,
-	'onlyPositive': global_type_string,
-	'SNRthresh': global_type_string,
-	'SNR': global_type_string,
+	'parameterIndex': global_type_float,
+	'onlyPositive': global_type_boolean,
+	'SNRthresh': global_type_float,
+	'SNR': global_type_boolean,
 	'SNRmin': global_type_float,
 	'SNRmax': global_type_float,
-	'onlySNR': global_type_string,
-	'DOP': global_type_string,
+	'onlySNR': global_type_boolean,
+	'DOP': global_type_boolean,
 	'zlabel': global_type_string,
 	'parameterName': global_type_string,
 	'parameterObject': global_type_string,
 	'save': global_type_boolean,
 	'figpath': global_type_string,
-	'lastone': global_type_string,
+	'lastone': global_type_integer,
 	'figfile': global_type_string,
-	'ftp': global_type_string,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
 	'show': global_type_string,
 	'server': global_type_string,
@@ -448,13 +453,13 @@ parameters = {
  }
 
 
-ParametersPlot
+#ParametersPlot
 parameters = { 
 	'id': global_type_string,
 	'wintitle': global_type_string,
 	'channelList': global_type_list,
-	'paramIndex': global_type_string,
-	'colormap': global_type_string,
+	'paramIndex': global_type_integer,
+	'colormap': global_type_colormap,
 	'xmin': global_type_float,
 	'xmax': global_type_float,
 	'ymin': global_type_float,
@@ -462,17 +467,17 @@ parameters = {
 	'zmin': global_type_float,
 	'zmax': global_type_float,
 	'timerange': global_type_float,
-	'showSNR': global_type_string,
-	'SNRthresh': global_type_string,
+	'showSNR': global_type_boolean,
+	'SNRthresh': global_type_float,
 	'SNRmin': global_type_float,
 	'SNRmax': global_type_float,
 	'save': global_type_boolean,
 	'figpath': global_type_string,
-	'lastone': global_type_string,
+	'lastone': global_type_integer,
 	'figfile': global_type_string,
-	'ftp': global_type_string,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
-	'show': global_type_string,
+	'show': global_type_boolean,
 	'server': global_type_string,
 	'folder': global_type_string,
 	'username': global_type_string,
@@ -484,11 +489,11 @@ parameters = {
  }
 
 
-PhasePlot
+#PhasePlot
 parameters = { 
 	'id': global_type_string,
 	'wintitle': global_type_string,
-	'pairsList': 'pairsLists',
+	'pairsList': global_type_pairsList,
 	'showprofile': global_type_boolean,
 	'xmin': global_type_float,
 	'xmax': global_type_float,
@@ -498,8 +503,8 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'show': global_type_string,
-	'ftp': global_type_string,
+	'show': global_type_boolean,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
 	'server': global_type_string,
 	'folder': global_type_string,
@@ -590,8 +595,8 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'show': global_type_string,
-	'ftp': global_type_string,
+	'show': global_type_boolean,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
 	'server': global_type_string,
 	'folder': global_type_string,
@@ -652,9 +657,9 @@ parameters = {
 	'figpath': global_type_string,
 	'lastone': global_type_string,
 	'figfile': global_type_string,
-	'ftp': global_type_string,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
-	'show': global_type_string,
+	'show': global_type_boolean,
 	'server': global_type_string,
 	'folder': global_type_string,
 	'username': global_type_string,
@@ -680,9 +685,9 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'ftp': global_type_string,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
-	'show': global_type_string,
+	'show': global_type_boolean,
 	'server': global_type_string,
 	'folder': global_type_string,
 	'username': global_type_string,
@@ -749,9 +754,9 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'show': global_type_string,
+	'show': global_type_boolean,
 	'wr_period': global_type_integer,
-	'ftp': global_type_string,
+	'ftp': global_type_boolean,
 	'server': global_type_string,
 	'folder': global_type_string,
 	'username': global_type_string,
@@ -784,8 +789,8 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'show': global_type_string,
-	'ftp': global_type_string,
+	'show': global_type_boolean,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
 	'server': global_type_string,
 	'folder': global_type_string,
@@ -811,8 +816,8 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'show': global_type_string,
-	'ftp': global_type_string,
+	'show': global_type_boolean,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
 	'server': global_type_string,
 	'folder': global_type_string,
@@ -834,9 +839,9 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'ftp': global_type_string,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
-	'show': global_type_string,
+	'show': global_type_boolean,
 	'server': global_type_string,
 	'folder': global_type_string,
 	'username': global_type_string,
@@ -869,8 +874,8 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'show': global_type_string,
-	'ftp': global_type_string,
+	'show': global_type_boolean,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
 	'server': global_type_string,
 	'folder': global_type_string,
@@ -920,7 +925,7 @@ parameters = {
 	'save': global_type_boolean,
 	'figpath': global_type_string,
 	'figfile': global_type_string,
-	'show': global_type_string,
+	'show': global_type_boolean,
  }
 
 
@@ -981,9 +986,9 @@ parameters = {
 	'figpath': global_type_string,
 	'lastone': global_type_string,
 	'figfile': global_type_string,
-	'ftp': global_type_string,
+	'ftp': global_type_boolean,
 	'wr_period': global_type_integer,
-	'show': global_type_string,
+	'show': global_type_boolean,
 	'server': global_type_string,
 	'folder': global_type_string,
 	'username': global_type_string,

@@ -602,33 +602,32 @@ class ParamWriter(Operation):
 
     lastTime = None
 
+    parameters = { 
+        'path': global_type_string,
+        'blocksPerFile':global_type_integer, 
+        'metadataList': global_type_list, 
+        'dataList': global_type_list,  
+        'mode': global_type_integer,
+    }
+
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
         self.isConfig = False
         return
 
-    def setup(self, dataOut, **kwargs):
+    def setup(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
 
-        self.path = kwargs['path']
-
-        if kwargs.has_key('blocksPerFile'):
-            self.blocksPerFile = kwargs['blocksPerFile']
-        else:
-            self.blocksPerFile = 10
-
-        self.metadataList = kwargs['metadataList']
-        self.dataList = kwargs['dataList']
+        self.path = path
+        self.blocksPerFile = blocksPerFile
+        self.metadataList = metadataList
+        self.dataList = dataList
         self.dataOut = dataOut
-
-        if kwargs.has_key('mode'):
-            mode = kwargs['mode']
-
-            if type(mode) == int:
-                mode = numpy.zeros(len(self.dataList)) + mode
-        else:
-            mode = numpy.ones(len(self.dataList))
-
         self.mode = mode
+        
+        if self.mode is not None:
+            self.mode = numpy.zeros(len(self.dataList)) + mode
+        else:
+            self.mode = numpy.ones(len(self.dataList))
 
         arrayDim = numpy.zeros((len(self.dataList),5))
 
@@ -1074,10 +1073,11 @@ class ParamWriter(Operation):
         self.fp.close()
         return
 
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
 
         if not(self.isConfig):
-            flagdata = self.setup(dataOut, **kwargs)
+            flagdata = self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
+                                  metadataList=metadataList, dataList=dataList, mode=mode, **kwargs)
 
             if not(flagdata):
                 return
