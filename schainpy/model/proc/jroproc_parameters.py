@@ -1277,6 +1277,14 @@ class EWDriftsEstimation(Operation):
 
 class NonSpecularMeteorDetection(Operation):
 
+    parameters = { 
+        'mode': global_type_string,
+        'SNRthresh': global_type_float,
+        'phaseDerThresh': global_type_float,
+        'cohThresh': global_type_float,
+        'allData': global_type_boolean,
+    }
+    
     def run(self, mode, SNRthresh=8, phaseDerThresh=0.5, cohThresh=0.8, allData = False):
         data_acf = self.dataOut.data_pre[0]
         data_ccf = self.dataOut.data_pre[1]
@@ -2190,6 +2198,13 @@ class SMDetection(Operation):
         return arrayParameters
 
 class CorrectSMPhases(Operation):
+    parameters = { 
+        'phaseOffsets': global_type_pairsList,
+        'hmin': global_type_float,
+        'hmax': global_type_float,
+        'azimuth': global_type_float,
+        'channelPositions': global_type_pairsList,
+    }
 
     def run(self, dataOut, phaseOffsets, hmin = 50, hmax = 150, azimuth = 45, channelPositions = None):
 

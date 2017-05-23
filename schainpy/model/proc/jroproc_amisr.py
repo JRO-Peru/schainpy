@@ -42,7 +42,7 @@ class BeamSelector(Operation):
     profileIndex = None
     nProfiles = None
     parameters = { 
-        'beam': 'string',
+	    'beam': global_type_string,
     }
     
     def __init__(self):

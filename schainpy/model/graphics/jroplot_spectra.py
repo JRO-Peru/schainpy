@@ -231,6 +231,40 @@ class CrossSpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'cspc'
 
+    parameters = { 
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'pairsList': global_type_pairsList,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'zmin': global_type_float,
+        'zmax': global_type_float,
+        'coh_min': global_type_float,
+        'coh_max': global_type_float,
+        'phase_min': global_type_float,
+        'phase_max': global_type_float,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'figfile': global_type_string,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'power_cmap': global_type_colormap,
+        'coherence_cmap': global_type_colormap,
+        'phase_cmap': global_type_colormap,
+        'show': global_type_boolean,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
+        'xaxis': global_type_string,
+    }
+
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)
         self.isConfig = False
@@ -1143,6 +1177,32 @@ class Noise(Figure):
     __nsubplots = None
 
     PREFIX = 'noise'
+    
+    parameters = { 
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'channelList': global_type_list,
+        'showprofile': global_type_boolean,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'timerange': global_type_float,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'figfile': global_type_string,
+        'show': global_type_boolean,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
+    }
 
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)
@@ -1345,31 +1405,31 @@ class BeaconPhase(Figure):
     PREFIX = 'beacon_phase'
     
     parameters = { 
-        'id': 'string',
-        'wintitle': 'string',
-        'pairsList': 'pairsList',
-        'showprofile': 'boolean',
-        'xmin': 'float',
-        'xmax': 'float',
-        'ymin': 'float',
-        'ymax': 'float',
-        'hmin': 'float',
-        'hmax': 'float',
-        'timerange': 'float',
-        'save': 'boolean',
-        'figpath': 'string',
-        'figfile': 'string',
-        'show': 'boolean',
-        'ftp': 'string',
-        'wr_period': 'int',
-        'server': 'string',
-        'folder': 'string',
-        'username': 'string',
-        'password': 'string',
-        'ftp_wei': 'int',
-        'exp_code': 'int',
-        'sub_exp_code': 'int',
-        'plot_pos': 'int',
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'pairsList': global_type_pairsList,
+        'showprofile': global_type_boolean,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'hmin': global_type_float,
+        'hmax': global_type_float,
+        'timerange': global_type_float,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'figfile': global_type_string,
+        'show': global_type_boolean,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
     }
 
     def __init__(self, **kwargs):
