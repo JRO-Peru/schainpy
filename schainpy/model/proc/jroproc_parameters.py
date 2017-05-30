@@ -1038,7 +1038,7 @@ class WindProfiler(Operation):
 
         return data_output
 
-    def run(self, dataOut, technique, **kwargs):
+    def run(self, dataOut, technique, hmin=70, hmax=110, nHours=1, **kwargs):
 
         param = dataOut.data_param
         if dataOut.abscissaList != None:
