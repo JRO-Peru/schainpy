@@ -24,7 +24,7 @@ def checkKwargs(method, kwargs):
         if fuzz is None:
             continue
         if fuzz[1] < 100:
-            raise Exception('\x1b[2;30;43mDid you mean {} instead of {} in {}? \x1b[0m'.
+            raise Exception('\x1b[0;32;40mDid you mean {} instead of {} in {}? \x1b[0m'.
                             format(fuzz[0], kwarg, method.__self__.__class__.__name__))
 
 class ProcessingUnit(object):
