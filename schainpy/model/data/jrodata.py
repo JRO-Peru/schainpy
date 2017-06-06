@@ -114,10 +114,6 @@ class GenericData(object):
 
     flagNoData = True
 
-    def __init__(self):
-
-        raise NotImplementedError
-
     def copy(self, inputObj=None):
 
         if inputObj == None:
@@ -230,10 +226,6 @@ class JROData(GenericData):
     beam = Beam()
 
     profileIndex = None
-
-    def __init__(self):
-
-        raise NotImplementedError
 
     def getNoise(self):
 
