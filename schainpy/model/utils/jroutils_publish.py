@@ -15,6 +15,7 @@ from threading import Thread
 from multiprocessing import Process
 
 from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
+from schainpy.model.data.jrodata import JROData
 
 MAXNUMX = 100
 MAXNUMY = 100
@@ -257,7 +258,44 @@ class PublishData(Operation):
             self.client.loop_stop()
             self.client.disconnect()
 
-class ReceiverData(ProcessingUnit, Process):
+
+class ReceiverData(ProcessingUnit):
+
+    def __init__(self, **kwargs):
+
+        ProcessingUnit.__init__(self, **kwargs)
+
+        self.isConfig = False
+        server = kwargs.get('server', 'zmq.pipe')
+        if 'tcp://' in server:
+            address = server
+        else:
+            address = 'ipc:///tmp/%s' % server
+
+        self.address = address
+        self.dataOut = JROData()
+
+    def setup(self):
+
+        self.context = zmq.Context()
+        self.receiver = self.context.socket(zmq.PULL)
+        self.receiver.bind(self.address)
+        time.sleep(0.5)
+        print '[Starting] ReceiverData from {}'.format(self.address)
+
+
+    def run(self):
+
+        if not self.isConfig:
+            self.setup()
+            self.isConfig = True
+
+        self.dataOut = self.receiver.recv_pyobj()
+        print '[Receiving] {} - {}'.format(self.dataOut.type,
+                                               self.dataOut.datatime.ctime())
+
+
+class PlotterReceiver(ProcessingUnit, Process):
 
     throttle_value = 5
 
@@ -268,7 +306,7 @@ class ReceiverData(ProcessingUnit, Process):
         self.mp = False
         self.isConfig = False
         self.isWebConfig = False
-        self.plottypes =[]
+        self.plottypes = []
         self.connections = 0
         server = kwargs.get('server', 'zmq.pipe')
         plot_server = kwargs.get('plot_server', 'zmq.web')
