@@ -14,14 +14,16 @@ if __name__ == '__main__':
     controllerObj = Project()
     controllerObj.setup(id='191', name='test01', description=desc)
 
-    proc1 = controllerObj.addProcUnit(name='ReceiverData')
+    proc1 = controllerObj.addProcUnit(name='PlotterReceiver')
     # proc1.addParameter(name='realtime', value='0', format='bool')
     #proc1.addParameter(name='plottypes', value='rti,coh,phase,snr,dop', format='str')
     #proc1.addParameter(name='plottypes', value='rti,coh,phase,snr', format='str')
     proc1.addParameter(name='plottypes', value='dop', format='str')
 
-    proc1.addParameter(name='throttle', value='10', format='int')
-    #proc1.addParameter(name='server', value='tcp://10.10.10.82:7000', format='str')
+    #proc1.addParameter(name='throttle', value='10', format='int')
+
+    proc1.addParameter(name='interactive', value='0', format='bool') # ? PREGUNTAR
+    # proc1.addParameter(name='server', value='tcp://10.10.10.82:7000', format='str')
     ## TODO Agregar direccion de server de publicacion a graficos como variable
 
     """

@@ -114,10 +114,6 @@ class GenericData(object):
 
     flagNoData = True
 
-    def __init__(self):
-
-        raise NotImplementedError
-
     def copy(self, inputObj=None):
 
         if inputObj == None:
@@ -230,10 +226,6 @@ class JROData(GenericData):
     beam = Beam()
 
     profileIndex = None
-
-    def __init__(self):
-
-        raise NotImplementedError
 
     def getNoise(self):
 
@@ -1216,7 +1208,10 @@ class Parameters(Spectra):
 
     def getTimeInterval(self):
 
-        return self.timeInterval1
+        if hasattr(self, 'timeInterval1'):
+            return self.timeInterval1
+        else:
+            return self.paramInterval
 
     def getNoise(self):
 
