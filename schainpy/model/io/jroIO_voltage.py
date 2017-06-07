@@ -10,6 +10,7 @@ from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Voltage
+import zmq
 # from _sha import blocksize
 
 class VoltageReader(JRODataReader, ProcessingUnit):
@@ -300,6 +301,12 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.radarControllerHeaderObj.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
 
         return
+
+    
+    def getFromZMQ(self):
+        self.dataOut = self.receiver.recv_pyobj()
+        print '[Receiving] {} - {}'.format(self.dataOut.type,
+                                           self.dataOut.datatime.ctime())
 
     def getData(self):
         """
