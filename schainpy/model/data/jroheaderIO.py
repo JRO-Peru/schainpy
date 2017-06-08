@@ -115,7 +115,6 @@ class BasicHeader(Header):
     dstFlag = None
     errorCount = None
     datatime = None
-    
     __LOCALTIME = None
         
     def __init__(self, useLocalTime=True):
@@ -134,8 +133,12 @@ class BasicHeader(Header):
     def read(self, fp):
         
         try:
-            header = numpy.fromfile(fp, BASIC_STRUCTURE,1)
-            
+            if hasattr(fp, 'read'):
+                print 'fromfile'
+                header = numpy.fromfile(fp, BASIC_STRUCTURE,1)
+            else:
+                print 'fromstring'
+                header = numpy.fromstring(fp, BASIC_STRUCTURE,1)
         except Exception, e:
             print "BasicHeader: "
             print e

@@ -217,7 +217,6 @@ class ParameterConf():
         self.id = str(new_id)
 
     def setup(self, id, name, value, format='str'):
-
         self.id = str(id)
         self.name = name
         if format == 'obj':
@@ -757,26 +756,26 @@ class ReadUnitConf(ProcUnitConf):
 
         return self.ELEMENTNAME
 
-    def setup(self, id, name, datatype, path, startDate="", endDate="", startTime="", endTime="", parentId=None, queue=None, **kwargs):
+    def setup(self, id, name, datatype, path='', startDate="", endDate="", startTime="", 
+              endTime="", parentId=None, queue=None, server=None, **kwargs):
 
         #Compatible with old signal chain version
         if datatype==None and name==None:
             raise ValueError, "datatype or name should be defined"
-
+        
         if name==None:
             if 'Reader' in datatype:
                 name = datatype
             else:
                 name = '%sReader' %(datatype)
-
         if datatype==None:
             datatype = name.replace('Reader','')
 
         self.id = id
         self.name = name
         self.datatype = datatype
-
-        self.path = os.path.abspath(path)
+        if path != '':
+            self.path = os.path.abspath(path)
         self.startDate = startDate
         self.endDate = endDate
         self.startTime = startTime
@@ -785,6 +784,7 @@ class ReadUnitConf(ProcUnitConf):
         self.inputId = '0'
         self.parentId = parentId
         self.queue = queue
+        self.server = server
         self.addRunOperation(**kwargs)
 
     def update(self, datatype, path, startDate, endDate, startTime, endTime, parentId=None, name=None, **kwargs):
@@ -826,16 +826,19 @@ class ReadUnitConf(ProcUnitConf):
 
         opObj = self.addOperation(name = 'run', optype = 'self')
 
-        opObj.addParameter(name='datatype' , value=self.datatype, format='str')
-        opObj.addParameter(name='path'     , value=self.path, format='str')
-        opObj.addParameter(name='startDate' , value=self.startDate, format='date')
-        opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
-        opObj.addParameter(name='startTime' , value=self.startTime, format='time')
-        opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
-        opObj.addParameter(name='queue'   , value=self.queue, format='obj')
-
-        for key, value in kwargs.items():
-            opObj.addParameter(name=key, value=value, format=type(value).__name__)
+        if self.server is None:
+            opObj.addParameter(name='datatype' , value=self.datatype, format='str')
+            opObj.addParameter(name='path'     , value=self.path, format='str')
+            opObj.addParameter(name='startDate' , value=self.startDate, format='date')
+            opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
+            opObj.addParameter(name='startTime' , value=self.startTime, format='time')
+            opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
+            opObj.addParameter(name='queue'   , value=self.queue, format='obj')
+            for key, value in kwargs.items():
+                opObj.addParameter(name=key, value=value, format=type(value).__name__)
+        else:
+            opObj.addParameter(name='server' , value=self.server, format='str')
+        
 
         return opObj
 

@@ -189,6 +189,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         pts2read = self.processingHeaderObj.profilesPerBlock * self.processingHeaderObj.nHeights * self.systemHeaderObj.nChannels
         self.blocksize = pts2read
 
+    
 
     def readBlock(self):
         """
@@ -213,11 +214,23 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         Exceptions:
             Si un bloque leido no es un bloque valido
         """
-        current_pointer_location = self.fp.tell()
-        junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
+        
+        print 'READ BLOCK'
+        if self.server is not None:
+            self.zBlock = self.receiver.recv()
+            self.zHeader = self.zBlock[:24]
+            self.zDataBlock = self.zBlock[24:]
+            junk = numpy.fromstring(self.zDataBlock, numpy.dtype([('real','<i4'),('imag','<i4')]))
+            self.processingHeaderObj.profilesPerBlock = 240
+            self.processingHeaderObj.nHeights = 248
+            self.systemHeaderObj.nChannels
+        else:
+            current_pointer_location = self.fp.tell()
+            junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
 
         try:
             junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
+            print'junked'
         except:
             #print "The read block (%3d) has not enough data" %self.nReadBlocks
 
@@ -302,12 +315,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         return
 
-    
-    def getFromZMQ(self):
-        self.dataOut = self.receiver.recv_pyobj()
-        print '[Receiving] {} - {}'.format(self.dataOut.type,
-                                           self.dataOut.datatime.ctime())
-
     def getData(self):
         """
         getData obtiene una unidad de datos del buffer de lectura, un perfil,  y la copia al objeto self.dataOut
@@ -344,15 +351,15 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.flagDiscontinuousBlock
             self.flagIsNewBlock
         """
-
+        print 1
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
             print 'Process finished'
             return 0
-
+        print 2
         self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
-
+        print 3
         if self.__hasNotDataInBuffer():
 
             if not( self.readNextBlock() ):
@@ -361,7 +368,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.getFirstHeader()
 
             self.reshapeData()
-
+        print 4
         if self.datablock is None:
             self.dataOut.flagNoData = True
             return 0

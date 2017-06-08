@@ -12,6 +12,7 @@ import fnmatch
 import inspect
 import time, datetime
 import traceback
+import zmq
 
 try:
     from gevent import sleep
@@ -993,12 +994,13 @@ class JRODataReader(JRODataIO):
         self.__isFirstTimeOnline = 0
 
     def __setNewBlock(self):
-
-        if self.fp == None:
-            return 0
+        if self.server is None:
+            if self.fp == None:
+                return 0
 
 #         if self.online:
 #             self.__jumpToLastBlock()
+        print 'xxxx'
 
         if self.flagIsNewFile:
             self.lastUTTime = self.basicHeaderObj.utc
@@ -1010,21 +1012,24 @@ class JRODataReader(JRODataIO):
                 return 0
             else:
                 return 1
-
-        currentSize = self.fileSize - self.fp.tell()
-        neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
-
-        if (currentSize >= neededSize):
-            self.basicHeaderObj.read(self.fp)
+        print 'xxxx'
+        if self.server is None:
+            currentSize = self.fileSize - self.fp.tell()
+            neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+            if (currentSize >= neededSize):
+                self.basicHeaderObj.read(self.fp)
+                self.lastUTTime = self.basicHeaderObj.utc
+                return 1
+        else:
+            self.basicHeaderObj.read(self.zHeader)
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
-
         if self.__waitNewBlock():
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
-
-        if not(self.setNextFile()):
-            return 0
+        if self.server is None:
+            if not(self.setNextFile()):
+                return 0
 
         deltaTime = self.basicHeaderObj.utc - self.lastUTTime #
         self.lastUTTime = self.basicHeaderObj.utc
@@ -1040,9 +1045,11 @@ class JRODataReader(JRODataIO):
 
         #Skip block out of startTime and endTime
         while True:
+            print 'cxxxx'
             if not(self.__setNewBlock()):
+                print 'returning'
                 return 0
-
+            print 'dxxx'
             if not(self.readBlock()):
                 return 0
 
@@ -1275,20 +1282,19 @@ class JRODataReader(JRODataIO):
                 warnings=True,
                 verbose=True,
                 server=None):
-        
         if server is not None:
-            server = kwargs.get('server', 'zmq.pipe')
             if 'tcp://' in server:
                 address = server
             else:
                 address = 'ipc:///tmp/%s' % server
-            self.address = address
+            self.server = address
             self.context = zmq.Context()
             self.receiver = self.context.socket(zmq.PULL)
-            self.receiver.bind(self.address)
+            self.receiver.bind(self.server)
             time.sleep(0.5)
-            print '[Starting] ReceiverData from {}'.format(self.address)
-        else:   
+            print '[Starting] ReceiverData from {}'.format(self.server)
+        else: 
+            self.server = None
             if path == None:
                 raise ValueError, "[Reading] The path is not valid"
 
@@ -1494,13 +1500,11 @@ class JRODataReader(JRODataIO):
                         skip=skip,
                         cursor=cursor,
                         warnings=warnings,
-                        server=None,
+                        server=server,
                         verbose=verbose)
             self.isConfig = True
-        if self.server is None:
-            self.getData()
-        else:
-            self.getFromZMQ()
+        print 'hola'
+        self.getData()
 
 class JRODataWriter(JRODataIO):
 
