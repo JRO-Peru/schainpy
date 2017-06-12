@@ -71,6 +71,7 @@ if __name__ == '__main__':
     op5.addParameter(name='zmin', value='-120', format='float')
     op5.addParameter(name='zmax', value='120', format='float')
     op5.addParameter(name='colormap', value='RdBu_r', format='str')
+    op5.addParameter(name='ind_plt_ch',value='1',format = 'bool')
     """
     op4 = proc1.addOperation(name='PlotSNRData1', optype='other')
     op4.addParameter(name='wintitle', value='HF System SNR1', format='str')

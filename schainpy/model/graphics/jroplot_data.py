@@ -37,7 +37,6 @@ class PlotData(Operation, Process):
         self.dataOut = None
         self.isConfig = False
         self.figure = None
-        self.figure2 = None #JM modificatiom
         self.axes = []
         self.localtime = kwargs.pop('localtime', True)
         self.show = kwargs.get('show', True)
@@ -59,6 +58,15 @@ class PlotData(Operation, Process):
         self.throttle_value = 5
         self.times = []
         #self.interactive = self.kwargs['parent']
+
+        '''
+        this new parameter is created to plot data from varius channels at different figures
+        1. crear una lista de figuras donde se puedan plotear las figuras,
+        2. dar las opciones de configuracion a cada figura, estas opciones son iguales para ambas figuras
+        3. probar?
+        '''
+        self.ind_plt_ch = kwargs.get('ind_plt_ch', False)
+        self.figurelist = None
 
 
     def fill_gaps(self, x_buffer, y_buffer, z_buffer):
@@ -94,37 +102,42 @@ class PlotData(Operation, Process):
     def __plot(self):
 
         print 'plotting...{}'.format(self.CODE)
-
-        if self.show:
-            self.figure.show()
-            self.figure2.show()
-
-        self.plot()
-        plt.tight_layout()
-
-#         self.figure.canvas.manager.set_window_title('{} {} - Date:{}'.format(self.title, self.CODE.upper(),
-#                                                                              datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')))
-#         self.figure2.canvas.manager.set_window_title('{} {} - Date:{}'.format(self.title, self.CODE.upper(),
-#                                                                              datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')))
-# =======
-        self.figure.canvas.manager.set_window_title('{} {} - {}'.format(self.title, self.CODE.upper(),
+        if self.ind_plt_ch is False : #standard
+            if self.show:
+                self.figure.show()
+            self.plot()
+            plt.tight_layout()
+            self.figure.canvas.manager.set_window_title('{} {} - {}'.format(self.title, self.CODE.upper(),
                                                                         datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
-        self.figure2.canvas.manager.set_window_title('{} {} - {}'.format(self.title, self.CODE.upper(),
-                                                                        datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
-
+        else :
+            for n, eachfigure in enumerate(self.figurelist):
+                if self.show:
+                    eachfigure.show()
+                self.plot() # ok? como elijo que figura?
+                plt.tight_layout()
+                eachfigure.canvas.manager.set_window_title('{} {} - {}'.format(self.title[n], self.CODE.upper(),
+                                                                            datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
 
         if self.save:
-            figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
-                                                                 datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
-            print 'Saving figure: {}'.format(figname)
-            self.figure.savefig(figname)
-            figname2 = os.path.join(self.save, '{}_{}2.png'.format(self.CODE,
-                                                                 datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
-            print 'Saving figure: {}'.format(figname2)
-            self.figure2.savefig(figname2)
+            if self.ind_plt_ch is False : #standard
+                figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
+                                                                     datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
+                print 'Saving figure: {}'.format(figname)
+                self.figure.savefig(figname)
+            else :
+                for n, eachfigure in enumerate(self.figurelist):
+                    #add specific name for each channel in channelList
+                    figname = os.path.join(self.save, '{}_{}_{}.png'.format(self.titles[n],self.CODE,
+                                                                         datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
 
-        self.figure.canvas.draw()
-        self.figure2.canvas.draw()
+                    print 'Saving figure: {}'.format(figname)
+                    eachfigure.savefig(figname)
+
+        if self.ind_plt_ch is False :
+            self.figure.canvas.draw()
+        else :
+            for eachfigure in self.figurelist:
+                eachfigure.canvas.draw()
 
     def plot(self):
 
@@ -246,7 +259,6 @@ class PlotSpectraData(PlotData):
         z = self.data[self.CODE]
 
         for n, ax in enumerate(self.axes):
-
             if ax.firsttime:
                 self.xmax = self.xmax if self.xmax else np.nanmax(x)
                 self.xmin = self.xmin if self.xmin else -self.xmax
@@ -484,95 +496,163 @@ class PlotRTIData(PlotData):
         self.ylabel = 'Range [Km]'
         self.titles = ['Channel {}'.format(x) for x in self.dataOut.channelList]
 
-        if self.figure is None:
-            self.figure = plt.figure(figsize=(self.width, self.height),
-                                     edgecolor='k',
-                                     facecolor='w')
-        else:
-            self.figure.clf()
-            self.axes = []
+        '''
+        Logica:
+        1) Si la variable ind_plt_ch es True, va a crear mas de 1 figura
+        2) guardamos "Figures" en una lista y "axes" en otra, quizas se deberia guardar el
+        axis dentro de "Figures" como un diccionario.
+        '''
+        if self.ind_plt_ch is False: #standard mode
 
-        if self.figure2 is None:
-            self.figure2 = plt.figure(figsize=(self.width, self.height),
-                                     edgecolor='k',
-                                     facecolor='w')
-        else:
-            self.figure2.clf()
-            self.axes = []
+            if self.figure is None: #solo para la priemra vez
+                self.figure = plt.figure(figsize=(self.width, self.height),
+                                         edgecolor='k',
+                                         facecolor='w')
+            else:
+                self.figure.clf()
+                self.axes = []
 
-        ax = self.figure.add_subplot(1,1,1)
-        #ax = self.figure( n+1)
-        ax.firsttime = True
-        self.axes.append(ax)
 
-        ax = self.figure2.add_subplot(1,1,1)
-        #ax = self.figure( n+1)
-        ax.firsttime = True
-        self.axes.append(ax)
-        # for n in range(self.nrows):
-        #     ax = self.figure.add_subplot(self.nrows, self.ncols, n+1)
-        #     #ax = self.figure( n+1)
-        #     ax.firsttime = True
-        #     self.axes.append(ax)
+            for n in range(self.nrows):
+                ax = self.figure.add_subplot(self.nrows, self.ncols, n+1)
+                #ax = self.figure(n+1)
+                ax.firsttime = True
+                self.axes.append(ax)
+
+        else : #append one figure foreach channel in channelList
+            if self.figurelist == None:
+                self.figurelist = []
+                for n in range(self.nrows):
+                    self.figure = plt.figure(figsize=(self.width, self.height),
+                                             edgecolor='k',
+                                             facecolor='w')
+                    #add always one subplot
+                    self.figurelist.append(self.figure)
+
+            else : # cada dia nuevo limpia el axes, pero mantiene el figure
+                for eachfigure in self.figurelist:
+                    eachfigure.clf() # eliminaria todas las figuras de la lista?
+                    self.axes = []
+
+            for eachfigure in self.figurelist:
+                ax = eachfigure.add_subplot(1,1,1) #solo 1 axis por figura
+                #ax = self.figure(n+1)
+                ax.firsttime = True
+                #Cada figura tiene un distinto puntero
+                self.axes.append(ax)
+                #plt.close(eachfigure)
 
 
     def plot(self):
 
-        self.x = np.array(self.times)
-        self.y = self.dataOut.getHeiRange()
-        self.z = []
+        if self.ind_plt_ch is False: #standard mode
+            self.x = np.array(self.times)
+            self.y = self.dataOut.getHeiRange()
+            self.z = []
 
-        for ch in range(self.nrows):
-            self.z.append([self.data[self.CODE][t][ch] for t in self.times])
+            for ch in range(self.nrows):
+                self.z.append([self.data[self.CODE][t][ch] for t in self.times])
 
-        self.z = np.array(self.z)
-        for n, ax in enumerate(self.axes):
-            x, y, z = self.fill_gaps(*self.decimate())
-            xmin = self.min_time
-            xmax = xmin+self.xrange*60*60
-            self.zmin = self.zmin if self.zmin else np.min(self.z)
-            self.zmax = self.zmax if self.zmax else np.max(self.z)
-            if ax.firsttime:
-                self.ymin = self.ymin if self.ymin else np.nanmin(self.y)
-                self.ymax = self.ymax if self.ymax else np.nanmax(self.y)
-                plot = ax.pcolormesh(x, y, z[n].T,
-                                     vmin=self.zmin,
-                                     vmax=self.zmax,
-                                     cmap=plt.get_cmap(self.colormap)
-                                    )
-                divider = make_axes_locatable(ax)
-                cax = divider.new_horizontal(size='2%', pad=0.05)
-                #self.figure.add_axes(cax)
-                #self.figure2.add_axes(cax)
-                plt.colorbar(plot, cax)
-                ax.set_ylim(self.ymin, self.ymax)
+            self.z = np.array(self.z)
+            for n, ax in enumerate(self.axes):
+                x, y, z = self.fill_gaps(*self.decimate())
+                xmin = self.min_time
+                xmax = xmin+self.xrange*60*60
+                self.zmin = self.zmin if self.zmin else np.min(self.z)
+                self.zmax = self.zmax if self.zmax else np.max(self.z)
+                if ax.firsttime:
+                    self.ymin = self.ymin if self.ymin else np.nanmin(self.y)
+                    self.ymax = self.ymax if self.ymax else np.nanmax(self.y)
+                    plot = ax.pcolormesh(x, y, z[n].T,
+                                         vmin=self.zmin,
+                                         vmax=self.zmax,
+                                         cmap=plt.get_cmap(self.colormap)
+                                        )
+                    divider = make_axes_locatable(ax)
+                    cax = divider.new_horizontal(size='2%', pad=0.05)
+                    self.figure.add_axes(cax)
+                    plt.colorbar(plot, cax)
+                    ax.set_ylim(self.ymin, self.ymax)
+                    ax.xaxis.set_major_formatter(FuncFormatter(func))
+                    ax.xaxis.set_major_locator(LinearLocator(6))
+                    ax.set_ylabel(self.ylabel)
+                    # if self.xmin is None:
+                    #     xmin = self.min_time
+                    # else:
+                    #     xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
+                    #                                      datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
+                    ax.set_xlim(xmin, xmax)
+                    ax.firsttime = False
+                else:
+                    ax.collections.remove(ax.collections[0])
+                    ax.set_xlim(xmin, xmax)
+                    plot = ax.pcolormesh(x, y, z[n].T,
+                                         vmin=self.zmin,
+                                         vmax=self.zmax,
+                                         cmap=plt.get_cmap(self.colormap)
+                                        )
+                ax.set_title('{} {}'.format(self.titles[n],
+                                            datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')),
+                             size=8)
 
-                ax.xaxis.set_major_formatter(FuncFormatter(func))
-                ax.xaxis.set_major_locator(LinearLocator(6))
+                self.saveTime = self.min_time
+        else :
+            self.x = np.array(self.times)
+            self.y = self.dataOut.getHeiRange()
+            self.z = []
 
-                ax.set_ylabel(self.ylabel)
+            for ch in range(self.nrows):
+                self.z.append([self.data[self.CODE][t][ch] for t in self.times])
 
-                # if self.xmin is None:
-                #     xmin = self.min_time
-                # else:
-                #     xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
-                #                                      datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
+            self.z = np.array(self.z)
+            for n, eachfigure in enumerate(self.figurelist): #estaba ax in axes
 
-                ax.set_xlim(xmin, xmax)
-                ax.firsttime = False
-            else:
-                ax.collections.remove(ax.collections[0])
-                ax.set_xlim(xmin, xmax)
-                plot = ax.pcolormesh(x, y, z[n].T,
-                                     vmin=self.zmin,
-                                     vmax=self.zmax,
-                                     cmap=plt.get_cmap(self.colormap)
-                                    )
-            ax.set_title('{} {}'.format(self.titles[n],
-                                        datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')),
-                         size=8)
+                x, y, z = self.fill_gaps(*self.decimate())
+                xmin = self.min_time
+                xmax = xmin+self.xrange*60*60
+                self.zmin = self.zmin if self.zmin else np.min(self.z)
+                self.zmax = self.zmax if self.zmax else np.max(self.z)
+                if self.axes[n].firsttime:
+                    self.ymin = self.ymin if self.ymin else np.nanmin(self.y)
+                    self.ymax = self.ymax if self.ymax else np.nanmax(self.y)
+                    plot = self.axes[n].pcolormesh(x, y, z[n].T,
+                                         vmin=self.zmin,
+                                         vmax=self.zmax,
+                                         cmap=plt.get_cmap(self.colormap)
+                                        )
+                    divider = make_axes_locatable(self.axes[n])
+                    cax = divider.new_horizontal(size='2%', pad=0.05)
+                    eachfigure.add_axes(cax)
+                    #self.figure2.add_axes(cax)
+                    plt.colorbar(plot, cax)
+                    self.axes[n].set_ylim(self.ymin, self.ymax)
 
-            self.saveTime = self.min_time
+                    self.axes[n].xaxis.set_major_formatter(FuncFormatter(func))
+                    self.axes[n].xaxis.set_major_locator(LinearLocator(6))
+
+                    self.axes[n].set_ylabel(self.ylabel)
+
+                    # if self.xmin is None:
+                    #     xmin = self.min_time
+                    # else:
+                    #     xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
+                    #                                      datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
+
+                    self.axes[n].set_xlim(xmin, xmax)
+                    self.axes[n].firsttime = False
+                else:
+                    self.axes[n].collections.remove(self.axes[n].collections[0])
+                    self.axes[n].set_xlim(xmin, xmax)
+                    plot = self.axes[n].pcolormesh(x, y, z[n].T,
+                                         vmin=self.zmin,
+                                         vmax=self.zmax,
+                                         cmap=plt.get_cmap(self.colormap)
+                                        )
+                self.axes[n].set_title('{} {}'.format(self.titles[n],
+                                            datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')),
+                             size=8)
+
+                self.saveTime = self.min_time
 
 
 class PlotCOHData(PlotRTIData):
