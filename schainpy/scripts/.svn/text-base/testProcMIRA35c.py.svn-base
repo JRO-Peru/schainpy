@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+import os, sys
+
+path = os.path.dirname(os.getcwd())
+path = os.path.join(path, 'source')
+sys.path.insert(0, '../')
+
+from controller import Project
+
+xmin = '15.5'
+xmax = '24'
+
+desc = "ProcBLTR Test"
+
+
+filename = "ProcBLTR.xml"
+    
+controllerObj = Project()
+    
+    
+controllerObj.setup(id = '191', name='test01', description=desc)
+    
+readUnitConfObj = controllerObj.addReadUnit(datatype='MIRA35CReader',
+                                                path='/home/erick/Documents/MIRA35C/20160117', 
+                                                startDate='2016/11/8',                
+                                                endDate='2017/10/19',
+                                                startTime='13:00:00',
+                  
+                                                endTime='23:59:59',
+               
+            
+                                                online=0,
+                                                walk=0,
+                                                ReadMode='1')
+                                                #expLabel='')
+    
+#opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
+    
+procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
+
+
+
+
+opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
+opObj11.addParameter(name='n', value='1', format='float')
+
+opObj10 = procUnitConfObj1.addOperation(name='removeDC')
+
+#opObj10 = procUnitConfObj1.addOperation(name='calcMag')
+
+# #opObj10 = procUnitConfObj1.addOperation(name='selectChannels')
+# #opObj10.addParameter(name='channelList', value='0,1', format='intlist')
+    
+opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
+opObj11.addParameter(name='id', value='21', format='int')
+opObj11.addParameter(name='wintitle', value='SpectraPlot', format='str')
+opObj11.addParameter(name='xaxis', value='Velocity', format='str')
+
+opObj11.addParameter(name='xaxis', value='velocity', format='str')
+opObj11.addParameter(name='xmin', value='-0.005', format='float')
+opObj11.addParameter(name='xmax', value='0.005', format='float')
+
+#opObj11.addParameter(name='ymin', value='225', format='float')
+#opObj11.addParameter(name='ymax', value='3000', format='float')
+# opObj11.addParameter(name='zmin', value='-100', format='int')
+# opObj11.addParameter(name='zmax', value='-65', format='int')    
+
+#opObj11 = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
+#opObj11.addParameter(name='id', value='10', format='int')
+#opObj11.addParameter(name='wintitle', value='RTI', format='str')
+ # opObj11.addParameter(name='ymin', value='0', format='float')
+ # opObj11.addParameter(name='ymax', value='4000', format='float')
+##opObj11.addParameter(name='zmin', value='-100', format='int')
+##opObj11.addParameter(name='zmax', value='-70', format='int')
+ # opObj11.addParameter(name='zmin', value='-90', format='int')
+ # opObj11.addParameter(name='zmax', value='-40', format='int')
+#opObj11.addParameter(name='showprofile', value='1', format='int')
+#opObj11.addParameter(name='timerange', value=str(2*60*60), format='int')
+
+# opObj11 = procUnitConfObj1.addOperation(name='CrossSpectraPlot', optype='other')
+# #procUnitConfObj1.addParameter(name='pairsList', value='(0,1),(0,2),(1,2)', format='pairsList')
+# opObj11.addParameter(name='id', value='2005', format='int')
+# opObj11.addParameter(name='wintitle', value='CrossSpectraPlot_ShortPulse', format='str')
+# # opObj11.addParameter(name='exp_code', value='13', format='int')
+# opObj11.addParameter(name='xaxis', value='Velocity', format='str')
+# #opObj11.addParameter(name='xmin', value='-10', format='float')
+# #opObj11.addParameter(name='xmax', value='10', format='float')
+# #opObj11.addParameter(name='ymin', value='225', format='float')
+# #opObj11.addParameter(name='ymax', value='3000', format='float')
+# #opObj11.addParameter(name='phase_min', value='-4', format='int')
+# #opObj11.addParameter(name='phase_max', value='4', format='int')
+
+
+
+
+controllerObj.createObjects()
+controllerObj.connectObjects()
+controllerObj.run()

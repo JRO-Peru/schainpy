@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/zerorpc
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/zerorpc/__init__.py
+END
+MyServer.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/zerorpc/MyServer.py
+END
+MyClient02.py
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/zerorpc/MyClient02.py
+END
+MyClient01.py
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/zerorpc/MyClient01.py
+END

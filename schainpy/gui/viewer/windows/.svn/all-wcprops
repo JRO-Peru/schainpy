@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/gui/viewer/windows
+END
+ui_correlation.py
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/gui/viewer/windows/ui_correlation.py
+END
+ui_voltage.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/gui/viewer/windows/ui_voltage.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/gui/viewer/windows/__init__.py
+END
+ui_project.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/gui/viewer/windows/ui_project.py
+END
+ui_spectra.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/gui/viewer/windows/ui_spectra.py
+END
+ui_spectra_heis.py
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/gui/viewer/windows/ui_spectra_heis.py
+END

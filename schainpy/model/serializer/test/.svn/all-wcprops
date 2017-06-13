@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test
+END
+serialtest.py
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/serialtest.py
+END
+DynamicYAML.py
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/DynamicYAML.py
+END
+OrderedYAML.py
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/OrderedYAML.py
+END
+Serializer.py
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/Serializer.py
+END
+DynamicSerializer.py
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/DynamicSerializer.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/__init__.py
+END
+DynamicObject.py
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/DynamicObject.py
+END
+test _serializer_speed.py
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/test%20_serializer_speed.py
+END
+PrecisionTime.py
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/PrecisionTime.py
+END
+Lookup.py
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/serializer/test/Lookup.py
+END
