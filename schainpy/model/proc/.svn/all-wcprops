@@ -1,0 +1,143 @@
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc
+END
+jroproc_base.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_base.py
+END
+jroproc_spectra_lags.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_spectra_lags.pyc
+END
+jroproc_amisr.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_amisr.pyc
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/__init__.py
+END
+jroproc_voltage.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_voltage.pyc
+END
+jroproc_heispectra.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_heispectra.pyc
+END
+jroproc_parameters.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1629/branches/schain_ebocanegra/schainpy/model/proc/jroproc_parameters.py
+END
+jroproc_correlation.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_correlation.pyc
+END
+jroproc_spectra_acf.py
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_spectra_acf.py
+END
+jroproc_bltr.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_bltr.py
+END
+jroproc_spectra.py
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_spectra.py
+END
+jroproc_spectra.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_spectra.pyc
+END
+jroproc_bltr.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_bltr.pyc
+END
+jroproc_spectra_acf.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_spectra_acf.pyc
+END
+jroproc_correlation.py
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_correlation.py
+END
+jroproc_parameters.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_parameters.pyc
+END
+jroproc_heispectra.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_heispectra.py
+END
+cfunctions.pyx
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/cfunctions.pyx
+END
+jroproc_voltage.py
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_voltage.py
+END
+__init__.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/__init__.pyc
+END
+jroproc_spectra_lags.py
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_spectra_lags.py
+END
+jroproc_amisr.py
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_amisr.py
+END
+jroproc_base.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/proc/jroproc_base.pyc
+END

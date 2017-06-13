@@ -1,0 +1,695 @@
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts
+END
+JASMET30_PreProc.py
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_PreProc.py
+END
+amisr_windEstimation.py
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_windEstimation.py
+END
+amisr_windEstimation.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_windEstimation.pyc
+END
+hf_write_pdata.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/hf_write_pdata.pyc
+END
+amisr_winds_proc_offline.py
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_winds_proc_offline.py
+END
+NSM_Preproc2.py
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM_Preproc2.py
+END
+plot_mst.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/plot_mst.py
+END
+test1.xml
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/test1.xml
+END
+150km_january_3.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_january_3.py
+END
+testRawData.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/testRawData.pyc
+END
+test_isr_blocks.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/test_isr_blocks.py
+END
+NSM1.py
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM1.py
+END
+mst_isr_eej_blocks.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/mst_isr_eej_blocks.pyc
+END
+150km_January_shortPulse.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_January_shortPulse.pyc
+END
+amisr_eej_proc_online.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_eej_proc_online.pyc
+END
+amisr_EEJ.py
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_EEJ.py
+END
+amisr_reader_exp_ex2.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_reader_exp_ex2.pyc
+END
+amisr_reader.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_reader.pyc
+END
+test_mst_blocks.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/test_mst_blocks.py
+END
+NSM_HDF5.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM_HDF5.py
+END
+NSM1.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM1.pyc
+END
+NSM2.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM2.pyc
+END
+150km_january_1.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_january_1.pyc
+END
+150km_jicamarca.xml
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_jicamarca.xml
+END
+bltrSpectra.py
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/bltrSpectra.py
+END
+sousy.py
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/sousy.py
+END
+150km_january_3.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_january_3.pyc
+END
+NSM_PreProc1.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM_PreProc1.pyc
+END
+mst_isr_eej_processing.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/mst_isr_eej_processing.pyc
+END
+amisr_winds_proc_offline.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_winds_proc_offline.pyc
+END
+hf_write_pdata.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/hf_write_pdata.py
+END
+150km_January_longPulse.py
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_January_longPulse.py
+END
+hf_test.py
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/hf_test.py
+END
+JASMET30_MetDet.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_MetDet.pyc
+END
+amisr_eej_proc_offline.py
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_eej_proc_offline.py
+END
+BLTR_reader.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/BLTR_reader.pyc
+END
+eej_plots.xml
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/eej_plots.xml
+END
+mst_isr_eej_processing.py
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/mst_isr_eej_processing.py
+END
+hf_plot_pdata.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/hf_plot_pdata.pyc
+END
+jasmet50_16april.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/jasmet50_16april.pyc
+END
+WindProfiler_SA01.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/WindProfiler_SA01.pyc
+END
+bltrSpectra.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/bltrSpectra.pyc
+END
+schain
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/schain
+END
+amisr_reader.xml
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_reader.xml
+END
+test_mst_blocks.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/test_mst_blocks.pyc
+END
+amisr_winds_proc_online.py
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_winds_proc_online.py
+END
+amisr_eej_proc_online.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_eej_proc_online.py
+END
+amisr_reader_exp_ex2.py
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_reader_exp_ex2.py
+END
+JASMET30_Winds.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_Winds.pyc
+END
+plot_isr.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/plot_isr.pyc
+END
+testRawData.py
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/testRawData.py
+END
+plot_mst.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/plot_mst.pyc
+END
+NSM_Preproc2.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM_Preproc2.pyc
+END
+amisr_proc.py
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_proc.py
+END
+amisr_esf_proc_online.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_esf_proc_online.pyc
+END
+hf_test.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/hf_test.pyc
+END
+jacktotalrunner.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/jacktotalrunner.pyc
+END
+JASMET30_PhaseCal.py
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_PhaseCal.py
+END
+bltr_reader.xml
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/bltr_reader.xml
+END
+150km_January_longPulse.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_January_longPulse.pyc
+END
+amisr_esf_proc_online.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_esf_proc_online.py
+END
+EWDrifts_estimation02.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/EWDrifts_estimation02.py
+END
+JASMET30_Online_spc.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_Online_spc.pyc
+END
+NSM_PreProc1.py
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM_PreProc1.py
+END
+sousy.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/sousy.pyc
+END
+plot_eej.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/plot_eej.py
+END
+beacon_phase.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/beacon_phase.pyc
+END
+150km_january_1.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_january_1.py
+END
+plot_isr.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/plot_isr.py
+END
+test_eej_blocks.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/test_eej_blocks.py
+END
+testBLTR_block.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/testBLTR_block.py
+END
+amisr_EEJ.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_EEJ.pyc
+END
+amisr_esf_proc_offline.py
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_esf_proc_offline.py
+END
+amisr_reader_exp.py
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_reader_exp.py
+END
+WindProfiler_DBS01.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/WindProfiler_DBS01.pyc
+END
+NSM11.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM11.pyc
+END
+150km_January_shortPulse.py
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/150km_January_shortPulse.py
+END
+mst_isr_eej_blocks.py
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/mst_isr_eej_blocks.py
+END
+schain.xml
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/schain.xml
+END
+amisr_spreadF.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_spreadF.pyc
+END
+BLTR_reader.py
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/BLTR_reader.py
+END
+amisr_eej_proc_offline.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_eej_proc_offline.pyc
+END
+JASMET30_PhaseCal.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_PhaseCal.pyc
+END
+jacktotalrunner.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/jacktotalrunner.py
+END
+JASMET30_PreProc.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_PreProc.pyc
+END
+amisr_proc.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_proc.pyc
+END
+amisr_spreadF.py
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_spreadF.py
+END
+testProcBLTR.py
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1609/branches/schain_ebocanegra/schainpy/scripts/testProcBLTR.py
+END
+ProcBLTR.xml
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/ProcBLTR.xml
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/__init__.py
+END
+EWDrifts_estimation01.py
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/EWDrifts_estimation01.py
+END
+testProcMIRA35c.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1639/branches/schain_ebocanegra/schainpy/scripts/testProcMIRA35c.py
+END
+NSM2.py
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM2.py
+END
+NSM_HDF5.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM_HDF5.pyc
+END
+JASMET30_Winds.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_Winds.py
+END
+NSM11.py
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM11.py
+END
+WindProfiler_DBS01.py
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/WindProfiler_DBS01.py
+END
+NSM21.py
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM21.py
+END
+amisr_esf_proc_offline.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_esf_proc_offline.pyc
+END
+amisr_reader_exp.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_reader_exp.pyc
+END
+amisr_reader.py
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_reader.py
+END
+amisr_winds_proc_online.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/amisr_winds_proc_online.pyc
+END
+NSM21.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/NSM21.pyc
+END
+testBLTR_block.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/testBLTR_block.pyc
+END
+test_eej_blocks.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/test_eej_blocks.pyc
+END
+test_isr_blocks.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/test_isr_blocks.pyc
+END
+beacon_phase.py
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/beacon_phase.py
+END
+plot_eej.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/plot_eej.pyc
+END
+jasmet50_16april.py
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/jasmet50_16april.py
+END
+hf_plot_pdata.py
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/hf_plot_pdata.py
+END
+WindProfiler_SA01.py
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/WindProfiler_SA01.py
+END
+JASMET30_Online_spc.py
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_Online_spc.py
+END
+EWDrifts_estimation01.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/EWDrifts_estimation01.pyc
+END
+EWDrifts_estimation02.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/EWDrifts_estimation02.pyc
+END
+JASMET30_MetDet.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/scripts/JASMET30_MetDet.py
+END

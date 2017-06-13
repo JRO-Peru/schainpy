@@ -1,0 +1,8 @@
+#Copy this file to /etc/schain.conf
+
+[schain]
+
+CONTACT = miguel.urco@jro.igp.gob.pe
+MAILSERVER = jro-zimbra.igp.gob.pe
+MALSERVER_ACCOUNT = notifier-schain@jro.igp.gob.pe
+MAILSERVER_PASSWORD = 

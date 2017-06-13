@@ -1,0 +1,167 @@
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io
+END
+jroIO_spectra.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_spectra.py
+END
+jroIO_spectra.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_spectra.pyc
+END
+jroIO_bltr.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_bltr.pyc
+END
+jroIO_param.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_param.pyc
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/__init__.py
+END
+jroIO_hf.py
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_hf.py
+END
+io_bltr_block.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/io_bltr_block.py
+END
+jroIO_heispectra.py
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_heispectra.py
+END
+jroIO_usrp.py
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_usrp.py
+END
+jroIO_voltage.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_voltage.py
+END
+jroIO_amisr.py
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_amisr.py
+END
+jroIO_usrp_api.py
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_usrp_api.py
+END
+jroIO_base.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_base.pyc
+END
+jroIO_kamisr.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_kamisr.pyc
+END
+jroIO_mira35c.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1638/branches/schain_ebocanegra/schainpy/model/io/jroIO_mira35c.py
+END
+jroIO_base.py
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_base.py
+END
+jroIO_kamisr.py
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_kamisr.py
+END
+jroIO_matlab.py
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_matlab.py
+END
+jroIO_voltage.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_voltage.pyc
+END
+jroIO_heispectra.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_heispectra.pyc
+END
+jroIO_usrp.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_usrp.pyc
+END
+io_bltr_block.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/io_bltr_block.pyc
+END
+jroIO_param.py
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_param.py
+END
+__init__.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/__init__.pyc
+END
+jroIO_hf.pyc
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_hf.pyc
+END
+jroIO_bltr.py
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/jro_soft/schain/!svn/ver/1630/branches/schain_ebocanegra/schainpy/model/io/jroIO_bltr.py
+END
+jroIO_example.py
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/jro_soft/schain/!svn/ver/1606/branches/schain_ebocanegra/schainpy/model/io/jroIO_example.py
+END

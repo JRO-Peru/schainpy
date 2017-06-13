@@ -1,0 +1,2179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1065</width>
+    <height>711</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QGridLayout" name="gridLayout_16">
+    <item row="1" column="0">
+     <widget class="QSplitter" name="splitter_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QTreeView" name="treeProjectExplorer"/>
+      <widget class="QSplitter" name="splitter">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <widget class="QTabWidget" name="tabWidgetProject">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>278</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tabProject">
+         <attribute name="title">
+          <string>Project</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_15">
+          <item row="0" column="0">
+           <widget class="QFrame" name="frame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Project Name :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1" colspan="8">
+              <widget class="QLineEdit" name="proName"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_11">
+               <property name="text">
+                <string>DataType :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" colspan="5">
+              <widget class="QComboBox" name="proComDataType">
+               <item>
+                <property name="text">
+                 <string>Voltage</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Spectra</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Fits</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="1" column="6" colspan="3">
+              <widget class="QLineEdit" name="proDataType"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_15">
+               <property name="text">
+                <string>DataPath :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QToolButton" name="proToolPath">
+               <property name="text">
+                <string>...</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2" colspan="7">
+              <widget class="QLineEdit" name="proDataPath"/>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_23">
+               <property name="text">
+                <string>Read Mode:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1" colspan="2">
+              <widget class="QComboBox" name="proComReadMode">
+               <item>
+                <property name="text">
+                 <string>Off Line</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>On Line</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="3" column="5" colspan="2">
+              <widget class="QLabel" name="label_33">
+               <property name="text">
+                <string>Delay:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="8">
+              <widget class="QLineEdit" name="proDelay"/>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_32">
+               <property name="text">
+                <string>Walk :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1" colspan="8">
+              <widget class="QComboBox" name="proComWalk">
+               <item>
+                <property name="text">
+                 <string>Search 0</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Search 1</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="5" column="0" colspan="9">
+              <widget class="QPushButton" name="proLoadButton">
+               <property name="text">
+                <string>Load</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QLabel" name="label_10">
+               <property name="text">
+                <string>Set:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="4">
+              <widget class="QLineEdit" name="proSet"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QFrame" name="frame_2">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_10">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_27">
+               <property name="text">
+                <string>Star Date:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="proComStartDate"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_28">
+               <property name="text">
+                <string>End Date:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QComboBox" name="proComEndDate"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Start Time:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QTimeEdit" name="proStartTime"/>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>End Time:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QTimeEdit" name="proEndTime"/>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_30">
+               <property name="text">
+                <string>Description:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QTextEdit" name="proDescription"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QFrame" name="frame_3">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_14">
+             <item row="0" column="0">
+              <widget class="QPushButton" name="proOk">
+               <property name="text">
+                <string>Ok</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPushButton" name="proClear">
+               <property name="text">
+                <string>Clear</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tabVoltage">
+         <attribute name="title">
+          <string>Voltage</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="1" column="1">
+           <widget class="QFrame" name="frame_4">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_17">
+             <item row="0" column="0">
+              <widget class="QPushButton" name="volOpOk">
+               <property name="text">
+                <string>Ok</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPushButton" name="volGraphClear">
+               <property name="text">
+                <string>Clear</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QTabWidget" name="tabWidgetVoltage">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <widget class="QWidget" name="tabopVoltage">
+             <attribute name="title">
+              <string>Operation</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout">
+              <item row="4" column="4">
+               <widget class="QLineEdit" name="volOpHeights"/>
+              </item>
+              <item row="4" column="0" colspan="3">
+               <widget class="QComboBox" name="volOpComHeights">
+                <item>
+                 <property name="text">
+                  <string>Value</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Index</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="3">
+               <widget class="QComboBox" name="volOpComChannels">
+                <item>
+                 <property name="text">
+                  <string>Value</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Index</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="6" column="0" colspan="3">
+               <widget class="QCheckBox" name="volOpCebProfile">
+                <property name="text">
+                 <string>Profile Selector</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0" colspan="3">
+               <widget class="QComboBox" name="volOpComProfile">
+                <item>
+                 <property name="text">
+                  <string>Profile List</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Profile Range List</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="8" column="0" colspan="3">
+               <widget class="QCheckBox" name="volOpCebDecodification">
+                <property name="text">
+                 <string>Decoder</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0" colspan="3">
+               <widget class="QCheckBox" name="volOpCebCohInt">
+                <property name="text">
+                 <string>Coherent Integration</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="4">
+               <widget class="QLineEdit" name="volOpProfile"/>
+              </item>
+              <item row="5" column="4">
+               <widget class="QLineEdit" name="volOpFilter"/>
+              </item>
+              <item row="6" column="4">
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="8" column="4">
+               <spacer name="horizontalSpacer_6">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="3" column="4">
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="2" column="4">
+               <widget class="QLineEdit" name="volOpChannel"/>
+              </item>
+              <item row="9" column="2">
+               <widget class="QLabel" name="label_4">
+                <property name="text">
+                 <string>Code:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="3">
+               <widget class="QCheckBox" name="volOpCebChannels">
+                <property name="text">
+                 <string>Select Channels</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="3">
+               <widget class="QCheckBox" name="volOpCebHeights">
+                <property name="text">
+                 <string>Select  Heights</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0" colspan="3">
+               <widget class="QCheckBox" name="volOpCebFilter">
+                <property name="text">
+                 <string>Filter</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="4">
+               <widget class="QLineEdit" name="volOpRadarfrequency"/>
+              </item>
+              <item row="0" column="0" colspan="3">
+               <widget class="QCheckBox" name="volOpCebRadarfrequency">
+                <property name="text">
+                 <string>Radar Frequency</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="2">
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string>Mode:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="4">
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="11" column="4">
+               <widget class="QLineEdit" name="volOpCohInt"/>
+              </item>
+              <item row="9" column="4">
+               <widget class="QComboBox" name="volOpComCode">
+                <item>
+                 <property name="text">
+                  <string>Barker 3</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 4</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 5</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 7</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 11</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 13</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 3 +  Comp.</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 4 +  Comp.</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 5 +  Comp.</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 7 +  Comp.</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 11+ Comp.</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Barker 13+ Comp.</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="10" column="4">
+               <widget class="QComboBox" name="volOpComMode">
+                <item>
+                 <property name="text">
+                  <string>Time</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Freq 1</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="tabgraphVoltage">
+             <attribute name="title">
+              <string>Graphics</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_6">
+              <item row="12" column="3">
+               <spacer name="verticalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="9" column="1" colspan="6">
+               <widget class="QLineEdit" name="volGraphfreqrange"/>
+              </item>
+              <item row="2" column="1" colspan="6">
+               <widget class="QLineEdit" name="volGraphPrefix"/>
+              </item>
+              <item row="1" column="5" colspan="2">
+               <widget class="QToolButton" name="volGraphToolPath">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1" colspan="4">
+               <widget class="QLineEdit" name="volGraphPath"/>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>Scope</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="3">
+               <spacer name="verticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="8" column="0">
+               <widget class="QLabel" name="label_8">
+                <property name="text">
+                 <string>Channel List</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="3">
+               <widget class="QLabel" name="label_49">
+                <property name="text">
+                 <string>Show</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QLabel" name="label_51">
+                <property name="text">
+                 <string>Freq/Vel</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="3">
+               <widget class="QCheckBox" name="volGraphCebshow">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_12">
+                <property name="text">
+                 <string>Path   :</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>Prefix:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0">
+               <widget class="QLabel" name="label_52">
+                <property name="text">
+                 <string>Height range</string>
+                </property>
+               </widget>
+              </item>
+              <item row="14" column="5" colspan="2">
+               <spacer name="horizontalSpacer_10">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>12</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="14" column="3">
+               <spacer name="horizontalSpacer_9">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>18</width>
+                  <height>12</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="8" column="1" colspan="6">
+               <widget class="QLineEdit" name="volGraphChannelList"/>
+              </item>
+              <item row="11" column="1" colspan="6">
+               <widget class="QLineEdit" name="volGraphHeightrange"/>
+              </item>
+              <item row="4" column="4">
+               <widget class="QLabel" name="label_50">
+                <property name="text">
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="4">
+               <widget class="QCheckBox" name="volGraphCebSave">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="taboutputVoltage">
+             <attribute name="title">
+              <string>Output</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_12">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_36">
+                <property name="text">
+                 <string>Type:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_37">
+                <property name="text">
+                 <string>Path:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QLineEdit" name="volOutputPath"/>
+              </item>
+              <item row="1" column="3">
+               <widget class="QToolButton" name="volOutputToolPath">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2" colspan="2">
+               <widget class="QComboBox" name="volOutputComData">
+                <item>
+                 <property name="text">
+                  <string>.rawdata</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="5" column="2">
+               <spacer name="verticalSpacer_6">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="3" column="2">
+               <widget class="QLineEdit" name="volOutputblocksperfile"/>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_7">
+                <property name="text">
+                 <string>Blocks per File : </string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_35">
+                <property name="text">
+                 <string>Profiles per Block: </string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="2">
+               <widget class="QLineEdit" name="volOutputprofilesperblock"/>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tabSpectra">
+         <attribute name="title">
+          <string>Spectra</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="1" column="1">
+           <widget class="QFrame" name="frame_5">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_18">
+             <item row="0" column="0">
+              <widget class="QPushButton" name="specOpOk">
+               <property name="text">
+                <string>Ok</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPushButton" name="specGraphClear">
+               <property name="text">
+                <string>Clear</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QTabWidget" name="tabWidgetSpectra">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <widget class="QWidget" name="tabopSpectra">
+             <attribute name="title">
+              <string>Operation</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_5">
+              <item row="3" column="0" colspan="2">
+               <widget class="QCheckBox" name="specOpCebCrossSpectra">
+                <property name="text">
+                 <string>Select  Cross Spectra</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0" colspan="2">
+               <widget class="QComboBox" name="specOpComChannel">
+                <item>
+                 <property name="text">
+                  <string>Value</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Index</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="7" column="3" colspan="2">
+               <widget class="QLineEdit" name="specOpChannel"/>
+              </item>
+              <item row="10" column="0" colspan="2">
+               <widget class="QComboBox" name="specOpComHeights">
+                <item>
+                 <property name="text">
+                  <string>Value</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Index</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="10" column="3" colspan="2">
+               <widget class="QLineEdit" name="specOpHeights"/>
+              </item>
+              <item row="12" column="3" colspan="2">
+               <widget class="QLineEdit" name="specOpIncoherent"/>
+              </item>
+              <item row="13" column="0" colspan="2">
+               <widget class="QCheckBox" name="specOpCebRemoveDC">
+                <property name="text">
+                 <string>Remove DC</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QCheckBox" name="specOpCebHeights">
+                <property name="text">
+                 <string>Select Heights</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QCheckBox" name="specOpCebChannel">
+                <property name="text">
+                 <string>Select Channel</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="3" colspan="2">
+               <widget class="QLineEdit" name="specOppairsList"/>
+              </item>
+              <item row="2" column="3" colspan="2">
+               <widget class="QLineEdit" name="specOpnFFTpoints"/>
+              </item>
+              <item row="5" column="0" colspan="2">
+               <widget class="QLabel" name="label_31">
+                <property name="text">
+                 <string>x-y pairs</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QLabel" name="label_26">
+                <property name="text">
+                 <string>nFFTPoints</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0">
+               <widget class="QCheckBox" name="specOpCebIncoherent">
+                <property name="text">
+                 <string>Incoherent Integration</string>
+                </property>
+               </widget>
+              </item>
+              <item row="12" column="0" colspan="2">
+               <widget class="QComboBox" name="specOpCobIncInt">
+                <item>
+                 <property name="text">
+                  <string>Time Interval</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Profiles</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="11" column="3">
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QCheckBox" name="specOpCebRadarfrequency">
+                <property name="text">
+                 <string>Radar Frequency</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="3">
+               <spacer name="horizontalSpacer_11">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="6" column="3">
+               <spacer name="horizontalSpacer_8">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="3" colspan="2">
+               <widget class="QLineEdit" name="specOpRadarfrequency"/>
+              </item>
+              <item row="3" column="3">
+               <spacer name="horizontalSpacer_7">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_21">
+                <property name="text">
+                 <string>Profiles</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3" colspan="2">
+               <widget class="QLineEdit" name="specOpProfiles"/>
+              </item>
+              <item row="14" column="0">
+               <widget class="QCheckBox" name="specOpCebRemoveInt">
+                <property name="text">
+                 <string>Remove Interference</string>
+                </property>
+               </widget>
+              </item>
+              <item row="14" column="3">
+               <spacer name="horizontalSpacer_12">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="13" column="3">
+               <widget class="QComboBox" name="specOpComRemoveDC">
+                <item>
+                 <property name="text">
+                  <string>Mode 1</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Mode 2</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="tabgraphSpectra">
+             <attribute name="title">
+              <string>Graphics</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_9">
+              <item row="10" column="0">
+               <widget class="QLabel" name="label_44">
+                <property name="text">
+                 <string>Coherence Map</string>
+                </property>
+               </widget>
+              </item>
+              <item row="14" column="2">
+               <spacer name="verticalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="21" column="0">
+               <widget class="QLabel" name="label_20">
+                <property name="text">
+                 <string>Tmin, Tmax:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="13" column="4">
+               <widget class="QCheckBox" name="specGraphSaveRTInoise">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="20" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphmagnitud"/>
+              </item>
+              <item row="6" column="4">
+               <widget class="QCheckBox" name="specGraphSaveSpectra">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphChannelList"/>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_25">
+                <property name="text">
+                 <string>Prefix :</string>
+                </property>
+               </widget>
+              </item>
+              <item row="21" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphTminTmax"/>
+              </item>
+              <item row="27" column="6" colspan="2">
+               <spacer name="horizontalSpacer_18">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>28</width>
+                  <height>15</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="3" column="5">
+               <spacer name="verticalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="9" column="0">
+               <widget class="QLabel" name="label_42">
+                <property name="text">
+                 <string>RTI Plot</string>
+                </property>
+               </widget>
+              </item>
+              <item row="18" column="0">
+               <widget class="QLabel" name="label_16">
+                <property name="text">
+                 <string>Height range:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="19" column="0">
+               <widget class="QLabel" name="label_17">
+                <property name="text">
+                 <string>dBs  range:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="20" column="0">
+               <widget class="QLabel" name="label_18">
+                <property name="text">
+                 <string>magnitud [0-1]</string>
+                </property>
+               </widget>
+              </item>
+              <item row="16" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphFreq"/>
+              </item>
+              <item row="18" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphHeight"/>
+              </item>
+              <item row="27" column="0">
+               <spacer name="horizontalSpacer_16">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>49</width>
+                  <height>15</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_24">
+                <property name="text">
+                 <string>Path :</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGraphPrefix"/>
+              </item>
+              <item row="19" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphDbsrange"/>
+              </item>
+              <item row="11" column="0">
+               <widget class="QLabel" name="label_46">
+                <property name="text">
+                 <string>Power Profile</string>
+                </property>
+               </widget>
+              </item>
+              <item row="16" column="0">
+               <widget class="QLabel" name="label_22">
+                <property name="text">
+                 <string>Freq/Vel:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1" colspan="6">
+               <widget class="QLineEdit" name="specGraphPath"/>
+              </item>
+              <item row="8" column="0">
+               <widget class="QLabel" name="label_41">
+                <property name="text">
+                 <string>Cross Spectra Plot</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="7">
+               <widget class="QToolButton" name="specGraphToolPath">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="0">
+               <widget class="QLabel" name="label_6">
+                <property name="text">
+                 <string>Channel List:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="label_40">
+                <property name="text">
+                 <string>Spectra Plot</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="2">
+               <widget class="QCheckBox" name="specGraphCebSpectraplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="2">
+               <widget class="QCheckBox" name="specGraphCebCrossSpectraplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="2">
+               <widget class="QCheckBox" name="specGraphCebRTIplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="2">
+               <widget class="QCheckBox" name="specGraphCebCoherencmap">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="2">
+               <widget class="QCheckBox" name="specGraphPowerprofile">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="4">
+               <widget class="QCheckBox" name="specGraphSaveCross">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="6">
+               <widget class="QCheckBox" name="specGraphftpSpectra">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="3">
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="11" column="4">
+               <widget class="QCheckBox" name="specGraphSavePowerprofile">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="4">
+               <widget class="QCheckBox" name="specGraphSaveCoherencemap">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="27" column="4">
+               <spacer name="horizontalSpacer_17">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>39</width>
+                  <height>15</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="23" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphftpratio"/>
+              </item>
+              <item row="3" column="2" rowspan="2">
+               <widget class="QLabel" name="label_43">
+                <property name="text">
+                 <string>Show</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="6">
+               <widget class="QCheckBox" name="specGraphftpCross">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="23" column="0">
+               <widget class="QLabel" name="label_29">
+                <property name="text">
+                 <string>Wr Period:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="4" rowspan="2">
+               <widget class="QLabel" name="label_47">
+                <property name="text">
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="6">
+               <widget class="QCheckBox" name="specGraphftpRTIplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="6">
+               <widget class="QCheckBox" name="specGraphftpCoherencemap">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="6">
+               <widget class="QCheckBox" name="specGraphftpPowerprofile">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="6" rowspan="2" colspan="2">
+               <widget class="QLabel" name="label_19">
+                <property name="text">
+                 <string>ftp</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="4">
+               <widget class="QCheckBox" name="specGraphSaveRTIplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="13" column="0">
+               <widget class="QLabel" name="label_45">
+                <property name="text">
+                 <string>RTI Noise</string>
+                </property>
+               </widget>
+              </item>
+              <item row="13" column="6">
+               <widget class="QCheckBox" name="specGraphftpRTInoise">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="13" column="2">
+               <widget class="QCheckBox" name="specGraphCebRTInoise">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="22" column="0">
+               <widget class="QLabel" name="label_48">
+                <property name="text">
+                 <string>Time Range:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="22" column="1" colspan="7">
+               <widget class="QLineEdit" name="specGgraphTimeRange"/>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="taboutputSpectra">
+             <attribute name="title">
+              <string>Output</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_11">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_39">
+                <property name="text">
+                 <string>Type:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2" colspan="2">
+               <widget class="QComboBox" name="specOutputComData">
+                <item>
+                 <property name="text">
+                  <string>.pdata</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_34">
+                <property name="text">
+                 <string>Path:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QLineEdit" name="specOutputPath"/>
+              </item>
+              <item row="4" column="2">
+               <spacer name="verticalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="3">
+               <widget class="QToolButton" name="specOutputToolPath">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <widget class="QLineEdit" name="specOutputblocksperfile"/>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QLabel" name="label_9">
+                <property name="text">
+                 <string>Blocks per File:  </string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_38">
+                <property name="text">
+                 <string>Profile per Block: </string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="2">
+               <widget class="QLineEdit" name="specOutputprofileperblock"/>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tabSpectraHeis">
+         <attribute name="title">
+          <string>SpectraHeis</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_23">
+          <item row="1" column="0">
+           <widget class="QFrame" name="frame_6">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_22">
+             <item row="0" column="1">
+              <widget class="QPushButton" name="specHeisGraphClear">
+               <property name="text">
+                <string>Clear</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QPushButton" name="specHeisOpOk">
+               <property name="text">
+                <string>Ok</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QTabWidget" name="tabWidgetSpectraHeis">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <widget class="QWidget" name="tabopSpectraHeis">
+             <attribute name="title">
+              <string>Operation</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_21">
+              <item row="0" column="1">
+               <spacer name="horizontalSpacer_20">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="0">
+               <widget class="QComboBox" name="specHeisOpCobIncInt">
+                <item>
+                 <property name="text">
+                  <string>Time Interval</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="specHeisOpCebIncoherent">
+                <property name="text">
+                 <string>Incoherent Intergration</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="specHeisOpIncoherent"/>
+              </item>
+              <item row="2" column="0">
+               <spacer name="verticalSpacer_7">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="tabgraphSpectraHeis">
+             <attribute name="title">
+              <string>Graphics</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_20">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_54">
+                <property name="text">
+                 <string>Prefix</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="6">
+               <widget class="QToolButton" name="specHeisGraphToolPath">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="2">
+               <widget class="QCheckBox" name="specHeisGraphCebRTIplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="label_62">
+                <property name="text">
+                 <string>ymin - ymax</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QLabel" name="label_63">
+                <property name="text">
+                 <string>Tmin - Tmax:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QLabel" name="label_64">
+                <property name="text">
+                 <string>Time Range:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="0">
+               <widget class="QLabel" name="label_65">
+                <property name="text">
+                 <string>Wr Period</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0" colspan="2">
+               <spacer name="horizontalSpacer_14">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>134</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="10" column="1" colspan="6">
+               <widget class="QLineEdit" name="specHeisGgraphftpratio"/>
+              </item>
+              <item row="4" column="6">
+               <widget class="QCheckBox" name="specHeisGraphftpRTIplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1" colspan="6">
+               <widget class="QLineEdit" name="specHeisGgraphTminTmax"/>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_60">
+                <property name="text">
+                 <string>Channel List:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="label_61">
+                <property name="text">
+                 <string>xmin - xmax</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1" colspan="6">
+               <widget class="QLineEdit" name="specHeisGraphPrefix"/>
+              </item>
+              <item row="2" column="4">
+               <widget class="QLabel" name="label_56">
+                <property name="text">
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="6">
+               <widget class="QLabel" name="label_57">
+                <property name="text">
+                 <string>ftp</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_58">
+                <property name="text">
+                 <string>Spectra Plot</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="2">
+               <widget class="QCheckBox" name="specHeisGraphCebSpectraplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1" colspan="6">
+               <widget class="QLineEdit" name="specHeisGgraphYminYmax"/>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_53">
+                <property name="text">
+                 <string>Path</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <widget class="QLabel" name="label_55">
+                <property name="text">
+                 <string>Show</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="4">
+               <widget class="QCheckBox" name="specHeisGraphSaveRTIplot">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="3">
+               <spacer name="horizontalSpacer_13">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="6" column="1" colspan="6">
+               <widget class="QLineEdit" name="specHeisGgraphXminXmax"/>
+              </item>
+              <item row="5" column="1" colspan="6">
+               <widget class="QLineEdit" name="specHeisGgraphChannelList"/>
+              </item>
+              <item row="9" column="1" colspan="6">
+               <widget class="QLineEdit" name="specHeisGgraphTimeRange"/>
+              </item>
+              <item row="11" column="3" colspan="3">
+               <spacer name="horizontalSpacer_19">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>106</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="3" column="4">
+               <widget class="QCheckBox" name="specHeisGraphSaveSpectra">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="6">
+               <widget class="QCheckBox" name="specHeisGraphftpSpectra">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_59">
+                <property name="text">
+                 <string>RTI PLot</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="5">
+               <spacer name="horizontalSpacer_21">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="1" colspan="5">
+               <widget class="QLineEdit" name="specHeisGraphPath"/>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="taboutputSpectraHeis">
+             <attribute name="title">
+              <string>Output</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_19">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_67">
+                <property name="text">
+                 <string>Path:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QLabel" name="label_68">
+                <property name="text">
+                 <string>Blocks  per File:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_66">
+                <property name="text">
+                 <string>Type:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <spacer name="verticalSpacer_8">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="4">
+               <widget class="QToolButton" name="specHeisOutputToolPath">
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QLineEdit" name="specHeisOutputPath"/>
+              </item>
+              <item row="0" column="3" colspan="2">
+               <widget class="QComboBox" name="specHeisOutputComdata">
+                <item>
+                 <property name="text">
+                  <string>.fits</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QLabel" name="label_69">
+                <property name="text">
+                 <string>Profile  per Block:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="3">
+               <widget class="QLineEdit" name="specHeisOutputblocksperfile"/>
+              </item>
+              <item row="3" column="3">
+               <widget class="QLineEdit" name="specHeisOutputprofileperblock"/>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tabCorrelation">
+         <attribute name="title">
+          <string>Correlation</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_13">
+          <item row="0" column="0">
+           <widget class="QTabWidget" name="tabWidget_2">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <widget class="QWidget" name="tabopCorrelation">
+             <attribute name="title">
+              <string>Operation</string>
+             </attribute>
+            </widget>
+            <widget class="QWidget" name="tabopCorrelation">
+             <attribute name="title">
+              <string>Graphics</string>
+             </attribute>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+       <widget class="QTabWidget" name="tabConsole">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tab_5">
+         <attribute name="title">
+          <string>Console</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="0" column="0">
+           <widget class="QTextEdit" name="console"/>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </widget>
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="tabProjectProperty">
+        <attribute name="title">
+         <string>Project Property</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_8">
+         <item row="0" column="0">
+          <widget class="QTreeView" name="treeProjectProperties"/>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionOpenToolbar"/>
+   <addaction name="separator"/>
+   <addaction name="actionCreateToolbar"/>
+   <addaction name="separator"/>
+   <addaction name="actionAddPU"/>
+   <addaction name="separator"/>
+   <addaction name="actionSaveToolbar"/>
+   <addaction name="separator"/>
+   <addaction name="actionStarToolbar"/>
+   <addaction name="separator"/>
+   <addaction name="actionPauseToolbar"/>
+   <addaction name="separator"/>
+   <addaction name="actionStopToolbar"/>
+   <addaction name="separator"/>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1065</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuProject">
+    <property name="title">
+     <string>Project</string>
+    </property>
+    <addaction name="actionOpen"/>
+    <addaction name="actionCreate"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionClose"/>
+   </widget>
+   <widget class="QMenu" name="menuRun">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="actionStart"/>
+    <addaction name="actionPause"/>
+   </widget>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionFTP"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuProject"/>
+   <addaction name="menuRun"/>
+   <addaction name="menuOptions"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/open.png</normaloff>../Documents/figure/open.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionCreate">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/create_class_obj.png</normaloff>../Documents/figure/create_class_obj.png</iconset>
+   </property>
+   <property name="text">
+    <string>Create</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/save.gif</normaloff>../Documents/figure/save.gif</iconset>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/startServer.png</normaloff>../Documents/figure/startServer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="actionPause">
+   <property name="text">
+    <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionOpenToolbar">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/open.png</normaloff>../Documents/figure/open.png</iconset>
+   </property>
+   <property name="text">
+    <string>openToolbar</string>
+   </property>
+   <property name="toolTip">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionCreateToolbar">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/create_class_obj.png</normaloff>../Documents/figure/create_class_obj.png</iconset>
+   </property>
+   <property name="text">
+    <string>createToolbar</string>
+   </property>
+   <property name="toolTip">
+    <string>Create</string>
+   </property>
+  </action>
+  <action name="actionSaveToolbar">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/save.gif</normaloff>../Documents/figure/save.gif</iconset>
+   </property>
+   <property name="text">
+    <string>saveToolbar</string>
+   </property>
+   <property name="toolTip">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionStarToolbar">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/startServer.png</normaloff>../Documents/figure/startServer.png</iconset>
+   </property>
+   <property name="text">
+    <string>starToolbar</string>
+   </property>
+   <property name="toolTip">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="actionStopToolbar">
+   <property name="icon">
+    <iconset>
+     <normaloff>../Documents/figure/stopServer.png</normaloff>../Documents/figure/stopServer.png</iconset>
+   </property>
+   <property name="text">
+    <string>stopToolbar</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionPauseToolbar">
+   <property name="icon">
+    <iconset>
+     <normaloff>../workspace/branch_gui_may/gui/figure/pause.png</normaloff>../workspace/branch_gui_may/gui/figure/pause.png</iconset>
+   </property>
+   <property name="text">
+    <string>pauseToolbar</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionAddPU">
+   <property name="icon">
+    <iconset>
+     <normaloff>../addpu.jpg</normaloff>../addpu.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>addPU</string>
+   </property>
+  </action>
+  <action name="actionFTP">
+   <property name="text">
+    <string>FTP</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
