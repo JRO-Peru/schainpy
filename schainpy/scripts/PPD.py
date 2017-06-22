@@ -5,6 +5,7 @@ from schainpy.controller import Project, multiSchain
 desc = "HF_EXAMPLE"
 path='/home/ci-81/Documents/DATA/HFADATA/hfdata_2017/pdata/sp1_f0'
 path = '/media/ci-81/Huancayo/DATA/hfradar_2016/pdata/sp1_f1'
+path = '/media/ci-81/Huancayo/DATA/hfradar_2016/pdata/sp1_f1'
 def fiber(cursor, skip, q, dt):
 
     controllerObj = Project()

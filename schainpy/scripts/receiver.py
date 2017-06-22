@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # proc1.addParameter(name='realtime', value='0', format='bool')
     #proc1.addParameter(name='plottypes', value='rti,coh,phase,snr,dop', format='str')
     #proc1.addParameter(name='plottypes', value='rti,coh,phase,snr', format='str')
-    proc1.addParameter(name='plottypes', value='dop', format='str')
+    proc1.addParameter(name='plottypes', value='snr,dop', format='str')
 
     #proc1.addParameter(name='throttle', value='10', format='int')
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # proc2.addParameter(name='server', value='juanca', format='str')
     # proc2.addParameter(name='plottypes', value='snr,dop', format='str')
     #
-
+    """
     op3 = proc1.addOperation(name='PlotSNRData', optype='other')
     op3.addParameter(name='wintitle', value='HF System SNR0', format='str')
     op3.addParameter(name='save', value='/home/ci-81/Pictures', format='str')
@@ -62,7 +62,8 @@ if __name__ == '__main__':
     op3.addParameter(name='zmin', value='-10', format='int')
     op3.addParameter(name='zmax', value='30', format='int')
     op3.addParameter(name='SNRthresh', value='0', format='float')
-    """
+    op3.addParameter(name='ind_plt_ch',value='1',format = 'bool')
+
     #
     op5 = proc1.addOperation(name='PlotDOPData', optype='other')
     op5.addParameter(name='wintitle', value='HF System DOP', format='str')

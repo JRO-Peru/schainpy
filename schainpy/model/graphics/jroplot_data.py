@@ -118,6 +118,27 @@ class PlotData(Operation, Process):
                 eachfigure.canvas.manager.set_window_title('{} {} - {}'.format(self.title[n], self.CODE.upper(),
                                                                             datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
 
+        # if self.save:
+        #     if self.ind_plt_ch is False : #standard
+        #         figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
+        #                                                              datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
+        #         print 'Saving figure: {}'.format(figname)
+        #         self.figure.savefig(figname)
+        #     else :
+        #         for n, eachfigure in enumerate(self.figurelist):
+        #             #add specific name for each channel in channelList
+        #             figname = os.path.join(self.save, '{}_{}_{}.png'.format(self.titles[n],self.CODE,
+        #                                                                  datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
+        #
+        #             print 'Saving figure: {}'.format(figname)
+        #             eachfigure.savefig(figname)
+
+        if self.ind_plt_ch is False :
+            self.figure.canvas.draw()
+        else :
+            for eachfigure in self.figurelist:
+                eachfigure.canvas.draw()
+
         if self.save:
             if self.ind_plt_ch is False : #standard
                 figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,
@@ -133,11 +154,6 @@ class PlotData(Operation, Process):
                     print 'Saving figure: {}'.format(figname)
                     eachfigure.savefig(figname)
 
-        if self.ind_plt_ch is False :
-            self.figure.canvas.draw()
-        else :
-            for eachfigure in self.figurelist:
-                eachfigure.canvas.draw()
 
     def plot(self):
 
@@ -576,11 +592,11 @@ class PlotRTIData(PlotData):
                     ax.xaxis.set_major_formatter(FuncFormatter(func))
                     ax.xaxis.set_major_locator(LinearLocator(6))
                     ax.set_ylabel(self.ylabel)
-                    # if self.xmin is None:
-                    #     xmin = self.min_time
-                    # else:
-                    #     xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
-                    #                                      datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
+                    if self.xmin is None:
+                        xmin = self.min_time
+                    else:
+                        xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
+                                                         datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
                     ax.set_xlim(xmin, xmax)
                     ax.firsttime = False
                 else:
@@ -632,11 +648,11 @@ class PlotRTIData(PlotData):
 
                     self.axes[n].set_ylabel(self.ylabel)
 
-                    # if self.xmin is None:
-                    #     xmin = self.min_time
-                    # else:
-                    #     xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
-                    #                                      datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
+                    if self.xmin is None:
+                        xmin = self.min_time
+                    else:
+                        xmin = (datetime.datetime.combine(self.dataOut.datatime.date(),
+                                                         datetime.time(self.xmin, 0, 0))-d1970).total_seconds()
 
                     self.axes[n].set_xlim(xmin, xmax)
                     self.axes[n].firsttime = False
