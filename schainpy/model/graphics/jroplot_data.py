@@ -6,6 +6,7 @@ import numpy
 import datetime
 import numpy as np
 import matplotlib
+import glob
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -99,6 +100,28 @@ class PlotData(Operation, Process):
 
         return x, y, z
 
+    '''
+    JM:
+    elimana las otras imagenes generadas debido a que lso workers no llegan en orden y le pueden
+    poner otro tiempo a la figura q no necesariamente es el ultimo.
+    Solo se realiza cuando termina la imagen.
+    Problemas:
+    -Aun no encuentro.
+    '''
+    def deleteanotherfiles(self):
+        figurenames=[]
+        for n, eachfigure in enumerate(self.figurelist):
+            #add specific name for each channel in channelList
+            ghostfigname = os.path.join(self.save, '{}_{}_{}'.format(self.titles[n].replace(' ',''),self.CODE,
+                                                                 datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d')))
+            figname = os.path.join(self.save, '{}_{}_{}.png'.format(self.titles[n].replace(' ',''),self.CODE,
+                                                                 datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
+
+            for ghostfigure in glob.glob(ghostfigname+'*'): #ghostfigure will adopt all posible names of figures
+                if ghostfigure != figname:
+                    os.remove(ghostfigure)
+                    print 'Removing GhostFigures:' , figname
+
     def __plot(self):
 
         print 'plotting...{}'.format(self.CODE)
@@ -113,8 +136,11 @@ class PlotData(Operation, Process):
             for n, eachfigure in enumerate(self.figurelist):
                 if self.show:
                     eachfigure.show()
+
                 self.plot() # ok? como elijo que figura?
-                plt.tight_layout()
+                #eachfigure.subplots_adjust(left=0.2)
+                #eachfigure.subplots_adjuccst(right=0.2)
+                eachfigure.tight_layout() # ajuste de cada subplot
                 eachfigure.canvas.manager.set_window_title('{} {} - {}'.format(self.title[n], self.CODE.upper(),
                                                                             datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
 
@@ -148,7 +174,7 @@ class PlotData(Operation, Process):
             else :
                 for n, eachfigure in enumerate(self.figurelist):
                     #add specific name for each channel in channelList
-                    figname = os.path.join(self.save, '{}_{}_{}.png'.format(self.titles[n],self.CODE,
+                    figname = os.path.join(self.save, '{}_{}_{}.png'.format(self.titles[n].replace(' ',''),self.CODE,
                                                                          datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
 
                     print 'Saving figure: {}'.format(figname)
@@ -202,6 +228,7 @@ class PlotData(Operation, Process):
                     self.ended = True
                     self.isConfig = False
                     self.__plot()
+                    self.deleteanotherfiles() #CLPDG
                 elif seconds_passed >= self.data['throttle']:
                     print 'passed', seconds_passed
                     self.__plot()
