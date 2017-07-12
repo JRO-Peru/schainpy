@@ -8,7 +8,7 @@ from jroIO_voltage import *
 from jroIO_spectra import *
 from jroIO_heispectra import *
 from jroIO_usrp import *
-    
+from jroIO_digitalRF import *
 from jroIO_kamisr import *
 from jroIO_param import *
 from jroIO_hf import *
