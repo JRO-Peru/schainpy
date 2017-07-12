@@ -513,10 +513,10 @@ class CohInt(Operation):
         self.__dataReady = True
         return avgdata, avgdatatime
 
-    def run(self, dataOut, **kwargs):
-
+    
+    def run(self, dataOut, n=None, timeInterval=None, overlapping=False, byblock=False, **kwargs):
         if not self.isConfig:
-            self.setup(**kwargs)
+            self.setup(n=n, timeInterval=timeInterval, overlapping=overlapping, byblock=byblock, **kwargs)
             self.isConfig = True
 
         if dataOut.flagDataAsBlock:

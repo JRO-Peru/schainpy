@@ -994,9 +994,9 @@ class JRODataReader(JRODataIO):
         self.__isFirstTimeOnline = 0
 
     def __setNewBlock(self):
-        if self.server is None:
-            if self.fp == None:
-                return 0
+        #if self.server is None:
+        if self.fp == None:
+            return 0
 
 #         if self.online:
 #             self.__jumpToLastBlock()
@@ -1013,23 +1013,23 @@ class JRODataReader(JRODataIO):
             else:
                 return 1
         print 'xxxx'
-        if self.server is None:
-            currentSize = self.fileSize - self.fp.tell()
-            neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
-            if (currentSize >= neededSize):
-                self.basicHeaderObj.read(self.fp)
-                self.lastUTTime = self.basicHeaderObj.utc
-                return 1
-        else:
-            self.basicHeaderObj.read(self.zHeader)
+        #if self.server is None:
+        currentSize = self.fileSize - self.fp.tell()
+        neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        if (currentSize >= neededSize):
+            self.basicHeaderObj.read(self.fp)
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
+        # else:
+        #     self.basicHeaderObj.read(self.zHeader)
+        #     self.lastUTTime = self.basicHeaderObj.utc
+        #     return 1
         if self.__waitNewBlock():
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
-        if self.server is None:
-            if not(self.setNextFile()):
-                return 0
+        #if self.server is None:
+        if not(self.setNextFile()):
+            return 0
 
         deltaTime = self.basicHeaderObj.utc - self.lastUTTime #
         self.lastUTTime = self.basicHeaderObj.utc
@@ -1290,7 +1290,7 @@ class JRODataReader(JRODataIO):
             self.server = address
             self.context = zmq.Context()
             self.receiver = self.context.socket(zmq.PULL)
-            self.receiver.bind(self.server)
+            self.receiver.connect(self.server)
             time.sleep(0.5)
             print '[Starting] ReceiverData from {}'.format(self.server)
         else: 
@@ -1503,8 +1503,10 @@ class JRODataReader(JRODataIO):
                         server=server,
                         verbose=verbose)
             self.isConfig = True
-        print 'hola'
-        self.getData()
+        if server is None:
+            self.getData()
+        else: 
+            self.getFromServer()
 
 class JRODataWriter(JRODataIO):
 

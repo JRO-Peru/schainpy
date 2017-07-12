@@ -132,18 +132,17 @@ class BasicHeader(Header):
     
     def read(self, fp):
         
+        self.length = 0
         try:
             if hasattr(fp, 'read'):
-                print 'fromfile'
                 header = numpy.fromfile(fp, BASIC_STRUCTURE,1)
             else:
-                print 'fromstring'
                 header = numpy.fromstring(fp, BASIC_STRUCTURE,1)
         except Exception, e:
             print "BasicHeader: "
             print e
             return 0
-        
+
         self.size = int(header['nSize'][0])
         self.version = int(header['nVersion'][0])
         self.dataBlock = int(header['nDataBlockId'][0])
@@ -155,7 +154,8 @@ class BasicHeader(Header):
         
         if self.size < 24:
             return 0
-            
+
+        self.length = header.nbytes
         return 1
     
     def write(self, fp):
@@ -200,13 +200,20 @@ class SystemHeader(Header):
         self.pciDioBusWidth = pciDioBusWith
         
     def read(self, fp):
-        
-        startFp = fp.tell()
-        
+        self.length = 0
         try:
-            header = numpy.fromfile(fp,SYSTEM_STRUCTURE,1)
+            startFp = fp.tell()
         except Exception, e:
-            print "System Header: " + e
+            startFp = None
+            pass
+
+        try:
+            if hasattr(fp, 'read'):
+                header = numpy.fromfile(fp, SYSTEM_STRUCTURE,1)
+            else:
+                header = numpy.fromstring(fp, SYSTEM_STRUCTURE,1)
+        except Exception, e:
+            print "System Header: " + str(e)
             return 0
         
         self.size = header['nSize'][0]
@@ -216,16 +223,19 @@ class SystemHeader(Header):
         self.adcResolution = header['nADCResolution'][0]
         self.pciDioBusWidth = header['nPCDIOBusWidth'][0]
         
-        endFp = self.size + startFp
         
-        if fp.tell() > endFp:
-            sys.stderr.write("Warning %s: Size value read from System Header is lower than it has to be\n" %fp.name)
-            return 0
+        if startFp is not None:
+            endFp = self.size + startFp
             
-        if fp.tell() < endFp:
-            sys.stderr.write("Warning %s: Size value read from System Header size is greater than it has to be\n" %fp.name)
-            return 0
+            if fp.tell() > endFp:
+                sys.stderr.write("Warning %s: Size value read from System Header is lower than it has to be\n" %fp.name)
+                return 0
+                
+            if fp.tell() < endFp:
+                sys.stderr.write("Warning %s: Size value read from System Header size is greater than it has to be\n" %fp.name)
+                return 0
         
+        self.length = header.nbytes
         return 1
     
     def write(self, fp):
@@ -302,13 +312,21 @@ class RadarControllerHeader(Header):
             self.fClock = 0.15/(deltaHeight*1e-6)   #0.15Km / (height * 1u)
 
     def read(self, fp):
-        
-       
-        startFp = fp.tell()
+        self.length = 0
         try:
-            header = numpy.fromfile(fp,RADAR_STRUCTURE,1)
+            startFp = fp.tell()
         except Exception, e:
-            print "RadarControllerHeader: " + e
+            startFp = None
+            pass
+
+        try:
+            if hasattr(fp, 'read'):
+                header = numpy.fromfile(fp, RADAR_STRUCTURE,1)
+            else:
+                header = numpy.fromstring(fp, RADAR_STRUCTURE,1)
+            self.length += header.nbytes
+        except Exception, e:
+            print "RadarControllerHeader: " + str(e)
             return 0
         
         size = int(header['nSize'][0])
@@ -329,23 +347,64 @@ class RadarControllerHeader(Header):
         self.rangeTxA = header['sRangeTxA'][0]
         self.rangeTxB = header['sRangeTxB'][0]
         
-        samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
-        
+        try:
+            if hasattr(fp, 'read'):
+                samplingWindow = numpy.fromfile(fp, SAMPLING_STRUCTURE, self.nWindows)
+            else:
+                samplingWindow = numpy.fromstring(fp[self.length:], SAMPLING_STRUCTURE, self.nWindows)
+            self.length += samplingWindow.nbytes
+        except Exception, e:
+            print "RadarControllerHeader: " + str(e)
+            return 0
         self.nHeights = int(numpy.sum(samplingWindow['nsa']))
         self.firstHeight = samplingWindow['h0']
         self.deltaHeight = samplingWindow['dh']
         self.samplesWin = samplingWindow['nsa']
+    
         
-        self.Taus = numpy.fromfile(fp,'<f4',self.numTaus)
+
+        try:
+            if hasattr(fp, 'read'):
+                self.Taus = numpy.fromfile(fp, '<f4', self.numTaus)
+            else:
+                self.Taus = numpy.fromstring(fp[self.length:], '<f4', self.numTaus)
+            self.length += self.Taus.nbytes
+        except Exception, e:
+            print "RadarControllerHeader: " + str(e)
+            return 0
+        
+        
         
         self.code_size = 0
         if self.codeType != 0:
-            self.nCode = int(numpy.fromfile(fp,'<u4',1))
-            self.nBaud = int(numpy.fromfile(fp,'<u4',1))
             
+            try:
+                if hasattr(fp, 'read'):
+                    self.nCode = numpy.fromfile(fp, '<u4', 1)
+                    self.length += self.nCode.nbytes
+                    self.nBaud = numpy.fromfile(fp, '<u4', 1)
+                    self.length += self.nBaud.nbytes
+                else:
+                    self.nCode = numpy.fromstring(fp[self.length:], '<u4', 1)[0]
+                    self.length += self.nCode.nbytes
+                    self.nBaud = numpy.fromstring(fp[self.length:], '<u4', 1)[0]
+                    self.length += self.nBaud.nbytes
+            except Exception, e:
+                print "RadarControllerHeader: " + str(e)
+                return 0
             code = numpy.empty([self.nCode,self.nBaud],dtype='i1')
+           
             for ic in range(self.nCode):
-                temp = numpy.fromfile(fp,'u4',int(numpy.ceil(self.nBaud/32.)))
+                try:
+                    if hasattr(fp, 'read'):
+                        temp = numpy.fromfile(fp,'u4', int(numpy.ceil(self.nBaud/32.)))
+                    else:
+                        temp = numpy.fromstring(fp,'u4', int(numpy.ceil(self.nBaud/32.)))
+                    self.length += temp.nbytes
+                except Exception, e:
+                    print "RadarControllerHeader: " + str(e)
+                    return 0
+
                 for ib in range(self.nBaud-1,-1,-1):
                     code[ic,ib] = temp[ib/32]%2
                     temp[ib/32] = temp[ib/32]/2
@@ -358,22 +417,22 @@ class RadarControllerHeader(Header):
 #  
 #             if self.line6Function == RCfunction.FLIP:
 #                 self.flip2 = numpy.fromfile(fp,'<u4',1)
-        
-        endFp = size + startFp
-        
-        if fp.tell() != endFp:
-#             fp.seek(endFp)
-            print "%s: Radar Controller Header size is not consistent: from data [%d] != from header field [%d]" %(fp.name, fp.tell()-startFp, size)
-#             return 0
+        if startFp is not None:
+            endFp = size + startFp
+            
+            if fp.tell() != endFp:
+    #             fp.seek(endFp)
+                print "%s: Radar Controller Header size is not consistent: from data [%d] != from header field [%d]" %(fp.name, fp.tell()-startFp, size)
+    #             return 0
 
-        if fp.tell() > endFp:
-            sys.stderr.write("Warning %s: Size value read from Radar Controller header is lower than it has to be\n" %fp.name)
-#             return 0
+            if fp.tell() > endFp:
+                sys.stderr.write("Warning %s: Size value read from Radar Controller header is lower than it has to be\n" %fp.name)
+    #             return 0
+                
+            if fp.tell() < endFp:
+                sys.stderr.write("Warning %s: Size value read from Radar Controller header is greater than it has to be\n" %fp.name)
             
-        if fp.tell() < endFp:
-            sys.stderr.write("Warning %s: Size value read from Radar Controller header is greater than it has to be\n" %fp.name)
-            
-            
+        
         return 1
     
     def write(self, fp):
@@ -512,15 +571,23 @@ class ProcessingHeader(Header):
         self.flag_cspc = False
         self.flag_decode = False
         self.flag_deflip = False
-    
+        self.length = 0
     def read(self, fp):
-        
-        startFp = fp.tell()
+        self.length = 0
+        try:
+            startFp = fp.tell()
+        except Exception, e:
+            startFp = None
+            pass
         
         try:
-            header = numpy.fromfile(fp,PROCESSING_STRUCTURE,1)
+            if hasattr(fp, 'read'):
+                header = numpy.fromfile(fp, PROCESSING_STRUCTURE, 1)
+            else:
+                header = numpy.fromstring(fp, PROCESSING_STRUCTURE, 1)
+            self.length += header.nbytes
         except Exception, e:
-            print "ProcessingHeader: " + e
+            print "ProcessingHeader: " + str(e)
             return 0
         
         size = int(header['nSize'][0])
@@ -534,14 +601,31 @@ class ProcessingHeader(Header):
         self.nIncohInt = int(header['nIncoherentIntegrations'][0])
         self.totalSpectra = int(header['nTotalSpectra'][0])
         
-        samplingWindow = numpy.fromfile(fp,SAMPLING_STRUCTURE,self.nWindows)
+        try:
+            if hasattr(fp, 'read'):
+                samplingWindow = numpy.fromfile(fp, SAMPLING_STRUCTURE, self.nWindows)
+            else:
+                samplingWindow = numpy.fromstring(fp[self.length:], SAMPLING_STRUCTURE, self.nWindows)
+            self.length += samplingWindow.nbytes
+        except Exception, e:
+            print "ProcessingHeader: " + str(e)
+            return 0
         
         self.nHeights = int(numpy.sum(samplingWindow['nsa']))
         self.firstHeight = float(samplingWindow['h0'][0])
         self.deltaHeight = float(samplingWindow['dh'][0])
         self.samplesWin = samplingWindow['nsa'][0]
         
-        self.spectraComb = numpy.fromfile(fp,'u1',2*self.totalSpectra)
+
+        try:
+            if hasattr(fp, 'read'):
+                self.spectraComb = numpy.fromfile(fp, 'u1', 2*self.totalSpectra)
+            else:
+                self.spectraComb = numpy.fromstring(fp[self.length:], 'u1', 2*self.totalSpectra)
+            self.length += self.spectraComb.nbytes
+        except Exception, e:
+            print "ProcessingHeader: " + str(e)
+            return 0
         
         if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
             self.nCode = int(numpy.fromfile(fp,'<u4',1))
@@ -587,14 +671,16 @@ class ProcessingHeader(Header):
         if nPairs > 0:
             self.flag_cspc = True
         
-        endFp = size + startFp
         
-        if fp.tell() > endFp:
-            sys.stderr.write("Warning: Processing header size is lower than it has to be")
-            return 0
-            
-        if fp.tell() < endFp:
-            sys.stderr.write("Warning: Processing header size is greater than it is considered")
+        
+        if startFp is not None:
+            endFp = size + startFp
+            if fp.tell() > endFp:
+                sys.stderr.write("Warning: Processing header size is lower than it has to be")
+                return 0
+                
+            if fp.tell() < endFp:
+                sys.stderr.write("Warning: Processing header size is greater than it is considered")
         
         return 1
     
