@@ -581,7 +581,16 @@ class DigitalRFWriter(Operation):
         print 'ippSeconds', dataIn.ippSeconds
         print 'frequency', dataIn.frequency
         print 'nProfiles', dataIn.nProfiles
+        print 'deltaH', dataIn.getDeltaH()
         print 'systemHeaderObj.nSamples', dataIn.systemHeaderObj.nSamples
+        nSamples = dataIn.systemHeaderObj.nSamples
+        ippSeconds = dataIn.ippSeconds
+
+        self.__samplerate = 1.0*nSamples/ippSeconds
+        # ippKm = 1e6*0.15*self.fixed_metadata_dict['ipp']
+        # nSamples = int(ippKm / (1e6*0.15/self.__sample_rate))
+        # ippSeconds = 1.0*self.__nSamples/self.__sample_rate
+
         if not self.isConfig:
             self.setup(dataIn, path, **kwargs)
 
