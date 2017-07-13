@@ -35,14 +35,11 @@ def fiber(cursor, skip, q, dt):
     # opObj11 = procUnitConfObj3.addOperation(name='SpectralMoments', optype='other')
 
     #
-    #     opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')
-    #     opObj11.addParameter(name='id', value='1000', format='int')
-    #     opObj11.addParameter(name='wintitle', value='HF_Jicamarca_Spc', format='str')
-    #     opObj11.addParameter(name='channelList', value='0', format='intlist')
-    #     opObj11.addParameter(name='zmin', value='-120', format='float')
-    #     opObj11.addParameter(name='zmax', value='-70', format='float')
-    #     opObj11.addParameter(name='save', value='1', format='int')
-    #     opObj11.addParameter(name='figpath', value=figpath, format='str')
+    opObj11 = procUnitConfObj2.addOperation(name='RTIPlot', optype='other')
+    opObj11.addParameter(name='id', value='1000', format='int')
+    opObj11.addParameter(name='wintitle', value='HF_Jicamarca_Spc', format='str')
+    opObj11.addParameter(name='xmin', value='0', format='int')
+    opObj11.addParameter(name='xmax', value='24', format='int')
 
     # opObj11 = procUnitConfObj3.addOperation(name='Parameters1Plot', optype='other')
     # opObj11.addParameter(name='channelList', value='0', format='intList')
@@ -67,8 +64,8 @@ def fiber(cursor, skip, q, dt):
     # opObj11.addParameter(name='save', value='0', format='int')
     # # opObj11.addParameter(name='figpath', value='/tmp/', format='str')
     #
-    opObj12 = procUnitConfObj2.addOperation(name='PublishData', optype='other')
-    opObj12.addParameter(name='zeromq', value=1, format='int')
+    # opObj12 = procUnitConfObj2.addOperation(name='PublishData', optype='other')
+    # opObj12.addParameter(name='zeromq', value=1, format='int')
     # opObj12.addParameter(name='server', value='tcp://10.10.10.82:7000', format='str')
 
 
