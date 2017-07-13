@@ -217,7 +217,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             Si un bloque leido no es un bloque valido
         """
         
-        print 'READ BLOCK'
         # if self.server is not None:
         #     self.zBlock = self.receiver.recv()
         #     self.zHeader = self.zBlock[:24]
@@ -232,7 +231,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         try:
             junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
-            print'junked'
         except:
             #print "The read block (%3d) has not enough data" %self.nReadBlocks
 
@@ -263,6 +261,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
 
         self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+
+        self.dataOut.processingHeaderObj = self.processingHeaderObj.copy()
 
         if self.nTxs > 1:
             self.dataOut.radarControllerHeaderObj.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs

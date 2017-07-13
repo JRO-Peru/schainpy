@@ -1,3 +1,4 @@
+
 '''
 Created on Jul 3, 2014
 
@@ -6,6 +7,7 @@ Created on Jul 3, 2014
 import os
 import datetime
 import numpy
+from fractions import Fraction
 
 try:
     from gevent import sleep
@@ -548,7 +550,7 @@ class DigitalRFWriter(Operation):
         Operation.__init__(self, **kwargs)
         self.dataOut = None
 
-    def setup(self, dataIn, path, blocksPerFile, set=0, ext='.h5'):
+    def setup(self, dataIn, path, set=0, ext='.h5'):
         '''
         In this method we should set all initial parameters.
 
@@ -556,10 +558,36 @@ class DigitalRFWriter(Operation):
             dataIn        :        Input data will also be outputa data
 
         '''
-        self.dataOut = dataIn
+        
+        self.__ippSeconds = dataIn.ippSeconds
+        self.__deltaH = dataIn.getDeltaH()
+        self.__sample_rate = 1e6*0.15/self.__deltaH
+        self.__dtype = dataIn.dtype
+        if len(dataIn.dtype) == 2:
+            self.__dtype = dataIn.dtype[0]
+        self.__nSamples = dataIn.systemHeaderObj.nSamples
+        self.__nProfiles = dataIn.nProfiles
+        self.__blocks_per_file = dataIn.processingHeaderObj.dataBlocksPerFile
 
+        file_cadence_millisecs = 1.0 * self.__blocks_per_file * self.__nProfiles * self.__nSamples / self.__sample_rate * 1000
+        sub_cadence_secs = 10 * file_cadence_millisecs
+        sample_rate_fraction = Fraction(self.__sample_rate).limit_denominator()
+        sample_rate_numerator = long(sample_rate_fraction.numerator)
+        sample_rate_denominator = long(sample_rate_fraction.denominator)
+        start_global_index = dataIn.utctime * self.__sample_rate
+        self.arr_data = arr_data = numpy.ones((self.__nSamples, 1), dtype=[('r', self.__dtype), ('i', self.__dtype)])
+        uuid = 'prueba'
+        compression_level = 1
+        checksum = False
+        is_complex = True
+        num_subchannels = 1
+        is_continuous = True
+        marching_periods = False
 
-
+        self.digitalWriteObj = digital_rf.DigitalRFWriter("/home/jchavez/jicamarca/mocked_data/voltage", self.__dtype, sub_cadence_secs,
+                                                file_cadence_millisecs, start_global_index,
+                                                sample_rate_numerator, sample_rate_denominator, uuid, compression_level, checksum,
+                                                is_complex, num_subchannels, is_continuous, marching_periods)
 
 
         self.isConfig = True
@@ -575,26 +603,24 @@ class DigitalRFWriter(Operation):
             dataIn        :        object with the data
 
         '''
-        print dir(dataIn)
-        print 'blocksize', dataIn.blocksize
-        print 'channelIndexList', dataIn.channelIndexList
-        print 'ippSeconds', dataIn.ippSeconds
-        print 'frequency', dataIn.frequency
-        print 'nProfiles', dataIn.nProfiles
-        print 'deltaH', dataIn.getDeltaH()
-        print 'systemHeaderObj.nSamples', dataIn.systemHeaderObj.nSamples
-        nSamples = dataIn.systemHeaderObj.nSamples
-        ippSeconds = dataIn.ippSeconds
 
-        self.__samplerate = 1.0*nSamples/ippSeconds
-        # ippKm = 1e6*0.15*self.fixed_metadata_dict['ipp']
-        # nSamples = int(ippKm / (1e6*0.15/self.__sample_rate))
-        # ippSeconds = 1.0*self.__nSamples/self.__sample_rate
+        self.dataOut = dataIn
 
         if not self.isConfig:
             self.setup(dataIn, path, **kwargs)
 
+        samples = len(self.dataOut.data[0])
 
+        for i in range(samples):
+            self.arr_data[i]['r'] = dataIn.data[0][i].real
+            self.arr_data[i]['i'] = dataIn.data[0][i].imag
+        
+        if dataIn.flagNoData:
+            self.digitalWriteObj.close()
+
+        self.digitalWriteObj.rf_write(self.arr_data)
+    
+        #raise
 if __name__ == '__main__':
 
     readObj = DigitalRFReader()
