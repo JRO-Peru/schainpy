@@ -370,7 +370,6 @@ class RadarControllerHeader(Header):
         if fp.tell() < endFp:
             sys.stderr.write("Warning %s: Size value read from Radar Controller header is greater than it has to be\n" %fp.name)
             
-            
         return 1
     
     def write(self, fp):

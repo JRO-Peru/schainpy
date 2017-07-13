@@ -548,7 +548,7 @@ class DigitalRFWriter(Operation):
         Operation.__init__(self, **kwargs)
         self.dataOut = None
 
-    def setup(self, dataIn, path, blocksPerFile, set=0, ext=None):
+    def setup(self, dataIn, path, blocksPerFile, set=0, ext='.h5'):
         '''
         In this method we should set all initial parameters.
 
@@ -566,7 +566,7 @@ class DigitalRFWriter(Operation):
 
         return
 
-    def run(self, dataIn, **kwargs):
+    def run(self, dataIn, path=None, **kwargs):
         '''
         This method will be called many times so here you should put all your code
 
@@ -575,9 +575,15 @@ class DigitalRFWriter(Operation):
             dataIn        :        object with the data
 
         '''
-
+        print dir(dataIn)
+        print 'blocksize', dataIn.blocksize
+        print 'channelIndexList', dataIn.channelIndexList
+        print 'ippSeconds', dataIn.ippSeconds
+        print 'frequency', dataIn.frequency
+        print 'nProfiles', dataIn.nProfiles
+        print 'systemHeaderObj.nSamples', dataIn.systemHeaderObj.nSamples
         if not self.isConfig:
-            self.setup(dataIn, **kwargs)
+            self.setup(dataIn, path, **kwargs)
 
 
 if __name__ == '__main__':
