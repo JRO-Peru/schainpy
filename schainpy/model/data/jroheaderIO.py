@@ -7,6 +7,7 @@ import sys
 import numpy
 import copy
 import datetime
+import inspect
 
 SPEED_OF_LIGHT = 299792458
 SPEED_OF_LIGHT = 3e8
@@ -82,6 +83,9 @@ class Header(object):
     def write(self):
         
         raise NotImplementedError
+
+    def getAllowedArgs(self):
+        return inspect.getargspec(self.__init__).args
     
     def printInfo(self):
         
@@ -115,6 +119,7 @@ class BasicHeader(Header):
     dstFlag = None
     errorCount = None
     datatime = None
+    structure = BASIC_STRUCTURE
     __LOCALTIME = None
         
     def __init__(self, useLocalTime=True):
@@ -189,7 +194,8 @@ class SystemHeader(Header):
     nChannels = None
     adcResolution = None
     pciDioBusWidth = None
-        
+    structure = SYSTEM_STRUCTURE
+
     def __init__(self, nSamples=0, nProfiles=0, nChannels=0, adcResolution=14, pciDioBusWith=0):
         
         self.size = 24 
@@ -198,7 +204,7 @@ class SystemHeader(Header):
         self.nChannels = nChannels
         self.adcResolution = adcResolution
         self.pciDioBusWidth = pciDioBusWith
-        
+
     def read(self, fp):
         self.length = 0
         try:
@@ -264,7 +270,7 @@ class RadarControllerHeader(Header):
     rangeIpp = None
     rangeTxA = None
     rangeTxB = None
-    
+    structure = RADAR_STRUCTURE
     __size = None
         
     def __init__(self, expType=2, nTx=1,
@@ -540,15 +546,18 @@ class ProcessingHeader(Header):
     nCohInt = None
     nIncohInt = None
     totalSpectra = None
-
+    structure = PROCESSING_STRUCTURE
     flag_dc = None
     flag_cspc = None
         
-    def __init__(self):
+    def __init__(self, dtype=0, blockSize=0, profilesPerBlock=0, dataBlocksPerFile=0, nWindows=0,processFlags=0, nCohInt=0,
+                nIncohInt=0, totalSpectra=0, nHeights=0, firstHeight=0, deltaHeight=0, samplesWin=0, spectraComb=0, nCode=0,
+                code=0, nBaud=None, shif_fft=False, flag_dc=False, flag_cspc=False, flag_decode=False, flag_deflip=False
+                ):
         
 #         self.size = 0
-        self.dtype = 0
-        self.blockSize = 0
+        self.dtype = dtype
+        self.blockSize = blockSize
         self.profilesPerBlock = 0
         self.dataBlocksPerFile = 0
         self.nWindows = 0
@@ -572,6 +581,7 @@ class ProcessingHeader(Header):
         self.flag_decode = False
         self.flag_deflip = False
         self.length = 0
+
     def read(self, fp):
         self.length = 0
         try:

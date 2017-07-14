@@ -25,8 +25,12 @@ if __name__ == '__main__':
     procUnitConfObj0 = controllerObj.addProcUnit(datatype='VoltageProc',
                                                  inputId=readUnitConfObj.getId())
 
+    # opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='external')
+    # opObj11.addParameter(name='id', value='121', format='int')
+    # opObj11.addParameter(name='wintitle', value='Scope', format='str')
+
     opObj10 = procUnitConfObj0.addOperation(name='DigitalRFWriter', optype='other')
-    opObj10.addParameter(name='path', value='/home/jchavez/jicamarca/data_sink/', format='str')
+    opObj10.addParameter(name='path', value='/home/jchavez/jicamarca/mocked_data/voltage', format='str')
     # opObj10.addParameter(name='minHei', value='0', format='float')
     # opObj10.addParameter(name='maxHei', value='8', format='float')
 

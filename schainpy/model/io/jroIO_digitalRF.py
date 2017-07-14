@@ -7,6 +7,7 @@ Created on Jul 3, 2014
 import os
 import datetime
 import numpy
+from profilehooks import coverage
 from fractions import Fraction
 
 try:
@@ -251,7 +252,6 @@ class DigitalRFReader(ProcessingUnit):
 
         self.__firstHeigth = 0
 
-
         try:
             codeType = self.fixed_metadata_dict['codeType']
         except:
@@ -386,7 +386,7 @@ class DigitalRFReader(ProcessingUnit):
 
         return False
 
-    def __readNextBlock(self, seconds=30, volt_scale = 218776):
+    def __readNextBlock(self, seconds=30, volt_scale = 1):
         '''
         '''
 
@@ -550,32 +550,37 @@ class DigitalRFWriter(Operation):
         Operation.__init__(self, **kwargs)
         self.dataOut = None
 
-    def setup(self, dataIn, path, set=0, ext='.h5'):
+    def setup(self, dataOut, path, set=0, metadataFile='metadata', ext='.h5'):
         '''
         In this method we should set all initial parameters.
 
         Input:
-            dataIn        :        Input data will also be outputa data
+            dataOut        :        Input data will also be outputa data
 
         '''
         
-        self.__ippSeconds = dataIn.ippSeconds
-        self.__deltaH = dataIn.getDeltaH()
+        self.__ippSeconds = dataOut.ippSeconds
+        self.__deltaH = dataOut.getDeltaH()
         self.__sample_rate = 1e6*0.15/self.__deltaH
-        self.__dtype = dataIn.dtype
-        if len(dataIn.dtype) == 2:
-            self.__dtype = dataIn.dtype[0]
-        self.__nSamples = dataIn.systemHeaderObj.nSamples
-        self.__nProfiles = dataIn.nProfiles
-        self.__blocks_per_file = dataIn.processingHeaderObj.dataBlocksPerFile
+        self.__dtype = dataOut.dtype
+        if len(dataOut.dtype) == 2:
+            self.__dtype = dataOut.dtype[0]
+        self.__nSamples = dataOut.systemHeaderObj.nSamples
+        self.__nProfiles = dataOut.nProfiles
+        self.__blocks_per_file = dataOut.processingHeaderObj.dataBlocksPerFile
+        self.arr_data = arr_data = numpy.ones((self.__nSamples, 1), dtype=[('r', self.__dtype), ('i', self.__dtype)])
 
-        file_cadence_millisecs = 1.0 * self.__blocks_per_file * self.__nProfiles * self.__nSamples / self.__sample_rate * 1000
-        sub_cadence_secs = 10 * file_cadence_millisecs
+        file_cadence_millisecs = long(1.0 * self.__blocks_per_file * self.__nProfiles * self.__nSamples / self.__sample_rate * 1000)
+        sub_cadence_secs = file_cadence_millisecs
+
+        #print file_cadence_millisecs
+        #print sub_cadence_secs
+
         sample_rate_fraction = Fraction(self.__sample_rate).limit_denominator()
         sample_rate_numerator = long(sample_rate_fraction.numerator)
         sample_rate_denominator = long(sample_rate_fraction.denominator)
-        start_global_index = dataIn.utctime * self.__sample_rate
-        self.arr_data = arr_data = numpy.ones((self.__nSamples, 1), dtype=[('r', self.__dtype), ('i', self.__dtype)])
+        start_global_index = dataOut.utctime * self.__sample_rate
+        
         uuid = 'prueba'
         compression_level = 1
         checksum = False
@@ -584,42 +589,59 @@ class DigitalRFWriter(Operation):
         is_continuous = True
         marching_periods = False
 
-        self.digitalWriteObj = digital_rf.DigitalRFWriter("/home/jchavez/jicamarca/mocked_data/voltage", self.__dtype, sub_cadence_secs,
+        self.digitalWriteObj = digital_rf.DigitalRFWriter(path, self.__dtype, sub_cadence_secs,
                                                 file_cadence_millisecs, start_global_index,
                                                 sample_rate_numerator, sample_rate_denominator, uuid, compression_level, checksum,
                                                 is_complex, num_subchannels, is_continuous, marching_periods)
+        
+        metadata_dir = os.path.join(path, 'metadata')
+        os.system('mkdir %s' % (metadata_dir))
+        
+        self.digitalMetadataWriteObj = digital_rf.DigitalMetadataWriter(metadata_dir, 236, file_cadence_millisecs / 1000,
+                                                sample_rate_numerator, sample_rate_denominator,
+                                                metadataFile)
 
 
         self.isConfig = True
-
+        self.currentSample = 0
         return
 
-    def run(self, dataIn, path=None, **kwargs):
+    @coverage
+    def run(self, dataOut, path=None, **kwargs):
         '''
         This method will be called many times so here you should put all your code
 
         Inputs:
 
-            dataIn        :        object with the data
+            dataOut        :        object with the data
 
         '''
-
-        self.dataOut = dataIn
+        #print dataOut.__dict__
+        self.dataOut = dataOut
 
         if not self.isConfig:
-            self.setup(dataIn, path, **kwargs)
+            self.setup(dataOut, path, **kwargs)
 
         samples = len(self.dataOut.data[0])
 
         for i in range(samples):
-            self.arr_data[i]['r'] = dataIn.data[0][i].real
-            self.arr_data[i]['i'] = dataIn.data[0][i].imag
-        
-        if dataIn.flagNoData:
-            self.digitalWriteObj.close()
-
+            self.arr_data[i]['r'] = dataOut.data[0][i].real
+            self.arr_data[i]['i'] = dataOut.data[0][i].imag
         self.digitalWriteObj.rf_write(self.arr_data)
-    
+        start_idx = self.__sample_rate * dataOut.utctime
+        metadata_dict = {}
+        metadata_dict['frequency'] = 49.92e6
+        metadata_dict['blablabla'] = 49.92e6
+        self.currentSample += 1
+        if self.dataOut.flagDataAsBlock:
+            self.digitalMetadataWriteObj.write(start_idx, metadata_dict)
+        elif self.currentSample == 1: 
+            print '[Writing] - Writing metadata'
+            self.digitalMetadataWriteObj.write(start_idx, metadata_dict)
+        if self.currentSample == self.__nProfiles: self.currentSample = 0
+    def close(self):
+        print '[Writing] - Closing files '
+        self.digitalWriteObj.close()
         #raise
 if __name__ == '__main__':
 
@@ -628,4 +650,4 @@ if __name__ == '__main__':
     while True:
         readObj.run(path='/home/jchavez/jicamarca/mocked_data/')
 #         readObj.printInfo()
-        readObj.printNumberOfBlock()
+        #readObj.printNumberOfBlock()    
