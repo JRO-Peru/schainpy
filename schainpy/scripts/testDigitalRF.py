@@ -29,8 +29,7 @@ def main():
                                                 endDate='2017/07/03',
                                                 startTime='00:00:00',
                                                 endTime='23:59:59',
-                                                online=0,
-                                                ippKm = 60)
+                                                online=0)
 
     procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage',
                                                  inputId=readUnitConfObj.getId())
@@ -47,12 +46,12 @@ def main():
 #     opObj10.addParameter(name='nCode', value='2', format='float')
 #     opObj10.addParameter(name='nBaud', value='1', format='float')
     
-    opObj10 = procUnitConfObj0.addOperation(name='CohInt', optype='external')
-    opObj10.addParameter(name='n', value='1', format='float')
+    # opObj10 = procUnitConfObj0.addOperation(name='CohInt', optype='external')
+    # opObj10.addParameter(name='n', value='1', format='float')
 
-    opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='external')
-    opObj11.addParameter(name='id', value='121', format='int')
-    opObj11.addParameter(name='wintitle', value='Scope', format='str')
+    # opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='external')
+    # opObj11.addParameter(name='id', value='121', format='int')
+    # opObj11.addParameter(name='wintitle', value='Scope', format='str')
     
     # procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra',
     #                                              inputId=procUnitConfObj0.getId())

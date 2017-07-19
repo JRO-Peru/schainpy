@@ -85,8 +85,23 @@ class Header(object):
         raise NotImplementedError
 
     def getAllowedArgs(self):
-        return inspect.getargspec(self.__init__).args
+        args = inspect.getargspec(self.__init__).args
+        try:
+            args.remove('self')
+        except:
+            pass
+        return args
+
+    def getAsDict(self):
+        args = self.getAllowedArgs()
+        asDict = {}
+        for x in args:
+            asDict[x] = self[x]
+        return asDict
     
+    def __getitem__(self, name):
+        return getattr(self, name)
+
     def printInfo(self):
         
         message = "#"*50 + "\n"
@@ -196,14 +211,14 @@ class SystemHeader(Header):
     pciDioBusWidth = None
     structure = SYSTEM_STRUCTURE
 
-    def __init__(self, nSamples=0, nProfiles=0, nChannels=0, adcResolution=14, pciDioBusWith=0):
+    def __init__(self, nSamples=0, nProfiles=0, nChannels=0, adcResolution=14, pciDioBusWidth=0):
         
         self.size = 24 
         self.nSamples = nSamples
         self.nProfiles = nProfiles
         self.nChannels = nChannels
         self.adcResolution = adcResolution
-        self.pciDioBusWidth = pciDioBusWith
+        self.pciDioBusWidth = pciDioBusWidth
 
     def read(self, fp):
         self.length = 0
@@ -266,7 +281,7 @@ class RadarControllerHeader(Header):
     line5Function = None
     fClock = None
     prePulseBefore = None
-    prePulserAfter = None
+    prePulseAfter = None
     rangeIpp = None
     rangeTxA = None
     rangeTxB = None
@@ -274,7 +289,7 @@ class RadarControllerHeader(Header):
     __size = None
         
     def __init__(self, expType=2, nTx=1,
-                 ippKm=None, txA=0, txB=0,
+                 ipp=None, txA=0, txB=0,
                  nWindows=None, nHeights=None, firstHeight=None, deltaHeight=None,
                  numTaus=0, line6Function=0, line5Function=0, fClock=None,
                  prePulseBefore=0, prePulseAfter=0,
@@ -284,10 +299,10 @@ class RadarControllerHeader(Header):
 #         self.size = 116
         self.expType = expType
         self.nTx = nTx
-        self.ipp = ippKm
+        self.ipp = ipp
         self.txA = txA
         self.txB = txB
-        self.rangeIpp = ippKm
+        self.rangeIpp = ipp
         self.rangeTxA = txA
         self.rangeTxB = txB
         
@@ -298,7 +313,7 @@ class RadarControllerHeader(Header):
         self.line5Function = line5Function
         self.fClock = fClock
         self.prePulseBefore = prePulseBefore
-        self.prePulserAfter = prePulseAfter
+        self.prePulseAfter = prePulseAfter
         
         self.nHeights = nHeights
         self.firstHeight = firstHeight
@@ -348,7 +363,7 @@ class RadarControllerHeader(Header):
         self.line5Function = int(header['nLine5Function'][0])
         self.fClock = float(header['fClock'][0])
         self.prePulseBefore = int(header['nPrePulseBefore'][0])
-        self.prePulserAfter = int(header['nPrePulseAfter'][0])
+        self.prePulseAfter = int(header['nPrePulseAfter'][0])
         self.rangeIpp = header['sRangeIPP'][0]
         self.rangeTxA = header['sRangeTxA'][0]
         self.rangeTxB = header['sRangeTxB'][0]
@@ -456,7 +471,7 @@ class RadarControllerHeader(Header):
                        self.line5Function,
                        self.fClock,
                        self.prePulseBefore,
-                       self.prePulserAfter,
+                       self.prePulseAfter,
                        self.rangeIpp,
                        self.rangeTxA,
                        self.rangeTxB)
