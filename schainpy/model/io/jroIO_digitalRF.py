@@ -86,6 +86,7 @@ class DigitalRFReader(ProcessingUnit):
         # self.dataOut.channelIndexList = None
 
         self.dataOut.flagNoData = True
+
         self.dataOut.flagDataAsBlock = False
         # Set to TRUE if the data is discontinuous
         self.dataOut.flagDiscontinuousBlock = False
@@ -98,13 +99,15 @@ class DigitalRFReader(ProcessingUnit):
 
         self.dataOut.errorCount = 0
 
-        self.dataOut.nCohInt = 1
+        self.dataOut.nCohInt = self.fixed_metadata_dict['nCohInt']
 
-        self.dataOut.flagDecodeData = False # asumo que la data esta decodificada
+        self.dataOut.flagDecodeData = self.fixed_metadata_dict['flagDecodeData'] # asumo que la data esta decodificada
 
-        self.dataOut.flagDeflipData = False # asumo que la data esta sin flip
+        self.dataOut.flagDeflipData = self.fixed_metadata_dict['flagDeflipData'] # asumo que la data esta sin flip
 
-        self.dataOut.flagShiftFFT = False
+        self.dataOut.flagShiftFFT = self.fixed_metadata_dict['flagShiftFFT']
+
+        self.dataOut.useLocalTime = self.fixed_metadata_dict['useLocalTime']
 
         self.dataOut.ippSeconds = ippSeconds
 
@@ -178,10 +181,10 @@ class DigitalRFReader(ProcessingUnit):
                     endTime = datetime.time(23,59,59),
                     channelList = None,
                     nSamples = None,
-                    ippKm = 60,
                     online = False,
                     delay = 60,
                     buffer_size = 1024,
+                    ippKm=None,
                     **kwargs):
         '''
         In this method we should set all initial parameters.
@@ -221,6 +224,7 @@ class DigitalRFReader(ProcessingUnit):
         top_properties = self.digitalReadObj.get_properties(channelNameList[channelList[0]])
 
         self.__sample_rate = 1.0 * top_properties['sample_rate_numerator'] / top_properties['sample_rate_denominator']
+
         # self.__samples_per_file = top_properties['samples_per_file'][0]
         self.__deltaHeigth = 1e6*0.15/self.__sample_rate ## why 0.15?
 
@@ -240,16 +244,16 @@ class DigitalRFReader(ProcessingUnit):
             self.__frequency = None
 
         try:
-            self.__timezone = self.fixed_metadata_dict['timezone']
+            self.__timezone = self.fixed_metadata_dict['timezone'] * 60
         except:
             self.__timezone = 0
 
-
+        
         try:
-            nSamples = self.__systemHeader['nSamples']
+            nSamples = self.fixed_metadata_dict['nSamples']
         except:
             nSamples = None
-
+        
         self.__firstHeigth = 0
 
         try:
@@ -269,7 +273,7 @@ class DigitalRFReader(ProcessingUnit):
         if not ippKm:
             try:
                 # seconds to km
-                ippKm = 1e6*0.15*self.__radarControllerHeader['ipp']
+                ippKm = self.__radarControllerHeader['ipp']
             except:
                 ippKm = None
         ####################################################
@@ -297,12 +301,12 @@ class DigitalRFReader(ProcessingUnit):
 
         if end_index < endUTCSecond*self.__sample_rate:
             endUTCSecond = end_index/self.__sample_rate
-
+        print ippKm
         if not nSamples:
             if not ippKm:
                 raise ValueError, "[Reading] nSamples or ippKm should be defined"
             nSamples = int(ippKm / (1e6*0.15/self.__sample_rate))
-
+        print nSamples
         channelBoundList = []
         channelNameListFiltered = []
 
@@ -531,7 +535,6 @@ class DigitalRFReader(ProcessingUnit):
         
         if not self.isConfig:
             self.setup(**kwargs)
-        print self.dataOut.dtype
         self.i = self.i+1
         self.getData(seconds=self.__delay)
 
@@ -550,15 +553,27 @@ class DigitalRFWriter(Operation):
         self.metadata_dict = {}
         self.dataOut = None
 
+    def setHeader(self, dataOut):
+        return
+
     def setup(self, dataOut, path, frequency, set=0, metadataFile='metadata', ext='.h5'):
         '''
         In this method we should set all initial parameters.
         Input:
             dataOut: Input data will also be outputa data
         '''
-        self.metadata_dict['frequency'] = frequency
-        self.metadata_dict['timezone'] = -5 * 60 * 60
+        self.metadata_dict['frequency'] = dataOut.frequency
+        self.metadata_dict['timezone'] = dataOut.timeZone
         self.metadata_dict['dtype'] = cPickle.dumps(dataOut.dtype)
+        self.metadata_dict['nProfiles'] = dataOut.nProfiles
+        self.metadata_dict['heightList'] = dataOut.heightList
+        self.metadata_dict['channelList'] = dataOut.channelList
+        self.metadata_dict['flagDecodeData'] = dataOut.flagDecodeData
+        self.metadata_dict['flagDeflipData'] = dataOut.flagDeflipData
+        self.metadata_dict['flagShiftFFT'] = dataOut.flagShiftFFT
+        self.metadata_dict['flagDataAsBlock'] = dataOut.flagDataAsBlock
+        self.metadata_dict['useLocalTime'] = dataOut.useLocalTime
+        self.metadata_dict['nCohInt'] = dataOut.nCohInt
 
         self.__ippSeconds = dataOut.ippSeconds
         self.__deltaH = dataOut.getDeltaH()
