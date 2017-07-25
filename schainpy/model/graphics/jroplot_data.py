@@ -106,17 +106,30 @@ class PlotData(Operation, Process):
     poner otro tiempo a la figura q no necesariamente es el ultimo.
     Solo se realiza cuando termina la imagen.
     Problemas:
-    -Aun no encuentro.
+
+        File "/home/ci-81/workspace/schainv2.3/schainpy/model/graphics/jroplot_data.py", line 145, in __plot
+        for n, eachfigure in enumerate(self.figurelist):
+        TypeError: 'NoneType' object is not iterable
+
     '''
     def deleteanotherfiles(self):
         figurenames=[]
-        for n, eachfigure in enumerate(self.figurelist):
-            #add specific name for each channel in channelList
-            ghostfigname = os.path.join(self.save, '{}_{}_{}'.format(self.titles[n].replace(' ',''),self.CODE,
-                                                                 datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d')))
-            figname = os.path.join(self.save, '{}_{}_{}.png'.format(self.titles[n].replace(' ',''),self.CODE,
-                                                                 datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
+        if self.figurelist != None:
+            for n, eachfigure in enumerate(self.figurelist):
+                #add specific name for each channel in channelList
+                ghostfigname = os.path.join(self.save, '{}_{}_{}'.format(self.titles[n].replace(' ',''),self.CODE,
+                                                                     datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d')))
+                figname = os.path.join(self.save, '{}_{}_{}.png'.format(self.titles[n].replace(' ',''),self.CODE,
+                                                                     datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
 
+                for ghostfigure in glob.glob(ghostfigname+'*'): #ghostfigure will adopt all posible names of figures
+                    if ghostfigure != figname:
+                        os.remove(ghostfigure)
+                        print 'Removing GhostFigures:' , figname
+        else :
+            '''Erasing ghost images for just on******************'''
+            ghostfigname =  os.path.join(self.save, '{}_{}'.format(self.CODE,datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d')))
+            figname = os.path.join(self.save, '{}_{}.png'.format(self.CODE,datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')))
             for ghostfigure in glob.glob(ghostfigname+'*'): #ghostfigure will adopt all posible names of figures
                 if ghostfigure != figname:
                     os.remove(ghostfigure)
@@ -133,6 +146,7 @@ class PlotData(Operation, Process):
             self.figure.canvas.manager.set_window_title('{} {} - {}'.format(self.title, self.CODE.upper(),
                                                                         datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
         else :
+            print 'len(self.figurelist): ',len(self.figurelist)
             for n, eachfigure in enumerate(self.figurelist):
                 if self.show:
                     eachfigure.show()
@@ -228,6 +242,7 @@ class PlotData(Operation, Process):
                     self.ended = True
                     self.isConfig = False
                     self.__plot()
+                    #TODO : AUN NO FUNCIONA PARA COHERENCIA.
                     self.deleteanotherfiles() #CLPDG
                 elif seconds_passed >= self.data['throttle']:
                     print 'passed', seconds_passed
@@ -533,9 +548,17 @@ class PlotRTIData(PlotData):
         self.ncols = 1
         self.nrows = self.dataOut.nChannels
         self.width = 10
-        self.height = 2.2*self.nrows if self.nrows<6 else 12
+        #TODO : arreglar la altura de la figura, esta hardcodeada.
+        #Se arreglo, testear!
+        if self.ind_plt_ch:
+            self.height = 3.2#*self.nrows if self.nrows<6 else 12
+        else:
+            self.height = 2.2*self.nrows if self.nrows<6 else 12
+
+        '''
         if self.nrows==1:
             self.height += 1
+        '''
         self.ylabel = 'Range [Km]'
         self.titles = ['Channel {}'.format(x) for x in self.dataOut.channelList]
 

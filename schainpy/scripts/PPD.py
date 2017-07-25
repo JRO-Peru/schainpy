@@ -1,5 +1,5 @@
 import argparse
-
+import datetime
 from schainpy.controller import Project, multiSchain
 
 desc = "HF_EXAMPLE"
@@ -95,7 +95,15 @@ def fiber(cursor, skip, q, dt):
 
 
 if __name__ == '__main__':
+    ############################DATE##########################################
+    doitnow = datetime.datetime.now() - datetime.timedelta(days=1) # Un dia antes
+    y = doitnow.year
+    m = doitnow.month
+    d = int(doitnow.day)
+    date = str(y)+"/"+str(m)+"/"+str(d)	
+    ###########################################################################
     parser = argparse.ArgumentParser(description='Set number of parallel processes')
     parser.add_argument('--nProcess', default=1, type=int)
     args = parser.parse_args()
-    multiSchain(fiber, nProcess=8, startDate='2016/04/23', endDate='2016/04/27')
+    multiSchain(fiber, nProcess=8, startDate='2016/04/23', endDate='2016/04/23')
+    #multiSchain(fiber, nProcess=4, startDate=date, endDate=date) #Plot automatico de un dia antes
