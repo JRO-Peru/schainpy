@@ -7,6 +7,7 @@ Created on Jul 3, 2014
 import os
 import datetime
 import numpy
+import timeit
 from profilehooks import coverage, profile
 from fractions import Fraction
 
@@ -19,6 +20,7 @@ from schainpy.model.data.jroheaderIO import RadarControllerHeader, SystemHeader
 from schainpy.model.data.jrodata import Voltage
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from time import time
+
 import cPickle
 try:
     import digital_rf
@@ -79,7 +81,7 @@ class DigitalRFReader(ProcessingUnit):
 
         self.dataOut.heightList = self.__firstHeigth + numpy.arange(self.__nSamples, dtype = numpy.float)*self.__deltaHeigth
 
-        self.dataOut.channelList = self.__channelList
+        self.dataOut.channelList = range(self.__num_subchannels)
 
         self.dataOut.blocksize = self.dataOut.getNChannels() * self.dataOut.getNHeights()
 
@@ -223,12 +225,19 @@ class DigitalRFReader(ProcessingUnit):
 
         top_properties = self.digitalReadObj.get_properties(channelNameList[channelList[0]])
 
+
+
+
+
+
+        self.__num_subchannels = top_properties['num_subchannels']
         self.__sample_rate = 1.0 * top_properties['sample_rate_numerator'] / top_properties['sample_rate_denominator']
 
         # self.__samples_per_file = top_properties['samples_per_file'][0]
         self.__deltaHeigth = 1e6*0.15/self.__sample_rate ## why 0.15?
 
         this_metadata_file = self.digitalReadObj.get_digital_metadata(channelNameList[channelList[0]])
+        print this_metadata_file
         metadata_bounds = this_metadata_file.get_bounds()
         self.fixed_metadata_dict = this_metadata_file.read(metadata_bounds[0])[metadata_bounds[0]] ## GET FIRST HEADER
         self.__processingHeader = self.fixed_metadata_dict['processingHeader']
@@ -345,7 +354,7 @@ class DigitalRFReader(ProcessingUnit):
 
         self.__thisUnixSample = long(startUTCSecond*self.__sample_rate) - self.__samples_to_read ## por que en el otro metodo lo primero q se hace es sumar samplestoread
 
-        self.__data_buffer = numpy.zeros((self.__nChannels, self.__samples_to_read), dtype = numpy.complex)
+        self.__data_buffer = numpy.zeros((self.__num_subchannels, self.__samples_to_read), dtype = numpy.complex)
 
         self.__setFileHeader()
         self.isConfig = True
@@ -413,28 +422,29 @@ class DigitalRFReader(ProcessingUnit):
 
         dataOk = False
         for thisChannelName in self.__channelNameList: ##TODO VARIOS CHANNELS? 
-            try:
-                result = self.digitalReadObj.read_vector_c81d(self.__thisUnixSample,
-                                                              self.__samples_to_read,
-                                                              thisChannelName)
-            except IOError, e:
-                #read next profile
-                self.__flagDiscontinuousBlock = True
-                print "[Reading] %s" %datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone), e
-                break
+            for indexSubchannel in range(self.__num_subchannels):
+                try:
+                    result = self.digitalReadObj.read_vector_c81d(self.__thisUnixSample,
+                                                                self.__samples_to_read,
+                                                                thisChannelName, sub_channel=indexSubchannel)
+                except IOError, e:
+                    #read next profile
+                    self.__flagDiscontinuousBlock = True
+                    print "[Reading] %s" %datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone), e
+                    break
 
-            if result.shape[0] != self.__samples_to_read:
-                self.__flagDiscontinuousBlock = True
-                print "[Reading] %s: Too few samples were found, just %d/%d  samples" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
-                                                                                result.shape[0],
-                                                                                self.__samples_to_read)
-                break
+                if result.shape[0] != self.__samples_to_read:
+                    self.__flagDiscontinuousBlock = True
+                    print "[Reading] %s: Too few samples were found, just %d/%d  samples" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
+                                                                                    result.shape[0],
+                                                                                    self.__samples_to_read)
+                    break
 
-            self.__data_buffer[indexChannel,:] = result*volt_scale
+                self.__data_buffer[indexSubchannel,:] = result*volt_scale
 
-            indexChannel += 1
+                indexChannel += 1
 
-            dataOk = True
+                dataOk = True
         
         self.__utctime = self.__thisUnixSample/self.__sample_rate
 
@@ -601,12 +611,12 @@ class DigitalRFWriter(Operation):
         compression_level = 1
         checksum = False
         is_complex = True
-        num_subchannels = 2
+        num_subchannels = len(dataOut.channelList)
         is_continuous = True
         marching_periods = False
 
         self.digitalWriteObj = digital_rf.DigitalRFWriter(path, self.__dtype, 100,
-                                                1000, start_global_index,
+                                                100, start_global_index,
                                                 sample_rate_numerator, sample_rate_denominator, uuid, compression_level, checksum,
                                                 is_complex, num_subchannels, is_continuous, marching_periods)
         
@@ -620,6 +630,8 @@ class DigitalRFWriter(Operation):
 
         self.isConfig = True
         self.currentSample = 0
+        self.oldAverage = 0
+        self.count = 0
         return
     
     def writeMetadata(self):
@@ -638,7 +650,14 @@ class DigitalRFWriter(Operation):
             for channel in self.dataOut.channelList:
                 self.arr_data[i][channel]['r'] = self.dataOut.data[channel][i].real
                 self.arr_data[i][channel]['i'] = self.dataOut.data[channel][i].imag
+        t0 = time()
         self.digitalWriteObj.rf_write(self.arr_data)
+        self.executionTime = time() - t0
+        if self.oldAverage is None: self.oldAverage = self.executionTime
+        self.oldAverage = (self.executionTime + self.count*self.oldAverage) / (self.count + 1.0)
+        self.count = self.count + 1.0
+        if self.oldAverage is None: self.oldAverage = self.executionTime
+        
         return
     
     def run(self, dataOut, frequency=49.92e6, path=None, **kwargs):
@@ -661,6 +680,7 @@ class DigitalRFWriter(Operation):
 
     def close(self):
         print '[Writing] - Closing files '
+        print 'Average of writing to digital rf format is ', self.oldAverage * 1000
         try:
             self.digitalWriteObj.close()
         except:
