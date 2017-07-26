@@ -49,9 +49,9 @@ def main():
     # opObj10 = procUnitConfObj0.addOperation(name='CohInt', optype='external')
     # opObj10.addParameter(name='n', value='1', format='float')
 
-    # opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='external')
-    # opObj11.addParameter(name='id', value='121', format='int')
-    # opObj11.addParameter(name='wintitle', value='Scope', format='str')
+    opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='external')
+    opObj11.addParameter(name='id', value='121', format='int')
+    opObj11.addParameter(name='wintitle', value='Scope', format='str')
     
     # procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra',
     #                                              inputId=procUnitConfObj0.getId())

@@ -584,7 +584,7 @@ class DigitalRFWriter(Operation):
         self.__nSamples = dataOut.systemHeaderObj.nSamples
         self.__nProfiles = dataOut.nProfiles
         self.__blocks_per_file = dataOut.processingHeaderObj.dataBlocksPerFile
-        self.arr_data = arr_data = numpy.ones((self.__nSamples, 1), dtype=[('r', self.__dtype), ('i', self.__dtype)])
+        self.arr_data = arr_data = numpy.ones((self.__nSamples, 2), dtype=[('r', self.__dtype), ('i', self.__dtype)])
 
         file_cadence_millisecs = long(1.0 * self.__blocks_per_file * self.__nProfiles * self.__nSamples / self.__sample_rate) * 1000
         sub_cadence_secs = file_cadence_millisecs / 500
@@ -601,7 +601,7 @@ class DigitalRFWriter(Operation):
         compression_level = 1
         checksum = False
         is_complex = True
-        num_subchannels = 1
+        num_subchannels = 2
         is_continuous = True
         marching_periods = False
 
@@ -635,8 +635,9 @@ class DigitalRFWriter(Operation):
     
     def writeData(self):
         for i in range(self.dataOut.systemHeaderObj.nSamples):
-            self.arr_data[i]['r'] = self.dataOut.data[0][i].real
-            self.arr_data[i]['i'] = self.dataOut.data[0][i].imag
+            for channel in self.dataOut.channelList:
+                self.arr_data[i][channel]['r'] = self.dataOut.data[channel][i].real
+                self.arr_data[i][channel]['i'] = self.dataOut.data[channel][i].imag
         self.digitalWriteObj.rf_write(self.arr_data)
         return
     

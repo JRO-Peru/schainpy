@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # opObj11.addParameter(name='wintitle', value='Scope', format='str')
 
     opObj10 = procUnitConfObj0.addOperation(name='DigitalRFWriter', optype='other')
-    opObj10.addParameter(name='path', value='/home/jchavez/jicamarca/mocked_data/voltage', format='str')
+    opObj10.addParameter(name='path', value='/media/jchavez/DATA/mocked_data/voltage', format='str')
     # opObj10.addParameter(name='minHei', value='0', format='float')
     # opObj10.addParameter(name='maxHei', value='8', format='float')
 
