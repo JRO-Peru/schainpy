@@ -610,6 +610,7 @@ class ParamWriter(Operation):
     def setup(self, dataOut, **kwargs):
 
         self.path = kwargs['path']
+        self.setType = kwargs.get('setType', None)
 
         if kwargs.has_key('blocksPerFile'):
             self.blocksPerFile = kwargs['blocksPerFile']
@@ -770,13 +771,20 @@ class ParamWriter(Operation):
             else:
                 setFile = -1 #inicializo mi contador de seteo
 
-        setFile += 1
-
-        file = '%s%4.4d%3.3d%3.3d%s' % (self.metaoptchar,
-                                        timeTuple.tm_year,
-                                        timeTuple.tm_yday,
-                                        setFile,
-                                        ext )
+        if self.setType is None:
+            setFile += 1
+            file = '%s%4.4d%3.3d%03d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
+        else:
+            setFile = timeTuple.tm_hour*60+timeTuple.tm_min
+            file = '%s%4.4d%3.3d%04d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
 
         filename = os.path.join( path, subfolder, file )
         self.metaFile = file
@@ -849,13 +857,20 @@ class ParamWriter(Operation):
             os.makedirs(fullpath)
             setFile = -1 #inicializo mi contador de seteo
 
-        setFile += 1
-
-        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
-                                        timeTuple.tm_year,
-                                        timeTuple.tm_yday,
-                                        setFile,
-                                        ext )
+        if self.setType is None:
+            setFile += 1
+            file = '%s%4.4d%3.3d%03d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
+        else:
+            setFile = timeTuple.tm_hour*60+timeTuple.tm_min
+            file = '%s%4.4d%3.3d%04d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
 
         filename = os.path.join( path, subfolder, file )
 
