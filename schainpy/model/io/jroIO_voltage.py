@@ -10,6 +10,9 @@ from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Voltage
+import zmq
+import tempfile
+from StringIO import StringIO
 # from _sha import blocksize
 
 class VoltageReader(JRODataReader, ProcessingUnit):
@@ -188,6 +191,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         pts2read = self.processingHeaderObj.profilesPerBlock * self.processingHeaderObj.nHeights * self.systemHeaderObj.nChannels
         self.blocksize = pts2read
 
+    
 
     def readBlock(self):
         """
@@ -212,11 +216,23 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         Exceptions:
             Si un bloque leido no es un bloque valido
         """
+        
+        print 'READ BLOCK'
+        # if self.server is not None:
+        #     self.zBlock = self.receiver.recv()
+        #     self.zHeader = self.zBlock[:24]
+        #     self.zDataBlock = self.zBlock[24:]
+        #     junk = numpy.fromstring(self.zDataBlock, numpy.dtype([('real','<i4'),('imag','<i4')]))
+        #     self.processingHeaderObj.profilesPerBlock = 240
+        #     self.processingHeaderObj.nHeights = 248
+        #     self.systemHeaderObj.nChannels
+        # else:
         current_pointer_location = self.fp.tell()
         junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
 
         try:
             junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
+            print'junked'
         except:
             #print "The read block (%3d) has not enough data" %self.nReadBlocks
 
@@ -301,6 +317,97 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         return
 
+    def readFirstHeaderFromServer(self):
+        
+        self.getFirstHeader()
+
+        self.firstHeaderSize = self.basicHeaderObj.size
+
+        datatype = int(numpy.log2((self.processingHeaderObj.processFlags & PROCFLAG.DATATYPE_MASK))-numpy.log2(PROCFLAG.DATATYPE_CHAR))
+        if datatype == 0:
+            datatype_str = numpy.dtype([('real','<i1'),('imag','<i1')])
+        elif datatype == 1:
+            datatype_str = numpy.dtype([('real','<i2'),('imag','<i2')])
+        elif datatype == 2:
+            datatype_str = numpy.dtype([('real','<i4'),('imag','<i4')])
+        elif datatype == 3:
+            datatype_str = numpy.dtype([('real','<i8'),('imag','<i8')])
+        elif datatype == 4:
+            datatype_str = numpy.dtype([('real','<f4'),('imag','<f4')])
+        elif datatype == 5:
+            datatype_str = numpy.dtype([('real','<f8'),('imag','<f8')])
+        else:
+            raise ValueError, 'Data type was not defined'
+
+        self.dtype = datatype_str
+        #self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
+        self.fileSizeByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.processingHeaderObj.dataBlocksPerFile - 1)
+#        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+#        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
+        self.getBlockDimension()
+
+
+    def getFromServer(self):       
+        self.flagDiscontinuousBlock = 0
+        self.profileIndex = 0
+        self.flagIsNewBlock = 1
+        self.dataOut.flagNoData = False
+        self.nTotalBlocks += 1
+        self.nReadBlocks += 1
+        self.blockPointer = 0
+
+        block = self.receiver.recv()
+        
+        self.basicHeaderObj.read(block[self.blockPointer:])
+        self.blockPointer += self.basicHeaderObj.length
+        self.systemHeaderObj.read(block[self.blockPointer:])
+        self.blockPointer += self.systemHeaderObj.length
+        self.radarControllerHeaderObj.read(block[self.blockPointer:])
+        self.blockPointer += self.radarControllerHeaderObj.length
+        self.processingHeaderObj.read(block[self.blockPointer:])
+        self.blockPointer += self.processingHeaderObj.length
+        self.readFirstHeaderFromServer()
+        
+        timestamp = self.basicHeaderObj.get_datatime()
+        print '[Reading] - Block {} - {}'.format(self.nTotalBlocks, timestamp)
+        current_pointer_location = self.blockPointer
+        junk = numpy.fromstring( block[self.blockPointer:], self.dtype, self.blocksize )
+
+        try:
+            junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
+        except:
+            #print "The read block (%3d) has not enough data" %self.nReadBlocks
+            if self.waitDataBlock(pointer_location=current_pointer_location):
+                junk = numpy.fromstring( block[self.blockPointer:], self.dtype, self.blocksize )
+                junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
+#             return 0
+
+        #Dimensions : nChannels, nProfiles, nSamples
+
+        junk = numpy.transpose(junk, (2,0,1))
+        self.datablock = junk['real'] + junk['imag'] * 1j        
+        self.profileIndex = 0
+        if self.selBlocksize == None: self.selBlocksize = self.dataOut.nProfiles
+        if self.selBlocktime != None:
+            if self.dataOut.nCohInt is not None:
+                nCohInt = self.dataOut.nCohInt
+            else:
+                nCohInt = 1
+            self.selBlocksize = int(self.dataOut.nProfiles*round(self.selBlocktime/(nCohInt*self.dataOut.ippSeconds*self.dataOut.nProfiles)))
+        self.dataOut.data = self.datablock[:,self.profileIndex:self.profileIndex+self.selBlocksize,:]
+        datasize = self.dataOut.data.shape[1]
+        if datasize < self.selBlocksize:
+            buffer = numpy.zeros((self.dataOut.data.shape[0], self.selBlocksize, self.dataOut.data.shape[2]), dtype = 'complex')
+            buffer[:,:datasize,:] = self.dataOut.data
+            self.dataOut.data = buffer
+            self.profileIndex = blockIndex
+
+        self.dataOut.flagDataAsBlock = True
+        self.flagIsNewBlock = 1
+        self.dataOut.realtime = self.online
+
+        return self.dataOut.data
+
     def getData(self):
         """
         getData obtiene una unidad de datos del buffer de lectura, un perfil,  y la copia al objeto self.dataOut
@@ -337,24 +444,19 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.flagDiscontinuousBlock
             self.flagIsNewBlock
         """
-
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
             print 'Process finished'
             return 0
-
         self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
-
         if self.__hasNotDataInBuffer():
-
             if not( self.readNextBlock() ):
                 return 0
 
             self.getFirstHeader()
 
             self.reshapeData()
-
         if self.datablock is None:
             self.dataOut.flagNoData = True
             return 0

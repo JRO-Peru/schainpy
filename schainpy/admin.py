@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
-class SchainConfigure():
+class SchainConfigure():  
     
     __DEFAULT_ADMINISTRATOR_EMAIL = ""
     __DEFAULT_EMAIL_SERVER = "jro-zimbra.igp.gob.pe"
