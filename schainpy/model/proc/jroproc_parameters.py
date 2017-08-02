@@ -1060,12 +1060,12 @@ class WindProfiler(Operation):
             
         return velEst
 
-    def run(self, dataOut, technique, **kwargs):
+    def run(self, dataOut, technique, nHours=1, hmin=70, hmax=110, **kwargs):
 
         param = dataOut.data_param
         if dataOut.abscissaList != None:
             absc = dataOut.abscissaList[:-1]
-        noise = dataOut.noise
+        # noise = dataOut.noise
         heightList = dataOut.heightList
         SNR = dataOut.data_SNR
 
@@ -2291,7 +2291,7 @@ class SMPhaseCalibration(Operation):
             jgammaArray = numpy.hstack((jgamma,jgamma+0.5*numpy.pi,jgamma-0.5*numpy.pi))
 
             #Histogram
-            nBins = 64.0
+            nBins = 64
             rmin = -0.5*numpy.pi
             rmax = 0.5*numpy.pi
             phaseHisto = numpy.histogram(jgammaArray, bins=nBins, range=(rmin,rmax))
@@ -2340,8 +2340,8 @@ class SMPhaseCalibration(Operation):
         range_angle = numpy.array([10*numpy.pi,numpy.pi,numpy.pi/2,numpy.pi/4])
         ntimes = len(range_angle)
 
-        nstepsx = 20.0
-        nstepsy = 20.0
+        nstepsx = 20
+        nstepsy = 20
 
         for iz in range(ntimes):
             min_xangle = -range_angle[iz]/2 + center_xangle
@@ -2601,8 +2601,8 @@ class SMOperations():
 
         hCorr = hi[ind_h, :]
         ind_hCorr = numpy.where(numpy.logical_and(hi > minHeight, hi < maxHeight))
-
-        hCorr = hi[ind_hCorr]
+        
+        hCorr = hi[ind_hCorr][:len(ind_h)]
         heights[ind_h] = hCorr
 
         #Setting Error
