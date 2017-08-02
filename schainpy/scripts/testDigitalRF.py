@@ -24,7 +24,7 @@ def main():
     #Creating a reader object with its parameters
     #schainpy.model.io.jroIO_usrp.USRPReader.setup()
     readUnitConfObj = controllerObj.addReadUnit(datatype='DigitalRF',
-                                                path='/home/jchavez/jicamarca/mocked_data/',
+                                                path='/media/jchavez/DATA/mocked_data',
                                                 startDate='2000/07/03',
                                                 endDate='2017/07/03',
                                                 startTime='00:00:00',
@@ -47,11 +47,11 @@ def main():
 #     opObj10.addParameter(name='nBaud', value='1', format='float')
     
     # opObj10 = procUnitConfObj0.addOperation(name='CohInt', optype='external')
-    # opObj10.addParameter(name='n', value='1', format='float')
+    # opObj10.addParameter(name='n', value='128', format='float')
 
-    opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='external')
-    opObj11.addParameter(name='id', value='121', format='int')
-    opObj11.addParameter(name='wintitle', value='Scope', format='str')
+    # opObj11 = procUnitConfObj0.addOperation(name='Scope', optype='external')
+    # opObj11.addParameter(name='id', value='121', format='int')
+    # opObj11.addParameter(name='wintitle', value='Scope', format='str')
     
     # procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra',
     #                                              inputId=procUnitConfObj0.getId())

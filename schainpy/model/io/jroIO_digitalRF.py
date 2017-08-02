@@ -4,6 +4,13 @@ Created on Jul 3, 2014
 
 @author: roj-idl71
 '''
+# SUBCHANNELS EN VEZ DE CHANNELS
+# BENCHMARKS -> PROBLEMAS CON ARCHIVOS GRANDES -> INCONSTANTE EN EL TIEMPO
+# ACTUALIZACION DE VERSION
+# HEADERS
+# MODULO DE ESCRITURA
+# METADATA
+
 import os
 import datetime
 import numpy
@@ -48,6 +55,10 @@ class DigitalRFReader(ProcessingUnit):
         self.__nCode = None
         self.__nBaud = None
         self.__code = None
+
+    def close(self):
+        print 'Average of writing to digital rf format is ', self.oldAverage * 1000
+        return
 
     def __getCurrentSecond(self):
 
@@ -367,7 +378,9 @@ class DigitalRFReader(ProcessingUnit):
         print "[Reading] Starting process from %s to %s" %(datetime.datetime.utcfromtimestamp(startUTCSecond - self.__timezone),
                                                            datetime.datetime.utcfromtimestamp(endUTCSecond - self.__timezone)
                                                            )
-
+        self.oldAverage = None
+        self.count = 0
+        self.executionTime = 0
     def __reload(self):
         #         print
         #         print "%s not in range [%s, %s]" %(
@@ -399,6 +412,15 @@ class DigitalRFReader(ProcessingUnit):
 
         return False
 
+    def timeit(self, toExecute):
+        t0 = time()
+        toExecute()
+        self.executionTime = time() - t0
+        if self.oldAverage is None: self.oldAverage = self.executionTime
+        self.oldAverage = (self.executionTime + self.count*self.oldAverage) / (self.count + 1.0)
+        self.count = self.count + 1.0
+        return
+
     def __readNextBlock(self, seconds=30, volt_scale = 1):
         '''
         '''
@@ -424,9 +446,15 @@ class DigitalRFReader(ProcessingUnit):
         for thisChannelName in self.__channelNameList: ##TODO VARIOS CHANNELS? 
             for indexSubchannel in range(self.__num_subchannels):
                 try:
+                    t0 = time()
                     result = self.digitalReadObj.read_vector_c81d(self.__thisUnixSample,
-                                                                self.__samples_to_read,
-                                                                thisChannelName, sub_channel=indexSubchannel)
+                                                                  self.__samples_to_read,
+                                                                  thisChannelName, sub_channel=indexSubchannel)
+                    self.executionTime = time() - t0
+                    if self.oldAverage is None: self.oldAverage = self.executionTime
+                    self.oldAverage = (self.executionTime + self.count*self.oldAverage) / (self.count + 1.0)
+                    self.count = self.count + 1.0
+                    
                 except IOError, e:
                     #read next profile
                     self.__flagDiscontinuousBlock = True
@@ -561,30 +589,32 @@ class DigitalRFWriter(Operation):
         '''
         Operation.__init__(self, **kwargs)
         self.metadata_dict = {}
-        self.dataOut = None
+        self.dataOut = None     
 
-    def setHeader(self, dataOut):
+    def setHeader(self):
+
+        self.metadata_dict['frequency'] = self.dataOut.frequency
+        self.metadata_dict['timezone'] = self.dataOut.timeZone
+        self.metadata_dict['dtype'] = cPickle.dumps(self.dataOut.dtype)
+        self.metadata_dict['nProfiles'] = self.dataOut.nProfiles
+        self.metadata_dict['heightList'] = self.dataOut.heightList
+        self.metadata_dict['channelList'] = self.dataOut.channelList
+        self.metadata_dict['flagDecodeData'] = self.dataOut.flagDecodeData
+        self.metadata_dict['flagDeflipData'] = self.dataOut.flagDeflipData
+        self.metadata_dict['flagShiftFFT'] = self.dataOut.flagShiftFFT
+        self.metadata_dict['flagDataAsBlock'] = self.dataOut.flagDataAsBlock
+        self.metadata_dict['useLocalTime'] = self.dataOut.useLocalTime
+        self.metadata_dict['nCohInt'] = self.dataOut.nCohInt
+        
         return
 
-    def setup(self, dataOut, path, frequency, set=0, metadataFile='metadata', ext='.h5'):
+    def setup(self, dataOut, path, frequency, fileCadence, dirCadence, metadataCadence, set=0, metadataFile='metadata', ext='.h5'):
         '''
         In this method we should set all initial parameters.
         Input:
             dataOut: Input data will also be outputa data
         '''
-        self.metadata_dict['frequency'] = dataOut.frequency
-        self.metadata_dict['timezone'] = dataOut.timeZone
-        self.metadata_dict['dtype'] = cPickle.dumps(dataOut.dtype)
-        self.metadata_dict['nProfiles'] = dataOut.nProfiles
-        self.metadata_dict['heightList'] = dataOut.heightList
-        self.metadata_dict['channelList'] = dataOut.channelList
-        self.metadata_dict['flagDecodeData'] = dataOut.flagDecodeData
-        self.metadata_dict['flagDeflipData'] = dataOut.flagDeflipData
-        self.metadata_dict['flagShiftFFT'] = dataOut.flagShiftFFT
-        self.metadata_dict['flagDataAsBlock'] = dataOut.flagDataAsBlock
-        self.metadata_dict['useLocalTime'] = dataOut.useLocalTime
-        self.metadata_dict['nCohInt'] = dataOut.nCohInt
-
+        self.setHeader()
         self.__ippSeconds = dataOut.ippSeconds
         self.__deltaH = dataOut.getDeltaH()
         self.__sample_rate = 1e6*0.15/self.__deltaH
@@ -599,9 +629,6 @@ class DigitalRFWriter(Operation):
         file_cadence_millisecs = long(1.0 * self.__blocks_per_file * self.__nProfiles * self.__nSamples / self.__sample_rate) * 1000
         sub_cadence_secs = file_cadence_millisecs / 500
 
-        print file_cadence_millisecs
-        print sub_cadence_secs
-
         sample_rate_fraction = Fraction(self.__sample_rate).limit_denominator()
         sample_rate_numerator = long(sample_rate_fraction.numerator)
         sample_rate_denominator = long(sample_rate_fraction.denominator)
@@ -615,15 +642,15 @@ class DigitalRFWriter(Operation):
         is_continuous = True
         marching_periods = False
 
-        self.digitalWriteObj = digital_rf.DigitalRFWriter(path, self.__dtype, 100,
-                                                100, start_global_index,
+        self.digitalWriteObj = digital_rf.DigitalRFWriter(path, self.__dtype, dirCadence,
+                                                fileCadence, start_global_index,
                                                 sample_rate_numerator, sample_rate_denominator, uuid, compression_level, checksum,
                                                 is_complex, num_subchannels, is_continuous, marching_periods)
         
         metadata_dir = os.path.join(path, 'metadata')
         os.system('mkdir %s' % (metadata_dir))
         
-        self.digitalMetadataWriteObj = digital_rf.DigitalMetadataWriter(metadata_dir, 100, 1, ##236, file_cadence_millisecs / 1000
+        self.digitalMetadataWriteObj = digital_rf.DigitalMetadataWriter(metadata_dir, dirCadence, 1, ##236, file_cadence_millisecs / 1000
                                                 sample_rate_numerator, sample_rate_denominator,
                                                 metadataFile)
 
@@ -645,22 +672,28 @@ class DigitalRFWriter(Operation):
         return
 
     
+    def timeit(self, toExecute):
+        t0 = time()
+        toExecute()
+        self.executionTime = time() - t0
+        if self.oldAverage is None: self.oldAverage = self.executionTime
+        self.oldAverage = (self.executionTime + self.count*self.oldAverage) / (self.count + 1.0)
+        self.count = self.count + 1.0
+        return
+
+
     def writeData(self):
         for i in range(self.dataOut.systemHeaderObj.nSamples):
             for channel in self.dataOut.channelList:
                 self.arr_data[i][channel]['r'] = self.dataOut.data[channel][i].real
                 self.arr_data[i][channel]['i'] = self.dataOut.data[channel][i].imag
-        t0 = time()
-        self.digitalWriteObj.rf_write(self.arr_data)
-        self.executionTime = time() - t0
-        if self.oldAverage is None: self.oldAverage = self.executionTime
-        self.oldAverage = (self.executionTime + self.count*self.oldAverage) / (self.count + 1.0)
-        self.count = self.count + 1.0
-        if self.oldAverage is None: self.oldAverage = self.executionTime
+
+        def f(): return self.digitalWriteObj.rf_write(self.arr_data)
+        self.timeit(f)
         
         return
     
-    def run(self, dataOut, frequency=49.92e6, path=None, **kwargs):
+    def run(self, dataOut, frequency=49.92e6, path=None, fileCadence=1000, dirCadence=100, metadataCadence=1, **kwargs):
         '''
         This method will be called many times so here you should put all your code
         Inputs:
@@ -669,7 +702,7 @@ class DigitalRFWriter(Operation):
         # print dataOut.__dict__
         self.dataOut = dataOut
         if not self.isConfig:
-            self.setup(dataOut, path, frequency, **kwargs)
+            self.setup(dataOut, path, frequency, fileCadence, dirCadence, metadataCadence, **kwargs)
 
         self.writeData()
         

@@ -1,0 +1,15 @@
+Lectura
+200samples -> 0.47m HDD 1000'' 
+200samples -> 6 HDD 100ms file 100s folder
+200samples -> 0.48ms HDD 100ms file 1000s folder
+200samples -> 116ms HDD 5000ms file 100s folder
+200samples -> 182 HDD 10000ms file 100s folder
+200samples -> 143 HDD 10000ms file 100s folder SSD
+
+Escritura
+200samples -> 0.78m HDD 100ms file 1000s folder
+200samples -> 0.066m HDD 100ms file 1000s folder
+200samples -> 0.30 HDD 100ms file 100s folder
+200samples -> 0.23 HDD 5000ms file 100s folder
+200samples -> 0.176 HDD 10000ms file 100s folder
+
