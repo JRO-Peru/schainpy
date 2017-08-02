@@ -106,3 +106,4 @@ ENV/
 .vscode
 
 schainpy/scripts/
+schaingui/node_modules/

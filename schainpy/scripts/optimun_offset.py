@@ -93,7 +93,7 @@ def filterOffsets(offsets0, stdvLimit):
  
 #----------------------     Setup    ---------------------------
  
-path = '/home/jespinoza/Pictures/JASMET30/201608/phase'
+path = '/home/nanosat/Pictures/JASMET30_mp/201608/phase'
 stdvLimit = 0.5
  
 #----------------------   Script     ---------------------------
