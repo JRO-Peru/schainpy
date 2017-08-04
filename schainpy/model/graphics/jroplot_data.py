@@ -731,6 +731,7 @@ class PlotCOHData(PlotRTIData):
         self.nrows = self.dataOut.nPairs
         self.width = 10
         self.height = 2.2*self.nrows if self.nrows<6 else 12
+        self.ind_plt_ch = False #just for coherence and phase
         if self.nrows==1:
             self.height += 1
         self.ylabel = 'Range [Km]'
