@@ -633,9 +633,7 @@ class Decoder(Operation):
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
 
         for i in range(self.__nChannels):
-            for j in range(self.__nProfiles):
-                print self.datadecTime[i,j,:].shape
-                print numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:].shape
+            for j in range(self.__nProfiles):                
                 self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
 
         return self.datadecTime
