@@ -627,7 +627,7 @@ class Decoder(Operation):
     def __convolutionByBlockInTime(self, data):
 
         repetitions = self.__nProfiles / self.nCode
-
+        
         junk = numpy.lib.stride_tricks.as_strided(self.code, (repetitions, self.code.size), (0, self.code.itemsize))
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
@@ -682,7 +682,9 @@ class Decoder(Operation):
             print "Fail decoding: Code is not defined."
             return
 
+        self.__nProfiles = dataOut.nProfiles
         datadec = None
+        
         if mode == 3:
             mode = 0
 
