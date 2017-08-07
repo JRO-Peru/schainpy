@@ -12,7 +12,7 @@ if __name__ == '__main__':
     controllerObj.setup(id = '191', name='test01', description=desc)
     
     readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
-                                                path='/home/jchavez/jicamarca/jro_data/rawdata/',
+                                                path='/home/nanosat/data/John',
                                                 startDate='2010/10/28',
                                                 endDate='2017/10/28',
                                                 startTime='00:00:00',
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # opObj11.addParameter(name='wintitle', value='Scope', format='str')
 
     opObj10 = procUnitConfObj0.addOperation(name='DigitalRFWriter', optype='other')
-    opObj10.addParameter(name='path', value='/media/jchavez/DATA/mocked_data/voltage', format='str')
+    opObj10.addParameter(name='path', value='/home/nanosat/data/digitalrf', format='str')
     # opObj10.addParameter(name='minHei', value='0', format='float')
     # opObj10.addParameter(name='maxHei', value='8', format='float')
 

@@ -24,15 +24,15 @@ def main():
     #Creating a reader object with its parameters
     #schainpy.model.io.jroIO_usrp.USRPReader.setup()
     readUnitConfObj = controllerObj.addReadUnit(datatype='DigitalRF',
-                                                path='/media/jchavez/DATA/mocked_data',
+                                                path='/home/nanosat/data/',
                                                 startDate='2000/07/03',
                                                 endDate='2017/07/03',
                                                 startTime='00:00:00',
                                                 endTime='23:59:59',
                                                 online=0)
 
-    procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage',
-                                                 inputId=readUnitConfObj.getId())
+    # procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage',
+    #                                              inputId=readUnitConfObj.getId())
  
 #     opObj10 = procUnitConfObj0.addOperation(name='selectHeights')
 #     opObj10.addParameter(name='minHei', value='0', format='float')

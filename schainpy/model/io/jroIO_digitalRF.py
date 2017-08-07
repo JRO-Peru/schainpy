@@ -214,7 +214,7 @@ class DigitalRFReader(ProcessingUnit):
             online
             delay
         '''
-
+        self.i = 0
         if not os.path.isdir(path):
             raise ValueError, "[Reading] Directory %s does not exist" %path
 
@@ -248,7 +248,6 @@ class DigitalRFReader(ProcessingUnit):
         self.__deltaHeigth = 1e6*0.15/self.__sample_rate ## why 0.15?
 
         this_metadata_file = self.digitalReadObj.get_digital_metadata(channelNameList[channelList[0]])
-        print this_metadata_file
         metadata_bounds = this_metadata_file.get_bounds()
         self.fixed_metadata_dict = this_metadata_file.read(metadata_bounds[0])[metadata_bounds[0]] ## GET FIRST HEADER
         self.__processingHeader = self.fixed_metadata_dict['processingHeader']
@@ -321,12 +320,10 @@ class DigitalRFReader(ProcessingUnit):
 
         if end_index < endUTCSecond*self.__sample_rate:
             endUTCSecond = end_index/self.__sample_rate
-        print ippKm
         if not nSamples:
             if not ippKm:
                 raise ValueError, "[Reading] nSamples or ippKm should be defined"
             nSamples = int(ippKm / (1e6*0.15/self.__sample_rate))
-        print nSamples
         channelBoundList = []
         channelNameListFiltered = []
 
@@ -565,7 +562,7 @@ class DigitalRFReader(ProcessingUnit):
         return
         # print self.profileIndex
 
-    ##@profile
+    
     def run(self, **kwargs):
         '''
         This method will be called many times so here you should put all your code
@@ -573,7 +570,7 @@ class DigitalRFReader(ProcessingUnit):
         
         if not self.isConfig:
             self.setup(**kwargs)
-        self.i = self.i+1
+        #self.i = self.i+1
         self.getData(seconds=self.__delay)
 
         return
@@ -624,7 +621,8 @@ class DigitalRFWriter(Operation):
         self.__nSamples = dataOut.systemHeaderObj.nSamples
         self.__nProfiles = dataOut.nProfiles
         self.__blocks_per_file = dataOut.processingHeaderObj.dataBlocksPerFile
-        self.arr_data = arr_data = numpy.ones((self.__nSamples, 2), dtype=[('r', self.__dtype), ('i', self.__dtype)])
+
+        self.arr_data = arr_data = numpy.ones((self.__nSamples, len(self.dataOut.channelList)), dtype=[('r', self.__dtype), ('i', self.__dtype)])
 
         file_cadence_millisecs = long(1.0 * self.__blocks_per_file * self.__nProfiles * self.__nSamples / self.__sample_rate) * 1000
         sub_cadence_secs = file_cadence_millisecs / 500
@@ -693,7 +691,7 @@ class DigitalRFWriter(Operation):
         
         return
     
-    def run(self, dataOut, frequency=49.92e6, path=None, fileCadence=1000, dirCadence=100, metadataCadence=1, **kwargs):
+    def run(self, dataOut, frequency=49.92e6, path=None, fileCadence=100, dirCadence=25, metadataCadence=1, **kwargs):
         '''
         This method will be called many times so here you should put all your code
         Inputs:
@@ -703,13 +701,14 @@ class DigitalRFWriter(Operation):
         self.dataOut = dataOut
         if not self.isConfig:
             self.setup(dataOut, path, frequency, fileCadence, dirCadence, metadataCadence, **kwargs)
+            self.writeMetadata()
 
         self.writeData()
         
-        self.currentSample += 1
-        if self.dataOut.flagDataAsBlock or self.currentSample == 1:
-            self.writeMetadata()
-        if self.currentSample == self.__nProfiles: self.currentSample = 0
+        ## self.currentSample += 1
+        ## if self.dataOut.flagDataAsBlock or self.currentSample == 1:
+            ## self.writeMetadata()
+        ## if self.currentSample == self.__nProfiles: self.currentSample = 0
 
     def close(self):
         print '[Writing] - Closing files '

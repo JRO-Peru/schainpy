@@ -18,7 +18,7 @@ controllerObj.setup(id = '002', name='script02', description="JASMET Meteor Dete
 # path = '/mnt/jars/2016_08/NOCHE'
 # path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/DIA' 
 # path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/NOCHE' 
-path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/DIA' 
+path = '/media/nanosat/NewVolumen/JASMET/2016_08/DIA' 
 
 #Path para los graficos
 pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')

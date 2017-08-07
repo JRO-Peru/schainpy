@@ -79,9 +79,9 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         Return:
             None
         """
-
+        
         ProcessingUnit.__init__(self, **kwargs)
-
+        self.i = 0
         self.isConfig = False
 
         self.datablock = None
