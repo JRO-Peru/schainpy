@@ -4,3 +4,10 @@ build/
 *.pyc
 *.so
 *.egg-info/
+
+# eclipse
+.project
+.pydevproject
+
+# vscode
+.vscode

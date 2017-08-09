@@ -3,9 +3,9 @@ Created on Jul 16, 2014
 
 @author: Miguel Urco
 '''
-
-from schainpy import __version__
+import numpy
 from setuptools import setup, Extension
+from schainpy import __version__
 
 setup(name="schainpy",
         version=__version__,
@@ -34,7 +34,7 @@ setup(name="schainpy",
         include_package_data=False,
         scripts =['schainpy/gui/schainGUI',
                   'schainpy/scripts/schain'],
-        ext_modules=[Extension("cSchain", ["schainpy/model/proc/extensions.c"])],
+        ext_modules=[Extension("cSchain", ["schainpy/model/proc/extensions.c"], include_dirs=[numpy.get_include()])],
         install_requires=[
                           "scipy >= 0.14.0",
                           "h5py >= 2.2.1",
