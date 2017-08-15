@@ -30,6 +30,7 @@ from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 #from schainpy.model.io.jroIO_bltr import BLTRReader
 from numpy import imag, shape, NaN
 
+from jroIO_base import JRODataReader
 
 
 class Header(object):
@@ -426,7 +427,7 @@ class RecordHeaderBLTR(Header):
         return 1
 
         
-class BLTRReader (ProcessingUnit,FileHeaderBLTR,RecordHeaderBLTR):
+class BLTRReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODataReader):
     
     path = None
     startDate = None
@@ -450,10 +451,10 @@ class BLTRReader (ProcessingUnit,FileHeaderBLTR,RecordHeaderBLTR):
     
     
     
-    def __init__(self):
+    def __init__(self, **kwargs):
         
         #Eliminar de la base la herencia
-        ProcessingUnit.__init__(self)
+        ProcessingUnit.__init__(self, **kwargs)
         
 #         self.isConfig = False
         
@@ -541,7 +542,8 @@ class BLTRReader (ProcessingUnit,FileHeaderBLTR,RecordHeaderBLTR):
                     timezone='utc',
                     code = None,
                     online=False,
-                    ReadMode=None):
+                    ReadMode=None,
+                    **kwargs):
         
         self.isConfig = True
         
@@ -717,8 +719,8 @@ class BLTRReader (ProcessingUnit,FileHeaderBLTR,RecordHeaderBLTR):
                 
                 self.data_block = numpy.transpose(self.data_block, (1,2,0))
                 
-                
-                spc = self.data_block.copy() * numpy.conjugate(self.data_block.copy())   
+                copy = self.data_block.copy()
+                spc = copy * numpy.conjugate(copy)   
                 
                 self.data_spc = numpy.absolute(spc) # valor absoluto o magnitud
                 

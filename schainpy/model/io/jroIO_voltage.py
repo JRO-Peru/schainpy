@@ -427,10 +427,16 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.flagNoData = False
 
         self.getBasicHeader()
-
+    
+        #print self.basicHeaderObj.printInfo()
+        #print self.systemHeaderObj.printInfo()
+        #print self.radarControllerHeaderObj.printInfo()
+        #print self.processingHeaderObj.printInfo()
+        
         self.dataOut.realtime = self.online
 
         return self.dataOut.data
+    
 
 class VoltageWriter(JRODataWriter, Operation):
     """

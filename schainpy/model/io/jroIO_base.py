@@ -1058,10 +1058,10 @@ class JRODataReader(JRODataIO):
 
             break
 
-        if self.verbose:
-            print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
-                                                      self.processingHeaderObj.dataBlocksPerFile,
-                                                      self.dataOut.datatime.ctime())
+#         if self.verbose:
+#             print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
+#                                                       self.processingHeaderObj.dataBlocksPerFile,
+#                                                       self.dataOut.datatime.ctime())
         return 1
 
     def __readFirstHeader(self):
@@ -1417,11 +1417,12 @@ class JRODataReader(JRODataIO):
         print "[Reading] Number of read blocks %04d" %self.nTotalBlocks
 
     def printNumberOfBlock(self):
+        'SPAM!'
 
-        if self.flagIsNewBlock:
-            print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
-                                                      self.processingHeaderObj.dataBlocksPerFile,
-                                                      self.dataOut.datatime.ctime())
+#         if self.flagIsNewBlock:
+#             print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
+#                                                       self.processingHeaderObj.dataBlocksPerFile,
+#                                                       self.dataOut.datatime.ctime())
 
     def printInfo(self):
 

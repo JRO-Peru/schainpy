@@ -416,7 +416,7 @@ class RecordHeader(Header):
         self.RadarConst = header['RadarConst'][0]    #
         #84
         
-        print 'Pointer fp RECheader', fp.tell()
+        #print 'Pointer fp RECheader', fp.tell()
         
         #self.ipp= 0.5*(SPEED_OF_LIGHT/self.PRFhz)
         
@@ -456,10 +456,10 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
     
     
     
-    def __init__(self):    
+    def __init__(self, **kwargs):    
         
         #Eliminar de la base la herencia
-        ProcessingUnit.__init__(self)
+        ProcessingUnit.__init__(self, **kwargs)
         self.PointerReader = 0
         self.FileHeaderFlag = False
         self.utc = None
@@ -490,13 +490,14 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
         self.dataOut.nRdPairs = 0
         self.dataOut.pairsList = []
         self.dataOut.data_spc=None
-        self.dataOut.noise=[]
+        
         self.dataOut.normFactor=1
         self.nextfileflag = True
         self.dataOut.RadarConst = 0
         self.dataOut.HSDV = []
         self.dataOut.NPW = []
         self.dataOut.COFA = []
+        self.dataOut.noise = 0
     
     
     def Files2Read(self, fp):
@@ -543,7 +544,7 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
                     timezone='utc',
                     code = None,
                     online=False,
-                    ReadMode=None):
+                    ReadMode=None, **kwargs):
         
         self.isConfig = True
         
@@ -553,7 +554,7 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
         self.startTime=startTime 
         self.endTime=endTime
         self.walk=walk 
-        self.ReadMode=int(ReadMode)
+        #self.ReadMode=int(ReadMode)
         
         pass
     
@@ -576,9 +577,13 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
         self.Files2Read(self.fp)
         self.readFile(self.fp)
         
-        self.dataOut.data_spc = self.data_spc.copy()
+        self.dataOut.data_spc = self.dataOut_spc#self.data_spc.copy()
         self.dataOut.RadarConst = self.RadarConst
         self.dataOut.data_output=self.data_output
+        self.dataOut.noise = self.dataOut.getNoise()
+        #print 'ACAAAAAA', self.dataOut.noise
+        self.dataOut.data_spc = self.dataOut.data_spc+self.dataOut.noise
+        #print 'self.dataOut.noise',self.dataOut.noise 
         
         
         return self.dataOut.data_spc
@@ -629,7 +634,7 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
             pulse_width = self.fheader.PPARpdr * 10**-9 
             self.__deltaHeigth = 0.5 * SPEED_OF_LIGHT * pulse_width
             
-            self.data_spc = numpy.zeros((self.Num_Hei, self.Num_Bins,2))
+            self.data_spc = numpy.zeros((self.Num_Hei, self.Num_Bins,2))#
             self.dataOut.HSDV = numpy.zeros((self.Num_Hei, 2))
             
             self.Ze = numpy.zeros(self.Num_Hei)
@@ -693,7 +698,7 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
         npw2 = self.recordheader.npw2
         
         
-        self.dataOut.channelList = range(2)
+        self.dataOut.channelList = range(1)
         self.dataOut.nIncohInt = self.Num_inCoh 
         self.dataOut.nProfiles = self.Num_Bins
         self.dataOut.nCohInt = 1
@@ -756,7 +761,6 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
         
         self.dataOut.COFA = numpy.array([self.COFA_Co , self.COFA_Cx])
         
-        
         print ' '
         print 'SPC',numpy.shape(self.dataOut.data_spc)
         #print 'SPC',self.dataOut.data_spc
@@ -764,19 +768,25 @@ class MIRA35CReader (ProcessingUnit,FileHeaderMIRA35c,SRVIHeader,RecordHeader):
         noinor1 = 713031680
         noinor2 = 30
         
-        #print 'npw1 db' , npw1
-        
-        npw1 = 10**(npw1/10) * noinor1 * noinor2
-        npw2 = 10**(npw2/10) * noinor1 * noinor2
+        npw1 = 1#0**(npw1/10) * noinor1 * noinor2
+        npw2 = 1#0**(npw2/10) * noinor1 * noinor2
         self.dataOut.NPW = numpy.array([npw1, npw2])
         
-        
         print ' '
-        #print numpy.__version__
+        
         self.data_spc = numpy.transpose(self.data_spc, (2,1,0))
         self.data_spc = numpy.fft.fftshift(self.data_spc, axes = 1) 
         
         self.data_spc = numpy.fliplr(self.data_spc)
+        
+        self.data_spc = numpy.where(self.data_spc > 0. , self.data_spc, 0)
+        self.dataOut_spc= numpy.ones([1, self.Num_Bins , self.Num_Hei])
+        self.dataOut_spc[0,:,:] = self.data_spc[0,:,:]
+        #print 'SHAPE', self.dataOut_spc.shape
+        #For nyquist correction:
+        #fix = 20 # ~3m/s
+        #shift = self.Num_Bins/2 + fix
+        #self.data_spc = numpy.array([ self.data_spc[: , self.Num_Bins-shift+1: , :] , self.data_spc[: , 0:self.Num_Bins-shift , :]])
         
         
         

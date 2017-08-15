@@ -83,7 +83,7 @@ opObj11.addParameter(name='n', value='6', format='float')
 
 opObj11 = procUnitConfObj1.addOperation(name='SpectraWriter', optype='other')
 opObj11.addParameter(name='path', value='/home/alex/Downloads/pdata_hf')
-opObj11.addParameter(name='blocksPerFile', value='1', format='int')
+opObj11.addParameter(name='blocksPerFile', value='1000', format='int')
 # 
 #   
 # # opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='other')

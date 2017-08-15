@@ -103,9 +103,6 @@ class SpectraPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
-
-        colormap = kwargs.get('colormap','jet')
-
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
                 print 'Skipping this plot function'
@@ -525,7 +522,7 @@ class RTIPlot(Figure):
             timerange=None, colormap='jet',
             save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, normFactor=None):
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, normFactor=None, HEIGHT=None):
 
         """
 
@@ -543,7 +540,10 @@ class RTIPlot(Figure):
             zmax            :    None
         """
 
-        colormap = kwargs.get('colormap', 'jet')
+        #colormap = kwargs.get('colormap', 'jet')
+        if HEIGHT is not None:
+            self.HEIGHT  = HEIGHT
+        
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
 

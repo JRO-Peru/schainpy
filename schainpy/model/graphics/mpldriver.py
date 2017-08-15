@@ -267,7 +267,6 @@ def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap=
     cmap.set_bad('white',1.)
     ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
     ax.grid(True)
->>>>>>> 08c4507d6c3c48f6c52326d5dedfa1972fb26356
 
 def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
 

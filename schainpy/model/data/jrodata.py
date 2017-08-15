@@ -1179,6 +1179,8 @@ class Parameters(Spectra):
     nAvg = None
 
     noise_estimation = None
+    
+    GauSPC = None #Fit gaussian SPC
 
 
     def __init__(self):
@@ -1199,7 +1201,7 @@ class Parameters(Spectra):
             time1 = self.utctimeInit - self.timeZone*60
         else:
             time1 = self.utctimeInit
-
+        print 'interval',interval    
         datatime.append(time1)
         datatime.append(time1 + interval)
         datatime = numpy.array(datatime)
@@ -1213,8 +1215,15 @@ class Parameters(Spectra):
         else:
             return self.paramInterval
 
+    def setValue(self, value):
+
+        print "This property should not be initialized"
+
+        return
+
     def getNoise(self):
 
         return self.spc_noise
 
     timeInterval = property(getTimeInterval)
+    noise = property(getNoise, setValue, "I'm the 'Noise' property.")
