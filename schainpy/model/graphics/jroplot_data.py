@@ -151,9 +151,7 @@ class PlotData(Operation, Process):
                 if self.show:
                     eachfigure.show()
 
-                self.plot() # ok? como elijo que figura?
-                #eachfigure.subplots_adjust(left=0.2)
-                #eachfigure.subplots_adjuccst(right=0.2)
+                self.plot()
                 eachfigure.tight_layout() # ajuste de cada subplot
                 eachfigure.canvas.manager.set_window_title('{} {} - {}'.format(self.title[n], self.CODE.upper(),
                                                                             datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
@@ -242,7 +240,6 @@ class PlotData(Operation, Process):
                     self.ended = True
                     self.isConfig = False
                     self.__plot()
-                    #TODO : AUN NO FUNCIONA PARA COHERENCIA.
                     self.deleteanotherfiles() #CLPDG
                 elif seconds_passed >= self.data['throttle']:
                     print 'passed', seconds_passed
