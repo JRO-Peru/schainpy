@@ -8,5 +8,5 @@
 from data import *
 from io import *
 from proc import *
-from graphics import *
+#from graphics import *
 from utils import *

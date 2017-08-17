@@ -999,8 +999,7 @@ class JRODataReader(JRODataIO):
             return 0
 
 #         if self.online:
-#             self.__jumpToLastBlock()
-        print 'xxxx'
+#             self.__jumpToLastBlock()        
 
         if self.flagIsNewFile:
             self.lastUTTime = self.basicHeaderObj.utc
@@ -1011,8 +1010,7 @@ class JRODataReader(JRODataIO):
             if not(self.setNextFile()):
                 return 0
             else:
-                return 1
-        print 'xxxx'
+                return 1        
         #if self.server is None:
         currentSize = self.fileSize - self.fp.tell()
         neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
@@ -1044,12 +1042,11 @@ class JRODataReader(JRODataIO):
     def readNextBlock(self):
 
         #Skip block out of startTime and endTime
-        while True:
-            print 'cxxxx'
+        while True:            
             if not(self.__setNewBlock()):
                 print 'returning'
                 return 0
-            print 'dxxx'
+            
             if not(self.readBlock()):
                 return 0
 

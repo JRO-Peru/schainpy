@@ -10,6 +10,7 @@ import traceback
 import math
 import time
 from multiprocessing import Process, Queue, cpu_count
+from profilehooks import profile, coverage
 
 import schainpy
 import schainpy.admin
@@ -19,6 +20,8 @@ from xml.dom import minidom
 
 from schainpy.model import *
 from time import sleep
+
+
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -258,7 +261,7 @@ class ParameterConf():
 
         print "Parameter[%s]: name = %s, value = %s, format = %s" %(self.id, self.name, self.value, self.format)
 
-class OperationConf():
+class OperationConf():  
 
     id = None
     name = None
@@ -327,8 +330,8 @@ class OperationConf():
 
         parameterObj = self.getParameterObj(parameterName)
 
-#         if not parameterObj:
-#             return None
+    #         if not parameterObj:
+        #             return None
 
         value = parameterObj.getValue()
 
@@ -687,6 +690,7 @@ class ProcUnitConf():
 
         return procUnitObj
 
+    ## @profile
     def run(self):
 
         is_ok = False
@@ -708,10 +712,10 @@ class ProcUnitConf():
                                         opId = opConfObj.id,
                                         )
 
-#             total_time = time.time() - ini
-#
-#             if total_time > 0.002:
-#                 print "%s::%s took %f seconds" %(self.name, opConfObj.name, total_time)
+        #             total_time = time.time() - ini
+        #
+        #             if total_time > 0.002:
+        #                 print "%s::%s took %f seconds" %(self.name, opConfObj.name, total_time)
 
             is_ok = is_ok or sts
 
@@ -859,16 +863,16 @@ class ReadUnitConf(ProcUnitConf):
 
         return opObj
 
-#     def makeXml(self, projectElement):
-#
-#         procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
-#         procUnitElement.set('id', str(self.id))
-#         procUnitElement.set('name', self.name)
-#         procUnitElement.set('datatype', self.datatype)
-#         procUnitElement.set('inputId', str(self.inputId))
-#
-#         for opConfObj in self.opConfObjList:
-#             opConfObj.makeXml(procUnitElement)
+        #     def makeXml(self, projectElement):
+        #
+        #         procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
+        #         procUnitElement.set('id', str(self.id))
+        #         procUnitElement.set('name', self.name)
+        #         procUnitElement.set('datatype', self.datatype)
+        #         procUnitElement.set('inputId', str(self.inputId))
+        #
+        #         for opConfObj in self.opConfObjList:
+        #             opConfObj.makeXml(procUnitElement)
 
     def readXml(self, upElement):
 
@@ -1263,6 +1267,7 @@ class Project():
     def useExternalPlotter(self):
 
         raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
+
 
     def run(self):
 

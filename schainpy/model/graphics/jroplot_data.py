@@ -17,6 +17,8 @@ from schainpy.model.proc.jroproc_base import Operation
 plt.ion()
 
 func = lambda x, pos: ('%s') %(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
+fromtimestamp = lambda x, mintime : (datetime.datetime.utcfromtimestamp(mintime).replace(hour=(x + 5), minute=0) - d1970).total_seconds()
+
 
 d1970 = datetime.datetime(1970,1,1)
 
@@ -54,7 +56,7 @@ class PlotData(Operation, Process):
         self.xrange = kwargs.get('xrange', 24)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
-        self.__MAXNUMY = kwargs.get('decimation', 80)
+        self.__MAXNUMY = kwargs.get('decimation', 5000)
         self.throttle_value = 5
         self.times = []
         #self.interactive = self.kwargs['parent']
@@ -493,8 +495,14 @@ class PlotRTIData(PlotData):
         self.z = np.array(self.z)
         for n, ax in enumerate(self.axes):
             x, y, z = self.fill_gaps(*self.decimate())
-            xmin = self.min_time
-            xmax = xmin+self.xrange*60*60
+            if self.xmin is None: 
+                xmin = self.min_time
+            else: 
+                xmin = fromtimestamp(int(self.xmin), self.min_time)
+            if self.xmax is None:
+                xmax = xmin + self.xrange*60*60
+            else:
+                xmax = xmin + (self.xmax - self.xmin) * 60 * 60
             self.zmin = self.zmin if self.zmin else np.min(self.z)
             self.zmax = self.zmax if self.zmax else np.max(self.z)
             if ax.firsttime:

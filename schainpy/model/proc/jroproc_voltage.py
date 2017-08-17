@@ -1,9 +1,11 @@
 import sys
 import numpy
+from profilehooks import profile
 from scipy import interpolate
-
+from schainpy import cSchain
 from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
+from time import time
 
 class VoltageProc(ProcessingUnit):
 
@@ -555,7 +557,7 @@ class Decoder(Operation):
 
         self.times = None
         self.osamp = None
-#         self.__setValues = False
+    #         self.__setValues = False
         self.isConfig = False
 
     def setup(self, code, osamp, dataOut):
@@ -624,21 +626,43 @@ class Decoder(Operation):
 
         return self.datadecTime
 
+    #@profile
+    def oldCorrelate(self, i, data, code_block):
+        profilesList = xrange(self.__nProfiles)
+        for j in profilesList:                
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
+
+    @profile
     def __convolutionByBlockInTime(self, data):
 
         repetitions = self.__nProfiles / self.nCode
-
+        
         junk = numpy.lib.stride_tricks.as_strided(self.code, (repetitions, self.code.size), (0, self.code.itemsize))
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
 
-        for i in range(self.__nChannels):
-            for j in range(self.__nProfiles):
-                print self.datadecTime[i,j,:].shape
-                print numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:].shape
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
-
+        
+        # def toVectorize(a,b):
+        #     return numpy.correlate(a,b, mode='full')
+        # vectorized = numpy.vectorize(toVectorize, signature='(n),(m)->(k)')
+        a = time()
+        for i in range(self.__nChannels):               
+        #     self.datadecTime[i,:,:] = numpy.array([numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:] for j in profilesList ])
+            # def func(i, j):
+            #     self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
+            # map(lambda j: func(i, j), range(self.__nProfiles))
+            #print data[i,:,:].shape
+            # self.datadecTime[i,:,:] = vectorized(data[i,:,:], code_block[:,:])[:,self.nBaud-1:]
+            self.oldCorrelate(i, data, code_block)
+            print self.datadecTime[i,:,:] 
+            # print data[i,:,:]
+            # print cSchain.correlateByBlock(data[i,:,:], code_block, 2)
+            self.datadecTime[i,:,:] = cSchain.correlateByBlock(data[i,:,:], code_block, 2)
+            print self.datadecTime[i,:,:] 
+            #print self.datadecTime[i,:,:].shape
+        print time() - a
         return self.datadecTime
+        
 
     def __convolutionByBlockInFreq(self, data):
 
@@ -655,6 +679,7 @@ class Decoder(Operation):
 
         return data
 
+    
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
 
         if dataOut.flagDecodeData:
@@ -684,7 +709,9 @@ class Decoder(Operation):
             print "Fail decoding: Code is not defined."
             return
 
+        self.__nProfiles = dataOut.nProfiles
         datadec = None
+        
         if mode == 3:
             mode = 0
 

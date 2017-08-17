@@ -7,6 +7,7 @@ Created on Jul 16, 2014
 
 from schainpy import __version__
 from setuptools import setup, Extension
+import numpy 
 
 setup(name="schainpy",
       version=__version__,
@@ -39,7 +40,13 @@ setup(name="schainpy",
         ],
       },
       scripts=['schainpy/gui/schainGUI'],
-      ext_modules=[Extension("cSchain", ["schainpy/model/proc/extensions.c"], include_dirs=[numpy.get_include()])],
+      ext_modules=[
+          Extension("cSchain", 
+            ["schainpy/model/proc/extensions.c"], 
+            include_dirs=[numpy.get_include()],
+            #extra_compile_args=['-Werror'],
+          )
+        ],
       install_requires=[
                       "scipy >= 0.14.0",
                       "h5py >= 2.2.1",
