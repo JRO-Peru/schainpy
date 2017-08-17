@@ -632,7 +632,7 @@ class Decoder(Operation):
         for j in profilesList:                
                 self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
 
-    @profile
+    #@profile
     def __convolutionByBlockInTime(self, data):
 
         repetitions = self.__nProfiles / self.nCode
@@ -640,12 +640,11 @@ class Decoder(Operation):
         junk = numpy.lib.stride_tricks.as_strided(self.code, (repetitions, self.code.size), (0, self.code.itemsize))
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
-
+        profilesList = xrange(self.__nProfiles)
         
         # def toVectorize(a,b):
         #     return numpy.correlate(a,b, mode='full')
         # vectorized = numpy.vectorize(toVectorize, signature='(n),(m)->(k)')
-        a = time()
         for i in range(self.__nChannels):               
         #     self.datadecTime[i,:,:] = numpy.array([numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:] for j in profilesList ])
             # def func(i, j):
@@ -653,14 +652,13 @@ class Decoder(Operation):
             # map(lambda j: func(i, j), range(self.__nProfiles))
             #print data[i,:,:].shape
             # self.datadecTime[i,:,:] = vectorized(data[i,:,:], code_block[:,:])[:,self.nBaud-1:]
-            self.oldCorrelate(i, data, code_block)
-            print self.datadecTime[i,:,:] 
+            for j in profilesList:                
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
             # print data[i,:,:]
             # print cSchain.correlateByBlock(data[i,:,:], code_block, 2)
-            self.datadecTime[i,:,:] = cSchain.correlateByBlock(data[i,:,:], code_block, 2)
-            print self.datadecTime[i,:,:] 
+            # self.datadecTime[i,:,:] = cSchain.correlateByBlock(data[i,:,:], code_block, 2)
+            # print self.datadecTime[i,:,:] 
             #print self.datadecTime[i,:,:].shape
-        print time() - a
         return self.datadecTime
         
 
