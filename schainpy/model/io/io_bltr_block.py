@@ -28,6 +28,7 @@ import schainpy
 import warnings
 from time import gmtime
 from math import floor
+
 warnings.simplefilter("error")
 from numpy.lib.nanfunctions import nansum
 warnings.simplefilter('ignore', FutureWarning)
@@ -36,7 +37,7 @@ warnings.simplefilter('ignore', FutureWarning)
 class testBLTRReader(ProcessingUnit):
 
     
-    def __init__(self):
+    def __init__(self, **kwargs):
         
         path = None
         startDate = None
@@ -71,7 +72,7 @@ class testBLTRReader(ProcessingUnit):
         lon = None 
         siteFile = None
         
-        ProcessingUnit.__init__(self) 
+        ProcessingUnit.__init__(self , **kwargs) 
         self.dataOut = self.createObjByDefault()         
         self.imode = 0
         self.counter_records = 0
@@ -100,7 +101,7 @@ class testBLTRReader(ProcessingUnit):
         print 'Boundary Layer and Tropospheric Radar (BLTR) script, Wind velocities and SNR from *.sswma files'
         print '{}  \n'.format(signalchainweb)
 
-    def run(self, path, startDate, endDate, ext, startTime, endTime):
+    def run(self, path, startDate, endDate, ext, startTime, endTime, queue=None):
 
         if not(self.isConfig):
             self.setup(path, startDate, endDate, ext)
@@ -281,9 +282,9 @@ class testBLTRReader(ProcessingUnit):
                           ('site', 'u1', (32,))                          
                           ])
         self.pointer = open(self.filename, 'rb')  # rb : Read Binary
- 
+        print self.filename
         self.header_file = numpy.fromfile(self.pointer, self.h_file, 1) 
- 
+        print self.header_file
         self.nrecords = self.header_file['nrec'][0]         
          
         self.sizeOfFile = os.path.getsize(self.filename)
@@ -493,7 +494,8 @@ class testBLTRReader(ProcessingUnit):
         '''
         self.dataOut.type = 'Parameters'
         self.dataOut.useLocalTime = False
-        self.dataOut.outputInterval = 157 
+        # self.dataOut.outputInterval = 157
+        self.dataOut.paramInterval = 157 
         self.dataOut.timezone = self.timezone
         self.dataOut.site = self.siteFile
         self.dataOut.nrecords = self.nrecords

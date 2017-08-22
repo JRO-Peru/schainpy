@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -101,9 +100,7 @@ ENV/
 # eclipse
 .project
 .pydevproject
-=======
-build/
-dist/
-schainpy.egg-info/
 .svn/
->>>>>>> 08c4507d6c3c48f6c52326d5dedfa1972fb26356
+*.png
+*.pyc
+schainpy/scripts

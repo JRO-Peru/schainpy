@@ -45,12 +45,12 @@ class BLTRProcess(ProcessingUnit):
         self.dataOut.year - Experiment year
     '''
        
-    def __init__(self):  
+    def __init__(self, **kwargs):  
         '''
         Inputs: None
            
         '''
-        ProcessingUnit.__init__(self)
+        ProcessingUnit.__init__(self, **kwargs)
         self.dataOut = Parameters()
 
         # Filters

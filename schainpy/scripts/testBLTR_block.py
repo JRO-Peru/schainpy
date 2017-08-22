@@ -15,9 +15,9 @@ from schainpy.controller import Project
 
 filename = 'test1.xml'
 # path = '/home/jespinoza/workspace/data/bltr/'
-path = '/home/erick/Documents/Data/BLTR_Data/sswma/'    
+path = '/media/erick/6F60F7113095A154/BLTR/'    
 desc = "read bltr data sswma file"
-figpath = '/home/erick/workspace' 
+figpath = '/media/erick/6F60F7113095A154/BLTR/' 
 pathhdf5 = '/tmp/'
 
 controllerObj = Project()
@@ -25,8 +25,8 @@ controllerObj = Project()
 controllerObj.setup(id = '191', name='test1', description=desc)
 readUnitConfObj = controllerObj.addReadUnit(datatype='testBLTRReader',
                                             path=path,
-                                            startDate='2015/01/17',
-                                            endDate='2017/01/01',
+                                            startDate='2017/01/17',
+                                            endDate='2018/01/01',
                                             startTime='00:00:00',
                                             endTime='23:59:59',
                                             ext='sswma')                    
@@ -143,14 +143,15 @@ opObj10 = procUnitConfObj1.addOperation(name='WindProfilerPlot', optype='other')
 opObj10.addParameter(name='id', value='2', format='int')
 opObj10.addParameter(name='wintitle', value='', format='str')
 #opObj10.addParameter(name='channelList', value='0', format='intlist') 
-#opObj10.addParameter(name='save', value='1', format='bool')
-#opObj10.addParameter(name='figpath', value=figpath, format='str')
+opObj10.addParameter(name='save', value='1', format='bool')
+opObj10.addParameter(name='figpath', value=figpath, format='str')
 opObj10.addParameter(name='SNRmin', value='-20', format='int')
 opObj10.addParameter(name='SNRmax', value='40', format='int')
 opObj10.addParameter(name='SNRthresh', value='0', format='float')
 opObj10.addParameter(name='xmin', value='0', format='float')
 opObj10.addParameter(name='xmax', value='24', format='float')
-#opObj10.addParameter(name='ymax', value='8', format='float')
+opObj10.addParameter(name='ymin', value='0', format='float')
+opObj10.addParameter(name='ymax', value='10', format='float')
 opObj10.addParameter(name='zmin', value='-4', format='float')
 opObj10.addParameter(name='zmax', value='4', format='float')
 opObj10.addParameter(name='zmin_ver', value='-200', format='float')

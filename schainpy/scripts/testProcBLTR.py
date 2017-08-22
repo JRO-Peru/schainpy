@@ -10,8 +10,10 @@ from schainpy.controller import Project
 xmin = '15.5'
 xmax = '24'
 
+
 desc = "ProcBLTR Test"
 filename = "ProcBLTR.xml"
+figpath = '/media/erick/6F60F7113095A154/BLTR' 
     
 controllerObj = Project()
     
@@ -19,7 +21,7 @@ controllerObj = Project()
 controllerObj.setup(id='191', name='test01', description=desc)
     
 readUnitConfObj = controllerObj.addReadUnit(datatype='BLTRReader',
-                                                path='/home/erick/Documents/Data/BLTR_Data/fdt/',
+                                                path='/media/erick/6F60F7113095A154/BLTR/',
                                                 
                                                 endDate='2017/10/19',
                                                 startTime='13:00:00',
@@ -39,7 +41,7 @@ procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUni
 
 
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
-opObj11.addParameter(name='n', value='2', format='float')
+opObj11.addParameter(name='n', value='3', format='float')
 
 opObj10 = procUnitConfObj1.addOperation(name='removeDC')
 
@@ -105,7 +107,7 @@ opObj22.addParameter(name='id', value='4', format='int')
 opObj22.addParameter(name='wintitle', value='Wind Profiler', format='str')
 opObj22.addParameter(name='save', value='1', format='bool')
 # opObj22.addParameter(name='figpath', value = '/home/erick/Pictures', format='str')
-  
+
 opObj22.addParameter(name='zmin', value='-20', format='int')
 opObj22.addParameter(name='zmax', value='20', format='int')
 opObj22.addParameter(name='zmin_ver', value='-250', format='float')
@@ -117,19 +119,21 @@ opObj22.addParameter(name='xmin', value=0, format='float')
 opObj22.addParameter(name='xmax', value=24, format='float')
 opObj22.addParameter(name='ymin', value='225', format='float')
 #opObj22.addParameter(name='ymax', value='2000', format='float')
- 
- 
+opObj22.addParameter(name='save', value='1', format='int')
+opObj22.addParameter(name='figpath', value=figpath, format='str')
+
+
 # opObj11.addParameter(name='pairlist', value='(1,0),(0,2),(1,2)', format='pairsList')
 #opObj10 = procUnitConfObj1.addOperation(name='selectHeights')
 #opObj10.addParameter(name='minHei', value='225', format='float')
 #opObj10.addParameter(name='maxHei', value='1000', format='float')         
- 
+
 # opObj11 = procUnitConfObj1.addOperation(name='CoherenceMap', optype='other')
 # opObj11.addParameter(name='id', value='102', format='int')
 # opObj11.addParameter(name='wintitle', value='Coherence', format='str')
 # opObj11.addParameter(name='ymin', value='225', format='float')
 # opObj11.addParameter(name='ymax', value='4000', format='float')
- 
+
 # opObj11.addParameter(name='phase_cmap', value='jet', format='str')
 # opObj11.addParameter(name='xmin', value='8.5', format='float')
 # opObj11.addParameter(name='xmax', value='9.5', format='float')

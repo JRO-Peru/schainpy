@@ -27,7 +27,9 @@ from scipy.optimize import curve_fit
 
 import warnings
 from numpy import NaN
+from scipy.optimize.optimize import OptimizeWarning
 warnings.filterwarnings('ignore')
+
 
 SPEED_OF_LIGHT = 299792458
 
@@ -1041,7 +1043,7 @@ class FullSpectralAnalysis(Operation):
         Parameters affected:    Winds, height range, SNR
         
     """
-    def run(self, dataOut, E01=None, E02=None, E12=None, N01=None, N02=None, N12=None):
+    def run(self, dataOut, E01=None, E02=None, E12=None, N01=None, N02=None, N12=None, SNRlimit=7):
         
         spc = dataOut.data_pre[0].copy()
         cspc = dataOut.data_pre[1].copy()
@@ -1069,18 +1071,22 @@ class FullSpectralAnalysis(Operation):
         coherence=numpy.ones([nChannel,nProfiles])
         PhaseSlope=numpy.ones(nChannel)
         PhaseInter=numpy.ones(nChannel)
+        dataSNR = dataOut.data_SNR
+        
+        
         
         data = dataOut.data_pre
         noise = dataOut.noise
         print 'noise',noise
-        SNRdB = 10*numpy.log10(dataOut.data_SNR)
+        #SNRdB = 10*numpy.log10(dataOut.data_SNR)
         
-        FirstMoment = []
-        SNRdBMean = []
+        FirstMoment = numpy.average(dataOut.data_param[:,1,:],0)
+        #SNRdBMean = []
+
         
-        for j in range(nHeights):
-            FirstMoment = numpy.append(FirstMoment,numpy.mean([dataOut.data_param[0,1,j],dataOut.data_param[1,1,j],dataOut.data_param[2,1,j]]))
-            SNRdBMean = numpy.append(SNRdBMean,numpy.mean([SNRdB[0,j],SNRdB[1,j],SNRdB[2,j]]))
+        #for j in range(nHeights):
+        #    FirstMoment = numpy.append(FirstMoment,numpy.mean([dataOut.data_param[0,1,j],dataOut.data_param[1,1,j],dataOut.data_param[2,1,j]]))
+        #    SNRdBMean = numpy.append(SNRdBMean,numpy.mean([SNRdB[0,j],SNRdB[1,j],SNRdB[2,j]]))
             
         data_output=numpy.ones([3,spc.shape[2]])*numpy.NaN
         
@@ -1088,9 +1094,11 @@ class FullSpectralAnalysis(Operation):
         velocityY=[]
         velocityV=[]
         
+        dbSNR = 10*numpy.log10(dataSNR)
+        dbSNR = numpy.average(dbSNR,0)
         for Height in range(nHeights):
             
-            [Vzon,Vmer,Vver, GaussCenter]= self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, VelRange)
+            [Vzon,Vmer,Vver, GaussCenter]= self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, VelRange, dbSNR[Height], SNRlimit)
             
             if abs(Vzon)<100. and abs(Vzon)> 0.:
                 velocityX=numpy.append(velocityX, Vzon)#Vmag
@@ -1106,8 +1114,8 @@ class FullSpectralAnalysis(Operation):
                 print 'Vmer',Vmer
                 velocityY=numpy.append(velocityY, numpy.NaN)
             
-            if abs(GaussCenter)<10:
-                velocityV=numpy.append(velocityV, Vver)
+            if dbSNR[Height] > SNRlimit:
+                velocityV=numpy.append(velocityV, FirstMoment[Height])
             else:
                 velocityV=numpy.append(velocityV, numpy.NaN)
                 #FirstMoment[Height]= numpy.NaN
@@ -1119,7 +1127,7 @@ class FullSpectralAnalysis(Operation):
         
         data_output[0]=numpy.array(velocityX)
         data_output[1]=numpy.array(velocityY)
-        data_output[2]=-FirstMoment
+        data_output[2]=-velocityV#FirstMoment
         
         print ' '
         #print 'FirstMoment'
@@ -1150,7 +1158,7 @@ class FullSpectralAnalysis(Operation):
             if x[index]==value:
                 return index
     
-    def WindEstimation(self, spc, cspc, pairsList, ChanDist, Height, noise, VelRange):
+    def WindEstimation(self, spc, cspc, pairsList, ChanDist, Height, noise, VelRange, dbSNR, SNRlimit):
         
         ySamples=numpy.ones([spc.shape[0],spc.shape[1]])
         phase=numpy.ones([spc.shape[0],spc.shape[1]])
@@ -1177,24 +1185,28 @@ class FullSpectralAnalysis(Operation):
         for i in range(spc.shape[0]):  
             
             '''****** Line of Data SPC ******'''
-            zline=z[i,:,Height]
+            zline=z[i,:,Height] 
             
             '''****** SPC is normalized ******'''
-            FactNorm= zline.copy() / numpy.sum(zline.copy())
+            FactNorm= (zline.copy()-noise[i]) / numpy.sum(zline.copy())
             FactNorm= FactNorm/numpy.sum(FactNorm)
             
             SmoothSPC=self.moving_average(FactNorm,N=3)
             
             xSamples = ar(range(len(SmoothSPC)))
-            ySamples[i] = SmoothSPC-noise[i]
-        
+            ySamples[i] = SmoothSPC 
+            
+        #dbSNR=10*numpy.log10(dataSNR)
         print ' '
         print ' '
         print ' ' 
-        print 'SmoothSPC',SmoothSPC
+        
+        #print 'dataSNR', dbSNR.shape, dbSNR[0,40:120]
+        print 'SmoothSPC', SmoothSPC.shape, SmoothSPC[0:20] 
         print 'noise',noise   
-        print'zline',zline 
-        print'FactNorm',FactNorm
+        print 'zline',zline.shape, zline[0:20] 
+        print 'FactNorm',FactNorm.shape, FactNorm[0:20]
+        print 'FactNorm suma', numpy.sum(FactNorm)
         
         for i in range(spc.shape[0]):
             
@@ -1204,19 +1216,24 @@ class FullSpectralAnalysis(Operation):
             '''****** CSPC is normalized ******'''
             chan_index0 = pairsList[i][0]
             chan_index1 = pairsList[i][1]
-            CSPCFactor= numpy.sum(ySamples[chan_index0]) * numpy.sum(ySamples[chan_index1])
+            CSPCFactor= abs(numpy.sum(ySamples[chan_index0]) * numpy.sum(ySamples[chan_index1])) #
             
-            CSPCNorm= cspcLine.copy() / numpy.sqrt(CSPCFactor)
+            CSPCNorm = (cspcLine.copy() -noise[i]) / numpy.sqrt(CSPCFactor)
             
-            CSPCSamples[i] = CSPCNorm-noise[i]
+            CSPCSamples[i] = CSPCNorm
             coherence[i] = numpy.abs(CSPCSamples[i]) / numpy.sqrt(CSPCFactor)
             
             coherence[i]= self.moving_average(coherence[i],N=2)
             
             phase[i] = self.moving_average( numpy.arctan2(CSPCSamples[i].imag, CSPCSamples[i].real),N=1)#*180/numpy.pi
         
-        print 'CSPCSamples', CSPCSamples
-            
+        print 'cspcLine', cspcLine.shape, cspcLine[0:20]
+        print 'CSPCFactor', CSPCFactor#, CSPCFactor[0:20]
+        print numpy.sum(ySamples[chan_index0]), numpy.sum(ySamples[chan_index1]), -noise[i]
+        print 'CSPCNorm', CSPCNorm.shape, CSPCNorm[0:20]
+        print 'CSPCNorm suma', numpy.sum(CSPCNorm)
+        print 'CSPCSamples', CSPCSamples.shape, CSPCSamples[0,0:20]
+        
         '''****** Getting fij width ******'''
         
         yMean=[]
@@ -1231,14 +1248,15 @@ class FullSpectralAnalysis(Operation):
         
         print '****************************'
         print 'len(xSamples): ',len(xSamples)
-        print 'yMean: ', yMean
-        print 'ySamples', ySamples
-        print 'xSamples: ',xSamples
+        print 'yMean: ', yMean.shape, yMean[0:20]
+        print 'ySamples', ySamples.shape, ySamples[0,0:20]
+        print 'xSamples: ',xSamples.shape, xSamples[0:20]
         
         print 'meanGauss',meanGauss
         print 'sigma',sigma
-        if (abs(meanGauss/sigma**2) > 0.000000001):#0.00001) :
         
+        #if (abs(meanGauss/sigma**2) > 0.0001) : #0.000000001):
+        if dbSNR > SNRlimit :
             try:    
                 popt,pcov = curve_fit(self.gaus,xSamples,yMean,p0=[1,meanGauss,sigma])
                 
@@ -1248,7 +1266,7 @@ class FullSpectralAnalysis(Operation):
                 else: 
                     FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
                     print 'Verificador:     Dentro', Height
-            except RuntimeError:
+            except :#RuntimeError:
                 FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
                 
                
@@ -1256,7 +1274,7 @@ class FullSpectralAnalysis(Operation):
             FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
         
         Maximun=numpy.amax(yMean)
-        eMinus1=Maximun*numpy.exp(-1)*0.8
+        eMinus1=Maximun*numpy.exp(-1)#*0.8
         
         HWpos=self.Find(FitGauss,min(FitGauss, key=lambda value:abs(value-eMinus1)))
         HalfWidth= xFrec[HWpos]
@@ -1279,9 +1297,15 @@ class FullSpectralAnalysis(Operation):
         
         if Rangpos<GCpos:
             Range=numpy.array([Rangpos,2*GCpos-Rangpos])
-        else:
+        elif Rangpos< ( len(xFrec)- len(xFrec)*0.1):
             Range=numpy.array([2*GCpos-Rangpos,Rangpos])
+        else:
+            Range = numpy.array([0,0])
         
+        print ' '
+        print 'GCpos',GCpos, ( len(xFrec)- len(xFrec)*0.1)
+        print 'Rangpos',Rangpos
+        print 'RANGE: ', Range
         FrecRange=xFrec[Range[0]:Range[1]]
         
         '''****** Getting SCPC Slope ******'''
@@ -1290,10 +1314,17 @@ class FullSpectralAnalysis(Operation):
             
             if len(FrecRange)>5 and len(FrecRange)<spc.shape[1]*0.5:
                 PhaseRange=self.moving_average(phase[i,Range[0]:Range[1]],N=3) 
-            
-                slope, intercept, r_value, p_value, std_err = stats.linregress(FrecRange,PhaseRange)
-                PhaseSlope[i]=slope
-                PhaseInter[i]=intercept
+                
+                print 'FrecRange', len(FrecRange) , FrecRange
+                print 'PhaseRange', len(PhaseRange), PhaseRange
+                print ' '
+                if len(FrecRange) == len(PhaseRange):
+                    slope, intercept, r_value, p_value, std_err = stats.linregress(FrecRange,PhaseRange)
+                    PhaseSlope[i]=slope
+                    PhaseInter[i]=intercept
+                else:
+                    PhaseSlope[i]=0
+                    PhaseInter[i]=0
             else:
                 PhaseSlope[i]=0
                 PhaseInter[i]=0
