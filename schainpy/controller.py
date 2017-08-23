@@ -50,6 +50,8 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_da
         if by_day:
             continue
         nFiles = q.get()
+        if nFiles==0:
+            continue
         firstProcess.terminate()
         skip = int(math.ceil(nFiles/nProcess))
         while True:
@@ -70,7 +72,9 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_da
         for process in processes:
             process.join()
             process.terminate()
+
         time.sleep(3)
+
 
 class ParameterConf():
 
