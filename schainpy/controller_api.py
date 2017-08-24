@@ -14,7 +14,7 @@ class ControllerThread(threading.Thread, Project):
         self.setDaemon(True)
         
         self.lock = threading.Lock()
-        self.control = {'stop':False, 'pause':False}
+        self.control = { 'stop':False, 'pause':False }
     
     def __del__(self):
         
@@ -90,7 +90,7 @@ class ControllerThread(threading.Thread, Project):
                     continue
                 
                 if thisOpObj.name in plotterList:
-                    thisOpObj.type = "plotter"
+                    thisOpObj.type = "other"
 
     def setPlotterQueue(self, plotter_queue):
         

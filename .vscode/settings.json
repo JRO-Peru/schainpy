@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "arrayobject.h": "c",
+    "ndarrayobject.h": "c",
+    "complex": "c"
+  }
+}
