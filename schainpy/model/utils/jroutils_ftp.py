@@ -583,6 +583,8 @@ class SendToServer(ProcessingUnit):
         
         self.isConfig = False
         self.clientObj = None
+
+        
     
     def setup(self, server, username, password, remotefolder, localfolder, ext='.png', period=60, protocol='ftp', **kwargs):
         
@@ -638,18 +640,20 @@ class SendToServer(ProcessingUnit):
         return fullfilenameList
     
     def run(self, **kwargs):
-        
         if not self.isConfig:
             self.init = time.time()
             self.setup(**kwargs)
             self.isConfig = True
+        
+        if not self.clientObj.is_alive():
+            print "[Remote Server]: Restarting connection "
+            self.setup(**kwargs)
         
         if time.time() - self.init >= self.period:
             fullfilenameList = self.findFiles()
             
             if self.clientObj.updateFileList(fullfilenameList):
                 print "[Remote Server]: Sending the next files ", str(fullfilenameList)
-            
             self.init = time.time()
     
     def close(self):
