@@ -19,56 +19,44 @@ import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
 
 
-
-
-class BLTRProcess(ProcessingUnit):
-    isConfig = False
+class BLTRParametersProc(ProcessingUnit):    
     '''
-    Processing unit for BLTR rawdata
-    
+    Processing unit for BLTR parameters data (winds)
+
     Inputs:
         self.dataOut.nmodes - Number of operation modes
         self.dataOut.nchannels - Number of channels
         self.dataOut.nranges - Number of ranges
-        
+
         self.dataOut.data_SNR - SNR array 
         self.dataOut.data_output - Zonal, Vertical and Meridional velocity array
         self.dataOut.height - Height array (km)
         self.dataOut.time - Time array (seconds)
-         
+
         self.dataOut.fileIndex -Index of the file currently read
         self.dataOut.lat - Latitude coordinate of BLTR location
-        
+
         self.dataOut.doy - Experiment doy (number of the day in the current year) 
         self.dataOut.month - Experiment month
         self.dataOut.day - Experiment day
         self.dataOut.year - Experiment year
     '''
-       
-    def __init__(self, **kwargs):  
+
+    def __init__(self, **kwargs):
         '''
-        Inputs: None
-           
+        Inputs: None           
         '''
         ProcessingUnit.__init__(self, **kwargs)
         self.dataOut = Parameters()
 
-        # Filters
-        snr_val = None
-        value = None
-        svalue2 = None
-        method = None
-        factor = None
-        filter = None
-        npoints = None
-        status_value = None
-        width = None    
-        self.flagfirstmode = 0
-                         
-    def run (self):
+    def run (self, mode):
+        '''
+        '''
         if self.dataIn.type == "Parameters":
             self.dataOut.copy(self.dataIn)
             
+        self.dataOut.data_output = self.dataOut.data_output[mode]
+        self.dataOut.heightList = self.dataOut.height[mode]
 
     def TimeSelect(self):
         '''

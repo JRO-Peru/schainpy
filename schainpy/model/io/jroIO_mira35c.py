@@ -13,7 +13,6 @@ from scipy.optimize import curve_fit
 from scipy import asarray as ar,exp
 from scipy import stats
 
-from duplicity.path import Path
 from numpy.ma.core import getdata
 
 SPEED_OF_LIGHT = 299792458
