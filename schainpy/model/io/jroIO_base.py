@@ -618,7 +618,7 @@ class JRODataReader(JRODataIO):
         dateList, pathList = self.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
         
         if dateList == []:
-#             print "[Reading] Date range selected invalid [%s - %s]: No *%s files in %s)" %(startDate, endDate, ext, path)
+        #             print "[Reading] Date range selected invalid [%s - %s]: No *%s files in %s)" %(startDate, endDate, ext, path)
             return None, None
         
         if len(dateList) > 1:
@@ -630,7 +630,7 @@ class JRODataReader(JRODataIO):
         datetimeList = []
         
         for thisPath in pathList:
-#             thisPath = pathList[pathDict[file]]
+        #             thisPath = pathList[pathDict[file]]
             
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
@@ -746,7 +746,7 @@ class JRODataReader(JRODataIO):
             idFile += 1
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-#                 print "[Reading] No more Files"
+        #                 print "[Reading] No more Files"
                 return 0
 
             filename = self.filenameList[idFile]
@@ -764,7 +764,7 @@ class JRODataReader(JRODataIO):
         self.fileSize = fileSize
         self.fp = fp
 
-#         print "[Reading] Setting the file: %s"%self.filename
+        #         print "[Reading] Setting the file: %s"%self.filename
 
         return 1
 
@@ -847,14 +847,14 @@ class JRODataReader(JRODataIO):
             if self.fp != None: self.fp.close() 
             self.fp = open(fullfilename, 'rb')
             self.flagNoMoreFiles = 0
-#             print '[Reading] Setting the file: %s' % fullfilename
+        #             print '[Reading] Setting the file: %s' % fullfilename
         else:
             self.fileSize = 0
             self.filename = None
             self.flagIsNewFile = 0
             self.fp = None
             self.flagNoMoreFiles = 1
-#             print '[Reading] No more files to read'
+        #             print '[Reading] No more files to read'
 
         return fileOk_flag
     
@@ -907,7 +907,7 @@ class JRODataReader(JRODataIO):
                 return 1
             
             if self.fileSize == self.fileSizeByHeader:
-#                self.flagEoF = True
+        #                self.flagEoF = True
                 return 0
             
             print "[Reading] Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
@@ -962,11 +962,11 @@ class JRODataReader(JRODataIO):
                 self.fp.seek(self.fp.tell() - neededsize)
                 break
         
-#        csize = self.fileSize - self.fp.tell()
-#        neededsize = self.processingHeaderObj.blockSize + self.basicHeaderSize
-#        factor = int(csize/neededsize)
-#        if factor > 0:
-#            self.fp.seek(self.fp.tell() + factor*neededsize)
+        #        csize = self.fileSize - self.fp.tell()
+        #        neededsize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        #        factor = int(csize/neededsize)
+        #        if factor > 0:
+        #            self.fp.seek(self.fp.tell() + factor*neededsize)
         
         self.flagIsNewFile = 0
         self.__isFirstTimeOnline = 0
@@ -976,8 +976,8 @@ class JRODataReader(JRODataIO):
         if self.fp == None:
             return 0
             
-#         if self.online:
-#             self.__jumpToLastBlock()
+        #         if self.online:
+        #             self.__jumpToLastBlock()
         
         if self.flagIsNewFile:
             self.lastUTTime = self.basicHeaderObj.utc
@@ -1069,8 +1069,8 @@ class JRODataReader(JRODataIO):
         self.dtype = datatype_str
         #self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
         self.fileSizeByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.processingHeaderObj.dataBlocksPerFile - 1)
-#        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
-#        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
     
     def __verifyFile(self, filename, msgFlag=True):
@@ -1331,7 +1331,7 @@ class JRODataReader(JRODataIO):
                 self.filenameList = []
                 return
 
-#         self.getBasicHeader()
+        #         self.getBasicHeader()
         
         if last_set != None:
             self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
