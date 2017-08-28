@@ -7,7 +7,7 @@ Created on Jul 16, 2014
 
 import numpy
 from setuptools import setup, Extension
-import numpy 
+from schainpy import __version__
 
 setup(name="schainpy",
       version=__version__,

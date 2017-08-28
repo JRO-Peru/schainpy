@@ -1380,9 +1380,9 @@ class JRODataReader(JRODataIO):
 
             #   self.getBasicHeader()
 
-        if last_set != None:
-            self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
-        return
+            if last_set != None:
+                self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
+            return
 
     def getBasicHeader(self):
 

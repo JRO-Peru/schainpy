@@ -10,7 +10,6 @@ import traceback
 import math
 import time
 from multiprocessing import Process, Queue, cpu_count
-from profilehooks import profile, coverage
 
 import schainpy
 import schainpy.admin
@@ -694,7 +693,6 @@ class ProcUnitConf():
 
         return procUnitObj
 
-    ## @profile
     def run(self):
 
         is_ok = False
@@ -713,8 +711,7 @@ class ProcUnitConf():
             #print "\tRunning the '%s' operation with %s" %(opConfObj.name, opConfObj.id)
             sts = self.procUnitObj.call(opType = opConfObj.type,
                                         opName = opConfObj.name,
-                                        opId = opConfObj.id,
-                                        **kwargs)
+                                        opId = opConfObj.id)
             
             #             total_time = time.time() - ini
             #              
@@ -766,7 +763,6 @@ class ReadUnitConf(ProcUnitConf):
 
     def setup(self, id, name, datatype, path='', startDate="", endDate="", startTime="", 
               endTime="", parentId=None, queue=None, server=None, **kwargs):
-
         #Compatible with old signal chain version
         if datatype==None and name==None:
             raise ValueError, "datatype or name should be defined"
@@ -987,7 +983,6 @@ class Project():
         self.description = description
 
     def addReadUnit(self, id=None, datatype=None, name=None, **kwargs):
-
         if id is None:
             idReadUnit = self.__getNewId()
         else:

@@ -237,7 +237,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             if self.waitDataBlock(pointer_location=current_pointer_location):
                 junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
                 junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
-#             return 0
+        #             return 0
 
         #Dimensions : nChannels, nProfiles, nSamples
 
@@ -267,15 +267,15 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         #Time interval and code are propierties of dataOut. Its value depends of radarControllerHeaderObj.
 
-#         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
-#
-#         if self.radarControllerHeaderObj.code is not None:
-#
-#             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
-#
-#             self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
-#
-#             self.dataOut.code = self.radarControllerHeaderObj.code
+        #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
+        #
+        #         if self.radarControllerHeaderObj.code is not None:
+        #
+        #             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
+        #
+        #             self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
+        #
+        #             self.dataOut.code = self.radarControllerHeaderObj.code
 
         self.dataOut.dtype = self.dtype
 
@@ -340,8 +340,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dtype = datatype_str
         #self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
         self.fileSizeByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.processingHeaderObj.dataBlocksPerFile - 1)
-#        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
-#        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
 
 
@@ -355,7 +355,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.blockPointer = 0
 
         block = self.receiver.recv()
-        
+
         self.basicHeaderObj.read(block[self.blockPointer:])
         self.blockPointer += self.basicHeaderObj.length
         self.systemHeaderObj.read(block[self.blockPointer:])
@@ -378,7 +378,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             if self.waitDataBlock(pointer_location=current_pointer_location):
                 junk = numpy.fromstring( block[self.blockPointer:], self.dtype, self.blocksize )
                 junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
-#             return 0
+        #               return 0
 
         #Dimensions : nChannels, nProfiles, nSamples
 
@@ -473,15 +473,15 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
             self.profileIndex += 1
 
-#         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
-#             """
-#             Return all block
-#             """
-#             self.dataOut.flagDataAsBlock = True
-#             self.dataOut.data = self.datablock
-#             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
-#
-#             self.profileIndex = self.dataOut.nProfiles
+        #         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
+        #             """
+        #             Return all block
+        #             """
+        #             self.dataOut.flagDataAsBlock = True
+        #             self.dataOut.data = self.datablock
+        #             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
+        #
+        #             self.profileIndex = self.dataOut.nProfiles
 
         else:
             """
