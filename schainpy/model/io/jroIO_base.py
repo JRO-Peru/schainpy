@@ -665,27 +665,27 @@ class JRODataReader(JRODataIO):
         
         return pathList, filenameList
 
-    def __searchFilesOnLine(self, path, expLabel = "", ext = None, walk=True, set=None):
+    def __searchFilesOnLine(self, path, expLabel = "", ext = None, walk=True, set=None, startDate=None, endDate=None):
         
         """
         Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
         devuelve el archivo encontrado ademas de otros datos.
         
         Input: 
-            path           :    carpeta donde estan contenidos los files que contiene data
+            path            :       carpeta donde estan contenidos los files que contiene data
             
-            expLabel        :     Nombre del subexperimento (subfolder)
+            expLabel        :       Nombre del subexperimento (subfolder)
             
-            ext              :    extension de los files
+            ext             :       extension de los files
             
-            walk        :    Si es habilitado no realiza busquedas dentro de los ubdirectorios (doypath)
+            walk            :       Si es habilitado no realiza busquedas dentro de los subdirectorios (doypath)
 
         Return:
-            directory   :    eL directorio donde esta el file encontrado
-            filename    :    el ultimo file de una determinada carpeta
-            year        :    el anho
-            doy         :    el numero de dia del anho
-            set         :    el set del archivo
+            directory       :       eL directorio donde esta el file encontrado
+            filename        :       el ultimo file de una determinada carpeta
+            year            :       el anho
+            doy             :       el numero de dia del anho
+            set             :       el set del archivo
             
             
         """
@@ -698,7 +698,7 @@ class JRODataReader(JRODataIO):
             fullpath = path
             foldercounter = 0
         else:
-            #Filtra solo los directorios
+            # Filtra solo los directorios
             for thisPath in os.listdir(path):
                 if not os.path.isdir(os.path.join(path,thisPath)):
                     continue
@@ -1258,7 +1258,14 @@ class JRODataReader(JRODataIO):
             print "[Reading] Searching files in online mode..."  
                    
             for nTries in range( self.nTries ):
-                fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk, set=set)
+                fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, 
+                                                                                        expLabel=expLabel, 
+                                                                                        ext=ext, 
+                                                                                        walk=walk,
+                                                                                        startDate=startDate,
+                                                                                        endDate=endDate,
+                                                                                        startTime=startTime, endTime=endTime,
+                                                                                        set=set)
                 
                 if fullpath:
                     break
@@ -1285,11 +1292,11 @@ class JRODataReader(JRODataIO):
                                                                walk=walk)
             
             if not(pathList):
-#                 print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
-#                                                         datetime.datetime.combine(startDate,startTime).ctime(),
-#                                                         datetime.datetime.combine(endDate,endTime).ctime())
-                 
-#                 sys.exit(-1)
+                #                 print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
+                #                                                         datetime.datetime.combine(startDate,startTime).ctime(),
+                #                                                         datetime.datetime.combine(endDate,endTime).ctime())
+                                
+                #                 sys.exit(-1)
                 
                 self.fileIndex = -1
                 self.pathList = []
