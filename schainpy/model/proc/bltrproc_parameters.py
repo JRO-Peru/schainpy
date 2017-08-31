@@ -10,13 +10,10 @@ import datetime
 import time
 from time import gmtime
 
-from jroproc_base import ProcessingUnit
-from schainpy.model.data.jrodata import Parameters
 from numpy import transpose
 
-from matplotlib import cm
-import matplotlib.pyplot as plt
-from matplotlib.mlab import griddata
+from jroproc_base import ProcessingUnit, Operation
+from schainpy.model.data.jrodata import Parameters
 
 
 class BLTRParametersProc(ProcessingUnit):    
@@ -49,165 +46,65 @@ class BLTRParametersProc(ProcessingUnit):
         ProcessingUnit.__init__(self, **kwargs)
         self.dataOut = Parameters()
 
-    def run (self, mode):
+    def run(self, mode, snr_threshold=None):
         '''
+
+        Inputs:
+            mode = High resolution (0) or Low resolution (1) data
+            snr_threshold = snr filter value
         '''
-        if self.dataIn.type == "Parameters":
+        if self.dataIn.type == 'Parameters':
             self.dataOut.copy(self.dataIn)
-            
+
         self.dataOut.data_output = self.dataOut.data_output[mode]
-        self.dataOut.heightList = self.dataOut.height[mode]
+        self.dataOut.heightList = self.dataOut.height[0]
+        self.dataOut.data_SNR = self.dataOut.data_SNR[mode]
 
-    def TimeSelect(self):
+        if snr_threshold is not None:
+            SNRavg = numpy.average(self.dataOut.data_SNR, axis=0)
+            SNRavgdB = 10*numpy.log10(SNRavg)
+            for i in range(3):
+                self.dataOut.data_output[i][SNRavgdB <= snr_threshold] = numpy.nan
+
+# TODO
+class OutliersFilter(Operation):
+
+    def __init__(self, **kwargs):
         '''
-        Selecting the time array according to the day of the experiment with a duration of 24 hours 
         '''
-        
-        k1 = datetime.datetime(self.dataOut.year, self.dataOut.month, self.dataOut.day) - datetime.timedelta(hours=5)
-        k2 = datetime.datetime(self.dataOut.year, self.dataOut.month, self.dataOut.day) + datetime.timedelta(hours=25) - datetime.timedelta(hours=5)
-        limit_sec1 = time.mktime(k1.timetuple())
-        limit_sec2 = time.mktime(k2.timetuple())
-        valid_data = 0
-        
-        doy = self.dataOut.doy
-        t1 = numpy.where(self.dataOut.time[0, :] >= limit_sec1) 
-        t2 = numpy.where(self.dataOut.time[0, :] < limit_sec2) 
-        time_select = []
-        for val_sec in t1[0]:
-            if val_sec in t2[0]:
-                time_select.append(val_sec)
-        
-        time_select = numpy.array(time_select, dtype='int')       
-        valid_data = valid_data + len(time_select)
+        Operation.__init__(self, **kwargs)
 
-
-        if len(time_select) > 0:
-            self.f_timesec = self.dataOut.time[:, time_select]
-            snr = self.dataOut.data_SNR[time_select, :, :, :]
-            zon = self.dataOut.data_output[0][time_select, :, :]
-            mer = self.dataOut.data_output[1][time_select, :, :]
-            ver = self.dataOut.data_output[2][time_select, :, :]
-
-        if valid_data > 0:
-            self.timesec1 = self.f_timesec[0, :]
-            self.f_height = self.dataOut.height 
-            self.f_zon = zon
-            self.f_mer = mer
-            self.f_ver = ver
-            self.f_snr = snr
-            self.f_timedate = []
-            self.f_time = []
-            
-            for valuet in self.timesec1:             
-                time_t = time.gmtime(valuet)
-                year = time_t.tm_year 
-                month = time_t.tm_mon
-                day = time_t.tm_mday
-                hour = time_t.tm_hour
-                minute = time_t.tm_min
-                second = time_t.tm_sec
-                f_timedate_0 = datetime.datetime(year, month, day, hour, minute, second)
-                self.f_timedate.append(f_timedate_0)
-
-            return self.f_timedate, self.f_timesec, self.f_height, self.f_zon, self.f_mer, self.f_ver, self.f_snr
-        
-        else:
-            self.f_timesec = None
-            self.f_timedate = None
-            self.f_height = None
-            self.f_zon = None
-            self.f_mer = None
-            self.f_ver = None
-            self.f_snr = None
-            print 'Invalid time'
-   
-            return self.f_timedate, self.f_height, self.f_zon, self.f_mer, self.f_ver, self.f_snr
-            
-    def SnrFilter(self, snr_val,modetofilter):
-        '''
-        Inputs: snr_val - Threshold value
-        
-        '''
-        if modetofilter!=2 and modetofilter!=1 :
-            raise ValueError,'Mode to filter should be "1" or "2". {} is not valid, check "Modetofilter" value.'.format(modetofilter)
-        m = modetofilter-1
-        
-        print '    SNR filter [mode {}]: SNR <= {}: data_output = NA'.format(modetofilter,snr_val)       
-        for k in range(self.dataOut.nchannels):
-            for r in range(self.dataOut.nranges):
-                if self.dataOut.data_SNR[r,k,m] <= snr_val:
-                    self.dataOut.data_output[2][r,m] = numpy.nan
-                    self.dataOut.data_output[1][r,m] = numpy.nan
-                    self.dataOut.data_output[0][r,m] = numpy.nan
-
-
-                    
-    def OutliersFilter(self,modetofilter,svalue,svalue2,method,factor,filter,npoints):   
+    def run(self, svalue2, method, factor, filter, npoints=9):
         '''
         Inputs:
             svalue    -  string to select array velocity
             svalue2    -  string to choose axis filtering
             method    - 0 for SMOOTH or 1 for MEDIAN
-            factor    - number used to set threshold 
+            factor    - number used to set threshold
             filter    - 1 for data filtering using the standard deviation criteria else 0
             npoints    - number of points for mask filter
-            
-        ''' 
-        if modetofilter!=2 and modetofilter!=1 :
-            raise ValueError,'Mode to filter should be "1" or "2". {} is not valid, check "Modetofilter" value.'.format(modetofilter)
-        
-        m = modetofilter-1
-                
-        print '    Outliers Filter [mode {}]: {} {} / threshold = {}'.format(modetofilter,svalue,svalue,factor)
-        
-        npoints = 9
-        novalid = 0.1
-        if svalue == 'zonal':
-            value = self.dataOut.data_output[0]
-                        
-        elif svalue == 'meridional':
-            value = self.dataOut.data_output[1]
-          
-        elif svalue == 'vertical':
-            value = self.dataOut.data_output[2]
-         
-        else:
-            print 'value is not defined'
-            return
-        
-        if svalue2 == 'inTime':            
-            yaxis = self.dataOut.height
-            xaxis = numpy.array([[self.dataOut.time1],[self.dataOut.time1]])
-            
-        elif svalue2 == 'inHeight':
-            yaxis = numpy.array([[self.dataOut.time1],[self.dataOut.time1]])
-            xaxis = self.dataOut.height
-                    
-        else:
-            print 'svalue2 is required, either inHeight or inTime'
-            return
+        '''
 
-        output_array = value
+        print '    Outliers Filter {} {} / threshold = {}'.format(svalue, svalue, factor)
 
-        value_temp = value[:,m] 
-        error = numpy.zeros(len(self.dataOut.time[m,:])) 
-        if svalue2 == 'inHeight':
-            value_temp = numpy.transpose(value_temp)
-            error = numpy.zeros(len(self.dataOut.height))
         
-        htemp = yaxis[m,:]
+        yaxis = self.dataOut.heightList
+        xaxis = numpy.array([[self.dataOut.utctime]])        
+
+        # Zonal
+        value_temp = self.dataOut.data_output[0]
+
+        # Zonal
+        value_temp = self.dataOut.data_output[1]
+        
+        # Vertical
+        value_temp = numpy.transpose(self.dataOut.data_output[2])
+
+        htemp = yaxis
         std = value_temp
         for h in range(len(htemp)):
-            if filter: #standard deviation filtering 
-                std[h] = numpy.std(value_temp[h],ddof = npoints)
-                value_temp[numpy.where(std[h] > 5),h] = numpy.nan
-                error[numpy.where(std[h] > 5)] = error[numpy.where(std[h] > 5)] + 1 
-
-
             nvalues_valid = len(numpy.where(numpy.isfinite(value_temp[h]))[0])
-            minvalid = novalid*len(xaxis[m,:])
-            if minvalid <= npoints:
-                minvalid = npoints
+            minvalid = npoints
             
             #only if valid values greater than the minimum required (10%)
             if nvalues_valid > minvalid:
@@ -491,74 +388,6 @@ class BLTRParametersProc(ProcessingUnit):
                   
         
         return startDTList, data_fHeigths_List, data_fZonal_List, data_fMeridional_List, data_fVertical_List
-      
-      
-    def prePlot(self,modeselect=None):
 
-        '''
-      Inputs: 
-      
-          self.dataOut.data_output - Zonal, Meridional and Vertical velocity array  
-          self.dataOut.height - height array
-          self.dataOut.time  - Time array (seconds)
-          self.dataOut.data_SNR - SNR array
-  
-          '''  
-
-        m = modeselect -1
-        
-        print '    [Plotting mode {}]'.format(modeselect)
-        if not (m ==1 or m==0):
-            raise IndexError("'Mode' must be egual to : 1 or 2")
-#         
-        if self.flagfirstmode==0:
-            #copy of the data
-            self.data_output_copy = self.dataOut.data_output.copy()
-            self.data_height_copy = self.dataOut.height.copy()
-            self.data_time_copy = self.dataOut.time.copy()
-            self.data_SNR_copy = self.dataOut.data_SNR.copy()    
-            self.flagfirstmode = 1
-        
-        else:
-            self.dataOut.data_output = self.data_output_copy
-            self.dataOut.height = self.data_height_copy
-            self.dataOut.time = self.data_time_copy
-            self.dataOut.data_SNR = self.data_SNR_copy
-            self.flagfirstmode = 0
-        
-        
-        #select data for mode m
-        #self.dataOut.data_output = self.dataOut.data_output[:,:,m]
-        self.dataOut.heightList = self.dataOut.height[0,:]
-
-        data_SNR = self.dataOut.data_SNR[:,:,m]
-        self.dataOut.data_SNR= transpose(data_SNR)
-        
-        if m==1 and self.dataOut.counter_records%2==0:
-            print '*********'
-            print 'MODO 2'
-            #print 'Zonal', self.dataOut.data_output[0]
-            #print 'Meridional', self.dataOut.data_output[1]
-            #print 'Vertical', self.dataOut.data_output[2]
-            
-            print '*********'
-            
-            Vx=self.dataOut.data_output[0,:,m]
-            Vy=self.dataOut.data_output[1,:,m]
-            
-            Vmag=numpy.sqrt(Vx**2+Vy**2)
-            Vang=numpy.arctan2(Vy,Vx)
-            #print 'Vmag', Vmag
-            #print 'Vang', Vang
-            
-            self.dataOut.data_output[0,:,m]=Vmag
-            self.dataOut.data_output[1,:,m]=Vang 
-            
-            prin= self.dataOut.data_output[0,:,m][~numpy.isnan(self.dataOut.data_output[0,:,m])]
-            print ' '
-            print 'VmagAverage',numpy.mean(prin) 
-            print ' '
-        self.dataOut.data_output = self.dataOut.data_output[:,:,m]
-            
 
   

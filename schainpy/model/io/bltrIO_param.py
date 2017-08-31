@@ -10,6 +10,7 @@ import sys
 import time
 import glob
 import datetime
+
 import numpy
 
 from schainpy.model.proc.jroproc_base import ProcessingUnit
@@ -241,7 +242,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.buffer = numpy.empty((self.nmodes, 3, self.nranges))
 
         for mode in range(self.nmodes):
-            self.readHeader()
+            self.readHeader()            
             data = self.readData()
             self.height[mode] = (data[0] - self.correction) / 1000.
             self.buffer[mode] = data[1]
@@ -272,14 +273,14 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.imode = self.header_rec['dmode_index'][0] 
         self.antenna = self.header_rec['antenna_coord']
         self.rx_gains = self.header_rec['rx_gains']        
-        self.time1 = self.header_rec['time'][0]
+        self.time = self.header_rec['time'][0]
         tseconds = self.header_rec['time'][0]
         local_t1 = time.localtime(tseconds)
         self.year = local_t1.tm_year
         self.month = local_t1.tm_mon
         self.day = local_t1.tm_mday
         self.t = datetime.datetime(self.year, self.month, self.day)
-        self.datatime = datetime.datetime.utcfromtimestamp(self.time1)        
+        self.datatime = datetime.datetime.utcfromtimestamp(self.time)
         
     def readData(self):
         '''
@@ -306,7 +307,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         winds = numpy.array((data['zonal'], data['meridional'], data['vertical']))
         snr = data['rx_snr'].T
 
-        winds[numpy.where(winds == -9999.)] = numpy.nan        
+        winds[numpy.where(winds == -9999.)] = numpy.nan      
         winds[:, numpy.where(data['status'] != self.status_value)] = numpy.nan
         snr[numpy.where(snr == -9999.)] = numpy.nan
         snr[:, numpy.where(data['status'] != self.status_value)] = numpy.nan
@@ -318,12 +319,11 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
         Storing data from databuffer to dataOut object
         '''
-
-        self.dataOut.time1 = self.time1
+        
         self.dataOut.data_SNR = self.snr
-        self.dataOut.height= self.height
+        self.dataOut.height = self.height
         self.dataOut.data_output = self.buffer
-        self.dataOut.utctimeInit = self.time1
+        self.dataOut.utctimeInit = self.time
         self.dataOut.utctime = self.dataOut.utctimeInit
         self.dataOut.counter_records = self.counter_records
         self.dataOut.nrecords = self.nrecords
@@ -334,7 +334,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.dataOut.nrecords = self.nrecords
         self.dataOut.sizeOfFile = self.sizeOfFile
         self.dataOut.lat = self.lat
-        self.dataOut.lon = self.lon        
+        self.dataOut.lon = self.lon
         self.dataOut.channelList = range(self.nchannels)
         self.dataOut.kchan = self.kchan
         # self.dataOut.nHeights = self.nranges
@@ -355,7 +355,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
             print 'No file left to process'
             return 0
 
-        if not(self.readNextBlock()):
+        if not  self.readNextBlock():
             self.dataOut.flagNoData = True
             return 0
 

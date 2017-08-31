@@ -658,13 +658,8 @@ class WindProfilerPlot(Figure):
 #         tmax = None
 
         x = dataOut.getTimeRange1(dataOut.paramInterval)
-        y = dataOut.heightList
-        z = dataOut.data_output.copy()
-        print ' '
-        print 'Xvel',z[0]
-        print ' '
-        print 'Yvel',z[1]
-        print ' '
+        y = dataOut.heightList        
+        z = dataOut.data_output.copy()        
         nplots = z.shape[0]    #Number of wind dimensions estimated
         nplotsw = nplots
 
