@@ -538,7 +538,7 @@ class JRODataIO:
     
 class JRODataReader(JRODataIO):
     
-    
+    firstTime = True
     online = 0
     
     realtime = 0
@@ -575,7 +575,7 @@ class JRODataReader(JRODataIO):
     
     selBlocktime = None
     
-    
+    onlineWithDate = False
     def __init__(self):
         
         """
@@ -609,7 +609,6 @@ class JRODataReader(JRODataIO):
                             expLabel='',
                             ext='.r',
                             walk=True):
-        
         self.filenameList = []
         self.datetimeList = []
         
@@ -663,32 +662,35 @@ class JRODataReader(JRODataIO):
         self.filenameList = filenameList
         self.datetimeList = datetimeList
         
+        
         return pathList, filenameList
 
-    def __searchFilesOnLine(self, path, expLabel = "", ext = None, walk=True, set=None, startDate=None, endDate=None):
+    def __searchFilesOnLine(self, path, expLabel="", ext=None, walk=True, set=None, startDate=None, startTime=None):
         
         """
-        Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
-        devuelve el archivo encontrado ademas de otros datos.
-        
-        Input: 
-            path            :       carpeta donde estan contenidos los files que contiene data
+            Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
+            devuelve el archivo encontrado ademas de otros datos.
             
-            expLabel        :       Nombre del subexperimento (subfolder)
-            
-            ext             :       extension de los files
-            
-            walk            :       Si es habilitado no realiza busquedas dentro de los subdirectorios (doypath)
+            Input: 
+                path            :       carpeta donde estan contenidos los files que contiene data
+                
+                expLabel        :       Nombre del subexperimento (subfolder)
+                
+                ext             :       extension de los files
+                
+                walk            :       Si es habilitado no realiza busquedas dentro de los subdirectorios (doypath)
 
-        Return:
-            directory       :       eL directorio donde esta el file encontrado
-            filename        :       el ultimo file de una determinada carpeta
-            year            :       el anho
-            doy             :       el numero de dia del anho
-            set             :       el set del archivo
-            
+            Return:
+                directory       :       eL directorio donde esta el file encontrado
+                filename        :       el ultimo file de una determinada carpeta
+                year            :       el anho
+                doy             :       el numero de dia del anho
+                set             :       el set del archivo
+                
             
         """
+        pathList = None
+        filenameList = None
         if not os.path.isdir(path):
             return None, None, None, None, None, None
         
@@ -735,7 +737,7 @@ class JRODataReader(JRODataIO):
         year = int( filename[1:5] )
         doy  = int( filename[5:8] )
         set  = int( filename[8:11] )        
-        
+
         return fullpath, foldercounter, filename, year, doy, set
     
     def __setNextFileOffline(self):
@@ -746,7 +748,7 @@ class JRODataReader(JRODataIO):
             idFile += 1
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-        #                 print "[Reading] No more Files"
+                #             print "[Reading] No more Files"
                 return 0
 
             filename = self.filenameList[idFile]
@@ -764,31 +766,32 @@ class JRODataReader(JRODataIO):
         self.fileSize = fileSize
         self.fp = fp
 
-        #         print "[Reading] Setting the file: %s"%self.filename
+        #print "[Reading] Setting the file: %s"%self.filename
 
         return 1
 
     def __setNextFileOnline(self):
         """
-        Busca el siguiente file que tenga suficiente data para ser leida, dentro de un folder especifico, si
-        no encuentra un file valido espera un tiempo determinado y luego busca en los posibles n files
-        siguientes.   
-            
-        Affected: 
-            self.flagIsNewFile
-            self.filename
-            self.fileSize
-            self.fp
-            self.set
-            self.flagNoMoreFiles
+            Busca el siguiente file que tenga suficiente data para ser leida, dentro de un folder especifico, si
+            no encuentra un file valido espera un tiempo determinado y luego busca en los posibles n files
+            siguientes.   
+                
+            Affected: 
+                self.flagIsNewFile
+                self.filename
+                self.fileSize
+                self.fp
+                self.set
+                self.flagNoMoreFiles
 
-        Return: 
-            0    : si luego de una busqueda del siguiente file valido este no pudo ser encontrado
-            1    : si el file fue abierto con exito y esta listo a ser leido
+            Return: 
+                0    : si luego de una busqueda del siguiente file valido este no pudo ser encontrado
+                1    : si el file fue abierto con exito y esta listo a ser leido
+            
+            Excepciones: 
+                Si un determinado file no puede ser abierto
+        """  
         
-        Excepciones: 
-            Si un determinado file no puede ser abierto
-        """
         nFiles = 0
         fileOk_flag = False        
         firstTime_flag = True
@@ -861,13 +864,34 @@ class JRODataReader(JRODataIO):
     def setNextFile(self):
         if self.fp != None:
             self.fp.close()
-
         if self.online:
             newFile = self.__setNextFileOnline()
         else:
             newFile = self.__setNextFileOffline()
-
         if not(newFile):
+            if  self.onlineWithDate is True:
+                self.onlineWithDate=False
+                self.online = True
+                self.firstTime = False
+                self.setup(
+                    path=self.path,
+                    startDate=self.startDate,
+                    endDate=self.endDate,
+                    startTime=self.startTime ,
+                    endTime=self.endTime,
+                    set=self.set,
+                    expLabel=self.expLabel,
+                    ext=self.ext,
+                    online=self.online,
+                    delay=self.delay,
+                    walk=self.walk,
+                    getblock=self.getblock,
+                    nTxs=self.nTxs,
+                    realtime=self.realtime,
+                    blocksize=self.blocksize,
+                    blocktime=self.blocktime
+                ) 
+                return 1
             print '[Reading] No more files to read'
             return 0
 
@@ -1021,12 +1045,9 @@ class JRODataReader(JRODataIO):
         while True:
             if not(self.__setNewBlock()):
                 return 0
-    
             if not(self.readBlock()):
                 return 0
-            
             self.getBasicHeader()
-        
             if not isTimeInRange(self.dataOut.datatime.time(), self.startTime, self.endTime):
                 
                 print "[Reading] Block No. %d/%d -> %s [Skipping]" %(self.nReadBlocks,
@@ -1035,7 +1056,6 @@ class JRODataReader(JRODataIO):
                 continue
                 
             break
-        
         print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
                                                   self.processingHeaderObj.dataBlocksPerFile,
                                                   self.dataOut.datatime.ctime())
@@ -1250,26 +1270,60 @@ class JRODataReader(JRODataIO):
 
         if path == None:
             raise ValueError, "[Reading] The path is not valid"
+        
 
         if ext == None:
             ext = self.ext
+        
+        self.path = path
+        self.startDate = startDate
+        self.endDate = endDate
+        self.startTime = startTime
+        self.endTime = endTime
+        self.set = set
+        self.expLabel = expLabel
+        self.ext = ext
+        self.online = online
+        self.delay = delay
+        self.walk = walk
+        self.getblock = getblock
+        self.nTxs = nTxs
+        self.realtime = realtime
+        self.blocksize = blocksize
+        self.blocktime = blocktime
+       
+
+        if self.firstTime is True:
+            pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
+                                                                startTime=startTime, endTime=endTime,
+                                                                set=set, expLabel=expLabel, ext=ext,
+                                                                walk=walk)
+            filenameList = filenameList[:-1]
+
+            if pathList is not None and filenameList is not None and online:
+                    self.onlineWithDate = True
+                    online = False
+                    self.fileIndex = -1
+                    self.pathList = pathList
+                    self.filenameList = filenameList
+                    file_name = os.path.basename(filenameList[-1])
+                    basename, ext = os.path.splitext(file_name)
+                    last_set = int(basename[-3:])
 
         if online:
             print "[Reading] Searching files in online mode..."  
                    
-            for nTries in range( self.nTries ):
+            for nTries in range(self.nTries):
                 fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, 
                                                                                         expLabel=expLabel, 
                                                                                         ext=ext, 
                                                                                         walk=walk,
                                                                                         startDate=startDate,
-                                                                                        endDate=endDate,
-                                                                                        startTime=startTime, endTime=endTime,
+                                                                                        startTime=startTime,
                                                                                         set=set)
-                
+
                 if fullpath:
                     break
-                
                 print '[Reading] Waiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
                 sleep( self.delay )
             
@@ -1283,7 +1337,7 @@ class JRODataReader(JRODataIO):
             self.path = path
             self.foldercounter = foldercounter
             last_set = None
-        
+            
         else:
             print "[Reading] Searching files in offline mode ..."
             pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
@@ -1309,7 +1363,8 @@ class JRODataReader(JRODataIO):
             file_name = os.path.basename(filenameList[-1])
             basename, ext = os.path.splitext(file_name)
             last_set = int(basename[-3:])
-            
+
+        
         self.online = online
         self.realtime = realtime
         self.delay = delay
@@ -1319,6 +1374,7 @@ class JRODataReader(JRODataIO):
         self.nTxs = nTxs
         self.startTime = startTime
         self.endTime = endTime
+
         
         #Added-----------------
         self.selBlocksize = blocksize
@@ -1339,7 +1395,7 @@ class JRODataReader(JRODataIO):
                 return
 
         #         self.getBasicHeader()
-        
+
         if last_set != None:
             self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
         return
@@ -1360,7 +1416,7 @@ class JRODataReader(JRODataIO):
         
         self.dataOut.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
         
-#         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
+        #         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
         
         
     def getFirstHeader(self):
@@ -1415,7 +1471,7 @@ class JRODataReader(JRODataIO):
         
         if not(self.isConfig):
             
-#            self.dataOut = dataOut
+            #            self.dataOut = dataOut
             self.setup(**kwargs)
             self.isConfig = True
             
@@ -1538,7 +1594,7 @@ class JRODataWriter(JRODataIO):
             None
         """
         
-#        CALCULAR PARAMETROS
+    #        CALCULAR PARAMETROS
         
         sizeLongHeader = self.systemHeaderObj.size + self.radarControllerHeaderObj.size + self.processingHeaderObj.size
         self.basicHeaderObj.size = self.basicHeaderSize + sizeLongHeader
