@@ -330,10 +330,10 @@ class OperationConf():
     def getParameterValue(self, parameterName):
 
         parameterObj = self.getParameterObj(parameterName)
-
-#         if not parameterObj:
-#             return None
-
+        
+    #         if not parameterObj:
+    #             return None
+        
         value = parameterObj.getValue()
 
         return value
@@ -651,11 +651,11 @@ class ProcUnitConf():
     def printattr(self):
 
         print "%s[%s]: name = %s, datatype = %s, inputId = %s" %(self.ELEMENTNAME,
-                                                             self.id,
-                                                             self.name,
-                                                             self.datatype,
-                                                             self.inputId)
-
+                                                                self.id,
+                                                                self.name,
+                                                                self.datatype,
+                                                                self.inputId)
+        
         for opConfObj in self.opConfObjList:
             opConfObj.printattr()
 
@@ -710,13 +710,13 @@ class ProcUnitConf():
             sts = self.procUnitObj.call(opType = opConfObj.type,
                                         opName = opConfObj.name,
                                         opId = opConfObj.id,
-                                        )
-
-#             total_time = time.time() - ini
-#
-#             if total_time > 0.002:
-#                 print "%s::%s took %f seconds" %(self.name, opConfObj.name, total_time)
-
+                                        **kwargs)
+            
+            #             total_time = time.time() - ini
+            #              
+            #             if total_time > 0.002:
+            #                 print "%s::%s took %f seconds" %(self.name, opConfObj.name, total_time)
+                
             is_ok = is_ok or sts
 
         return is_ok
@@ -862,18 +862,18 @@ class ReadUnitConf(ProcUnitConf):
             opObj.addParameter(name=key, value=value, format=type(value).__name__)
 
         return opObj
-
-#     def makeXml(self, projectElement):
-#
-#         procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
-#         procUnitElement.set('id', str(self.id))
-#         procUnitElement.set('name', self.name)
-#         procUnitElement.set('datatype', self.datatype)
-#         procUnitElement.set('inputId', str(self.inputId))
-#
-#         for opConfObj in self.opConfObjList:
-#             opConfObj.makeXml(procUnitElement)
-
+    
+        #     def makeXml(self, projectElement):
+        #         
+        #         procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
+        #         procUnitElement.set('id', str(self.id))
+        #         procUnitElement.set('name', self.name)
+        #         procUnitElement.set('datatype', self.datatype)
+        #         procUnitElement.set('inputId', str(self.inputId))
+        #         
+        #         for opConfObj in self.opConfObjList:
+        #             opConfObj.makeXml(procUnitElement)
+    
     def readXml(self, upElement):
 
         self.id = upElement.get('id')
@@ -1115,8 +1115,8 @@ class Project():
 
         self.id = self.projectElement.get('id')
         self.name = self.projectElement.get('name')
-        self.description = self.projectElement.get('description')
-
+        self.description = self.projectElement.get('description')        
+        
         readUnitElementList = self.projectElement.iter(ReadUnitConf().getElementName())
 
         for readUnitElement in readUnitElementList:
@@ -1146,9 +1146,9 @@ class Project():
     def printattr(self):
 
         print "Project[%s]: name = %s, description = %s" %(self.id,
-                                                              self.name,
-                                                              self.description)
-
+                                                        self.name,
+                                                        self.description)
+        
         for procUnitConfObj in self.procUnitConfObjDict.values():
             procUnitConfObj.printattr()
 
@@ -1184,9 +1184,9 @@ class Project():
         import socket
 
         err = traceback.format_exception(sys.exc_info()[0],
-                                         sys.exc_info()[1],
-                                         sys.exc_info()[2])
-
+                                        sys.exc_info()[1],
+                                        sys.exc_info()[2])
+        
         print "***** Error occurred in %s *****" %(procUnitConfObj.name)
         print "***** %s" %err[-1]
 
@@ -1217,10 +1217,10 @@ class Project():
 
         adminObj = schainpy.admin.SchainNotify()
         adminObj.sendAlert(message=message,
-                           subject=subject,
-                           subtitle=subtitle,
-                           filename=self.filename)
-
+                        subject=subject,
+                        subtitle=subtitle,
+                        filename=self.filename)
+                    
     def isPaused(self):
         return 0
 

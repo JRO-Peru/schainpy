@@ -105,4 +105,9 @@ ENV/
 
 .vscode
 
-schainpy/scripts/
+.svn/
+*.png
+*.pyc
+schainpy/scripts
+
+schaingui/node_modules

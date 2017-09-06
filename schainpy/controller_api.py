@@ -90,7 +90,7 @@ class ControllerThread(threading.Thread, Project):
                     continue
 
                 if thisOpObj.name in plotterList:
-                    thisOpObj.type = "plotter"
+                    thisOpObj.type = "other"
 
     def setPlotterQueue(self, plotter_queue):
 
