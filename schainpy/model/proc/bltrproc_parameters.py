@@ -45,14 +45,24 @@ class BLTRParametersProc(ProcessingUnit):
         '''
         ProcessingUnit.__init__(self, **kwargs)
         self.dataOut = Parameters()
+        self.isConfig = False
+
+    def setup(self, mode):
+        '''
+        '''
+        self.dataOut.mode = mode
 
     def run(self, mode, snr_threshold=None):
         '''
-
         Inputs:
             mode = High resolution (0) or Low resolution (1) data
             snr_threshold = snr filter value
         '''
+
+        if not self.isConfig:
+            self.setup(mode)
+            self.isConfig = True
+
         if self.dataIn.type == 'Parameters':
             self.dataOut.copy(self.dataIn)
 

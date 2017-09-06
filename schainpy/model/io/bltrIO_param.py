@@ -325,13 +325,11 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.dataOut.data_output = self.buffer
         self.dataOut.utctimeInit = self.time
         self.dataOut.utctime = self.dataOut.utctimeInit
-        self.dataOut.counter_records = self.counter_records
-        self.dataOut.nrecords = self.nrecords
         self.dataOut.useLocalTime = False
         self.dataOut.paramInterval = 157
         self.dataOut.timezone = self.timezone
         self.dataOut.site = self.siteFile
-        self.dataOut.nrecords = self.nrecords
+        self.dataOut.nrecords = self.nrecords/self.nmodes
         self.dataOut.sizeOfFile = self.sizeOfFile
         self.dataOut.lat = self.lat
         self.dataOut.lon = self.lon
