@@ -42,7 +42,7 @@ setup(name="schainpy",
       scripts=['schainpy/gui/schainGUI'],
       ext_modules=[Extension("cSchain", ["schainpy/model/proc/extensions.c"], include_dirs=[numpy.get_include()])],
       install_requires=[
-                      "scipy >= 0.14.0",
+                      "scipy >= 0.13.0",
                       "h5py >= 2.2.1",
                       "matplotlib >= 1.4.2",
                       "pyfits >= 3.4",                      

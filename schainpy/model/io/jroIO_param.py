@@ -178,8 +178,8 @@ class ParamReader(ProcessingUnit):
         print "[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime)
         print
 
-        for i in range(len(filenameList)):
-            print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
+#         for i in range(len(filenameList)):
+#             print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
 
         self.filenameList = filenameList
         self.datetimeList = datetimeList
