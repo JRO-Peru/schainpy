@@ -704,18 +704,9 @@ class ProcUnitConf():
 
                 kwargs[parmConfObj.name] = parmConfObj.getValue()
 
-            #ini = time.time()
-
-            #print "\tRunning the '%s' operation with %s" %(opConfObj.name, opConfObj.id)
             sts = self.procUnitObj.call(opType = opConfObj.type,
                                         opName = opConfObj.name,
-                                        opId = opConfObj.id,
-                                        **kwargs)
-            
-            #             total_time = time.time() - ini
-            #              
-            #             if total_time > 0.002:
-            #                 print "%s::%s took %f seconds" %(self.name, opConfObj.name, total_time)
+                                        opId = opConfObj.id)
                 
             is_ok = is_ok or sts
 
