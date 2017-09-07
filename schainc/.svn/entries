@@ -1,37 +1,0 @@
-10
-
-dir
-1608
-http://jro-dev.igp.gob.pe/svn/jro_soft/schain/branches/schain_ebocanegra/schainc
-http://jro-dev.igp.gob.pe/svn/jro_soft/schain
-
-
-
-2017-04-12T22:42:28.822577Z
-1606
-ebocanegra
-
-
-svn:special svn:externals svn:needs-lock
-
-
-
-
-
-
-
-
-
-
-
-ea082a80-fb9f-4feb-b8d7-17586309b78c
-
-include
-dir
-
-schaincuda
-dir
-
-schainmpi
-dir
-

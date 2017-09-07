@@ -11,7 +11,6 @@ import numpy
 import fnmatch
 import inspect
 import time, datetime
-#import h5py
 import traceback
 
 try:
@@ -1058,10 +1057,10 @@ class JRODataReader(JRODataIO):
 
             break
 
-#         if self.verbose:
-#             print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
-#                                                       self.processingHeaderObj.dataBlocksPerFile,
-#                                                       self.dataOut.datatime.ctime())
+        if self.verbose:
+            print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
+                                                      self.processingHeaderObj.dataBlocksPerFile,
+                                                      self.dataOut.datatime.ctime())
         return 1
 
     def __readFirstHeader(self):

@@ -104,3 +104,5 @@ ENV/
 *.png
 *.pyc
 schainpy/scripts
+
+.vscode

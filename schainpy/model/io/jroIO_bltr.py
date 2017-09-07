@@ -10,10 +10,9 @@ import matplotlib.pyplot as plt
 
 import pylab as plb
 from scipy.optimize import curve_fit
-from scipy import asarray as ar,exp
+from scipy import asarray as ar, exp
 from scipy import stats
 
-from duplicity.path import Path
 from numpy.ma.core import getdata
 
 SPEED_OF_LIGHT = 299792458
@@ -427,7 +426,7 @@ class RecordHeaderBLTR(Header):
         return 1
 
         
-class BLTRReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODataReader):
+class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODataReader):
     
     path = None
     startDate = None
@@ -456,7 +455,7 @@ class BLTRReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODataReade
         #Eliminar de la base la herencia
         ProcessingUnit.__init__(self, **kwargs)
         
-#         self.isConfig = False
+        #self.isConfig = False
         
         #self.pts2read_SelfSpectra = 0
         #self.pts2read_CrossSpectra = 0
@@ -1152,43 +1151,5 @@ class BLTRReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODataReade
         
         
         
-class BLTRWriter(ProcessingUnit):
-    '''
-    classdocs
-    '''
-    
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        self.dataOut = None
-        
-        self.isConfig = False
-    
-    def setup(self, dataIn, path, blocksPerFile, set=0, ext=None):
-        '''
-        In this method we should set all initial parameters.
-        
-        Input:
-            dataIn        :        Input data will also be outputa data
-        
-        '''
-        self.dataOut = dataIn
-        
-        self.isConfig = True
-        
-        return
-        
-    def run(self, dataIn, **kwargs):
-        '''
-        This method will be called many times so here you should put all your code
-        
-        Inputs:
-        
-            dataIn        :        object with the data
-            
-        '''
-        
-        if not self.isConfig:
-            self.setup(dataIn, **kwargs)
+
     
