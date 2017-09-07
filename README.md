@@ -8,16 +8,16 @@ Signal Chain (SCh) is a radar data processing library developed using [Python](w
 
 Install system dependencies, clone the latest version from [git](http://jro-dev.igp.gob.pe/rhodecode/schain/) and install it as a normal python package.
 
+### Linux based system
 ```
 $ sudo apt-get install python-pip python-dev gfortran libpng-dev freetype* libblas-dev liblapack-dev libatlas-base-dev python-qt4 python-tk libssl-dev libhdf5-dev
 $ sudo pip install numpy
 $ git clone http://jro-dev.igp.gob.pe/rhodecode/schain/
 $ cd schain
 $ sudo pip install ./
+
 ```
-
-**Its recommended to install schain in a virtual environment**
-
+**It is recommended to install schain in a virtual environment**
 ```
 $ sudo pip install virtualenv
 $ virtualenv /path/to/virtual --system-site-packages
@@ -25,6 +25,20 @@ $ source /path/to/virtual/bin/activate
 (virtual) $ cd schain
 (virtual) $ pip install ./
 ```
+
+### MAC Os 
+```
+$ brew install cartr/qt4/pyqt
+$ git clone http://jro-dev.igp.gob.pe/rhodecode/schain/
+$ cd schain
+$ pip install ./
+```
+
+if ```pip install ./``` does not work, install a proper python enviroment, and repeat the steps.
+```
+$ brew install python
+```
+
 
 ## First Script
 
