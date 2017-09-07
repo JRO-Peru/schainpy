@@ -1006,14 +1006,14 @@ class PrecipitationProc(Operation):
         """ 
         Constants:
         
-        Pt:     Transmission Power               dB   
-        Gt:     Transmission Gain                dB  
-        Gr:     Reception Gain                   dB   
-        Lambda: Wavelenght                       m   
-        aL:      Attenuation loses               dB  
-        tauW:   Width of transmission pulse      s  
-        ThetaT: Transmission antenna bean angle  rad 
-        ThetaR: Reception antenna beam angle     rad   
+        Pt:     Transmission Power               dB        5kW
+        Gt:     Transmission Gain                dB        24.7 dB
+        Gr:     Reception Gain                   dB        18.5 dB
+        Lambda: Wavelenght                       m         0.6741 m
+        aL:     Attenuation loses                dB        
+        tauW:   Width of transmission pulse      s          
+        ThetaT: Transmission antenna bean angle  rad       0.1656317 rad
+        ThetaR: Reception antenna beam angle     rad       0.36774087 rad  
         
         """
         Numerator = ( (4*numpy.pi)**3 * aL**2 * 16 * numpy.log(2) )
@@ -1077,7 +1077,7 @@ class FullSpectralAnalysis(Operation):
         
         data = dataOut.data_pre
         noise = dataOut.noise
-        print 'noise',noise
+        #print 'noise',noise
         #SNRdB = 10*numpy.log10(dataOut.data_SNR)
         
         FirstMoment = numpy.average(dataOut.data_param[:,1,:],0)
@@ -1093,25 +1093,28 @@ class FullSpectralAnalysis(Operation):
         velocityX=[]
         velocityY=[]
         velocityV=[]
+        PhaseLine=[]
         
         dbSNR = 10*numpy.log10(dataSNR)
         dbSNR = numpy.average(dbSNR,0)
         for Height in range(nHeights):
             
-            [Vzon,Vmer,Vver, GaussCenter]= self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, VelRange, dbSNR[Height], SNRlimit)
+            [Vzon,Vmer,Vver, GaussCenter, PhaseSlope]= self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, VelRange, dbSNR[Height], SNRlimit)
+            
+            PhaseLine = numpy.append(PhaseLine, PhaseSlope)
             
             if abs(Vzon)<100. and abs(Vzon)> 0.:
                 velocityX=numpy.append(velocityX, Vzon)#Vmag
                
             else:
-                print 'Vzon',Vzon
+                #print 'Vzon',Vzon
                 velocityX=numpy.append(velocityX, numpy.NaN)
                 
             if abs(Vmer)<100. and abs(Vmer) > 0.:
                 velocityY=numpy.append(velocityY, Vmer)#Vang
                 
             else:
-                print 'Vmer',Vmer
+                #print 'Vmer',Vmer
                 velocityY=numpy.append(velocityY, numpy.NaN)
             
             if dbSNR[Height] > SNRlimit:
@@ -1123,7 +1126,8 @@ class FullSpectralAnalysis(Operation):
 #                 FirstMoment[Height] = numpy.NaN
 #                 velocityX[Height] = numpy.NaN
 #                 velocityY[Height] = numpy.NaN
-                
+        
+        
         
         data_output[0]=numpy.array(velocityX)
         data_output[1]=numpy.array(velocityY)
@@ -1135,6 +1139,7 @@ class FullSpectralAnalysis(Operation):
         print 'velocityX',data_output[0]
         print ' '
         print 'velocityY',data_output[1]
+        print 'PhaseLine',PhaseLine
         #print numpy.array(velocityY)
         print ' '
         #print 'SNR'
@@ -1144,6 +1149,7 @@ class FullSpectralAnalysis(Operation):
         
         
         dataOut.data_output=data_output
+        
         return
     
     
@@ -1164,7 +1170,7 @@ class FullSpectralAnalysis(Operation):
         phase=numpy.ones([spc.shape[0],spc.shape[1]])
         CSPCSamples=numpy.ones([spc.shape[0],spc.shape[1]],dtype=numpy.complex_)
         coherence=numpy.ones([spc.shape[0],spc.shape[1]])
-        PhaseSlope=numpy.ones(spc.shape[0])
+        PhaseSlope=numpy.zeros(spc.shape[0])
         PhaseInter=numpy.ones(spc.shape[0])
         xFrec=VelRange
         
@@ -1202,11 +1208,11 @@ class FullSpectralAnalysis(Operation):
         print ' ' 
         
         #print 'dataSNR', dbSNR.shape, dbSNR[0,40:120]
-        print 'SmoothSPC', SmoothSPC.shape, SmoothSPC[0:20] 
-        print 'noise',noise   
-        print 'zline',zline.shape, zline[0:20] 
-        print 'FactNorm',FactNorm.shape, FactNorm[0:20]
-        print 'FactNorm suma', numpy.sum(FactNorm)
+        #print 'SmoothSPC', SmoothSPC.shape, SmoothSPC[0:20] 
+        #print 'noise',noise   
+        #print 'zline',zline.shape, zline[0:20] 
+        #print 'FactNorm',FactNorm.shape, FactNorm[0:20]
+        #print 'FactNorm suma', numpy.sum(FactNorm)
         
         for i in range(spc.shape[0]):
             
@@ -1227,12 +1233,12 @@ class FullSpectralAnalysis(Operation):
             
             phase[i] = self.moving_average( numpy.arctan2(CSPCSamples[i].imag, CSPCSamples[i].real),N=1)#*180/numpy.pi
         
-        print 'cspcLine', cspcLine.shape, cspcLine[0:20]
-        print 'CSPCFactor', CSPCFactor#, CSPCFactor[0:20]
-        print numpy.sum(ySamples[chan_index0]), numpy.sum(ySamples[chan_index1]), -noise[i]
-        print 'CSPCNorm', CSPCNorm.shape, CSPCNorm[0:20]
-        print 'CSPCNorm suma', numpy.sum(CSPCNorm)
-        print 'CSPCSamples', CSPCSamples.shape, CSPCSamples[0,0:20]
+        #print 'cspcLine', cspcLine.shape, cspcLine[0:20]
+        #print 'CSPCFactor', CSPCFactor#, CSPCFactor[0:20]
+        #print numpy.sum(ySamples[chan_index0]), numpy.sum(ySamples[chan_index1]), -noise[i]
+        #print 'CSPCNorm', CSPCNorm.shape, CSPCNorm[0:20]
+        #print 'CSPCNorm suma', numpy.sum(CSPCNorm)
+        #print 'CSPCSamples', CSPCSamples.shape, CSPCSamples[0,0:20]
         
         '''****** Getting fij width ******'''
         
@@ -1246,17 +1252,17 @@ class FullSpectralAnalysis(Operation):
         meanGauss=sum(xSamples*yMean) / len(xSamples)
         sigma=sum(yMean*(xSamples-meanGauss)**2) / len(xSamples)
         
-        print '****************************'
-        print 'len(xSamples): ',len(xSamples)
-        print 'yMean: ', yMean.shape, yMean[0:20]
-        print 'ySamples', ySamples.shape, ySamples[0,0:20]
-        print 'xSamples: ',xSamples.shape, xSamples[0:20]
+        #print '****************************'
+        #print 'len(xSamples): ',len(xSamples)
+        #print 'yMean: ', yMean.shape, yMean[0:20]
+        #print 'ySamples', ySamples.shape, ySamples[0,0:20]
+        #print 'xSamples: ',xSamples.shape, xSamples[0:20]
         
-        print 'meanGauss',meanGauss
-        print 'sigma',sigma
+        #print 'meanGauss',meanGauss
+        #print 'sigma',sigma
         
         #if (abs(meanGauss/sigma**2) > 0.0001) : #0.000000001):
-        if dbSNR > SNRlimit :
+        if dbSNR > SNRlimit and abs(meanGauss/sigma**2) > 0.0001:
             try:    
                 popt,pcov = curve_fit(self.gaus,xSamples,yMean,p0=[1,meanGauss,sigma])
                 
@@ -1302,9 +1308,9 @@ class FullSpectralAnalysis(Operation):
         else:
             Range = numpy.array([0,0])
         
-        print ' '
-        print 'GCpos',GCpos, ( len(xFrec)- len(xFrec)*0.1)
-        print 'Rangpos',Rangpos
+        #print ' '
+        #print 'GCpos',GCpos, ( len(xFrec)- len(xFrec)*0.1)
+        #print 'Rangpos',Rangpos
         print 'RANGE: ', Range
         FrecRange=xFrec[Range[0]:Range[1]]
         
@@ -1363,8 +1369,9 @@ class FullSpectralAnalysis(Operation):
             Vmag=numpy.sqrt(Vzon**2+Vmer**2)
             Vang=numpy.arctan2(Vmer,Vzon)
             Vver=xFrec[Vpos]
+        print 'Height',Height    
         print 'vzon y vmer', Vzon, Vmer
-        return Vzon, Vmer, Vver, GaussCenter
+        return Vzon, Vmer, Vver, GaussCenter, PhaseSlope
             
 class SpectralMoments(Operation):
     

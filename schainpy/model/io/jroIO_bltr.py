@@ -762,6 +762,7 @@ class BLTRReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODataReade
                 #print ' '
                 #print ' '
                 #Height=35
+                
                 for i in range(self.nRdPairs):    
                     
                     chan_index0 = self.dataOut.pairsList[i][0]

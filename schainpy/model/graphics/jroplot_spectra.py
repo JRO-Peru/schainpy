@@ -7,8 +7,11 @@ import os
 import datetime
 import numpy
 
+import matplotlib.pyplot as plt
+
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
+from matplotlib.pyplot import savefig
 
 class SpectraPlot(Figure):
 
@@ -39,6 +42,8 @@ class SpectraPlot(Figure):
 
         self.__xfilter_ena = False
         self.__yfilter_ena = False
+        
+        self.indice=1
 
     def getSubplots(self):
 
@@ -149,6 +154,27 @@ class SpectraPlot(Figure):
 
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Spectra"
+                
+        
+                
+        print 'len de X',len(x), numpy.shape(x), 'len de spc line',len(dataOut.data_spc[1,:,15]), numpy.shape(dataOut.data_spc) 
+        print 'Altura:', y[0], y[1], y[13], y[14], y[10]
+        #a=z[1,:,15]
+        
+#         fig = plt.figure(10+self.indice)
+#         plt.plot( x[0:128], zdB[0,:,10] )
+#         plt.axis([-12, 12, 15, 50])
+#         plt.title(" %s" %(  '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S")))   )
+#         plt.ylabel('Intensidad [dB]')
+#         plt.xlabel('Velocidad [m/s]')
+#         fig.savefig('/home/erick/Documents/Pics/to{}.png'.format(self.indice))
+#         
+#         plt.show()  
+#         
+#         self.indice=self.indice+1
+        
+
+
         if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
             title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
 
@@ -217,6 +243,7 @@ class SpectraPlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
+        
 
 class CrossSpectraPlot(Figure):
 
@@ -244,6 +271,8 @@ class CrossSpectraPlot(Figure):
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
+        
+        self.indice=0
 
     def getSubplots(self):
 
@@ -385,6 +414,7 @@ class CrossSpectraPlot(Figure):
             self.isConfig = True
 
         self.setWinTitle(title)
+  
 
         for i in range(self.nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
@@ -413,6 +443,19 @@ class CrossSpectraPlot(Figure):
             coherence = numpy.abs(coherenceComplex)
 #            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
             phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
+            
+            
+#             print 'FASE', numpy.shape(phase), y[10]
+#             fig = plt.figure(10+self.indice)
+#             plt.plot( x[0:128],phase[:,10] )
+#             #plt.axis([-12, 12, 15, 50])
+#             plt.title("%s" %(  '%s %s, Channel %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S") , i)))
+#             plt.ylabel('Desfase [grados]')
+#             plt.xlabel('Velocidad [m/s]')
+#             fig.savefig('/home/erick/Documents/Pics/to{}.png'.format(self.indice))
+#             
+#             plt.show()  
+#             self.indice=self.indice+1
 
             title = "Coherence Ch%d * Ch%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+2]
