@@ -1277,13 +1277,13 @@ class JRODataReader(JRODataIO):
 
     def setup(self,
                 path=None,
-                startDate=None,
-                endDate=None,
-                startTime=datetime.time(0,0,0),
-                endTime=datetime.time(23,59,59),
-                set=None,
-                expLabel = "",
-                ext = None,
+                startDate=None, 
+                endDate=None, 
+                startTime=datetime.time(0,0,0), 
+                endTime=datetime.time(23,59,59), 
+                set=None, 
+                expLabel = "", 
+                ext = None, 
                 online = False,
                 delay = 60,
                 walk = True,
@@ -1291,76 +1291,8 @@ class JRODataReader(JRODataIO):
                 nTxs = 1,
                 realtime=False,
                 blocksize=None,
-                blocktime=None,
-                queue=None,
-                skip=None,
-                cursor=None,
-                warnings=True,
-                verbose=True,
-                server=None):
-        if server is not None:
-            if 'tcp://' in server:
-                address = server
-            else:
-                address = 'ipc:///tmp/%s' % server
-            self.server = address
-            self.context = zmq.Context()
-            self.receiver = self.context.socket(zmq.PULL)
-            self.receiver.connect(self.server)
-            time.sleep(0.5)
-            print '[Starting] ReceiverData from {}'.format(self.server)
-        else: 
-            self.server = None
-            if path == None:
-                raise ValueError, "[Reading] The path is not valid"
+                blocktime=None):
 
-            if ext == None:
-                ext = self.ext
-
-            if online:
-                print "[Reading] Searching files in online mode..."
-
-                for nTries in range( self.nTries ):
-                    fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(path=path, expLabel=expLabel, ext=ext, walk=walk, set=set)
-
-                    if fullpath:
-                        break
-
-                    print '[Reading] Waiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries+1)
-                    sleep( self.delay )
-
-                if not(fullpath):
-                    print "[Reading] There 'isn't any valid file in %s" % path
-                    return
-
-                self.year = year
-                self.doy  = doy
-                self.set  = set - 1
-                self.path = path
-                self.foldercounter = foldercounter
-                last_set = None
-            else:
-                print "[Reading] Searching files in offline mode ..."
-                pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
-                                                                startTime=startTime, endTime=endTime,
-                                                                set=set, expLabel=expLabel, ext=ext,
-                                                                walk=walk, cursor=cursor,
-                                                                skip=skip, queue=queue)
-
-<<<<<<< HEAD
-                if not(pathList):
-                #      print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
-                #                                          datetime.datetime.combine(startDate,startTime).ctime(),
-                #                                           datetime.datetime.combine(endDate,endTime).ctime())
-
-                #     sys.exit(-1)
-
-                    self.fileIndex = -1
-                    self.pathList = []
-                    self.filenameList = []
-                    return
-
-=======
         if path == None:
             raise ValueError, "[Reading] The path is not valid"
         
@@ -1482,58 +1414,16 @@ class JRODataReader(JRODataIO):
             else:
                 print "[Reading] No files"
                 
->>>>>>> online_data_hour
                 self.fileIndex = -1
-                self.pathList = pathList
-                self.filenameList = filenameList
-                file_name = os.path.basename(filenameList[-1])
-                basename, ext = os.path.splitext(file_name)
-                last_set = int(basename[-3:])
+                self.pathList = []
+                self.filenameList = []
+                return
 
-            self.online = online
-            self.realtime = realtime
-            self.delay = delay
-            ext = ext.lower()
-            self.ext = ext
-            self.getByBlock = getblock
-            self.nTxs = nTxs
-            self.startTime = startTime
-            self.endTime = endTime
-
-            #Added-----------------
-            self.selBlocksize = blocksize
-            self.selBlocktime = blocktime
-
-            # Verbose-----------
-            self.verbose = verbose
-            self.warnings = warnings
-
-<<<<<<< HEAD
-            if not(self.setNextFile()):
-                if (startDate!=None) and (endDate!=None):
-                    print "[Reading] No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
-                elif startDate != None:
-                    print "[Reading] No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime())
-                else:
-                    print "[Reading] No files"
-
-                    self.fileIndex = -1
-                    self.pathList = []
-                    self.filenameList = []
-                    return
-
-            #   self.getBasicHeader()
-
-            if last_set != None:
-                self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
-            return
-=======
         #         self.getBasicHeader()
 
         if last_set != None:
             self.dataOut.last_block = last_set * self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
         return
->>>>>>> online_data_hour
 
     def getBasicHeader(self):
 
