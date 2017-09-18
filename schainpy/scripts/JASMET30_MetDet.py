@@ -74,7 +74,6 @@ opObj11.addParameter(name='zmax', value='50.0', format='float')
 
 #---------------------------    Parameters Processing Unit    ------------------------------------
 
-<<<<<<< HEAD
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=procUnitConfObj0.getId())
 #     
 opObj10 = procUnitConfObj1.addOperation(name='SMDetection', optype='other')
@@ -92,23 +91,5 @@ opObj12.addParameter(name='mode',value='2',format='int')
 #--------------------------------------------------------------------------------------------------
 
 controllerObj.start()
-=======
-# procUnitConfObj1 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=procUnitConfObj0.getId())
-# #     
-# opObj10 = procUnitConfObj1.addOperation(name='SMDetection', optype='other')
-# opObj10.addParameter(name='azimuth', value='45', format='float') 
-# opObj10.addParameter(name='hmin', value='60', format='float') 
-# opObj10.addParameter(name='hmax', value='120', format='float')
 
-# opObj12 = procUnitConfObj1.addOperation(name='ParamWriter', optype='other')
-# opObj12.addParameter(name='path', value=pathfile)
-# opObj12.addParameter(name='blocksPerFile', value='1000', format='int')
-# opObj12.addParameter(name='metadataList',value='type,heightList,paramInterval,timeZone',format='list')
-# opObj12.addParameter(name='dataList',value='data_param,utctime',format='list')
-# opObj12.addParameter(name='mode',value='2',format='int')
-     
-#--------------------------------------------------------------------------------------------------
-controllerObj.createObjects()
-controllerObj.connectObjects()
-controllerObj.run()
->>>>>>> online_data_hour
+

@@ -119,11 +119,6 @@ class Metadata(object):
             self.parmConfObjList.append(parmConfObj)
 
 class FitsWriter(Operation):
-    parameters = { 
-        'path': global_type_string, 
-        'dataBlocksPerFile': global_type_integer, 
-        'metadatafile': global_type_string,
-    }
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
         self.isConfig = False

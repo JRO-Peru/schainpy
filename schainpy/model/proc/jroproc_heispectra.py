@@ -162,12 +162,6 @@ class IncohInt4SpectraHeis(Operation):
     __dataReady = False
 
     n = None
-    parameters = { 
-        'n': global_type_float,
-        'timeInterval': global_type_integer,
-        'overlapping': global_type_boolean,
-    }
-
 
     def __init__(self, **kwargs):
 

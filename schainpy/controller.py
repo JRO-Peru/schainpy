@@ -903,7 +903,7 @@ class ReadUnitConf(ProcUnitConf):
                 self.startTime = opConfObj.getParameterValue('startTime')
                 self.endTime = opConfObj.getParameterValue('endTime')
 
-class Project():
+class Project(Process):
 
     id = None
     name = None
@@ -917,7 +917,7 @@ class Project():
     plotterQueue = None
 
     def __init__(self, plotter_queue=None):
-
+        Process.__init__(self)
         self.id = None
         self.name = None
         self.description = None
@@ -1268,7 +1268,11 @@ class Project():
         raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
 
 
-    def run(self):
+    def run(self, filename=None):
+        
+        # self.writeXml(filename)
+        self.createObjects()
+        self.connectObjects()
 
         print
         print "*"*60
@@ -1319,10 +1323,3 @@ class Project():
             procUnitConfObj.close()
 
         print "Process finished"
-
-    def start(self, filename=None):
-
-        self.writeXml(filename)
-        self.createObjects()
-        self.connectObjects()
-        self.run()

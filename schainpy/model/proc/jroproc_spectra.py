@@ -742,12 +742,6 @@ class IncohInt(Operation):
 
     __timeInterval = None
 
-    parameters = { 
-        'n': global_type_float,
-        'timeInterval': global_type_integer,
-        'overlapping': global_type_boolean,
-    }
-
     n = None
 
 

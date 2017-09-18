@@ -602,14 +602,6 @@ class ParamWriter(Operation):
 
     lastTime = None
 
-    parameters = { 
-        'path': global_type_string,
-        'blocksPerFile':global_type_integer, 
-        'metadataList': global_type_list, 
-        'dataList': global_type_list,  
-        'mode': global_type_integer,
-    }
-
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
         self.isConfig = False

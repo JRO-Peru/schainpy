@@ -1291,7 +1291,9 @@ class JRODataReader(JRODataIO):
                 nTxs = 1,
                 realtime=False,
                 blocksize=None,
-                blocktime=None):
+                blocktime=None,
+                verbose=True,
+                **kwargs):
 
         if path == None:
             raise ValueError, "[Reading] The path is not valid"
@@ -1300,6 +1302,7 @@ class JRODataReader(JRODataIO):
         if ext == None:
             ext = self.ext
         
+        self.verbose=verbose
         self.path = path
         self.startDate = startDate
         self.endDate = endDate
@@ -1323,7 +1326,7 @@ class JRODataReader(JRODataIO):
                                                                 startTime=startTime, endTime=endTime,
                                                                 set=set, expLabel=expLabel, ext=ext,
                                                                 walk=walk)
-            filenameList = filenameList[:-1]
+            if filenameList is not None: filenameList = filenameList[:-1]
 
             if pathList is not None and filenameList is not None and online:
                     self.onlineWithDate = True
@@ -1362,7 +1365,6 @@ class JRODataReader(JRODataIO):
             self.path = path
             self.foldercounter = foldercounter
             last_set = None
-            
         else:
             print "[Reading] Searching files in offline mode ..."
             pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
@@ -1790,7 +1792,7 @@ class JRODataWriter(JRODataIO):
 
         return 1
 
-    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=None, ext=None, datatype=4):
+    def setup(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=None, ext=None, datatype=4, verbose=True):
         """
         Setea el tipo de formato en la cual sera guardada la data y escribe el First Header
 
