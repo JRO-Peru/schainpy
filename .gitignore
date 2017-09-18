@@ -106,3 +106,4 @@ ENV/
 schainpy/scripts
 .vscode
 schaingui/node_modules
+trash
