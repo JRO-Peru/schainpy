@@ -3,6 +3,29 @@
 $Author: murco $
 $Id: jroproc_base.py 1 2012-11-12 18:56:07Z murco $
 '''
+import inspect
+from fuzzywuzzy import process
+
+def checkKwargs(method, kwargs):
+    currentKwargs = kwargs
+    choices = inspect.getargspec(method).args
+    try:
+        choices.remove('self')
+    except Exception as e:
+        pass
+
+    try:
+        choices.remove('dataOut')
+    except Exception as e:
+        pass
+
+    for kwarg in kwargs:
+        fuzz = process.extractOne(kwarg, choices)
+        if fuzz is None:
+            continue
+        if fuzz[1] < 100:
+            raise Exception('\x1b[0;32;40mDid you mean {} instead of {} in {}? \x1b[0m'.
+                            format(fuzz[0], kwarg, method.__self__.__class__.__name__))
 
 class ProcessingUnit(object):
 
@@ -27,7 +50,7 @@ class ProcessingUnit(object):
     isConfig = False
 
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
 
         self.dataIn = None
         self.dataInList = []
@@ -35,8 +58,23 @@ class ProcessingUnit(object):
         self.dataOut = None
 
         self.operations2RunDict = {}
+        self.operationKwargs = {}
 
         self.isConfig = False
+
+        self.args = args
+        self.kwargs = kwargs
+        checkKwargs(self.run, kwargs)
+
+    def getAllowedArgs(self):
+        return inspect.getargspec(self.run).args
+
+    def addOperationKwargs(self, objId, **kwargs):
+        '''
+        '''
+
+        self.operationKwargs[objId] = kwargs
+
 
     def addOperation(self, opObj, objId):
 
@@ -77,7 +115,7 @@ class ProcessingUnit(object):
 
         raise NotImplementedError
 
-    def callMethod(self, name, **kwargs):
+    def callMethod(self, name, opId):
 
         """
         Ejecuta el metodo con el nombre "name" y con argumentos **kwargs de la propia clase.
@@ -97,24 +135,27 @@ class ProcessingUnit(object):
                 return False
         else:
             #Si no es un metodo RUN la entrada es la misma dataOut (interna)
-            if self.dataOut.isEmpty():
+            if self.dataOut is not None and self.dataOut.isEmpty():
                 return False
 
         #Getting the pointer to method
         methodToCall = getattr(self, name)
 
         #Executing the self method
-        methodToCall(**kwargs)
 
-        #Checkin the outputs
-
-#         if name == 'run':
-#             pass
-#         else:
-#             pass
-#
-#         if name != 'run':
-#             return True
+        if hasattr(self, 'mp'):
+            if name=='run':
+                if self.mp is False:
+                    self.mp = True
+                    self.start()
+            else:
+                self.operationKwargs[opId]['parent'] = self.kwargs
+                methodToCall(**self.operationKwargs[opId])
+        else:
+            if name=='run':
+                methodToCall(**self.kwargs)
+            else:
+                methodToCall(**self.operationKwargs[opId])
 
         if self.dataOut is None:
             return False
@@ -124,7 +165,7 @@ class ProcessingUnit(object):
 
         return True
 
-    def callObject(self, objId, **kwargs):
+    def callObject(self, objId):
 
         """
         Ejecuta la operacion asociada al identificador del objeto "objId"
@@ -140,17 +181,25 @@ class ProcessingUnit(object):
             None
         """
 
-        if self.dataOut.isEmpty():
+        if self.dataOut is not None and self.dataOut.isEmpty():
             return False
 
         externalProcObj = self.operations2RunDict[objId]
 
-        externalProcObj.run(self.dataOut, **kwargs)
+        if hasattr(externalProcObj, 'mp'):
+            if externalProcObj.mp is False:
+                externalProcObj.kwargs['parent'] = self.kwargs
+                self.operationKwargs[objId] = externalProcObj.kwargs
+                externalProcObj.mp = True
+                externalProcObj.start()
+        else:
+            externalProcObj.run(self.dataOut, **externalProcObj.kwargs)
+            self.operationKwargs[objId] = externalProcObj.kwargs
+
 
         return True
 
-    def call(self, opType, opName=None, opId=None, **kwargs):
-
+    def call(self, opType, opName=None, opId=None):
         """
         Return True si ejecuta la operacion interna nombrada "opName" o la operacion externa
         identificada con el id "opId"; con los argumentos "**kwargs".
@@ -194,7 +243,7 @@ class ProcessingUnit(object):
             if not opName:
                 raise ValueError, "opName parameter should be defined"
 
-            sts = self.callMethod(opName, **kwargs)
+            sts = self.callMethod(opName, opId)
 
         elif opType == 'other' or opType == 'external' or opType == 'plotter':
 
@@ -204,7 +253,7 @@ class ProcessingUnit(object):
             if opId not in self.operations2RunDict.keys():
                 raise ValueError, "Any operation with id=%s has been added" %str(opId)
 
-            sts = self.callObject(opId, **kwargs)
+            sts = self.callObject(opId)
 
         else:
             raise ValueError, "opType should be 'self', 'external' or 'plotter'; and not '%s'" %opType
@@ -221,7 +270,7 @@ class ProcessingUnit(object):
         return self.dataOut
 
     def checkInputs(self):
-        
+
         for thisDataIn in self.dataInList:
 
             if thisDataIn.isEmpty():
@@ -255,10 +304,15 @@ class Operation(object):
     __buffer = None
     isConfig = False
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         self.__buffer = None
         self.isConfig = False
+        self.kwargs = kwargs
+        checkKwargs(self.run, kwargs)
+
+    def getAllowedArgs(self):
+        return inspect.getargspec(self.run).args
 
     def setup(self):
 

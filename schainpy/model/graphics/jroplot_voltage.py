@@ -13,8 +13,8 @@ class Scope(Figure):
     
     isConfig = None
     
-    def __init__(self):
-        
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.WIDTH = 300
         self.HEIGHT = 200

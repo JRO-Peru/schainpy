@@ -1,11 +1,6 @@
 
 import os, sys
 
-path = os.path.split(os.getcwd())[0]
-path = os.path.split(path)[0]
-
-sys.path.insert(0, path)
-
 from schainpy.controller import Project
 
 controllerObj = Project()
@@ -18,7 +13,7 @@ controllerObj.setup(id = '002', name='script02', description="JASMET Meteor Dete
 # path = '/mnt/jars/2016_08/NOCHE'
 # path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/DIA' 
 # path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/NOCHE' 
-path = '/media/joscanoa/DATA_JASMET/JASMET/2016_08/DIA' 
+path = '/home/nanosat/data/jasmet' 
 
 #Path para los graficos
 pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
@@ -27,8 +22,8 @@ pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
 pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/meteor')
 
 #Fechas para busqueda de archivos
-startDate = '2016/08/29'
-endDate = '2016/09/11'
+startDate = '2010/08/29'
+endDate = '2017/09/11'
 #Horas para busqueda de archivos
 startTime = '00:00:00'
 endTime = '23:59:59'
@@ -84,14 +79,7 @@ opObj12.addParameter(name='blocksPerFile', value='1000', format='int')
 opObj12.addParameter(name='metadataList',value='type,heightList,paramInterval,timeZone',format='list')
 opObj12.addParameter(name='dataList',value='data_param,utctime',format='list')
 opObj12.addParameter(name='mode',value='2',format='int')
-     
+
 #--------------------------------------------------------------------------------------------------
 
-print "Escribiendo el archivo XML"
-controllerObj.writeXml("JASMET02.xml")
-print "Leyendo el archivo XML"
-controllerObj.readXml("JASMET02.xml")
-
-controllerObj.createObjects()
-controllerObj.connectObjects()
-controllerObj.run()
+controllerObj.start()
