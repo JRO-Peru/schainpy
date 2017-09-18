@@ -166,12 +166,21 @@ class Remote(Thread):
             return 0
 
         self.mutex.acquire()
+<<<<<<< HEAD
         #         init = time.time()
         #         
         #         while(self.bussy):
         #             sleep(0.1)
         #             if time.time() - init > 2*self.period:
         #                 return 0
+=======
+    #         init = time.time()
+    #         
+    #         while(self.bussy):
+    #             sleep(0.1)
+    #             if time.time() - init > 2*self.period:
+    #                 return 0
+>>>>>>> online_data_hour
             
         self.fileList = fileList
         self.mutex.release()
@@ -196,7 +205,11 @@ class Remote(Thread):
             if self.stopFlag:
                 break
                 
+<<<<<<< HEAD
             #   self.bussy = True
+=======
+    #             self.bussy = True
+>>>>>>> online_data_hour
             self.mutex.acquire()
 
             print "[Remote Server] Opening %s" %self.__server
@@ -619,6 +632,7 @@ class SendToServer(ProcessingUnit):
             filenameList = glob.glob1(thisFolder, '*%s' %self.ext)
 
             if len(filenameList) < 1:
+
                 continue
 
             for thisFile in filenameList:
