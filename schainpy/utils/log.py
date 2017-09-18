@@ -17,26 +17,20 @@ SCHAINPY - LOG
 
 import click
 
-
 def warning(message):
     click.echo(click.style('[WARNING] - ' + message, fg='yellow'))
-    pass
 
 
 def error(message):
-    click.echo(click.style('[ERROR] - ' + message, fg='red'))
-    pass
+    click.echo(click.style('[ERROR] - ' + message, fg='red', bg='black'))
 
 
 def success(message):
     click.echo(click.style(message, fg='green'))
-    pass
 
 
-def log(message):
-    click.echo('[LOG] - ' + message)
-    pass
-
+def log(message, topic='LOG'):
+    click.echo('[{}] - {}'.format(topic, message))
 
 def makelogger(topic, bg='reset', fg='reset'):
     def func(message):

@@ -42,11 +42,15 @@ setup(name="schainpy",
                     'schainpy.gui.figures': ['*.png','*.jpg'],
                     },
       include_package_data=False,
-      scripts =['schainpy/gui/schainGUI',
-                'schainpy/scripts/schain'],
+      scripts =['schainpy/gui/schainGUI'],
       ext_modules=[
         Extension("cSchain", ["schainpy/model/proc/extensions.c"]
       )],
+      entry_points={
+        'console_scripts': [
+            'schain = schaincli.cli:main',
+        ],
+      },
       cmdclass={'build_ext':build_ext},
       setup_requires=["numpy >= 1.11.2"],
       install_requires=[
