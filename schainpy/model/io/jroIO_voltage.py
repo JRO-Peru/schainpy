@@ -180,17 +180,10 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     def getBlockDimension(self):
         """
-<<<<<<< HEAD
-        Obtiene la cantidad de puntos a leer por cada bloque de datos
-
-        Affected:
-            self.blocksize
-=======
             Obtiene la cantidad de puntos a leer por cada bloque de datos
             
             Affected:
                 self.blocksize
->>>>>>> online_data_hour
 
             Return:
                 None
@@ -202,28 +195,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     def readBlock(self):
         """
-<<<<<<< HEAD
-        readBlock lee el bloque de datos desde la posicion actual del puntero del archivo
-        (self.fp) y actualiza todos los parametros relacionados al bloque de datos
-        (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
-        es seteado a 0
-
-        Inputs:
-            None
-
-        Return:
-            None
-
-        Affected:
-            self.profileIndex
-            self.datablock
-            self.flagIsNewFile
-            self.flagIsNewBlock
-            self.nTotalBlocks
-
-        Exceptions:
-            Si un bloque leido no es un bloque valido
-=======
             readBlock lee el bloque de datos desde la posicion actual del puntero del archivo
             (self.fp) y actualiza todos los parametros relacionados al bloque de datos
             (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
@@ -244,7 +215,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
                 
             Exceptions: 
                 Si un bloque leido no es un bloque valido
->>>>>>> online_data_hour
         """
         
         # if self.server is not None:
@@ -438,41 +408,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     def getData(self):
         """
-<<<<<<< HEAD
-        getData obtiene una unidad de datos del buffer de lectura, un perfil,  y la copia al objeto self.dataOut
-        del tipo "Voltage" con todos los parametros asociados a este (metadata). cuando no hay datos
-        en el buffer de lectura es necesario hacer una nueva lectura de los bloques de datos usando
-        "readNextBlock"
-
-        Ademas incrementa el contador del buffer "self.profileIndex" en 1.
-
-        Return:
-
-            Si el flag self.getByBlock ha sido seteado el bloque completo es copiado a self.dataOut y el self.profileIndex
-            es igual al total de perfiles leidos desde el archivo.
-
-            Si self.getByBlock == False:
-
-                self.dataOut.data = buffer[:, thisProfile, :]
-
-                shape = [nChannels, nHeis]
-
-            Si self.getByBlock == True:
-
-                self.dataOut.data = buffer[:, :, :]
-
-                shape = [nChannels, nProfiles, nHeis]
-
-        Variables afectadas:
-            self.dataOut
-            self.profileIndex
-
-        Affected:
-            self.dataOut
-            self.profileIndex
-            self.flagDiscontinuousBlock
-            self.flagIsNewBlock
-=======
             getData obtiene una unidad de datos del buffer de lectura, un perfil,  y la copia al objeto self.dataOut
             del tipo "Voltage" con todos los parametros asociados a este (metadata). cuando no hay datos
             en el buffer de lectura es necesario hacer una nueva lectura de los bloques de datos usando
@@ -506,7 +441,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
                 self.profileIndex
                 self.flagDiscontinuousBlock
                 self.flagIsNewBlock
->>>>>>> online_data_hour
         """
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
@@ -528,36 +462,16 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         if not self.getByBlock:
 
             """
-<<<<<<< HEAD
-            Return profile by profile
-
-            If nTxs > 1 then one profile is divided by nTxs and number of total
-            blocks is increased by nTxs (nProfiles *= nTxs)
-=======
                 Return profile by profile
 
                 If nTxs > 1 then one profile is divided by nTxs and number of total
                 blocks is increased by nTxs (nProfiles *= nTxs)
->>>>>>> online_data_hour
             """
             self.dataOut.flagDataAsBlock = False
             self.dataOut.data = self.datablock[:,self.profileIndex,:]
             self.dataOut.profileIndex = self.profileIndex
 
             self.profileIndex += 1
-<<<<<<< HEAD
-
-        #         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
-        #             """
-        #             Return all block
-        #             """
-        #             self.dataOut.flagDataAsBlock = True
-        #             self.dataOut.data = self.datablock
-        #             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
-        #
-        #             self.profileIndex = self.dataOut.nProfiles
-
-=======
                 
             #         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
             #             """
@@ -569,7 +483,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             #             
             #             self.profileIndex = self.dataOut.nProfiles
         
->>>>>>> online_data_hour
         else:
             """
                 Return a block
