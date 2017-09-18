@@ -1491,33 +1491,31 @@ class JRODataReader(JRODataIO):
 
         self.__printInfo = False
 
-
     def run(self,
-                path=None,
-                startDate=None,
-                endDate=None,
-                startTime=datetime.time(0,0,0),
-                endTime=datetime.time(23,59,59),
-                set=None,
-                expLabel = "",
-                ext = None,
-                online = False,
-                delay = 60,
-                walk = True,
-                getblock = False,
-                nTxs = 1,
-                realtime=False,
-                blocksize=None,
-                blocktime=None,
-                queue=None,
-                skip=None,
-                cursor=None,
-                warnings=True,
-                server=None,
-                verbose=True, **kwargs):
+            path=None,
+            startDate=None,
+            endDate=None,
+            startTime=datetime.time(0,0,0),
+            endTime=datetime.time(23,59,59),
+            set=None,
+            expLabel = "",
+            ext = None,
+            online = False,
+            delay = 60,
+            walk = True,
+            getblock = False,
+            nTxs = 1,
+            realtime=False,
+            blocksize=None,
+            blocktime=None,
+            queue=None,
+            skip=None,
+            cursor=None,
+            warnings=True,
+            server=None,
+            verbose=True, **kwargs):
 
         if not(self.isConfig):
-<<<<<<< HEAD
 #            self.dataOut = dataOut
             self.setup( path=path,
                         startDate=startDate,
@@ -1540,12 +1538,7 @@ class JRODataReader(JRODataIO):
                         cursor=cursor,
                         warnings=warnings,
                         server=server,
-                        verbose=verbose)
-=======
-            
-            #            self.dataOut = dataOut
-            self.setup(**kwargs)
->>>>>>> online_data_hour
+                        verbose=verbose, **kwargs)
             self.isConfig = True
         if server is None:
             self.getData()
@@ -1668,15 +1661,9 @@ class JRODataWriter(JRODataIO):
         Return:
             None
         """
-<<<<<<< HEAD
-
-#        CALCULAR PARAMETROS
-
-=======
         
-    #        CALCULAR PARAMETROS
+        #        CALCULAR PARAMETROS
         
->>>>>>> online_data_hour
         sizeLongHeader = self.systemHeaderObj.size + self.radarControllerHeaderObj.size + self.processingHeaderObj.size
         self.basicHeaderObj.size = self.basicHeaderSize + sizeLongHeader
 
