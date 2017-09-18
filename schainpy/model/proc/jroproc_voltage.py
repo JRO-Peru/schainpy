@@ -334,6 +334,37 @@ class CohInt(Operation):
 
     n = None
 
+    parameters = { 
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'pairsList': global_type_pairsList,
+        'showprofile': global_type_boolean,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'zmin': global_type_float,
+        'zmax': global_type_float,
+        'timerange': global_type_float,
+        'phase_min': global_type_float,
+        'phase_max': global_type_float,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'figfile': global_type_string,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'coherence_cmap': global_type_colormap,
+        'phase_cmap': global_type_colormap,
+        'show': global_type_boolean,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
+    }
 
     def __init__(self, **kwargs):
 
@@ -347,10 +378,9 @@ class CohInt(Operation):
 
         Inputs:
 
-            n        :    Number of coherent integrations
-            timeInterval   :    Time of integration. If the parameter "n" is selected this one does not work
-            overlapping    :
-
+            n               :    Number of coherent integrations
+            timeInterval    :    Time of integration. If the parameter "n" is selected this one does not work
+            overlapping     :
         """
 
         self.__initime = None
@@ -549,7 +579,14 @@ class Decoder(Operation):
 
     nCode = None
     nBaud = None
-
+    
+    parameters = { 
+        'code': global_type_list,
+        'nCode': global_type_integer,
+        'nBaud': global_type_integer,
+        'mode': global_type_integer,
+        'osamp': global_type_float,
+    }
 
     def __init__(self, **kwargs):
 
@@ -1112,7 +1149,9 @@ class SplitProfiles(Operation):
         dataOut.ippSeconds /= n
 
 class CombineProfiles(Operation):
-
+    parameters = { 
+        'n': global_type_integer,
+    }
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)

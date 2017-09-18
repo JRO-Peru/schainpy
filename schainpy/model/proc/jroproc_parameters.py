@@ -2220,6 +2220,13 @@ class SMDetection(Operation):
         return arrayParameters
 
 class CorrectSMPhases(Operation):
+    parameters = { 
+        'phaseOffsets': global_type_pairsList,
+        'hmin': global_type_float,
+        'hmax': global_type_float,
+        'azimuth': global_type_float,
+        'channelPositions': global_type_pairsList,
+    }
 
     def run(self, dataOut, phaseOffsets, hmin = 50, hmax = 150, azimuth = 45, channelPositions = None):
 

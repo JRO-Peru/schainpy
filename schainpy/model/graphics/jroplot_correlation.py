@@ -2,10 +2,37 @@ import os
 import datetime
 import numpy
 import copy
-
+from schainpy.model import *
 from figure import Figure, isRealtime
 
 class CorrelationPlot(Figure):
+    parameters = { 
+        'id': global_type_string,
+        'wintitle': global_type_string,
+        'channelList': global_type_list,
+        'showprofile': global_type_string,
+        'xmin': global_type_float,
+        'xmax': global_type_float,
+        'ymin': global_type_float,
+        'ymax': global_type_float,
+        'zmin': global_type_float,
+        'zmax': global_type_float,
+        'save': global_type_boolean,
+        'figpath': global_type_string,
+        'figfile': global_type_string,
+        'show': global_type_boolean,
+        'ftp': global_type_boolean,
+        'wr_period': global_type_integer,
+        'server': global_type_string,
+        'folder': global_type_string,
+        'username': global_type_string,
+        'password': global_type_string,
+        'ftp_wei': global_type_integer,
+        'exp_code': global_type_integer,
+        'sub_exp_code': global_type_integer,
+        'plot_pos': global_type_integer,
+        'realtime': global_type_boolean,
+    }
 
     isConfig = None
     __nsubplots = None

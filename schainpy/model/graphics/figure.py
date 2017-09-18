@@ -61,7 +61,7 @@ class Figure(Operation):
     figfile = None
 
     created = False
-
+    parameters = {}
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)

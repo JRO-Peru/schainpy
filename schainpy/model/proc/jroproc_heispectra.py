@@ -162,6 +162,11 @@ class IncohInt4SpectraHeis(Operation):
     __dataReady = False
 
     n = None
+    parameters = { 
+        'n': global_type_float,
+        'timeInterval': global_type_integer,
+        'overlapping': global_type_boolean,
+    }
 
 
     def __init__(self, **kwargs):
@@ -324,10 +329,10 @@ class IncohInt4SpectraHeis(Operation):
 
         return avgdata, avgdatatime
 
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, n=None, timeInterval=None, overlapping=False, **kwargs):
 
         if not self.isConfig:
-            self.setup(**kwargs)
+            self.setup(n=n, timeInterval=timeInterval, overlapping=overlapping)
             self.isConfig = True
 
         avgdata, avgdatatime = self.integrate(dataOut.data_spc, dataOut.utctime)
