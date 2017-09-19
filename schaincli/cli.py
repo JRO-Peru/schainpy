@@ -8,7 +8,7 @@ save_stdout = sys.stdout
 sys.stdout = open('trash', 'w')
 from multiprocessing import cpu_count
 from schaincli import templates
-from schainpy import controller_api
+from schainpy.controller import Project
 from schainpy.model import Operation, ProcessingUnit
 from schainpy.utils import log
 from importlib import import_module
@@ -150,18 +150,8 @@ def test():
 
 
 def runFromXML(filename):
-    controller = controller_api.ControllerThread()
+    controller = Project()
     if not controller.readXml(filename):
         return
-
-    plotterObj = controller.useExternalPlotter()
-
     controller.start()
-    plotterObj.start()
-
-    cliLogger("Finishing all processes")
-
-    controller.join(5)
-
-    cliLogger("End of script")
     return

@@ -1,4 +1,4 @@
-""".
+"""
 SCHAINPY - LOG
     Simple helper for log standarization
     Usage:
@@ -14,7 +14,8 @@ SCHAINPY - LOG
         [NEVER GONNA] - give you up
     with color red as background and white as foreground.
 """
-
+import os
+import sys
 import click
 
 def warning(message):
@@ -37,3 +38,22 @@ def makelogger(topic, bg='reset', fg='reset'):
         click.echo(click.style('[{}] - '.format(topic.upper()) + message,
                    bg=bg, fg=fg))
     return func
+
+class LoggerForFile():
+    def __init__(self, filename):
+        self.old_stdout=sys.stdout
+        cwd = os.getcwd()
+        self.log_file = open(os.path.join(cwd, filename), 'w+')
+    def write(self, text):
+        text = text.rstrip()
+        if not text: 
+            return
+        self.log_file.write(text + '\n')
+        self.old_stdout.write(text + '\n')
+    def flush(self):
+        self.old_stdout.flush()
+
+def logToFile(filename='log.log'):
+    logger = LoggerForFile(filename)
+    sys.stdout = logger
+

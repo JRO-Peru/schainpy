@@ -4,6 +4,12 @@ Created on September , 2012
 '''
 
 import sys
+
+# save_stdout = sys.stdout
+# logToFile = newLogger()
+# sys.stdout = logToFile
+# sys.stderr = logToFile
+
 import ast
 import datetime
 import traceback
@@ -13,6 +19,7 @@ from multiprocessing import Process, Queue, cpu_count
 
 import schainpy
 import schainpy.admin
+from schainpy.utils.log import logToFile
 
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
@@ -904,7 +911,6 @@ class ReadUnitConf(ProcUnitConf):
                 self.endTime = opConfObj.getParameterValue('endTime')
 
 class Project(Process):
-
     id = None
     name = None
     description = None
@@ -916,16 +922,17 @@ class Project(Process):
 
     plotterQueue = None
 
-    def __init__(self, plotter_queue=None):
+    def __init__(self, plotter_queue=None, logfile=None):
         Process.__init__(self)
         self.id = None
         self.name = None
         self.description = None
-
+        if logfile is not None:
+            logToFile(logfile)
         self.plotterQueue = plotter_queue
 
         self.procUnitConfObjDict = {}
-
+        
     def __getNewId(self):
 
         idList = self.procUnitConfObjDict.keys()
@@ -1321,5 +1328,3 @@ class Project(Process):
         for procKey in keyList:
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             procUnitConfObj.close()
-
-        print "Process finished"
