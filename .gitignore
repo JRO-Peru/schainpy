@@ -111,4 +111,5 @@ schaingui/node_modules/
 *.png
 *.pyc
 *.xml
+*.log
 trash
