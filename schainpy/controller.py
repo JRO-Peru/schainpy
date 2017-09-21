@@ -4,12 +4,6 @@ Created on September , 2012
 '''
 
 import sys
-
-# save_stdout = sys.stdout
-# logToFile = newLogger()
-# sys.stdout = logToFile
-# sys.stderr = logToFile
-
 import ast
 import datetime
 import traceback
