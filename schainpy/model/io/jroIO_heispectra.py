@@ -453,7 +453,7 @@ class FitsReader(ProcessingUnit):
 #         self.blockIndex = 1
         return 1
 
-    def __searchFilesOffLine(self,
+    def searchFilesOffLine(self,
                             path,
                             startDate,
                             endDate,
@@ -559,7 +559,7 @@ class FitsReader(ProcessingUnit):
 
         if not(online):
             print "Searching files in offline mode ..."
-            pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
+            pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
                                                                startTime=startTime, endTime=endTime,
                                                                set=set, expLabel=expLabel, ext=ext,
                                                                walk=walk)
