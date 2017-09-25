@@ -7,7 +7,6 @@ import json
 import numpy
 import paho.mqtt.client as mqtt
 import zmq
-from profilehooks import profile
 import datetime
 from zmq.utils.monitor import recv_monitor_message
 from functools import wraps

@@ -1,6 +1,5 @@
 import sys
 import numpy
-from profilehooks import profile
 from scipy import interpolate
 from schainpy import cSchain
 from jroproc_base import ProcessingUnit, Operation
@@ -623,13 +622,6 @@ class Decoder(Operation):
 
         return self.datadecTime
 
-    #@profile
-    def oldCorrelate(self, i, data, code_block):
-        profilesList = xrange(self.__nProfiles)
-        for j in profilesList:                
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
-
-    #@profile
     def __convolutionByBlockInTime(self, data):
 
         repetitions = self.__nProfiles / self.nCode
@@ -639,25 +631,10 @@ class Decoder(Operation):
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
         profilesList = xrange(self.__nProfiles)
         
-        # def toVectorize(a,b):
-        #     return numpy.correlate(a,b, mode='full')
-        # vectorized = numpy.vectorize(toVectorize, signature='(n),(m)->(k)')
-        for i in range(self.__nChannels):               
-        #     self.datadecTime[i,:,:] = numpy.array([numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:] for j in profilesList ])
-            # def func(i, j):
-            #     self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
-            # map(lambda j: func(i, j), range(self.__nProfiles))
-            #print data[i,:,:].shape
-            # self.datadecTime[i,:,:] = vectorized(data[i,:,:], code_block[:,:])[:,self.nBaud-1:]
-            for j in profilesList:                
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
-            # print data[i,:,:]
-            # print cSchain.correlateByBlock(data[i,:,:], code_block, 2)
-            # self.datadecTime[i,:,:] = cSchain.correlateByBlock(data[i,:,:], code_block, 2)
-            # print self.datadecTime[i,:,:] 
-            #print self.datadecTime[i,:,:].shape
-        return self.datadecTime
-        
+        for i in range(self.__nChannels):        
+            for j in profilesList:         
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]            
+        return self.datadecTime        
 
     def __convolutionByBlockInFreq(self, data):
 
