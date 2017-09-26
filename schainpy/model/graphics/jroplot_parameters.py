@@ -14,7 +14,6 @@ class MomentsPlot(Figure):
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'prm'
-
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)
         self.isConfig = False
@@ -1416,6 +1415,7 @@ class PhasePlot(Figure):
     __nsubplots = None
 
     PREFIX = 'mphase'
+
 
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)

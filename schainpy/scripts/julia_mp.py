@@ -11,20 +11,20 @@ def fiber(cursor, skip, q, dt):
     controllerObj.setup(id='191', name='test01', description=desc)
 
     readUnitConfObj = controllerObj.addReadUnit(datatype='SpectraReader',
-                                                 path='/home/nanosat/data/julia',
-                                                 startDate=dt,
-                                                 endDate=dt,
-                                                 startTime="00:00:00",
-                                                 endTime="23:59:59",
-                                                 online=0,
-                                                 #set=1426485881,
-                                                 delay=10,
-                                                 walk=1,
-                                                 queue=q,
-                                                 cursor=cursor,
-                                                 skip=skip,
-                                                 #timezone=-5*3600
-                                                 )
+                                                path='/home/nanosat/data/julia',
+                                                startDate=dt,
+                                                endDate=dt,
+                                                startTime="00:00:00",
+                                                endTime="23:59:59",
+                                                online=0,
+                                                #set=1426485881,
+                                                delay=10,
+                                                walk=1,
+                                                queue=q,
+                                                cursor=cursor,
+                                                skip=skip,
+                                                #timezone=-5*3600
+                                                )
 
     #     #opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
     #

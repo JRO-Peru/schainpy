@@ -196,7 +196,7 @@ class Remote(Thread):
             if self.stopFlag:
                 break
                 
-    #             self.bussy = True
+            #   self.bussy = True
             self.mutex.acquire()
 
             print "[Remote Server] Opening %s" %self.__server
@@ -211,7 +211,7 @@ class Remote(Thread):
             self.close()
 
             self.mutex.release()
-#             self.bussy = False
+            # self.bussy = False
 
         print "[Remote Server] Thread stopped successfully"
 
@@ -619,6 +619,7 @@ class SendToServer(ProcessingUnit):
             filenameList = glob.glob1(thisFolder, '*%s' %self.ext)
 
             if len(filenameList) < 1:
+
                 continue
 
             for thisFile in filenameList:
@@ -706,7 +707,7 @@ class FTP(object):
             self.ftp = ftplib.FTP(self.server)
             self.ftp.login(self.username,self.password)
             self.ftp.cwd(self.remotefolder)            
-    #            print 'Connect to FTP Server: Successfully'
+            #   print 'Connect to FTP Server: Successfully'
         
         except ftplib.all_errors:
             print 'Error FTP Service'

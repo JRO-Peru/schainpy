@@ -401,9 +401,9 @@ class RadarControllerHeader(Header):
             
             try:
                 if hasattr(fp, 'read'):
-                    self.nCode = numpy.fromfile(fp, '<u4', 1)
+                    self.nCode = numpy.fromfile(fp, '<u4', 1)[0]
                     self.length += self.nCode.nbytes
-                    self.nBaud = numpy.fromfile(fp, '<u4', 1)
+                    self.nBaud = numpy.fromfile(fp, '<u4', 1)[0]
                     self.length += self.nBaud.nbytes
                 else:
                     self.nCode = numpy.fromstring(fp[self.length:], '<u4', 1)[0]
@@ -412,7 +412,7 @@ class RadarControllerHeader(Header):
                     self.length += self.nBaud.nbytes
             except Exception, e:
                 print "RadarControllerHeader: " + str(e)
-                return 0
+                return 0            
             code = numpy.empty([self.nCode,self.nBaud],dtype='i1')
            
             for ic in range(self.nCode):

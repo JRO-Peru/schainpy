@@ -9,6 +9,7 @@ import datetime
 import traceback
 import schainpy
 import schainpy.admin
+from schainpy.utils.log import logToFile
 
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
@@ -16,12 +17,60 @@ from xml.dom import minidom
 from schainpy.model import *
 from time import sleep
 
+
+
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
     """
     rough_string = tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
+
+def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_day=False):
+    skip = 0
+    cursor = 0
+    nFiles = None
+    processes = []
+    dt1 = datetime.datetime.strptime(startDate, '%Y/%m/%d')
+    dt2 = datetime.datetime.strptime(endDate, '%Y/%m/%d')
+    days = (dt2 - dt1).days
+
+    for day in range(days+1):
+        skip = 0
+        cursor = 0
+        q = Queue()
+        processes = []
+        dt = (dt1 + datetime.timedelta(day)).strftime('%Y/%m/%d')
+        firstProcess = Process(target=child, args=(cursor, skip, q, dt))
+        firstProcess.start()
+        if by_day:
+            continue
+        nFiles = q.get()
+        if nFiles==0:
+            continue
+        firstProcess.terminate()
+        skip = int(math.ceil(nFiles/nProcess))
+        while True:
+            processes.append(Process(target=child, args=(cursor, skip, q, dt)))
+            processes[cursor].start()
+            if nFiles < cursor*skip:
+                break
+            cursor += 1
+
+        def beforeExit(exctype, value, trace):
+            for process in processes:
+                process.terminate()
+                process.join()
+            print traceback.print_tb(trace)
+
+        sys.excepthook = beforeExit
+
+        for process in processes:
+            process.join()
+            process.terminate()
+
+        time.sleep(3)
+
 
 class ParameterConf():
     
@@ -207,8 +256,8 @@ class ParameterConf():
         
         print "Parameter[%s]: name = %s, value = %s, format = %s" %(self.id, self.name, self.value, self.format)
 
-class OperationConf():
-    
+class OperationConf():  
+
     id = None
     name = None
     priority = None
@@ -623,8 +672,7 @@ class ProcUnitConf():
             #print "\tRunning the '%s' operation with %s" %(opConfObj.name, opConfObj.id)
             sts = self.procUnitObj.call(opType = opConfObj.type,
                                         opName = opConfObj.name,
-                                        opId = opConfObj.id,
-                                        **kwargs)
+                                        opId = opConfObj.id)
             
             #             total_time = time.time() - ini
             #              
@@ -673,9 +721,9 @@ class ReadUnitConf(ProcUnitConf):
     def getElementName(self):
         
         return self.ELEMENTNAME
-        
-    def setup(self, id, name, datatype, path, startDate="", endDate="", startTime="", endTime="", parentId=None, **kwargs):
 
+    def setup(self, id, name, datatype, path='', startDate="", endDate="", startTime="", 
+              endTime="", parentId=None, queue=None, server=None, **kwargs):
         #Compatible with old signal chain version
         if datatype==None and name==None:
             raise ValueError, "datatype or name should be defined"
@@ -811,9 +859,8 @@ class ReadUnitConf(ProcUnitConf):
                 self.endDate = opConfObj.getParameterValue('endDate')
                 self.startTime = opConfObj.getParameterValue('startTime')
                 self.endTime = opConfObj.getParameterValue('endTime')
-            
-class Project():
-    
+
+class Project(Process):
     id = None
     name = None
     description = None
@@ -824,13 +871,14 @@ class Project():
     ELEMENTNAME = 'Project'
     
     plotterQueue = None
-    
-    def __init__(self, plotter_queue=None):
-        
+
+    def __init__(self, plotter_queue=None, logfile=None):
+        Process.__init__(self)
         self.id = None
         self.name = None
         self.description = None
-        
+        if logfile is not None:
+            logToFile(logfile)
         self.plotterQueue = plotter_queue
         
         self.procUnitConfObjDict = {}
@@ -892,7 +940,6 @@ class Project():
         self.description = description
         
     def addReadUnit(self, id=None, datatype=None, name=None, **kwargs):
-            
         if id is None:
             idReadUnit = self.__getNewId()
         else:
@@ -1055,9 +1102,9 @@ class Project():
     def printattr(self):
         
         print "Project[%s]: name = %s, description = %s" %(self.id,
-                                                        self.name,
-                                                        self.description)
-        
+                                                            self.name,
+                                                            self.description)
+
         for procUnitConfObj in self.procUnitConfObjDict.values():
             procUnitConfObj.printattr()
     
@@ -1176,9 +1223,14 @@ class Project():
     def useExternalPlotter(self):
         
         raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
-    
-    def run(self):
+
+
+    def run(self, filename=None):
         
+        # self.writeXml(filename)
+        self.createObjects()
+        self.connectObjects()
+
         print
         print "*"*60
         print "   Starting SIGNAL CHAIN PROCESSING v%s " %schainpy.__version__
@@ -1226,69 +1278,3 @@ class Project():
         for procKey in keyList:
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             procUnitConfObj.close()
-            
-        print "Process finished"
-        
-    def start(self):
-        
-        self.writeXml()
-        
-        self.createObjects()
-        self.connectObjects()
-        self.run()
-        
-if __name__ == '__main__':
-    
-    desc = "Segundo Test"
-    filename = "schain.xml"
-    
-    controllerObj = Project()
-    
-    controllerObj.setup(id = '191', name='test01', description=desc)
-    
-    readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
-                                                path='data/rawdata/',
-                                                startDate='2011/01/01',
-                                                endDate='2012/12/31',
-                                                startTime='00:00:00',
-                                                endTime='23:59:59',
-                                                online=1,
-                                                walk=1)
-    
-    procUnitConfObj0 = controllerObj.addProcUnit(datatype='Voltage', inputId=readUnitConfObj.getId())
-    
-    opObj10 = procUnitConfObj0.addOperation(name='selectChannels')
-    opObj10.addParameter(name='channelList', value='3,4,5', format='intlist')
-
-    opObj10 = procUnitConfObj0.addOperation(name='selectHeights')
-    opObj10.addParameter(name='minHei', value='90', format='float')
-    opObj10.addParameter(name='maxHei', value='180', format='float')
-    
-    opObj12 = procUnitConfObj0.addOperation(name='CohInt', optype='external')
-    opObj12.addParameter(name='n', value='10', format='int')
-    
-    procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=procUnitConfObj0.getId())
-    procUnitConfObj1.addParameter(name='nFFTPoints', value='32', format='int')
-#    procUnitConfObj1.addParameter(name='pairList', value='(0,1),(0,2),(1,2)', format='')
-    
-    
-    opObj11 = procUnitConfObj1.addOperation(name='SpectraPlot', optype='external')
-    opObj11.addParameter(name='idfigure', value='1', format='int')
-    opObj11.addParameter(name='wintitle', value='SpectraPlot0', format='str')
-    opObj11.addParameter(name='zmin', value='40', format='int')
-    opObj11.addParameter(name='zmax', value='90', format='int')
-    opObj11.addParameter(name='showprofile', value='1', format='int')  
-    
-    print "Escribiendo el archivo XML"
-    
-    controllerObj.writeXml(filename)
-    
-    print "Leyendo el archivo XML"
-    controllerObj.readXml(filename)
-    #controllerObj.printattr()
-    
-    controllerObj.createObjects()
-    controllerObj.connectObjects()
-    controllerObj.run()
-    
-    

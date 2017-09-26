@@ -200,7 +200,6 @@ class ProcessingUnit(object):
         return True
 
     def call(self, opType, opName=None, opId=None):
-
         """
         Return True si ejecuta la operacion interna nombrada "opName" o la operacion externa
         identificada con el id "opId"; con los argumentos "**kwargs".

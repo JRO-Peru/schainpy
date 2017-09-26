@@ -607,28 +607,18 @@ class ParamWriter(Operation):
         self.isConfig = False
         return
 
-    def setup(self, dataOut, **kwargs):
-
-        self.path = kwargs['path']
-
-        if kwargs.has_key('blocksPerFile'):
-            self.blocksPerFile = kwargs['blocksPerFile']
-        else:
-            self.blocksPerFile = 10
-
-        self.metadataList = kwargs['metadataList']
-        self.dataList = kwargs['dataList']
+    def setup(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
+        self.path = path
+        self.blocksPerFile = blocksPerFile
+        self.metadataList = metadataList
+        self.dataList = dataList
         self.dataOut = dataOut
-
-        if kwargs.has_key('mode'):
-            mode = kwargs['mode']
-
-            if type(mode) == int:
-                mode = numpy.zeros(len(self.dataList)) + mode
-        else:
-            mode = numpy.ones(len(self.dataList))
-
         self.mode = mode
+        
+        if self.mode is not None:
+            self.mode = numpy.zeros(len(self.dataList)) + mode
+        else:
+            self.mode = numpy.ones(len(self.dataList))
 
         arrayDim = numpy.zeros((len(self.dataList),5))
 
@@ -770,13 +760,20 @@ class ParamWriter(Operation):
             else:
                 setFile = -1 #inicializo mi contador de seteo
 
-        setFile += 1
-
-        file = '%s%4.4d%3.3d%3.3d%s' % (self.metaoptchar,
-                                        timeTuple.tm_year,
-                                        timeTuple.tm_yday,
-                                        setFile,
-                                        ext )
+        if self.setType is None:
+            setFile += 1
+            file = '%s%4.4d%3.3d%03d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
+        else:
+            setFile = timeTuple.tm_hour*60+timeTuple.tm_min
+            file = '%s%4.4d%3.3d%04d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
 
         filename = os.path.join( path, subfolder, file )
         self.metaFile = file
@@ -849,13 +846,20 @@ class ParamWriter(Operation):
             os.makedirs(fullpath)
             setFile = -1 #inicializo mi contador de seteo
 
-        setFile += 1
-
-        file = '%s%4.4d%3.3d%3.3d%s' % (self.optchar,
-                                        timeTuple.tm_year,
-                                        timeTuple.tm_yday,
-                                        setFile,
-                                        ext )
+        if self.setType is None:
+            setFile += 1
+            file = '%s%4.4d%3.3d%03d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
+        else:
+            setFile = timeTuple.tm_hour*60+timeTuple.tm_min
+            file = '%s%4.4d%3.3d%04d%s' % (self.metaoptchar,
+                                           timeTuple.tm_year,
+                                           timeTuple.tm_yday,
+                                           setFile,
+                                           ext )
 
         filename = os.path.join( path, subfolder, file )
 
@@ -1074,10 +1078,11 @@ class ParamWriter(Operation):
         self.fp.close()
         return
 
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
 
         if not(self.isConfig):
-            flagdata = self.setup(dataOut, **kwargs)
+            flagdata = self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
+                                  metadataList=metadataList, dataList=dataList, mode=mode, **kwargs)
 
             if not(flagdata):
                 return

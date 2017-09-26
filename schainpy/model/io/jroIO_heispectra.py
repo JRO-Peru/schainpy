@@ -119,7 +119,6 @@ class Metadata(object):
             self.parmConfObjList.append(parmConfObj)
 
 class FitsWriter(Operation):
-
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
         self.isConfig = False
@@ -276,9 +275,9 @@ class FitsWriter(Operation):
             self.setNextFile()
         self.writeNextBlock()
 
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, path, dataBlocksPerFile=100, metadatafile=None, **kwargs):
         if not(self.isConfig):
-            self.setup(dataOut, **kwargs)
+            self.setup(dataOut, path, dataBlocksPerFile=dataBlocksPerFile, metadatafile=metadatafile, **kwargs)
             self.isConfig = True
         self.putData()
 

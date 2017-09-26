@@ -8,12 +8,13 @@ save_stdout = sys.stdout
 sys.stdout = open('trash', 'w')
 from multiprocessing import cpu_count
 from schaincli import templates
-from schainpy import controller_api
+from schainpy.controller import Project
 from schainpy.model import Operation, ProcessingUnit
 from schainpy.utils import log
 from importlib import import_module
 from pydoc import locate
 from fuzzywuzzy import process
+from schainpy.utils import paramsFinder
 sys.stdout = save_stdout
 
 
@@ -75,47 +76,25 @@ def search(nextcommand):
     if nextcommand is None:
         log.error('There is no Operation/ProcessingUnit to search')
     elif nextcommand == 'procs':
-        module = dir(import_module('schainpy.model'))
-        procs = check_module(module, ProcessingUnit)
-        try:
-            procs.remove('ProcessingUnit')
-        except Exception as e:
-            pass
+        procs = paramsFinder.getProcs()
         log.success('Current ProcessingUnits are:\n\033[1m{}\033[0m'.format('\n'.join(procs)))
 
     elif nextcommand == 'operations':
-        module = dir(import_module('schainpy.model'))
-        noProcs = [x for x in module if not x.endswith('Proc')]
-        operations = check_module(noProcs, Operation)
-        try:
-            operations.remove('Operation')
-        except Exception as e:
-            pass
+        operations = paramsFinder.getOperations()
         log.success('Current Operations are:\n\033[1m{}\033[0m'.format('\n'.join(operations)))
     else:
         try:
-            module = locate('schainpy.model.{}'.format(nextcommand))
-            args = module().getAllowedArgs()
+            args = paramsFinder.getArgs(nextcommand)
             log.warning('Use this feature with caution. It may not return all the allowed arguments')
-            try:
-                args.remove('self')
-            except Exception as e:
-                pass
-            try:
-                args.remove('dataOut')
-            except Exception as e:
-                pass
             if len(args) == 0:
                 log.success('{} has no arguments'.format(nextcommand))
             else:
                 log.success('Showing arguments of {} are:\n\033[1m{}\033[0m'.format(nextcommand, '\n'.join(args)))
         except Exception as e:
             log.error('Module {} does not exists'.format(nextcommand))
-            allModules = dir(import_module('schainpy.model'))
-            module = check_module(allModules, Operation)
-            module.extend(check_module(allModules, ProcessingUnit))
-            similar = process.extractOne(nextcommand, module)[0]
-            log.success('Searching {} instead'.format(similar))
+            allModules = paramsFinder.getAll()
+            similar = process.extractOne(nextcommand, allModules)[0]
+            log.success('Showing {} instead'.format(similar))
             search(similar)
 
 
@@ -171,18 +150,8 @@ def test():
 
 
 def runFromXML(filename):
-    controller = controller_api.ControllerThread()
+    controller = Project()
     if not controller.readXml(filename):
         return
-
-    plotterObj = controller.useExternalPlotter()
-
     controller.start()
-    plotterObj.start()
-
-    cliLogger("Finishing all processes")
-
-    controller.join(5)
-
-    cliLogger("End of script")
     return

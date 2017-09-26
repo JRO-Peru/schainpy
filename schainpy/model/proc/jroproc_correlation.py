@@ -174,5 +174,5 @@ class CorrelationProc(ProcessingUnit):
             self.dataOut.lagRange = numpy.array(lags)*delta
 #             self.dataOut.nCohInt = self.dataIn.nCohInt*nAvg
             self.dataOut.flagNoData = False
-            a = self.dataOut.normFactor
+#             a = self.dataOut.normFactor
             return
