@@ -14,9 +14,9 @@ from schainpy.utils.log import logToFile
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
+from multiprocessing import cpu_count
 from schainpy.model import *
 from time import sleep
-
 
 
 def prettify(elem):

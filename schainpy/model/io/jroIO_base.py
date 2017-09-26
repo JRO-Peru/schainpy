@@ -1294,7 +1294,7 @@ class JRODataReader(JRODataIO):
                 blocktime=None,
                 verbose=True,
                 **kwargs):
-
+        
         if path == None:
             raise ValueError, "[Reading] The path is not valid"
         
@@ -1516,7 +1516,6 @@ class JRODataReader(JRODataIO):
             warnings=True,
             server=None,
             verbose=True, **kwargs):
-
         if not(self.isConfig):
 #            self.dataOut = dataOut
             self.setup( path=path,
