@@ -124,7 +124,7 @@ class PlotManager():
         subtitle = "%s:\n" %(name)
         subtitle += "Hostname: %s\n" %socket.gethostbyname(socket.gethostname())
         subtitle += "Working directory: %s\n" %os.path.abspath("./")
-#         subtitle += "Configuration file: %s\n" %self.filename
+        #         subtitle += "Configuration file: %s\n" %self.filename
         subtitle += "Time: %s\n" %str(datetime.datetime.now())
 
         adminObj = schainpy.admin.SchainNotify()

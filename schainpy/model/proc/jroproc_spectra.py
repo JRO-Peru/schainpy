@@ -109,7 +109,7 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-#             self.__selectPairs(pairsList)
+            #             self.__selectPairs(pairsList)
             return True
 
         if self.dataIn.type == "Voltage":
@@ -878,7 +878,6 @@ class IncohInt(Operation):
         return self.__initime, avgdata_spc, avgdata_cspc, avgdata_dc
 
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
-
         if n==1:
             return
 

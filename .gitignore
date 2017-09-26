@@ -100,6 +100,7 @@ ENV/
 # eclipse
 .project
 .pydevproject
+<<<<<<< HEAD
 
 # vscode
 
@@ -107,3 +108,12 @@ ENV/
 
 schaingui/node_modules/
 schainpy/scripts/
+=======
+.svn/
+*.png
+*.pyc
+schainpy/scripts
+.vscode
+schaingui/node_modules
+trash
+>>>>>>> master

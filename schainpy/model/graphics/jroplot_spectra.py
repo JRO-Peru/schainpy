@@ -24,8 +24,8 @@ class SpectraPlot(Figure):
         self.isConfig = False
         self.__nsubplots = 1
 
-        self.WIDTH = 250
-        self.HEIGHT = 250
+        self.WIDTH = 1000
+        self.HEIGHT = 1000
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
