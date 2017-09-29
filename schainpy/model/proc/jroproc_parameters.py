@@ -52,13 +52,6 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
-
-
-
-
-
-
-
 class ParametersProc(ProcessingUnit):
     
     nSeconds = None
@@ -104,9 +97,7 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.timeInterval1 = self.dataIn.timeInterval
         self.dataOut.heightList = self.dataIn.getHeiRange()   
         self.dataOut.frequency = self.dataIn.frequency
-        self.dataOut.noise = self.dataIn.noise
-        
-        
+        # self.dataOut.noise = self.dataIn.noise
         
     def run(self):
         
@@ -125,22 +116,23 @@ class ParametersProc(ProcessingUnit):
         
         if self.dataIn.type == "Spectra":
 
-            self.dataOut.data_pre = (self.dataIn.data_spc,self.dataIn.data_cspc)
-            print 'self.dataIn.data_spc', self.dataIn.data_spc.shape
+            self.dataOut.data_pre = (self.dataIn.data_spc, self.dataIn.data_cspc)
+            self.dataOut.data_spc = self.dataIn.data_spc
+            self.dataOut.data_cspc = self.dataIn.data_cspc
+            self.dataOut.nProfiles = self.dataIn.nProfiles
+            self.dataOut.nIncohInt = self.dataIn.nIncohInt
+            self.dataOut.nFFTPoints = self.dataIn.nFFTPoints
+            self.dataOut.ippFactor = self.dataIn.ippFactor
             self.dataOut.abscissaList = self.dataIn.getVelRange(1)
             self.dataOut.spc_noise = self.dataIn.getNoise()
-            self.dataOut.spc_range = (self.dataIn.getFreqRange(1)/1000. , self.dataIn.getAcfRange(1) , self.dataIn.getVelRange(1) )
-            
-            self.dataOut.normFactor = self.dataIn.normFactor
-            #self.dataOut.outputInterval = self.dataIn.outputInterval
+            self.dataOut.spc_range = (self.dataIn.getFreqRange(1)/1000. , self.dataIn.getAcfRange(1) , self.dataIn.getVelRange(1))
+            self.dataOut.pairsList = self.dataIn.pairsList            
             self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
-            #print 'datain chandist ',self.dataIn.ChanDist
+            
             if hasattr(self.dataIn, 'ChanDist'): #Distances of receiver channels
                 self.dataOut.ChanDist = self.dataIn.ChanDist
-            else: self.dataOut.ChanDist = None
-                
-            print 'datain chandist ',self.dataOut.ChanDist
+            else: self.dataOut.ChanDist = None            
             
             if hasattr(self.dataIn, 'VelRange'): #Velocities range
                 self.dataOut.VelRange = self.dataIn.VelRange

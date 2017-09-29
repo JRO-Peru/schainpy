@@ -180,13 +180,13 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     def getBlockDimension(self):
         """
-        Obtiene la cantidad de puntos a leer por cada bloque de datos
+            Obtiene la cantidad de puntos a leer por cada bloque de datos
+            
+            Affected:
+                self.blocksize
 
-        Affected:
-            self.blocksize
-
-        Return:
-            None
+            Return:
+                None
         """
         pts2read = self.processingHeaderObj.profilesPerBlock * self.processingHeaderObj.nHeights * self.systemHeaderObj.nChannels
         self.blocksize = pts2read
@@ -195,26 +195,26 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     def readBlock(self):
         """
-        readBlock lee el bloque de datos desde la posicion actual del puntero del archivo
-        (self.fp) y actualiza todos los parametros relacionados al bloque de datos
-        (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
-        es seteado a 0
-
-        Inputs:
-            None
-
-        Return:
-            None
-
-        Affected:
-            self.profileIndex
-            self.datablock
-            self.flagIsNewFile
-            self.flagIsNewBlock
-            self.nTotalBlocks
-
-        Exceptions:
-            Si un bloque leido no es un bloque valido
+            readBlock lee el bloque de datos desde la posicion actual del puntero del archivo
+            (self.fp) y actualiza todos los parametros relacionados al bloque de datos
+            (metadata + data). La data leida es almacenada en el buffer y el contador del buffer
+            es seteado a 0
+            
+            Inputs:
+                None
+                
+            Return:
+                None
+            
+            Affected:
+                self.profileIndex
+                self.datablock
+                self.flagIsNewFile
+                self.flagIsNewBlock
+                self.nTotalBlocks
+                
+            Exceptions: 
+                Si un bloque leido no es un bloque valido
         """
         
         # if self.server is not None:
@@ -237,7 +237,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             if self.waitDataBlock(pointer_location=current_pointer_location):
                 junk = numpy.fromfile( self.fp, self.dtype, self.blocksize )
                 junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
-#             return 0
+        #             return 0
 
         #Dimensions : nChannels, nProfiles, nSamples
 
@@ -267,15 +267,15 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         #Time interval and code are propierties of dataOut. Its value depends of radarControllerHeaderObj.
 
-#         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
-#
-#         if self.radarControllerHeaderObj.code is not None:
-#
-#             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
-#
-#             self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
-#
-#             self.dataOut.code = self.radarControllerHeaderObj.code
+        #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
+        #
+        #         if self.radarControllerHeaderObj.code is not None:
+        #
+        #             self.dataOut.nCode = self.radarControllerHeaderObj.nCode
+        #
+        #             self.dataOut.nBaud = self.radarControllerHeaderObj.nBaud
+        #
+        #             self.dataOut.code = self.radarControllerHeaderObj.code
 
         self.dataOut.dtype = self.dtype
 
@@ -340,8 +340,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dtype = datatype_str
         #self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
         self.fileSizeByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + self.firstHeaderSize + self.basicHeaderSize*(self.processingHeaderObj.dataBlocksPerFile - 1)
-#        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
-#        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
 
 
@@ -355,7 +355,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.blockPointer = 0
 
         block = self.receiver.recv()
-        
+
         self.basicHeaderObj.read(block[self.blockPointer:])
         self.blockPointer += self.basicHeaderObj.length
         self.systemHeaderObj.read(block[self.blockPointer:])
@@ -378,7 +378,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             if self.waitDataBlock(pointer_location=current_pointer_location):
                 junk = numpy.fromstring( block[self.blockPointer:], self.dtype, self.blocksize )
                 junk = junk.reshape( (self.processingHeaderObj.profilesPerBlock, self.processingHeaderObj.nHeights, self.systemHeaderObj.nChannels) )
-#             return 0
+        #               return 0
 
         #Dimensions : nChannels, nProfiles, nSamples
 
@@ -408,39 +408,39 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     def getData(self):
         """
-        getData obtiene una unidad de datos del buffer de lectura, un perfil,  y la copia al objeto self.dataOut
-        del tipo "Voltage" con todos los parametros asociados a este (metadata). cuando no hay datos
-        en el buffer de lectura es necesario hacer una nueva lectura de los bloques de datos usando
-        "readNextBlock"
-
-        Ademas incrementa el contador del buffer "self.profileIndex" en 1.
-
-        Return:
-
-            Si el flag self.getByBlock ha sido seteado el bloque completo es copiado a self.dataOut y el self.profileIndex
-            es igual al total de perfiles leidos desde el archivo.
-
-            Si self.getByBlock == False:
-
-                self.dataOut.data = buffer[:, thisProfile, :]
-
-                shape = [nChannels, nHeis]
-
-            Si self.getByBlock == True:
-
-                self.dataOut.data = buffer[:, :, :]
-
-                shape = [nChannels, nProfiles, nHeis]
-
-        Variables afectadas:
-            self.dataOut
-            self.profileIndex
-
-        Affected:
-            self.dataOut
-            self.profileIndex
-            self.flagDiscontinuousBlock
-            self.flagIsNewBlock
+            getData obtiene una unidad de datos del buffer de lectura, un perfil,  y la copia al objeto self.dataOut
+            del tipo "Voltage" con todos los parametros asociados a este (metadata). cuando no hay datos
+            en el buffer de lectura es necesario hacer una nueva lectura de los bloques de datos usando
+            "readNextBlock"
+            
+            Ademas incrementa el contador del buffer "self.profileIndex" en 1.
+            
+            Return:
+            
+                Si el flag self.getByBlock ha sido seteado el bloque completo es copiado a self.dataOut y el self.profileIndex
+                es igual al total de perfiles leidos desde el archivo.
+            
+                Si self.getByBlock == False:
+                
+                    self.dataOut.data = buffer[:, thisProfile, :]
+                    
+                    shape = [nChannels, nHeis]
+                        
+                Si self.getByBlock == True:
+                
+                    self.dataOut.data = buffer[:, :, :]
+                    
+                    shape = [nChannels, nProfiles, nHeis]
+                
+            Variables afectadas:
+                self.dataOut
+                self.profileIndex
+                
+            Affected:
+                self.dataOut
+                self.profileIndex
+                self.flagDiscontinuousBlock
+                self.flagIsNewBlock
         """
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
@@ -462,30 +462,30 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         if not self.getByBlock:
 
             """
-            Return profile by profile
+                Return profile by profile
 
-            If nTxs > 1 then one profile is divided by nTxs and number of total
-            blocks is increased by nTxs (nProfiles *= nTxs)
+                If nTxs > 1 then one profile is divided by nTxs and number of total
+                blocks is increased by nTxs (nProfiles *= nTxs)
             """
             self.dataOut.flagDataAsBlock = False
             self.dataOut.data = self.datablock[:,self.profileIndex,:]
             self.dataOut.profileIndex = self.profileIndex
 
             self.profileIndex += 1
-
-#         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
-#             """
-#             Return all block
-#             """
-#             self.dataOut.flagDataAsBlock = True
-#             self.dataOut.data = self.datablock
-#             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
-#
-#             self.profileIndex = self.dataOut.nProfiles
-
+                
+            #         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
+            #             """
+            #             Return all block
+            #             """
+            #             self.dataOut.flagDataAsBlock = True
+            #             self.dataOut.data = self.datablock
+            #             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
+            #             
+            #             self.profileIndex = self.dataOut.nProfiles
+        
         else:
             """
-            Return a block
+                Return a block
             """
             if self.selBlocksize == None:   self.selBlocksize = self.dataOut.nProfiles
             if self.selBlocktime != None:

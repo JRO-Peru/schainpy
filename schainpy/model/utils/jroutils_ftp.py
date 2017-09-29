@@ -32,9 +32,7 @@ class Remote(Thread):
         None
 
     Written by:
-
-        "Miguel Urco":mailto:miguel.urco@jro.igp.gob.pe  Jun. 03, 2015
-
+        "Miguel Urco":mailto:miguel.urco@jro.igp.gob.pe Jun. 03, 2015
     """
 
     server = None
@@ -168,13 +166,13 @@ class Remote(Thread):
             return 0
 
         self.mutex.acquire()
-#         init = time.time()
-#
-#         while(self.bussy):
-#             sleep(0.1)
-#             if time.time() - init > 2*self.period:
-#                 return 0
-
+        #         init = time.time()
+        #         
+        #         while(self.bussy):
+        #             sleep(0.1)
+        #             if time.time() - init > 2*self.period:
+        #                 return 0
+            
         self.fileList = fileList
         self.mutex.release()
         return 1
@@ -197,8 +195,8 @@ class Remote(Thread):
 
             if self.stopFlag:
                 break
-
-#             self.bussy = True
+                
+            #   self.bussy = True
             self.mutex.acquire()
 
             print "[Remote Server] Opening %s" %self.__server
@@ -213,7 +211,7 @@ class Remote(Thread):
             self.close()
 
             self.mutex.release()
-#             self.bussy = False
+            # self.bussy = False
 
         print "[Remote Server] Thread stopped successfully"
 
@@ -400,21 +398,21 @@ class SSHClient(Remote):
     def open(self, server, username, password, remotefolder, port=22):
 
         """
-        This method is used to set SSH parameters and establish a connection to a remote server
-
-        Inputs:
-            server    - remote server IP Address
-
-            username    - remote server Username
-
-            password    - remote server password
-
-            remotefolder    - remote server current working directory
-
-        Return: void
-
-        Affects:
-            self.status        - in case of error or fail connection this parameter is set to 0 else 1
+            This method is used to set SSH parameters and establish a connection to a remote server
+            
+            Inputs:
+                server    - remote server IP Address 
+                
+                username    - remote server Username 
+                
+                password    - remote server password
+                
+                remotefolder    - remote server current working directory
+            
+            Return: void
+            
+            Affects: 
+                self.status        - in case of error or fail connection this parameter is set to 0 else 1
 
         """
         import socket
@@ -440,7 +438,7 @@ class SSHClient(Remote):
         try:
             sshClientObj.connect(server, username=username, password=password, port=port)
         except paramiko.AuthenticationException, e:
-#             print "SSH username or password are incorrect: %s"
+    #             print "SSH username or password are incorrect: %s"
             print "[SSH Server]:", e
             return 0
         except SSHException, e:
@@ -474,7 +472,7 @@ class SSHClient(Remote):
 
     def close(self):
         """
-        Close connection to remote server
+            Close connection to remote server
         """
         if not self.status:
             return 0
@@ -484,13 +482,13 @@ class SSHClient(Remote):
 
     def __execute(self, command):
         """
-        __execute a command on remote server
-
-        Input:
-            command    - Exmaple 'ls -l'
-
-        Return:
-            0 in error case else 1
+            __execute a command on remote server
+            
+            Input:
+                command    - Exmaple 'ls -l'
+            
+            Return:
+                0 in error case else 1
         """
         if not self.status:
             return 0
@@ -509,13 +507,13 @@ class SSHClient(Remote):
 
     def mkdir(self, remotefolder):
         """
-        mkdir is used to make a new directory in remote server
-
-        Input:
-            remotefolder    - directory name
-
-        Return:
-            0 in error case else 1
+            mkdir is used to make a new directory in remote server
+            
+            Input:
+                remotefolder    - directory name
+            
+            Return:
+                0 in error case else 1
         """
 
         command = 'mkdir %s' %remotefolder
@@ -530,16 +528,16 @@ class SSHClient(Remote):
 
     def cd(self, remotefolder):
         """
-        cd is used to change remote working directory on server
-
-        Input:
-            remotefolder    - current working directory
-
-        Affects:
-            self.remotefolder
-
-        Return:
-            0 in case of error else 1
+            cd is used to change remote working directory on server
+            
+            Input:
+                remotefolder    - current working directory
+                
+            Affects:
+                self.remotefolder
+            
+            Return: 
+                0 in case of error else 1
         """
         if not self.status:
             return 0
@@ -582,8 +580,8 @@ class SendToServer(ProcessingUnit):
         ProcessingUnit.__init__(self, **kwargs)
 
         self.isConfig = False
-        self.clientObj = None
-
+        self.clientObj = None        
+    
     def setup(self, server, username, password, remotefolder, localfolder, ext='.png', period=60, protocol='ftp', **kwargs):
 
         self.clientObj = None
@@ -621,6 +619,7 @@ class SendToServer(ProcessingUnit):
             filenameList = glob.glob1(thisFolder, '*%s' %self.ext)
 
             if len(filenameList) < 1:
+
                 continue
 
             for thisFile in filenameList:
@@ -707,9 +706,9 @@ class FTP(object):
         try:
             self.ftp = ftplib.FTP(self.server)
             self.ftp.login(self.username,self.password)
-            self.ftp.cwd(self.remotefolder)
-#            print 'Connect to FTP Server: Successfully'
-
+            self.ftp.cwd(self.remotefolder)            
+            #   print 'Connect to FTP Server: Successfully'
+        
         except ftplib.all_errors:
             print 'Error FTP Service'
             self.status = 1
@@ -740,7 +739,7 @@ class FTP(object):
             name, ext = os.path.splitext(f)
             if ext != '':
                 self.fileList.append(f)
-#                print 'filename: %s - size: %d'%(f,self.ftp.size(f))
+    #                print 'filename: %s - size: %d'%(f,self.ftp.size(f))
 
     def parmsByDefault(self):
         server = 'jro-app.igp.gob.pe'

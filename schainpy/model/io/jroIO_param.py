@@ -97,7 +97,7 @@ class ParamReader(ProcessingUnit):
             self.timezone = 'lt'
 
         print "[Reading] Searching files in offline mode ..."
-        pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
+        pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
                                                                startTime=startTime, endTime=endTime,
                                                                ext=ext, walk=walk)
 
@@ -115,7 +115,7 @@ class ParamReader(ProcessingUnit):
 
         return
 
-    def __searchFilesOffLine(self,
+    def searchFilesOffLine(self,
                             path,
                             startDate=None,
                             endDate=None,
@@ -607,29 +607,18 @@ class ParamWriter(Operation):
         self.isConfig = False
         return
 
-    def setup(self, dataOut, **kwargs):
-
-        self.path = kwargs['path']
-        self.setType = kwargs.get('setType', None)
-
-        if kwargs.has_key('blocksPerFile'):
-            self.blocksPerFile = kwargs['blocksPerFile']
-        else:
-            self.blocksPerFile = 10
-
-        self.metadataList = kwargs['metadataList']
-        self.dataList = kwargs['dataList']
+    def setup(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
+        self.path = path
+        self.blocksPerFile = blocksPerFile
+        self.metadataList = metadataList
+        self.dataList = dataList
         self.dataOut = dataOut
-
-        if kwargs.has_key('mode'):
-            mode = kwargs['mode']
-
-            if type(mode) == int:
-                mode = numpy.zeros(len(self.dataList)) + mode
-        else:
-            mode = numpy.ones(len(self.dataList))
-
         self.mode = mode
+        
+        if self.mode is not None:
+            self.mode = numpy.zeros(len(self.dataList)) + mode
+        else:
+            self.mode = numpy.ones(len(self.dataList))
 
         arrayDim = numpy.zeros((len(self.dataList),5))
 
@@ -1089,10 +1078,11 @@ class ParamWriter(Operation):
         self.fp.close()
         return
 
-    def run(self, dataOut, **kwargs):
+    def run(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
 
         if not(self.isConfig):
-            flagdata = self.setup(dataOut, **kwargs)
+            flagdata = self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
+                                  metadataList=metadataList, dataList=dataList, mode=mode, **kwargs)
 
             if not(flagdata):
                 return

@@ -9,53 +9,53 @@ import datetime
 import traceback
 import math
 import time
-from multiprocessing import Process, Queue, cpu_count
-
-import schainpy
-import schainpy.admin
+from multiprocessing import Process, cpu_count
 
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
+import schainpy
+import schainpy.admin
 from schainpy.model import *
-from time import sleep
+from schainpy.utils import log
 
-def prettify(elem):
-    """Return a pretty-printed XML string for the Element.
-    """
-    rough_string = tostring(elem, 'utf-8')
-    reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
+DTYPES = {
+    'Voltage': '.r',
+    'Spectra': '.pdata'
+}
 
-def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_day=False):
-    skip = 0
-    cursor = 0
-    nFiles = None
-    processes = []
-    dt1 = datetime.datetime.strptime(startDate, '%Y/%m/%d')
-    dt2 = datetime.datetime.strptime(endDate, '%Y/%m/%d')
+def MPProject(project, n=cpu_count()):
+    '''
+    Project wrapper to run schain in n processes
+    '''
+
+    rconf = project.getReadUnitObj()
+    op = rconf.getOperationObj('run')
+    dt1 = op.getParameterValue('startDate')
+    dt2 = op.getParameterValue('endDate')
     days = (dt2 - dt1).days
-
+    
     for day in range(days+1):
         skip = 0
         cursor = 0
-        q = Queue()
         processes = []
-        dt = (dt1 + datetime.timedelta(day)).strftime('%Y/%m/%d')
-        firstProcess = Process(target=child, args=(cursor, skip, q, dt))
-        firstProcess.start()
-        if by_day:
+        dt = dt1 + datetime.timedelta(day)
+        dt_str = dt.strftime('%Y/%m/%d')
+        reader = JRODataReader()
+        paths, files = reader.searchFilesOffLine(path=rconf.path,
+            startDate=dt,
+            endDate=dt,
+            ext=DTYPES[rconf.datatype])
+        nFiles = len(files)
+        if nFiles == 0:
             continue
-        nFiles = q.get()
-        if nFiles==0:
-            continue
-        firstProcess.terminate()
-        skip = int(math.ceil(nFiles/nProcess))
-        while True:
-            processes.append(Process(target=child, args=(cursor, skip, q, dt)))
-            processes[cursor].start()
-            if nFiles < cursor*skip:
-                break
+        skip = int(math.ceil(nFiles/n))        
+        while nFiles > cursor*skip:
+            rconf.update(startDate=dt_str, endDate=dt_str, cursor=cursor, 
+                skip=skip)
+            p = project.clone()            
+            p.start()
+            processes.append(p)
             cursor += 1
 
         def beforeExit(exctype, value, trace):
@@ -71,7 +71,6 @@ def multiSchain(child, nProcess=cpu_count(), startDate=None, endDate=None, by_da
             process.terminate()
 
         time.sleep(3)
-
 
 class ParameterConf():
 
@@ -109,7 +108,7 @@ class ParameterConf():
             return self.__formated_value
 
         if value == '':
-            raise ValueError, "%s: This parameter value is empty" %self.name
+            raise ValueError, '%s: This parameter value is empty' %self.name
 
         if format == 'list':
             strList = value.split(',')
@@ -119,10 +118,10 @@ class ParameterConf():
             return self.__formated_value
 
         if format == 'intlist':
-            """
+            '''
             Example:
                 value = (0,1,2)
-            """
+            '''
 
             new_value = ast.literal_eval(value)
 
@@ -134,10 +133,10 @@ class ParameterConf():
             return self.__formated_value
 
         if format == 'floatlist':
-            """
+            '''
             Example:
                 value = (0.5, 1.4, 2.7)
-            """
+            '''
 
             new_value = ast.literal_eval(value)
 
@@ -167,38 +166,38 @@ class ParameterConf():
             return self.__formated_value
 
         if format == 'pairslist':
-            """
+            '''
             Example:
                 value = (0,1),(1,2)
-            """
+            '''
 
             new_value = ast.literal_eval(value)
 
             if type(new_value) not in (tuple, list):
-                raise ValueError, "%s has to be a tuple or list of pairs" %value
+                raise ValueError, '%s has to be a tuple or list of pairs' %value
 
             if type(new_value[0]) not in (tuple, list):
                 if len(new_value) != 2:
-                    raise ValueError, "%s has to be a tuple or list of pairs" %value
+                    raise ValueError, '%s has to be a tuple or list of pairs' %value
                 new_value = [new_value]
 
             for thisPair in new_value:
                 if len(thisPair) != 2:
-                    raise ValueError, "%s has to be a tuple or list of pairs" %value
+                    raise ValueError, '%s has to be a tuple or list of pairs' %value
 
             self.__formated_value = new_value
 
             return self.__formated_value
 
         if format == 'multilist':
-            """
+            '''
             Example:
                 value = (0,1,2),(3,4,5)
-            """
+            '''
             multiList = ast.literal_eval(value)
 
             if type(multiList[0]) == int:
-                multiList = ast.literal_eval("(" + value + ")")
+                multiList = ast.literal_eval('(' + value + ')')
 
             self.__formated_value = multiList
 
@@ -260,7 +259,7 @@ class ParameterConf():
 
     def printattr(self):
 
-        print "Parameter[%s]: name = %s, value = %s, format = %s" %(self.id, self.name, self.value, self.format)
+        print 'Parameter[%s]: name = %s, value = %s, format = %s' %(self.id, self.name, self.value, self.format)
 
 class OperationConf():
 
@@ -368,7 +367,9 @@ class OperationConf():
         self.parmConfObjList = []
 
     def addParameter(self, name, value, format='str'):
-
+        
+        if value is None:
+            return None
         id = self.__getNewId()
 
         parmConfObj = ParameterConf()
@@ -428,7 +429,7 @@ class OperationConf():
 
     def printattr(self):
 
-        print "%s[%s]: name = %s, type = %s, priority = %s" %(self.ELEMENTNAME,
+        print '%s[%s]: name = %s, type = %s, priority = %s' %(self.ELEMENTNAME,
                                                               self.id,
                                                               self.name,
                                                               self.type,
@@ -441,12 +442,11 @@ class OperationConf():
 
 
         if self.type == 'self':
-            raise ValueError, "This operation type cannot be created"
+            raise ValueError, 'This operation type cannot be created'
 
-        if self.type == 'plotter':
-            #Plotter(plotter_name)
+        if self.type == 'plotter':            
             if not plotter_queue:
-                raise ValueError, "plotter_queue is not defined. Use:\nmyProject = Project()\nmyProject.setPlotterQueue(plotter_queue)"
+                raise ValueError, 'plotter_queue is not defined. Use:\nmyProject = Project()\nmyProject.setPlotterQueue(plotter_queue)'
 
             opObj = Plotter(self.name, plotter_queue)
 
@@ -561,7 +561,7 @@ class ProcUnitConf():
 
         #Compatible with old signal chain version
         if datatype==None and name==None:
-            raise ValueError, "datatype or name should be defined"
+            raise ValueError, 'datatype or name should be defined'
 
         if name==None:
             if 'Proc' in datatype:
@@ -592,7 +592,7 @@ class ProcUnitConf():
 
     def addParameter(self, **kwargs):
         '''
-        Add parameters to "run" operation
+        Add parameters to 'run' operation
         '''
         opObj = self.opConfObjList[0]
 
@@ -630,11 +630,11 @@ class ProcUnitConf():
         self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
 
-        if self.ELEMENTNAME == "ReadUnit":
-            self.datatype = self.datatype.replace("Reader", "")
+        if self.ELEMENTNAME == 'ReadUnit':
+            self.datatype = self.datatype.replace('Reader', '')
 
-        if self.ELEMENTNAME == "ProcUnit":
-            self.datatype = self.datatype.replace("Proc", "")
+        if self.ELEMENTNAME == 'ProcUnit':
+            self.datatype = self.datatype.replace('Proc', '')
 
         if self.inputId == 'None':
             self.inputId = '0'
@@ -650,7 +650,7 @@ class ProcUnitConf():
 
     def printattr(self):
 
-        print "%s[%s]: name = %s, datatype = %s, inputId = %s" %(self.ELEMENTNAME,
+        print '%s[%s]: name = %s, datatype = %s, inputId = %s' %(self.ELEMENTNAME,
                                                                 self.id,
                                                                 self.name,
                                                                 self.datatype,
@@ -751,12 +751,12 @@ class ReadUnitConf(ProcUnitConf):
 
         return self.ELEMENTNAME
 
-    def setup(self, id, name, datatype, path='', startDate="", endDate="", startTime="", 
-              endTime="", parentId=None, queue=None, server=None, **kwargs):
+    def setup(self, id, name, datatype, path='', startDate='', endDate='',
+              startTime='', endTime='', parentId=None, server=None, **kwargs):
 
         #Compatible with old signal chain version
         if datatype==None and name==None:
-            raise ValueError, "datatype or name should be defined"
+            raise ValueError, 'datatype or name should be defined'
         
         if name==None:
             if 'Reader' in datatype:
@@ -775,39 +775,28 @@ class ReadUnitConf(ProcUnitConf):
         self.endDate = endDate
         self.startTime = startTime
         self.endTime = endTime
-
         self.inputId = '0'
         self.parentId = parentId
-        self.queue = queue
         self.server = server
         self.addRunOperation(**kwargs)
 
-    def update(self, datatype, path, startDate, endDate, startTime, endTime, parentId=None, name=None, **kwargs):
+    def update(self, **kwargs):
 
-        #Compatible with old signal chain version
-        if datatype==None and name==None:
-            raise ValueError, "datatype or name should be defined"
-
-        if name==None:
+        if 'datatype' in kwargs:
+            datatype = kwargs.pop('datatype')
             if 'Reader' in datatype:
-                name = datatype
+                self.name = datatype
             else:
-                name = '%sReader' %(datatype)
+                self.name = '%sReader' %(datatype)
+            self.datatype = self.name.replace('Reader', '')
 
-        if datatype==None:
-            datatype = name.replace('Reader','')
-
-        self.datatype = datatype
-        self.name = name
-        self.path = path
-        self.startDate = startDate
-        self.endDate = endDate
-        self.startTime = startTime
-        self.endTime = endTime
-
+        attrs = ('path', 'startDate', 'endDate', 'startTime', 'endTime', 'parentId')
+        
+        for attr in attrs:
+            if attr in kwargs:
+                setattr(self, attr, kwargs.pop(attr))
+        
         self.inputId = '0'
-        self.parentId = parentId
-
         self.updateRunOperation(**kwargs)
 
     def removeOperations(self):
@@ -822,13 +811,13 @@ class ReadUnitConf(ProcUnitConf):
         opObj = self.addOperation(name = 'run', optype = 'self')
 
         if self.server is None:
-            opObj.addParameter(name='datatype' , value=self.datatype, format='str')
-            opObj.addParameter(name='path'     , value=self.path, format='str')
-            opObj.addParameter(name='startDate' , value=self.startDate, format='date')
-            opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
-            opObj.addParameter(name='startTime' , value=self.startTime, format='time')
-            opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
-            opObj.addParameter(name='queue'   , value=self.queue, format='obj')
+            opObj.addParameter(name='datatype', value=self.datatype, format='str')
+            opObj.addParameter(name='path', value=self.path, format='str')
+            opObj.addParameter(name='startDate', value=self.startDate, format='date')
+            opObj.addParameter(name='endDate', value=self.endDate, format='date')
+            opObj.addParameter(name='startTime', value=self.startTime, format='time')
+            opObj.addParameter(name='endTime', value=self.endTime, format='time')
+            
             for key, value in kwargs.items():
                 opObj.addParameter(name=key, value=value, format=type(value).__name__)
         else:
@@ -839,31 +828,20 @@ class ReadUnitConf(ProcUnitConf):
 
     def updateRunOperation(self, **kwargs):
 
-        opObj = self.getOperationObj(name = 'run')
+        opObj = self.getOperationObj(name='run')
         opObj.removeParameters()
 
-        opObj.addParameter(name='datatype' , value=self.datatype, format='str')
-        opObj.addParameter(name='path'     , value=self.path, format='str')
-        opObj.addParameter(name='startDate' , value=self.startDate, format='date')
-        opObj.addParameter(name='endDate'   , value=self.endDate, format='date')
-        opObj.addParameter(name='startTime' , value=self.startTime, format='time')
-        opObj.addParameter(name='endTime'   , value=self.endTime, format='time')
-
+        opObj.addParameter(name='datatype', value=self.datatype, format='str')
+        opObj.addParameter(name='path', value=self.path, format='str')
+        opObj.addParameter(name='startDate', value=self.startDate, format='date')
+        opObj.addParameter(name='endDate', value=self.endDate, format='date')
+        opObj.addParameter(name='startTime', value=self.startTime, format='time')
+        opObj.addParameter(name='endTime', value=self.endTime, format='time')
+        
         for key, value in kwargs.items():
             opObj.addParameter(name=key, value=value, format=type(value).__name__)
 
         return opObj
-    
-        #     def makeXml(self, projectElement):
-        #         
-        #         procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
-        #         procUnitElement.set('id', str(self.id))
-        #         procUnitElement.set('name', self.name)
-        #         procUnitElement.set('datatype', self.datatype)
-        #         procUnitElement.set('inputId', str(self.inputId))
-        #         
-        #         for opConfObj in self.opConfObjList:
-        #             opConfObj.makeXml(procUnitElement)
     
     def readXml(self, upElement):
 
@@ -872,8 +850,8 @@ class ReadUnitConf(ProcUnitConf):
         self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
 
-        if self.ELEMENTNAME == "ReadUnit":
-            self.datatype = self.datatype.replace("Reader", "")
+        if self.ELEMENTNAME == 'ReadUnit':
+            self.datatype = self.datatype.replace('Reader', '')
 
         if self.inputId == 'None':
             self.inputId = '0'
@@ -894,10 +872,10 @@ class ReadUnitConf(ProcUnitConf):
                 self.startTime = opConfObj.getParameterValue('startTime')
                 self.endTime = opConfObj.getParameterValue('endTime')
 
-class Project():
+class Project(Process):
 
     id = None
-    name = None
+    # name = None
     description = None
     filename = None
 
@@ -909,8 +887,9 @@ class Project():
 
     def __init__(self, plotter_queue=None):
 
+        Process.__init__(self)
         self.id = None
-        self.name = None
+        # self.name = None
         self.description = None
 
         self.plotterQueue = plotter_queue
@@ -962,16 +941,25 @@ class Project():
 
         self.procUnitConfObjDict = newProcUnitConfObjDict
 
-    def setup(self, id, name, description):
+    def setup(self, id, name='', description=''):
 
+        print
+        print '*'*60
+        print '   Starting SIGNAL CHAIN PROCESSING v%s ' % schainpy.__version__
+        print '*'*60
+        print
         self.id = str(id)
-        self.name = name
         self.description = description
 
     def update(self, name, description):
 
-        self.name = name
         self.description = description
+
+    def clone(self):
+
+        p = Project()
+        p.procUnitConfObjDict = self.procUnitConfObjDict
+        return p
 
     def addReadUnit(self, id=None, datatype=None, name=None, **kwargs):
 
@@ -1012,7 +1000,7 @@ class Project():
     def getReadUnitObj(self):
 
         for obj in self.procUnitConfObjDict.values():
-            if obj.getElementName() == "ReadUnit":
+            if obj.getElementName() == 'ReadUnit':
                 return obj
 
         return None
@@ -1057,20 +1045,20 @@ class Project():
             if self.filename:
                 filename = self.filename
             else:
-                filename = "schain.xml"
+                filename = 'schain.xml'
 
         if not filename:
-            print "filename has not been defined. Use setFilename(filename) for do it."
+            print 'filename has not been defined. Use setFilename(filename) for do it.'
             return 0
 
         abs_file = os.path.abspath(filename)
 
         if not os.access(os.path.dirname(abs_file), os.W_OK):
-            print "No write permission on %s" %os.path.dirname(abs_file)
+            print 'No write permission on %s' %os.path.dirname(abs_file)
             return 0
 
         if os.path.isfile(abs_file) and not(os.access(abs_file, os.W_OK)):
-            print "File %s already exists and it could not be overwriten" %abs_file
+            print 'File %s already exists and it could not be overwriten' %abs_file
             return 0
 
         self.makeXml()
@@ -1084,13 +1072,13 @@ class Project():
     def readXml(self, filename = None):
 
         if not filename:
-            print "filename is not defined"
+            print 'filename is not defined'
             return 0
 
         abs_file = os.path.abspath(filename)
 
         if not os.path.isfile(abs_file):
-            print "%s file does not exist" %abs_file
+            print '%s file does not exist' %abs_file
             return 0
 
         self.projectElement = None
@@ -1099,7 +1087,7 @@ class Project():
         try:
             self.projectElement = ElementTree().parse(abs_file)
         except:
-            print "Error reading %s, verify file format" %filename
+            print 'Error reading %s, verify file format' %filename
             return 0
 
         self.project = self.projectElement.tag
@@ -1136,7 +1124,7 @@ class Project():
 
     def printattr(self):
 
-        print "Project[%s]: name = %s, description = %s" %(self.id,
+        print 'Project[%s]: name = %s, description = %s' %(self.id,
                                                         self.name,
                                                         self.description)
         
@@ -1170,7 +1158,7 @@ class Project():
 
             self.__connect(puObjIN, thisPUObj)
 
-    def __handleError(self, procUnitConfObj, send_email=True):
+    def __handleError(self, procUnitConfObj, send_email=False):
 
         import socket
 
@@ -1178,33 +1166,33 @@ class Project():
                                         sys.exc_info()[1],
                                         sys.exc_info()[2])
         
-        print "***** Error occurred in %s *****" %(procUnitConfObj.name)
-        print "***** %s" %err[-1]
+        print '***** Error occurred in %s *****' %(procUnitConfObj.name)
+        print '***** %s' %err[-1]
 
-        message = "".join(err)
+        message = ''.join(err)
 
         sys.stderr.write(message)
 
         if not send_email:
             return
 
-        subject =  "SChain v%s: Error running %s\n" %(schainpy.__version__, procUnitConfObj.name)
+        subject =  'SChain v%s: Error running %s\n' %(schainpy.__version__, procUnitConfObj.name)
 
-        subtitle = "%s: %s\n" %(procUnitConfObj.getElementName() ,procUnitConfObj.name)
-        subtitle += "Hostname: %s\n" %socket.gethostbyname(socket.gethostname())
-        subtitle += "Working directory: %s\n" %os.path.abspath("./")
-        subtitle += "Configuration file: %s\n" %self.filename
-        subtitle += "Time: %s\n" %str(datetime.datetime.now())
+        subtitle = '%s: %s\n' %(procUnitConfObj.getElementName() ,procUnitConfObj.name)
+        subtitle += 'Hostname: %s\n' %socket.gethostbyname(socket.gethostname())
+        subtitle += 'Working directory: %s\n' %os.path.abspath('./')
+        subtitle += 'Configuration file: %s\n' %self.filename
+        subtitle += 'Time: %s\n' %str(datetime.datetime.now())
 
         readUnitConfObj = self.getReadUnitObj()
         if readUnitConfObj:
-            subtitle += "\nInput parameters:\n"
-            subtitle += "[Data path = %s]\n" %readUnitConfObj.path
-            subtitle += "[Data type = %s]\n" %readUnitConfObj.datatype
-            subtitle += "[Start date = %s]\n" %readUnitConfObj.startDate
-            subtitle += "[End date = %s]\n" %readUnitConfObj.endDate
-            subtitle += "[Start time = %s]\n" %readUnitConfObj.startTime
-            subtitle += "[End time = %s]\n" %readUnitConfObj.endTime
+            subtitle += '\nInput parameters:\n'
+            subtitle += '[Data path = %s]\n' %readUnitConfObj.path
+            subtitle += '[Data type = %s]\n' %readUnitConfObj.datatype
+            subtitle += '[Start date = %s]\n' %readUnitConfObj.startDate
+            subtitle += '[End date = %s]\n' %readUnitConfObj.endDate
+            subtitle += '[Start time = %s]\n' %readUnitConfObj.startTime
+            subtitle += '[End time = %s]\n' %readUnitConfObj.endTime
 
         adminObj = schainpy.admin.SchainNotify()
         adminObj.sendAlert(message=message,
@@ -1219,15 +1207,15 @@ class Project():
         return 0
 
     def runController(self):
-        """
+        '''
         returns 0 when this process has been stopped, 1 otherwise
-        """
+        '''
 
         if self.isPaused():
-            print "Process suspended"
+            print 'Process suspended'
 
             while True:
-                sleep(0.1)
+                time.sleep(0.1)
 
                 if not self.isPaused():
                     break
@@ -1235,10 +1223,10 @@ class Project():
                 if self.isStopped():
                     break
 
-            print "Process reinitialized"
+            print 'Process reinitialized'
 
         if self.isStopped():
-            print "Process stopped"
+            print 'Process stopped'
             return 0
 
         return 1
@@ -1249,23 +1237,22 @@ class Project():
 
     def setPlotterQueue(self, plotter_queue):
 
-        raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
+        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
 
     def getPlotterQueue(self):
 
-        raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
+        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
 
     def useExternalPlotter(self):
 
-        raise NotImplementedError, "Use schainpy.controller_api.ControllerThread instead Project class"
+        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
 
     def run(self):
 
-        print
-        print "*"*60
-        print "   Starting SIGNAL CHAIN PROCESSING v%s " %schainpy.__version__
-        print "*"*60
-        print
+        log.success('Starting {}'.format(self.name))
+        
+        self.createObjects()
+        self.connectObjects()
 
         keyList = self.procUnitConfObjDict.keys()
         keyList.sort()
@@ -1275,7 +1262,6 @@ class Project():
             is_ok = False
 
             for procKey in keyList:
-#                 print "Running the '%s' process with %s" %(procUnitConfObj.name, procUnitConfObj.id)
 
                 procUnitConfObj = self.procUnitConfObjDict[procKey]
 
@@ -1286,19 +1272,18 @@ class Project():
                     is_ok = False
                     break
                 except ValueError, e:
-                    sleep(0.5)
+                    time.sleep(0.5)
                     self.__handleError(procUnitConfObj, send_email=True)
                     is_ok = False
                     break
                 except:
-                    sleep(0.5)
+                    time.sleep(0.5)
                     self.__handleError(procUnitConfObj)
                     is_ok = False
                     break
 
             #If every process unit finished so end process
             if not(is_ok):
-#                 print "Every process unit have finished"
                 break
 
             if not self.runController():
@@ -1309,11 +1294,4 @@ class Project():
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             procUnitConfObj.close()
 
-        print "Process finished"
-
-    def start(self, filename=None):
-
-        self.writeXml(filename)
-        self.createObjects()
-        self.connectObjects()
-        self.run()
+        log.success('{} finished'.format(self.name))

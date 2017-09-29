@@ -415,7 +415,7 @@ class HFReader(ProcessingUnit):
 
 
 
-    def __searchFilesOffline(self,
+    def searchFilesOffLine(self,
                             path,
                             startDate,
                             endDate,
@@ -438,7 +438,7 @@ class HFReader(ProcessingUnit):
 
         return
 
-    def __searchFilesOnline(self,
+    def searchFilesOnLine(self,
                             path,
                             expLabel= "",
                             ext=None,
@@ -636,10 +636,10 @@ class HFReader(ProcessingUnit):
         if not(online):
             print "Searching files in offline mode..."
 
-            self.__searchFilesOffline(path, startDate, endDate, ext, startTime, endTime, walk)
+            self.searchFilesOffLine(path, startDate, endDate, ext, startTime, endTime, walk)
         else:
             print "Searching files in online mode..."
-            self.__searchFilesOnline(path, walk,ext,set=set)
+            self.searchFilesOnLine(path, walk,ext,set=set)
             if set==None:
                 pass
             else:
@@ -647,7 +647,7 @@ class HFReader(ProcessingUnit):
 
 #             for nTries in range(self.nTries):
 #
-#                 fullpath,file,year,month,day,set = self.__searchFilesOnline(path=path,expLabel=expLabel,ext=ext, walk=walk,set=set)
+#                 fullpath,file,year,month,day,set = self.searchFilesOnLine(path=path,expLabel=expLabel,ext=ext, walk=walk,set=set)
 #
 #                 if fullpath:
 #                     break

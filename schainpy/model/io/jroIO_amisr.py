@@ -267,7 +267,7 @@ class AMISRReader(ProcessingUnit):
         self.dirnameList = new_dirnameList
         return 1
         
-    def __searchFilesOnline(self,
+    def searchFilesOnLine(self,
                             path,
                             walk=True):
         
@@ -287,7 +287,7 @@ class AMISRReader(ProcessingUnit):
         return
         
     
-    def __searchFilesOffline(self,
+    def searchFilesOffLine(self,
                             path,
                             startDate,
                             endDate,
@@ -494,9 +494,9 @@ class AMISRReader(ProcessingUnit):
         self.online = online
         if not(online):
             #Busqueda de archivos offline
-            self.__searchFilesOffline(path, startDate, endDate, startTime, endTime, walk)
+            self.searchFilesOffLine(path, startDate, endDate, startTime, endTime, walk)
         else:
-            self.__searchFilesOnline(path, walk)
+            self.searchFilesOnLine(path, walk)
         
         if not(self.filenameList):
             print "There is no files into the folder: %s"%(path)

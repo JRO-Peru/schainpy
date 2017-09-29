@@ -1,3 +1,5 @@
+import itertools
+
 import numpy
 
 from jroproc_base import ProcessingUnit, Operation
@@ -109,7 +111,10 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-#             self.__selectPairs(pairsList)
+            if not pairsList:
+                pairsList = itertools.combinations(self.dataOut.channelList, 2)            
+            if self.dataOut.data_cspc is not None:
+                self.__selectPairs(pairsList)
             return True
 
         if self.dataIn.type == "Voltage":
@@ -178,27 +183,21 @@ class SpectraProc(ProcessingUnit):
 
     def __selectPairs(self, pairsList):
 
-        if channelList == None:
+        if not pairsList:            
             return
 
-        pairsIndexListSelected = []
+        pairs = []
+        pairsIndex = []
 
-        for thisPair in pairsList:
-
-            if thisPair not in self.dataOut.pairsList:
+        for pair in pairsList:
+            if pair[0] not in self.dataOut.channelList or pair[1] not in self.dataOut.channelList:
                 continue
-
-            pairIndex = self.dataOut.pairsList.index(thisPair)
-
-            pairsIndexListSelected.append(pairIndex)
-
-        if not pairsIndexListSelected:
-            self.dataOut.data_cspc = None
-            self.dataOut.pairsList = []
-            return
-
-        self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndexListSelected]
-        self.dataOut.pairsList = [self.dataOut.pairsList[i] for i in pairsIndexListSelected]
+            pairs.append(pair)
+            pairsIndex.append(pairs.index(pair))
+                
+        self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndex]
+        self.dataOut.pairsList = pairs
+        self.dataOut.pairsIndexList = pairsIndex
 
         return
 

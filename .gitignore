@@ -105,9 +105,11 @@ ENV/
 
 .vscode
 
+schainpy/scripts/
+schaingui/node_modules/
 .svn/
 *.png
 *.pyc
-schainpy/scripts
-
-schaingui/node_modules
+*.xml
+*.log
+trash

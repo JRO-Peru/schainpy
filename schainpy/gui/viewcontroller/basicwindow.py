@@ -6218,3 +6218,6 @@ class ShowMeConsole(QtCore.QObject):
             text = text[:-1]
             
         self.textWritten.emit(str(text))
+
+    def flush(self):
+        pass

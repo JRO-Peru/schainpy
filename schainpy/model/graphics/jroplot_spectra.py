@@ -10,6 +10,7 @@ import numpy
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
+
 class SpectraPlot(Figure):
 
     isConfig = None

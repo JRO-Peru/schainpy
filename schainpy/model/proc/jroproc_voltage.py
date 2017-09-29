@@ -1,9 +1,10 @@
 import sys
 import numpy
 from scipy import interpolate
-
+from schainpy import cSchain
 from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
+from time import time
 
 class VoltageProc(ProcessingUnit):
 
@@ -332,7 +333,6 @@ class CohInt(Operation):
 
     n = None
 
-
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)
@@ -345,10 +345,9 @@ class CohInt(Operation):
 
         Inputs:
 
-            n        :    Number of coherent integrations
-            timeInterval   :    Time of integration. If the parameter "n" is selected this one does not work
-            overlapping    :
-
+            n               :    Number of coherent integrations
+            timeInterval    :    Time of integration. If the parameter "n" is selected this one does not work
+            overlapping     :
         """
 
         self.__initime = None
@@ -548,14 +547,13 @@ class Decoder(Operation):
     nCode = None
     nBaud = None
 
-
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)
 
         self.times = None
         self.osamp = None
-#         self.__setValues = False
+    #         self.__setValues = False
         self.isConfig = False
 
     def setup(self, code, osamp, dataOut):
@@ -631,12 +629,12 @@ class Decoder(Operation):
         junk = numpy.lib.stride_tricks.as_strided(self.code, (repetitions, self.code.size), (0, self.code.itemsize))
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
-
-        for i in range(self.__nChannels):
-            for j in range(self.__nProfiles):                
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
-
-        return self.datadecTime
+        profilesList = xrange(self.__nProfiles)
+        
+        for i in range(self.__nChannels):        
+            for j in profilesList:         
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]            
+        return self.datadecTime        
 
     def __convolutionByBlockInFreq(self, data):
 
@@ -653,6 +651,7 @@ class Decoder(Operation):
 
         return data
 
+    
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
 
         if dataOut.flagDecodeData:
@@ -1087,7 +1086,6 @@ class SplitProfiles(Operation):
         dataOut.ippSeconds /= n
 
 class CombineProfiles(Operation):
-
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)

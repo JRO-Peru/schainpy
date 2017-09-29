@@ -542,7 +542,6 @@ class JRODataIO:
 
 class JRODataReader(JRODataIO):
 
-
     online = 0
 
     realtime = 0
@@ -579,7 +578,6 @@ class JRODataReader(JRODataIO):
 
     selBlocktime = None
 
-
     def __init__(self):
 
         """
@@ -603,19 +601,18 @@ class JRODataReader(JRODataIO):
 
         raise NotImplementedError
 
-    def __searchFilesOffLine(self,
-                            path,
-                            startDate=None,
-                            endDate=None,
-                            startTime=datetime.time(0,0,0),
-                            endTime=datetime.time(23,59,59),
-                            set=None,
-                            expLabel='',
-                            ext='.r',
-                            queue=None,
-                            cursor=None,
-                            skip=None,
-                            walk=True):
+    def searchFilesOffLine(self,
+                           path,
+                           startDate=None,
+                           endDate=None,
+                           startTime=datetime.time(0,0,0),
+                           endTime=datetime.time(23,59,59),
+                           set=None,
+                           expLabel='',
+                           ext='.r',
+                           cursor=None,
+                           skip=None,
+                           walk=True):
 
         self.filenameList = []
         self.datetimeList = []
@@ -625,8 +622,7 @@ class JRODataReader(JRODataIO):
         dateList, pathList = self.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
 
         if dateList == []:
-#             print "[Reading] Date range selected invalid [%s - %s]: No *%s files in %s)" %(startDate, endDate, ext, path)
-            return None, None
+            return [], []
 
         if len(dateList) > 1:
             print "[Reading] Data found for date range [%s - %s]: total days = %d" %(startDate, endDate, len(dateList))
@@ -637,7 +633,6 @@ class JRODataReader(JRODataIO):
         datetimeList = []
 
         for thisPath in pathList:
-#             thisPath = pathList[pathDict[file]]
 
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
@@ -645,10 +640,8 @@ class JRODataReader(JRODataIO):
             skippedFileList = []
 
             if cursor is not None and skip is not None:
-                # if cursor*skip > len(fileList):
+
                 if skip == 0:
-                    if queue is not None:
-                        queue.put(len(fileList))
                     skippedFileList = []
                 else:
                     skippedFileList = fileList[cursor*skip: cursor*skip + skip]
@@ -673,13 +666,13 @@ class JRODataReader(JRODataIO):
 
         if not(filenameList):
             print "[Reading] Time range selected invalid [%s - %s]: No *%s files in %s)" %(startTime, endTime, ext, path)
-            return None, None
+            return [], []
 
         print "[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime)
         print
 
-        for i in range(len(filenameList)):
-            print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
+        # for i in range(len(filenameList)):
+        #     print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
 
         self.filenameList = filenameList
         self.datetimeList = datetimeList
@@ -1043,8 +1036,7 @@ class JRODataReader(JRODataIO):
 
         #Skip block out of startTime and endTime
         while True:            
-            if not(self.__setNewBlock()):
-                print 'returning'
+            if not(self.__setNewBlock()):                
                 return 0
             
             if not(self.readBlock()):
@@ -1273,7 +1265,6 @@ class JRODataReader(JRODataIO):
                 realtime=False,
                 blocksize=None,
                 blocktime=None,
-                queue=None,
                 skip=None,
                 cursor=None,
                 warnings=True,
@@ -1322,19 +1313,13 @@ class JRODataReader(JRODataIO):
                 last_set = None
             else:
                 print "[Reading] Searching files in offline mode ..."
-                pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
+                pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
                                                                 startTime=startTime, endTime=endTime,
                                                                 set=set, expLabel=expLabel, ext=ext,
                                                                 walk=walk, cursor=cursor,
-                                                                skip=skip, queue=queue)
+                                                                skip=skip)
 
                 if not(pathList):
-            #      print "[Reading] No *%s files in %s (%s - %s)"%(ext, path,
-            #                                          datetime.datetime.combine(startDate,startTime).ctime(),
-            #                                           datetime.datetime.combine(endDate,endTime).ctime())
-
-            #     sys.exit(-1)
-
                     self.fileIndex = -1
                     self.pathList = []
                     self.filenameList = []
@@ -1451,7 +1436,6 @@ class JRODataReader(JRODataIO):
 
         self.__printInfo = False
 
-
     def run(self,
                 path=None,
                 startDate=None,
@@ -1469,7 +1453,6 @@ class JRODataReader(JRODataIO):
                 realtime=False,
                 blocksize=None,
                 blocktime=None,
-                queue=None,
                 skip=None,
                 cursor=None,
                 warnings=True,
@@ -1477,29 +1460,27 @@ class JRODataReader(JRODataIO):
                 verbose=True, **kwargs):
 
         if not(self.isConfig):
-#            self.dataOut = dataOut
-            self.setup( path=path,
-                        startDate=startDate,
-                        endDate=endDate,
-                        startTime=startTime,
-                        endTime=endTime,
-                        set=set,
-                        expLabel=expLabel,
-                        ext=ext,
-                        online=online,
-                        delay=delay,
-                        walk=walk,
-                        getblock=getblock,
-                        nTxs=nTxs,
-                        realtime=realtime,
-                        blocksize=blocksize,
-                        blocktime=blocktime,
-                        queue=queue,
-                        skip=skip,
-                        cursor=cursor,
-                        warnings=warnings,
-                        server=server,
-                        verbose=verbose)
+            self.setup(path=path,
+                       startDate=startDate,
+                       endDate=endDate,
+                       startTime=startTime,
+                       endTime=endTime,
+                       set=set,
+                       expLabel=expLabel,
+                       ext=ext,
+                       online=online,
+                       delay=delay,
+                       walk=walk,
+                       getblock=getblock,
+                       nTxs=nTxs,
+                       realtime=realtime,
+                       blocksize=blocksize,
+                       blocktime=blocktime,
+                       skip=skip,
+                       cursor=cursor,
+                       warnings=warnings,
+                       server=server,
+                       verbose=verbose)
             self.isConfig = True
         if server is None:
             self.getData()
