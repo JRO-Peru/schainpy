@@ -113,6 +113,8 @@ class Data(object):
         self.__heights = []
         self.__all_heights = set()
         for plot in self.plottypes:
+            if 'snr' in plot:
+                plot = 'snr'
             self.data[plot] = {}
 
     def shape(self, key):
@@ -138,8 +140,9 @@ class Data(object):
         self.parameters = getattr(dataOut, 'parameters', [])
         self.pairs = dataOut.pairsList
         self.channels = dataOut.channelList
-        self.xrange = (dataOut.getFreqRange(1)/1000. , dataOut.getAcfRange(1) , dataOut.getVelRange(1))
         self.interval = dataOut.getTimeInterval()
+        if 'spc' in self.plottypes or 'cspc' in self.plottypes:
+            self.xrange = (dataOut.getFreqRange(1)/1000. , dataOut.getAcfRange(1) , dataOut.getVelRange(1))
         self.__heights.append(dataOut.heightList)
         self.__all_heights.update(dataOut.heightList)
         self.__times.append(tm)

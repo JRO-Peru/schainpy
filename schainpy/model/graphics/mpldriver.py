@@ -4,7 +4,7 @@ import sys
 import matplotlib
 
 if 'linux' in sys.platform:
-    matplotlib.use("TKAgg")
+    matplotlib.use("GTK3Agg")
 
 if 'darwin' in sys.platform:
     matplotlib.use('TKAgg')

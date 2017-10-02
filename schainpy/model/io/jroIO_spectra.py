@@ -256,15 +256,6 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         Exceptions: 
             Si un bloque leido no es un bloque valido
         """
-        print ' ======================================================== '
-        print ' '
-        print ' '
-        print self.processingHeaderObj.totalSpectra, 'TotalSpectra', type(self.processingHeaderObj.totalSpectra)
-        print self.processingHeaderObj.spectraComb, 'SpectraComb', type(self.processingHeaderObj.spectraComb)
-        print ' '
-        print ' '
-        print ' ======================================================== '
-        
 
         blockOk_flag = False
         fpointer = self.fp.tell()

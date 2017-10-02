@@ -145,6 +145,7 @@ class PlotData(Operation, Process):
         ax.figure.add_axes(nax)        
         return nax
 
+        self.setup()
 
     def setup(self):
         '''
@@ -334,7 +335,6 @@ class PlotData(Operation, Process):
     def close(self):
         if self.data:
             self.__plot()
-
 
 class PlotSpectraData(PlotData):
     '''
@@ -727,6 +727,7 @@ class PlotParamData(PlotRTIData):
         self.nplots = self.nrows
         if self.showSNR:
             self.nrows += 1
+            self.nplots += 1
         
         self.ylabel = 'Height [Km]'
         self.titles = self.data.parameters \
