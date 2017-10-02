@@ -16,7 +16,6 @@ class build_ext(_build_ext):
         import numpy
         self.include_dirs.append(numpy.get_include())
 
-
 setup(name="schainpy",
       version=__version__,
       description="Python tools to read, write and process Jicamarca data",

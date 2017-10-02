@@ -264,7 +264,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         if self.nTxs > 1:
             self.dataOut.radarControllerHeaderObj.ippSeconds = self.radarControllerHeaderObj.ippSeconds/self.nTxs
-
         #Time interval and code are propierties of dataOut. Its value depends of radarControllerHeaderObj.
 
         #         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt
