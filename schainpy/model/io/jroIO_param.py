@@ -97,7 +97,7 @@ class ParamReader(ProcessingUnit):
             self.timezone = 'lt'
 
         print "[Reading] Searching files in offline mode ..."
-        pathList, filenameList = self.__searchFilesOffLine(path, startDate=startDate, endDate=endDate,
+        pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
                                                                startTime=startTime, endTime=endTime,
                                                                ext=ext, walk=walk)
 
@@ -115,7 +115,7 @@ class ParamReader(ProcessingUnit):
 
         return
 
-    def __searchFilesOffLine(self,
+    def searchFilesOffLine(self,
                             path,
                             startDate=None,
                             endDate=None,

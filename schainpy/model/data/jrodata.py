@@ -698,7 +698,7 @@ class Spectra(JROData):
             for pair in pairsList:
                 if pair not in self.pairsList:
                     raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
-                pairsIndexList.append(self.pairsList.index(pair))
+                pairsIndexList.append(self.pairsList.index(pair))        
         for i in range(len(pairsIndexList)):
             pair = self.pairsList[pairsIndexList[i]]
             ccf = numpy.average(self.data_cspc[pairsIndexList[i], :, :], axis=0)

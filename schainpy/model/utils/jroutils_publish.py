@@ -7,7 +7,6 @@ import json
 import numpy
 import paho.mqtt.client as mqtt
 import zmq
-from profilehooks import profile
 import datetime
 from zmq.utils.monitor import recv_monitor_message
 from functools import wraps
@@ -16,6 +15,7 @@ from multiprocessing import Process
 
 from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
 from schainpy.model.data.jrodata import JROData
+from schainpy.utils import log
 
 MAXNUMX = 100
 MAXNUMY = 100
@@ -31,14 +31,13 @@ def roundFloats(obj):
         return round(obj, 2)
 
 def decimate(z, MAXNUMY):
-    # dx = int(len(self.x)/self.__MAXNUMX) + 1
-
     dy = int(len(z[0])/MAXNUMY) + 1
 
     return z[::, ::dy]
 
 class throttle(object):
-    """Decorator that prevents a function from being called more than once every
+    '''
+    Decorator that prevents a function from being called more than once every
     time period.
     To create a function that cannot be called more than once a minute, but
     will sleep until it can be called:
@@ -49,7 +48,7 @@ class throttle(object):
     for i in range(10):
       foo()
       print "This function has run %s times." % i
-    """
+    '''
 
     def __init__(self, seconds=0, minutes=0, hours=0):
         self.throttle_period = datetime.timedelta(
@@ -73,9 +72,169 @@ class throttle(object):
 
         return wrapper
 
+class Data(object):
+    '''
+    Object to hold data to be plotted
+    '''
+
+    def __init__(self, plottypes, throttle_value):
+        self.plottypes = plottypes
+        self.throttle = throttle_value
+        self.ended = False
+        self.__times = []      
+
+    def __str__(self):
+        dum = ['{}{}'.format(key, self.shape(key)) for key in self.data]
+        return 'Data[{}][{}]'.format(';'.join(dum), len(self.__times))
+
+    def __len__(self):
+        return len(self.__times)
+
+    def __getitem__(self, key):
+        if key not in self.data:
+            raise KeyError(log.error('Missing key: {}'.format(key)))
+
+        if 'spc' in key:
+            ret = self.data[key]
+        else:
+            ret = numpy.array([self.data[key][x] for x in self.times])
+            if ret.ndim > 1:
+                ret = numpy.swapaxes(ret, 0, 1)
+        return ret
+
+    def setup(self):
+        '''
+        Configure object
+        '''
+        
+        self.ended = False
+        self.data = {}
+        self.__times = []
+        self.__heights = []
+        self.__all_heights = set()
+        for plot in self.plottypes:
+            self.data[plot] = {}
+
+    def shape(self, key):
+        '''
+        Get the shape of the one-element data for the given key
+        '''
+        
+        if len(self.data[key]):
+            if 'spc' in key:
+                return self.data[key].shape
+            return self.data[key][self.__times[0]].shape
+        return (0,)
+
+    def update(self, dataOut):
+        '''
+        Update data object with new dataOut
+        '''
+
+        tm = dataOut.utctime
+        if tm in self.__times:
+            return
+
+        self.parameters = getattr(dataOut, 'parameters', [])
+        self.pairs = dataOut.pairsList
+        self.channels = dataOut.channelList
+        self.xrange = (dataOut.getFreqRange(1)/1000. , dataOut.getAcfRange(1) , dataOut.getVelRange(1))
+        self.interval = dataOut.getTimeInterval()
+        self.__heights.append(dataOut.heightList)
+        self.__all_heights.update(dataOut.heightList)
+        self.__times.append(tm)
+
+        for plot in self.plottypes:
+            if plot == 'spc':
+                z = dataOut.data_spc/dataOut.normFactor
+                self.data[plot] = 10*numpy.log10(z)
+            if plot == 'cspc':
+                self.data[plot] = dataOut.data_cspc
+            if plot == 'noise':
+                self.data[plot][tm] = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
+            if plot == 'rti':
+                self.data[plot][tm] = dataOut.getPower()
+            if plot == 'snr_db':
+                self.data['snr'][tm] = dataOut.data_SNR
+            if plot == 'snr':
+                self.data[plot][tm] = 10*numpy.log10(dataOut.data_SNR)
+            if plot == 'dop':
+                self.data[plot][tm] = 10*numpy.log10(dataOut.data_DOP)
+            if plot == 'mean':
+                self.data[plot][tm] = dataOut.data_MEAN
+            if plot == 'std':
+                self.data[plot][tm] = dataOut.data_STD
+            if plot == 'coh':
+                self.data[plot][tm] = dataOut.getCoherence()
+            if plot == 'phase':
+                self.data[plot][tm] = dataOut.getCoherence(phase=True)
+            if plot == 'output':
+                self.data[plot][tm] = dataOut.data_output
+            if plot == 'param':
+                self.data[plot][tm] = dataOut.data_param
+
+    def normalize_heights(self):
+        '''
+        Ensure same-dimension of the data for different heighList
+        '''
+
+        H = numpy.array(list(self.__all_heights))
+        H.sort()
+        for key in self.data:            
+            shape = self.shape(key)[:-1] + H.shape
+            for tm, obj in self.data[key].items():
+                h = self.__heights[self.__times.index(tm)]
+                if H.size == h.size:
+                    continue
+                index = numpy.where(numpy.in1d(H, h))[0]
+                dummy = numpy.zeros(shape) + numpy.nan                
+                if len(shape) == 2:
+                    dummy[:, index] = obj
+                else:
+                    dummy[index] = obj
+                self.data[key][tm] = dummy
+        
+        self.__heights = [H for tm in self.__times]
+
+    def jsonify(self, decimate=False):
+        '''
+        Convert data to json
+        '''
+
+        ret = {}
+        tm = self.times[-1]
+
+        for key, value in self.data:
+            if key in ('spc', 'cspc'):
+                ret[key] = roundFloats(self.data[key].to_list())
+            else:
+                ret[key] = roundFloats(self.data[key][tm].to_list())
+
+        ret['timestamp'] = tm
+        ret['interval'] = self.interval
+
+    @property
+    def times(self):
+        '''
+        Return the list of times of the current data
+        '''
+
+        ret = numpy.array(self.__times)
+        ret.sort()
+        return ret
+
+    @property
+    def heights(self):
+        '''
+        Return the list of heights of the current data
+        '''
+
+        return numpy.array(self.__heights[-1])
 
 class PublishData(Operation):
-    """Clase publish."""
+    '''
+    Operation to send data over zmq.
+    '''
 
     def __init__(self, **kwargs):
         """Inicio."""
@@ -87,11 +246,11 @@ class PublishData(Operation):
 
     def on_disconnect(self, client, userdata, rc):
         if rc != 0:
-            print("Unexpected disconnection.")
+            log.warning('Unexpected disconnection.')
         self.connect()
 
     def connect(self):
-        print 'trying to connect'
+        log.warning('trying to connect')
         try:
             self.client.connect(
                 host=self.host,
@@ -105,7 +264,7 @@ class PublishData(Operation):
             #     retain=True
             #     )
         except:
-            print "MQTT Conection error."
+            log.error('MQTT Conection error.')
             self.client = False
 
     def setup(self, port=1883, username=None, password=None, clientId="user", zeromq=1, verbose=True, **kwargs):
@@ -120,8 +279,7 @@ class PublishData(Operation):
         self.zeromq = zeromq
         self.mqtt = kwargs.get('plottype', 0)
         self.client = None
-        self.verbose = verbose
-        self.dataOut.firstdata = True
+        self.verbose = verbose        
         setup = []
         if mqtt is 1:
             self.client = mqtt.Client(
@@ -176,7 +334,6 @@ class PublishData(Operation):
                     'type': self.plottype,
                     'yData': yData
                 }
-                # print payload
 
             elif self.plottype in ('rti', 'power'):
                 data = getattr(self.dataOut, 'data_spc')
@@ -230,15 +387,16 @@ class PublishData(Operation):
                     'timestamp': 'None',
                     'type': None
                 }
-                # print 'Publishing data to {}'.format(self.host)
+
             self.client.publish(self.topic + self.plottype, json.dumps(payload), qos=0)
 
         if self.zeromq is 1:
             if self.verbose:
-                print '[Sending] {} - {}'.format(self.dataOut.type, self.dataOut.datatime)
+                log.log(
+                    '{} - {}'.format(self.dataOut.type, self.dataOut.datatime),
+                    'Sending'
+                )
             self.zmq_socket.send_pyobj(self.dataOut)
-            self.dataOut.firstdata = False
-
 
     def run(self, dataOut, **kwargs):
         self.dataOut = dataOut
@@ -253,6 +411,7 @@ class PublishData(Operation):
         if self.zeromq is 1:
             self.dataOut.finished = True
             self.zmq_socket.send_pyobj(self.dataOut)
+            time.sleep(0.1)
             self.zmq_socket.close()
         if self.client:
             self.client.loop_stop()
@@ -281,7 +440,7 @@ class ReceiverData(ProcessingUnit):
         self.receiver = self.context.socket(zmq.PULL)
         self.receiver.bind(self.address)
         time.sleep(0.5)
-        print '[Starting] ReceiverData from {}'.format(self.address)
+        log.success('ReceiverData from {}'.format(self.address))
 
 
     def run(self):
@@ -291,8 +450,9 @@ class ReceiverData(ProcessingUnit):
             self.isConfig = True
 
         self.dataOut = self.receiver.recv_pyobj()
-        print '[Receiving] {} - {}'.format(self.dataOut.type,
-                                               self.dataOut.datatime.ctime())
+        log.log('{} - {}'.format(self.dataOut.type,
+                                 self.dataOut.datatime.ctime(),),
+                'Receiving')
 
 
 class PlotterReceiver(ProcessingUnit, Process):
@@ -306,7 +466,6 @@ class PlotterReceiver(ProcessingUnit, Process):
         self.mp = False
         self.isConfig = False
         self.isWebConfig = False
-        self.plottypes = []
         self.connections = 0
         server = kwargs.get('server', 'zmq.pipe')
         plot_server = kwargs.get('plot_server', 'zmq.web')
@@ -326,19 +485,13 @@ class PlotterReceiver(ProcessingUnit, Process):
         self.realtime = kwargs.get('realtime', False)
         self.throttle_value = kwargs.get('throttle', 5)
         self.sendData = self.initThrottle(self.throttle_value)
+        self.dates = []
         self.setup()
 
     def setup(self):
 
-        self.data = {}
-        self.data['times'] = []
-        for plottype in self.plottypes:
-            self.data[plottype] = {}
-        self.data['noise'] = {}
-        self.data['throttle'] = self.throttle_value
-        self.data['ENDED'] = False
-        self.isConfig = True
-        self.data_web = {}
+        self.data = Data(self.plottypes, self.throttle_value)
+        self.isConfig = True        
 
     def event_monitor(self, monitor):
 
@@ -355,15 +508,13 @@ class PlotterReceiver(ProcessingUnit, Process):
                 self.connections += 1
             if evt['event'] == 512:
                 pass
-            if self.connections == 0 and self.started is True:
-                self.ended = True
 
             evt.update({'description': events[evt['event']]})
 
             if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
                 break
         monitor.close()
-        print("event monitor thread done!")
+        print('event monitor thread done!')
 
     def initThrottle(self, throttle_value):
 
@@ -373,65 +524,16 @@ class PlotterReceiver(ProcessingUnit, Process):
 
         return sendDataThrottled
 
-
     def send(self, data):
-        # print '[sending] data=%s size=%s' % (data.keys(), len(data['times']))
+        log.success('Sending {}'.format(data), self.name)
         self.sender.send_pyobj(data)
-
-
-    def update(self):
-        t = self.dataOut.utctime
-
-        if t in self.data['times']:
-            return
-
-        self.data['times'].append(t)
-        self.data['dataOut'] = self.dataOut
-
-        for plottype in self.plottypes:
-            if plottype == 'spc':
-                z = self.dataOut.data_spc/self.dataOut.normFactor
-                self.data[plottype] = 10*numpy.log10(z)
-                self.data['noise'][t] = 10*numpy.log10(self.dataOut.getNoise()/self.dataOut.normFactor)
-            if plottype == 'cspc':
-                jcoherence = self.dataOut.data_cspc/numpy.sqrt(self.dataOut.data_spc*self.dataOut.data_spc)
-                self.data['cspc_coh'] = numpy.abs(jcoherence)
-                self.data['cspc_phase'] = numpy.arctan2(jcoherence.imag, jcoherence.real)*180/numpy.pi
-            if plottype == 'rti':
-                self.data[plottype][t] = self.dataOut.getPower()
-            if plottype == 'snr':
-                self.data[plottype][t] = 10*numpy.log10(self.dataOut.data_SNR)
-            if plottype == 'dop':
-                self.data[plottype][t] = 10*numpy.log10(self.dataOut.data_DOP)
-            if plottype == 'mean':
-                self.data[plottype][t] = self.dataOut.data_MEAN
-            if plottype == 'std':
-                self.data[plottype][t] = self.dataOut.data_STD
-            if plottype == 'coh':
-                self.data[plottype][t] = self.dataOut.getCoherence()
-            if plottype == 'phase':
-                self.data[plottype][t] = self.dataOut.getCoherence(phase=True)
-            if plottype == 'output':
-                self.data[plottype][t] = self.dataOut.data_output
-            if plottype == 'param':
-                self.data[plottype][t] = self.dataOut.data_param
-            if self.realtime:
-                self.data_web['timestamp'] = t
-                if plottype == 'spc':
-                    self.data_web[plottype] = roundFloats(decimate(self.data[plottype]).tolist())
-                elif plottype == 'cspc':
-                    self.data_web['cspc_coh'] = roundFloats(decimate(self.data['cspc_coh']).tolist())
-                    self.data_web['cspc_phase'] = roundFloats(decimate(self.data['cspc_phase']).tolist())
-                elif plottype == 'noise':
-                    self.data_web['noise'] = roundFloats(self.data['noise'][t].tolist())
-                else:
-                    self.data_web[plottype] = roundFloats(decimate(self.data[plottype][t]).tolist())
-                self.data_web['interval'] = self.dataOut.getTimeInterval()
-                self.data_web['type'] = plottype
 
     def run(self):
 
-        print '[Starting] {} from {}'.format(self.name, self.address)
+        log.success(
+            'Starting from {}'.format(self.address),
+            self.name
+        )
 
         self.context = zmq.Context()
         self.receiver = self.context.socket(zmq.PULL)
@@ -448,39 +550,39 @@ class PlotterReceiver(ProcessingUnit, Process):
         else:
             self.sender.bind("ipc:///tmp/zmq.plots")
 
-        time.sleep(3)
+        time.sleep(2)
 
         t = Thread(target=self.event_monitor, args=(monitor,))
         t.start()
 
         while True:
-            self.dataOut = self.receiver.recv_pyobj()
-            # print '[Receiving] {} - {}'.format(self.dataOut.type,
-            #                                    self.dataOut.datatime.ctime())
-
-            self.update()
-
-            if self.dataOut.firstdata is True:
-                self.data['STARTED'] = True
-
-            if self.dataOut.finished is True:
-                self.send(self.data)
-                self.connections -= 1
-                if self.connections == 0 and self.started:
-                    self.ended = True
-                    self.data['ENDED'] = True
+            dataOut = self.receiver.recv_pyobj()
+            dt = datetime.datetime.fromtimestamp(dataOut.utctime).date()
+            sended = False
+            if dt not in self.dates:
+                if self.data:
+                    self.data.ended = True
                     self.send(self.data)
-                    self.setup()
-                    self.started = False
+                    sended = True
+                self.data.setup()
+                self.dates.append(dt)
+
+            self.data.update(dataOut)
+
+            if dataOut.finished is True:
+                self.connections -= 1
+                if self.connections == 0 and dt in self.dates:
+                    self.data.ended = True                    
+                    self.send(self.data)
+                    self.data.setup()
             else:
                 if self.realtime:
                     self.send(self.data)
-                    self.sender_web.send_string(json.dumps(self.data_web))
+                    # self.sender_web.send_string(self.data.jsonify())
                 else:
-                    self.sendData(self.send, self.data)
-                self.started = True
+                    if not sended:
+                        self.sendData(self.send, self.data)
 
-            self.data['STARTED'] = False
         return
 
     def sendToWeb(self):
@@ -497,6 +599,6 @@ class PlotterReceiver(ProcessingUnit, Process):
             time.sleep(1)
             for kwargs in self.operationKwargs.values():
                 if 'plot' in kwargs:
-                    print '[Sending] Config data to web for {}'.format(kwargs['code'].upper())
+                    log.success('[Sending] Config data to web for {}'.format(kwargs['code'].upper()))
                     sender_web_config.send_string(json.dumps(kwargs))
             self.isWebConfig = True

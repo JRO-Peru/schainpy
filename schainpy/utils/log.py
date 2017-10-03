@@ -1,4 +1,4 @@
-"""
+'''
 SCHAINPY - LOG
     Simple helper for log standarization
     Usage:
@@ -13,47 +13,32 @@ SCHAINPY - LOG
     which will look like this:
         [NEVER GONNA] - give you up
     with color red as background and white as foreground.
-"""
-import os
-import sys
+'''
+
 import click
 
-def warning(message):
-    click.echo(click.style('[WARNING] - ' + message, fg='yellow'))
+def warning(message, tag='Warning'):
+    click.echo(click.style('[{}] {}'.format(tag, message), fg='yellow'))
+    pass
 
 
-def error(message):
-    click.echo(click.style('[ERROR] - ' + message, fg='red', bg='black'))
+def error(message, tag='Error'):
+    click.echo(click.style('[{}] {}'.format(tag, message), fg='red'))
+    pass
 
 
-def success(message):
-    click.echo(click.style(message, fg='green'))
+def success(message, tag='Info'):
+    click.echo(click.style('[{}] {}'.format(tag, message), fg='green'))
+    pass
 
 
-def log(message, topic='LOG'):
-    click.echo('[{}] - {}'.format(topic, message))
+def log(message, tag='Info'):
+    click.echo('[{}] {}'.format(tag, message))
+    pass
 
-def makelogger(topic, bg='reset', fg='reset'):
+
+def makelogger(tag, bg='reset', fg='reset'):
     def func(message):
-        click.echo(click.style('[{}] - '.format(topic.upper()) + message,
+        click.echo(click.style('[{}] {}'.format(tag.upper(), message),
                    bg=bg, fg=fg))
     return func
-
-class LoggerForFile():
-    def __init__(self, filename):
-        self.old_stdout=sys.stdout
-        cwd = os.getcwd()
-        self.log_file = open(os.path.join(cwd, filename), 'w+')
-    def write(self, text):
-        text = text.rstrip()
-        if not text: 
-            return
-        self.log_file.write(text + '\n')
-        self.old_stdout.write(text + '\n')
-    def flush(self):
-        self.old_stdout.flush()
-
-def logToFile(filename='log.log'):
-    logger = LoggerForFile(filename)
-    sys.stdout = logger
-
