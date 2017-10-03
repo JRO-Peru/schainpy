@@ -111,14 +111,10 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-<<<<<<< HEAD
-            #             self.__selectPairs(pairsList)
-=======
             if not pairsList:
                 pairsList = itertools.combinations(self.dataOut.channelList, 2)            
             if self.dataOut.data_cspc is not None:
                 self.__selectPairs(pairsList)
->>>>>>> 8048843f4edfb980d0968f42f82054783b84e1cc
             return True
 
         if self.dataIn.type == "Voltage":
