@@ -100,33 +100,16 @@ ENV/
 # eclipse
 .project
 .pydevproject
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> v2.3
-
 # vscode
 
 .vscode
 
 schaingui/node_modules/
 schainpy/scripts/
-<<<<<<< HEAD
-=======
 .svn/
 *.png
 *.pyc
 schainpy/scripts
 .vscode
-schaingui/node_modules
 trash
->>>>>>> master
-=======
-schaingui/node_modules/
-.svn/
-*.png
-*.pyc
-*.xml
 *.log
-trash
->>>>>>> v2.3
