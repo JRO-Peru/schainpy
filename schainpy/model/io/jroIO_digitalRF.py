@@ -106,7 +106,7 @@ class DigitalRFReader(ProcessingUnit):
 
         # self.dataOut.nHeights = 0
 
-        self.dataOut.nProfiles = nProfiles
+        self.dataOut.nProfiles = int(nProfiles)
 
         self.dataOut.heightList = self.__firstHeigth + numpy.arange(self.__nSamples, dtype = numpy.float)*self.__deltaHeigth
 

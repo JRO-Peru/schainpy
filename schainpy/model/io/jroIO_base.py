@@ -639,7 +639,7 @@ class JRODataReader(JRODataIO):
 
             skippedFileList = []
 
-            if cursor is not None andk skip is not None:
+            if cursor is not None and skip is not None:
 
                 if skip == 0:
                     skippedFileList = []
