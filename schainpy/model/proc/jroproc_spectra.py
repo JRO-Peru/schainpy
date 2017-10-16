@@ -901,3 +901,4 @@ class IncohInt(Operation):
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
+

@@ -6,6 +6,217 @@ from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
 
+class FitGauPlot(Figure):
+
+    isConfig = None
+    __nsubplots = None
+
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'fitgau'
+
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
+        self.isConfig = False
+        self.__nsubplots = 1
+
+        self.WIDTH = 250
+        self.HEIGHT = 250
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.counter_imagwr = 0
+
+        self.PLOT_CODE = SPEC_CODE
+
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+
+        self.__xfilter_ena = False
+        self.__yfilter_ena = False
+
+    def getSubplots(self):
+
+        ncol = int(numpy.sqrt(self.nplots)+0.9)
+        nrow = int(self.nplots*1./ncol + 0.9)
+
+        return nrow, ncol
+
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
+
+        self.__showprofile = showprofile
+        self.nplots = nplots
+
+        ncolspan = 1
+        colspan = 1
+        if showprofile:
+            ncolspan = 3
+            colspan = 2
+            self.__nsubplots = 2
+
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
+
+        nrow, ncol = self.getSubplots()
+
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+
+                if counter >= self.nplots:
+                    break
+
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+
+                if showprofile:
+                    self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
+
+                counter += 1
+
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile=True,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
+            xaxis="frequency", colormap='jet', normFactor=None , GauSelector = 1):
+
+        """
+
+        Input:
+            dataOut         :
+            id        :
+            wintitle        :
+            channelList     :
+            showProfile     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+            zmin            :    None,
+            zmax            :    None
+        """
+        if realtime:
+            if not(isRealtime(utcdatatime = dataOut.utctime)):
+                print 'Skipping this plot function'
+                return
+
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList" %channel
+                channelIndexList.append(dataOut.channelList.index(channel))
+
+#         if normFactor is None:
+#             factor = dataOut.normFactor
+#         else:
+#             factor = normFactor
+        if xaxis == "frequency":
+            x = dataOut.spc_range[0]
+            xlabel = "Frequency (kHz)"
+
+        elif xaxis == "time":
+            x = dataOut.spc_range[1]
+            xlabel = "Time (ms)"
+
+        else:
+            x = dataOut.spc_range[2]
+            xlabel = "Velocity (m/s)"
+
+        ylabel = "Range (Km)"
+
+        y = dataOut.getHeiRange()
+
+        z = dataOut.GauSPC[:,GauSelector,:,:] #GauSelector]    #dataOut.data_spc/factor
+        print 'GausSPC', z[0,32,10:40]
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        zdB = 10*numpy.log10(z)
+
+        avg = numpy.average(z, axis=1)
+        avgdB = 10*numpy.log10(avg)
+
+        noise = dataOut.spc_noise
+        noisedB = 10*numpy.log10(noise)
+
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        title = wintitle + " Spectra"
+        if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+            title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
+
+        if not self.isConfig:
+
+            nplots = len(channelIndexList)
+
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile,
+                       show=show)
+
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            if zmin == None: zmin = numpy.floor(numpy.nanmin(noisedB)) - 3
+            if zmax == None: zmax = numpy.ceil(numpy.nanmax(avgdB)) + 3
+
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+
+            self.isConfig = True
+
+        self.setWinTitle(title)
+
+        for i in range(self.nplots):
+            index = channelIndexList[i]
+            str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
+            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[index], noisedB[index], str_datetime)
+            if len(dataOut.beam.codeList) != 0:
+                title = "Ch%d:%4.2fdB,%2.2f,%2.2f:%s" %(dataOut.channelList[index], noisedB[index], dataOut.beam.azimuthList[index], dataOut.beam.zenithList[index], str_datetime)
+
+            axes = self.axesList[i*self.__nsubplots]
+            axes.pcolor(x, y, zdB[index,:,:],
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title, colormap=colormap,
+                        ticksize=9, cblabel='')
+
+            if self.__showprofile:
+                axes = self.axesList[i*self.__nsubplots +1]
+                axes.pline(avgdB[index,:], y,
+                        xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
+                        xlabel='dB', ylabel='', title='',
+                        ytick_visible=False,
+                        grid='x')
+
+                noiseline = numpy.repeat(noisedB[index], len(y))
+                axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
+
+        self.draw()
+
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            name = str_datetime
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith)
+            figfile = self.getFilename(name)
+
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
+
+
+
 class MomentsPlot(Figure):
 
     isConfig = None
@@ -445,10 +656,9 @@ class WindProfilerPlot(Figure):
 #         tmin = None
 #         tmax = None
 
-
-        x = dataOut.getTimeRange1(dataOut.outputInterval)
-        y = dataOut.heightList
-        z = dataOut.data_output.copy()
+        x = dataOut.getTimeRange1(dataOut.paramInterval)
+        y = dataOut.heightList        
+        z = dataOut.data_output.copy()        
         nplots = z.shape[0]    #Number of wind dimensions estimated
         nplotsw = nplots
 
@@ -558,7 +768,7 @@ class WindProfilerPlot(Figure):
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
 
-        if dataOut.ltctime + dataOut.outputInterval >= self.xmax:
+        if dataOut.ltctime + dataOut.paramInterval >= self.xmax:
             self.counter_imagwr = wr_period
             self.isConfig = False
             update_figfile = True
@@ -635,12 +845,12 @@ class ParametersPlot(Figure):
 
                 counter += 1
 
-    def run(self, dataOut, id, wintitle="", channelList=None, paramIndex = 0, colormap=True,
+    def run(self, dataOut, id, wintitle="", channelList=None, paramIndex = 0, colormap="jet",
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, timerange=None,
             showSNR=False, SNRthresh = -numpy.inf, SNRmin=None, SNRmax=None,
             save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, HEIGHT=None):
         """
 
         Input:
@@ -656,12 +866,11 @@ class ParametersPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
-
-        if colormap:
-            colormap="jet"
-        else:
-            colormap="RdBu_r"
-
+        
+        if HEIGHT is not None:
+            self.HEIGHT = HEIGHT
+        
+        
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
 
@@ -906,25 +1115,23 @@ class Parameters1Plot(Figure):
 
         x = dataOut.getTimeRange1(dataOut.paramInterval)
         y = dataOut.heightList
-        z = data_param[channelIndexList,parameterIndex,:].copy()
 
-        zRange = dataOut.abscissaList
-#         nChannels = z.shape[0]    #Number of wind dimensions estimated
-#        thisDatetime = dataOut.datatime
+        if dataOut.data_param.ndim == 3:
+            z = dataOut.data_param[channelIndexList,parameterIndex,:]
+        else:
+            z = dataOut.data_param[channelIndexList,:]
 
         if dataOut.data_SNR is not None:
-            SNRarray = dataOut.data_SNR[channelIndexList,:]
-            SNRdB = 10*numpy.log10(SNRarray)
-#             SNRavgdB = 10*numpy.log10(SNRavg)
-            ind = numpy.where(SNRdB < 10**(SNRthresh/10))
-            z[ind] = numpy.nan
+            if dataOut.data_SNR.ndim == 2:
+                SNRavg = numpy.average(dataOut.data_SNR, axis=0)
+            else:
+                SNRavg = dataOut.data_SNR
+            SNRdB = 10*numpy.log10(SNRavg)            
 
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Parameters Plot" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
-        ylabel = "Range (Km)"
-
-        if (SNR and not onlySNR): nplots = 2*nplots
+        ylabel = "Range (Km)"        
 
         if onlyPositive:
             colormap = "jet"
@@ -943,8 +1150,8 @@ class Parameters1Plot(Figure):
 
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
-            if zmin == None: zmin = numpy.nanmin(zRange)
-            if zmax == None: zmax = numpy.nanmax(zRange)
+            if zmin == None: zmin = numpy.nanmin(z)
+            if zmax == None: zmax = numpy.nanmax(z)
 
             if SNR:
                 if SNRmin == None:  SNRmin = numpy.nanmin(SNRdB)
@@ -994,19 +1201,18 @@ class Parameters1Plot(Figure):
                             xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap=colormap,
                             ticksize=9, cblabel=zlabel, cbsize="1%")
 
-            if SNR:
-                title = "Channel %d Signal Noise Ratio (SNR): %s" %(channelIndexList[i], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
-                axes = self.axesList[(j)*self.__nsubplots]
-                if not onlySNR:
-                    axes = self.axesList[(j + 1)*self.__nsubplots]
+        if SNR:
+            title = "Channel %d Signal Noise Ratio (SNR): %s" %(channelIndexList[i], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            axes = self.axesList[(j)*self.__nsubplots]
+            if not onlySNR:
+                axes = self.axesList[(j + 1)*self.__nsubplots]
 
-                axes = self.axesList[(j + nGraphsByChannel-1)]
-
-                z1 = SNRdB[i,:].reshape((1,-1))
-                axes.pcolorbuffer(x, y, z1,
-                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
-                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap="jet",
-                        ticksize=9, cblabel=zlabel, cbsize="1%")
+            axes = self.axesList[(j + nGraphsByChannel-1)]            
+            z1 = SNRdB.reshape((1,-1))
+            axes.pcolorbuffer(x, y, z1,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,colormap="jet",
+                    ticksize=9, cblabel=zlabel, cbsize="1%")
 
 
 

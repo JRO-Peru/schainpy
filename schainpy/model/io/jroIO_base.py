@@ -1269,7 +1269,11 @@ class JRODataReader(JRODataIO):
                 cursor=None,
                 warnings=True,
                 verbose=True,
-                server=None):
+                server=None,
+                format=None,
+                oneDDict=None,
+                twoDDict=None,
+                ind2DList=None):
         if server is not None:
             if 'tcp://' in server:
                 address = server
@@ -1417,11 +1421,12 @@ class JRODataReader(JRODataIO):
         print "[Reading] Number of read blocks %04d" %self.nTotalBlocks
 
     def printNumberOfBlock(self):
+        'SPAM!'
 
-        if self.flagIsNewBlock:
-            print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
-                                                      self.processingHeaderObj.dataBlocksPerFile,
-                                                      self.dataOut.datatime.ctime())
+#         if self.flagIsNewBlock:
+#             print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
+#                                                       self.processingHeaderObj.dataBlocksPerFile,
+#                                                       self.dataOut.datatime.ctime())
 
     def printInfo(self):
 
@@ -1456,7 +1461,11 @@ class JRODataReader(JRODataIO):
                 cursor=None,
                 warnings=True,
                 server=None,
-                verbose=True, **kwargs):
+                verbose=True, 
+                format=None, 
+                oneDDict=None,
+                twoDDict=None, 
+                ind2DList=None, **kwargs):
 
         if not(self.isConfig):
             self.setup(path=path,
@@ -1479,7 +1488,11 @@ class JRODataReader(JRODataIO):
                        cursor=cursor,
                        warnings=warnings,
                        server=server,
-                       verbose=verbose)
+                       verbose=verbose,
+                       format=format,
+                       oneDDict=oneDDict,
+                       twoDDict=twoDDict,
+                       ind2DList=ind2DList)
             self.isConfig = True
         if server is None:
             self.getData()
