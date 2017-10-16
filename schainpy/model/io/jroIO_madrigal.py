@@ -20,7 +20,7 @@ from schainpy.model.data.jrodata import Parameters
 from schainpy.utils import log
 
 try:
-    import madrigal.cedar    
+    import madrigal.cedar
 except:
     log.warning(
         'You should install "madrigal library" module if you want to read/write Madrigal data'
@@ -306,6 +306,8 @@ class MADReader(JRODataReader, ProcessingUnit):
         dum = []
         if self.ext == '.txt':
             dt = self.data[self.counter_records][:6].astype(int)
+            if datetime.datetime(dt[0], dt[1], dt[2], dt[3], dt[4], dt[5]).date() > self.datatime.date():
+                self.flagDiscontinuousBlock = 1
             self.datatime = datetime.datetime(dt[0], dt[1], dt[2], dt[3], dt[4], dt[5])
             while True:
                 dt = self.data[self.counter_records][:6].astype(int)
@@ -317,9 +319,7 @@ class MADReader(JRODataReader, ProcessingUnit):
                         self.flagIsNewFile = True
                         break
                     continue
-                self.intervals.add((datatime-self.datatime).seconds)
-                if datatime.date() > self.datatime.date():
-                    self.flagDiscontinuousBlock = 1
+                self.intervals.add((datatime-self.datatime).seconds)                
                 break
         elif self.ext == '.hdf5':
             datatime = datetime.datetime.utcfromtimestamp(
@@ -506,15 +506,15 @@ class MADWriter(Operation):
             log.success(
                 'Creating file: {}'.format(self.fullname),
                 'MADWriter')
-            self.fp = madrigal.cedar.MadrigalCedarFile(self.fullname, True)  
+            self.fp = madrigal.cedar.MadrigalCedarFile(self.fullname, True)
         except ValueError, e:
             log.error(
                 'Impossible to create a cedar object with "madrigal.cedar.MadrigalCedarFile"',
                 'MADWriter')
             return
-        
-        return 1  
-     
+
+        return 1
+
     def writeBlock(self):
         '''
         Add data records to cedar file taking data from oneDDict and twoDDict
@@ -525,30 +525,39 @@ class MADWriter(Operation):
         startTime = datetime.datetime.fromtimestamp(self.dataOut.utctime)
         endTime = startTime + datetime.timedelta(seconds=self.dataOut.paramInterval)
         heights = self.dataOut.heightList
-        
+
         if self.ext == '.dat':
-            invalid = numpy.isnan(self.dataOut.data_output)
-            self.dataOut.data_output[invalid] = self.missing
-        out = {}        
+            for key, value in self.twoDDict.items():
+                if isinstance(value, str):
+                    data = getattr(self.dataOut, value)
+                    invalid = numpy.isnan(data)
+                    data[invalid] = self.missing
+                elif isinstance(value, (tuple, list)):
+                    attr, key = value
+                    data = getattr(self.dataOut, attr)
+                    invalid = numpy.isnan(data)
+                    data[invalid] = self.missing
+
+        out = {}
         for key, value in self.twoDDict.items():
             key = key.lower()
-            if isinstance(value, str):                
+            if isinstance(value, str):
                 if 'db' in value.lower():
                     tmp = getattr(self.dataOut, value.replace('_db', ''))
-                    SNRavg = numpy.average(tmp, axis=0)  
+                    SNRavg = numpy.average(tmp, axis=0)
                     tmp = 10*numpy.log10(SNRavg)
                 else:
-                    tmp = getattr(self.dataOut, value)                
+                    tmp = getattr(self.dataOut, value)
                 out[key] = tmp.flatten()
             elif isinstance(value, (tuple, list)):
-                attr, x = value                
+                attr, x = value
                 data = getattr(self.dataOut, attr)
                 out[key] = data[int(x)]
 
         a = numpy.array([out[k] for k in self.keys])
-        nrows = numpy.array([numpy.isnan(a[:, x]).all() for x in range(len(heights))])        
+        nrows = numpy.array([numpy.isnan(a[:, x]).all() for x in range(len(heights))])
         index = numpy.where(nrows == False)[0]
-        
+
         rec = madrigal.cedar.MadrigalDataRecord(
             self.kinst,
             self.kindat,
@@ -586,7 +595,7 @@ class MADWriter(Operation):
         self.fp.append(rec)
         if self.ext == '.hdf5' and self.counter % 500 == 0 and self.counter > 0:
             self.fp.dump()
-        if self.counter % 10 == 0 and self.counter > 0:
+        if self.counter % 100 == 0 and self.counter > 0:
             log.log(
                 'Writing {} records'.format(
                     self.counter),
@@ -616,12 +625,12 @@ class MADWriter(Operation):
             return 0        
         
         if self.dataOut.flagDiscontinuousBlock or self.counter == self.blocks:
-            if self.counter > 0:                
+            if self.counter > 0:
                 self.setHeader()
             self.counter = 0
 
         if self.counter == 0:
-            self.setFile()            
+            self.setFile()
         
         self.writeBlock()
         self.counter += 1        
