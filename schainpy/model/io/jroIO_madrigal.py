@@ -14,22 +14,21 @@ import datetime
 import numpy
 import h5py
 
-try:
-    import madrigal
-    import madrigal.cedar
-except:
-    print 'You should install "madrigal library" module if you want to read/write Madrigal data'
-
-from schainpy.model.io.jroIO_base import JRODataReader 
+from schainpy.model.io.jroIO_base import JRODataReader
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Parameters
 from schainpy.utils import log
 
+try:
+    import madrigal.cedar    
+except:
+    log.warning(
+        'You should install "madrigal library" module if you want to read/write Madrigal data'
+        )
 
 DEF_CATALOG = {
     'principleInvestigator': 'Marco Milla',
     'expPurpose': None,
-    'expMode': None,
     'cycleTime': None,
     'correlativeExp': None,
     'sciRemarks': None,
@@ -60,6 +59,8 @@ def load_json(obj):
 
     if isinstance(obj, str):
         iterable = json.loads(obj)
+    else:
+        iterable = obj
 
     if isinstance(iterable, dict):
         return {str(k): load_json(v) if isinstance(v, dict) else str(v) if isinstance(v, unicode) else v
@@ -92,8 +93,7 @@ class MADReader(JRODataReader, ProcessingUnit):
               startTime=datetime.time(0, 0, 0),
               endTime=datetime.time(23, 59, 59),
               **kwargs):
-        
-        self.started = True
+                
         self.path = path
         self.startDate = startDate
         self.endDate = endDate
@@ -135,7 +135,7 @@ class MADReader(JRODataReader, ProcessingUnit):
              path - Path to find files             
         '''    
 
-        print 'Searching files {} in {} '.format(self.ext, path)
+        log.log('Searching files {} in {} '.format(self.ext, path), 'MADReader')
         foldercounter = 0        
         fileList0 = glob.glob1(path, '*{}'.format(self.ext))
         fileList0.sort()
@@ -200,16 +200,18 @@ class MADReader(JRODataReader, ProcessingUnit):
         
         for param in self.oneDDict.keys():
             if param.lower() not in self.parameters:
-                print('\x1b[33m[Warning]\x1b[0m Parameter \x1b[1;32m{}\x1b[0m not found will be ignored'.format(
-                    param
-                ))
+                log.warning(
+                    'Parameter {} not found will be ignored'.format(
+                        param),
+                    'MADReader')
                 self.oneDDict.pop(param, None)
         
         for param, value in self.twoDDict.items():
             if param.lower() not in self.parameters:
-                print('\x1b[33m[Warning]\x1b[0m Parameter \x1b[1;32m{}\x1b[0m not found will be ignored'.format(
-                    param
-                ))
+                log.warning(
+                    'Parameter {} not found, it will be ignored'.format(
+                        param),
+                    'MADReader')
                 self.twoDDict.pop(param, None)
                 continue
             if isinstance(value, list):
@@ -237,14 +239,15 @@ class MADReader(JRODataReader, ProcessingUnit):
         file_id = self.fileId
 
         if file_id == len(self.fileList):
-            print '\nNo more files in the folder'
-            print 'Total number of file(s) read : {}'.format(self.fileId)            
+            log.success('No more files', 'MADReader')
             self.flagNoMoreFiles = 1
             return 0
         
-        print('\x1b[32m[Info]\x1b[0m Opening: {}'.format(
-            self.fileList[file_id]
-            ))
+        log.success(
+            'Opening: {}'.format(self.fileList[file_id]),
+            'MADReader'
+            )
+        
         filename = os.path.join(self.path, self.fileList[file_id])
         
         if self.filename is not None:
@@ -270,7 +273,7 @@ class MADReader(JRODataReader, ProcessingUnit):
     def readNextBlock(self):
 
         while True:
-
+            self.flagDiscontinuousBlock = 0
             if self.flagIsNewFile:                
                 if not self.setNextFile():                    
                     return 0
@@ -279,17 +282,21 @@ class MADReader(JRODataReader, ProcessingUnit):
             
             if (self.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or \
                (self.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
-                print "\x1b[32m[Reading]\x1b[0m Record No. %d/%d -> %s \x1b[33m[Skipping]\x1b[0m" %(
-                    self.counter_records,
-                    self.nrecords,
-                    self.datatime.ctime())
+                log.warning(
+                    'Reading Record No. {}/{} -> {} [Skipping]'.format(
+                        self.counter_records,
+                        self.nrecords,
+                        self.datatime.ctime()),
+                    'MADReader')
                 continue
             break
 
-        print "\x1b[32m[Reading]\x1b[0m Record No. %d/%d -> %s" %(
-            self.counter_records,
-            self.nrecords,
-            self.datatime.ctime())
+        log.log(
+            'Reading Record No. {}/{} -> {}'.format(
+                self.counter_records,
+                self.nrecords,
+                self.datatime.ctime()),
+            'MADReader')
 
         return 1
 
@@ -311,6 +318,8 @@ class MADReader(JRODataReader, ProcessingUnit):
                         break
                     continue
                 self.intervals.add((datatime-self.datatime).seconds)
+                if datatime.date() > self.datatime.date():
+                    self.flagDiscontinuousBlock = 1
                 break
         elif self.ext == '.hdf5':
             datatime = datetime.datetime.utcfromtimestamp(
@@ -326,12 +335,14 @@ class MADReader(JRODataReader, ProcessingUnit):
                         tmp = self.data['2D Parameters'][param].value.T
                         dum.append(tmp[self.counter_records])
             self.intervals.add((datatime-self.datatime).seconds)
+            if datatime.date()>self.datatime.date():
+                self.flagDiscontinuousBlock = 1
             self.datatime = datatime
             self.counter_records += 1
             if self.counter_records == self.nrecords:
                 self.flagIsNewFile = True
         
-        self.buffer = numpy.array(dum)        
+        self.buffer = numpy.array(dum)
         return
 
     def set_output(self):
@@ -344,7 +355,7 @@ class MADReader(JRODataReader, ProcessingUnit):
         for param, attr in self.oneDDict.items():            
             x = self.parameters.index(param.lower())
             setattr(self.dataOut, attr, self.buffer[0][x])
-        
+
         for param, value in self.twoDDict.items():            
             x = self.parameters.index(param.lower())
             if self.ext == '.txt':
@@ -355,10 +366,9 @@ class MADReader(JRODataReader, ProcessingUnit):
                 index = numpy.where(numpy.in1d(self.ranges, ranges))[0]
                 dummy = numpy.zeros(self.ranges.shape) + numpy.nan
                 dummy[index] = self.buffer[:,x]
-            else:
-                
-                dummy = self.buffer[x]
-                
+            else:                
+                dummy = self.buffer[x]                
+
             if isinstance(value, str):
                 if value not in self.ind2DList:             
                     setattr(self.dataOut, value, dummy.reshape(1,-1))
@@ -375,8 +385,9 @@ class MADReader(JRODataReader, ProcessingUnit):
         self.dataOut.utctimeInit = self.dataOut.utctime  
         self.dataOut.paramInterval = min(self.intervals)
         self.dataOut.useLocalTime = False        
-        self.dataOut.flagNoData = False
-        self.dataOut.started = self.started
+        self.dataOut.flagNoData = False        
+        self.dataOut.nrecords = self.nrecords
+        self.dataOut.flagDiscontinuousBlock = self.flagDiscontinuousBlock
 
     def getData(self):
         '''
@@ -384,7 +395,7 @@ class MADReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'No file left to process'
+            log.error('No file left to process', 'MADReader')
             return 0
 
         if not  self.readNextBlock():
@@ -396,19 +407,19 @@ class MADReader(JRODataReader, ProcessingUnit):
         return 1
 
 
-class MAD2Writer(Operation):
+class MADWriter(Operation):
 
-    missing = -32767
-    ext = '.dat'
+    missing = -32767    
     
     def __init__(self, **kwargs):
-        
+
         Operation.__init__(self, **kwargs)
         self.dataOut = Parameters()
         self.path = None
-        self.dataOut = None
-    
-    def run(self, dataOut, path, oneDDict, ind2DList='[]', twoDDict='{}', metadata='{}', **kwargs):
+        self.fp = None
+
+    def run(self, dataOut, path, oneDDict, ind2DList='[]', twoDDict='{}',
+            metadata='{}', format='cedar', **kwargs):
         '''
         Inputs:
             path - path where files will be created
@@ -434,22 +445,21 @@ class MAD2Writer(Operation):
             metadata - json of madrigal metadata (kinst, kindat, catalog and header)      
         '''
         if not self.isConfig:
-            self.setup(dataOut, path, oneDDict, ind2DList, twoDDict, metadata, **kwargs)
+            self.setup(path, oneDDict, ind2DList, twoDDict, metadata, format, **kwargs)
             self.isConfig = True
-            
+        
+        self.dataOut = dataOut        
         self.putData() 
         return
     
-    def setup(self, dataOut, path, oneDDict, ind2DList, twoDDict, metadata, **kwargs):
+    def setup(self, path, oneDDict, ind2DList, twoDDict, metadata, format, **kwargs):
         '''
         Configure Operation        
         '''
-        
-        self.dataOut = dataOut
-        self.nmodes = self.dataOut.nmodes     
+                
         self.path = path
         self.blocks = kwargs.get('blocks', None)
-        self.counter = 0        
+        self.counter = 0
         self.oneDDict = load_json(oneDDict)
         self.twoDDict = load_json(twoDDict)
         self.ind2DList = load_json(ind2DList)
@@ -458,8 +468,18 @@ class MAD2Writer(Operation):
         self.kindat = meta.get('kindat')
         self.catalog = meta.get('catalog', DEF_CATALOG)
         self.header = meta.get('header', DEF_HEADER)
-
-        return
+        if format == 'cedar':
+            self.ext = '.dat'
+            self.extra_args = {}
+        elif format == 'hdf5':
+            self.ext = '.hdf5'
+            self.extra_args = {'ind2DList': self.ind2DList}
+        
+        self.keys = [k.lower() for k in self.twoDDict]        
+        if 'range' in self.keys:
+            self.keys.remove('range')
+        if 'gdalt' in self.keys:
+            self.keys.remove('gdalt')
 
     def setFile(self):
         '''
@@ -467,24 +487,30 @@ class MAD2Writer(Operation):
         '''
 
         self.mnemonic = MNEMONICS[self.kinst]   #TODO get mnemonic from madrigal
-        date = datetime.datetime.utcfromtimestamp(self.dataOut.utctime)
+        date = datetime.datetime.fromtimestamp(self.dataOut.utctime)
 
-        filename = '%s%s_%s%s' % (self.mnemonic,
-                                  date.strftime('%Y%m%d_%H%M%S'),
-                                  self.dataOut.mode,
-                                  self.ext)     
+        filename = '{}{}{}'.format(self.mnemonic,
+                                   date.strftime('%Y%m%d_%H%M%S'),
+                                   self.ext)     
        
         self.fullname = os.path.join(self.path, filename)
 
         if os.path.isfile(self.fullname) : 
-            print "Destination path '%s' already exists. Previous file deleted. " %self.fullname
+            log.warning(
+                'Destination path {} already exists. Previous file deleted.'.format(
+                    self.fullname),
+                'MADWriter')
             os.remove(self.fullname)
         
         try:
-            print '[Writing] creating file : %s' % (self.fullname)
-            self.cedarObj = madrigal.cedar.MadrigalCedarFile(self.fullname, True)  
+            log.success(
+                'Creating file: {}'.format(self.fullname),
+                'MADWriter')
+            self.fp = madrigal.cedar.MadrigalCedarFile(self.fullname, True)  
         except ValueError, e:
-            print '[Error]: Impossible to create a cedar object with "madrigal.cedar.MadrigalCedarFile" '
+            log.error(
+                'Impossible to create a cedar object with "madrigal.cedar.MadrigalCedarFile"',
+                'MADWriter')
             return
         
         return 1  
@@ -496,10 +522,33 @@ class MAD2Writer(Operation):
         Allowed parameters in: parcodes.tab
         '''
 
-        startTime = datetime.datetime.utcfromtimestamp(self.dataOut.utctime)
+        startTime = datetime.datetime.fromtimestamp(self.dataOut.utctime)
         endTime = startTime + datetime.timedelta(seconds=self.dataOut.paramInterval)
-        nrows = len(getattr(self.dataOut, self.ind2DList))
+        heights = self.dataOut.heightList
+        
+        if self.ext == '.dat':
+            invalid = numpy.isnan(self.dataOut.data_output)
+            self.dataOut.data_output[invalid] = self.missing
+        out = {}        
+        for key, value in self.twoDDict.items():
+            key = key.lower()
+            if isinstance(value, str):                
+                if 'db' in value.lower():
+                    tmp = getattr(self.dataOut, value.replace('_db', ''))
+                    SNRavg = numpy.average(tmp, axis=0)  
+                    tmp = 10*numpy.log10(SNRavg)
+                else:
+                    tmp = getattr(self.dataOut, value)                
+                out[key] = tmp.flatten()
+            elif isinstance(value, (tuple, list)):
+                attr, x = value                
+                data = getattr(self.dataOut, attr)
+                out[key] = data[int(x)]
 
+        a = numpy.array([out[k] for k in self.keys])
+        nrows = numpy.array([numpy.isnan(a[:, x]).all() for x in range(len(heights))])        
+        index = numpy.where(nrows == False)[0]
+        
         rec = madrigal.cedar.MadrigalDataRecord(
             self.kinst,
             self.kindat,
@@ -519,44 +568,42 @@ class MAD2Writer(Operation):
             endTime.microsecond/10000,
             self.oneDDict.keys(),
             self.twoDDict.keys(),
-            nrows
-            )
-                    
+            len(index),
+            **self.extra_args
+        )
+
         # Setting 1d values        
         for key in self.oneDDict:
             rec.set1D(key, getattr(self.dataOut, self.oneDDict[key]))
 
         # Setting 2d values
-        invalid = numpy.isnan(self.dataOut.data_output)
-        self.dataOut.data_output[invalid] = self.missing
-        out = {}
-        for key, value in self.twoDDict.items():
-            if isinstance(value, str):
-                out[key] = getattr(self.dataOut, value)
-            elif isinstance(value, tuple):
-                attr, x = value
-                if isinstance(x, (int, float)):
-                    out[key] = getattr(self.dataOut, attr)[int(x)]
-                elif x.lower()=='db':
-                    tmp = getattr(self.dataOut, attr)
-                    SNRavg = numpy.average(tmp, axis=0)
-                    out[key] = 10*numpy.log10(SNRavg)
-
-        for n in range(nrows):
+        nrec = 0
+        for n in index:            
             for key in out:
-                rec.set2D(key, n, out[key][n])
+                rec.set2D(key, nrec, out[key][n])
+            nrec += 1 
 
-        self.cedarObj.append(rec)
-        self.cedarObj.dump()
-        print '[Writing] Record No. {} (mode {}).'.format(
-            self.counter,
-            self.dataOut.mode
-            )
+        self.fp.append(rec)
+        if self.ext == '.hdf5' and self.counter % 500 == 0 and self.counter > 0:
+            self.fp.dump()
+        if self.counter % 10 == 0 and self.counter > 0:
+            log.log(
+                'Writing {} records'.format(
+                    self.counter),
+                'MADWriter')
 
     def setHeader(self):
         '''
         Create an add catalog and header to cedar file
         ''' 
+        
+        log.success('Closing file {}'.format(self.fullname), 'MADWriter')
+
+        if self.ext == '.dat':
+            self.fp.write()
+        else:
+            self.fp.dump()
+            self.fp.close()
         
         header = madrigal.cedar.CatalogHeaderCreator(self.fullname)        
         header.createCatalog(**self.catalog)
@@ -566,15 +613,20 @@ class MAD2Writer(Operation):
     def putData(self):
 
         if self.dataOut.flagNoData:
-            return 0
+            return 0        
         
+        if self.dataOut.flagDiscontinuousBlock or self.counter == self.blocks:
+            if self.counter > 0:                
+                self.setHeader()
+            self.counter = 0
+
         if self.counter == 0:
             self.setFile()            
         
-        if self.counter <= self.dataOut.nrecords:
-            self.writeBlock()
-            self.counter += 1
+        self.writeBlock()
+        self.counter += 1        
         
-        if self.counter == self.dataOut.nrecords or self.counter == self.blocks:
+    def close(self):
+        
+        if self.counter > 0:                
             self.setHeader()
-            self.counter = 0
