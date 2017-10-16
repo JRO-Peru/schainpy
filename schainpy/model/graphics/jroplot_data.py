@@ -15,10 +15,16 @@ from matplotlib.ticker import FuncFormatter, LinearLocator, MultipleLocator
 from schainpy.model.proc.jroproc_base import Operation
 from schainpy.utils import log
 
-func = lambda x, pos: ('%s') %(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
+jet_values = matplotlib.pyplot.get_cmap("jet", 100)(numpy.arange(100))[10:90]
+blu_values = matplotlib.pyplot.get_cmap("seismic_r", 20)(numpy.arange(20))[10:15]
+ncmap = matplotlib.colors.LinearSegmentedColormap.from_list("jro", numpy.vstack((blu_values, jet_values)))
+matplotlib.pyplot.register_cmap(cmap=ncmap)
 
-d1970 = datetime.datetime(1970, 1, 1)
+func = lambda x, pos: '{}'.format(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
 
+UT1970 = datetime.datetime(1970, 1, 1) - datetime.timedelta(seconds=time.timezone)
+
+CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'RdBu_r', 'seismic')]
 
 class PlotData(Operation, Process):
     '''
@@ -59,9 +65,7 @@ class PlotData(Operation, Process):
         self.zmin = kwargs.get('zmin', None)
         self.zmax = kwargs.get('zmax', None)
         self.zlimits = kwargs.get('zlimits', None)
-        self.xmin = kwargs.get('xmin', None)
-        if self.xmin is not None:
-            self.xmin += 5
+        self.xmin = kwargs.get('xmin', None)        
         self.xmax = kwargs.get('xmax', None)
         self.xrange = kwargs.get('xrange', 24)
         self.ymin = kwargs.get('ymin', None)
@@ -82,6 +86,8 @@ class PlotData(Operation, Process):
         '''
 
         self.setup()
+
+        self.time_label = 'LT' if self.localtime else 'UTC'
 
         if self.width is None:
             self.width = 8
@@ -106,6 +112,7 @@ class PlotData(Operation, Process):
                 ax = fig.add_subplot(self.nrows, self.ncols, n+1)
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
+                ax.index = 0
                 self.axes.append(ax)                
                 if self.showprofile:
                     cax = self.__add_axes(ax, size=size, pad=pad)
@@ -121,6 +128,7 @@ class PlotData(Operation, Process):
                 ax = fig.add_subplot(1, 1, 1)
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
+                ax.index = 0
                 self.figures.append(fig)                
                 self.axes.append(ax)
                 if self.showprofile:
@@ -135,6 +143,29 @@ class PlotData(Operation, Process):
                 cmap = plt.get_cmap(self.colormap)
             cmap.set_bad(self.bgcolor, 1.)
             self.cmaps.append(cmap)
+
+        for fig in self.figures:
+            fig.canvas.mpl_connect('key_press_event', self.event_key_press)
+
+    def event_key_press(self, event):
+        '''
+        '''
+
+        for ax in self.axes:
+            if ax == event.inaxes:
+                if event.key == 'down':
+                    ax.index += 1
+                elif event.key == 'up':
+                    ax.index -= 1
+                if ax.index < 0:
+                    ax.index = len(CMAPS) - 1 
+                elif ax.index == len(CMAPS):
+                    ax.index = 0
+                cmap = CMAPS[ax.index]
+                ax.cbar.set_cmap(cmap)
+                ax.cbar.draw_all()
+                ax.plt.set_cmap(cmap)                
+                ax.cbar.patch.figure.canvas.draw()
 
     def __add_axes(self, ax, size='30%', pad='8%'):
         '''
@@ -204,7 +235,7 @@ class PlotData(Operation, Process):
             if self.xaxis is 'time':
                 dt = datetime.datetime.fromtimestamp(self.min_time)
                 xmin = (datetime.datetime.combine(dt.date(),
-                                                datetime.time(int(self.xmin), 0, 0))-d1970).total_seconds()
+                                                datetime.time(int(self.xmin), 0, 0))-UT1970).total_seconds()
             else:
                 xmin = self.xmin
 
@@ -214,7 +245,7 @@ class PlotData(Operation, Process):
             if self.xaxis is 'time':
                 dt = datetime.datetime.fromtimestamp(self.min_time)
                 xmax = (datetime.datetime.combine(dt.date(),
-                                                datetime.time(int(self.xmax), 0, 0))-d1970).total_seconds()
+                                                datetime.time(int(self.xmax), 0, 0))-UT1970).total_seconds()
             else:
                 xmax = self.xmax
         
@@ -241,20 +272,20 @@ class PlotData(Operation, Process):
                     self.pf_axes[n].grid(b=True, axis='x')
                     [tick.set_visible(False) for tick in self.pf_axes[n].get_yticklabels()]
                 if self.colorbar:
-                    cb = plt.colorbar(ax.plt, ax=ax, pad=0.02)
-                    cb.ax.tick_params(labelsize=8)
+                    ax.cbar = plt.colorbar(ax.plt, ax=ax, pad=0.02, aspect=10)
+                    ax.cbar.ax.tick_params(labelsize=8)
                     if self.cb_label:
-                        cb.set_label(self.cb_label, size=8)
+                        ax.cbar.set_label(self.cb_label, size=8)
                     elif self.cb_labels:
-                        cb.set_label(self.cb_labels[n], size=8)
-
-            ax.set_title('{} - {} UTC'.format(
+                        ax.cbar.set_label(self.cb_labels[n], size=8)
+                    
+            ax.set_title('{} - {} {}'.format(
                     self.titles[n],
-                    datetime.datetime.fromtimestamp(self.max_time).strftime('%H:%M:%S')),
+                    datetime.datetime.fromtimestamp(self.max_time).strftime('%H:%M:%S'),
+                    self.time_label),
                 size=8)
             ax.set_xlim(xmin, xmax)
             ax.set_ylim(ymin, ymax)
-            
 
     def __plot(self):
         '''
@@ -314,10 +345,15 @@ class PlotData(Operation, Process):
 
         while True:
             try:
-                self.data = receiver.recv_pyobj(flags=zmq.NOBLOCK)                
+                self.data = receiver.recv_pyobj(flags=zmq.NOBLOCK)
                 
-                self.min_time = self.data.times[0]
-                self.max_time = self.data.times[-1]
+                if self.localtime:
+                    self.times = self.data.times - time.timezone
+                else:
+                    self.times = self.data.times
+                
+                self.min_time = self.times[0]
+                self.max_time = self.times[-1]
 
                 if self.isConfig is False:
                     self.__setup()
@@ -532,7 +568,7 @@ class PlotRTIData(PlotData):
         self.titles = ['{} Channel {}'.format(self.CODE.upper(), x) for x in range(self.nrows)]
 
     def plot(self):
-        self.x = self.data.times
+        self.x = self.times
         self.y = self.data.heights
         self.z = self.data[self.CODE]
         self.z = numpy.ma.masked_invalid(self.z)
@@ -613,7 +649,7 @@ class PlotNoiseData(PlotData):
 
     def plot(self):
 
-        x = self.data.times
+        x = self.times
         xmin = self.min_time
         xmax = xmin+self.xrange*60*60
         Y = self.data[self.CODE]
@@ -681,7 +717,7 @@ class PlotSkyMapData(PlotData):
 
     def plot(self):
 
-        arrayParameters = numpy.concatenate([self.data['param'][t] for t in self.data.times])
+        arrayParameters = numpy.concatenate([self.data['param'][t] for t in self.times])
         error = arrayParameters[:,-1]
         indValid = numpy.where(error == 0)[0]
         finalMeteor = arrayParameters[indValid,:]
@@ -737,7 +773,7 @@ class PlotParamData(PlotRTIData):
 
     def plot(self):
         self.data.normalize_heights()        
-        self.x = self.data.times
+        self.x = self.times
         self.y = self.data.heights
         if self.showSNR:            
             self.z = numpy.concatenate(
