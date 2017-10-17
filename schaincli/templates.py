@@ -43,12 +43,14 @@ desc = "{desc}"
 plotter = Project()
 plotter.setup(id='100', name='receiver', description=desc)
 
-receiver_proc = plotter.addProcUnit(name='PlotterReceiver')
-receiver_proc.addParameter(name='throttle', value=20, format='int')
+receiver_plot = plotter.addProcUnit(name='PlotterReceiver')
+receiver_plot.addParameter(name='throttle', value=20, format='int')
+receiver_plot.addParameter(name='plottypes', value='rti', format='str')
 
-rti = receiver_proc.addOperation(name='PlotRTIData', optype='other')
+rti = receiver_plot.addOperation(name='PlotRTIData', optype='other')
 rti.addParameter(name='zmin', value='-40.0', format='float') 
 rti.addParameter(name='zmax', value='100.0', format='float') 
+rti.addParameter(name='decimation', value='200', format='int') 
 rti.addParameter(name='xmin', value='0.0', format='int') 
 rti.addParameter(name='colormap', value='jet', format='str') 
 

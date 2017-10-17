@@ -16,15 +16,22 @@ from schainpy.model.proc.jroproc_base import Operation
 from schainpy.utils import log
 
 jet_values = matplotlib.pyplot.get_cmap("jet", 100)(numpy.arange(100))[10:90]
-blu_values = matplotlib.pyplot.get_cmap("seismic_r", 20)(numpy.arange(20))[10:15]
-ncmap = matplotlib.colors.LinearSegmentedColormap.from_list("jro", numpy.vstack((blu_values, jet_values)))
+blu_values = matplotlib.pyplot.get_cmap(
+    "seismic_r", 20)(numpy.arange(20))[10:15]
+ncmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+    "jro", numpy.vstack((blu_values, jet_values)))
 matplotlib.pyplot.register_cmap(cmap=ncmap)
 
-func = lambda x, pos: '{}'.format(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
 
-UT1970 = datetime.datetime(1970, 1, 1) - datetime.timedelta(seconds=time.timezone)
+def func(x, pos): return '{}'.format(
+    datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
+
+
+UT1970 = datetime.datetime(1970, 1, 1) - \
+    datetime.timedelta(seconds=time.timezone)
 
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'RdBu_r', 'seismic')]
+
 
 class PlotData(Operation, Process):
     '''
@@ -45,7 +52,7 @@ class PlotData(Operation, Process):
         self.kwargs['code'] = self.CODE
         self.mp = False
         self.data = None
-        self.isConfig = False        
+        self.isConfig = False
         self.figures = []
         self.axes = []
         self.cb_axes = []
@@ -65,13 +72,13 @@ class PlotData(Operation, Process):
         self.zmin = kwargs.get('zmin', None)
         self.zmax = kwargs.get('zmax', None)
         self.zlimits = kwargs.get('zlimits', None)
-        self.xmin = kwargs.get('xmin', None)        
+        self.xmin = kwargs.get('xmin', None)
         self.xmax = kwargs.get('xmax', None)
         self.xrange = kwargs.get('xrange', 24)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
         self.xlabel = kwargs.get('xlabel', None)
-        self.__MAXNUMY = kwargs.get('decimation', 100)        
+        self.__MAXNUMY = kwargs.get('decimation', 100)
         self.showSNR = kwargs.get('showSNR', False)
         self.oneFigure = kwargs.get('oneFigure', True)
         self.width = kwargs.get('width', None)
@@ -98,47 +105,47 @@ class PlotData(Operation, Process):
         self.pf_axes = []
         self.cmaps = []
 
-        size = '15%' if self.ncols==1 else '30%'
-        pad = '4%' if self.ncols==1 else '8%'
+        size = '15%' if self.ncols == 1 else '30%'
+        pad = '4%' if self.ncols == 1 else '8%'
 
         if self.oneFigure:
             if self.height is None:
-                self.height = 1.4*self.nrows + 1
+                self.height = 1.4 * self.nrows + 1
             fig = plt.figure(figsize=(self.width, self.height),
                              edgecolor='k',
                              facecolor='w')
             self.figures.append(fig)
-            for n in range(self.nplots):                
-                ax = fig.add_subplot(self.nrows, self.ncols, n+1)
+            for n in range(self.nplots):
+                ax = fig.add_subplot(self.nrows, self.ncols, n + 1)
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
                 ax.index = 0
-                self.axes.append(ax)                
+                self.axes.append(ax)
                 if self.showprofile:
                     cax = self.__add_axes(ax, size=size, pad=pad)
-                    cax.tick_params(labelsize=8)              
+                    cax.tick_params(labelsize=8)
                     self.pf_axes.append(cax)
         else:
             if self.height is None:
                 self.height = 3
             for n in range(self.nplots):
                 fig = plt.figure(figsize=(self.width, self.height),
-                                    edgecolor='k',
-                                    facecolor='w')
+                                 edgecolor='k',
+                                 facecolor='w')
                 ax = fig.add_subplot(1, 1, 1)
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
                 ax.index = 0
-                self.figures.append(fig)                
+                self.figures.append(fig)
                 self.axes.append(ax)
                 if self.showprofile:
                     cax = self.__add_axes(ax, size=size, pad=pad)
-                    cax.tick_params(labelsize=8)              
+                    cax.tick_params(labelsize=8)
                     self.pf_axes.append(cax)
-    
+
         for n in range(self.nrows):
             if self.colormaps is not None:
-                cmap = plt.get_cmap(self.colormaps[n])    
+                cmap = plt.get_cmap(self.colormaps[n])
             else:
                 cmap = plt.get_cmap(self.colormap)
             cmap.set_bad(self.bgcolor, 1.)
@@ -158,13 +165,13 @@ class PlotData(Operation, Process):
                 elif event.key == 'up':
                     ax.index -= 1
                 if ax.index < 0:
-                    ax.index = len(CMAPS) - 1 
+                    ax.index = len(CMAPS) - 1
                 elif ax.index == len(CMAPS):
                     ax.index = 0
                 cmap = CMAPS[ax.index]
                 ax.cbar.set_cmap(cmap)
                 ax.cbar.draw_all()
-                ax.plt.set_cmap(cmap)                
+                ax.plt.set_cmap(cmap)
                 ax.cbar.patch.figure.canvas.draw()
 
     def __add_axes(self, ax, size='30%', pad='8%'):
@@ -173,7 +180,7 @@ class PlotData(Operation, Process):
         '''
         divider = make_axes_locatable(ax)
         nax = divider.new_horizontal(size=size, pad=pad)
-        ax.figure.add_axes(nax)        
+        ax.figure.add_axes(nax)
         return nax
 
         self.setup()
@@ -182,7 +189,7 @@ class PlotData(Operation, Process):
         '''
         This method should be implemented in the child class, the following
         attributes should be set:
-        
+
         self.nrows: number of rows
         self.ncols: number of cols
         self.nplots: number of plots (channels or pairs)
@@ -202,26 +209,26 @@ class PlotData(Operation, Process):
         deltas = x_buffer[1:] - x_buffer[0:-1]
         x_median = numpy.median(deltas)
 
-        index = numpy.where(deltas > 5*x_median)
+        index = numpy.where(deltas > 5 * x_median)
 
         if len(index[0]) != 0:
             z_buffer[::, index[0], ::] = self.__missing
             z_buffer = numpy.ma.masked_inside(z_buffer,
-                                           0.99*self.__missing,
-                                           1.01*self.__missing)
+                                              0.99 * self.__missing,
+                                              1.01 * self.__missing)
 
         return x_buffer, y_buffer, z_buffer
 
     def decimate(self):
 
         # dx = int(len(self.x)/self.__MAXNUMX) + 1
-        dy = int(len(self.y)/self.__MAXNUMY) + 1
+        dy = int(len(self.y) / self.__MAXNUMY) + 1
 
         # x = self.x[::dx]
         x = self.x
         y = self.y[::dy]
         z = self.z[::, ::, ::dy]
-        
+
         return x, y, z
 
     def format(self):
@@ -235,42 +242,43 @@ class PlotData(Operation, Process):
             if self.xaxis is 'time':
                 dt = datetime.datetime.fromtimestamp(self.min_time)
                 xmin = (datetime.datetime.combine(dt.date(),
-                                                datetime.time(int(self.xmin), 0, 0))-UT1970).total_seconds()
+                                                  datetime.time(int(self.xmin), 0, 0)) - UT1970).total_seconds()
             else:
                 xmin = self.xmin
 
         if self.xmax is None:
-            xmax = xmin+self.xrange*60*60
+            xmax = xmin + self.xrange * 60 * 60
         else:
             if self.xaxis is 'time':
                 dt = datetime.datetime.fromtimestamp(self.min_time)
                 xmax = (datetime.datetime.combine(dt.date(),
-                                                datetime.time(int(self.xmax), 0, 0))-UT1970).total_seconds()
+                                                  datetime.time(int(self.xmax), 0, 0)) - UT1970).total_seconds()
             else:
                 xmax = self.xmax
-        
+
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
-        
-        ystep = 200 if ymax>= 800 else 100 if ymax>=400 else 50 if ymax>=200 else 20
 
-        for n, ax in enumerate(self.axes):            
+        ystep = 200 if ymax >= 800 else 100 if ymax >= 400 else 50 if ymax >= 200 else 20
+
+        for n, ax in enumerate(self.axes):
             if ax.firsttime:
                 ax.set_facecolor(self.bgcolor)
                 ax.yaxis.set_major_locator(MultipleLocator(ystep))
-                if self.xaxis is 'time':            
+                if self.xaxis is 'time':
                     ax.xaxis.set_major_formatter(FuncFormatter(func))
-                    ax.xaxis.set_major_locator(LinearLocator(9))                
+                    ax.xaxis.set_major_locator(LinearLocator(9))
                 if self.xlabel is not None:
                     ax.set_xlabel(self.xlabel)
-                ax.set_ylabel(self.ylabel)                
+                ax.set_ylabel(self.ylabel)
                 ax.firsttime = False
                 if self.showprofile:
                     self.pf_axes[n].set_ylim(ymin, ymax)
-                    self.pf_axes[n].set_xlim(self.zmin, self.zmax)                    
+                    self.pf_axes[n].set_xlim(self.zmin, self.zmax)
                     self.pf_axes[n].set_xlabel('dB')
                     self.pf_axes[n].grid(b=True, axis='x')
-                    [tick.set_visible(False) for tick in self.pf_axes[n].get_yticklabels()]
+                    [tick.set_visible(False)
+                     for tick in self.pf_axes[n].get_yticklabels()]
                 if self.colorbar:
                     ax.cbar = plt.colorbar(ax.plt, ax=ax, pad=0.02, aspect=10)
                     ax.cbar.ax.tick_params(labelsize=8)
@@ -278,11 +286,12 @@ class PlotData(Operation, Process):
                         ax.cbar.set_label(self.cb_label, size=8)
                     elif self.cb_labels:
                         ax.cbar.set_label(self.cb_labels[n], size=8)
-                    
+
             ax.set_title('{} - {} {}'.format(
-                    self.titles[n],
-                    datetime.datetime.fromtimestamp(self.max_time).strftime('%H:%M:%S'),
-                    self.time_label),
+                self.titles[n],
+                datetime.datetime.fromtimestamp(
+                    self.max_time).strftime('%H:%M:%S'),
+                self.time_label),
                 size=8)
             ax.set_xlim(xmin, xmax)
             ax.set_ylim(ymin, ymax)
@@ -291,22 +300,22 @@ class PlotData(Operation, Process):
         '''
         '''
         log.success('Plotting', self.name)
-        
+
         self.plot()
         self.format()
-        
+
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
                 continue
             if self.show:
                 fig.show()
-            
+
             fig.tight_layout()
-            fig.canvas.manager.set_window_title('{} - {}'.format(self.title, 
+            fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
             # fig.canvas.draw()
-        
+
             if self.save and self.data.ended:
                 channels = range(self.nrows)
                 if self.oneFigure:
@@ -318,7 +327,8 @@ class PlotData(Operation, Process):
                     '{}{}_{}.png'.format(
                         self.CODE,
                         label,
-                        datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')
+                        datetime.datetime.fromtimestamp(
+                            self.saveTime).strftime('%y%m%d_%H%M%S')
                     )
                 )
                 print 'Saving figure: {}'.format(figname)
@@ -339,26 +349,27 @@ class PlotData(Operation, Process):
         receiver.setsockopt(zmq.CONFLATE, self.CONFLATE)
 
         if 'server' in self.kwargs['parent']:
-            receiver.connect('ipc:///tmp/{}.plots'.format(self.kwargs['parent']['server']))
+            receiver.connect(
+                'ipc:///tmp/{}.plots'.format(self.kwargs['parent']['server']))
         else:
-            receiver.connect("ipc:///tmp/zmq.plots")        
+            receiver.connect("ipc:///tmp/zmq.plots")
 
         while True:
             try:
                 self.data = receiver.recv_pyobj(flags=zmq.NOBLOCK)
-                
+
                 if self.localtime:
                     self.times = self.data.times - time.timezone
                 else:
                     self.times = self.data.times
-                
+
                 self.min_time = self.times[0]
                 self.max_time = self.times[-1]
 
                 if self.isConfig is False:
                     self.__setup()
                     self.isConfig = True
-           
+
                 self.__plot()
 
             except zmq.Again as e:
@@ -372,23 +383,24 @@ class PlotData(Operation, Process):
         if self.data:
             self.__plot()
 
+
 class PlotSpectraData(PlotData):
     '''
     Plot for Spectra data
     '''
 
     CODE = 'spc'
-    colormap = 'jro'    
+    colormap = 'jro'
 
     def setup(self):
         self.nplots = len(self.data.channels)
-        self.ncols = int(numpy.sqrt(self.nplots)+ 0.9)
-        self.nrows = int((1.0*self.nplots/self.ncols) + 0.9)
-        self.width = 3.4*self.ncols
-        self.height = 3*self.nrows
+        self.ncols = int(numpy.sqrt(self.nplots) + 0.9)
+        self.nrows = int((1.0 * self.nplots / self.ncols) + 0.9)
+        self.width = 3.4 * self.ncols
+        self.height = 3 * self.nrows
         self.cb_label = 'dB'
-        if self.showprofile:        
-            self.width += 0.8*self.ncols
+        if self.showprofile:
+            self.width += 0.8 * self.ncols
 
         self.ylabel = 'Range [Km]'
 
@@ -412,7 +424,7 @@ class PlotSpectraData(PlotData):
         y = self.data.heights
         self.y = y
         z = self.data['spc']
-        
+
         for n, ax in enumerate(self.axes):
             noise = self.data['noise'][n][-1]
             if self.CODE == 'spc_mean':
@@ -423,15 +435,16 @@ class PlotSpectraData(PlotData):
                 self.zmin = self.zmin if self.zmin else numpy.nanmin(z)
                 self.zmax = self.zmax if self.zmax else numpy.nanmax(z)
                 ax.plt = ax.pcolormesh(x, y, z[n].T,
-                                     vmin=self.zmin,
-                                     vmax=self.zmax,
-                                     cmap=plt.get_cmap(self.colormap)
-                                    )                
+                                       vmin=self.zmin,
+                                       vmax=self.zmax,
+                                       cmap=plt.get_cmap(self.colormap)
+                                       )
 
                 if self.showprofile:
-                    ax.plt_profile= self.pf_axes[n].plot(self.data['rti'][n][-1], y)[0]                 
+                    ax.plt_profile = self.pf_axes[n].plot(
+                        self.data['rti'][n][-1], y)[0]
                     ax.plt_noise = self.pf_axes[n].plot(numpy.repeat(noise, len(y)), y,
-                                                         color="k", linestyle="dashed", lw=1)[0]
+                                                        color="k", linestyle="dashed", lw=1)[0]
                 if self.CODE == 'spc_mean':
                     ax.plt_mean = ax.plot(mean, y, color='k')[0]
             else:
@@ -452,17 +465,17 @@ class PlotCrossSpectraData(PlotData):
     zmin_coh = None
     zmax_coh = None
     zmin_phase = None
-    zmax_phase = None    
+    zmax_phase = None
 
     def setup(self):
 
         self.ncols = 4
         self.nrows = len(self.data.pairs)
-        self.nplots = self.nrows*4
-        self.width = 3.4*self.ncols
-        self.height = 3*self.nrows
+        self.nplots = self.nrows * 4
+        self.width = 3.4 * self.ncols
+        self.height = 3 * self.nrows
         self.ylabel = 'Range [Km]'
-        self.showprofile = False        
+        self.showprofile = False
 
     def plot(self):
 
@@ -486,24 +499,24 @@ class PlotCrossSpectraData(PlotData):
         for n in range(self.nrows):
             noise = self.data['noise'][n][-1]
             pair = self.data.pairs[n]
-            ax = self.axes[4*n]
-            ax3 = self.axes[4*n+3]
+            ax = self.axes[4 * n]
+            ax3 = self.axes[4 * n + 3]
             if ax.firsttime:
                 self.xmax = self.xmax if self.xmax else numpy.nanmax(x)
                 self.xmin = self.xmin if self.xmin else -self.xmax
                 self.zmin = self.zmin if self.zmin else numpy.nanmin(spc)
-                self.zmax = self.zmax if self.zmax else numpy.nanmax(spc)                
+                self.zmax = self.zmax if self.zmax else numpy.nanmax(spc)
                 ax.plt = ax.pcolormesh(x, y, spc[pair[0]].T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
-                                       )                
+                                       )
             else:
                 ax.plt.set_array(spc[pair[0]].T.ravel())
             self.titles.append('CH {}: {:3.2f}dB'.format(n, noise))
 
-            ax = self.axes[4*n+1]
-            if ax.firsttime:                
+            ax = self.axes[4 * n + 1]
+            if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, spc[pair[1]].T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
@@ -513,12 +526,12 @@ class PlotCrossSpectraData(PlotData):
                 ax.plt.set_array(spc[pair[1]].T.ravel())
             self.titles.append('CH {}: {:3.2f}dB'.format(n, noise))
 
-            out = cspc[n]/numpy.sqrt(spc[pair[0]]*spc[pair[1]])
+            out = cspc[n] / numpy.sqrt(spc[pair[0]] * spc[pair[1]])
             coh = numpy.abs(out)
-            phase = numpy.arctan2(out.imag, out.real)*180/numpy.pi
-            
-            ax = self.axes[4*n+2]
-            if ax.firsttime:                
+            phase = numpy.arctan2(out.imag, out.real) * 180 / numpy.pi
+
+            ax = self.axes[4 * n + 2]
+            if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, coh.T,
                                        vmin=0,
                                        vmax=1,
@@ -526,9 +539,10 @@ class PlotCrossSpectraData(PlotData):
                                        )
             else:
                 ax.plt.set_array(coh.T.ravel())
-            self.titles.append('Coherence Ch{} * Ch{}'.format(pair[0], pair[1]))
+            self.titles.append(
+                'Coherence Ch{} * Ch{}'.format(pair[0], pair[1]))
 
-            ax = self.axes[4*n+3]
+            ax = self.axes[4 * n + 3]
             if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, phase.T,
                                        vmin=-180,
@@ -538,7 +552,7 @@ class PlotCrossSpectraData(PlotData):
             else:
                 ax.plt.set_array(phase.T.ravel())
             self.titles.append('Phase CH{} * CH{}'.format(pair[0], pair[1]))
-            
+
             self.saveTime = self.max_time
 
 
@@ -560,12 +574,13 @@ class PlotRTIData(PlotData):
 
     def setup(self):
         self.xaxis = 'time'
-        self.ncols = 1        
+        self.ncols = 1
         self.nrows = len(self.data.channels)
         self.nplots = len(self.data.channels)
         self.ylabel = 'Range [Km]'
         self.cb_label = 'dB'
-        self.titles = ['{} Channel {}'.format(self.CODE.upper(), x) for x in range(self.nrows)]
+        self.titles = ['{} Channel {}'.format(
+            self.CODE.upper(), x) for x in range(self.nrows)]
 
     def plot(self):
         self.x = self.times
@@ -574,17 +589,18 @@ class PlotRTIData(PlotData):
         self.z = numpy.ma.masked_invalid(self.z)
 
         for n, ax in enumerate(self.axes):
-            x, y, z = self.fill_gaps(*self.decimate())            
+            x, y, z = self.fill_gaps(*self.decimate())
             self.zmin = self.zmin if self.zmin else numpy.min(self.z)
             self.zmax = self.zmax if self.zmax else numpy.max(self.z)
-            if ax.firsttime:                
+            if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, z[n].T,
-                                     vmin=self.zmin,
-                                     vmax=self.zmax,
-                                     cmap=plt.get_cmap(self.colormap)
-                                    )
+                                       vmin=self.zmin,
+                                       vmax=self.zmax,
+                                       cmap=plt.get_cmap(self.colormap)
+                                       )
                 if self.showprofile:
-                    ax.plot_profile= self.pf_axes[n].plot(self.data['rti'][n][-1], self.y)[0]
+                    ax.plot_profile = self.pf_axes[n].plot(
+                        self.data['rti'][n][-1], self.y)[0]
                     ax.plot_noise = self.pf_axes[n].plot(numpy.repeat(self.data['noise'][n][-1], len(self.y)), self.y,
                                                          color="k", linestyle="dashed", lw=1)[0]
             else:
@@ -593,12 +609,13 @@ class PlotRTIData(PlotData):
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
-                                      )
+                                       )
                 if self.showprofile:
                     ax.plot_profile.set_data(self.data['rti'][n][-1], self.y)
-                    ax.plot_noise.set_data(numpy.repeat(self.data['noise'][n][-1], len(self.y)), self.y)
+                    ax.plot_noise.set_data(numpy.repeat(
+                        self.data['noise'][n][-1], len(self.y)), self.y)
 
-        self.saveTime = self.min_time        
+        self.saveTime = self.min_time
 
 
 class PlotCOHData(PlotRTIData):
@@ -613,13 +630,15 @@ class PlotCOHData(PlotRTIData):
         self.ncols = 1
         self.nrows = len(self.data.pairs)
         self.nplots = len(self.data.pairs)
-        self.ylabel = 'Range [Km]'        
+        self.ylabel = 'Range [Km]'
         if self.CODE == 'coh':
             self.cb_label = ''
-            self.titles = ['Coherence Map Ch{} * Ch{}'.format(x[0], x[1]) for x in self.data.pairs]
+            self.titles = [
+                'Coherence Map Ch{} * Ch{}'.format(x[0], x[1]) for x in self.data.pairs]
         else:
             self.cb_label = 'Degrees'
-            self.titles = ['Phase Map Ch{} * Ch{}'.format(x[0], x[1]) for x in self.data.pairs]
+            self.titles = [
+                'Phase Map Ch{} * Ch{}'.format(x[0], x[1]) for x in self.data.pairs]
 
 
 class PlotPHASEData(PlotCOHData):
@@ -651,9 +670,9 @@ class PlotNoiseData(PlotData):
 
         x = self.times
         xmin = self.min_time
-        xmax = xmin+self.xrange*60*60
+        xmax = xmin + self.xrange * 60 * 60
         Y = self.data[self.CODE]
-        
+
         if self.axes[0].firsttime:
             for ch in self.data.channels:
                 y = Y[ch]
@@ -663,7 +682,7 @@ class PlotNoiseData(PlotData):
             for ch in self.data.channels:
                 y = Y[ch]
                 self.axes[0].lines[ch].set_data(x, y)
-        
+
         self.ymin = numpy.nanmin(Y) - 5
         self.ymax = numpy.nanmax(Y) + 5
         self.saveTime = self.min_time
@@ -711,26 +730,27 @@ class PlotSkyMapData(PlotData):
         else:
             self.figure.clf()
 
-        self.ax = plt.subplot2grid((self.nrows, self.ncols), (0, 0), 1, 1, polar=True)
+        self.ax = plt.subplot2grid(
+            (self.nrows, self.ncols), (0, 0), 1, 1, polar=True)
         self.ax.firsttime = True
-
 
     def plot(self):
 
-        arrayParameters = numpy.concatenate([self.data['param'][t] for t in self.times])
-        error = arrayParameters[:,-1]
+        arrayParameters = numpy.concatenate(
+            [self.data['param'][t] for t in self.times])
+        error = arrayParameters[:, -1]
         indValid = numpy.where(error == 0)[0]
-        finalMeteor = arrayParameters[indValid,:]
-        finalAzimuth = finalMeteor[:,3]
-        finalZenith = finalMeteor[:,4]
+        finalMeteor = arrayParameters[indValid, :]
+        finalAzimuth = finalMeteor[:, 3]
+        finalZenith = finalMeteor[:, 4]
 
-        x = finalAzimuth*numpy.pi/180
+        x = finalAzimuth * numpy.pi / 180
         y = finalZenith
 
         if self.ax.firsttime:
             self.ax.plot = self.ax.plot(x, y, 'bo', markersize=5)[0]
-            self.ax.set_ylim(0,90)
-            self.ax.set_yticks(numpy.arange(0,90,20))
+            self.ax.set_ylim(0, 90)
+            self.ax.set_yticks(numpy.arange(0, 90, 20))
             self.ax.set_xlabel(self.xlabel)
             self.ax.set_ylabel(self.ylabel)
             self.ax.yaxis.labelpad = 40
@@ -738,15 +758,17 @@ class PlotSkyMapData(PlotData):
         else:
             self.ax.plot.set_data(x, y)
 
-
-        dt1 = datetime.datetime.fromtimestamp(self.min_time).strftime('%y/%m/%d %H:%M:%S')
-        dt2 = datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')
+        dt1 = datetime.datetime.fromtimestamp(
+            self.min_time).strftime('%y/%m/%d %H:%M:%S')
+        dt2 = datetime.datetime.fromtimestamp(
+            self.max_time).strftime('%y/%m/%d %H:%M:%S')
         title = 'Meteor Detection Sky Map\n %s - %s \n Number of events: %5.0f\n' % (dt1,
                                                                                      dt2,
                                                                                      len(x))
         self.ax.set_title(title, size=8)
 
         self.saveTime = self.max_time
+
 
 class PlotParamData(PlotRTIData):
     '''
@@ -764,7 +786,7 @@ class PlotParamData(PlotRTIData):
         if self.showSNR:
             self.nrows += 1
             self.nplots += 1
-        
+
         self.ylabel = 'Height [Km]'
         self.titles = self.data.parameters \
             if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
@@ -772,10 +794,10 @@ class PlotParamData(PlotRTIData):
             self.titles.append('SNR')
 
     def plot(self):
-        self.data.normalize_heights()        
+        self.data.normalize_heights()
         self.x = self.times
         self.y = self.data.heights
-        if self.showSNR:            
+        if self.showSNR:
             self.z = numpy.concatenate(
                 (self.data[self.CODE], self.data['snr'])
             )
@@ -791,24 +813,26 @@ class PlotParamData(PlotRTIData):
             if ax.firsttime:
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
-                self.zmax = self.zmax if self.zmax is not None else numpy.nanmax(abs(self.z[:-1, :]))
+                self.zmax = self.zmax if self.zmax is not None else numpy.nanmax(
+                    abs(self.z[:-1, :]))
                 self.zmin = self.zmin if self.zmin is not None else -self.zmax
-                ax.plt = ax.pcolormesh(x, y, z[n, :, :].T*self.factors[n],
+                ax.plt = ax.pcolormesh(x, y, z[n, :, :].T * self.factors[n],
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=self.cmaps[n]
-                                      )                
+                                       )
             else:
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
                 ax.collections.remove(ax.collections[0])
-                ax.plt = ax.pcolormesh(x, y, z[n, :, :].T*self.factors[n],
+                ax.plt = ax.pcolormesh(x, y, z[n, :, :].T * self.factors[n],
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=self.cmaps[n]
-                                      )
+                                       )
 
         self.saveTime = self.min_time
+
 
 class PlotOuputData(PlotParamData):
     '''
