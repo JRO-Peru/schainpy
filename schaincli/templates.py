@@ -34,7 +34,7 @@ controller.start()
 '''
 
 multiprocess = '''from schainpy.controller import Project, MPProject
-
+from time import sleep
 desc = "{desc}"
 
 ####################
@@ -53,6 +53,8 @@ rti.addParameter(name='xmin', value='0.0', format='int')
 rti.addParameter(name='colormap', value='jet', format='str') 
 
 plotter.start()
+
+sleep(2)
 
 ################
 # DATA EMITTER #

@@ -89,16 +89,13 @@ def isFileInEpoch(filename, startUTSeconds, endUTSeconds):
 
 
 def isTimeInRange(thisTime, startTime, endTime):
-
     if endTime >= startTime:
         if (thisTime < startTime) or (thisTime > endTime):
             return 0
-
         return 1
     else:
         if (thisTime < startTime) and (thisTime > endTime):
             return 0
-
         return 1
 
 
@@ -1066,9 +1063,7 @@ class JRODataReader(JRODataIO):
                 return 0
 
             self.getBasicHeader()
-
-            if not isTimeInRange(self.dataOut.datatime.time(), self.startTime, self.endTime):
-
+            if (self.dataOut.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or (self.dataOut.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
                 print "[Reading] Block No. %d/%d -> %s [Skipping]" % (self.nReadBlocks,
                                                                       self.processingHeaderObj.dataBlocksPerFile,
                                                                       self.dataOut.datatime.ctime())
@@ -1113,8 +1108,8 @@ class JRODataReader(JRODataIO):
         self.fileSizeByHeader = self.processingHeaderObj.dataBlocksPerFile * self.processingHeaderObj.blockSize + \
             self.firstHeaderSize + self.basicHeaderSize * \
             (self.processingHeaderObj.dataBlocksPerFile - 1)
-#        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
-#        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelList = numpy.arange(self.systemHeaderObj.numChannels)
+        #        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
 
     def __verifyFile(self, filename, msgFlag=True):
@@ -1372,7 +1367,8 @@ class JRODataReader(JRODataIO):
             self.nTxs = nTxs
             self.startTime = startTime
             self.endTime = endTime
-
+            self.endDate = endDate
+            self.startDate = startDate
             # Added-----------------
             self.selBlocksize = blocksize
             self.selBlocktime = blocktime
