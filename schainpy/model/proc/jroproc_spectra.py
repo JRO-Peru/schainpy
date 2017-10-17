@@ -142,7 +142,7 @@ class SpectraProc(ProcessingUnit):
             if self.dataIn.flagDataAsBlock:
                 #data dimension: [nChannels, nProfiles, nSamples]
                 nVoltProfiles = self.dataIn.data.shape[1]
-#                 nVoltProfiles = self.dataIn.nProfiles
+            #                 nVoltProfiles = self.dataIn.nProfiles
 
                 if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
@@ -197,7 +197,6 @@ class SpectraProc(ProcessingUnit):
                 
         self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndex]
         self.dataOut.pairsList = pairs
-        self.dataOut.pairsIndexList = pairsIndex
 
         return
 
