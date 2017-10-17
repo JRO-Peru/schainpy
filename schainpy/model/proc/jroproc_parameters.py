@@ -17,7 +17,6 @@ from functools import partial
 import time
 #from sklearn.cluster import KMeans 
 
-import matplotlib.pyplot as plt
 
 from scipy.optimize import fmin_l_bfgs_b #optimize with bounds on state papameters
 from jroproc_base import ProcessingUnit, Operation
