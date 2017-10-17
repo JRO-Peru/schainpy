@@ -12,3 +12,9 @@ from jroIO_digitalRF import *
 from jroIO_kamisr import *
 from jroIO_param import *
 from jroIO_hf import *
+
+from jroIO_madrigal import *
+
+from bltrIO_param import *
+from jroIO_bltr import *
+from jroIO_mira35c import *
