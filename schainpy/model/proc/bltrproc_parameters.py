@@ -65,8 +65,8 @@ class BLTRParametersProc(ProcessingUnit):
 
         if self.dataIn.type == 'Parameters':
             self.dataOut.copy(self.dataIn)
-
-        self.dataOut.data_output = self.dataOut.data_output[mode]
+        
+        self.dataOut.data_param = self.dataOut.data[mode]
         self.dataOut.heightList = self.dataOut.height[0]
         self.dataOut.data_SNR = self.dataOut.data_SNR[mode]
 
@@ -74,7 +74,7 @@ class BLTRParametersProc(ProcessingUnit):
             SNRavg = numpy.average(self.dataOut.data_SNR, axis=0)
             SNRavgdB = 10*numpy.log10(SNRavg)
             for i in range(3):
-                self.dataOut.data_output[i][SNRavgdB <= snr_threshold] = numpy.nan
+                self.dataOut.data_param[i][SNRavgdB <= snr_threshold] = numpy.nan
 
 # TODO
 class OutliersFilter(Operation):

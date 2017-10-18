@@ -16,6 +16,7 @@ import numpy
 from schainpy.model.proc.jroproc_base import ProcessingUnit
 from schainpy.model.data.jrodata import Parameters
 from schainpy.model.io.jroIO_base import JRODataReader, isNumber
+from schainpy.utils import log
 
 FILE_HEADER_STRUCTURE = numpy.dtype([
     ('FMN', '<u4'),
@@ -109,11 +110,14 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
               timezone=0,
               status_value=0,
               **kwargs):
-        
+
         self.path = path
+        self.startDate = startDate
+        self.endDate = endDate
         self.startTime = startTime
-        self.endTime = endTime        
+        self.endTime = endTime
         self.status_value = status_value
+        self.datatime = datetime.datetime(1900,1,1)
         
         if self.path is None:
             raise ValueError, "The path is not valid"
@@ -143,7 +147,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
               
         '''    
 
-        print 'Searching file in %s ' % (path)        
+        log.success('Searching files in {} '.format(path), 'BLTRParamReader')
         foldercounter = 0        
         fileList0 = glob.glob1(path, "*%s" % ext)
         fileList0.sort()
@@ -180,12 +184,11 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         file_id = self.fileIndex
 
         if file_id == len(self.fileList):
-            print '\nNo more files in the folder'
-            print 'Total number of file(s) read : {}'.format(self.fileIndex + 1)            
+            log.success('No more files in the folder', 'BLTRParamReader')
             self.flagNoMoreFiles = 1
             return 0
         
-        print '\n[Setting file] (%s) ...' % self.fileList[file_id]
+        log.success('Opening {}'.format(self.fileList[file_id]), 'BLTRParamReader')
         filename = os.path.join(self.path, self.fileList[file_id])
 
         dirname, name = os.path.split(filename)
@@ -205,26 +208,29 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
     def readNextBlock(self):
 
-        while True:            
+        while True:
             if self.counter_records == self.nrecords:
                 self.flagIsNewFile = 1
                 if not self.setNextFile():
                     return 0
-            
+
             self.readBlock()
-            
-            if (self.datatime.time() < self.startTime) or (self.datatime.time() > self.endTime):
-                print "[Reading] Record No. %d/%d -> %s [Skipping]" %(
-                    self.counter_records,
-                    self.nrecords,
-                    self.datatime.ctime())
+
+            if (self.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or \
+               (self.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
+                log.warning(
+                    'Reading Record No. {}/{} -> {} [Skipping]'.format(
+                        self.counter_records,
+                        self.nrecords,
+                        self.datatime.ctime()),
+                    'BLTRParamReader')
                 continue
             break
 
-        print "[Reading] Record No. %d/%d -> %s" %(
+        log.log('Reading Record No. {}/{} -> {}'.format(
             self.counter_records,
             self.nrecords,
-            self.datatime.ctime())
+            self.datatime.ctime()), 'BLTRParamReader')
 
         return 1
 
@@ -240,6 +246,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.height = numpy.empty((self.nmodes, self.nranges))
         self.snr = numpy.empty((self.nmodes, self.nchannels, self.nranges))
         self.buffer = numpy.empty((self.nmodes, 3, self.nranges))
+        self.flagDiscontinuousBlock = 0
 
         for mode in range(self.nmodes):
             self.readHeader()            
@@ -273,14 +280,11 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.imode = self.header_rec['dmode_index'][0] 
         self.antenna = self.header_rec['antenna_coord']
         self.rx_gains = self.header_rec['rx_gains']        
-        self.time = self.header_rec['time'][0]
-        tseconds = self.header_rec['time'][0]
-        local_t1 = time.localtime(tseconds)
-        self.year = local_t1.tm_year
-        self.month = local_t1.tm_mon
-        self.day = local_t1.tm_mday
-        self.t = datetime.datetime(self.year, self.month, self.day)
-        self.datatime = datetime.datetime.utcfromtimestamp(self.time)
+        self.time = self.header_rec['time'][0]               
+        dt = datetime.datetime.utcfromtimestamp(self.time)
+        if dt.date()>self.datatime.date():
+            self.flagDiscontinuousBlock = 1
+        self.datatime = dt
         
     def readData(self):
         '''
@@ -322,7 +326,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         
         self.dataOut.data_SNR = self.snr
         self.dataOut.height = self.height
-        self.dataOut.data_output = self.buffer
+        self.dataOut.data = self.buffer
         self.dataOut.utctimeInit = self.time
         self.dataOut.utctime = self.dataOut.utctimeInit
         self.dataOut.useLocalTime = False
@@ -334,8 +338,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.dataOut.lat = self.lat
         self.dataOut.lon = self.lon
         self.dataOut.channelList = range(self.nchannels)
-        self.dataOut.kchan = self.kchan
-        # self.dataOut.nHeights = self.nranges
+        self.dataOut.kchan = self.kchan        
         self.dataOut.delta = self.delta
         self.dataOut.correction = self.correction
         self.dataOut.nmodes = self.nmodes
@@ -343,6 +346,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.dataOut.antenna = self.antenna
         self.dataOut.rx_gains = self.rx_gains
         self.dataOut.flagNoData = False
+        self.dataOut.flagDiscontinuousBlock = self.flagDiscontinuousBlock
 
     def getData(self):
         '''
@@ -350,7 +354,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'No file left to process'
+            log.success('No file left to process', 'BLTRParamReader')
             return 0
 
         if not  self.readNextBlock():
