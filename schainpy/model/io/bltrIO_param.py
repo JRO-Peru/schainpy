@@ -82,6 +82,7 @@ DATA_STRUCTURE = numpy.dtype([
     ('sea_algorithm', '<u4')
 ])
 
+
 class BLTRParamReader(JRODataReader, ProcessingUnit):
     '''
     Boundary Layer and Tropospheric Radar (BLTR) reader, Wind velocities and SNR from *.sswma files
@@ -91,14 +92,14 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
     def __init__(self, **kwargs):
 
-        ProcessingUnit.__init__(self , **kwargs)
+        ProcessingUnit.__init__(self, **kwargs)
 
-        self.dataOut = Parameters()        
+        self.dataOut = Parameters()
         self.counter_records = 0
         self.flagNoMoreFiles = 0
-        self.isConfig = False        
+        self.isConfig = False
         self.filename = None
-        
+
     def setup(self,
               path=None,
               startDate=None,
@@ -107,18 +108,17 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
               startTime=datetime.time(0, 0, 0),
               endTime=datetime.time(23, 59, 59),
               timezone=0,
-              status_value=0,
-              **kwargs):
-        
+              status_value=0, **kwargs):
+
         self.path = path
         self.startTime = startTime
-        self.endTime = endTime        
+        self.endTime = endTime
         self.status_value = status_value
-        
+
         if self.path is None:
             raise ValueError, "The path is not valid"
 
-        if ext is None:        
+        if ext is None:
             ext = self.ext
 
         self.search_files(self.path, startDate, endDate, ext)
@@ -126,50 +126,51 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.fileIndex = 0
 
         if not self.fileList:
-            raise  Warning, "There is no files matching these date in the folder: %s. \n Check 'startDate' and 'endDate' "%(path)
+            raise Warning, "There is no files matching these date in the folder: %s. \n Check 'startDate' and 'endDate' " % (
+                path)
 
         self.setNextFile()
-        
+
     def search_files(self, path, startDate, endDate, ext):
         '''
          Searching for BLTR rawdata file in path
          Creating a list of file to proces included in [startDate,endDate]
-         
+
          Input: 
              path - Path to find BLTR rawdata files
              startDate - Select file from this date
              enDate - Select file until this date
              ext - Extension of the file to read
-              
-        '''    
 
-        print 'Searching file in %s ' % (path)        
-        foldercounter = 0        
+        '''
+
+        print 'Searching file in %s ' % (path)
+        foldercounter = 0
         fileList0 = glob.glob1(path, "*%s" % ext)
         fileList0.sort()
-        
+
         self.fileList = []
         self.dateFileList = []
-        
-        for thisFile in fileList0:       
+
+        for thisFile in fileList0:
             year = thisFile[-14:-10]
             if not isNumber(year):
                 continue
-         
+
             month = thisFile[-10:-8]
             if not isNumber(month):
                 continue
-             
+
             day = thisFile[-8:-6]
             if not isNumber(day):
-                continue       
-            
+                continue
+
             year, month, day = int(year), int(month), int(day)
             dateFile = datetime.date(year, month, day)
-            
+
             if (startDate > dateFile) or (endDate < dateFile):
                 continue
-            
+
             self.fileList.append(thisFile)
             self.dateFileList.append(dateFile)
 
@@ -181,22 +182,23 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
         if file_id == len(self.fileList):
             print '\nNo more files in the folder'
-            print 'Total number of file(s) read : {}'.format(self.fileIndex + 1)            
+            print 'Total number of file(s) read : {}'.format(self.fileIndex + 1)
             self.flagNoMoreFiles = 1
             return 0
-        
+
         print '\n[Setting file] (%s) ...' % self.fileList[file_id]
         filename = os.path.join(self.path, self.fileList[file_id])
 
         dirname, name = os.path.split(filename)
-        self.siteFile = name.split('.')[0]  # 'peru2' ---> Piura  -   'peru1' ---> Huancayo or Porcuya
+        # 'peru2' ---> Piura  -   'peru1' ---> Huancayo or Porcuya
+        self.siteFile = name.split('.')[0]
         if self.filename is not None:
             self.fp.close()
         self.filename = filename
         self.fp = open(self.filename, 'rb')
         self.header_file = numpy.fromfile(self.fp, FILE_HEADER_STRUCTURE, 1)
         self.nrecords = self.header_file['nrec'][0]
-        self.sizeOfFile = os.path.getsize(self.filename)       
+        self.sizeOfFile = os.path.getsize(self.filename)
         self.counter_records = 0
         self.flagIsNewFile = 0
         self.fileIndex += 1
@@ -205,23 +207,23 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
     def readNextBlock(self):
 
-        while True:            
+        while True:
             if self.counter_records == self.nrecords:
                 self.flagIsNewFile = 1
                 if not self.setNextFile():
                     return 0
-            
+
             self.readBlock()
-            
+
             if (self.datatime.time() < self.startTime) or (self.datatime.time() > self.endTime):
-                print "[Reading] Record No. %d/%d -> %s [Skipping]" %(
+                print "[Reading] Record No. %d/%d -> %s [Skipping]" % (
                     self.counter_records,
                     self.nrecords,
                     self.datatime.ctime())
                 continue
             break
 
-        print "[Reading] Record No. %d/%d -> %s" %(
+        print "[Reading] Record No. %d/%d -> %s" % (
             self.counter_records,
             self.nrecords,
             self.datatime.ctime())
@@ -232,7 +234,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
         pointer = self.fp.tell()
         header_rec = numpy.fromfile(self.fp, REC_HEADER_STRUCTURE, 1)
-        self.nchannels = header_rec['nchan'][0]/2
+        self.nchannels = header_rec['nchan'][0] / 2
         self.kchan = header_rec['nrxs'][0]
         self.nmodes = header_rec['nmodes'][0]
         self.nranges = header_rec['nranges'][0]
@@ -242,7 +244,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.buffer = numpy.empty((self.nmodes, 3, self.nranges))
 
         for mode in range(self.nmodes):
-            self.readHeader()            
+            self.readHeader()
             data = self.readData()
             self.height[mode] = (data[0] - self.correction) / 1000.
             self.buffer[mode] = data[1]
@@ -256,7 +258,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
         RecordHeader of BLTR rawdata file
         '''
-        
+
         header_structure = numpy.dtype(
             REC_HEADER_STRUCTURE.descr + [
                 ('antenna_coord', 'f4', (2, self.nchannels)),
@@ -270,9 +272,9 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.lon = self.header_rec['lon'][0]
         self.delta = self.header_rec['delta_r'][0]
         self.correction = self.header_rec['dmode_rngcorr'][0]
-        self.imode = self.header_rec['dmode_index'][0] 
+        self.imode = self.header_rec['dmode_index'][0]
         self.antenna = self.header_rec['antenna_coord']
-        self.rx_gains = self.header_rec['rx_gains']        
+        self.rx_gains = self.header_rec['rx_gains']
         self.time = self.header_rec['time'][0]
         tseconds = self.header_rec['time'][0]
         local_t1 = time.localtime(tseconds)
@@ -281,7 +283,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.day = local_t1.tm_mday
         self.t = datetime.datetime(self.year, self.month, self.day)
         self.datatime = datetime.datetime.utcfromtimestamp(self.time)
-        
+
     def readData(self):
         '''
         Reading and filtering data block record of BLTR rawdata file, filtering is according to status_value.
@@ -304,22 +306,23 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         data = numpy.fromfile(self.fp, data_structure, self.nranges)
 
         height = data['range']
-        winds = numpy.array((data['zonal'], data['meridional'], data['vertical']))
+        winds = numpy.array(
+            (data['zonal'], data['meridional'], data['vertical']))
         snr = data['rx_snr'].T
 
-        winds[numpy.where(winds == -9999.)] = numpy.nan      
+        winds[numpy.where(winds == -9999.)] = numpy.nan
         winds[:, numpy.where(data['status'] != self.status_value)] = numpy.nan
         snr[numpy.where(snr == -9999.)] = numpy.nan
         snr[:, numpy.where(data['status'] != self.status_value)] = numpy.nan
-        snr = numpy.power(10, snr / 10)   
-                
+        snr = numpy.power(10, snr / 10)
+
         return height, winds, snr
 
     def set_output(self):
         '''
         Storing data from databuffer to dataOut object
         '''
-        
+
         self.dataOut.data_SNR = self.snr
         self.dataOut.height = self.height
         self.dataOut.data_output = self.buffer
@@ -329,7 +332,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.dataOut.paramInterval = 157
         self.dataOut.timezone = self.timezone
         self.dataOut.site = self.siteFile
-        self.dataOut.nrecords = self.nrecords/self.nmodes
+        self.dataOut.nrecords = self.nrecords / self.nmodes
         self.dataOut.sizeOfFile = self.sizeOfFile
         self.dataOut.lat = self.lat
         self.dataOut.lon = self.lon
@@ -353,7 +356,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
             print 'No file left to process'
             return 0
 
-        if not  self.readNextBlock():
+        if not self.readNextBlock():
             self.dataOut.flagNoData = True
             return 0
 
