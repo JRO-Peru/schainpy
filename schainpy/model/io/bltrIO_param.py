@@ -108,7 +108,8 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
               startTime=datetime.time(0, 0, 0),
               endTime=datetime.time(23, 59, 59),
               timezone=0,
-              status_value=0, **kwargs):
+              status_value=0,
+              **kwargs):
 
         self.path = path
         self.startTime = startTime
