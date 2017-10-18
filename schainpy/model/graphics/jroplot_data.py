@@ -20,9 +20,7 @@ blu_values = matplotlib.pyplot.get_cmap("seismic_r", 20)(numpy.arange(20))[10:15
 ncmap = matplotlib.colors.LinearSegmentedColormap.from_list("jro", numpy.vstack((blu_values, jet_values)))
 matplotlib.pyplot.register_cmap(cmap=ncmap)
 
-func = lambda x, pos: '{}'.format(datetime.datetime.fromtimestamp(x).strftime('%H:%M'))
-
-UT1970 = datetime.datetime(1970, 1, 1) - datetime.timedelta(seconds=time.timezone)
+func = lambda x, pos: '{}'.format(datetime.datetime.utcfromtimestamp(x).strftime('%H:%M'))
 
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'RdBu_r', 'seismic')]
 
@@ -113,6 +111,7 @@ class PlotData(Operation, Process):
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
                 ax.index = 0
+                ax.press = None
                 self.axes.append(ax)                
                 if self.showprofile:
                     cax = self.__add_axes(ax, size=size, pad=pad)
@@ -129,6 +128,7 @@ class PlotData(Operation, Process):
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
                 ax.index = 0
+                ax.press = None
                 self.figures.append(fig)                
                 self.axes.append(ax)
                 if self.showprofile:
@@ -145,27 +145,101 @@ class PlotData(Operation, Process):
             self.cmaps.append(cmap)
 
         for fig in self.figures:
-            fig.canvas.mpl_connect('key_press_event', self.event_key_press)
+            fig.canvas.mpl_connect('key_press_event', self.OnKeyPress)
+            fig.canvas.mpl_connect('scroll_event', self.OnBtnScroll)
+            fig.canvas.mpl_connect('button_press_event', self.onBtnPress)
+            fig.canvas.mpl_connect('motion_notify_event', self.onMotion)
+            fig.canvas.mpl_connect('button_release_event', self.onBtnRelease)
 
-    def event_key_press(self, event):
+    def OnKeyPress(self, event):
         '''
+        Event for pressing keys (up, down) change colormap
         '''
+        ax = event.inaxes
+        if ax in self.axes:            
+            if event.key == 'down':
+                ax.index += 1
+            elif event.key == 'up':
+                ax.index -= 1
+            if ax.index < 0:
+                ax.index = len(CMAPS) - 1 
+            elif ax.index == len(CMAPS):
+                ax.index = 0
+            cmap = CMAPS[ax.index]
+            ax.cbar.set_cmap(cmap)
+            ax.cbar.draw_all()
+            ax.plt.set_cmap(cmap)                
+            ax.cbar.patch.figure.canvas.draw()
 
-        for ax in self.axes:
-            if ax == event.inaxes:
-                if event.key == 'down':
-                    ax.index += 1
-                elif event.key == 'up':
-                    ax.index -= 1
-                if ax.index < 0:
-                    ax.index = len(CMAPS) - 1 
-                elif ax.index == len(CMAPS):
-                    ax.index = 0
-                cmap = CMAPS[ax.index]
-                ax.cbar.set_cmap(cmap)
-                ax.cbar.draw_all()
-                ax.plt.set_cmap(cmap)                
-                ax.cbar.patch.figure.canvas.draw()
+    def OnBtnScroll(self, event):
+        '''
+        Event for scrolling, scale figure
+        '''
+        cb_ax = event.inaxes
+        if cb_ax in [ax.cbar.ax for ax in self.axes]:
+            ax = [ax for ax in self.axes if cb_ax == ax.cbar.ax][0]
+            pt = ax.cbar.ax.bbox.get_points()[:,1]
+            nrm = ax.cbar.norm
+            vmin, vmax, p0, p1, pS = (nrm.vmin, nrm.vmax, pt[0], pt[1], event.y)
+            scale = 2 if event.step == 1 else 0.5
+            point = vmin + (vmax - vmin) / (p1 - p0)*(pS - p0)    
+            ax.cbar.norm.vmin = point - scale*(point - vmin)
+            ax.cbar.norm.vmax = point - scale*(point - vmax)            
+            ax.plt.set_norm(ax.cbar.norm)
+            ax.cbar.draw_all()
+            ax.cbar.patch.figure.canvas.draw()
+
+    def onBtnPress(self, event):
+        '''
+        Event for mouse button press
+        '''
+        cb_ax = event.inaxes
+        if cb_ax is None:
+            return
+
+        if cb_ax in [ax.cbar.ax for ax in self.axes]:
+            cb_ax.press = event.x, event.y
+        else:
+            cb_ax.press = None
+
+    def onMotion(self, event):
+        '''
+        Event for move inside colorbar
+        '''
+        cb_ax = event.inaxes
+        if cb_ax is None:
+            return
+        if cb_ax not in [ax.cbar.ax for ax in self.axes]:
+            return
+        if  cb_ax.press is None:
+            return
+
+        ax = [ax for ax in self.axes if cb_ax == ax.cbar.ax][0]
+        xprev, yprev = cb_ax.press
+        dx = event.x - xprev
+        dy = event.y - yprev
+        cb_ax.press = event.x, event.y        
+        scale = ax.cbar.norm.vmax - ax.cbar.norm.vmin
+        perc = 0.03
+
+        if event.button == 1:
+            ax.cbar.norm.vmin -= (perc*scale)*numpy.sign(dy)
+            ax.cbar.norm.vmax -= (perc*scale)*numpy.sign(dy)
+        elif event.button == 3:
+            ax.cbar.norm.vmin -= (perc*scale)*numpy.sign(dy)
+            ax.cbar.norm.vmax += (perc*scale)*numpy.sign(dy)
+
+        ax.cbar.draw_all()
+        ax.plt.set_norm(ax.cbar.norm)
+        ax.cbar.patch.figure.canvas.draw()
+
+    def onBtnRelease(self, event):
+        '''
+        Event for mouse button release
+        '''
+        cb_ax = event.inaxes
+        if cb_ax is not None:
+            cb_ax.press = None
 
     def __add_axes(self, ax, size='30%', pad='8%'):
         '''
@@ -233,9 +307,8 @@ class PlotData(Operation, Process):
             xmin = self.min_time
         else:
             if self.xaxis is 'time':
-                dt = datetime.datetime.fromtimestamp(self.min_time)
-                xmin = (datetime.datetime.combine(dt.date(),
-                                                datetime.time(int(self.xmin), 0, 0))-UT1970).total_seconds()
+                dt = datetime.datetime.utcfromtimestamp(self.min_time)                
+                xmin = (dt.replace(hour=int(self.xmin), minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
             else:
                 xmin = self.xmin
 
@@ -243,16 +316,17 @@ class PlotData(Operation, Process):
             xmax = xmin+self.xrange*60*60
         else:
             if self.xaxis is 'time':
-                dt = datetime.datetime.fromtimestamp(self.min_time)
-                xmax = (datetime.datetime.combine(dt.date(),
-                                                datetime.time(int(self.xmax), 0, 0))-UT1970).total_seconds()
+                dt = datetime.datetime.utcfromtimestamp(self.min_time)
+                xmax = (dt.replace(hour=int(self.xmax), minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
             else:
                 xmax = self.xmax
-        
+
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
-        ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
-        
-        ystep = 200 if ymax>= 800 else 100 if ymax>=400 else 50 if ymax>=200 else 20
+        ymax = self.ymax if self.ymax else numpy.nanmax(self.y)        
+
+        Y = numpy.array([10, 20, 50, 100, 200, 500, 1000, 2000])
+        i = 1 if numpy.where(ymax < Y)[0][0] < 0 else numpy.where(ymax < Y)[0][0]
+        ystep = Y[i-1]/5
 
         for n, ax in enumerate(self.axes):            
             if ax.firsttime:
@@ -274,6 +348,7 @@ class PlotData(Operation, Process):
                 if self.colorbar:
                     ax.cbar = plt.colorbar(ax.plt, ax=ax, pad=0.02, aspect=10)
                     ax.cbar.ax.tick_params(labelsize=8)
+                    ax.cbar.ax.press = None
                     if self.cb_label:
                         ax.cbar.set_label(self.cb_label, size=8)
                     elif self.cb_labels:
@@ -281,7 +356,7 @@ class PlotData(Operation, Process):
                     
             ax.set_title('{} - {} {}'.format(
                     self.titles[n],
-                    datetime.datetime.fromtimestamp(self.max_time).strftime('%H:%M:%S'),
+                    datetime.datetime.utcfromtimestamp(self.max_time).strftime('%H:%M:%S'),
                     self.time_label),
                 size=8)
             ax.set_xlim(xmin, xmax)
@@ -304,7 +379,7 @@ class PlotData(Operation, Process):
             
             fig.tight_layout()
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title, 
-                                                                 datetime.datetime.fromtimestamp(self.max_time).strftime('%Y/%m/%d')))
+                                                                 datetime.datetime.utcfromtimestamp(self.max_time).strftime('%Y/%m/%d')))
             # fig.canvas.draw()
         
             if self.save and self.data.ended:
@@ -318,7 +393,7 @@ class PlotData(Operation, Process):
                     '{}{}_{}.png'.format(
                         self.CODE,
                         label,
-                        datetime.datetime.fromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')
+                        datetime.datetime.utcfromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')
                     )
                 )
                 print 'Saving figure: {}'.format(figname)
@@ -739,8 +814,8 @@ class PlotSkyMapData(PlotData):
             self.ax.plot.set_data(x, y)
 
 
-        dt1 = datetime.datetime.fromtimestamp(self.min_time).strftime('%y/%m/%d %H:%M:%S')
-        dt2 = datetime.datetime.fromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')
+        dt1 = datetime.datetime.utcfromtimestamp(self.min_time).strftime('%y/%m/%d %H:%M:%S')
+        dt2 = datetime.datetime.utcfromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')
         title = 'Meteor Detection Sky Map\n %s - %s \n Number of events: %5.0f\n' % (dt1,
                                                                                      dt2,
                                                                                      len(x))
@@ -787,13 +862,14 @@ class PlotParamData(PlotRTIData):
         for n, ax in enumerate(self.axes):
 
             x, y, z = self.fill_gaps(*self.decimate())
-
+            self.zmax = self.zmax if self.zmax is not None else numpy.max(self.z[n])
+            self.zmin = self.zmin if self.zmin is not None else numpy.min(self.z[n])
+                        
             if ax.firsttime:
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
-                self.zmax = self.zmax if self.zmax is not None else numpy.nanmax(abs(self.z[:-1, :]))
-                self.zmin = self.zmin if self.zmin is not None else -self.zmax
-                ax.plt = ax.pcolormesh(x, y, z[n, :, :].T*self.factors[n],
+                
+                ax.plt = ax.pcolormesh(x, y, z[n].T*self.factors[n],
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=self.cmaps[n]
@@ -802,7 +878,7 @@ class PlotParamData(PlotRTIData):
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
                 ax.collections.remove(ax.collections[0])
-                ax.plt = ax.pcolormesh(x, y, z[n, :, :].T*self.factors[n],
+                ax.plt = ax.pcolormesh(x, y, z[n].T*self.factors[n],
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=self.cmaps[n]
@@ -810,7 +886,7 @@ class PlotParamData(PlotRTIData):
 
         self.saveTime = self.min_time
 
-class PlotOuputData(PlotParamData):
+class PlotOutputData(PlotParamData):
     '''
     Plot data_output object
     '''

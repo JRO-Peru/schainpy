@@ -142,7 +142,7 @@ class Data(object):
         self.channels = dataOut.channelList
         self.interval = dataOut.getTimeInterval()
         if 'spc' in self.plottypes or 'cspc' in self.plottypes:
-            self.xrange = (dataOut.getFreqRange(1)/1000. , dataOut.getAcfRange(1) , dataOut.getVelRange(1))
+            self.xrange = (dataOut.getFreqRange(1)/1000., dataOut.getAcfRange(1), dataOut.getVelRange(1))
         self.__heights.append(dataOut.heightList)
         self.__all_heights.update(dataOut.heightList)
         self.__times.append(tm)
@@ -560,7 +560,7 @@ class PlotterReceiver(ProcessingUnit, Process):
 
         while True:
             dataOut = self.receiver.recv_pyobj()
-            dt = datetime.datetime.fromtimestamp(dataOut.utctime).date()
+            dt = datetime.datetime.utcfromtimestamp(dataOut.utctime).date()
             sended = False
             if dt not in self.dates:
                 if self.data:
