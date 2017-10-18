@@ -381,7 +381,7 @@ class MADReader(JRODataReader, ProcessingUnit):
 
         self.dataOut.parameters = [s for s in parameters if s]
         self.dataOut.heightList = self.ranges
-        self.dataOut.utctime = (self.datatime - UT1970).total_seconds()
+        self.dataOut.utctime = (self.datatime - datetime.datetime(1970, 1, 1)).total_seconds()
         self.dataOut.utctimeInit = self.dataOut.utctime  
         self.dataOut.paramInterval = min(self.intervals)
         self.dataOut.useLocalTime = False        
@@ -415,6 +415,7 @@ class MADWriter(Operation):
 
         Operation.__init__(self, **kwargs)
         self.dataOut = Parameters()
+        self.counter = 0
         self.path = None
         self.fp = None
 
@@ -487,17 +488,17 @@ class MADWriter(Operation):
         '''
 
         self.mnemonic = MNEMONICS[self.kinst]   #TODO get mnemonic from madrigal
-        date = datetime.datetime.fromtimestamp(self.dataOut.utctime)
+        date = datetime.datetime.utcfromtimestamp(self.dataOut.utctime)
 
         filename = '{}{}{}'.format(self.mnemonic,
                                    date.strftime('%Y%m%d_%H%M%S'),
-                                   self.ext)     
+                                   self.ext)
        
         self.fullname = os.path.join(self.path, filename)
 
         if os.path.isfile(self.fullname) : 
             log.warning(
-                'Destination path {} already exists. Previous file deleted.'.format(
+                'Destination file {} already exists, previous file deleted.'.format(
                     self.fullname),
                 'MADWriter')
             os.remove(self.fullname)
@@ -522,7 +523,7 @@ class MADWriter(Operation):
         Allowed parameters in: parcodes.tab
         '''
 
-        startTime = datetime.datetime.fromtimestamp(self.dataOut.utctime)
+        startTime = datetime.datetime.utcfromtimestamp(self.dataOut.utctime)
         endTime = startTime + datetime.timedelta(seconds=self.dataOut.paramInterval)
         heights = self.dataOut.heightList
 
