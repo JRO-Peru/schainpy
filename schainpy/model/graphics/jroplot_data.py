@@ -20,9 +20,18 @@ blu_values = matplotlib.pyplot.get_cmap("seismic_r", 20)(numpy.arange(20))[10:15
 ncmap = matplotlib.colors.LinearSegmentedColormap.from_list("jro", numpy.vstack((blu_values, jet_values)))
 matplotlib.pyplot.register_cmap(cmap=ncmap)
 
-func = lambda x, pos: '{}'.format(datetime.datetime.utcfromtimestamp(x).strftime('%H:%M'))
-
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'RdBu_r', 'seismic')]
+
+def figpause(interval):
+    backend = plt.rcParams['backend']
+    if backend in matplotlib.rcsetup.interactive_bk:
+        figManager = matplotlib._pylab_helpers.Gcf.get_active()
+        if figManager is not None:
+            canvas = figManager.canvas
+            if canvas.figure.stale:
+                canvas.draw()
+            canvas.start_event_loop(interval)
+            return
 
 class PlotData(Operation, Process):
     '''
@@ -77,6 +86,12 @@ class PlotData(Operation, Process):
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
         self.titles = ['' for __ in range(16)]
+    
+    def __fmtTime(self, x, pos):
+        '''
+        '''
+
+        return '{}'.format(self.getDateTime(x).strftime('%H:%M'))
 
     def __setup(self):
         '''
@@ -86,6 +101,10 @@ class PlotData(Operation, Process):
         self.setup()
 
         self.time_label = 'LT' if self.localtime else 'UTC'
+        if self.data.localtime:
+            self.getDateTime = datetime.datetime.fromtimestamp            
+        else:
+            self.getDateTime = datetime.datetime.utcfromtimestamp        
 
         if self.width is None:
             self.width = 8
@@ -150,6 +169,8 @@ class PlotData(Operation, Process):
             fig.canvas.mpl_connect('button_press_event', self.onBtnPress)
             fig.canvas.mpl_connect('motion_notify_event', self.onMotion)
             fig.canvas.mpl_connect('button_release_event', self.onBtnRelease)
+            if self.show:
+                fig.show()
 
     def OnKeyPress(self, event):
         '''
@@ -165,11 +186,12 @@ class PlotData(Operation, Process):
                 ax.index = len(CMAPS) - 1 
             elif ax.index == len(CMAPS):
                 ax.index = 0
-            cmap = CMAPS[ax.index]
+            cmap = CMAPS[ax.index]            
             ax.cbar.set_cmap(cmap)
             ax.cbar.draw_all()
             ax.plt.set_cmap(cmap)                
             ax.cbar.patch.figure.canvas.draw()
+            self.colormap = cmap.name
 
     def OnBtnScroll(self, event):
         '''
@@ -307,8 +329,10 @@ class PlotData(Operation, Process):
             xmin = self.min_time
         else:
             if self.xaxis is 'time':
-                dt = datetime.datetime.utcfromtimestamp(self.min_time)                
+                dt = self.getDateTime(self.min_time)                
                 xmin = (dt.replace(hour=int(self.xmin), minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
+                if self.data.localtime:
+                    xmin += time.timezone
             else:
                 xmin = self.xmin
 
@@ -316,8 +340,10 @@ class PlotData(Operation, Process):
             xmax = xmin+self.xrange*60*60
         else:
             if self.xaxis is 'time':
-                dt = datetime.datetime.utcfromtimestamp(self.min_time)
+                dt = self.getDateTime(self.max_time)
                 xmax = (dt.replace(hour=int(self.xmax), minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
+                if self.data.localtime:
+                    xmax += time.timezone
             else:
                 xmax = self.xmax
 
@@ -333,7 +359,7 @@ class PlotData(Operation, Process):
                 ax.set_facecolor(self.bgcolor)
                 ax.yaxis.set_major_locator(MultipleLocator(ystep))
                 if self.xaxis is 'time':            
-                    ax.xaxis.set_major_formatter(FuncFormatter(func))
+                    ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
                     ax.xaxis.set_major_locator(LinearLocator(9))                
                 if self.xlabel is not None:
                     ax.set_xlabel(self.xlabel)
@@ -356,7 +382,7 @@ class PlotData(Operation, Process):
                     
             ax.set_title('{} - {} {}'.format(
                     self.titles[n],
-                    datetime.datetime.utcfromtimestamp(self.max_time).strftime('%H:%M:%S'),
+                    self.getDateTime(self.max_time).strftime('%H:%M:%S'),
                     self.time_label),
                 size=8)
             ax.set_xlim(xmin, xmax)
@@ -373,13 +399,11 @@ class PlotData(Operation, Process):
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
-                continue
-            if self.show:
-                fig.show()
+                continue            
             
             fig.tight_layout()
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title, 
-                                                                 datetime.datetime.utcfromtimestamp(self.max_time).strftime('%Y/%m/%d')))
+                                                                 self.getDateTime(self.max_time).strftime('%Y/%m/%d')))
             # fig.canvas.draw()
         
             if self.save and self.data.ended:
@@ -393,7 +417,7 @@ class PlotData(Operation, Process):
                     '{}{}_{}.png'.format(
                         self.CODE,
                         label,
-                        datetime.datetime.utcfromtimestamp(self.saveTime).strftime('%y%m%d_%H%M%S')
+                        self.getDateTime(self.saveTime).strftime('%y%m%d_%H%M%S')
                     )
                 )
                 print 'Saving figure: {}'.format(figname)
@@ -421,12 +445,15 @@ class PlotData(Operation, Process):
         while True:
             try:
                 self.data = receiver.recv_pyobj(flags=zmq.NOBLOCK)
-                
-                if self.localtime:
+                if self.data.localtime and self.localtime:
+                    self.times = self.data.times
+                elif self.data.localtime and not self.localtime:
+                    self.times = self.data.times + time.timezone
+                elif not self.data.localtime and self.localtime:
                     self.times = self.data.times - time.timezone
                 else:
                     self.times = self.data.times
-                
+
                 self.min_time = self.times[0]
                 self.max_time = self.times[-1]
 
@@ -439,7 +466,7 @@ class PlotData(Operation, Process):
             except zmq.Again as e:
                 log.log('Waiting for data...')
                 if self.data:
-                    plt.pause(self.data.throttle)
+                    figpause(self.data.throttle)
                 else:
                     time.sleep(2)
 
@@ -814,8 +841,8 @@ class PlotSkyMapData(PlotData):
             self.ax.plot.set_data(x, y)
 
 
-        dt1 = datetime.datetime.utcfromtimestamp(self.min_time).strftime('%y/%m/%d %H:%M:%S')
-        dt2 = datetime.datetime.utcfromtimestamp(self.max_time).strftime('%y/%m/%d %H:%M:%S')
+        dt1 = self.getDateTime(self.min_time).strftime('%y/%m/%d %H:%M:%S')
+        dt2 = self.getDateTime(self.max_time).strftime('%y/%m/%d %H:%M:%S')
         title = 'Meteor Detection Sky Map\n %s - %s \n Number of events: %5.0f\n' % (dt1,
                                                                                      dt2,
                                                                                      len(x))

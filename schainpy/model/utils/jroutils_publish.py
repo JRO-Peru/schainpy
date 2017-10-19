@@ -81,7 +81,9 @@ class Data(object):
         self.plottypes = plottypes
         self.throttle = throttle_value
         self.ended = False
-        self.__times = []      
+        self.localtime = False
+        self.__times = []
+        self.__heights = []
 
     def __str__(self):
         dum = ['{}{}'.format(key, self.shape(key)) for key in self.data]
@@ -141,6 +143,7 @@ class Data(object):
         self.pairs = dataOut.pairsList
         self.channels = dataOut.channelList
         self.interval = dataOut.getTimeInterval()
+        self.localtime = dataOut.useLocalTime
         if 'spc' in self.plottypes or 'cspc' in self.plottypes:
             self.xrange = (dataOut.getFreqRange(1)/1000., dataOut.getAcfRange(1), dataOut.getVelRange(1))
         self.__heights.append(dataOut.heightList)
@@ -396,8 +399,8 @@ class PublishData(Operation):
         if self.zeromq is 1:
             if self.verbose:
                 log.log(
-                    '{} - {}'.format(self.dataOut.type, self.dataOut.datatime),
-                    'Sending'
+                    'Sending {} - {}'.format(self.dataOut.type, self.dataOut.datatime),
+                    self.name
                 )
             self.zmq_socket.send_pyobj(self.dataOut)
 
@@ -486,6 +489,7 @@ class PlotterReceiver(ProcessingUnit, Process):
         self.plot_address = plot_address
         self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
         self.realtime = kwargs.get('realtime', False)
+        self.localtime = kwargs.get('localtime', True)
         self.throttle_value = kwargs.get('throttle', 5)
         self.sendData = self.initThrottle(self.throttle_value)
         self.dates = []
@@ -560,7 +564,15 @@ class PlotterReceiver(ProcessingUnit, Process):
 
         while True:
             dataOut = self.receiver.recv_pyobj()
-            dt = datetime.datetime.utcfromtimestamp(dataOut.utctime).date()
+            tm = dataOut.utctime
+            if dataOut.useLocalTime:
+                if not self.localtime:
+                    tm += time.timezone
+                dt = datetime.datetime.fromtimestamp(tm).date()
+            else:
+                if self.localtime:
+                    tm -= time.timezone
+                dt = datetime.datetime.utcfromtimestamp(tm).date()
             sended = False
             if dt not in self.dates:
                 if self.data:
