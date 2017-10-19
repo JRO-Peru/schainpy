@@ -758,13 +758,18 @@ class ReadUnitConf(ProcUnitConf):
         if datatype==None and name==None:
             raise ValueError, 'datatype or name should be defined'
         
-        if name==None:
+        if name == None:
             if 'Reader' in datatype:
                 name = datatype
+                datatype = name.replace('Reader','')
             else:
-                name = '%sReader' %(datatype)
-        if datatype==None:
-            datatype = name.replace('Reader','')
+                name = '{}Reader'.format(datatype)
+        if datatype == None:
+            if 'Reader' in name:
+                datatype = name.replace('Reader','')
+            else:
+                datatype = name
+                name = '{}Reader'.format(name)
 
         self.id = id
         self.name = name
