@@ -50,7 +50,6 @@ class ProjectParms():
             indexDatatype = 2
         if 'usrp' in self.datatype.lower():
             indexDatatype = 3
-            
         return indexDatatype
 
     def getExt(self):
@@ -65,7 +64,6 @@ class ProjectParms():
             ext = '.fits'
         if self.datatype.lower() == 'usrp':
             ext = '.hdf5'
-            
         return ext
                
     def set(self, project_name, datatype, ext, dpath, online,

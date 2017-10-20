@@ -6,8 +6,8 @@ from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroamisr import AMISR
 
 class AMISRProc(ProcessingUnit):
-    def __init__(self):
-        ProcessingUnit.__init__(self)
+    def __init__(self, **kwargs):
+        ProcessingUnit.__init__(self, **kwargs)
         self.objectDict = {}
         self.dataOut = AMISR()
         
@@ -17,7 +17,8 @@ class AMISRProc(ProcessingUnit):
 
 
 class PrintInfo(Operation):
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Operation.__init__(self, **kwargs)
         self.__isPrinted = False
     
     def run(self, dataOut):
@@ -42,8 +43,8 @@ class BeamSelector(Operation):
     profileIndex = None
     nProfiles = None
     
-    def __init__(self):
-        
+    def __init__(self, **kwargs):
+        Operation.__init__(self, **kwargs)
         self.profileIndex = 0
         self.__isConfig = False
     
@@ -98,7 +99,8 @@ class BeamSelector(Operation):
 
 class ProfileToChannels(Operation):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Operation.__init__(self, **kwargs)
         self.__isConfig = False
         self.__counter_chan = 0
         self.buffer = None

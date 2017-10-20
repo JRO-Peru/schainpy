@@ -4,32 +4,36 @@ import sys
 import matplotlib
 
 if 'linux' in sys.platform:
-    matplotlib.use("GTK3Agg")
+    matplotlib.use("TkAgg")
 
 if 'darwin' in sys.platform:
     matplotlib.use('TKAgg')
-#Qt4Agg', 'GTK', 'GTKAgg', 'ps', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'template', 'TkAgg', 'GTK3Cairo', 'GTK3Agg', 'svg', 'WebAgg', 'CocoaAgg', 'emf', 'gdk', 'WX'
+# Qt4Agg', 'GTK', 'GTKAgg', 'ps', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'template', 'TkAgg', 'GTK3Cairo', 'GTK3Agg', 'svg', 'WebAgg', 'CocoaAgg', 'emf', 'gdk', 'WX'
 import matplotlib.pyplot
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import FuncFormatter, LinearLocator
 
 ###########################################
-#Actualizacion de las funciones del driver
+# Actualizacion de las funciones del driver
 ###########################################
 
 # create jro colormap
 
 jet_values = matplotlib.pyplot.get_cmap("jet", 100)(numpy.arange(100))[10:90]
-blu_values = matplotlib.pyplot.get_cmap("seismic_r", 20)(numpy.arange(20))[10:15]
-ncmap = matplotlib.colors.LinearSegmentedColormap.from_list("jro", numpy.vstack((blu_values, jet_values)))
+blu_values = matplotlib.pyplot.get_cmap(
+    "seismic_r", 20)(numpy.arange(20))[10:15]
+ncmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+    "jro", numpy.vstack((blu_values, jet_values)))
 matplotlib.pyplot.register_cmap(cmap=ncmap)
 
-def createFigure(id, wintitle, width, height, facecolor="w", show=True, dpi = 80):
+
+def createFigure(id, wintitle, width, height, facecolor="w", show=True, dpi=80):
 
     matplotlib.pyplot.ioff()
 
-    fig = matplotlib.pyplot.figure(num=id, facecolor=facecolor, figsize=(1.0*width/dpi, 1.0*height/dpi))
+    fig = matplotlib.pyplot.figure(num=id, facecolor=facecolor, figsize=(
+        1.0 * width / dpi, 1.0 * height / dpi))
     fig.canvas.manager.set_window_title(wintitle)
 #     fig.canvas.manager.resize(width, height)
     matplotlib.pyplot.ion()
@@ -39,10 +43,11 @@ def createFigure(id, wintitle, width, height, facecolor="w", show=True, dpi = 80
 
     return fig
 
+
 def closeFigure(show=False, fig=None):
 
-#     matplotlib.pyplot.ioff()
-#     matplotlib.pyplot.pause(0)
+    #     matplotlib.pyplot.ioff()
+    #     matplotlib.pyplot.pause(0)
 
     if show:
         matplotlib.pyplot.show()
@@ -60,47 +65,52 @@ def closeFigure(show=False, fig=None):
 
     return
 
+
 def saveFigure(fig, filename):
 
-#     matplotlib.pyplot.ioff()
+    #     matplotlib.pyplot.ioff()
     fig.savefig(filename, dpi=matplotlib.pyplot.gcf().dpi)
 #     matplotlib.pyplot.ion()
+
 
 def clearFigure(fig):
 
     fig.clf()
 
+
 def setWinTitle(fig, title):
 
     fig.canvas.manager.set_window_title(title)
 
+
 def setTitle(fig, title):
 
     fig.suptitle(title)
+
 
 def createAxes(fig, nrow, ncol, xpos, ypos, colspan, rowspan, polar=False):
 
     matplotlib.pyplot.ioff()
     matplotlib.pyplot.figure(fig.number)
     axes = matplotlib.pyplot.subplot2grid((nrow, ncol),
-                                        (xpos, ypos),
-                                        colspan=colspan,
-                                        rowspan=rowspan,
-                                        polar=polar)
-
-    axes.grid(True)
+                                          (xpos, ypos),
+                                          colspan=colspan,
+                                          rowspan=rowspan,
+                                          polar=polar)
 
     matplotlib.pyplot.ion()
     return axes
 
+
 def setAxesText(ax, text):
 
     ax.annotate(text,
-                xy = (.1, .99),
-                xycoords = 'figure fraction',
-                horizontalalignment = 'left',
-                verticalalignment = 'top',
-                fontsize = 10)
+                xy=(.1, .99),
+                xycoords='figure fraction',
+                horizontalalignment='left',
+                verticalalignment='top',
+                fontsize=10)
+
 
 def printLabels(ax, xlabel, ylabel, title):
 
@@ -108,11 +118,11 @@ def printLabels(ax, xlabel, ylabel, title):
     ax.set_ylabel(ylabel, size=11)
     ax.set_title(title, size=8)
 
+
 def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='',
                 ticksize=9, xtick_visible=True, ytick_visible=True,
                 nxticks=4, nyticks=10,
-                grid=None,color='blue'):
-
+                grid=None, color='blue'):
     """
 
     Input:
@@ -121,18 +131,19 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
 
     matplotlib.pyplot.ioff()
 
-    ax.set_xlim([xmin,xmax])
-    ax.set_ylim([ymin,ymax])
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
 
     printLabels(ax, xlabel, ylabel, title)
 
     ######################################################
-    if (xmax-xmin)<=1:
-        xtickspos = numpy.linspace(xmin,xmax,nxticks)
-        xtickspos = numpy.array([float("%.1f"%i) for i in xtickspos])
+    if (xmax - xmin) <= 1:
+        xtickspos = numpy.linspace(xmin, xmax, nxticks)
+        xtickspos = numpy.array([float("%.1f" % i) for i in xtickspos])
         ax.set_xticks(xtickspos)
     else:
-        xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+        xtickspos = numpy.arange(nxticks) * \
+            int((xmax - xmin) / (nxticks)) + int(xmin)
 #         xtickspos = numpy.arange(nxticks)*float(xmax-xmin)/float(nxticks) + int(xmin)
         ax.set_xticks(xtickspos)
 
@@ -170,26 +181,29 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
 
     return iplot
 
+
 def set_linedata(ax, x, y, idline):
 
-    ax.lines[idline].set_data(x,y)
+    ax.lines[idline].set_data(x, y)
+
 
 def pline(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
 
     printLabels(ax, xlabel, ylabel, title)
 
     set_linedata(ax, x, y, idline=0)
 
+
 def addpline(ax, x, y, color, linestyle, lw):
 
-    ax.plot(x,y,color=color,linestyle=linestyle,lw=lw)
+    ax.plot(x, y, color=color, linestyle=linestyle, lw=lw)
 
 
 def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
-                 xlabel='', ylabel='', title='', ticksize = 9,
-                 colormap='jet',cblabel='', cbsize="5%",
+                 xlabel='', ylabel='', title='', ticksize=9,
+                 colormap='jet', cblabel='', cbsize="5%",
                  XAxisAsTime=False):
 
     matplotlib.pyplot.ioff()
@@ -199,16 +213,16 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
     fig = ax.get_figure()
     fig.add_axes(ax_cb)
 
-    ax.set_xlim([xmin,xmax])
-    ax.set_ylim([ymin,ymax])
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
 
     printLabels(ax, xlabel, ylabel, title)
 
     z = numpy.ma.masked_invalid(z)
-    cmap=matplotlib.pyplot.get_cmap(colormap)
-    cmap.set_bad('white',1.)
-    imesh = ax.pcolormesh(x,y,z.T, vmin=zmin, vmax=zmax, cmap=cmap)
-    cb =  matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
+    cmap = matplotlib.pyplot.get_cmap(colormap)
+    cmap.set_bad('black', 1.)
+    imesh = ax.pcolormesh(x, y, z.T, vmin=zmin, vmax=zmax, cmap=cmap)
+    cb = matplotlib.pyplot.colorbar(imesh, cax=ax_cb)
     cb.set_label(cblabel)
 
 #    for tl in ax_cb.get_yticklabels():
@@ -237,36 +251,30 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
 
     if XAxisAsTime:
 
-        func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
+        def func(x, pos): return ('%s') % (
+            datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
         ax.xaxis.set_major_formatter(FuncFormatter(func))
         ax.xaxis.set_major_locator(LinearLocator(7))
 
-    ax.grid(True)
     matplotlib.pyplot.ion()
     return imesh
 
+
 def pcolor(imesh, z, xlabel='', ylabel='', title=''):
 
-    z = numpy.ma.masked_invalid(z)
-    
-    cmap=matplotlib.pyplot.get_cmap('jet')
-    cmap.set_bad('white',1.)
-
     z = z.T
-    ax = imesh.get_axes()
+    ax = imesh.axes
     printLabels(ax, xlabel, ylabel, title)
     imesh.set_array(z.ravel())
-    ax.grid(True)
 
 
 def addpcolor(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
 
     printLabels(ax, xlabel, ylabel, title)
-    z = numpy.ma.masked_invalid(z)
-    cmap=matplotlib.pyplot.get_cmap(colormap)
-    cmap.set_bad('white',1.)
-    ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=matplotlib.pyplot.get_cmap(colormap))
-    ax.grid(True)
+
+    ax.pcolormesh(x, y, z.T, vmin=zmin, vmax=zmax,
+                  cmap=matplotlib.pyplot.get_cmap(colormap))
+
 
 def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', colormap='jet'):
 
@@ -275,19 +283,17 @@ def addpcolorbuffer(ax, x, y, z, zmin, zmax, xlabel='', ylabel='', title='', col
     ax.collections.remove(ax.collections[0])
 
     z = numpy.ma.masked_invalid(z)
-    
-    cmap=matplotlib.pyplot.get_cmap(colormap)
-    cmap.set_bad('white',1.)
 
-    ax.pcolormesh(x,y,z.T,vmin=zmin,vmax=zmax, cmap=cmap)
-    ax.grid(True)
+    cmap = matplotlib.pyplot.get_cmap(colormap)
+    cmap.set_bad('black', 1.)
+
+    ax.pcolormesh(x, y, z.T, vmin=zmin, vmax=zmax, cmap=cmap)
 
 
 def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
-                ticksize=9, xtick_visible=True, ytick_visible=True,
-                nxticks=4, nyticks=10,
-                grid=None):
-
+                     ticksize=9, xtick_visible=True, ytick_visible=True,
+                     nxticks=4, nyticks=10,
+                     grid=None):
     """
 
     Input:
@@ -299,11 +305,12 @@ def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', tit
     lines = ax.plot(x.T, y)
     leg = ax.legend(lines, legendlabels, loc='upper right')
     leg.get_frame().set_alpha(0.5)
-    ax.set_xlim([xmin,xmax])
-    ax.set_ylim([ymin,ymax])
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
     printLabels(ax, xlabel, ylabel, title)
 
-    xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
+    xtickspos = numpy.arange(nxticks) * \
+        int((xmax - xmin) / (nxticks)) + int(xmin)
     ax.set_xticks(xtickspos)
 
     for tick in ax.get_xticklabels():
@@ -340,19 +347,19 @@ def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', tit
 
 def pmultiline(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
 
     printLabels(ax, xlabel, ylabel, title)
 
     for i in range(len(ax.lines)):
         line = ax.lines[i]
-        line.set_data(x[i,:],y)
+        line.set_data(x[i, :], y)
+
 
 def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title='', legendlabels=None,
-                ticksize=9, xtick_visible=True, ytick_visible=True,
-                nxticks=4, nyticks=10, marker='.', markersize=10, linestyle="None",
-                grid=None, XAxisAsTime=False):
-
+                          ticksize=9, xtick_visible=True, ytick_visible=True,
+                          nxticks=4, nyticks=10, marker='.', markersize=10, linestyle="None",
+                          grid=None, XAxisAsTime=False):
     """
 
     Input:
@@ -369,10 +376,11 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
     leg = ax.legend(lines, legendlabels,
                     loc='upper right', bbox_to_anchor=(1.16, 1), borderaxespad=0)
 
-    for label in leg.get_texts(): label.set_fontsize(9)
+    for label in leg.get_texts():
+        label.set_fontsize(9)
 
-    ax.set_xlim([xmin,xmax])
-    ax.set_ylim([ymin,ymax])
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
     printLabels(ax, xlabel, ylabel, title)
 
 #    xtickspos = numpy.arange(nxticks)*int((xmax-xmin)/(nxticks)) + int(xmin)
@@ -407,7 +415,8 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
 
     if XAxisAsTime:
 
-        func = lambda x, pos: ('%s') %(datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
+        def func(x, pos): return ('%s') % (
+            datetime.datetime.utcfromtimestamp(x).strftime("%H:%M:%S"))
         ax.xaxis.set_major_formatter(FuncFormatter(func))
         ax.xaxis.set_major_locator(LinearLocator(7))
 
@@ -415,30 +424,33 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
 
     return iplot
 
+
 def pmultilineyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
+
     printLabels(ax, xlabel, ylabel, title)
 
     for i in range(len(ax.lines)):
         line = ax.lines[i]
-        line.set_data(x,y[i,:])
+        line.set_data(x, y[i, :])
+
 
 def createPolar(ax, x, y,
-                xlabel='', ylabel='', title='', ticksize = 9,
-                 colormap='jet',cblabel='', cbsize="5%",
-                 XAxisAsTime=False):
+                xlabel='', ylabel='', title='', ticksize=9,
+                colormap='jet', cblabel='', cbsize="5%",
+                XAxisAsTime=False):
 
     matplotlib.pyplot.ioff()
 
-    ax.plot(x,y,'bo', markersize=5)
+    ax.plot(x, y, 'bo', markersize=5)
 #     ax.set_rmax(90)
-    ax.set_ylim(0,90)
-    ax.set_yticks(numpy.arange(0,90,20))
+    ax.set_ylim(0, 90)
+    ax.set_yticks(numpy.arange(0, 90, 20))
 #     ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center' ,size='11')
 #     ax.text(0, 50, ylabel, rotation='vertical', va ='center', ha = 'left' ,size='11')
 #     ax.text(100, 100, 'example', ha='left', va='center', rotation='vertical')
-    ax.yaxis.labelpad = 230
+    ax.yaxis.labelpad = 40
     printLabels(ax, xlabel, ylabel, title)
     iplot = ax.lines[-1]
 
@@ -457,17 +469,18 @@ def createPolar(ax, x, y,
 
     matplotlib.pyplot.ion()
 
-
     return iplot
+
 
 def polar(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
 
 #     ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center',size='11')
     printLabels(ax, xlabel, ylabel, title)
 
     set_linedata(ax, x, y, idline=0)
+
 
 def draw(fig):
 
@@ -475,6 +488,7 @@ def draw(fig):
         raise ValueError, "Error drawing: Fig parameter should be a matplotlib figure object figure"
 
     fig.canvas.draw()
+
 
 def pause(interval=0.000001):
 

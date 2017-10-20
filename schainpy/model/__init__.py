@@ -5,8 +5,8 @@
 # from schainpy.model.utils.jroutils import *
 # from schainpy.serializer import *
 
+from graphics import *
 from data import *
 from io import *
 from proc import *
-from graphics import *
 from utils import *

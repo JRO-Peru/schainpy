@@ -8,6 +8,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 from schainpy import __version__
 
+
 class build_ext(_build_ext):
     def finalize_options(self):
         _build_ext.finalize_options(self)
@@ -23,7 +24,7 @@ setup(name="schainpy",
       author="Miguel Urco",
       author_email="miguel.urco@jro.igp.gob.pe",
       url="http://jro.igp.gob.pe",
-      packages = {'schainpy',
+      packages={'schainpy',
                   'schainpy.model',
                   'schainpy.model.data',
                   'schainpy.model.graphics',
@@ -39,31 +40,30 @@ setup(name="schainpy",
       ext_package='schainpy',
       py_modules=[''],
       package_data={'': ['schain.conf.template'],
-                    'schainpy.gui.figures': ['*.png','*.jpg'],
+                    'schainpy.gui.figures': ['*.png', '*.jpg'],
                     },
       include_package_data=False,
-      scripts =['schainpy/gui/schainGUI'],
+      scripts=['schainpy/gui/schainGUI'],
       ext_modules=[
-        Extension("cSchain", ["schainpy/model/proc/extensions.c"]
-      )],
+          Extension("cSchain", ["schainpy/model/proc/extensions.c"]
+                    )],
       entry_points={
-        'console_scripts': [
-            'schain = schaincli.cli:main',
-        ],
+          'console_scripts': [
+              'schain = schaincli.cli:main',
+          ],
       },
-      cmdclass={'build_ext':build_ext},
+      cmdclass={'build_ext': build_ext},
       setup_requires=["numpy >= 1.11.2"],
       install_requires=[
-                          "scipy >= 0.14.0",
-                          "h5py >= 2.2.1",
-                          "matplotlib >= 1.4.2",
-                          "pyfits >= 3.4",                      
-                          "paramiko >= 2.1.2",
-                          "paho-mqtt >= 1.2",
-                          "zmq",
-                          "fuzzywuzzy",
-                          "click",
-                          "colorama",
-                          "python-Levenshtein"
-                        ],
-    )
+          "scipy >= 0.14.0",
+          "h5py >= 2.2.1",
+          "matplotlib >= 1.4.2",
+          "pyfits >= 3.4",
+          "paramiko >= 2.1.2",
+          "paho-mqtt >= 1.2",
+          "zmq",
+          "fuzzywuzzy",
+          "click",
+          "python-Levenshtein"
+      ],
+      )

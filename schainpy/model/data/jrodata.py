@@ -292,11 +292,9 @@ class JROData(GenericData):
         return fmax
 
     def getFmax(self):
-
         PRF = 1./(self.ippSeconds * self.nCohInt)
 
         fmax = PRF
-
         return fmax
 
     def getVmax(self):

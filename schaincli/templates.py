@@ -1,11 +1,10 @@
 basic = '''from schainpy.controller import Project
 
 desc = "{desc}"
+project = Project()
+project.setup(id='200', name="{name}", description=desc)
 
-controller = Project()
-controller.setup(id='191', name="{name}", description=desc)
-
-readUnitConf = controller.addReadUnit(datatype='VoltageReader',
+voltage_reader = project.addReadUnit(datatype='VoltageReader',
                                       path="{path}",
                                       startDate="{startDate}",
                                       endDate="{endDate}",
@@ -16,60 +15,76 @@ readUnitConf = controller.addReadUnit(datatype='VoltageReader',
                                       walk=1,
                                       )
 
-procUnitConf1 = controller.addProcUnit(datatype='VoltageProc', inputId=readUnitConf.getId())
+voltage_proc = project.addProcUnit(datatype='VoltageProc', inputId=voltage_reader.getId())
 
-opObj11 = procUnitConf1.addOperation(name='ProfileSelector', optype='other')
-opObj11.addParameter(name='profileRangeList', value='120,183', format='intlist')
+profile = voltage_proc.addOperation(name='ProfileSelector', optype='other')
+profile.addParameter(name='profileRangeList', value='120,183', format='intlist')
 
-opObj11 = procUnitConf1.addOperation(name='RTIPlot', optype='other')
-opObj11.addParameter(name='wintitle', value='Jicamarca Radio Observatory', format='str')
-opObj11.addParameter(name='showprofile', value='0', format='int')
-opObj11.addParameter(name='xmin', value='0', format='int')
-opObj11.addParameter(name='xmax', value='24', format='int')
-opObj11.addParameter(name='figpath', value="{figpath}", format='str')
-opObj11.addParameter(name='wr_period', value='5', format='int')
-opObj11.addParameter(name='exp_code', value='22', format='int')
+rti = voltage_proc.addOperation(name='RTIPlot', optype='other')
+rti.addParameter(name='wintitle', value='Jicamarca Radio Observatory', format='str')
+rti.addParameter(name='showprofile', value='0', format='int')
+rti.addParameter(name='xmin', value='0', format='int')
+rti.addParameter(name='xmax', value='24', format='int')
+rti.addParameter(name='figpath', value="{figpath}", format='str')
+rti.addParameter(name='wr_period', value='5', format='int')
+rti.addParameter(name='exp_code', value='22', format='int')
 
 
 controller.start()
 '''
 
-multiprocess = '''from schainpy.controller import Project, multiSchain
-
+multiprocess = '''from schainpy.controller import Project, MPProject
+from time import sleep
 desc = "{desc}"
 
-def fiber(cursor, skip, q, day):
-    controller = Project()
-    controller.setup(id='191', name="{name}", description=desc)
+####################
+# PLOTTER RECEIVER #
+####################
+plotter = Project()
+plotter.setup(id='100', name='receiver', description=desc)
 
-    readUnitConf = controller.addReadUnit(datatype='SpectraReader',
-                                          path="{path}",
-                                          startDate=day,
-                                          endDate=day,
-                                          startTime="{startHour}",
-                                          endTime="{endHour}",
-                                          online=0,
-                                          queue=q,
-                                          cursor=cursor,
-                                          skip=skip,
-                                          verbose=1,
-                                          walk=1,
-                                          )
+receiver_plot = plotter.addProcUnit(name='PlotterReceiver')
+receiver_plot.addParameter(name='throttle', value=20, format='int')
+receiver_plot.addParameter(name='plottypes', value='rti', format='str')
 
-    procUnitConf1 = controller.addProcUnit(datatype='Spectra', inputId=readUnitConf.getId())
+rti = receiver_plot.addOperation(name='PlotRTIData', optype='other')
+rti.addParameter(name='zmin', value='-40.0', format='float') 
+rti.addParameter(name='zmax', value='100.0', format='float') 
+rti.addParameter(name='decimation', value='200', format='int') 
+rti.addParameter(name='xmin', value='0.0', format='int') 
+rti.addParameter(name='colormap', value='jet', format='str') 
 
-    procUnitConf2 = controller.addProcUnit(datatype='ParametersProc', inputId=readUnitConf.getId())
-    opObj11 = procUnitConf2.addOperation(name='SpectralMoments', optype='other')
+plotter.start()
 
-    opObj12 = procUnitConf2.addOperation(name='PublishData', optype='other')
-    opObj12.addParameter(name='zeromq', value=1, format='int')
-    opObj12.addParameter(name='verbose', value=0, format='bool')
+sleep(2)
 
-    controller.start()
+################
+# DATA EMITTER #
+################
+project = Project()
+project.setup(id='200', name="{name}", description=desc)
 
+spectra_reader = project.addReadUnit(datatype='SpectraReader',
+                                        path="{path}",
+                                        startDate={startDate},
+                                        endDate={endDate},
+                                        startTime="{startHour}",
+                                        endTime="{endHour}",
+                                        online=0,
+                                        verbose=1,
+                                        walk=1,
+                                        )
 
-if __name__ == '__main__':
-    multiSchain(fiber, nProcess={nProcess}, startDate="{startDate}", endDate="{endDate}")
+spectra_proc = project.addProcUnit(datatype='Spectra', inputId=spectra_reader.getId())
+
+parameters_proc = project.addProcUnit(datatype='ParametersProc', inputId=spectra_proc.getId())
+moments = parameters_proc.addOperation(name='SpectralMoments', optype='other')
+
+publish = parameters_proc.addOperation(name='PublishData', optype='other')
+publish.addParameter(name='zeromq', value=1, format='int')
+publish.addParameter(name='verbose', value=0, format='bool')
+
+MPProject(project, 16)
 
 
 '''

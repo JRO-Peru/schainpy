@@ -100,16 +100,16 @@ ENV/
 # eclipse
 .project
 .pydevproject
-
 # vscode
 
 .vscode
 
-schainpy/scripts/
 schaingui/node_modules/
+schainpy/scripts/
 .svn/
 *.png
 *.pyc
-*.xml
-*.log
+schainpy/scripts
+.vscode
 trash
+*.log

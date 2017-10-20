@@ -17,6 +17,7 @@ SCHAINPY - LOG
 
 import click
 
+
 def warning(message, tag='Warning'):
     click.echo(click.style('[{}] {}'.format(tag, message), fg='yellow'))
     pass
@@ -39,6 +40,6 @@ def log(message, tag='Info'):
 
 def makelogger(tag, bg='reset', fg='reset'):
     def func(message):
-        click.echo(click.style('[{}] {}'.format(tag.upper(), message),
-                   bg=bg, fg=fg))
+        click.echo(click.style('[{}] {}'.format(
+            tag.upper(), message), bg=bg, fg=fg))
     return func

@@ -113,7 +113,7 @@ class Scope(Figure):
     def run(self, dataOut, id, wintitle="", channelList=None,
             xmin=None, xmax=None, ymin=None, ymax=None, save=False,
             figpath='./', figfile=None, show=True, wr_period=1,
-            ftp=False, server=None, folder=None, username=None, password=None, type='power'):
+            ftp=False, server=None, folder=None, username=None, password=None, type='power', **kwargs):
         
         """
         

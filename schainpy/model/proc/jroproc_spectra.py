@@ -142,7 +142,7 @@ class SpectraProc(ProcessingUnit):
             if self.dataIn.flagDataAsBlock:
                 #data dimension: [nChannels, nProfiles, nSamples]
                 nVoltProfiles = self.dataIn.data.shape[1]
-#                 nVoltProfiles = self.dataIn.nProfiles
+            #                 nVoltProfiles = self.dataIn.nProfiles
 
                 if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
@@ -197,7 +197,6 @@ class SpectraProc(ProcessingUnit):
                 
         self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndex]
         self.dataOut.pairsList = pairs
-        self.dataOut.pairsIndexList = pairsIndex
 
         return
 
@@ -877,7 +876,6 @@ class IncohInt(Operation):
         return self.__initime, avgdata_spc, avgdata_cspc, avgdata_dc
 
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
-
         if n==1:
             return
 
@@ -901,4 +899,3 @@ class IncohInt(Operation):
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
-

@@ -17,7 +17,6 @@ from functools import partial
 import time
 #from sklearn.cluster import KMeans 
 
-import matplotlib.pyplot as plt
 
 from scipy.optimize import fmin_l_bfgs_b #optimize with bounds on state papameters
 from jroproc_base import ProcessingUnit, Operation
@@ -1766,8 +1765,8 @@ class WindProfiler(Operation):
     
     n = None
     
-    def __init__(self):    
-        Operation.__init__(self)
+    def __init__(self, **kwargs):    
+        Operation.__init__(self, **kwargs)
     
     def __calculateCosDir(self, elev, azim):
         zen = (90 - elev)*numpy.pi/180
@@ -2473,8 +2472,8 @@ class WindProfiler(Operation):
     
 class EWDriftsEstimation(Operation):
        
-    def __init__(self):    
-        Operation.__init__(self)    
+    def __init__(self, **kwargs):    
+        Operation.__init__(self, **kwargs)    
     
     def __correctValues(self, heiRang, phi, velRadial, SNR):
         listPhi = phi.tolist()

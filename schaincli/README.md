@@ -1,4 +1,4 @@
-# schaing
+# schain
 
 Command Line Interface for SIGNAL CHAIN - jro
 
