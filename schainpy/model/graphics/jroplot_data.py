@@ -88,7 +88,7 @@ class PlotData(Operation, Process):
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
         self.titles = ['' for __ in range(16)]
-    
+
     def __fmtTime(self, x, pos):
         '''
         '''
@@ -200,7 +200,7 @@ class PlotData(Operation, Process):
         Event for scrolling, scale figure
         '''
         cb_ax = event.inaxes
-        if cb_ax in [ax.cbar.ax for ax in self.axes]:
+        if cb_ax in [ax.cbar.ax for ax in self.axes if ax.cbar]:
             ax = [ax for ax in self.axes if cb_ax == ax.cbar.ax][0]
             pt = ax.cbar.ax.bbox.get_points()[:,1]
             nrm = ax.cbar.norm
@@ -221,7 +221,7 @@ class PlotData(Operation, Process):
         if cb_ax is None:
             return
 
-        if cb_ax in [ax.cbar.ax for ax in self.axes]:
+        if cb_ax in [ax.cbar.ax for ax in self.axes if ax.cbar]:
             cb_ax.press = event.x, event.y
         else:
             cb_ax.press = None
@@ -233,7 +233,7 @@ class PlotData(Operation, Process):
         cb_ax = event.inaxes
         if cb_ax is None:
             return
-        if cb_ax not in [ax.cbar.ax for ax in self.axes]:
+        if cb_ax not in [ax.cbar.ax for ax in self.axes if ax.cbar]:
             return
         if  cb_ax.press is None:
             return
@@ -384,6 +384,8 @@ class PlotData(Operation, Process):
                         ax.cbar.set_label(self.cb_label, size=8)
                     elif self.cb_labels:
                         ax.cbar.set_label(self.cb_labels[n], size=8)
+                else:
+                    ax.cbar = None
 
             ax.set_title('{} - {} {}'.format(
                     self.titles[n],
