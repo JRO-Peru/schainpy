@@ -24,6 +24,7 @@ matplotlib.pyplot.register_cmap(cmap=ncmap)
 
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'RdBu_r', 'seismic')]
 
+
 def figpause(interval):
     backend = plt.rcParams['backend']
     if backend in matplotlib.rcsetup.interactive_bk:
@@ -34,6 +35,7 @@ def figpause(interval):
                 canvas.draw()
             canvas.start_event_loop(interval)
             return
+
 
 class PlotData(Operation, Process):
     '''
@@ -51,6 +53,7 @@ class PlotData(Operation, Process):
 
         Operation.__init__(self, plot=True, **kwargs)
         Process.__init__(self)
+        self.contador = 0
         self.kwargs['code'] = self.CODE
         self.mp = False
         self.data = None
@@ -80,7 +83,7 @@ class PlotData(Operation, Process):
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
         self.xlabel = kwargs.get('xlabel', None)
-        self.__MAXNUMY = kwargs.get('decimation', 100)
+        self.__MAXNUMY = kwargs.get('decimation', 300)
         self.showSNR = kwargs.get('showSNR', False)
         self.oneFigure = kwargs.get('oneFigure', True)
         self.width = kwargs.get('width', None)
@@ -104,9 +107,9 @@ class PlotData(Operation, Process):
 
         self.time_label = 'LT' if self.localtime else 'UTC'
         if self.data.localtime:
-            self.getDateTime = datetime.datetime.fromtimestamp            
+            self.getDateTime = datetime.datetime.fromtimestamp
         else:
-            self.getDateTime = datetime.datetime.utcfromtimestamp        
+            self.getDateTime = datetime.datetime.utcfromtimestamp
 
         if self.width is None:
             self.width = 8
@@ -133,7 +136,7 @@ class PlotData(Operation, Process):
                 ax.firsttime = True
                 ax.index = 0
                 ax.press = None
-                self.axes.append(ax)                
+                self.axes.append(ax)
                 if self.showprofile:
                     cax = self.__add_axes(ax, size=size, pad=pad)
                     cax.tick_params(labelsize=8)
@@ -150,7 +153,7 @@ class PlotData(Operation, Process):
                 ax.firsttime = True
                 ax.index = 0
                 ax.press = None
-                self.figures.append(fig)                
+                self.figures.append(fig)
                 self.axes.append(ax)
                 if self.showprofile:
                     cax = self.__add_axes(ax, size=size, pad=pad)
@@ -179,19 +182,19 @@ class PlotData(Operation, Process):
         Event for pressing keys (up, down) change colormap
         '''
         ax = event.inaxes
-        if ax in self.axes:            
+        if ax in self.axes:
             if event.key == 'down':
                 ax.index += 1
             elif event.key == 'up':
                 ax.index -= 1
             if ax.index < 0:
-                ax.index = len(CMAPS) - 1 
+                ax.index = len(CMAPS) - 1
             elif ax.index == len(CMAPS):
                 ax.index = 0
-            cmap = CMAPS[ax.index]            
+            cmap = CMAPS[ax.index]
             ax.cbar.set_cmap(cmap)
             ax.cbar.draw_all()
-            ax.plt.set_cmap(cmap)                
+            ax.plt.set_cmap(cmap)
             ax.cbar.patch.figure.canvas.draw()
             self.colormap = cmap.name
 
@@ -202,13 +205,14 @@ class PlotData(Operation, Process):
         cb_ax = event.inaxes
         if cb_ax in [ax.cbar.ax for ax in self.axes if ax.cbar]:
             ax = [ax for ax in self.axes if cb_ax == ax.cbar.ax][0]
-            pt = ax.cbar.ax.bbox.get_points()[:,1]
+            pt = ax.cbar.ax.bbox.get_points()[:, 1]
             nrm = ax.cbar.norm
-            vmin, vmax, p0, p1, pS = (nrm.vmin, nrm.vmax, pt[0], pt[1], event.y)
+            vmin, vmax, p0, p1, pS = (
+                nrm.vmin, nrm.vmax, pt[0], pt[1], event.y)
             scale = 2 if event.step == 1 else 0.5
-            point = vmin + (vmax - vmin) / (p1 - p0)*(pS - p0)    
-            ax.cbar.norm.vmin = point - scale*(point - vmin)
-            ax.cbar.norm.vmax = point - scale*(point - vmax)            
+            point = vmin + (vmax - vmin) / (p1 - p0) * (pS - p0)
+            ax.cbar.norm.vmin = point - scale * (point - vmin)
+            ax.cbar.norm.vmax = point - scale * (point - vmax)
             ax.plt.set_norm(ax.cbar.norm)
             ax.cbar.draw_all()
             ax.cbar.patch.figure.canvas.draw()
@@ -235,23 +239,23 @@ class PlotData(Operation, Process):
             return
         if cb_ax not in [ax.cbar.ax for ax in self.axes if ax.cbar]:
             return
-        if  cb_ax.press is None:
+        if cb_ax.press is None:
             return
 
         ax = [ax for ax in self.axes if cb_ax == ax.cbar.ax][0]
         xprev, yprev = cb_ax.press
         dx = event.x - xprev
         dy = event.y - yprev
-        cb_ax.press = event.x, event.y        
+        cb_ax.press = event.x, event.y
         scale = ax.cbar.norm.vmax - ax.cbar.norm.vmin
         perc = 0.03
 
         if event.button == 1:
-            ax.cbar.norm.vmin -= (perc*scale)*numpy.sign(dy)
-            ax.cbar.norm.vmax -= (perc*scale)*numpy.sign(dy)
+            ax.cbar.norm.vmin -= (perc * scale) * numpy.sign(dy)
+            ax.cbar.norm.vmax -= (perc * scale) * numpy.sign(dy)
         elif event.button == 3:
-            ax.cbar.norm.vmin -= (perc*scale)*numpy.sign(dy)
-            ax.cbar.norm.vmax += (perc*scale)*numpy.sign(dy)
+            ax.cbar.norm.vmin -= (perc * scale) * numpy.sign(dy)
+            ax.cbar.norm.vmax += (perc * scale) * numpy.sign(dy)
 
         ax.cbar.draw_all()
         ax.plt.set_norm(ax.cbar.norm)
@@ -331,8 +335,9 @@ class PlotData(Operation, Process):
             xmin = self.min_time
         else:
             if self.xaxis is 'time':
-                dt = self.getDateTime(self.min_time)                
-                xmin = (dt.replace(hour=int(self.xmin), minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
+                dt = self.getDateTime(self.min_time)
+                xmin = (dt.replace(hour=int(self.xmin), minute=0, second=0) -
+                        datetime.datetime(1970, 1, 1)).total_seconds()
                 if self.data.localtime:
                     xmin += time.timezone
             else:
@@ -343,18 +348,20 @@ class PlotData(Operation, Process):
         else:
             if self.xaxis is 'time':
                 dt = self.getDateTime(self.max_time)
-                xmax = (dt.replace(hour=int(self.xmax), minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
+                xmax = (dt.replace(hour=int(self.xmax), minute=0, second=0) -
+                        datetime.datetime(1970, 1, 1)).total_seconds()
                 if self.data.localtime:
                     xmax += time.timezone
             else:
                 xmax = self.xmax
 
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
-        ymax = self.ymax if self.ymax else numpy.nanmax(self.y)        
+        ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
 
         Y = numpy.array([10, 20, 50, 100, 200, 500, 1000, 2000])
-        i = 1 if numpy.where(ymax < Y)[0][0] < 0 else numpy.where(ymax < Y)[0][0]
-        ystep = Y[i-1]/5
+        i = 1 if numpy.where(ymax < Y)[
+            0][0] < 0 else numpy.where(ymax < Y)[0][0]
+        ystep = Y[i - 1] / 5
 
         ystep = 200 if ymax >= 800 else 100 if ymax >= 400 else 50 if ymax >= 200 else 20
 
@@ -362,9 +369,9 @@ class PlotData(Operation, Process):
             if ax.firsttime:
                 ax.set_facecolor(self.bgcolor)
                 ax.yaxis.set_major_locator(MultipleLocator(ystep))
-                if self.xaxis is 'time':            
+                if self.xaxis is 'time':
                     ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
-                    ax.xaxis.set_major_locator(LinearLocator(9))                
+                    ax.xaxis.set_major_locator(LinearLocator(9))
                 if self.xlabel is not None:
                     ax.set_xlabel(self.xlabel)
                 ax.set_ylabel(self.ylabel)
@@ -388,9 +395,9 @@ class PlotData(Operation, Process):
                     ax.cbar = None
 
             ax.set_title('{} - {} {}'.format(
-                    self.titles[n],
-                    self.getDateTime(self.max_time).strftime('%H:%M:%S'),
-                    self.time_label),
+                self.titles[n],
+                self.getDateTime(self.max_time).strftime('%H:%M:%S'),
+                self.time_label),
                 size=8)
             ax.set_xlim(xmin, xmax)
             ax.set_ylim(ymin, ymax)
@@ -406,14 +413,15 @@ class PlotData(Operation, Process):
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
-                continue            
-            
+                continue
+
             fig.tight_layout()
-            fig.canvas.manager.set_window_title('{} - {}'.format(self.title, 
+            fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.max_time).strftime('%Y/%m/%d')))
             # fig.canvas.draw()
 
-            if self.save and self.data.ended:
+            if self.save:  # and self.data.ended:
+                self.contador += 1
                 channels = range(self.nrows)
                 if self.oneFigure:
                     label = ''
@@ -421,10 +429,12 @@ class PlotData(Operation, Process):
                     label = '_{}'.format(channels[n])
                 figname = os.path.join(
                     self.save,
-                    '{}{}_{}.png'.format(
+                    '{}{}_{}{}.png'.format(
                         self.CODE,
                         label,
-                        self.getDateTime(self.saveTime).strftime('%y%m%d_%H%M%S')
+                        self.getDateTime(self.saveTime).strftime(
+                            '%y%m%d_%H%M%S'),
+                        str(self.contador),
                     )
                 )
                 print 'Saving figure: {}'.format(figname)
@@ -857,7 +867,6 @@ class PlotSkyMapData(PlotData):
         else:
             self.ax.plot.set_data(x, y)
 
-
         dt1 = self.getDateTime(self.min_time).strftime('%y/%m/%d %H:%M:%S')
         dt2 = self.getDateTime(self.max_time).strftime('%y/%m/%d %H:%M:%S')
         title = 'Meteor Detection Sky Map\n %s - %s \n Number of events: %5.0f\n' % (dt1,
@@ -906,14 +915,16 @@ class PlotParamData(PlotRTIData):
         for n, ax in enumerate(self.axes):
 
             x, y, z = self.fill_gaps(*self.decimate())
-            self.zmax = self.zmax if self.zmax is not None else numpy.max(self.z[n])
-            self.zmin = self.zmin if self.zmin is not None else numpy.min(self.z[n])
-                        
+            self.zmax = self.zmax if self.zmax is not None else numpy.max(
+                self.z[n])
+            self.zmin = self.zmin if self.zmin is not None else numpy.min(
+                self.z[n])
+
             if ax.firsttime:
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
-                
-                ax.plt = ax.pcolormesh(x, y, z[n].T*self.factors[n],
+
+                ax.plt = ax.pcolormesh(x, y, z[n].T * self.factors[n],
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=self.cmaps[n]
@@ -922,13 +933,14 @@ class PlotParamData(PlotRTIData):
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
                 ax.collections.remove(ax.collections[0])
-                ax.plt = ax.pcolormesh(x, y, z[n].T*self.factors[n],
+                ax.plt = ax.pcolormesh(x, y, z[n].T * self.factors[n],
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=self.cmaps[n]
                                        )
 
         self.saveTime = self.min_time
+
 
 class PlotOutputData(PlotParamData):
     '''
