@@ -30,7 +30,7 @@ rti.addParameter(name='wr_period', value='5', format='int')
 rti.addParameter(name='exp_code', value='22', format='int')
 
 
-controller.start()
+project.start()
 '''
 
 multiprocess = '''from schainpy.controller import Project, MPProject

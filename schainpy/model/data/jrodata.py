@@ -15,40 +15,42 @@ from schainpy import cSchain
 def getNumpyDtype(dataTypeCode):
 
     if dataTypeCode == 0:
-        numpyDtype = numpy.dtype([('real','<i1'),('imag','<i1')])
+        numpyDtype = numpy.dtype([('real', '<i1'), ('imag', '<i1')])
     elif dataTypeCode == 1:
-        numpyDtype = numpy.dtype([('real','<i2'),('imag','<i2')])
+        numpyDtype = numpy.dtype([('real', '<i2'), ('imag', '<i2')])
     elif dataTypeCode == 2:
-        numpyDtype = numpy.dtype([('real','<i4'),('imag','<i4')])
+        numpyDtype = numpy.dtype([('real', '<i4'), ('imag', '<i4')])
     elif dataTypeCode == 3:
-        numpyDtype = numpy.dtype([('real','<i8'),('imag','<i8')])
+        numpyDtype = numpy.dtype([('real', '<i8'), ('imag', '<i8')])
     elif dataTypeCode == 4:
-        numpyDtype = numpy.dtype([('real','<f4'),('imag','<f4')])
+        numpyDtype = numpy.dtype([('real', '<f4'), ('imag', '<f4')])
     elif dataTypeCode == 5:
-        numpyDtype = numpy.dtype([('real','<f8'),('imag','<f8')])
+        numpyDtype = numpy.dtype([('real', '<f8'), ('imag', '<f8')])
     else:
         raise ValueError, 'dataTypeCode was not defined'
 
     return numpyDtype
 
+
 def getDataTypeCode(numpyDtype):
 
-    if numpyDtype == numpy.dtype([('real','<i1'),('imag','<i1')]):
+    if numpyDtype == numpy.dtype([('real', '<i1'), ('imag', '<i1')]):
         datatype = 0
-    elif numpyDtype == numpy.dtype([('real','<i2'),('imag','<i2')]):
+    elif numpyDtype == numpy.dtype([('real', '<i2'), ('imag', '<i2')]):
         datatype = 1
-    elif numpyDtype == numpy.dtype([('real','<i4'),('imag','<i4')]):
+    elif numpyDtype == numpy.dtype([('real', '<i4'), ('imag', '<i4')]):
         datatype = 2
-    elif numpyDtype == numpy.dtype([('real','<i8'),('imag','<i8')]):
+    elif numpyDtype == numpy.dtype([('real', '<i8'), ('imag', '<i8')]):
         datatype = 3
-    elif numpyDtype == numpy.dtype([('real','<f4'),('imag','<f4')]):
+    elif numpyDtype == numpy.dtype([('real', '<f4'), ('imag', '<f4')]):
         datatype = 4
-    elif numpyDtype == numpy.dtype([('real','<f8'),('imag','<f8')]):
+    elif numpyDtype == numpy.dtype([('real', '<f8'), ('imag', '<f8')]):
         datatype = 5
     else:
         datatype = None
 
     return datatype
+
 
 def hildebrand_sekhon(data, navg):
     """
@@ -110,6 +112,7 @@ class Beam:
         self.azimuthList = []
         self.zenithList = []
 
+
 class GenericData(object):
 
     flagNoData = True
@@ -123,12 +126,12 @@ class GenericData(object):
 
             attribute = inputObj.__dict__[key]
 
-            #If this attribute is a tuple or list
+            # If this attribute is a tuple or list
             if type(inputObj.__dict__[key]) in (tuple, list):
                 self.__dict__[key] = attribute[:]
                 continue
 
-            #If this attribute is another object or instance
+            # If this attribute is another object or instance
             if hasattr(attribute, '__dict__'):
                 self.__dict__[key] = attribute.copy()
                 continue
@@ -143,10 +146,11 @@ class GenericData(object):
 
         return self.flagNoData
 
+
 class JROData(GenericData):
 
-#    m_BasicHeader = BasicHeader()
-#    m_ProcessingHeader = ProcessingHeader()
+    #    m_BasicHeader = BasicHeader()
+    #    m_ProcessingHeader = ProcessingHeader()
 
     systemHeaderObj = SystemHeader()
 
@@ -156,7 +160,7 @@ class JROData(GenericData):
 
     type = None
 
-    datatype = None #dtype but in string
+    datatype = None  # dtype but in string
 
 #     dtype = None
 
@@ -190,9 +194,9 @@ class JROData(GenericData):
 #
 #     code = None
 
-    flagDecodeData = False #asumo q la data no esta decodificada
+    flagDecodeData = False  # asumo q la data no esta decodificada
 
-    flagDeflipData = False #asumo q la data no esta sin flip
+    flagDeflipData = False  # asumo q la data no esta sin flip
 
     flagShiftFFT = False
 
@@ -206,7 +210,7 @@ class JROData(GenericData):
 
     windowOfFilter = 1
 
-    #Speed of ligth
+    # Speed of ligth
     C = 3e8
 
     frequency = 49.92e6
@@ -261,7 +265,7 @@ class JROData(GenericData):
     def getltctime(self):
 
         if self.useLocalTime:
-            return self.utctime - self.timeZone*60
+            return self.utctime - self.timeZone * 60
 
         return self.utctime
 
@@ -275,7 +279,7 @@ class JROData(GenericData):
         datatime = []
 
         datatime.append(self.ltctime)
-        datatime.append(self.ltctime + self.timeInterval+1)
+        datatime.append(self.ltctime + self.timeInterval + 1)
 
         datatime = numpy.array(datatime)
 
@@ -283,25 +287,25 @@ class JROData(GenericData):
 
     def getFmaxTimeResponse(self):
 
-        period = (10**-6)*self.getDeltaH()/(0.15)
+        period = (10**-6) * self.getDeltaH() / (0.15)
 
-        PRF = 1./(period * self.nCohInt)
+        PRF = 1. / (period * self.nCohInt)
 
         fmax = PRF
 
         return fmax
 
     def getFmax(self):
-        PRF = 1./(self.ippSeconds * self.nCohInt)
+        PRF = 1. / (self.ippSeconds * self.nCohInt)
 
         fmax = PRF
         return fmax
 
     def getVmax(self):
 
-        _lambda = self.C/self.frequency
+        _lambda = self.C / self.frequency
 
-        vmax = self.getFmax() * _lambda/2
+        vmax = self.getFmax() * _lambda / 2
 
         return vmax
 
@@ -366,7 +370,8 @@ class JROData(GenericData):
         return
 
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
-    channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
+    channelIndexList = property(
+        getChannelIndexList, "I'm the 'channelIndexList' property.")
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")
     #noise = property(getNoise, "I'm the 'nHeights' property.")
     datatime = property(getDatatime, "I'm the 'datatime' property")
@@ -378,9 +383,10 @@ class JROData(GenericData):
     nCode = property(get_ncode, set_ncode)
     nBaud = property(get_nbaud, set_nbaud)
 
+
 class Voltage(JROData):
 
-    #data es un numpy array de 2 dmensiones (canales, alturas)
+    # data es un numpy array de 2 dmensiones (canales, alturas)
     data = None
 
     def __init__(self):
@@ -428,17 +434,17 @@ class Voltage(JROData):
 
         self.blocksize = None
 
-        self.flagDecodeData = False #asumo q la data no esta decodificada
+        self.flagDecodeData = False  # asumo q la data no esta decodificada
 
-        self.flagDeflipData = False #asumo q la data no esta sin flip
+        self.flagDeflipData = False  # asumo q la data no esta sin flip
 
         self.flagShiftFFT = False
 
-        self.flagDataAsBlock = False    #Asumo que la data es leida perfil a perfil
+        self.flagDataAsBlock = False  # Asumo que la data es leida perfil a perfil
 
         self.profileIndex = 0
 
-    def getNoisebyHildebrand(self, channel = None):
+    def getNoisebyHildebrand(self, channel=None):
         """
         Determino el nivel de ruido usando el metodo Hildebrand-Sekhon
 
@@ -460,19 +466,19 @@ class Voltage(JROData):
             if nChannels == 1:
                 daux = power[:].real
             else:
-                daux = power[thisChannel,:].real
+                daux = power[thisChannel, :].real
             noise[thisChannel] = hildebrand_sekhon(daux, self.nCohInt)
 
         return noise
 
-    def getNoise(self, type = 1, channel = None):
+    def getNoise(self, type=1, channel=None):
 
         if type == 1:
             noise = self.getNoisebyHildebrand(channel)
 
         return noise
 
-    def getPower(self, channel = None):
+    def getPower(self, channel=None):
 
         if channel != None:
             data = self.data[channel]
@@ -480,7 +486,7 @@ class Voltage(JROData):
             data = self.data
 
         power = data * numpy.conjugate(data)
-        powerdB = 10*numpy.log10(power.real)
+        powerdB = 10 * numpy.log10(power.real)
         powerdB = numpy.squeeze(powerdB)
 
         return powerdB
@@ -494,18 +500,19 @@ class Voltage(JROData):
     noise = property(getNoise, "I'm the 'nHeights' property.")
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
 
+
 class Spectra(JROData):
 
-    #data spc es un numpy array de 2 dmensiones (canales, perfiles, alturas)
+    # data spc es un numpy array de 2 dmensiones (canales, perfiles, alturas)
     data_spc = None
 
-    #data cspc es un numpy array de 2 dmensiones (canales, pares, alturas)
+    # data cspc es un numpy array de 2 dmensiones (canales, pares, alturas)
     data_cspc = None
 
-    #data dc es un numpy array de 2 dmensiones (canales, alturas)
+    # data dc es un numpy array de 2 dmensiones (canales, alturas)
     data_dc = None
 
-    #data power
+    # data power
     data_pwr = None
 
     nFFTPoints = None
@@ -516,9 +523,9 @@ class Spectra(JROData):
 
     nIncohInt = None
 
-    wavelength = None #Necesario para cacular el rango de velocidad desde la frecuencia
+    wavelength = None  # Necesario para cacular el rango de velocidad desde la frecuencia
 
-    nCohInt = None #se requiere para determinar el valor de timeInterval
+    nCohInt = None  # se requiere para determinar el valor de timeInterval
 
     ippFactor = None
 
@@ -573,9 +580,9 @@ class Spectra(JROData):
 
         self.wavelength = None
 
-        self.flagDecodeData = False #asumo q la data no esta decodificada
+        self.flagDecodeData = False  # asumo q la data no esta decodificada
 
-        self.flagDeflipData = False #asumo q la data no esta sin flip
+        self.flagDeflipData = False  # asumo q la data no esta sin flip
 
         self.flagShiftFFT = False
 
@@ -586,7 +593,6 @@ class Spectra(JROData):
         self.beacon_heiIndexList = []
 
         self.noise_estimation = None
-
 
     def getNoisebyHildebrand(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
         """
@@ -599,7 +605,8 @@ class Spectra(JROData):
         noise = numpy.zeros(self.nChannels)
 
         for channel in range(self.nChannels):
-            daux = self.data_spc[channel,xmin_index:xmax_index,ymin_index:ymax_index]
+            daux = self.data_spc[channel,
+                                 xmin_index:xmax_index, ymin_index:ymax_index]
             noise[channel] = hildebrand_sekhon(daux, self.nIncohInt)
 
         return noise
@@ -607,36 +614,45 @@ class Spectra(JROData):
     def getNoise(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
 
         if self.noise_estimation is not None:
-            return self.noise_estimation #this was estimated by getNoise Operation defined in jroproc_spectra.py
+            # this was estimated by getNoise Operation defined in jroproc_spectra.py
+            return self.noise_estimation
         else:
-            noise = self.getNoisebyHildebrand(xmin_index, xmax_index, ymin_index, ymax_index)
+            noise = self.getNoisebyHildebrand(
+                xmin_index, xmax_index, ymin_index, ymax_index)
             return noise
 
     def getFreqRangeTimeResponse(self, extrapoints=0):
 
-        deltafreq = self.getFmaxTimeResponse() / (self.nFFTPoints*self.ippFactor)
-        freqrange = deltafreq*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
+        deltafreq = self.getFmaxTimeResponse() / (self.nFFTPoints * self.ippFactor)
+        freqrange = deltafreq * \
+            (numpy.arange(self.nFFTPoints + extrapoints) -
+             self.nFFTPoints / 2.) - deltafreq / 2
 
         return freqrange
 
     def getAcfRange(self, extrapoints=0):
 
-        deltafreq = 10./(self.getFmax() / (self.nFFTPoints*self.ippFactor))
-        freqrange = deltafreq*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
+        deltafreq = 10. / (self.getFmax() / (self.nFFTPoints * self.ippFactor))
+        freqrange = deltafreq * \
+            (numpy.arange(self.nFFTPoints + extrapoints) -
+             self.nFFTPoints / 2.) - deltafreq / 2
 
         return freqrange
 
     def getFreqRange(self, extrapoints=0):
 
-        deltafreq = self.getFmax() / (self.nFFTPoints*self.ippFactor)
-        freqrange = deltafreq*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) - deltafreq/2
+        deltafreq = self.getFmax() / (self.nFFTPoints * self.ippFactor)
+        freqrange = deltafreq * \
+            (numpy.arange(self.nFFTPoints + extrapoints) -
+             self.nFFTPoints / 2.) - deltafreq / 2
 
         return freqrange
 
     def getVelRange(self, extrapoints=0):
 
-        deltav = self.getVmax() / (self.nFFTPoints*self.ippFactor)
-        velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) #- deltav/2
+        deltav = self.getVmax() / (self.nFFTPoints * self.ippFactor)
+        velrange = deltav * (numpy.arange(self.nFFTPoints +
+                                          extrapoints) - self.nFFTPoints / 2.)  # - deltav/2
 
         return velrange
 
@@ -655,7 +671,8 @@ class Spectra(JROData):
         if self.flagDecodeData:
             pwcode = numpy.sum(self.code[0]**2)
         #normFactor = min(self.nFFTPoints,self.nProfiles)*self.nIncohInt*self.nCohInt*pwcode*self.windowOfFilter
-        normFactor = self.nProfiles*self.nIncohInt*self.nCohInt*pwcode*self.windowOfFilter
+        normFactor = self.nProfiles * self.nIncohInt * \
+            self.nCohInt * pwcode * self.windowOfFilter
 
         return normFactor
 
@@ -682,11 +699,11 @@ class Spectra(JROData):
     def getPower(self):
 
         factor = self.normFactor
-        z = self.data_spc/factor
+        z = self.data_spc / factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         avg = numpy.average(z, axis=1)
 
-        return 10*numpy.log10(avg)
+        return 10 * numpy.log10(avg)
 
     def getCoherence(self, pairsList=None, phase=False):
 
@@ -697,17 +714,19 @@ class Spectra(JROData):
             pairsIndexList = []
             for pair in pairsList:
                 if pair not in self.pairsList:
-                    raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
-                pairsIndexList.append(self.pairsList.index(pair))        
+                    raise ValueError, "Pair %s is not in dataOut.pairsList" % (
+                        pair)
+                pairsIndexList.append(self.pairsList.index(pair))
         for i in range(len(pairsIndexList)):
             pair = self.pairsList[pairsIndexList[i]]
-            ccf = numpy.average(self.data_cspc[pairsIndexList[i], :, :], axis=0)
+            ccf = numpy.average(
+                self.data_cspc[pairsIndexList[i], :, :], axis=0)
             powa = numpy.average(self.data_spc[pair[0], :, :], axis=0)
             powb = numpy.average(self.data_spc[pair[1], :, :], axis=0)
-            avgcoherenceComplex = ccf/numpy.sqrt(powa*powb)
+            avgcoherenceComplex = ccf / numpy.sqrt(powa * powb)
             if phase:
                 data = numpy.arctan2(avgcoherenceComplex.imag,
-                                     avgcoherenceComplex.real)*180/numpy.pi
+                                     avgcoherenceComplex.real) * 180 / numpy.pi
             else:
                 data = numpy.abs(avgcoherenceComplex)
 
@@ -722,12 +741,16 @@ class Spectra(JROData):
         return
 
     nPairs = property(getNPairs, setValue, "I'm the 'nPairs' property.")
-    pairsIndexList = property(getPairsIndexList, setValue, "I'm the 'pairsIndexList' property.")
-    normFactor = property(getNormFactor, setValue, "I'm the 'getNormFactor' property.")
+    pairsIndexList = property(
+        getPairsIndexList, setValue, "I'm the 'pairsIndexList' property.")
+    normFactor = property(getNormFactor, setValue,
+                          "I'm the 'getNormFactor' property.")
     flag_cspc = property(getFlagCspc, setValue)
     flag_dc = property(getFlagDc, setValue)
     noise = property(getNoise, setValue, "I'm the 'nHeights' property.")
-    timeInterval = property(getTimeInterval, setValue, "I'm the 'timeInterval' property")
+    timeInterval = property(getTimeInterval, setValue,
+                            "I'm the 'timeInterval' property")
+
 
 class SpectraHeis(Spectra):
 
@@ -790,7 +813,7 @@ class SpectraHeis(Spectra):
         if self.flagDecodeData:
             pwcode = numpy.sum(self.code[0]**2)
 
-        normFactor = self.nIncohInt*self.nCohInt*pwcode
+        normFactor = self.nIncohInt * self.nCohInt * pwcode
 
         return normFactor
 
@@ -802,6 +825,7 @@ class SpectraHeis(Spectra):
 
     normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
+
 
 class Fits(JROData):
 
@@ -831,13 +855,12 @@ class Fits(JROData):
 
     windowOfFilter = 1
 
-    #Speed of ligth
+    # Speed of ligth
     C = 3e8
 
     frequency = 49.92e6
 
     realtime = False
-
 
     def __init__(self):
 
@@ -879,11 +902,10 @@ class Fits(JROData):
 #         self.comments = ''
 #
 
-
     def getltctime(self):
 
         if self.useLocalTime:
-            return self.utctime - self.timeZone*60
+            return self.utctime - self.timeZone * 60
 
         return self.utctime
 
@@ -921,7 +943,7 @@ class Fits(JROData):
 
         return range(self.nChannels)
 
-    def getNoise(self, type = 1):
+    def getNoise(self, type=1):
 
         #noise = numpy.zeros(self.nChannels)
 
@@ -945,7 +967,8 @@ class Fits(JROData):
     datatime = property(getDatatime, "I'm the 'datatime' property")
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
-    channelIndexList = property(getChannelIndexList, "I'm the 'channelIndexList' property.")
+    channelIndexList = property(
+        getChannelIndexList, "I'm the 'channelIndexList' property.")
     noise = property(getNoise, "I'm the 'nHeights' property.")
 
     ltctime = property(getltctime, "I'm the 'ltctime' property")
@@ -984,7 +1007,6 @@ class Correlation(JROData):
 
     nAvg = None
 
-
     def __init__(self):
         '''
         Constructor
@@ -1019,9 +1041,9 @@ class Correlation(JROData):
 
         self.blocksize = None
 
-        self.flagDecodeData = False #asumo q la data no esta decodificada
+        self.flagDecodeData = False  # asumo q la data no esta decodificada
 
-        self.flagDeflipData = False #asumo q la data no esta sin flip
+        self.flagDeflipData = False  # asumo q la data no esta sin flip
 
         self.pairsList = None
 
@@ -1031,48 +1053,50 @@ class Correlation(JROData):
 
         return self.pairsList
 
-    def getNoise(self, mode = 2):
+    def getNoise(self, mode=2):
 
         indR = numpy.where(self.lagR == 0)[0][0]
         indT = numpy.where(self.lagT == 0)[0][0]
 
-        jspectra0 = self.data_corr[:,:,indR,:]
+        jspectra0 = self.data_corr[:, :, indR, :]
         jspectra = copy.copy(jspectra0)
 
         num_chan = jspectra.shape[0]
         num_hei = jspectra.shape[2]
 
-        freq_dc = jspectra.shape[1]/2
-        ind_vel = numpy.array([-2,-1,1,2]) + freq_dc
+        freq_dc = jspectra.shape[1] / 2
+        ind_vel = numpy.array([-2, -1, 1, 2]) + freq_dc
 
-        if ind_vel[0]<0:
-            ind_vel[range(0,1)] = ind_vel[range(0,1)] + self.num_prof
+        if ind_vel[0] < 0:
+            ind_vel[range(0, 1)] = ind_vel[range(0, 1)] + self.num_prof
 
         if mode == 1:
-            jspectra[:,freq_dc,:] = (jspectra[:,ind_vel[1],:] + jspectra[:,ind_vel[2],:])/2 #CORRECCION
+            jspectra[:, freq_dc, :] = (
+                jspectra[:, ind_vel[1], :] + jspectra[:, ind_vel[2], :]) / 2  # CORRECCION
 
         if mode == 2:
 
-            vel = numpy.array([-2,-1,1,2])
-            xx = numpy.zeros([4,4])
+            vel = numpy.array([-2, -1, 1, 2])
+            xx = numpy.zeros([4, 4])
 
             for fil in range(4):
-                xx[fil,:] = vel[fil]**numpy.asarray(range(4))
+                xx[fil, :] = vel[fil]**numpy.asarray(range(4))
 
             xx_inv = numpy.linalg.inv(xx)
-            xx_aux = xx_inv[0,:]
+            xx_aux = xx_inv[0, :]
 
             for ich in range(num_chan):
-                yy = jspectra[ich,ind_vel,:]
-                jspectra[ich,freq_dc,:] = numpy.dot(xx_aux,yy)
+                yy = jspectra[ich, ind_vel, :]
+                jspectra[ich, freq_dc, :] = numpy.dot(xx_aux, yy)
 
-                junkid = jspectra[ich,freq_dc,:]<=0
+                junkid = jspectra[ich, freq_dc, :] <= 0
                 cjunkid = sum(junkid)
 
                 if cjunkid.any():
-                    jspectra[ich,freq_dc,junkid.nonzero()] = (jspectra[ich,ind_vel[1],junkid] + jspectra[ich,ind_vel[2],junkid])/2
+                    jspectra[ich, freq_dc, junkid.nonzero()] = (
+                        jspectra[ich, ind_vel[1], junkid] + jspectra[ich, ind_vel[2], junkid]) / 2
 
-        noise = jspectra0[:,freq_dc,:] - jspectra[:,freq_dc,:]
+        noise = jspectra0[:, freq_dc, :] - jspectra[:, freq_dc, :]
 
         return noise
 
@@ -1093,7 +1117,7 @@ class Correlation(JROData):
             chan0 = pairsList[l][0]
             chan1 = pairsList[l][1]
 
-            #Obteniendo pares de Autocorrelacion
+            # Obteniendo pares de Autocorrelacion
             if chan0 == chan1:
                 acf_pairs.append(chan0)
                 acf_ind.append(l)
@@ -1109,7 +1133,7 @@ class Correlation(JROData):
     def getNormFactor(self):
         acf_ind, ccf_ind, acf_pairs, ccf_pairs, data_acf, data_ccf = self.splitFunctions()
         acf_pairs = numpy.array(acf_pairs)
-        normFactor = numpy.zeros((self.nPairs,self.nHeights))
+        normFactor = numpy.zeros((self.nPairs, self.nHeights))
 
         for p in range(self.nPairs):
             pair = self.pairsList[p]
@@ -1117,69 +1141,69 @@ class Correlation(JROData):
             ch0 = pair[0]
             ch1 = pair[1]
 
-            ch0_max = numpy.max(data_acf[acf_pairs==ch0,:,:], axis=1)
-            ch1_max = numpy.max(data_acf[acf_pairs==ch1,:,:], axis=1)
-            normFactor[p,:] = numpy.sqrt(ch0_max*ch1_max)
+            ch0_max = numpy.max(data_acf[acf_pairs == ch0, :, :], axis=1)
+            ch1_max = numpy.max(data_acf[acf_pairs == ch1, :, :], axis=1)
+            normFactor[p, :] = numpy.sqrt(ch0_max * ch1_max)
 
         return normFactor
 
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
     normFactor = property(getNormFactor, "I'm the 'normFactor property'")
 
+
 class Parameters(Spectra):
 
-    experimentInfo = None   #Information about the experiment
+    experimentInfo = None  # Information about the experiment
 
-    #Information from previous data
+    # Information from previous data
 
-    inputUnit = None        #Type of data to be processed
+    inputUnit = None  # Type of data to be processed
 
-    operation = None        #Type of operation to parametrize
+    operation = None  # Type of operation to parametrize
 
-    #normFactor = None       #Normalization Factor
+    # normFactor = None       #Normalization Factor
 
-    groupList = None        #List of Pairs, Groups, etc
+    groupList = None  # List of Pairs, Groups, etc
 
-    #Parameters
+    # Parameters
 
-    data_param = None       #Parameters obtained
+    data_param = None  # Parameters obtained
 
-    data_pre = None         #Data Pre Parametrization
+    data_pre = None  # Data Pre Parametrization
 
-    data_SNR = None         #Signal to Noise Ratio
+    data_SNR = None  # Signal to Noise Ratio
 
 #     heightRange = None      #Heights
 
-    abscissaList = None    #Abscissa, can be velocities, lags or time
+    abscissaList = None  # Abscissa, can be velocities, lags or time
 
 #    noise = None            #Noise Potency
 
-    utctimeInit = None      #Initial UTC time
+    utctimeInit = None  # Initial UTC time
 
-    paramInterval = None    #Time interval to calculate Parameters in seconds
+    paramInterval = None  # Time interval to calculate Parameters in seconds
 
     useLocalTime = True
 
-    #Fitting
+    # Fitting
 
-    data_error = None       #Error of the estimation
+    data_error = None  # Error of the estimation
 
     constants = None
 
     library = None
 
-    #Output signal
+    # Output signal
 
-    outputInterval = None     #Time interval to calculate output signal in seconds
+    outputInterval = None  # Time interval to calculate output signal in seconds
 
-    data_output = None       #Out signal
+    data_output = None  # Out signal
 
     nAvg = None
 
     noise_estimation = None
-    
-    GauSPC = None #Fit gaussian SPC
 
+    GauSPC = None  # Fit gaussian SPC
 
     def __init__(self):
         '''
@@ -1196,7 +1220,7 @@ class Parameters(Spectra):
         datatime = []
 
         if self.useLocalTime:
-            time1 = self.utctimeInit - self.timeZone*60
+            time1 = self.utctimeInit - self.timeZone * 60
         else:
             time1 = self.utctimeInit
 

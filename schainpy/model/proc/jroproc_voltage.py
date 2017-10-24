@@ -616,7 +616,6 @@ class Decoder(Operation):
     def __convolutionInTime(self, data):
 
         code = self.code[self.__profIndex]
-
         for i in range(self.__nChannels):
             self.datadecTime[i,:] = numpy.correlate(data[i,:], code, mode='full')[self.nBaud-1:]
 
@@ -666,7 +665,6 @@ class Decoder(Operation):
                 code = dataOut.code
             else:
                 code = numpy.array(code).reshape(nCode,nBaud)
-
             self.setup(code, osamp, dataOut)
 
             self.isConfig = True
