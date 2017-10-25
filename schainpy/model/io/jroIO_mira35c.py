@@ -494,17 +494,14 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
         self.dataOut = Spectra()
         self.profileIndex = 1  # Always
         self.dataOut.flagNoData = False
-        self.dataOut.nRdPairs = 0
-        self.dataOut.pairsList = []
-        self.dataOut.data_spc = None
-
-        self.dataOut.normFactor = 1
+        self.dataOut.nRdPairs = 0        
+        self.dataOut.data_spc = None        
         self.nextfileflag = True
         self.dataOut.RadarConst = 0
         self.dataOut.HSDV = []
         self.dataOut.NPW = []
         self.dataOut.COFA = []
-        self.dataOut.noise = 0
+        # self.dataOut.noise = 0
 
     def Files2Read(self, fp):
         ''' 
@@ -588,6 +585,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
         self.dataOut.noise = self.dataOut.getNoise()
         # print 'ACAAAAAA', self.dataOut.noise
         self.dataOut.data_spc = self.dataOut.data_spc + self.dataOut.noise
+        self.dataOut.normFactor = 1
         # print 'self.dataOut.noise',self.dataOut.noise
 
         return self.dataOut.data_spc

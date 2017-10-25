@@ -513,10 +513,8 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         self.dataOut = Spectra()
         self.profileIndex = 1  # Always
         self.dataOut.flagNoData = False
-        self.dataOut.nRdPairs = 0
-        self.dataOut.pairsList = []
-        self.dataOut.data_spc = None
-        self.dataOut.noise = []
+        self.dataOut.nRdPairs = 0    
+        self.dataOut.data_spc = None        
         self.dataOut.velocityX = []
         self.dataOut.velocityY = []
         self.dataOut.velocityV = []

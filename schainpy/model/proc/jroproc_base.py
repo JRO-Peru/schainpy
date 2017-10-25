@@ -71,7 +71,10 @@ class ProcessingUnit(object):
         checkKwargs(self.run, kwargs)
 
     def getAllowedArgs(self):
-        return inspect.getargspec(self.run).args
+        if hasattr(self, '__attrs__'):
+            return self.__attrs__
+        else:
+            return inspect.getargspec(self.run).args
 
     def addOperationKwargs(self, objId, **kwargs):
         '''
@@ -318,7 +321,10 @@ class Operation(object):
         checkKwargs(self.run, kwargs)
 
     def getAllowedArgs(self):
-        return inspect.getargspec(self.run).args
+        if hasattr(self, '__attrs__'):
+            return self.__attrs__
+        else:
+            return inspect.getargspec(self.run).args
 
     def setup(self):
 

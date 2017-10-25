@@ -250,6 +250,8 @@ class PublishData(Operation):
     Operation to send data over zmq.
     '''
 
+    __attrs__ = ['host', 'port', 'delay', 'zeromq', 'mqtt', 'verbose']
+
     def __init__(self, **kwargs):
         """Inicio."""
         Operation.__init__(self, **kwargs)
@@ -434,6 +436,8 @@ class PublishData(Operation):
 
 class ReceiverData(ProcessingUnit):
 
+    __attrs__ = ['server']
+
     def __init__(self, **kwargs):
 
         ProcessingUnit.__init__(self, **kwargs)
@@ -472,6 +476,7 @@ class ReceiverData(ProcessingUnit):
 class PlotterReceiver(ProcessingUnit, Process):
 
     throttle_value = 5
+    __attrs__ = ['server', 'plottypes', 'realtime', 'localtime', 'throttle']
 
     def __init__(self, **kwargs):
 

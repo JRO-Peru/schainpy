@@ -47,6 +47,10 @@ class PlotData(Operation, Process):
     __MAXNUMX = 80
     __missing = 1E30
 
+    __attrs__ = ['show', 'save', 'xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax',
+        'zlimits', 'xlabel', 'ylabel', 'cb_label', 'title', 'titles', 'colorbar', 
+        'bgcolor', 'width', 'height', 'localtime', 'oneFigure', 'showprofile']
+
     def __init__(self, **kwargs):
 
         Operation.__init__(self, plot=True, **kwargs)
@@ -380,7 +384,7 @@ class PlotData(Operation, Process):
                     [tick.set_visible(False)
                      for tick in self.pf_axes[n].get_yticklabels()]
                 if self.colorbar:
-                    ax.cbar = plt.colorbar(ax.plt, ax=ax, fraction=0.1, pad=0.02, aspect=10)
+                    ax.cbar = plt.colorbar(ax.plt, ax=ax, fraction=0.05, pad=0.02, aspect=10)
                     ax.cbar.ax.tick_params(labelsize=8)
                     ax.cbar.ax.press = None
                     if self.cb_label:

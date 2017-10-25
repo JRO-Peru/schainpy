@@ -1,6 +1,5 @@
 import schainpy
 from schainpy.model import Operation, ProcessingUnit
-from importlib import import_module
 from pydoc import locate
 
 def clean_modules(module):
@@ -11,17 +10,17 @@ def clean_modules(module):
 
 def check_module(possible, instance):
     def check(x):
-        try:
+        try:            
             instancia = locate('schainpy.model.{}'.format(x))
             return isinstance(instancia(), instance)
         except Exception as e:
-            return False
+            return False    
     clean = clean_modules(possible)
     return [x for x in clean if check(x)]
 
 
 def getProcs():
-    module = dir(import_module('schainpy.model'))
+    module = dir(schainpy.model)
     procs = check_module(module, ProcessingUnit)
     try:
         procs.remove('ProcessingUnit')
@@ -30,7 +29,7 @@ def getProcs():
     return procs
 
 def getOperations():
-    module = dir(import_module('schainpy.model'))
+    module = dir(schainpy.model)
     noProcs = [x for x in module if not x.endswith('Proc')]
     operations = check_module(noProcs, Operation)
     try:
@@ -53,7 +52,7 @@ def getArgs(op):
     return args
 
 def getAll():
-    allModules = dir(import_module('schainpy.model'))
+    allModules = dir(schainpy.model)
     modules = check_module(allModules, Operation)
     modules.extend(check_module(allModules, ProcessingUnit))
     return modules
