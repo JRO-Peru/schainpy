@@ -553,7 +553,10 @@ class JRODataIO:
         return dtype_width
 
     def getAllowedArgs(self):
-        return inspect.getargspec(self.run).args
+        if hasattr(self, '__attrs__'):
+            return self.__attrs__
+        else:
+            return inspect.getargspec(self.run).args
 
 
 class JRODataReader(JRODataIO):

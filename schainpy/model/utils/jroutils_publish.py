@@ -60,12 +60,17 @@ class throttle(object):
     def __call__(self, fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            now = datetime.datetime.now()
-            time_since_last_call = now - self.time_of_last_call
-            time_left = self.throttle_period - time_since_last_call
+            coerce = kwargs.pop('coerce', None)
+            if coerce:
+                self.time_of_last_call = datetime.datetime.now()
+                return fn(*args, **kwargs)
+            else:
+                now = datetime.datetime.now()
+                time_since_last_call = now - self.time_of_last_call
+                time_left = self.throttle_period - time_since_last_call
 
-            if time_left > datetime.timedelta(seconds=0):
-                return
+                if time_left > datetime.timedelta(seconds=0):
+                    return
 
             self.time_of_last_call = datetime.datetime.now()
             return fn(*args, **kwargs)
@@ -103,6 +108,9 @@ class Data(object):
             if ret.ndim > 1:
                 ret = numpy.swapaxes(ret, 0, 1)
         return ret
+
+    def __contains__(self, key):
+        return key in self.data
 
     def setup(self):
         '''
@@ -241,6 +249,8 @@ class PublishData(Operation):
     '''
     Operation to send data over zmq.
     '''
+
+    __attrs__ = ['host', 'port', 'delay', 'zeromq', 'mqtt', 'verbose']
 
     def __init__(self, **kwargs):
         """Inicio."""
@@ -426,6 +436,8 @@ class PublishData(Operation):
 
 class ReceiverData(ProcessingUnit):
 
+    __attrs__ = ['server']
+
     def __init__(self, **kwargs):
 
         ProcessingUnit.__init__(self, **kwargs)
@@ -464,6 +476,7 @@ class ReceiverData(ProcessingUnit):
 class PlotterReceiver(ProcessingUnit, Process):
 
     throttle_value = 5
+    __attrs__ = ['server', 'plottypes', 'realtime', 'localtime', 'throttle']
 
     def __init__(self, **kwargs):
 
@@ -564,26 +577,30 @@ class PlotterReceiver(ProcessingUnit, Process):
 
         while True:
             dataOut = self.receiver.recv_pyobj()
-            tm = dataOut.utctime
-            if dataOut.useLocalTime:
-                if not self.localtime:
-                    tm += time.timezone
-                dt = datetime.datetime.fromtimestamp(tm).date()
-            else:
-                if self.localtime:
-                    tm -= time.timezone
-                dt = datetime.datetime.utcfromtimestamp(tm).date()
-            sended = False
-            if dt not in self.dates:
-                if self.data:
-                    self.data.ended = True
-                    self.send(self.data)
-                    sended = True
-                self.data.setup()
-                self.dates.append(dt)
+            if not dataOut.flagNoData:                
+                if dataOut.type == 'Parameters':                    
+                    tm = dataOut.utctimeInit
+                else:
+                    tm = dataOut.utctime
+                if dataOut.useLocalTime:
+                    if not self.localtime:
+                        tm += time.timezone
+                    dt = datetime.datetime.fromtimestamp(tm).date()
+                else:
+                    if self.localtime:
+                        tm -= time.timezone
+                    dt = datetime.datetime.utcfromtimestamp(tm).date()
+                coerce = False
+                if dt not in self.dates:
+                    if self.data:
+                        self.data.ended = True
+                        self.send(self.data)
+                        coerce = True
+                    self.data.setup()
+                    self.dates.append(dt)
 
-            self.data.update(dataOut)
-
+                self.data.update(dataOut)
+            
             if dataOut.finished is True:
                 self.connections -= 1
                 if self.connections == 0 and dt in self.dates:
@@ -594,9 +611,9 @@ class PlotterReceiver(ProcessingUnit, Process):
                 if self.realtime:
                     self.send(self.data)
                     # self.sender_web.send_string(self.data.jsonify())
-                else:
-                    if not sended:
-                        self.sendData(self.send, self.data)
+                else:                    
+                    self.sendData(self.send, self.data, coerce=coerce)
+                    coerce = False
 
         return
 

@@ -15,11 +15,11 @@ from matplotlib.ticker import FuncFormatter, LinearLocator, MultipleLocator
 from schainpy.model.proc.jroproc_base import Operation
 from schainpy.utils import log
 
-jet_values = matplotlib.pyplot.get_cmap("jet", 100)(numpy.arange(100))[10:90]
+jet_values = matplotlib.pyplot.get_cmap('jet', 100)(numpy.arange(100))[10:90]
 blu_values = matplotlib.pyplot.get_cmap(
-    "seismic_r", 20)(numpy.arange(20))[10:15]
+    'seismic_r', 20)(numpy.arange(20))[10:15]
 ncmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-    "jro", numpy.vstack((blu_values, jet_values)))
+    'jro', numpy.vstack((blu_values, jet_values)))
 matplotlib.pyplot.register_cmap(cmap=ncmap)
 
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'RdBu_r', 'seismic')]
@@ -48,6 +48,10 @@ class PlotData(Operation, Process):
     CONFLATE = False
     __MAXNUMX = 80
     __missing = 1E30
+
+    __attrs__ = ['show', 'save', 'xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax',
+                 'zlimits', 'xlabel', 'ylabel', 'cb_label', 'title', 'titles', 'colorbar',
+                 'bgcolor', 'width', 'height', 'localtime', 'oneFigure', 'showprofile']
 
     def __init__(self, **kwargs):
 
@@ -91,6 +95,7 @@ class PlotData(Operation, Process):
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
         self.titles = ['' for __ in range(16)]
+        self.polar = False
 
     def __fmtTime(self, x, pos):
         '''
@@ -102,6 +107,10 @@ class PlotData(Operation, Process):
         '''
         Common setup for all figures, here figures and axes are created
         '''
+
+        if self.CODE not in self.data:
+            raise ValueError(log.error('Missing data for {}'.format(self.CODE),
+                                       self.name))
 
         self.setup()
 
@@ -131,7 +140,8 @@ class PlotData(Operation, Process):
                              facecolor='w')
             self.figures.append(fig)
             for n in range(self.nplots):
-                ax = fig.add_subplot(self.nrows, self.ncols, n + 1)
+                ax = fig.add_subplot(self.nrows, self.ncols,
+                                     n + 1, polar=self.polar)
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
                 ax.index = 0
@@ -148,7 +158,7 @@ class PlotData(Operation, Process):
                 fig = plt.figure(figsize=(self.width, self.height),
                                  edgecolor='k',
                                  facecolor='w')
-                ax = fig.add_subplot(1, 1, 1)
+                ax = fig.add_subplot(1, 1, 1, polar=self.polar)
                 ax.tick_params(labelsize=8)
                 ax.firsttime = True
                 ax.index = 0
@@ -348,7 +358,7 @@ class PlotData(Operation, Process):
         else:
             if self.xaxis is 'time':
                 dt = self.getDateTime(self.max_time)
-                xmax = (dt.replace(hour=int(self.xmax), minute=0, second=0) -
+                xmax = (dt.replace(hour=int(self.xmax), minute=59, second=59) -
                         datetime.datetime(1970, 1, 1)).total_seconds()
                 if self.data.localtime:
                     xmax += time.timezone
@@ -362,8 +372,6 @@ class PlotData(Operation, Process):
         i = 1 if numpy.where(ymax < Y)[
             0][0] < 0 else numpy.where(ymax < Y)[0][0]
         ystep = Y[i - 1] / 5
-
-        ystep = 200 if ymax >= 800 else 100 if ymax >= 400 else 50 if ymax >= 200 else 20
 
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
@@ -384,7 +392,8 @@ class PlotData(Operation, Process):
                     [tick.set_visible(False)
                      for tick in self.pf_axes[n].get_yticklabels()]
                 if self.colorbar:
-                    ax.cbar = plt.colorbar(ax.plt, ax=ax, pad=0.02, aspect=10)
+                    ax.cbar = plt.colorbar(
+                        ax.plt, ax=ax, fraction=0.05, pad=0.02, aspect=10)
                     ax.cbar.ax.tick_params(labelsize=8)
                     ax.cbar.ax.press = None
                     if self.cb_label:
@@ -394,13 +403,19 @@ class PlotData(Operation, Process):
                 else:
                     ax.cbar = None
 
-            ax.set_title('{} - {} {}'.format(
-                self.titles[n],
-                self.getDateTime(self.max_time).strftime('%H:%M:%S'),
-                self.time_label),
-                size=8)
-            ax.set_xlim(xmin, xmax)
-            ax.set_ylim(ymin, ymax)
+            if not self.polar:
+                ax.set_xlim(xmin, xmax)
+                ax.set_ylim(ymin, ymax)
+                ax.set_title('{} - {} {}'.format(
+                    self.titles[n],
+                    self.getDateTime(self.max_time).strftime('%H:%M:%S'),
+                    self.time_label),
+                    size=8)
+            else:
+                ax.set_title('{}'.format(self.titles[n]), size=8)
+                ax.set_ylim(0, 90)
+                ax.set_yticks(numpy.arange(0, 90, 20))
+                ax.yaxis.labelpad = 40
 
     def __plot(self):
         '''
@@ -413,6 +428,7 @@ class PlotData(Operation, Process):
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
+                fig.text(0.5, 0.5, 'No Data', fontsize='large', ha='center')
                 continue
 
             fig.tight_layout()
@@ -437,7 +453,7 @@ class PlotData(Operation, Process):
                         str(self.contador),
                     )
                 )
-                print 'Saving figure: {}'.format(figname)
+                log.log('Saving figure: {}'.format(figname), self.name)
                 fig.savefig(figname)
 
     def plot(self):
@@ -820,7 +836,7 @@ class PlotSkyMapData(PlotData):
     Plot for meteors detection data
     '''
 
-    CODE = 'met'
+    CODE = 'param'
 
     def setup(self):
 
@@ -828,25 +844,17 @@ class PlotSkyMapData(PlotData):
         self.nrows = 1
         self.width = 7.2
         self.height = 7.2
-
+        self.nplots = 1
         self.xlabel = 'Zonal Zenith Angle (deg)'
         self.ylabel = 'Meridional Zenith Angle (deg)'
-
-        if self.figure is None:
-            self.figure = plt.figure(figsize=(self.width, self.height),
-                                     edgecolor='k',
-                                     facecolor='w')
-        else:
-            self.figure.clf()
-
-        self.ax = plt.subplot2grid(
-            (self.nrows, self.ncols), (0, 0), 1, 1, polar=True)
-        self.ax.firsttime = True
+        self.polar = True
+        self.ymin = -180
+        self.ymax = 180
+        self.colorbar = False
 
     def plot(self):
 
-        arrayParameters = numpy.concatenate(
-            [self.data['param'][t] for t in self.times])
+        arrayParameters = numpy.concatenate(self.data['param'])
         error = arrayParameters[:, -1]
         indValid = numpy.where(error == 0)[0]
         finalMeteor = arrayParameters[indValid, :]
@@ -856,23 +864,19 @@ class PlotSkyMapData(PlotData):
         x = finalAzimuth * numpy.pi / 180
         y = finalZenith
 
-        if self.ax.firsttime:
-            self.ax.plot = self.ax.plot(x, y, 'bo', markersize=5)[0]
-            self.ax.set_ylim(0, 90)
-            self.ax.set_yticks(numpy.arange(0, 90, 20))
-            self.ax.set_xlabel(self.xlabel)
-            self.ax.set_ylabel(self.ylabel)
-            self.ax.yaxis.labelpad = 40
-            self.ax.firsttime = False
+        ax = self.axes[0]
+
+        if ax.firsttime:
+            ax.plot = ax.plot(x, y, 'bo', markersize=5)[0]
         else:
-            self.ax.plot.set_data(x, y)
+            ax.plot.set_data(x, y)
 
         dt1 = self.getDateTime(self.min_time).strftime('%y/%m/%d %H:%M:%S')
         dt2 = self.getDateTime(self.max_time).strftime('%y/%m/%d %H:%M:%S')
         title = 'Meteor Detection Sky Map\n %s - %s \n Number of events: %5.0f\n' % (dt1,
                                                                                      dt2,
                                                                                      len(x))
-        self.ax.set_title(title, size=8)
+        self.titles[0] = title
         self.saveTime = self.max_time
 
 
