@@ -64,6 +64,10 @@ class ProcessingUnit(object):
 
         self.args = args
         self.kwargs = kwargs
+
+        if not hasattr(self, 'name'):
+            self.name = self.__class__.__name__
+
         checkKwargs(self.run, kwargs)
 
     def getAllowedArgs(self):
@@ -309,6 +313,8 @@ class Operation(object):
         self.__buffer = None
         self.isConfig = False
         self.kwargs = kwargs
+        if not hasattr(self, 'name'):
+            self.name = self.__class__.__name__
         checkKwargs(self.run, kwargs)
 
     def getAllowedArgs(self):
