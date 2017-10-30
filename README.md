@@ -11,7 +11,6 @@ Install system dependencies, clone the latest version from [git](http://jro-dev.
 ### Linux based system
 ```
 $ sudo apt-get install python-pip python-dev gfortran libpng-dev freetype* libblas-dev liblapack-dev libatlas-base-dev python-qt4 python-tk libssl-dev libhdf5-dev
-$ sudo pip install numpy
 $ git clone http://jro-dev.igp.gob.pe/rhodecode/schain/
 $ cd schain
 $ sudo pip install ./
@@ -38,6 +37,13 @@ $ pip install ./
 if ```pip install ./``` does not work, install a proper python enviroment, and repeat the steps.
 ```
 $ brew install python
+```
+
+### GUI Installation
+
+```
+$ sudo apt-get install python-pip python-dev gfortran libpng-dev freetype* libblas-dev liblapack-dev libatlas-base-dev python-qt4 python-tk libssl-dev libhdf5-dev 
+$ (virtual) bash link_PyQt4.sh
 ```
 
 
