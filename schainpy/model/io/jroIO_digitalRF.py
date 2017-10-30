@@ -56,6 +56,7 @@ class DigitalRFReader(ProcessingUnit):
         self.__nBaud = None
         self.__code = None
         self.dtype = None
+        self.oldAverage = None
 
     def close(self):
         print 'Average of writing to digital rf format is ', self.oldAverage * 1000
@@ -643,6 +644,7 @@ class DigitalRFWriter(Operation):
         self.metadata_dict = {}
         self.dataOut = None
         self.dtype = None
+        self.oldAverage = 0
 
     def setHeader(self):
 
@@ -681,9 +683,7 @@ class DigitalRFWriter(Operation):
         self.arr_data = arr_data = numpy.ones((self.__nSamples, len(
             self.dataOut.channelList)), dtype=[('r', self.__dtype), ('i', self.__dtype)])
 
-        file_cadence_millisecs = long(
-            1.0 * self.__blocks_per_file * self.__nProfiles * self.__nSamples / self.__sample_rate) * 1000
-        sub_cadence_secs = file_cadence_millisecs / 500
+        file_cadence_millisecs = 1000
 
         sample_rate_fraction = Fraction(self.__sample_rate).limit_denominator()
         sample_rate_numerator = long(sample_rate_fraction.numerator)
@@ -691,7 +691,7 @@ class DigitalRFWriter(Operation):
         start_global_index = dataOut.utctime * self.__sample_rate
 
         uuid = 'prueba'
-        compression_level = 1
+        compression_level = 0
         checksum = False
         is_complex = True
         num_subchannels = len(dataOut.channelList)
@@ -751,7 +751,7 @@ class DigitalRFWriter(Operation):
 
         return
 
-    def run(self, dataOut, frequency=49.92e6, path=None, fileCadence=100, dirCadence=25, metadataCadence=1, **kwargs):
+    def run(self, dataOut, frequency=49.92e6, path=None, fileCadence=1000, dirCadence=36000, metadataCadence=1, **kwargs):
         '''
         This method will be called many times so here you should put all your code
         Inputs:
@@ -778,6 +778,7 @@ class DigitalRFWriter(Operation):
             self.digitalWriteObj.close()
         except:
             pass
+
 
         # raise
 if __name__ == '__main__':

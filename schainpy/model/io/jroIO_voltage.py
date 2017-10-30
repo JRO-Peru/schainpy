@@ -259,6 +259,8 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         self.getBasicHeader()
 
+        self.dataOut.processingHeaderObj = self.processingHeaderObj.copy()
+
         self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
 
         self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
