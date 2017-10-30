@@ -109,7 +109,8 @@ schainpy/scripts/
 .svn/
 *.png
 *.pyc
-schainpy/scripts
 .vscode
 trash
 *.log
+schainpy/scripts/testDigitalRF.py
+schainpy/scripts/testDigitalRFWriter.py
