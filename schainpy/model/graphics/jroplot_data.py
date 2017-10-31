@@ -57,7 +57,8 @@ class PlotData(Operation, Process):
     def __init__(self, **kwargs):
 
         Operation.__init__(self, plot=True, **kwargs)
-        Process.__init__(self)        
+        Process.__init__(self)
+        
         self.kwargs['code'] = self.CODE
         self.mp = False
         self.data = None
@@ -94,7 +95,7 @@ class PlotData(Operation, Process):
         self.height = kwargs.get('height', None)
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
-        self.titles = ['' for __ in range(16)]
+        self.titles = kwargs.get('titles', [])
         self.polar = False
 
     def __fmtTime(self, x, pos):
@@ -434,7 +435,7 @@ class PlotData(Operation, Process):
             fig.tight_layout()
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.max_time).strftime('%Y/%m/%d')))
-            # fig.canvas.draw()
+            fig.canvas.draw()
 
             if self.save and self.data.ended:                
                 channels = range(self.nrows)
@@ -447,7 +448,8 @@ class PlotData(Operation, Process):
                     '{}{}_{}.png'.format(
                         self.CODE,
                         label,
-                        self.getDateTime(self.saveTime).strftime('%y%m%d_%H%M%S')                        
+                        self.getDateTime(self.saveTime).strftime(
+                            '%y%m%d_%H%M%S'),                        
                     )
                 )
                 log.log('Saving figure: {}'.format(figname), self.name)
@@ -895,10 +897,11 @@ class PlotParamData(PlotRTIData):
             self.nplots += 1
 
         self.ylabel = 'Height [Km]'
-        self.titles = self.data.parameters \
-            if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
-        if self.showSNR:
-            self.titles.append('SNR')
+        if not self.titles:
+            self.titles = self.data.parameters \
+                if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
+            if self.showSNR:
+                self.titles.append('SNR')
 
     def plot(self):
         self.data.normalize_heights()
