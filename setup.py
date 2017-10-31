@@ -25,7 +25,7 @@ try:
     from PyQt4.QtGui import QApplication
 except:
     log.warning(
-        'You should install PtQt4 module in order to run the GUI. See the README.')
+        'You should install PyQt4 module in order to run the GUI. See the README.')
 
 
 setup(name="schainpy",
