@@ -57,7 +57,7 @@ class PlotData(Operation, Process):
 
         Operation.__init__(self, plot=True, **kwargs)
         Process.__init__(self)
-        self.contador = 0
+        
         self.kwargs['code'] = self.CODE
         self.mp = False
         self.data = None
@@ -94,7 +94,7 @@ class PlotData(Operation, Process):
         self.height = kwargs.get('height', None)
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
-        self.titles = ['' for __ in range(16)]
+        self.titles = kwargs.get('titles', [])
         self.polar = False
 
     def __fmtTime(self, x, pos):
@@ -429,15 +429,15 @@ class PlotData(Operation, Process):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
                 fig.text(0.5, 0.5, 'No Data', fontsize='large', ha='center')
+                fig.canvas.manager.set_window_title(self.CODE)
                 continue
 
             fig.tight_layout()
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.max_time).strftime('%Y/%m/%d')))
-            # fig.canvas.draw()
+            fig.canvas.draw()
 
-            if self.save:  # and self.data.ended:
-                self.contador += 1
+            if self.save and self.data.ended:                
                 channels = range(self.nrows)
                 if self.oneFigure:
                     label = ''
@@ -445,12 +445,11 @@ class PlotData(Operation, Process):
                     label = '_{}'.format(channels[n])
                 figname = os.path.join(
                     self.save,
-                    '{}{}_{}{}.png'.format(
+                    '{}{}_{}.png'.format(
                         self.CODE,
                         label,
                         self.getDateTime(self.saveTime).strftime(
-                            '%y%m%d_%H%M%S'),
-                        str(self.contador),
+                            '%y%m%d_%H%M%S'),                        
                     )
                 )
                 log.log('Saving figure: {}'.format(figname), self.name)
@@ -898,10 +897,11 @@ class PlotParamData(PlotRTIData):
             self.nplots += 1
 
         self.ylabel = 'Height [Km]'
-        self.titles = self.data.parameters \
-            if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
-        if self.showSNR:
-            self.titles.append('SNR')
+        if not self.titles:
+            self.titles = self.data.parameters \
+                if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
+            if self.showSNR:
+                self.titles.append('SNR')
 
     def plot(self):
         self.data.normalize_heights()

@@ -32,7 +32,7 @@ FILE_HEADER_STRUCTURE = numpy.dtype([
 REC_HEADER_STRUCTURE = numpy.dtype([
     ('magic', 'f'),
     ('hours', 'f'),
-    ('timedelta', 'f'),
+    ('interval', 'f'),
     ('h0', 'f'),
     ('nheights', 'f'),
     ('snr1', 'f'),
@@ -95,7 +95,7 @@ class JULIAParamReader(JRODataReader, ProcessingUnit):
         self.startTime = startTime
         self.endTime = endTime
         self.datatime = datetime.datetime(1900, 1, 1)
-        self.format = format
+        self.format = format        
 
         if self.path is None:
             raise ValueError, "The path is not valid"
@@ -174,22 +174,13 @@ class JULIAParamReader(JRODataReader, ProcessingUnit):
             self.fp.close()
         self.filename = filename
         self.fp = open(self.filename, 'rb')
-        self.t0 = [7, 0, 0]
-        self.tf = [18, 0, 0]
         
         self.header_file = numpy.fromfile(self.fp, FILE_HEADER_STRUCTURE, 1)
         yy = self.header_file['year'] - 1900 * (self.header_file['year'] > 3000)
         self.year = int(yy + 1900 * (yy < 1000))
         self.doy = int(self.header_file['doy'])
-        self.H0 = self.clockpulse*numpy.round(self.header_file['fh']/self.clockpulse)
-        self.dH = self.clockpulse*numpy.round(self.header_file['dh']/self.clockpulse)        
-        self.ipp = self.clockpulse*numpy.round(self.header_file['ipp']/self.clockpulse)        
-        
-        tau = self.ipp / 1.5E5        
-        
-        self.nheights = int(self.header_file['nheights'])
-        self.heights = numpy.arange(self.nheights) * self.dH + self.H0    
-
+        self.dH = round(self.header_file['dh'], 2)
+        self.ipp = round(self.header_file['ipp'], 2)
         self.sizeOfFile = os.path.getsize(self.filename)
         self.counter_records = 0
         self.flagIsNewFile = 0
@@ -200,12 +191,10 @@ class JULIAParamReader(JRODataReader, ProcessingUnit):
     def readNextBlock(self):
 
         while True:
-            if self.fp.tell() == self.sizeOfFile:
+            if not self.readBlock():
                 self.flagIsNewFile = 1
                 if not self.setNextFile():
-                    return 0
-
-            self.readBlock()
+                    return 0            
 
             if (self.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or \
                (self.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
@@ -216,7 +205,7 @@ class JULIAParamReader(JRODataReader, ProcessingUnit):
                     self.name)
                 continue
             break
-
+       
         log.log('Reading Record No. {} -> {}'.format(
             self.counter_records,
             self.datatime.ctime()), self.name)
@@ -225,144 +214,113 @@ class JULIAParamReader(JRODataReader, ProcessingUnit):
 
     def readBlock(self):
         
-        header_rec = numpy.fromfile(self.fp, REC_HEADER_STRUCTURE, 1)
-        self.timedelta = header_rec['timedelta']
-        if header_rec['magic'] == 888.:
-            h0 = self.clockpulse * numpy.round(header_rec['h0'] / self.clockpulse)
-            nheights = int(header_rec['nheights'])            
-            hours = float(header_rec['hours'][0])            
-            self.datatime = datetime.datetime(self.year, 1, 1) + datetime.timedelta(days=self.doy-1, hours=hours)
-            self.time = (self.datatime - datetime.datetime(1970,1,1)).total_seconds()
-            
-            buffer = numpy.fromfile(self.fp, 'f', 8*nheights).reshape(nheights, 8)
-            idh0 = int(numpy.round((self.H0 - h0) / self.dH))
-            if idh0 == 0 and buffer[0,0] > 1E8: 
-                buffer[0,0] = buffer[1,0]
-            
-            pow0 = buffer[:, 0]
-            pow1 = buffer[:, 1]
-            acf0 = (buffer[:,2] + buffer[:,3]*1j) / pow0
-            acf1 = (buffer[:,4] + buffer[:,5]*1j) / pow1
-            dccf = (buffer[:,6] + buffer[:,7]*1j) / (pow0*pow1)
+        pointer = self.fp.tell()
+        heights, dt = self.readHeader()
+        self.fp.seek(pointer)
+        buffer_h = []
+        buffer_d = []
+        while True:
+            pointer = self.fp.tell()
+            if pointer == self.sizeOfFile:
+                return 0
+            heights, datatime = self.readHeader()            
+            if dt == datatime:                
+                buffer_h.append(heights)
+                buffer_d.append(self.readData(len(heights)))
+                continue
+            self.fp.seek(pointer)
+            break
+        
+        if dt.date() > self.datatime.date():
+            self.flagDiscontinuousBlock = 1
+        self.datatime = dt
+        self.time = (dt - datetime.datetime(1970, 1, 1)).total_seconds() + time.timezone        
+        self.heights = numpy.concatenate(buffer_h)
+        self.buffer = numpy.zeros((5, len(self.heights))) + numpy.nan
+        self.buffer[0, :] = numpy.concatenate([buf[0] for buf in buffer_d])
+        self.buffer[1, :] = numpy.concatenate([buf[1] for buf in buffer_d])
+        self.buffer[2, :] = numpy.concatenate([buf[2] for buf in buffer_d])
+        self.buffer[3, :] = numpy.concatenate([buf[3] for buf in buffer_d])
+        self.buffer[4, :] = numpy.concatenate([buf[4] for buf in buffer_d])
+        
+        self.counter_records += 1
 
-            ### SNR
-            sno = (pow0 + pow1 - header_rec['snr']) / header_rec['snr']
-            sno10 = numpy.log10(sno)
-            dsno = 1.0 / numpy.sqrt(self.header_file['nint'] * self.header_file['navg']) * (1 + (1 / sno))
-            
-            ### Vertical Drift
-            sp = numpy.sqrt(numpy.abs(acf0)*numpy.abs(acf1))
-            sp[numpy.where(numpy.abs(sp) >= 1.0)] = numpy.sqrt(0.9999)
-                        
-            vzo = -numpy.arctan2(acf0.imag + acf1.imag,acf0.real + acf1.real)*1.5E5*1.5/(self.ipp*numpy.pi)
-            dvzo = numpy.sqrt(1.0 - sp*sp)*0.338*1.5E5/(numpy.sqrt(self.header_file['nint']*self.header_file['navg'])*sp*self.ipp)            
-            err = numpy.where(dvzo <= 0.1)
-            dvzo[err] = 0.1
-
-            #Zonal Drifts
-            dt = self.header_file['nint']*self.ipp / 1.5E5
-            coh = numpy.sqrt(numpy.abs(dccf))
-            err = numpy.where(coh >= 1.0)            
-            coh[err] = numpy.sqrt(0.99999)
-                
-            err = numpy.where(coh <= 0.1)
-            coh[err] = numpy.sqrt(0.1)
-                    
-            vxo = numpy.arctan2(dccf.imag, dccf.real)*self.heights[idh0]*1.0E3/(self.kd*dt)
-            dvxo = numpy.sqrt(1.0 - coh*coh)*self.heights[idh0]*1.0E3/(numpy.sqrt(self.header_file['nint']*self.header_file['navg'])*coh*self.kd*dt)
-            
-            err = numpy.where(dvxo <= 0.1)            
-            dvxo[err] = 0.1
-            
-            N = range(len(pow0))
-
-            self.buffer = numpy.zeros((6, self.nheights)) + numpy.nan
-
-            self.buffer[0, idh0+numpy.array(N)] = sno10
-            self.buffer[1, idh0+numpy.array(N)] = vzo
-            self.buffer[2, idh0+numpy.array(N)] = vxo            
-            self.buffer[3, idh0+numpy.array(N)] = dvzo
-            self.buffer[4, idh0+numpy.array(N)] = dvxo
-            self.buffer[5, idh0+numpy.array(N)] = dsno
-
-            self.counter_records += 1
-
-        return
+        return 1
 
     def readHeader(self):
         '''
-        RecordHeader of BLTR rawdata file
+        Parse recordHeader
         '''
-
-        header_structure = numpy.dtype(
-            REC_HEADER_STRUCTURE.descr + [
-                ('antenna_coord', 'f4', (2, self.nchannels)),
-                ('rx_gains', 'u4', (self.nchannels,)),
-                ('rx_analysis', 'u4', (self.nchannels,))
-            ]
-        )
-
-        self.header_rec = numpy.fromfile(self.fp, header_structure, 1)
-        self.lat = self.header_rec['lat'][0]
-        self.lon = self.header_rec['lon'][0]
-        self.delta = self.header_rec['delta_r'][0]
-        self.correction = self.header_rec['dmode_rngcorr'][0]
-        self.imode = self.header_rec['dmode_index'][0]
-        self.antenna = self.header_rec['antenna_coord']
-        self.rx_gains = self.header_rec['rx_gains']        
-        self.time = self.header_rec['time'][0]               
-        dt = datetime.datetime.utcfromtimestamp(self.time)
-        if dt.date()>self.datatime.date():
-            self.flagDiscontinuousBlock = 1
-        self.datatime = dt
         
-    def readData(self):
+        self.header_rec = numpy.fromfile(self.fp, REC_HEADER_STRUCTURE, 1)
+        self.interval = self.header_rec['interval']
+        if self.header_rec['magic'] == 888.:
+            self.header_rec['h0'] = round(self.header_rec['h0'], 2)
+            nheights = int(self.header_rec['nheights'])            
+            hours = float(self.header_rec['hours'][0])
+            heights = numpy.arange(nheights) * self.dH + self.header_rec['h0']
+            datatime = datetime.datetime(self.year, 1, 1) + datetime.timedelta(days=self.doy-1, hours=hours)            
+            return heights, datatime
+        else:
+            return False
+        
+    def readData(self, N):
         '''
-        Reading and filtering data block record of BLTR rawdata file, filtering is according to status_value.
-
-        Input:
-            status_value - Array data is set to NAN for values that are not equal to status_value
-
+        Parse data
         '''
 
-        data_structure = numpy.dtype(
-            DATA_STRUCTURE.descr + [
-                ('rx_saturation', 'u4', (self.nchannels,)),
-                ('chan_offset', 'u4', (2 * self.nchannels,)),
-                ('rx_amp', 'u4', (self.nchannels,)),
-                ('rx_snr', 'f4', (self.nchannels,)),
-                ('cross_snr', 'f4', (self.kchan,)),
-                ('sea_power_relative', 'f4', (self.kchan,))]
-        )
+        buffer = numpy.fromfile(self.fp, 'f', 8*N).reshape(N, 8)
+        
+        pow0 = buffer[:, 0]
+        pow1 = buffer[:, 1]
+        acf0 = (buffer[:,2] + buffer[:,3]*1j) / pow0
+        acf1 = (buffer[:,4] + buffer[:,5]*1j) / pow1
+        dccf = (buffer[:,6] + buffer[:,7]*1j) / (pow0*pow1)
 
-        data = numpy.fromfile(self.fp, data_structure, self.nranges)
+        ### SNR
+        sno = (pow0 + pow1 - self.header_rec['snr']) / self.header_rec['snr']
+        sno10 = numpy.log10(sno)
+        # dsno = 1.0 / numpy.sqrt(self.header_file['nint'] * self.header_file['navg']) * (1 + (1 / sno))
+        
+        ### Vertical Drift
+        sp = numpy.sqrt(numpy.abs(acf0)*numpy.abs(acf1))
+        sp[numpy.where(numpy.abs(sp) >= 1.0)] = numpy.sqrt(0.9999)
+                    
+        vzo = -numpy.arctan2(acf0.imag + acf1.imag,acf0.real + acf1.real)*1.5E5*1.5/(self.ipp*numpy.pi)
+        dvzo = numpy.sqrt(1.0 - sp*sp)*0.338*1.5E5/(numpy.sqrt(self.header_file['nint']*self.header_file['navg'])*sp*self.ipp)            
+        err = numpy.where(dvzo <= 0.1)
+        dvzo[err] = 0.1
 
-        height = data['range']
-        winds = numpy.array(
-            (data['zonal'], data['meridional'], data['vertical']))
-        snr = data['rx_snr'].T
+        #Zonal Drifts
+        dt = self.header_file['nint']*self.ipp / 1.5E5
+        coh = numpy.sqrt(numpy.abs(dccf))
+        err = numpy.where(coh >= 1.0)            
+        coh[err] = numpy.sqrt(0.99999)
+            
+        err = numpy.where(coh <= 0.1)
+        coh[err] = numpy.sqrt(0.1)
+                
+        vxo = numpy.arctan2(dccf.imag, dccf.real)*self.header_rec['h0']*1.0E3/(self.kd*dt)
+        dvxo = numpy.sqrt(1.0 - coh*coh)*self.header_rec['h0']*1.0E3/(numpy.sqrt(self.header_file['nint']*self.header_file['navg'])*coh*self.kd*dt)
+        
+        err = numpy.where(dvxo <= 0.1)            
+        dvxo[err] = 0.1
 
-        winds[numpy.where(winds == -9999.)] = numpy.nan
-        winds[:, numpy.where(data['status'] != self.status_value)] = numpy.nan
-        snr[numpy.where(snr == -9999.)] = numpy.nan
-        snr[:, numpy.where(data['status'] != self.status_value)] = numpy.nan
-        snr = numpy.power(10, snr / 10)
-
-        return height, winds, snr
+        return vzo, dvzo, vxo, dvxo, sno10 
 
     def set_output(self):
         '''
         Storing data from databuffer to dataOut object
         '''
-
-        self.dataOut.data_SNR = self.buffer[0]
-        self.dataOut.heights = self.heights
-        self.dataOut.data_param = self.buffer[1:,]
+        
+        self.dataOut.data_SNR = self.buffer[4].reshape(1, -1)
+        self.dataOut.heightList = self.heights
+        self.dataOut.data_param = self.buffer[0:4,]
         self.dataOut.utctimeInit = self.time
-        self.dataOut.utctime = self.dataOut.utctimeInit
-        self.dataOut.useLocalTime = False
-        self.dataOut.paramInterval = self.timedelta
-        self.dataOut.timezone = self.timezone        
+        self.dataOut.utctime = self.time
+        self.dataOut.useLocalTime = True
+        self.dataOut.paramInterval = self.interval
+        self.dataOut.timezone = self.timezone
         self.dataOut.sizeOfFile = self.sizeOfFile
         self.dataOut.flagNoData = False
         self.dataOut.flagDiscontinuousBlock = self.flagDiscontinuousBlock

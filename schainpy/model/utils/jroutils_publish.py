@@ -138,12 +138,11 @@ class Data(object):
             return self.data[key][self.__times[0]].shape
         return (0,)
 
-    def update(self, dataOut):
+    def update(self, dataOut, tm):
         '''
         Update data object with new dataOut
         '''
-
-        tm = dataOut.utctime
+        
         if tm in self.__times:
             return
 
@@ -578,7 +577,7 @@ class PlotterReceiver(ProcessingUnit, Process):
         while True:
             dataOut = self.receiver.recv_pyobj()
             if not dataOut.flagNoData:                
-                if dataOut.type == 'Parameters':                    
+                if dataOut.type == 'Parameters':
                     tm = dataOut.utctimeInit
                 else:
                     tm = dataOut.utctime
@@ -599,7 +598,7 @@ class PlotterReceiver(ProcessingUnit, Process):
                     self.data.setup()
                     self.dates.append(dt)
 
-                self.data.update(dataOut)
+                self.data.update(dataOut, tm)
             
             if dataOut.finished is True:
                 self.connections -= 1
