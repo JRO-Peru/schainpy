@@ -50,14 +50,15 @@ class PlotData(Operation, Process):
     __missing = 1E30
 
     __attrs__ = ['show', 'save', 'xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax',
-                 'zlimits', 'xlabel', 'ylabel', 'cb_label', 'title', 'titles', 'colorbar',
-                 'bgcolor', 'width', 'height', 'localtime', 'oneFigure', 'showprofile']
+                 'zlimits', 'xlabel', 'ylabel', 'xaxis','cb_label', 'title',
+                 'colorbar', 'bgcolor', 'width', 'height', 'localtime', 'oneFigure',
+                 'showprofile', 'decimation']
 
     def __init__(self, **kwargs):
 
         Operation.__init__(self, plot=True, **kwargs)
         Process.__init__(self)
-        self.contador = 0
+        
         self.kwargs['code'] = self.CODE
         self.mp = False
         self.data = None
@@ -87,14 +88,14 @@ class PlotData(Operation, Process):
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
         self.xlabel = kwargs.get('xlabel', None)
-        self.__MAXNUMY = kwargs.get('decimation', 300)
+        self.__MAXNUMY = kwargs.get('decimation', 200)
         self.showSNR = kwargs.get('showSNR', False)
         self.oneFigure = kwargs.get('oneFigure', True)
         self.width = kwargs.get('width', None)
         self.height = kwargs.get('height', None)
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
-        self.titles = ['' for __ in range(16)]
+        self.titles = kwargs.get('titles', [])
         self.polar = False
 
     def __fmtTime(self, x, pos):
@@ -359,7 +360,7 @@ class PlotData(Operation, Process):
             if self.xaxis is 'time':
                 dt = self.getDateTime(self.max_time)
                 xmax = (dt.replace(hour=int(self.xmax), minute=59, second=59) -
-                        datetime.datetime(1970, 1, 1)).total_seconds()
+                        datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=1)).total_seconds()
                 if self.data.localtime:
                     xmax += time.timezone
             else:
@@ -369,9 +370,8 @@ class PlotData(Operation, Process):
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
 
         Y = numpy.array([10, 20, 50, 100, 200, 500, 1000, 2000])
-        i = 1 if numpy.where(ymax < Y)[
-            0][0] < 0 else numpy.where(ymax < Y)[0][0]
-        ystep = Y[i - 1] / 5
+        i = 1 if numpy.where(ymax-ymin < Y)[0][0] < 0 else numpy.where(ymax-ymin < Y)[0][0]
+        ystep = Y[i] / 5
 
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
@@ -429,15 +429,15 @@ class PlotData(Operation, Process):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
                 fig.text(0.5, 0.5, 'No Data', fontsize='large', ha='center')
+                fig.canvas.manager.set_window_title(self.CODE)
                 continue
 
             fig.tight_layout()
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.max_time).strftime('%Y/%m/%d')))
-            # fig.canvas.draw()
+            fig.canvas.draw()
 
-            if self.save:  # and self.data.ended:
-                self.contador += 1
+            if self.save and self.data.ended:                
                 channels = range(self.nrows)
                 if self.oneFigure:
                     label = ''
@@ -445,12 +445,11 @@ class PlotData(Operation, Process):
                     label = '_{}'.format(channels[n])
                 figname = os.path.join(
                     self.save,
-                    '{}{}_{}{}.png'.format(
+                    '{}{}_{}.png'.format(
                         self.CODE,
                         label,
                         self.getDateTime(self.saveTime).strftime(
-                            '%y%m%d_%H%M%S'),
-                        str(self.contador),
+                            '%y%m%d_%H%M%S'),                        
                     )
                 )
                 log.log('Saving figure: {}'.format(figname), self.name)
@@ -898,10 +897,11 @@ class PlotParamData(PlotRTIData):
             self.nplots += 1
 
         self.ylabel = 'Height [Km]'
-        self.titles = self.data.parameters \
-            if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
-        if self.showSNR:
-            self.titles.append('SNR')
+        if not self.titles:
+            self.titles = self.data.parameters \
+                if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
+            if self.showSNR:
+                self.titles.append('SNR')
 
     def plot(self):
         self.data.normalize_heights()
