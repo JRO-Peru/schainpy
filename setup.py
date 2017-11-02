@@ -8,8 +8,6 @@ import os
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 from schainpy import __version__
-from schainpy.utils import log
-
 
 class build_ext(_build_ext):
     def finalize_options(self):
@@ -18,15 +16,6 @@ class build_ext(_build_ext):
         __builtins__.__NUMPY_SETUP__ = False
         import numpy
         self.include_dirs.append(numpy.get_include())
-
-
-try:
-    from PyQt4 import QtCore, QtGui
-    from PyQt4.QtGui import QApplication
-except:
-    log.warning(
-        'You should install PyQt4 module in order to run the GUI. See the README.')
-
 
 setup(name="schainpy",
       version=__version__,
