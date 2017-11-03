@@ -493,8 +493,8 @@ class RadarControllerHeader(Header):
             nBaud.tofile(fp)
             code1 = (self.code + 1.0)/2.
             
-            for ic in range(self.nCode):
-                tempx = numpy.zeros(numpy.ceil(self.nBaud/32.))
+            for ic in range(self.nCode):                
+                tempx = numpy.zeros(int(numpy.ceil(self.nBaud/32.)))
                 start = 0
                 end = 32
                 for i in range(len(tempx)):

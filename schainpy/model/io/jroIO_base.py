@@ -22,6 +22,7 @@ except:
 
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jroheaderIO import get_dtype_index, get_numpy_dtype, get_procflag_dtype, get_dtype_width
+from schainpy.utils import log
 
 LOCALTIME = True
 
@@ -440,7 +441,7 @@ def isRadarFolder(folder):
 
 
 def isRadarFile(file):
-    try:
+    try:        
         year = int(file[1:5])
         doy = int(file[5:8])
         set = int(file[8:11])
@@ -451,10 +452,10 @@ def isRadarFile(file):
 
 
 def getDateFromRadarFile(file):
-    try:
+    try:    
         year = int(file[1:5])
         doy = int(file[5:8])
-        set = int(file[8:11])
+        set = int(file[8:11])    
     except:
         return None
 
@@ -649,26 +650,13 @@ class JRODataReader(JRODataIO):
 
         filenameList = []
         datetimeList = []
-
+        
         for thisPath in pathList:
 
             fileList = glob.glob1(thisPath, "*%s" % ext)
             fileList.sort()
 
-            skippedFileList = []
-
-            if cursor is not None and skip is not None:
-
-                if skip == 0:
-                    skippedFileList = []
-                else:
-                    skippedFileList = fileList[cursor *
-                                               skip: cursor * skip + skip]
-
-            else:
-                skippedFileList = fileList
-
-            for file in skippedFileList:
+            for file in fileList:
 
                 filename = os.path.join(thisPath, file)
 
@@ -684,12 +672,15 @@ class JRODataReader(JRODataIO):
                 filenameList.append(filename)
                 datetimeList.append(thisDatetime)
 
+        if cursor is not None and skip is not None:                            
+            filenameList = filenameList[cursor * skip:cursor * skip + skip]
+            datetimeList = datetimeList[cursor * skip:cursor * skip + skip]
+
         if not(filenameList):
             print "[Reading] Time range selected invalid [%s - %s]: No *%s files in %s)" % (startTime, endTime, ext, path)
             return [], []
 
-        print "[Reading] %d file(s) was(were) found in time range: %s - %s" % (len(filenameList), startTime, endTime)
-        print
+        print "[Reading] %d file(s) was(were) found in time range: %s - %s" % (len(filenameList), startTime, endTime)        
 
         # for i in range(len(filenameList)):
         #     print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
@@ -1743,9 +1734,9 @@ class JRODataWriter(JRODataIO):
         if self.dataOut.datatime.date() > self.fileDate:
             setFile = 0
             self.nTotalBlocks = 0
-
-        filen = '%s%4.4d%3.3d%3.3d%s' % (
-            self.optchar, timeTuple.tm_year, timeTuple.tm_yday, setFile, ext)
+        
+        filen = '{}{:04d}{:03d}{:03d}{}'.format(
+                self.optchar, timeTuple.tm_year, timeTuple.tm_yday, setFile, ext)        
 
         filename = os.path.join(path, subfolder, filen)
 
@@ -1796,11 +1787,11 @@ class JRODataWriter(JRODataIO):
         self.ext = ext.lower()
 
         self.path = path
-
+        
         if set is None:
             self.setFile = -1
         else:
-            self.setFile = set - 1
+            self.setFile = set - 1        
 
         self.blocksPerFile = blocksPerFile
 

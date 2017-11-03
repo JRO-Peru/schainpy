@@ -34,6 +34,8 @@ def MPProject(project, n=cpu_count()):
     op = rconf.getOperationObj('run')
     dt1 = op.getParameterValue('startDate')
     dt2 = op.getParameterValue('endDate')
+    tm1 = op.getParameterValue('startTime')
+    tm2 = op.getParameterValue('endTime')
     days = (dt2 - dt1).days
 
     for day in range(days + 1):
@@ -46,11 +48,13 @@ def MPProject(project, n=cpu_count()):
         paths, files = reader.searchFilesOffLine(path=rconf.path,
                                                  startDate=dt,
                                                  endDate=dt,
+                                                 startTime=tm1,
+                                                 endTime=tm2,
                                                  ext=DTYPES[rconf.datatype])
         nFiles = len(files)
         if nFiles == 0:
             continue
-        skip = int(math.ceil(nFiles / n))
+        skip = int(math.ceil(nFiles / n))        
         while nFiles > cursor * skip:
             rconf.update(startDate=dt_str, endDate=dt_str, cursor=cursor,
                          skip=skip)
@@ -962,7 +966,7 @@ class Project(Process):
         print '*' * 60
         print
         self.id = str(id)
-        self.description = description
+        self.description = description        
 
     def update(self, name, description):
 
@@ -1270,7 +1274,7 @@ class Project(Process):
     def run(self):
 
         log.success('Starting {}'.format(self.name))
-
+        self.start_time = time.time()
         self.createObjects()
         self.connectObjects()
 
@@ -1314,4 +1318,6 @@ class Project(Process):
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             procUnitConfObj.close()
 
-        log.success('{} finished'.format(self.name))
+        log.success('{} finished (time: {}s)'.format(
+            self.name,
+            time.time()-self.start_time))
