@@ -11,7 +11,6 @@ except:
         'You should install PyQt4 module in order to run the GUI. See the README.')
     sys.exit()
 
-
 from schainpy.gui.viewcontroller.initwindow import InitWindow
 from schainpy.gui.viewcontroller.basicwindow import BasicWindow
 from schainpy.gui.viewcontroller.workspace import Workspace

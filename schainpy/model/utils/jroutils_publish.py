@@ -147,7 +147,8 @@ class Data(object):
             return
 
         self.parameters = getattr(dataOut, 'parameters', [])
-        self.pairs = dataOut.pairsList
+        if hasattr(dataOut, 'pairsList'):
+            self.pairs = dataOut.pairsList
         self.channels = dataOut.channelList
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
@@ -499,7 +500,7 @@ class PlotterReceiver(ProcessingUnit, Process):
 
         self.address = address
         self.plot_address = plot_address
-        self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
+        self.plottypes = [s.strip() for s in kwargs.get('plottypes', '').split(',') if s]
         self.realtime = kwargs.get('realtime', False)
         self.localtime = kwargs.get('localtime', True)
         self.throttle_value = kwargs.get('throttle', 5)

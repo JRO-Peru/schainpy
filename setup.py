@@ -17,13 +17,13 @@ class build_ext(_build_ext):
         import numpy
         self.include_dirs.append(numpy.get_include())
 
-setup(name="schainpy",
-      version=__version__,
-      description="Python tools to read, write and process Jicamarca data",
-      author="Miguel Urco",
-      author_email="miguel.urco@jro.igp.gob.pe",
-      url="http://jro.igp.gob.pe",
-      packages={'schainpy',
+setup(name = "schainpy",
+      version = __version__,
+      description = "Python tools to read, write and process Jicamarca data",
+      author = "Miguel Urco",
+      author_email = "miguel.urco@jro.igp.gob.pe",
+      url = "http://jro.igp.gob.pe",
+      packages = {'schainpy',
                   'schainpy.model',
                   'schainpy.model.data',
                   'schainpy.model.graphics',
@@ -36,25 +36,25 @@ setup(name="schainpy",
                   'schainpy.gui.figures',
                   'schainpy.gui.viewcontroller',
                   'schainpy.gui.viewer',
-                  'schainpy.gui.viewer.windows'},
-      ext_package='schainpy',
-      py_modules=[''],
-      package_data={'': ['schain.conf.template'],
-                    'schainpy.gui.figures': ['*.png', '*.jpg'],
-                    },
-      include_package_data=False,
-      scripts=['schainpy/gui/schainGUI'],
-      ext_modules=[
-          Extension("cSchain", ["schainpy/model/proc/extensions.c"]
-                    )],
-      entry_points={
+                  'schainpy.gui.viewer.windows',
+                  'schainpy.cli'},
+      ext_package = 'schainpy',      
+      package_data = {'': ['schain.conf.template'],
+                      'schainpy.gui.figures': ['*.png', '*.jpg'],
+                     },
+      include_package_data = False,
+      scripts = ['schainpy/gui/schainGUI'],
+      ext_modules = [
+          Extension("cSchain", ["schainpy/model/proc/extensions.c"])
+          ],
+      entry_points = {
           'console_scripts': [
-              'schain = schaincli.cli:main',
+              'schain = schainpy.cli.cli:main',
           ],
       },
-      cmdclass={'build_ext': build_ext},
-      setup_requires=["numpy >= 1.11.2"],
-      install_requires=[
+      cmdclass = {'build_ext': build_ext},
+      setup_requires = ["numpy >= 1.11.2"],
+      install_requires = [
           "scipy >= 0.14.0",
           "h5py >= 2.2.1",
           "matplotlib >= 2.0.0",
@@ -65,5 +65,5 @@ setup(name="schainpy",
           "fuzzywuzzy",
           "click",
           "python-Levenshtein"
-      ],
-      )
+          ],
+)
