@@ -1,13 +1,19 @@
-import numpy
-import datetime
+import os
 import sys
+import datetime
+import numpy
 import matplotlib
 
-if 'linux' in sys.platform:
+if 'BACKEND' in os.environ:
+    matplotlib.use(os.environ['BACKEND'])
+elif 'linux' in sys.platform:
     matplotlib.use("TkAgg")
-
-if 'darwin' in sys.platform:
-    matplotlib.use('TKAgg')
+elif 'darwin' in sys.platform:
+    matplotlib.use('TkAgg')
+else:
+    from schainpy.utils import log
+    log.warning('Using default Backend="Agg"', 'INFO')
+    matplotlib.use('Agg')
 # Qt4Agg', 'GTK', 'GTKAgg', 'ps', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'template', 'TkAgg', 'GTK3Cairo', 'GTK3Agg', 'svg', 'WebAgg', 'CocoaAgg', 'emf', 'gdk', 'WX'
 import matplotlib.pyplot
 
