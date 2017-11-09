@@ -82,9 +82,10 @@ class Data(object):
     Object to hold data to be plotted
     '''
 
-    def __init__(self, plottypes, throttle_value):
+    def __init__(self, plottypes, throttle_value, exp_code):
         self.plottypes = plottypes
         self.throttle = throttle_value
+        self.exp_code = exp_code
         self.ended = False
         self.localtime = False
         self.__times = []
@@ -215,17 +216,24 @@ class Data(object):
         Convert data to json
         '''
 
-        ret = {}
+        data = {}
         tm = self.times[-1]
 
-        for key, value in self.data:
+        for key in self.data:
             if key in ('spc', 'cspc'):
-                ret[key] = roundFloats(self.data[key].to_list())
+                data[key] = roundFloats(self.data[key].tolist())
             else:
-                ret[key] = roundFloats(self.data[key][tm].to_list())
+                data[key] = roundFloats(self.data[key][tm].tolist())
 
-        ret['timestamp'] = tm
+        ret = {'data': data}
+        ret['exp_code'] = self.exp_code
+        ret['time'] = tm
         ret['interval'] = self.interval
+        ret['ymin'] = self.heights[0]
+        ret['ymax'] = self.heights[-1]
+        ret['ystep'] = self.heights[1] - self.heights[0]
+
+        return json.dumps(ret)
 
     @property
     def times(self):
@@ -476,7 +484,8 @@ class ReceiverData(ProcessingUnit):
 class PlotterReceiver(ProcessingUnit, Process):
 
     throttle_value = 5
-    __attrs__ = ['server', 'plottypes', 'realtime', 'localtime', 'throttle']
+    __attrs__ = ['server', 'plottypes', 'realtime', 'localtime', 'throttle',
+        'exp_code', 'web_server']
 
     def __init__(self, **kwargs):
 
@@ -487,30 +496,25 @@ class PlotterReceiver(ProcessingUnit, Process):
         self.isWebConfig = False
         self.connections = 0
         server = kwargs.get('server', 'zmq.pipe')
-        plot_server = kwargs.get('plot_server', 'zmq.web')
+        web_server = kwargs.get('web_server', None)
         if 'tcp://' in server:
             address = server
         else:
             address = 'ipc:///tmp/%s' % server
-
-        if 'tcp://' in plot_server:
-            plot_address = plot_server
-        else:
-            plot_address = 'ipc:///tmp/%s' % plot_server
-
         self.address = address
-        self.plot_address = plot_address
-        self.plottypes = [s.strip() for s in kwargs.get('plottypes', '').split(',') if s]
+        self.web_address = web_server        
+        self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
         self.realtime = kwargs.get('realtime', False)
         self.localtime = kwargs.get('localtime', True)
         self.throttle_value = kwargs.get('throttle', 5)
+        self.exp_code = kwargs.get('exp_code', None)
         self.sendData = self.initThrottle(self.throttle_value)
         self.dates = []
         self.setup()
 
     def setup(self):
 
-        self.data = Data(self.plottypes, self.throttle_value)
+        self.data = Data(self.plottypes, self.throttle_value, self.exp_code)
         self.isConfig = True        
 
     def event_monitor(self, monitor):
@@ -560,9 +564,13 @@ class PlotterReceiver(ProcessingUnit, Process):
         self.receiver.bind(self.address)
         monitor = self.receiver.get_monitor_socket()
         self.sender = self.context.socket(zmq.PUB)
-        if self.realtime:
+        if self.web_address:
+            log.success(
+                'Sending to web: {}'.format(self.web_address),
+                self.name
+            )
             self.sender_web = self.context.socket(zmq.PUB)
-            self.sender_web.connect(self.plot_address)
+            self.sender_web.connect(self.web_address)
             time.sleep(1)
 
         if 'server' in self.kwargs:
@@ -610,27 +618,10 @@ class PlotterReceiver(ProcessingUnit, Process):
             else:
                 if self.realtime:
                     self.send(self.data)
-                    # self.sender_web.send_string(self.data.jsonify())
+                    if self.web_address:
+                        self.sender_web.send(self.data.jsonify())
                 else:                    
                     self.sendData(self.send, self.data, coerce=coerce)
                     coerce = False
 
         return
-
-    def sendToWeb(self):
-
-        if not self.isWebConfig:
-            context = zmq.Context()
-            sender_web_config = context.socket(zmq.PUB)
-            if 'tcp://' in self.plot_address:
-                dum, address, port = self.plot_address.split(':')
-                conf_address = '{}:{}:{}'.format(dum, address, int(port)+1)
-            else:
-                conf_address = self.plot_address + '.config'
-            sender_web_config.bind(conf_address)
-            time.sleep(1)
-            for kwargs in self.operationKwargs.values():
-                if 'plot' in kwargs:
-                    log.success('[Sending] Config data to web for {}'.format(kwargs['code'].upper()))
-                    sender_web_config.send_string(json.dumps(kwargs))
-            self.isWebConfig = True
