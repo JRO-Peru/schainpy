@@ -471,7 +471,7 @@ class CohInt(Operation):
         if self.__profIndex == 0:
             self.__buffer = [[data.copy(), datatime]]
         else:
-            self.__buffer.append([data.copy(), datatime])
+            self.__buffer.append([data.copy(),datatime])
         self.__profIndex += 1
         self.__dataReady = False
 
@@ -488,15 +488,13 @@ class CohInt(Operation):
                 self.__bufferStride.append((data, avgdatatime))
 
         if self.__dataToPutStride:
-            self.__dataReady = False
+            self.__dataReady = True
             self.__profIndexStride += 1
             if self.__profIndexStride == self.stride:
-                self.__dataReady = True
                 self.__dataToPutStride = False
-                self.__profIndexStride = 0
             # print self.__bufferStride[self.__profIndexStride - 1]
             # raise
-                return (numpy.sum([t[0] for t in self.__bufferStride], axis=0), numpy.average([t[1] for t in self.__bufferStride]))
+            return self.__bufferStride[self.__profIndexStride - 1]
             
        
         return None, None
