@@ -6,14 +6,14 @@ from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
 from time import time
 
-class VoltageProc(ProcessingUnit):
+class VoltageProc(ProcessingUnit):  
 
 
     def __init__(self, **kwargs):
 
         ProcessingUnit.__init__(self, **kwargs)
 
-#         self.objectDict = {}
+        #         self.objectDict = {}
         self.dataOut = Voltage()
         self.flip = 1
 
@@ -24,7 +24,7 @@ class VoltageProc(ProcessingUnit):
         if self.dataIn.type == 'Voltage':
             self.dataOut.copy(self.dataIn)
 
-#         self.dataOut.copy(self.dataIn)
+    #         self.dataOut.copy(self.dataIn)
 
     def __updateObjFromAmisrInput(self):
 
@@ -37,7 +37,7 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data = self.dataIn.data
         self.dataOut.utctime = self.dataIn.utctime
         self.dataOut.channelList = self.dataIn.channelList
-#         self.dataOut.timeInterval = self.dataIn.timeInterval
+        #         self.dataOut.timeInterval = self.dataIn.timeInterval
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.nProfiles = self.dataIn.nProfiles
 
@@ -51,19 +51,19 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.beam.codeList = self.dataIn.beam.codeList
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
-#
-#        pass#
-#
-#    def init(self):
-#
-#
-#        if self.dataIn.type == 'AMISR':
-#            self.__updateObjFromAmisrInput()
-#
-#        if self.dataIn.type == 'Voltage':
-#            self.dataOut.copy(self.dataIn)
-#        # No necesita copiar en cada init() los atributos de dataIn
-#        # la copia deberia hacerse por cada nuevo bloque de datos
+    #
+    #        pass#
+    #
+    #    def init(self):
+    #
+    #
+    #        if self.dataIn.type == 'AMISR':
+    #            self.__updateObjFromAmisrInput()
+    #
+    #        if self.dataIn.type == 'Voltage':
+    #            self.dataOut.copy(self.dataIn)
+    #        # No necesita copiar en cada init() los atributos de dataIn
+    #        # la copia deberia hacerse por cada nuevo bloque de datos
 
     def selectChannels(self, channelList):
 
@@ -112,7 +112,7 @@ class VoltageProc(ProcessingUnit):
 
         self.dataOut.data = data
         self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
-#        self.dataOut.nChannels = nChannels
+        #        self.dataOut.nChannels = nChannels
 
         return 1
 
@@ -198,7 +198,7 @@ class VoltageProc(ProcessingUnit):
         else:
             data = self.dataOut.data[:, minIndex:maxIndex]
 
-#         firstHeight = self.dataOut.heightList[minIndex]
+        #         firstHeight = self.dataOut.heightList[minIndex]
 
         self.dataOut.data = data
         self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex]
@@ -313,33 +313,30 @@ class VoltageProc(ProcessingUnit):
 
             self.dataOut.data[:,:,botLim:topLim+1]  = ynew
 
-# import collections
+    # import collections
 
 class CohInt(Operation):
 
     isConfig = False
-
     __profIndex = 0
-    __withOverapping  = False
-
     __byTime = False
     __initime = None
     __lastdatatime = None
     __integrationtime = None
-
     __buffer = None
-
+    __bufferStride = []
     __dataReady = False
-
+    __profIndexStride = 0
+    __dataToPutStride = False
     n = None
 
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)
 
-#         self.isConfig = False
+        #   self.isConfig = False
 
-    def setup(self, n=None, timeInterval=None, overlapping=False, byblock=False):
+    def setup(self, n=None, timeInterval=None, stride=None, overlapping=False, byblock=False):
         """
         Set the parameters of the integration class.
 
@@ -355,6 +352,7 @@ class CohInt(Operation):
         self.__buffer = None
         self.__dataReady = False
         self.byblock = byblock
+        self.stride = stride
 
         if n == None and timeInterval == None:
             raise ValueError, "n or timeInterval should be specified ..."
@@ -368,10 +366,10 @@ class CohInt(Operation):
             self.__byTime = True
 
         if overlapping:
-            self.__withOverapping = True
+            self.__withOverlapping = True
             self.__buffer = None
         else:
-            self.__withOverapping = False
+            self.__withOverlapping = False
             self.__buffer = 0
 
         self.__profIndex = 0
@@ -383,7 +381,7 @@ class CohInt(Operation):
 
         """
 
-        if not self.__withOverapping:
+        if not self.__withOverlapping:
             self.__buffer += data.copy()
             self.__profIndex += 1
             return
@@ -421,7 +419,7 @@ class CohInt(Operation):
 
         """
 
-        if not self.__withOverapping:
+        if not self.__withOverlapping:
             data = self.__buffer
             n = self.__profIndex
 
@@ -432,6 +430,8 @@ class CohInt(Operation):
 
         #Integration with Overlapping
         data = numpy.sum(self.__buffer, axis=0)
+        # print data
+        # raise
         n = self.__profIndex
 
         return data, n
@@ -440,12 +440,12 @@ class CohInt(Operation):
 
         self.__dataReady = False
         avgdata = None
-#         n = None
-
+        #         n = None
+        # print data
+        # raise
         self.putData(data)
 
         if self.__profIndex == self.n:
-
             avgdata, n = self.pushData()
             self.__dataReady = True
 
@@ -466,6 +466,41 @@ class CohInt(Operation):
 
         return avgdata
 
+    def integrateByStride(self, data, datatime):
+        # print data
+        if self.__profIndex == 0:
+            self.__buffer = [[data.copy(), datatime]]
+        else:
+            self.__buffer.append([data.copy(), datatime])
+        self.__profIndex += 1
+        self.__dataReady = False
+
+        if self.__profIndex == self.n * self.stride :
+            self.__dataToPutStride = True
+            self.__profIndexStride = 0
+            self.__profIndex = 0
+            self.__bufferStride = []
+            for i in range(self.stride):
+                current = self.__buffer[i::self.stride]
+                data = numpy.sum([t[0] for t in current], axis=0)
+                avgdatatime = numpy.average([t[1] for t in current])
+                # print data
+                self.__bufferStride.append((data, avgdatatime))
+
+        if self.__dataToPutStride:
+            self.__dataReady = False
+            self.__profIndexStride += 1
+            if self.__profIndexStride == self.stride:
+                self.__dataReady = True
+                self.__dataToPutStride = False
+                self.__profIndexStride = 0
+            # print self.__bufferStride[self.__profIndexStride - 1]
+            # raise
+                return (numpy.sum([t[0] for t in self.__bufferStride], axis=0), numpy.average([t[1] for t in self.__bufferStride]))
+            
+       
+        return None, None
+
     def integrate(self, data, datatime=None):
 
         if self.__initime == None:
@@ -484,9 +519,9 @@ class CohInt(Operation):
 
         avgdatatime = self.__initime
 
-        deltatime = datatime -self.__lastdatatime
-
-        if not self.__withOverapping:
+        deltatime = datatime - self.__lastdatatime
+        
+        if not self.__withOverlapping:
             self.__initime = datatime
         else:
             self.__initime += deltatime
@@ -511,11 +546,10 @@ class CohInt(Operation):
         avgdatatime = (times - 1) * timeInterval + dataOut.utctime
         self.__dataReady = True
         return avgdata, avgdatatime
-
     
-    def run(self, dataOut, n=None, timeInterval=None, overlapping=False, byblock=False, **kwargs):
+    def run(self, dataOut, n=None, timeInterval=None, stride=None, overlapping=False, byblock=False, **kwargs):
         if not self.isConfig:
-            self.setup(n=n, timeInterval=timeInterval, overlapping=overlapping, byblock=byblock, **kwargs)
+            self.setup(n=n, stride=stride, timeInterval=timeInterval, overlapping=overlapping, byblock=byblock, **kwargs)
             self.isConfig = True
 
         if dataOut.flagDataAsBlock:
@@ -525,16 +559,22 @@ class CohInt(Operation):
             avgdata, avgdatatime = self.integrateByBlock(dataOut)
             dataOut.nProfiles /= self.n
         else:
-            avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
+            if stride is None: 
+                avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
+            else:
+                avgdata, avgdatatime = self.integrateByStride(dataOut.data, dataOut.utctime)
 
-#        dataOut.timeInterval *= n
+        
+        #   dataOut.timeInterval *= n
         dataOut.flagNoData = True
 
         if self.__dataReady:
             dataOut.data = avgdata
             dataOut.nCohInt *= self.n
             dataOut.utctime = avgdatatime
-#             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt
+            # print avgdata, avgdatatime
+            # raise
+            #   dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt
             dataOut.flagNoData = False
 
 class Decoder(Operation):
