@@ -22,7 +22,7 @@ ncmap = matplotlib.colors.LinearSegmentedColormap.from_list(
     'jro', numpy.vstack((blu_values, jet_values)))
 matplotlib.pyplot.register_cmap(cmap=ncmap)
 
-CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'RdBu_r', 'seismic')]
+CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'viridis', 'plasma', 'inferno', 'Greys', 'seismic', 'bwr', 'coolwarm')]
 
 
 def figpause(interval):
@@ -45,8 +45,7 @@ class PlotData(Operation, Process):
     CODE = 'Figure'
     colormap = 'jro'
     bgcolor = 'white'
-    CONFLATE = False
-    __MAXNUMX = 80
+    CONFLATE = False    
     __missing = 1E30
 
     __attrs__ = ['show', 'save', 'xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax',
@@ -88,7 +87,7 @@ class PlotData(Operation, Process):
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
         self.xlabel = kwargs.get('xlabel', None)
-        self.__MAXNUMY = kwargs.get('decimation', 200)
+        self.decimation = kwargs.get('decimation', None)
         self.showSNR = kwargs.get('showSNR', False)
         self.oneFigure = kwargs.get('oneFigure', True)
         self.width = kwargs.get('width', None)
@@ -328,7 +327,7 @@ class PlotData(Operation, Process):
     def decimate(self):
 
         # dx = int(len(self.x)/self.__MAXNUMX) + 1
-        dy = int(len(self.y) / self.__MAXNUMY) + 1
+        dy = int(len(self.y) / self.decimation) + 1
 
         # x = self.x[::dx]
         x = self.x
@@ -369,7 +368,7 @@ class PlotData(Operation, Process):
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
 
-        Y = numpy.array([10, 20, 50, 100, 200, 500, 1000, 2000])
+        Y = numpy.array([5, 10, 20, 50, 100, 200, 500, 1000, 2000])
         i = 1 if numpy.where(ymax-ymin < Y)[0][0] < 0 else numpy.where(ymax-ymin < Y)[0][0]
         ystep = Y[i] / 5
 
@@ -712,8 +711,12 @@ class PlotRTIData(PlotData):
         self.z = self.data[self.CODE]
         self.z = numpy.ma.masked_invalid(self.z)
 
-        for n, ax in enumerate(self.axes):
+        if self.decimation is None:
+            x, y, z = self.fill_gaps(self.x, self.y, self.z)
+        else:
             x, y, z = self.fill_gaps(*self.decimate())
+
+        for n, ax in enumerate(self.axes):            
             self.zmin = self.zmin if self.zmin else numpy.min(self.z)
             self.zmax = self.zmax if self.zmax else numpy.max(self.z)
             if ax.firsttime:
@@ -916,9 +919,13 @@ class PlotParamData(PlotRTIData):
 
         self.z = numpy.ma.masked_invalid(self.z)
 
-        for n, ax in enumerate(self.axes):
-
+        if self.decimation is None:
+            x, y, z = self.fill_gaps(self.x, self.y, self.z)
+        else:
             x, y, z = self.fill_gaps(*self.decimate())
+
+        for n, ax in enumerate(self.axes):
+            
             self.zmax = self.zmax if self.zmax is not None else numpy.max(
                 self.z[n])
             self.zmin = self.zmin if self.zmin is not None else numpy.min(
