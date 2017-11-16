@@ -35,6 +35,20 @@ $ source /path/to/virtual/bin/activate
 (virtual) $ bash link_PyQt4.sh
 ```
 
+### Docker
+
+Download Dockerfile from the repository, and create a docker image
+
+```
+$ docker build -t schain .
+```
+
+You can run a container using an xml file or a schain script also you need to mount a volume for the data input and for the output files/plots
+```
+$ docker run -it --rm --volume /path/to/host/data:/data schain xml /data/test.xml
+$ docker run -it --rm --volume /path/to/host/data:/data --entrypoint=/bin/python schain /data/test.py
+```
+
 ## First Script
 
 Read Spectra data (.pdata) - remove dc - plot spectra & RTI
