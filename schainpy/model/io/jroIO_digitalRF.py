@@ -657,11 +657,11 @@ class DigitalRFWriter(Operation):
         self.metadata_dict['flagDecodeData'] = self.dataOut.flagDecodeData
         self.metadata_dict['flagDeflipData'] = self.dataOut.flagDeflipData
         self.metadata_dict['flagShiftFFT'] = self.dataOut.flagShiftFFT
-        self.metadata_dict['flagDataAsBlock'] = self.dataOut.flagDataAsBlock
         self.metadata_dict['useLocalTime'] = self.dataOut.useLocalTime
         self.metadata_dict['nCohInt'] = self.dataOut.nCohInt
-
-        return
+        self.metadata_dict['type'] = self.dataOut.type
+        self.metadata_dict['flagDataAsBlock'] = getattr(
+            self.dataOut, 'flagDataAsBlock', None)  # chequear
 
     def setup(self, dataOut, path, frequency, fileCadence, dirCadence, metadataCadence, set=0, metadataFile='metadata', ext='.h5'):
         '''
@@ -678,10 +678,14 @@ class DigitalRFWriter(Operation):
             self.__dtype = dataOut.dtype[0]
         self.__nSamples = dataOut.systemHeaderObj.nSamples
         self.__nProfiles = dataOut.nProfiles
-        self.__blocks_per_file = dataOut.processingHeaderObj.dataBlocksPerFile
 
-        self.arr_data = arr_data = numpy.ones((self.__nSamples, len(
-            self.dataOut.channelList)), dtype=[('r', self.__dtype), ('i', self.__dtype)])
+        if self.dataOut.type != 'Voltage':
+            raise 'Digital RF cannot be used with this data type'
+            self.arr_data = numpy.ones((1, dataOut.nFFTPoints * len(
+                self.dataOut.channelList)), dtype=[('r', self.__dtype), ('i', self.__dtype)])
+        else:
+            self.arr_data = numpy.ones((self.__nSamples, len(
+                self.dataOut.channelList)), dtype=[('r', self.__dtype), ('i', self.__dtype)])
 
         file_cadence_millisecs = 1000
 
@@ -702,14 +706,11 @@ class DigitalRFWriter(Operation):
                                                           fileCadence, start_global_index,
                                                           sample_rate_numerator, sample_rate_denominator, uuid, compression_level, checksum,
                                                           is_complex, num_subchannels, is_continuous, marching_periods)
-
         metadata_dir = os.path.join(path, 'metadata')
         os.system('mkdir %s' % (metadata_dir))
-
         self.digitalMetadataWriteObj = digital_rf.DigitalMetadataWriter(metadata_dir, dirCadence, 1,  # 236, file_cadence_millisecs / 1000
                                                                         sample_rate_numerator, sample_rate_denominator,
                                                                         metadataFile)
-
         self.isConfig = True
         self.currentSample = 0
         self.oldAverage = 0
@@ -717,7 +718,6 @@ class DigitalRFWriter(Operation):
         return
 
     def writeMetadata(self):
-        print '[Writing] - Writing metadata'
         start_idx = self.__sample_rate * self.dataOut.utctime
 
         self.metadata_dict['processingHeader'] = self.dataOut.processingHeaderObj.getAsDict(
@@ -741,10 +741,19 @@ class DigitalRFWriter(Operation):
         return
 
     def writeData(self):
-        for i in range(self.dataOut.systemHeaderObj.nSamples):
+        if self.dataOut.type != 'Voltage':
+            raise 'Digital RF cannot be used with this data type'
             for channel in self.dataOut.channelList:
-                self.arr_data[i][channel]['r'] = self.dataOut.data[channel][i].real
-                self.arr_data[i][channel]['i'] = self.dataOut.data[channel][i].imag
+                for i in range(self.dataOut.nFFTPoints):
+                    self.arr_data[1][channel * self.dataOut.nFFTPoints +
+                                     i]['r'] = self.dataOut.data[channel][i].real
+                    self.arr_data[1][channel * self.dataOut.nFFTPoints +
+                                     i]['i'] = self.dataOut.data[channel][i].imag
+        else:
+            for i in range(self.dataOut.systemHeaderObj.nSamples):
+                for channel in self.dataOut.channelList:
+                    self.arr_data[i][channel]['r'] = self.dataOut.data[channel][i].real
+                    self.arr_data[i][channel]['i'] = self.dataOut.data[channel][i].imag
 
         def f(): return self.digitalWriteObj.rf_write(self.arr_data)
         self.timeit(f)
