@@ -421,8 +421,11 @@ class PlotData(Operation, Process):
         '''
         log.success('Plotting', self.name)
 
-        self.plot()
-        self.format()
+        try:
+            self.plot()
+            self.format()
+        except:
+            log.warning('{} Plot could not be updated... check data'.format(self.CODE), self.name)
 
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
