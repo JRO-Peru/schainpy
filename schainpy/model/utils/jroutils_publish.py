@@ -218,10 +218,12 @@ class Data(object):
 
         data = {}
         tm = self.times[-1]
-
+        
         for key in self.data:
             if key in ('spc', 'cspc'):
-                data[key] = roundFloats(self.data[key].tolist())
+                dx = int(self.data[key].shape[1]/MAXNUMX) + 1
+                dy = int(self.data[key].shape[2]/MAXNUMY) + 1
+                data[key] = roundFloats(self.data[key][::, ::dx, ::dy].tolist())
             else:
                 data[key] = roundFloats(self.data[key][tm].tolist())
 
@@ -229,10 +231,12 @@ class Data(object):
         ret['exp_code'] = self.exp_code
         ret['time'] = tm
         ret['interval'] = self.interval
-        ret['ymin'] = self.heights[0]
-        ret['ymax'] = self.heights[-1]
-        ret['ystep'] = self.heights[1] - self.heights[0]
-
+        ret['localtime'] = self.localtime
+        ret['yrange'] = roundFloats(self.heights.tolist())
+        if key in ('spc', 'cspc'):
+            ret['xrange'] = roundFloats(self.xrange[2][::dx].tolist())
+        if hasattr(self, 'pairs'):
+            ret['pairs'] = self.pairs
         return json.dumps(ret)
 
     @property

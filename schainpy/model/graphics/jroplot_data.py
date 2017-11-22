@@ -451,7 +451,7 @@ class PlotData(Operation, Process):
                         self.CODE,
                         label,
                         self.getDateTime(self.saveTime).strftime(
-                            '%y%m%d_%H%M%S'),                        
+                            '%Y%m%d_%H%M%S'),                        
                     )
                 )
                 log.log('Saving figure: {}'.format(figname), self.name)
@@ -528,7 +528,7 @@ class PlotSpectraData(PlotData):
         if self.showprofile:
             self.width += 0.8 * self.ncols
 
-        self.ylabel = 'Range [Km]'
+        self.ylabel = 'Range [km]'
 
     def plot(self):
         if self.xaxis == "frequency":
@@ -600,7 +600,7 @@ class PlotCrossSpectraData(PlotData):
         self.nplots = self.nrows * 4
         self.width = 3.4 * self.ncols
         self.height = 3 * self.nrows
-        self.ylabel = 'Range [Km]'
+        self.ylabel = 'Range [km]'
         self.showprofile = False
 
     def plot(self):
@@ -703,7 +703,7 @@ class PlotRTIData(PlotData):
         self.ncols = 1
         self.nrows = len(self.data.channels)
         self.nplots = len(self.data.channels)
-        self.ylabel = 'Range [Km]'
+        self.ylabel = 'Range [km]'
         self.cb_label = 'dB'
         self.titles = ['{} Channel {}'.format(
             self.CODE.upper(), x) for x in range(self.nrows)]
@@ -760,7 +760,7 @@ class PlotCOHData(PlotRTIData):
         self.ncols = 1
         self.nrows = len(self.data.pairs)
         self.nplots = len(self.data.pairs)
-        self.ylabel = 'Range [Km]'
+        self.ylabel = 'Range [km]'
         if self.CODE == 'coh':
             self.cb_label = ''
             self.titles = [
@@ -902,7 +902,7 @@ class PlotParamData(PlotRTIData):
             self.nrows += 1
             self.nplots += 1
 
-        self.ylabel = 'Height [Km]'
+        self.ylabel = 'Height [km]'
         if not self.titles:
             self.titles = self.data.parameters \
                 if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
