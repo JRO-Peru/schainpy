@@ -27,8 +27,8 @@ class SpectraPlot(Figure):
         self.isConfig = False
         self.__nsubplots = 1
 
-        self.WIDTH = 250
-        self.HEIGHT = 250
+        self.WIDTH = 300
+        self.HEIGHT = 300
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -128,6 +128,10 @@ class SpectraPlot(Figure):
             factor = normFactor
         if xaxis == "frequency":
             x = dataOut.getFreqRange(1)/1000.
+            print '#######################################################'
+            print 'xlen', len(x)
+            print x 
+            print '#######################################################'
             xlabel = "Frequency (kHz)"
 
         elif xaxis == "time":
@@ -439,23 +443,44 @@ class CrossSpectraPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=power_cmap, cblabel='')
 
-            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:])
+            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]  /  numpy.sqrt(  dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:]  )
             coherence = numpy.abs(coherenceComplex)
 #            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
             phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
             
             
-#             print 'FASE', numpy.shape(phase), y[10]
+            
+            
+#             #print 'FASE', numpy.shape(phase), y[25]
 #             fig = plt.figure(10+self.indice)
-#             plt.plot( x[0:128],phase[:,10] )
+#             #plt.plot( x[0:256],coherence[:,25] )
+#             cohAv = numpy.average(coherence,1)
+#             
+#             plt.plot( x[0:256],cohAv )
 #             #plt.axis([-12, 12, 15, 50])
 #             plt.title("%s" %(  '%s %s, Channel %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S") , i)))
 #             plt.ylabel('Desfase [grados]')
 #             plt.xlabel('Velocidad [m/s]')
 #             fig.savefig('/home/erick/Documents/Pics/to{}.png'.format(self.indice))
-#             
+#              
 #             plt.show()  
 #             self.indice=self.indice+1
+            
+            
+#             print 'FASE', numpy.shape(phase), y[25]
+#             fig = plt.figure(10+self.indice)
+#             plt.plot( x[0:256],phase[:,25] )
+#             #plt.axis([-12, 12, 15, 50])
+#             plt.title("%s" %(  '%s %s, Channel %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S") , i)))
+#             plt.ylabel('Desfase [grados]')
+#             plt.xlabel('Velocidad [m/s]')
+#             fig.savefig('/home/erick/Documents/Pics/to{}.png'.format(self.indice))
+#              
+#             plt.show()  
+#             self.indice=self.indice+1
+
+
+
 
             title = "Coherence Ch%d * Ch%d" %(pair[0], pair[1])
             axes0 = self.axesList[i*self.__nsubplots+2]
@@ -500,7 +525,7 @@ class RTIPlot(Figure):
         self.__nsubplots = 1
 
         self.WIDTH = 800
-        self.HEIGHT = 180
+        self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0

@@ -1784,7 +1784,7 @@ class JRODataWriter(JRODataIO):
 
         return 1
 
-    def run(self, dataOut, path, blocksPerFile, profilesPerBlock=64, set=None, ext=None, datatype=4, **kwargs):
+    def run(self, dataOut, path, blocksPerFile=100, profilesPerBlock=64, set=None, ext=None, datatype=4, **kwargs):
 
         if not(self.isConfig):
 

@@ -706,7 +706,7 @@ class ProcUnitConf():
             #print "\tRunning the '%s' operation with %s" %(opConfObj.name, opConfObj.id)
             sts = self.procUnitObj.call(opType = opConfObj.type,
                                         opName = opConfObj.name,
-                                        opId = opConfObj.id,
+                                        opId = opConfObj.id
                                         )
 
 #             total_time = time.time() - ini

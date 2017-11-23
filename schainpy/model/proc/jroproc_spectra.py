@@ -4,6 +4,8 @@ from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Spectra
 from schainpy.model.data.jrodata import hildebrand_sekhon
 
+import matplotlib.pyplot as plt
+
 class SpectraProc(ProcessingUnit):
 
     def __init__(self, **kwargs):
@@ -275,7 +277,46 @@ class SpectraProc(ProcessingUnit):
         self.__selectPairsByChannel(self.dataOut.channelList)
 
         return 1
+    
+    
+    def selectFFTs(self, minFFT, maxFFT ):
+        """
+        Selecciona un bloque de datos en base a un grupo de valores de puntos FFTs segun el rango 
+        minFFT<= FFT <= maxFFT
+        """
+        
+        if (minFFT > maxFFT):
+            raise ValueError, "Error selecting heights: Height range (%d,%d) is not valid" % (minFFT, maxFFT)
 
+        if (minFFT < self.dataOut.getFreqRange()[0]):
+            minFFT = self.dataOut.getFreqRange()[0]
+
+        if (maxFFT > self.dataOut.getFreqRange()[-1]):
+            maxFFT = self.dataOut.getFreqRange()[-1]
+
+        minIndex = 0
+        maxIndex = 0
+        FFTs = self.dataOut.getFreqRange()
+
+        inda = numpy.where(FFTs >= minFFT)
+        indb = numpy.where(FFTs <= maxFFT)
+
+        try:
+            minIndex = inda[0][0]
+        except:
+            minIndex = 0
+
+        try:
+            maxIndex = indb[0][-1]
+        except:
+            maxIndex = len(FFTs)
+
+        self.selectFFTsByIndex(minIndex, maxIndex)
+
+        return 1
+    
+    
+    
     def selectHeights(self, minHei, maxHei):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
@@ -292,6 +333,7 @@ class SpectraProc(ProcessingUnit):
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
 
+        
         if (minHei > maxHei):
             raise ValueError, "Error selecting heights: Height range (%d,%d) is not valid" % (minHei, maxHei)
 
@@ -319,6 +361,7 @@ class SpectraProc(ProcessingUnit):
             maxIndex = len(heights)
 
         self.selectHeightsByIndex(minIndex, maxIndex)
+        
 
         return 1
 
@@ -360,6 +403,41 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.beacon_heiIndexList = beacon_heiIndexList
 
         return 1
+
+    def selectFFTsByIndex(self, minIndex, maxIndex):
+        """
+        
+        """
+
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError, "Error selecting heights: Index range (%d,%d) is not valid" % (minIndex, maxIndex)
+
+        if (maxIndex >= self.dataOut.nProfiles):
+            maxIndex = self.dataOut.nProfiles-1
+
+        #Spectra
+        data_spc = self.dataOut.data_spc[:,minIndex:maxIndex+1,:]
+
+        data_cspc = None
+        if self.dataOut.data_cspc is not None:
+            data_cspc = self.dataOut.data_cspc[:,minIndex:maxIndex+1,:]
+
+        data_dc = None
+        if self.dataOut.data_dc is not None:
+            data_dc = self.dataOut.data_dc[minIndex:maxIndex+1,:]
+
+        self.dataOut.data_spc = data_spc
+        self.dataOut.data_cspc = data_cspc
+        self.dataOut.data_dc = data_dc
+        
+        self.dataOut.ippSeconds = self.dataOut.ippSeconds*(self.dataOut.nFFTPoints / numpy.shape(data_cspc)[1])
+        self.dataOut.nFFTPoints = numpy.shape(data_cspc)[1]
+        self.dataOut.profilesPerBlock = numpy.shape(data_cspc)[1]
+
+        #self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex+1]
+
+        return 1
+
 
 
     def selectHeightsByIndex(self, minIndex, maxIndex):
@@ -405,7 +483,8 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex+1]
 
         return 1
-
+    
+    
     def removeDC(self, mode = 2):
         jspectra = self.dataOut.data_spc
         jcspectra = self.dataOut.data_cspc
@@ -462,6 +541,86 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_cspc = jcspectra
 
         return 1
+
+    def removeInterference2(self):
+        
+        cspc = self.dataOut.data_cspc
+        spc = self.dataOut.data_spc
+        print numpy.shape(spc)
+        Heights = numpy.arange(cspc.shape[2]) 
+        realCspc = numpy.abs(cspc)
+        
+        for i in range(cspc.shape[0]):
+            LinePower= numpy.sum(realCspc[i], axis=0)
+            Threshold = numpy.amax(LinePower)-numpy.sort(LinePower)[len(Heights)-int(len(Heights)*0.1)]
+            SelectedHeights = Heights[ numpy.where( LinePower < Threshold ) ]
+            #print numpy.shape(realCspc)
+            #print '',SelectedHeights, '', numpy.shape(realCspc[i,:,SelectedHeights])
+            InterferenceSum = numpy.sum( realCspc[i,:,SelectedHeights], axis=0 )
+            print SelectedHeights
+            InterferenceThresholdMin = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.98)]
+            InterferenceThresholdMax = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.99)]
+            
+            
+            InterferenceRange = numpy.where( ([InterferenceSum > InterferenceThresholdMin]))# , InterferenceSum < InterferenceThresholdMax]) )
+            #InterferenceRange = numpy.where( ([InterferenceRange < InterferenceThresholdMax]))
+            if len(InterferenceRange)<int(cspc.shape[1]*0.3):
+                cspc[i,InterferenceRange,:] = numpy.NaN
+            
+            print '########################################################################################'
+            print 'Len interference sum',len(InterferenceSum)
+            print 'InterferenceThresholdMin', InterferenceThresholdMin, 'InterferenceThresholdMax', InterferenceThresholdMax
+            print 'InterferenceRange',InterferenceRange
+            print '########################################################################################'
+            
+            ''' Ploteo '''
+            
+            #for i in range(3):
+            #print 'FASE', numpy.shape(phase), y[25]
+            #print numpy.shape(coherence)
+            #fig = plt.figure(10+ int(numpy.random.rand()*100))
+            #plt.plot( x[0:256],coherence[:,25] )
+            #cohAv = numpy.average(coherence[i],1)
+            #Pendiente = FrecRange * PhaseSlope[i]         
+            #plt.plot( InterferenceSum)
+            #plt.plot( numpy.sort(InterferenceSum))
+            #plt.plot( LinePower ) 
+            #plt.plot( xFrec,phase[i])
+            
+            #CSPCmean = numpy.mean(numpy.abs(CSPCSamples),0)
+            #plt.plot(xFrec, FitGauss01)
+            #plt.plot(xFrec, CSPCmean)
+            #plt.plot(xFrec, numpy.abs(CSPCSamples[0]))
+            #plt.plot(xFrec, FitGauss)
+            #plt.plot(xFrec, yMean)
+            #plt.plot(xFrec, numpy.abs(coherence[0]))
+            
+            #plt.axis([-12, 12, 15, 50])
+            #plt.title("%s" %(  '%s %s, Channel %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S") , i)))
+ 
+                  
+            #fig.savefig('/home/erick/Documents/Pics/nom{}.png'.format(int(numpy.random.rand()*100)))
+                  
+            #plt.show()
+                #self.indice=self.indice+1 
+        #raise
+        
+            
+        self.dataOut.data_cspc = cspc
+        
+#         for i in range(spc.shape[0]):
+#             LinePower= numpy.sum(spc[i], axis=0)
+#             Threshold = numpy.amax(LinePower)-numpy.sort(LinePower)[len(Heights)-int(len(Heights)*0.1)]
+#             SelectedHeights = Heights[ numpy.where( LinePower < Threshold ) ]
+#             #print numpy.shape(realCspc)
+#             #print '',SelectedHeights, '', numpy.shape(realCspc[i,:,SelectedHeights])
+#             InterferenceSum = numpy.sum( spc[i,:,SelectedHeights], axis=0 )
+#             InterferenceThreshold = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.98)]
+#             InterferenceRange = numpy.where( InterferenceSum > InterferenceThreshold )
+#             if len(InterferenceRange)<int(spc.shape[1]*0.03):
+#                 spc[i,InterferenceRange,:] = numpy.NaN
+            
+        #self.dataOut.data_spc = spc
 
     def removeInterference(self,  interf = 2,hei_interf = None, nhei_interf = None, offhei_interf = None):
 

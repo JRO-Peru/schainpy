@@ -82,7 +82,7 @@ class FitGauPlot(Figure):
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
-            xaxis="frequency", colormap='jet', normFactor=None , GauSelector = 1):
+            xaxis="frequency", colormap='jet', normFactor=None , GauSelector = 0):
 
         """
 
@@ -125,7 +125,7 @@ class FitGauPlot(Figure):
             x = dataOut.spc_range[1]
             xlabel = "Time (ms)"
 
-        else:
+        else:            
             x = dataOut.spc_range[2]
             xlabel = "Velocity (m/s)"
 
@@ -667,13 +667,14 @@ class WindProfilerPlot(Figure):
         #If there is a SNR function defined
         if dataOut.data_SNR is not None:
             nplots += 1
-            SNR = dataOut.data_SNR
-            SNRavg = numpy.average(SNR, axis=0)
+            SNR = dataOut.data_SNR[0]
+            SNRavg = SNR#numpy.average(SNR, axis=0)
 
             SNRdB = 10*numpy.log10(SNR)
             SNRavgdB = 10*numpy.log10(SNRavg)
 
-            if SNRthresh == None: SNRthresh = -5.0
+            if SNRthresh == None: 
+                SNRthresh = -5.0
             ind = numpy.where(SNRavg < 10**(SNRthresh/10))[0]
 
             for i in range(nplotsw):

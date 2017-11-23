@@ -110,6 +110,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
               status_value=0,
               **kwargs):
         
+        self.verbose = kwargs.get('verbose', True)
         self.path = path
         self.startTime = startTime
         self.endTime = endTime        
@@ -214,17 +215,19 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
             self.readBlock()
             
             if (self.datatime.time() < self.startTime) or (self.datatime.time() > self.endTime):
-                print "[Reading] Record No. %d/%d -> %s [Skipping]" %(
-                    self.counter_records,
-                    self.nrecords,
-                    self.datatime.ctime())
+                if self.verbose:
+                    print "[Reading] Record No. %d/%d -> %s [Skipping]" %(
+                        self.counter_records,
+                        self.nrecords,
+                        self.datatime.ctime())
                 continue
             break
 
-        print "[Reading] Record No. %d/%d -> %s" %(
-            self.counter_records,
-            self.nrecords,
-            self.datatime.ctime())
+        if self.verbose:
+            print "[Reading] Record No. %d/%d -> %s" %(
+                self.counter_records,
+                self.nrecords,
+                self.datatime.ctime())
 
         return 1
 
