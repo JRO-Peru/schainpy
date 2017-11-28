@@ -507,7 +507,7 @@ class RadarControllerHeader(Header):
             code1 = (self.code + 1.0) / 2.
 
             for ic in range(self.nCode):
-                tempx = numpy.zeros(int(self.nBaud / 32.))
+                tempx = numpy.zeros(int(numpy.ceil(self.nBaud / 32.)))
                 start = 0
                 end = 32
                 for i in range(len(tempx)):

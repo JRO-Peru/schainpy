@@ -7,7 +7,6 @@ import glob
 save_stdout = sys.stdout
 sys.stdout = open('trash', 'w')
 from multiprocessing import cpu_count
-from schaincli import templates
 from schainpy.controller import Project
 from schainpy.model import Operation, ProcessingUnit
 from schainpy.utils import log
@@ -15,6 +14,7 @@ from importlib import import_module
 from pydoc import locate
 from fuzzywuzzy import process
 from schainpy.utils import paramsFinder
+import templates
 sys.stdout = save_stdout
 
 

@@ -1,6 +1,6 @@
 import pytest
 from click.testing import CliRunner
-from schaincli import cli
+from schainpy.cli import cli
 
 
 @pytest.fixture
