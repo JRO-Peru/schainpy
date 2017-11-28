@@ -765,7 +765,7 @@ class Decoder(Operation):
         self.__profIndex += 1
 
         return 1
-#        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
+    #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
 
 
 class ProfileConcat(Operation):
