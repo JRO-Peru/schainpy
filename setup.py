@@ -41,6 +41,7 @@ setup(name = "schainpy",
       ext_package = 'schainpy',      
       package_data = {'': ['schain.conf.template'],
                       'schainpy.gui.figures': ['*.png', '*.jpg'],
+                      'schainpy.files': ['*.oga']
                      },
       include_package_data = False,
       scripts = ['schainpy/gui/schainGUI'],

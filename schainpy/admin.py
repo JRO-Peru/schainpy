@@ -5,17 +5,53 @@ notification class and a standard error handing class.
 
 $Id: admin.py 3966 2015-12-01 14:32:29Z miguel.urco $
 """
-import os, sys
+import os
+import sys
+import time
 import traceback
 import smtplib
 import ConfigParser
 import StringIO
-
+from threading import Thread
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
-class SchainConfigure():  
+from schainpy.utils import log
+
+def get_path():
+    '''
+    Return schainpy path
+    '''
+    
+    try:
+        root = __file__
+        if os.path.islink(root):
+            root = os.path.realpath(root)
+            
+        return os.path.dirname(os.path.abspath(root))
+    except:
+        log.error('I am sorry, but something is wrong... __file__ not found')
+
+def alarm(level=1, cycle=2):
+    '''
+    '''
+
+    def target(sound, level, cycle):
+        for __ in range(cycle):
+            os.system('paplay {}'.format(sound))
+            time.sleep(0.5)
+    
+    sound = os.path.join(get_path(), 'alarm{}.oga'.format(level))
+    
+    if os.path.exists(sound):
+        t = Thread(target=target, args=(sound, level, cycle))
+        t.start()
+    else:
+        log.warning('Unable to play alarm', 'ADMIN')
+
+
+class SchainConfigure():
     
     __DEFAULT_ADMINISTRATOR_EMAIL = ""
     __DEFAULT_EMAIL_SERVER = "jro-zimbra.igp.gob.pe"
@@ -204,7 +240,7 @@ class SchainNotify:
             
         msg.attach(part)
         
-        if os.path.isfile(filename):
+        if filename and os.path.isfile(filename):
             # This is the binary part(The Attachment):
             part = MIMEApplication(open(filename,"rb").read())
             part.add_header('Content-Disposition', 
@@ -220,7 +256,7 @@ class SchainNotify:
             return 0
             
         # Start the server:
-#         smtp.ehlo()
+    #         smtp.ehlo()
         if self.__emailPass:
             smtp.login(self.__emailFromAddress, self.__emailPass)
         

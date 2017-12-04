@@ -905,12 +905,11 @@ class Project(Process):
     def __init__(self, plotter_queue=None):
 
         Process.__init__(self)
-        self.id = None
-        # self.name = None
+        self.id = None        
         self.description = None
-
+        self.email = None
+        self.alarm = False
         self.plotterQueue = plotter_queue
-
         self.procUnitConfObjDict = {}
 
     def __getNewId(self):
@@ -952,13 +951,12 @@ class Project(Process):
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             idProcUnit = str(int(self.id) * 10 + n)
             procUnitConfObj.updateId(idProcUnit, parentId=self.id)
-
             newProcUnitConfObjDict[idProcUnit] = procUnitConfObj
             n += 1
 
         self.procUnitConfObjDict = newProcUnitConfObjDict
 
-    def setup(self, id, name='', description=''):
+    def setup(self, id, name='', description='', email=None, alarm=False):
 
         print
         print '*' * 60
@@ -966,11 +964,14 @@ class Project(Process):
         print '*' * 60
         print
         self.id = str(id)
-        self.description = description        
-
-    def update(self, name, description):
-
         self.description = description
+        self.email = email
+        self.alarm = alarm
+
+    def update(self, **kwargs):
+
+        for key, value in kwargs:
+            setattr(self, key, value)
 
     def clone(self):
 
@@ -1179,7 +1180,7 @@ class Project(Process):
 
             self.__connect(puObjIN, thisPUObj)
 
-    def __handleError(self, procUnitConfObj, send_email=False):
+    def __handleError(self, procUnitConfObj):
 
         import socket
 
@@ -1194,8 +1195,12 @@ class Project(Process):
 
         sys.stderr.write(message)
 
-        if not send_email:
+        if self.email is None:
+            log.warning('Email attribute has not been set', self.name)
             return
+
+        if self.alarm:
+            schainpy.admin.alarm(1)
 
         subject = 'SChain v%s: Error running %s\n' % (
             schainpy.__version__, procUnitConfObj.name)
@@ -1219,10 +1224,13 @@ class Project(Process):
             subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
 
         adminObj = schainpy.admin.SchainNotify()
-        adminObj.sendAlert(message=message,
-                           subject=subject,
-                           subtitle=subtitle,
-                           filename=self.filename)
+        adminObj.notify(
+            email=self.email,
+            message=message,
+            subject=subject,
+            subtitle=subtitle,
+            filename=self.filename
+        )
 
     def isPaused(self):
         return 0
@@ -1297,7 +1305,7 @@ class Project(Process):
                     break
                 except ValueError, e:
                     time.sleep(0.5)
-                    self.__handleError(procUnitConfObj, send_email=True)
+                    self.__handleError(procUnitConfObj)
                     is_ok = False
                     break
                 except:
