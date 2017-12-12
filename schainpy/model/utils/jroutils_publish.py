@@ -235,8 +235,12 @@ class Data(object):
         ret['yrange'] = roundFloats(self.heights.tolist())
         if key in ('spc', 'cspc'):
             ret['xrange'] = roundFloats(self.xrange[2][::dx].tolist())
+        else:
+            ret['xrange'] = []
         if hasattr(self, 'pairs'):
             ret['pairs'] = self.pairs
+        else:
+            ret['pairs'] = []
         return json.dumps(ret)
 
     @property
