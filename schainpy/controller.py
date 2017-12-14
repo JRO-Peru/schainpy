@@ -15,7 +15,7 @@ from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
 import schainpy
-import schainpy.admin
+from schainpy.admin import Alarm, SchainWarning
 from schainpy.model import *
 from schainpy.utils import log
 
@@ -1180,9 +1180,12 @@ class Project(Process):
 
             self.__connect(puObjIN, thisPUObj)
 
-    def __handleError(self, procUnitConfObj):
+    def __handleError(self, procUnitConfObj, modes=None):
 
         import socket
+
+        if modes is None:
+            modes = self.alarm
 
         err = traceback.format_exception(sys.exc_info()[0],
                                          sys.exc_info()[1],
@@ -1215,14 +1218,16 @@ class Project(Process):
             subtitle += '[Start time = %s]\n' % readUnitConfObj.startTime
             subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
 
-        schainpy.admin.alarm(
-            modes=self.alarm, 
+        a = Alarm(
+            modes=modes, 
             email=self.email,
             message=message,
             subject=subject,
             subtitle=subtitle,
             filename=self.filename
         )
+
+        a.start()
 
     def isPaused(self):
         return 0
@@ -1292,7 +1297,8 @@ class Project(Process):
                 try:
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
-                    j
+                except SchainWarning:
+                    self.__handleError(procUnitConfObj, modes=[2, 3])
                 except KeyboardInterrupt:
                     is_ok = False
                     break
