@@ -18,6 +18,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
 from schainpy.utils import log
+from schainpy.model.graphics.jroplot_data import popup
 
 def get_path():
     '''
@@ -33,27 +34,69 @@ def get_path():
     except:
         log.error('I am sorry, but something is wrong... __file__ not found')
 
-def alarm(level=1, cycle=2):
+def alarm(modes=[1], **kwargs):
     '''
+    modes:
+      0 - All
+      1 - Sound alarm
+      2 - Send email
+      3 - Popup message
+      4 - Send to alarm system TODO
     '''
 
-    def target(sound, level, cycle):
-        for __ in range(cycle):
-            os.system('paplay {}'.format(sound))
-            time.sleep(0.5)
+    def play_sound():
+        sound = os.path.join(get_path(), 'alarm1.oga')
+        if os.path.exists(sound):        
+            for __ in range(2):
+                os.system('paplay {}'.format(sound))
+                time.sleep(0.5)
+        else:
+            log.warning('Unable to play alarm, sound file not found', 'ADMIN')
     
-    sound = os.path.join(get_path(), 'alarm{}.oga'.format(level))
-    
-    if os.path.exists(sound):
-        t = Thread(target=target, args=(sound, level, cycle))
-        t.start()
-    else:
-        log.warning('Unable to play alarm', 'ADMIN')
+    def send_email(**kwargs):
+        notifier = SchainNotify()
+        notifier.notify(**kwargs)            
+
+    def show_popup(message='Error'):
+        popup(message)
+
+    def send_alarm():
+        pass
+
+    def get_kwargs(kwargs, keys):
+        ret = {}
+        for key in keys:
+            ret[key] = kwargs[key]
+        return ret
+
+    tasks = {
+        1 : send_email,
+        2 : play_sound,
+        3 : show_popup,
+        4 : send_alarm,
+    }
+
+    tasks_args = {
+        1: ['email', 'message', 'subject', 'subtitle', 'filename'],
+        2: [],
+        3: ['message'],
+        4: [],
+    }
+
+    for mode in modes:
+        if mode == 0:
+            for x in tasks:
+                t = Thread(target=tasks[x], kwargs=get_kwargs(kwargs, tasks_args[x]))
+                t.start()
+            break
+        else:
+            t = Thread(target=tasks[mode], kwargs=get_kwargs(kwargs, tasks_args[x]))
+            t.start()    
 
 
 class SchainConfigure():
     
-    __DEFAULT_ADMINISTRATOR_EMAIL = ""
+    __DEFAULT_ADMINISTRATOR_EMAIL = "juan.espinoza@jro.igp.gob.pe"
     __DEFAULT_EMAIL_SERVER = "jro-zimbra.igp.gob.pe"
     __DEFAULT_SENDER_EMAIL = "notifier-schain@jro.igp.gob.pe"
     __DEFAULT_SENDER_PASS = ""
@@ -316,7 +359,10 @@ class SchainNotify:
         Exceptions: None.
         """
         
-        print "Notifying to %s ..." %email
+        if email is None:
+            email = self.__emailToAddress
+
+        log.success('Notifying to %s ...'.format(email), 'ADMIN')
         
         self.sendEmail(email_from=self.__emailFromAddress,
                        email_to=email,
@@ -325,7 +371,7 @@ class SchainNotify:
                        subtitle=subtitle, 
                        filename=filename)
         
-        print "***** Your system administrator has been notified *****"
+        log.success('Email sent', 'ADMIN')        
 
 class SchainError(Exception):
     """SchainError is an exception class that is thrown for all known errors using Schain Py lib.

@@ -908,7 +908,7 @@ class Project(Process):
         self.id = None        
         self.description = None
         self.email = None
-        self.alarm = False
+        self.alarm = [0]
         self.plotterQueue = plotter_queue
         self.procUnitConfObjDict = {}
 
@@ -956,7 +956,7 @@ class Project(Process):
 
         self.procUnitConfObjDict = newProcUnitConfObjDict
 
-    def setup(self, id, name='', description='', email=None, alarm=False):
+    def setup(self, id, name='', description='', email=None, alarm=[0]):
 
         print
         print '*' * 60
@@ -1187,20 +1187,12 @@ class Project(Process):
         err = traceback.format_exception(sys.exc_info()[0],
                                          sys.exc_info()[1],
                                          sys.exc_info()[2])
-
-        print '***** Error occurred in %s *****' % (procUnitConfObj.name)
-        print '***** %s' % err[-1]
+        
+        log.error('{}'.format(err[-1]), procUnitConfObj.name)
 
         message = ''.join(err)
 
         sys.stderr.write(message)
-
-        if self.email is None:
-            log.warning('Email attribute has not been set', self.name)
-            return
-
-        if self.alarm:
-            schainpy.admin.alarm(1)
 
         subject = 'SChain v%s: Error running %s\n' % (
             schainpy.__version__, procUnitConfObj.name)
@@ -1223,8 +1215,8 @@ class Project(Process):
             subtitle += '[Start time = %s]\n' % readUnitConfObj.startTime
             subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
 
-        adminObj = schainpy.admin.SchainNotify()
-        adminObj.notify(
+        schainpy.admin.alarm(
+            modes=self.alarm, 
             email=self.email,
             message=message,
             subject=subject,
@@ -1300,6 +1292,7 @@ class Project(Process):
                 try:
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
+                    j
                 except KeyboardInterrupt:
                     is_ok = False
                     break
