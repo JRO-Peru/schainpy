@@ -116,7 +116,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = True
 
-    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None):
+    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None, shift_fft=False):
 
         self.dataOut.flagNoData = True
 
@@ -126,6 +126,15 @@ class SpectraProc(ProcessingUnit):
                 pairsList = itertools.combinations(self.dataOut.channelList, 2)
             if self.dataOut.data_cspc is not None:
                 self.__selectPairs(pairsList)
+            if shift_fft:
+                #desplaza a la derecha en el eje 2 determinadas posiciones
+                shift = int(self.dataOut.nFFTPoints/2)
+                self.dataOut.data_spc = numpy.roll(self.dataOut.data_spc, shift , axis=1)
+
+                if self.dataOut.data_cspc is not None:
+                    #desplaza a la derecha en el eje 2 determinadas posiciones
+                    self.dataOut.data_cspc = numpy.roll(self.dataOut.cspc, shift, axis=1)
+            
             return True
 
         if self.dataIn.type == "Voltage":
