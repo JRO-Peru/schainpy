@@ -36,6 +36,12 @@ def figpause(interval):
             canvas.start_event_loop(interval)
             return
 
+def popup(message):
+    fig = plt.figure(figsize=(12, 8), facecolor='r')
+    fig.text(0.5, 0.5, message, ha='center', va='center', size='20', weight='heavy', color='w')    
+    fig.show()
+    figpause(1000)
+
 
 class PlotData(Operation, Process):
     '''

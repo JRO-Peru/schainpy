@@ -5,19 +5,114 @@ notification class and a standard error handing class.
 
 $Id: admin.py 3966 2015-12-01 14:32:29Z miguel.urco $
 """
-import os, sys
+import os
+import sys
+import time
 import traceback
 import smtplib
 import ConfigParser
 import StringIO
-
+from threading import Thread
+from multiprocessing import Process
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
-class SchainConfigure():  
+from schainpy.utils import log
+from schainpy.model.graphics.jroplot_data import popup
+
+def get_path():
+    '''
+    Return schainpy path
+    '''
     
-    __DEFAULT_ADMINISTRATOR_EMAIL = ""
+    try:
+        root = __file__
+        if os.path.islink(root):
+            root = os.path.realpath(root)
+            
+        return os.path.dirname(os.path.abspath(root))
+    except:
+        log.error('I am sorry, but something is wrong... __file__ not found')
+
+class Alarm(Process):
+    '''
+    modes:
+      0 - All
+      1 - Sound alarm
+      2 - Send email
+      3 - Popup message
+      4 - Send to alarm system TODO
+    '''
+
+    def __init__(self, modes=[1], **kwargs):
+        Process.__init__(self)
+        self.modes = modes
+        self.kwargs = kwargs
+
+    @staticmethod
+    def play_sound():
+        sound = os.path.join(get_path(), 'alarm1.oga')
+        if os.path.exists(sound):        
+            for __ in range(2):
+                os.system('paplay {}'.format(sound))
+                time.sleep(0.5)
+        else:
+            log.warning('Unable to play alarm, sound file not found', 'ADMIN')
+    
+    @staticmethod
+    def send_email(**kwargs):
+        notifier = SchainNotify()
+        notifier.notify(**kwargs)            
+
+    @staticmethod
+    def show_popup(message='Error'):
+        popup(message)
+
+    @staticmethod
+    def send_alarm():
+        pass
+
+    @staticmethod
+    def get_kwargs(kwargs, keys):
+        ret = {}
+        for key in keys:
+            ret[key] = kwargs[key]
+        return ret
+
+    def run(self):
+        tasks = {
+            1 : self.send_email,
+            2 : self.play_sound,
+            3 : self.show_popup,
+            4 : self.send_alarm,
+        }
+
+        tasks_args = {
+            1: ['email', 'message', 'subject', 'subtitle', 'filename'],
+            2: [],
+            3: ['message'],
+            4: [],
+        }
+        procs = []
+        for mode in self.modes:
+            if 0 in self.modes:
+                for x in tasks:
+                    t = Thread(target=tasks[x], kwargs=self.get_kwargs(self.kwargs, tasks_args[x]))
+                    t.start()
+                    procs.append(t)
+                break
+            else:
+                t = Thread(target=tasks[mode], kwargs=self.get_kwargs(self.kwargs, tasks_args[mode]))
+                t.start()
+                procs.append(t)
+        for t in procs:
+            t.join()
+
+
+class SchainConfigure():
+    
+    __DEFAULT_ADMINISTRATOR_EMAIL = "juan.espinoza@jro.igp.gob.pe"
     __DEFAULT_EMAIL_SERVER = "jro-zimbra.igp.gob.pe"
     __DEFAULT_SENDER_EMAIL = "notifier-schain@jro.igp.gob.pe"
     __DEFAULT_SENDER_PASS = ""
@@ -176,13 +271,15 @@ class SchainNotify:
         self.__emailServer  = confObj.getEmailServer()
 
     def sendEmail(self, email_from, email_to, subject='Error running ...', message="", subtitle="", filename="", html_format=True):
-        
+
         if not email_to:
             return 0
         
         if not self.__emailServer:
             return 0
         
+        log.success('Sending email to {}...'.format(email_to), 'System')
+
         msg = MIMEMultipart()
         msg['Subject'] = subject
         msg['From'] = "(Python SChain API): " + email_from
@@ -204,7 +301,7 @@ class SchainNotify:
             
         msg.attach(part)
         
-        if os.path.isfile(filename):
+        if filename and os.path.isfile(filename):
             # This is the binary part(The Attachment):
             part = MIMEApplication(open(filename,"rb").read())
             part.add_header('Content-Disposition', 
@@ -216,11 +313,11 @@ class SchainNotify:
         try:
             smtp = smtplib.SMTP(self.__emailServer)
         except:
-            print "***** Could not connect to server %s *****" %self.__emailServer
+            log.error('Could not connect to server {}'.format(self.__emailServer), 'System')
             return 0
             
         # Start the server:
-#         smtp.ehlo()
+    #         smtp.ehlo()
         if self.__emailPass:
             smtp.login(self.__emailFromAddress, self.__emailPass)
         
@@ -228,11 +325,13 @@ class SchainNotify:
         try:
             smtp.sendmail(msg['From'], msg['To'], msg.as_string())
         except:
-            print "***** Could not send the email to %s *****" %msg['To']
+            log.error('Could not send the email to {}'.format(msg['To']), 'System')
             smtp.quit()
             return 0
         
         smtp.quit()
+
+        log.success('Email sent ', 'System')
         
         return 1
     
@@ -264,8 +363,6 @@ class SchainNotify:
         if not sent:
             return 0
         
-        print "***** Your system administrator has been notified *****"
-        
         return 1
         
     def notify(self, email, message, subject = "", subtitle="", filename=""):
@@ -280,16 +377,18 @@ class SchainNotify:
         Exceptions: None.
         """
         
-        print "Notifying to %s ..." %email
+        if email is None:
+            email = self.__emailToAddress
         
-        self.sendEmail(email_from=self.__emailFromAddress,
-                       email_to=email,
-                       subject=subject,
-                       message=message,
-                       subtitle=subtitle, 
-                       filename=filename)
-        
-        print "***** Your system administrator has been notified *****"
+        self.sendEmail(
+            email_from=self.__emailFromAddress,
+            email_to=email,
+            subject=subject,
+            message=message,
+            subtitle=subtitle, 
+            filename=filename
+            )
+
 
 class SchainError(Exception):
     """SchainError is an exception class that is thrown for all known errors using Schain Py lib.
@@ -385,6 +484,10 @@ class SchainError(Exception):
                 excStr = excStr + str(item) + '\n<BR>'
 
         return excStr
+
+class SchainWarning(Exception):
+    pass
+
 
 if __name__ == '__main__':
     

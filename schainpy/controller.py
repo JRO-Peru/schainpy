@@ -15,7 +15,7 @@ from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
 import schainpy
-import schainpy.admin
+from schainpy.admin import Alarm, SchainWarning
 from schainpy.model import *
 from schainpy.utils import log
 
@@ -905,12 +905,11 @@ class Project(Process):
     def __init__(self, plotter_queue=None):
 
         Process.__init__(self)
-        self.id = None
-        # self.name = None
+        self.id = None        
         self.description = None
-
+        self.email = None
+        self.alarm = [0]
         self.plotterQueue = plotter_queue
-
         self.procUnitConfObjDict = {}
 
     def __getNewId(self):
@@ -952,13 +951,12 @@ class Project(Process):
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             idProcUnit = str(int(self.id) * 10 + n)
             procUnitConfObj.updateId(idProcUnit, parentId=self.id)
-
             newProcUnitConfObjDict[idProcUnit] = procUnitConfObj
             n += 1
 
         self.procUnitConfObjDict = newProcUnitConfObjDict
 
-    def setup(self, id, name='', description=''):
+    def setup(self, id, name='', description='', email=None, alarm=[0]):
 
         print
         print '*' * 60
@@ -966,11 +964,14 @@ class Project(Process):
         print '*' * 60
         print
         self.id = str(id)
-        self.description = description        
-
-    def update(self, name, description):
-
         self.description = description
+        self.email = email
+        self.alarm = alarm
+
+    def update(self, **kwargs):
+
+        for key, value in kwargs:
+            setattr(self, key, value)
 
     def clone(self):
 
@@ -1179,23 +1180,22 @@ class Project(Process):
 
             self.__connect(puObjIN, thisPUObj)
 
-    def __handleError(self, procUnitConfObj, send_email=False):
+    def __handleError(self, procUnitConfObj, modes=None):
 
         import socket
+
+        if modes is None:
+            modes = self.alarm
 
         err = traceback.format_exception(sys.exc_info()[0],
                                          sys.exc_info()[1],
                                          sys.exc_info()[2])
-
-        print '***** Error occurred in %s *****' % (procUnitConfObj.name)
-        print '***** %s' % err[-1]
+        
+        log.error('{}'.format(err[-1]), procUnitConfObj.name)
 
         message = ''.join(err)
 
         sys.stderr.write(message)
-
-        if not send_email:
-            return
 
         subject = 'SChain v%s: Error running %s\n' % (
             schainpy.__version__, procUnitConfObj.name)
@@ -1218,11 +1218,16 @@ class Project(Process):
             subtitle += '[Start time = %s]\n' % readUnitConfObj.startTime
             subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
 
-        adminObj = schainpy.admin.SchainNotify()
-        adminObj.sendAlert(message=message,
-                           subject=subject,
-                           subtitle=subtitle,
-                           filename=self.filename)
+        a = Alarm(
+            modes=modes, 
+            email=self.email,
+            message=message,
+            subject=subject,
+            subtitle=subtitle,
+            filename=self.filename
+        )
+
+        a.start()
 
     def isPaused(self):
         return 0
@@ -1292,12 +1297,14 @@ class Project(Process):
                 try:
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
+                except SchainWarning:
+                    self.__handleError(procUnitConfObj, modes=[2, 3])
                 except KeyboardInterrupt:
                     is_ok = False
                     break
                 except ValueError, e:
                     time.sleep(0.5)
-                    self.__handleError(procUnitConfObj, send_email=True)
+                    self.__handleError(procUnitConfObj)
                     is_ok = False
                     break
                 except:
