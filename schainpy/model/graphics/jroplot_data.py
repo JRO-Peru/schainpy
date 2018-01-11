@@ -33,12 +33,19 @@ def figpause(interval):
             canvas = figManager.canvas
             if canvas.figure.stale:
                 canvas.draw()
-            canvas.start_event_loop(interval)
+            try:
+                canvas.start_event_loop(interval)
+            except:
+                pass
             return
 
 def popup(message):
-    fig = plt.figure(figsize=(12, 8), facecolor='r')
-    fig.text(0.5, 0.5, message, ha='center', va='center', size='20', weight='heavy', color='w')    
+    '''
+    '''
+
+    fig = plt.figure(figsize=(12, 8), facecolor='r')    
+    text = '\n'.join([s.strip() for s in message.split(':')])
+    fig.text(0.01, 0.5, text, ha='left', va='center', size='20', weight='heavy', color='w')    
     fig.show()
     figpause(1000)
 

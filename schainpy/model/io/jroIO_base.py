@@ -20,6 +20,7 @@ try:
 except:
     from time import sleep
 
+import schainpy.admin
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jroheaderIO import get_dtype_index, get_numpy_dtype, get_procflag_dtype, get_dtype_width
 from schainpy.utils import log
@@ -859,7 +860,7 @@ class JRODataReader(JRODataIO):
 
                 firstTime_flag = False
 
-                print "\t[Reading] Skipping the file \"%s\" due to this file doesn't exist" % filename
+                log.warning('Skipping the file {} due to this file doesn\'t exist'.format(filename))
                 self.set += 1
 
                 # si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
@@ -883,7 +884,6 @@ class JRODataReader(JRODataIO):
             self.flagIsNewFile = 0
             self.fp = None
             self.flagNoMoreFiles = 1
-#             print '[Reading] No more files to read'
 
         return fileOk_flag
 
@@ -896,8 +896,8 @@ class JRODataReader(JRODataIO):
         else:
             newFile = self.__setNextFileOffline()
 
-        if not(newFile):
-            print '[Reading] No more files to read'
+        if not(newFile):            
+            raise schainpy.admin.SchainWarning('No more files to read')
             return 0
 
         if self.verbose:
@@ -1318,11 +1318,11 @@ class JRODataReader(JRODataIO):
                     if fullpath:
                         break
 
-                    print '[Reading] Waiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries + 1)
-                    sleep(self.delay)
+                    print '[Reading] Waiting %0.2f sec for an valid file in %s: try %02d ...' % (delay, path, nTries + 1)
+                    sleep(delay)
 
-                if not(fullpath):
-                    print "[Reading] There 'isn't any valid file in %s" % path
+                if not(fullpath):                    
+                    raise schainpy.admin.SchainWarning('There isn\'t any valid file in {}'.format(path))
                     return
 
                 self.year = year

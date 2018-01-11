@@ -908,7 +908,7 @@ class Project(Process):
         self.id = None        
         self.description = None
         self.email = None
-        self.alarm = [0]
+        self.alarm = None
         self.plotterQueue = plotter_queue
         self.procUnitConfObjDict = {}
 
@@ -956,7 +956,7 @@ class Project(Process):
 
         self.procUnitConfObjDict = newProcUnitConfObjDict
 
-    def setup(self, id, name='', description='', email=None, alarm=[0]):
+    def setup(self, id, name='', description='', email=None, alarm=[3]):
 
         print
         print '*' * 60
@@ -1180,7 +1180,7 @@ class Project(Process):
 
             self.__connect(puObjIN, thisPUObj)
 
-    def __handleError(self, procUnitConfObj, modes=None):
+    def __handleError(self, procUnitConfObj, modes=None, stdout=True):
 
         import socket
 
@@ -1195,7 +1195,8 @@ class Project(Process):
 
         message = ''.join(err)
 
-        sys.stderr.write(message)
+        if stdout:
+            sys.stderr.write(message)
 
         subject = 'SChain v%s: Error running %s\n' % (
             schainpy.__version__, procUnitConfObj.name)
@@ -1227,7 +1228,7 @@ class Project(Process):
             filename=self.filename
         )
 
-        a.start()
+        return a
 
     def isPaused(self):
         return 0
@@ -1286,6 +1287,8 @@ class Project(Process):
         keyList = self.procUnitConfObjDict.keys()
         keyList.sort()
 
+        err = None
+
         while(True):
 
             is_ok = False
@@ -1298,18 +1301,18 @@ class Project(Process):
                     sts = procUnitConfObj.run()
                     is_ok = is_ok or sts
                 except SchainWarning:
-                    self.__handleError(procUnitConfObj, modes=[2, 3])
+                    err = self.__handleError(procUnitConfObj, modes=[2, 3], stdout=False)
                 except KeyboardInterrupt:
                     is_ok = False
                     break
                 except ValueError, e:
                     time.sleep(0.5)
-                    self.__handleError(procUnitConfObj)
+                    err = self.__handleError(procUnitConfObj)
                     is_ok = False
                     break
                 except:
                     time.sleep(0.5)
-                    self.__handleError(procUnitConfObj)
+                    err = self.__handleError(procUnitConfObj)
                     is_ok = False
                     break
 
@@ -1324,6 +1327,10 @@ class Project(Process):
         for procKey in keyList:
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             procUnitConfObj.close()
+
+        if err is not None:
+            err.start()
+            # err.join()
 
         log.success('{} finished (time: {}s)'.format(
             self.name,
