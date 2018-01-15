@@ -970,7 +970,7 @@ class Project(Process):
 
     def update(self, **kwargs):
 
-        for key, value in kwargs:
+        for key, value in kwargs.items():
             setattr(self, key, value)
 
     def clone(self):
