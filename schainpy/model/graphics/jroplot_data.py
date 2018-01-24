@@ -22,7 +22,7 @@ ncmap = matplotlib.colors.LinearSegmentedColormap.from_list(
     'jro', numpy.vstack((blu_values, jet_values)))
 matplotlib.pyplot.register_cmap(cmap=ncmap)
 
-CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'viridis', 'plasma', 'inferno', 'Greys', 'seismic', 'bwr', 'coolwarm')]
+CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'viridis', 'plasma', 'inferno', 'Greys', 'seismic', 'bwr', 'coolwarm', 'spectral')]
 
 
 def figpause(interval):
@@ -51,7 +51,7 @@ class PlotData(Operation, Process):
     __attrs__ = ['show', 'save', 'xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax',
                  'zlimits', 'xlabel', 'ylabel', 'xaxis','cb_label', 'title',
                  'colorbar', 'bgcolor', 'width', 'height', 'localtime', 'oneFigure',
-                 'showprofile', 'decimation']
+                 'showprofile', 'decimation', 'ftp']
 
     def __init__(self, **kwargs):
 
@@ -68,6 +68,7 @@ class PlotData(Operation, Process):
         self.localtime = kwargs.pop('localtime', True)
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
+        self.ftp = kwargs.get('ftp', False)
         self.colormap = kwargs.get('colormap', self.colormap)
         self.colormap_coh = kwargs.get('colormap_coh', 'jet')
         self.colormap_phase = kwargs.get('colormap_phase', 'RdBu_r')
@@ -77,6 +78,7 @@ class PlotData(Operation, Process):
         self.title = kwargs.get('wintitle', self.CODE.upper())
         self.cb_label = kwargs.get('cb_label', None)
         self.cb_labels = kwargs.get('cb_labels', None)
+        self.labels = kwargs.get('labels', None)
         self.xaxis = kwargs.get('xaxis', 'frequency')
         self.zmin = kwargs.get('zmin', None)
         self.zmax = kwargs.get('zmax', None)
@@ -84,8 +86,10 @@ class PlotData(Operation, Process):
         self.xmin = kwargs.get('xmin', None)
         self.xmax = kwargs.get('xmax', None)
         self.xrange = kwargs.get('xrange', 24)
+        self.xscale = kwargs.get('xscale', None)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
+        self.yscale = kwargs.get('yscale', None)
         self.xlabel = kwargs.get('xlabel', None)
         self.decimation = kwargs.get('decimation', None)
         self.showSNR = kwargs.get('showSNR', False)
@@ -94,6 +98,7 @@ class PlotData(Operation, Process):
         self.height = kwargs.get('height', None)
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
+        self.channels = kwargs.get('channels', None)
         self.titles = kwargs.get('titles', [])
         self.polar = False
 
@@ -368,14 +373,19 @@ class PlotData(Operation, Process):
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
 
-        Y = numpy.array([5, 10, 20, 50, 100, 200, 500, 1000, 2000])
-        i = 1 if numpy.where(ymax-ymin < Y)[0][0] < 0 else numpy.where(ymax-ymin < Y)[0][0]
-        ystep = Y[i] / 5
+        Y = numpy.array([5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
+        i = 1 if numpy.where(abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
+        ystep = Y[i] / 5.
 
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
                 ax.set_facecolor(self.bgcolor)
                 ax.yaxis.set_major_locator(MultipleLocator(ystep))
+                ax.xaxis.set_major_locator(MultipleLocator(ystep))
+                if self.xscale:
+                    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: '{0:g}'.format(x*self.xscale)))
+                if self.xscale:
+                    ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: '{0:g}'.format(x*self.yscale)))
                 if self.xaxis is 'time':
                     ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
                     ax.xaxis.set_major_locator(LinearLocator(9))
@@ -419,7 +429,7 @@ class PlotData(Operation, Process):
     def __plot(self):
         '''
         '''
-        log.success('Plotting', self.name)
+        log.log('Plotting', self.name)
 
         try:
             self.plot()
@@ -439,14 +449,20 @@ class PlotData(Operation, Process):
                                                                  self.getDateTime(self.max_time).strftime('%Y/%m/%d')))
             fig.canvas.draw()
 
-            if self.save and self.data.ended:                
-                channels = range(self.nrows)
+            if self.save and (self.data.ended or not self.data.buffering):
+                
+                if self.labels:
+                    labels = self.labels
+                else:
+                    labels = range(self.nrows)
+                
                 if self.oneFigure:
                     label = ''
                 else:
-                    label = '_{}'.format(channels[n])
+                    label = '-{}'.format(labels[n])
                 figname = os.path.join(
                     self.save,
+                    self.CODE,
                     '{}{}_{}.png'.format(
                         self.CODE,
                         label,
@@ -455,6 +471,8 @@ class PlotData(Operation, Process):
                     )
                 )
                 log.log('Saving figure: {}'.format(figname), self.name)
+                if not os.path.isdir(os.path.dirname(figname)):
+                    os.makedirs(os.path.dirname(figname))
                 fig.savefig(figname)
 
     def plot(self):
@@ -464,7 +482,7 @@ class PlotData(Operation, Process):
 
     def run(self):
 
-        log.success('Starting', self.name)
+        log.log('Starting', self.name)
 
         context = zmq.Context()
         receiver = context.socket(zmq.SUB)
@@ -499,7 +517,7 @@ class PlotData(Operation, Process):
                 self.__plot()
 
             except zmq.Again as e:
-                log.log('Waiting for data...')
+                log.log('.', tag='', nl=False)
                 if self.data:
                     figpause(self.data.throttle)
                 else:
@@ -963,3 +981,62 @@ class PlotOutputData(PlotParamData):
 
     CODE = 'output'
     colormap = 'seismic'
+
+
+class PlotPolarMapData(PlotData):
+    '''
+    Plot for meteors detection data
+    '''
+
+    CODE = 'param'
+    colormap = 'seismic'
+
+    def setup(self):
+        self.ncols = 1
+        self.nrows = 1
+        self.width = 9
+        self.height = 8
+        if self.channels is not None:
+            self.nplots = len(self.channels)
+            self.nrows = len(self.channels)
+        else:
+            self.nplots = self.data.shape(self.CODE)[0]
+            self.nrows = self.nplots
+            self.channels = range(self.nplots)
+        self.xlabel = 'Zonal Distance (km)'
+        self.ylabel = 'Meridional Distance (km)'
+        self.bgcolor = 'white'
+
+    def plot(self):
+        
+        for n, ax in enumerate(self.axes):
+            data = self.data['param'][self.channels[n]]
+            
+            zeniths = numpy.arange(data.shape[1])
+            azimuths = -numpy.radians(self.data.heights)+numpy.pi/2
+            self.y = zeniths
+            
+            r, theta = numpy.meshgrid(zeniths, azimuths)
+            x, y = r*numpy.cos(theta), r*numpy.sin(theta)
+
+            if ax.firsttime:
+                if self.zlimits is not None:
+                    self.zmin, self.zmax = self.zlimits[n]
+                ax.plt = ax.pcolormesh(x, y, numpy.ma.array(data, mask=numpy.isnan(data)),
+                                        vmin=self.zmin,
+                                        vmax=self.zmax,
+                                        cmap=self.cmaps[n])
+            else:
+                if self.zlimits is not None:
+                    self.zmin, self.zmax = self.zlimits[n]
+                ax.collections.remove(ax.collections[0])
+                ax.plt = ax.pcolormesh(x, y, numpy.ma.array(data, mask=numpy.isnan(data)), 
+                                        vmin=self.zmin,
+                                        vmax=self.zmax,
+                                        cmap=self.cmaps[n])
+
+            
+            title = ''
+
+        self.titles = [self.data.parameters[x] for x in self.channels]
+        self.saveTime = self.max_time
