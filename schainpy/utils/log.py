@@ -18,23 +18,35 @@ SCHAINPY - LOG
 import click
 
 
-def warning(message, tag='Warning'):
-    click.echo(click.style('[{}] {}'.format(tag, message), fg='yellow'))
+def warning(message, tag='Warning', nl=True):
+    if tag:
+        click.echo(click.style('[{}] {}'.format(tag, message), fg='yellow'), nl=nl)
+    else:
+        click.echo(click.style('{}'.format(message), fg='yellow'), nl=nl)
     pass
 
 
-def error(message, tag='Error'):
-    click.echo(click.style('[{}] {}'.format(tag, message), fg='red'))
+def error(message, tag='Error', nl=True):
+    if tag:
+        click.echo(click.style('[{}] {}'.format(tag, message), fg='red'), nl=nl)
+    else:
+        click.echo(click.style('{}'.format(message), fg='red'), nl=nl)
     pass
 
 
-def success(message, tag='Info'):
-    click.echo(click.style('[{}] {}'.format(tag, message), fg='green'))
+def success(message, tag='Success', nl=True):
+    if tag:
+        click.echo(click.style('[{}] {}'.format(tag, message), fg='green'), nl=nl)
+    else:
+        click.echo(click.style('{}'.format(message), fg='green'), nl=nl)
     pass
 
 
-def log(message, tag='Info'):
-    click.echo('[{}] {}'.format(tag, message))
+def log(message, tag='Info', nl=True):
+    if tag:
+        click.echo('[{}] {}'.format(tag, message), nl=nl)
+    else:
+        click.echo('{}'.format(message), nl=nl)
     pass
 
 
