@@ -41,8 +41,8 @@ PLOT_CODES = {
     'wind' : 22,
     'skymap' : 23,
     # 'MPHASE_CODE' : 24,
-    'moments' : 25,
-    'param' : 26,
+    'V' : 25,
+    'Z' : 26,
     'spc_fit' : 27,
     'ew_drifts' : 28,
     'reflectivity': 30
@@ -749,7 +749,7 @@ class SendToFTP(Operation, Process):
         DOY_STR = '%3.3d'%thisDatetime.timetuple().tm_yday
         exp_code = '%3.3d'%exp_code
         sub_exp_code = '%2.2d'%sub_exp_code
-        plot_code = '%2.2d'% PLOT_CODES[filename.split('_')[0].split('-')[0]]
+        plot_code = '%2.2d'% PLOT_CODES[filename.split('_')[0].split('-')[1]]
         name = YEAR_STR + DOY_STR + '00' + exp_code + sub_exp_code + plot_code + '00.png'
         return name
 

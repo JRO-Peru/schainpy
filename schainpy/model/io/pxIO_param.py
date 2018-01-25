@@ -77,6 +77,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
         self.nTries = kwargs.get('nTries', 3)
         self.online = kwargs.get('online', False)
         self.delay = kwargs.get('delay', 30)
+        self.ele = kwargs.get('ext', '')
 
         if self.path is None:
             raise ValueError, 'The path is not valid'
@@ -107,9 +108,11 @@ class NCDFReader(JRODataReader, ProcessingUnit):
         fileList0 = []
         
         for subpath in paths:
-            fileList0 += [os.path.join(subpath, s) for s in glob.glob1(subpath, '*') if os.path.splitext(s)[-1] in self.ext]
+            fileList0 += [os.path.join(subpath, s) for s in glob.glob1(subpath, '*') if os.path.splitext(s)[-1] in self.ext and 'E{}'.format(self.ele) in s]
         
         fileList0.sort()
+        if self.online:
+            fileList0 = fileList0[-1:]
 
         self.files = {}
 
@@ -156,62 +159,58 @@ class NCDFReader(JRODataReader, ProcessingUnit):
              path - Path to find files             
         '''    
 
-        old_files = self.files[self.dt]
         self.files = {}
 
         for n in range(self.nTries):
 
             if self.walk:
                 paths = [os.path.join(self.path, p) for p in os.listdir(self.path) if os.path.isdir(os.path.join(self.path, p))]
-                paths = paths[-2:]
+                path = paths[-1]
             else:
-                paths = [self.path]
+                paths = self.path
 
-            new_files = []
-
-            for path in paths:
-                new_files += [os.path.join(path, s) for s in glob.glob1(path, '*') if os.path.splitext(s)[-1] in self.ext and os.path.join(path, s not in old_files)]
+            new_files = [os.path.join(path, s) for s in glob.glob1(path, '*') if os.path.splitext(s)[-1] in self.ext and 'E{}'.format(self.ele) in s]
             
             new_files.sort()
-            
-            if new_files:
+
+            for fullname in new_files:
+                thisFile = fullname.split('/')[-1]
+                year = thisFile[3:7]
+                if not year.isdigit():
+                    continue
+
+                month = thisFile[7:9]
+                if not month.isdigit():
+                    continue
+
+                day = thisFile[9:11]
+                if not day.isdigit():
+                    continue
+                
+                year, month, day = int(year), int(month), int(day)
+                dateFile = datetime.date(year, month, day)
+                timeFile = datetime.time(int(thisFile[12:14]), int(thisFile[14:16]), int(thisFile[16:18]))
+                
+                dt = datetime.datetime.combine(dateFile, timeFile)
+                
+                if self.dt >= dt:
+                    continue
+                
+                if dt not in self.files:
+                    self.dt = dt
+                    self.files[dt] = []
+                
+                self.files[dt].append(fullname)
+                break
+
+            if self.files:
                 break
             else:
                 log.warning('Waiting {} seconds for the next file, try {} ...'.format(self.delay, n + 1), 'NCDFReader')
                 time.sleep(self.delay)
 
-        if not new_files:
-            log.error('No more files found', 'NCDFReader')
+        if not self.files:
             return 0
-
-        startDate = self.dt - datetime.timedelta(seconds=1)
-
-        for fullname in new_files:
-            thisFile = fullname.split('/')[-1]
-            year = thisFile[3:7]
-            if not year.isdigit():
-                continue
-
-            month = thisFile[7:9]
-            if not month.isdigit():
-                continue
-
-            day = thisFile[9:11]
-            if not day.isdigit():
-                continue
-            
-            year, month, day = int(year), int(month), int(day)
-            dateFile = datetime.date(year, month, day)
-            timeFile = datetime.time(int(thisFile[12:14]), int(thisFile[14:16]), int(thisFile[16:18]))
-            
-            if (startDate > dateFile):
-                continue
-            
-            dt = datetime.datetime.combine(dateFile, timeFile)
-            if dt not in self.files:
-                self.files[dt] = []
-            
-            self.files[dt].append(fullname)
 
         self.dates = self.files.keys()
         self.dates.sort()
@@ -240,12 +239,15 @@ class NCDFReader(JRODataReader, ProcessingUnit):
         '''
 
         cursor = self.cursor
-
         if not self.online_mode:
-            self.dt = self.dates[cursor]
             if cursor == len(self.dates):
                 if self.online:
+                    cursor = 0
+                    self.dt = self.dates[cursor]
                     self.online_mode = True
+                    if not self.search_files_online():
+                        log.success('No more files', 'NCDFReader')
+                        return 0
                 else:
                     log.success('No more files', 'NCDFReader')
                     self.flagNoMoreFiles = 1
@@ -253,6 +255,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
         else:
             if not self.search_files_online():
                 return 0
+            cursor = self.cursor
         
         log.log(
             'Opening: {}\'s files'.format(self.dates[cursor]),

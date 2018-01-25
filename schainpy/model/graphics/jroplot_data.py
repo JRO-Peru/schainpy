@@ -517,7 +517,7 @@ class PlotData(Operation, Process):
                 self.__plot()
 
             except zmq.Again as e:
-                log.log('.', tag='', nl=False)
+                # log.log('.', tag='', nl=False)
                 if self.data:
                     figpause(self.data.throttle)
                 else:
