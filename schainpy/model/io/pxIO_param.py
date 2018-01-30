@@ -15,6 +15,8 @@ import tarfile
 import numpy
 from netCDF4 import Dataset
 
+from utils import folder_in_range
+
 from schainpy.model.io.jroIO_base import JRODataReader
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Parameters
@@ -41,7 +43,7 @@ def load_json(obj):
     return iterable
 
 
-class NCDFReader(JRODataReader, ProcessingUnit):
+class PXReader(JRODataReader, ProcessingUnit):
 
     def __init__(self, **kwargs):
 
@@ -98,7 +100,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
              path - Path to find files             
         '''    
 
-        log.log('Searching files {} in {} '.format(self.ext, path), 'NCDFReader')
+        log.log('Searching files {} in {} '.format(self.ext, path), 'PXReader')
         if walk:
             paths = [os.path.join(path, p) for p in os.listdir(path) if os.path.isdir(os.path.join(path, p))]
             paths.sort()
@@ -108,7 +110,9 @@ class NCDFReader(JRODataReader, ProcessingUnit):
         fileList0 = []
         
         for subpath in paths:
-            fileList0 += [os.path.join(subpath, s) for s in glob.glob1(subpath, '*') if os.path.splitext(s)[-1] in self.ext and 'E{}'.format(self.ele) in s]
+            if not folder_in_range(subpath.split('/')[-1], startDate, endDate, '%Y%m%d'):
+                continue
+            fileList0 += [os.path.join(subpath, s) for s in glob.glob1(subpath, '*') if os.path.splitext(s)[-1] in self.ext and '{}'.format(self.ele) in s]
         
         fileList0.sort()
         if self.online:
@@ -169,7 +173,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
             else:
                 paths = self.path
 
-            new_files = [os.path.join(path, s) for s in glob.glob1(path, '*') if os.path.splitext(s)[-1] in self.ext and 'E{}'.format(self.ele) in s]
+            new_files = [os.path.join(path, s) for s in glob.glob1(path, '*') if os.path.splitext(s)[-1] in self.ext and '{}'.format(self.ele) in s]
             
             new_files.sort()
 
@@ -206,7 +210,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
             if self.files:
                 break
             else:
-                log.warning('Waiting {} seconds for the next file, try {} ...'.format(self.delay, n + 1), 'NCDFReader')
+                log.warning('Waiting {} seconds for the next file, try {} ...'.format(self.delay, n + 1), 'PXReader')
                 time.sleep(self.delay)
 
         if not self.files:
@@ -222,16 +226,14 @@ class NCDFReader(JRODataReader, ProcessingUnit):
         '''
         '''
 
-        self.header = {}
+        header = {}
         
         for attr in self.fp.ncattrs():
-            self.header[str(attr)] = getattr(self.fp, attr)
+            header[str(attr)] = getattr(self.fp, attr)
 
-        self.data[self.header['TypeName']] = numpy.array(self.fp.variables[self.header['TypeName']])
-        
-        if 'Azimuth' not in self.data:
-            self.data['Azimuth'] = numpy.array(self.fp.variables['Azimuth'])
-        
+        self.header.append(header)
+
+        self.data[header['TypeName']] = numpy.array(self.fp.variables[header['TypeName']])
 
     def setNextFile(self):
         '''
@@ -246,25 +248,23 @@ class NCDFReader(JRODataReader, ProcessingUnit):
                     self.dt = self.dates[cursor]
                     self.online_mode = True
                     if not self.search_files_online():
-                        log.success('No more files', 'NCDFReader')
+                        log.success('No more files', 'PXReader')
                         return 0
                 else:
-                    log.success('No more files', 'NCDFReader')
+                    log.success('No more files', 'PXReader')
                     self.flagNoMoreFiles = 1
                     return 0
         else:
             if not self.search_files_online():
                 return 0
             cursor = self.cursor
-        
-        log.log(
-            'Opening: {}\'s files'.format(self.dates[cursor]),
-            'NCDFReader'
-            )
 
         self.data = {}
+        self.header = []
 
         for fullname in self.files[self.dates[cursor]]:
+
+            log.log('Opening: {}'.format(fullname), 'PXReader')
 
             if os.path.splitext(fullname)[-1] == '.tgz':
                 tar = tarfile.open(fullname, 'r:gz')
@@ -293,7 +293,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
             if not self.setNextFile():                    
                 return 0
 
-            self.datatime = datetime.datetime.utcfromtimestamp(self.header['Time'])
+            self.datatime = datetime.datetime.utcfromtimestamp(self.header[0]['Time'])
             
             if (self.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or \
                (self.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
@@ -302,7 +302,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
                         self.counter_records,
                         self.nrecords,
                         self.datatime.ctime()),
-                    'NCDFReader')
+                    'PXReader')
                 continue
             break
 
@@ -311,7 +311,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
                 self.counter_records,
                 self.nrecords,
                 self.datatime.ctime()),
-            'NCDFReader')
+            'PXReader')
 
         return 1
 
@@ -319,21 +319,28 @@ class NCDFReader(JRODataReader, ProcessingUnit):
     def set_output(self):
         '''
         Storing data from buffer to dataOut object
-        '''        
-        
-        self.dataOut.heightList = self.data.pop('Azimuth')
-        
-        log.log('Parameters found: {}'.format(','.join(self.data.keys())),
-                    'PXReader')
-        
-        self.dataOut.data_param = numpy.array(self.data.values())
-        self.dataOut.data_param[self.dataOut.data_param == -99900.] = numpy.nan
-        self.dataOut.parameters = self.data.keys()
-        self.dataOut.utctime = self.header['Time']
+        '''
+
+        self.data['Elevation'] = numpy.array(self.fp.variables['Elevation'])
+        self.data['Azimuth'] = numpy.array(self.fp.variables['Azimuth'])
+        self.dataOut.range = numpy.array(self.fp.variables['GateWidth'])
+        self.dataOut.data = self.data
+        self.dataOut.units = [h['Unit-value'] for h in self.header]
+        self.dataOut.parameters = [h['TypeName'] for h in self.header]
+        self.dataOut.missing = self.header[0]['MissingData']
+        self.dataOut.max_range = self.header[0]['MaximumRange-value']
+        self.dataOut.elevation = self.header[0]['Elevation']
+        self.dataOut.azimuth = self.header[0]['Azimuth']
+        self.dataOut.latitude = self.header[0]['Latitude']
+        self.dataOut.longitude = self.header[0]['Longitude']
+        self.dataOut.utctime = self.header[0]['Time']
         self.dataOut.utctimeInit = self.dataOut.utctime
-        self.dataOut.useLocalTime = False
+        self.dataOut.useLocalTime = True
         self.dataOut.flagNoData = False
         self.dataOut.flagDiscontinuousBlock = self.flagDiscontinuousBlock
+
+        log.log('Parameters found: {}'.format(','.join(self.dataOut.parameters)),
+                    'PXReader')
 
     def getData(self):
         '''
@@ -341,7 +348,7 @@ class NCDFReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            log.error('No file left to process', 'NCDFReader')
+            log.error('No file left to process', 'PXReader')
             return 0
 
         if not self.readNextFile():
