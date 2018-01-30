@@ -434,8 +434,10 @@ class PlotData(Operation, Process):
         try:
             self.plot()
             self.format()
-        except:
+        except Exception as e:
             log.warning('{} Plot could not be updated... check data'.format(self.CODE), self.name)
+            log.error(str(e), '')
+            return
 
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
@@ -451,8 +453,8 @@ class PlotData(Operation, Process):
 
             if self.save and (self.data.ended or not self.data.buffering):
                 
-                if self.labels:
-                    labels = self.labels
+                if self.save_labels:
+                    labels = self.save_labels
                 else:
                     labels = range(self.nrows)
                 
@@ -1003,26 +1005,37 @@ class PlotPolarMapData(PlotData):
             self.nplots = self.data.shape(self.CODE)[0]
             self.nrows = self.nplots
             self.channels = range(self.nplots)
-        self.xlabel = 'Zonal Distance (km)'
-        self.ylabel = 'Meridional Distance (km)'
+        if self.data.meta['mode'] == 'E':
+            self.xlabel = 'Zonal Distance (km)'
+            self.ylabel = 'Meridional Distance (km)'
+        else:
+            self.xlabel = 'Range (km)'
+            self.ylabel = 'Height (km)'
         self.bgcolor = 'white'
+        self.cb_labels = self.data.meta['units']
+        # self.polar = True
 
     def plot(self):
         
         for n, ax in enumerate(self.axes):
             data = self.data['param'][self.channels[n]]
             
-            zeniths = numpy.arange(data.shape[1])
-            azimuths = -numpy.radians(self.data.heights)+numpy.pi/2
+            zeniths = numpy.linspace(0, self.data.meta['max_range'], data.shape[1])
+            if self.data.meta['mode'] == 'E':    
+                azimuths = -numpy.radians(self.data.heights)+numpy.pi/2
+                r, theta = numpy.meshgrid(zeniths, azimuths)
+                x, y = r*numpy.cos(theta)*numpy.cos(numpy.radians(self.data.meta['elevation'])), r*numpy.sin(theta)*numpy.cos(numpy.radians(self.data.meta['elevation']))
+            else:
+                azimuths = numpy.radians(self.data.heights)
+                r, theta = numpy.meshgrid(zeniths, azimuths)
+                x, y = r*numpy.cos(theta), r*numpy.sin(theta)
             self.y = zeniths
-            
-            r, theta = numpy.meshgrid(zeniths, azimuths)
-            x, y = r*numpy.cos(theta), r*numpy.sin(theta)
 
             if ax.firsttime:
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
-                ax.plt = ax.pcolormesh(x, y, numpy.ma.array(data, mask=numpy.isnan(data)),
+                ax.plt = ax.pcolormesh(#r, theta, numpy.ma.array(data, mask=numpy.isnan(data)),
+                                       x, y, numpy.ma.array(data, mask=numpy.isnan(data)),
                                         vmin=self.zmin,
                                         vmax=self.zmax,
                                         cmap=self.cmaps[n])
@@ -1030,13 +1043,43 @@ class PlotPolarMapData(PlotData):
                 if self.zlimits is not None:
                     self.zmin, self.zmax = self.zlimits[n]
                 ax.collections.remove(ax.collections[0])
-                ax.plt = ax.pcolormesh(x, y, numpy.ma.array(data, mask=numpy.isnan(data)), 
+                ax.plt = ax.pcolormesh(# r, theta, numpy.ma.array(data, mask=numpy.isnan(data)),
+                                       x, y, numpy.ma.array(data, mask=numpy.isnan(data)), 
                                         vmin=self.zmin,
                                         vmax=self.zmax,
                                         cmap=self.cmaps[n])
 
-            
-            title = ''
+            if self.data.meta['mode'] == 'A':
+                continue
+            '''
+            f = open('/data/workspace/schain_scripts/map_lima.csv')
 
-        self.titles = [self.data.parameters[x] for x in self.channels]
+            lat1 = -11.96
+            lon1 = -76.54
+
+            for line in f:
+                label, x, y = [s.strip() for s in line.split(',') if s]
+                lat2 = float(y)
+                lon2 = float(x)
+
+                dx = (lon2-lon1)*40000*numpy.cos((lat1+lat2)*numpy.pi/360)/360
+                dy = (lat1-lat2)*40000/360
+                print label, dx, dy
+                if label == 'map':
+                    print 'SDHSDHSDHSGHSDFHSDF'
+                    ax.plot([dx], [dy],'--k')
+                else:
+                    ax.plot([dx], [dy],'.b', ms=2)
+            '''
+        if self.data.meta['mode'] == 'E':
+            title = 'El={}$^\circ$'.format(self.data.meta['elevation'])
+            label = 'E{:d}'.format(int(self.data.meta['elevation']))
+        else:
+            title = 'Az={}$^\circ$'.format(self.data.meta['azimuth'])
+            label = 'A{:d}'.format(int(self.data.meta['azimuth']))
+        
+        self.save_labels = ['{}-{}'.format(lbl, label) for lbl in self.labels]
+        self.titles = ['{} {}'.format(self.data.parameters[x], title) for x in self.channels]
         self.saveTime = self.max_time
+
+        
