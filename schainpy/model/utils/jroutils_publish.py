@@ -24,28 +24,25 @@ MAXNUMX = 500
 MAXNUMY = 500
 
 PLOT_CODES = {
-    'rti': 0,            #Range time intensity (RTI).
-    'spc': 1,           #Spectra (and Cross-spectra) information.
-    'cspc': 2,          #Cross-Correlation information.
-    'coh': 3,            #Coherence map.
-    'base': 4,           #Base lines graphic.
-    'row': 5,            #Row Spectra.
-    'total' : 6,          #Total Power.
-    'drift' : 7,         #Drifts graphics.
-    'height' : 8,         #Height profile.
-    'phase' : 9,          #Signal Phase.
+    'rti': 0,            # Range time intensity (RTI).
+    'spc': 1,            # Spectra (and Cross-spectra) information.
+    'cspc': 2,           # Cross-Correlation information.
+    'coh': 3,            # Coherence map.
+    'base': 4,           # Base lines graphic.
+    'row': 5,            # Row Spectra.
+    'total' : 6,         # Total Power.
+    'drift' : 7,         # Drifts graphics.
+    'height' : 8,        # Height profile.
+    'phase' : 9,         # Signal Phase.
     'power' : 16,
     'noise' : 17,
     'beacon' : 18,
-    #USED IN jroplot_parameters.py
     'wind' : 22,
     'skymap' : 23,
-    # 'MPHASE_CODE' : 24,
-    'V' : 25,
-    'Z' : 26,
-    'spc_fit' : 27,
-    'ew_drifts' : 28,
-    'reflectivity': 30
+    'V-E' : 25,
+    'Z-E' : 26,
+    'V-A' : 27,
+    'Z-A' : 28,
 }
 
 class PrettyFloat(float):
@@ -117,6 +114,7 @@ class Data(object):
         self.buffering = buffering
         self.ended = False
         self.localtime = False
+        self.meta = {}
         self.__times = []
         self.__heights = []
 
@@ -181,6 +179,8 @@ class Data(object):
         self.parameters = getattr(dataOut, 'parameters', [])
         if hasattr(dataOut, 'pairsList'):
             self.pairs = dataOut.pairsList
+        if hasattr(dataOut, 'meta'):
+            self.meta = dataOut.meta
         self.channels = dataOut.channelList
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
@@ -275,6 +275,10 @@ class Data(object):
             ret['xrange'] = []
         if hasattr(self, 'pairs'):
             ret['pairs'] = self.pairs
+        
+        for key, value in self.meta:
+            ret[key] = value
+
         return json.dumps(ret)
 
     @property
@@ -690,7 +694,7 @@ class SendToFTP(Operation, Process):
         self.username = kwargs.get('username')
         self.password = kwargs.get('password')
         self.patterns = kwargs.get('patterns')
-        self.timeout = kwargs.get('timeout', 10)
+        self.timeout = kwargs.get('timeout', 30)
         self.times = [time.time() for p in self.patterns]
         self.latest = ['' for p in self.patterns]
         self.mp = False
@@ -819,11 +823,10 @@ class SendToFTP(Operation, Process):
             if self.ftp is not None:
                 self.check()
                 self.send_files()
-            time.sleep(2)
+            time.sleep(10)
 
     def close():
 
         if self.ftp is not None:
-            if self.ftp is not None:
-                self.ftp.close()
+            self.ftp.close()
         self.terminate()
