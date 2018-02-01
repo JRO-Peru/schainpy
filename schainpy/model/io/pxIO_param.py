@@ -1,5 +1,5 @@
 '''
-Created on Dec 27, 2017
+Created on Jan 15, 2018
 
 @author: Juan C. Espinoza
 '''
@@ -7,7 +7,6 @@ Created on Dec 27, 2017
 import os
 import sys
 import time
-import json
 import glob
 import datetime
 import tarfile
@@ -23,24 +22,6 @@ from schainpy.model.data.jrodata import Parameters
 from schainpy.utils import log
 
 UT1970 = datetime.datetime(1970, 1, 1) - datetime.timedelta(seconds=time.timezone)
-
-def load_json(obj):
-    '''
-    Parse json as string instead of unicode
-    '''
-
-    if isinstance(obj, str):
-        iterable = json.loads(obj)
-    else:
-        iterable = obj
-
-    if isinstance(iterable, dict):
-        return {str(k): load_json(v) if isinstance(v, dict) else str(v) if isinstance(v, unicode) else v
-            for k, v in iterable.items()}
-    elif isinstance(iterable, (list, tuple)):
-        return [str(v) if isinstance(v, unicode) else v for v in iterable]
-    
-    return iterable
 
 
 class PXReader(JRODataReader, ProcessingUnit):
@@ -76,9 +57,9 @@ class PXReader(JRODataReader, ProcessingUnit):
         self.endTime = endTime
         self.datatime = datetime.datetime(1900,1,1)
         self.walk = walk
-        self.nTries = kwargs.get('nTries', 3)
+        self.nTries = kwargs.get('nTries', 10)
         self.online = kwargs.get('online', False)
-        self.delay = kwargs.get('delay', 30)
+        self.delay = kwargs.get('delay', 60)
         self.ele = kwargs.get('ext', '')
 
         if self.path is None:
@@ -169,12 +150,12 @@ class PXReader(JRODataReader, ProcessingUnit):
 
             if self.walk:
                 paths = [os.path.join(self.path, p) for p in os.listdir(self.path) if os.path.isdir(os.path.join(self.path, p))]
+                paths.sort()
                 path = paths[-1]
             else:
-                paths = self.path
+                path = self.path
 
-            new_files = [os.path.join(path, s) for s in glob.glob1(path, '*') if os.path.splitext(s)[-1] in self.ext and '{}'.format(self.ele) in s]
-            
+            new_files = [os.path.join(path, s) for s in glob.glob1(path, '*') if os.path.splitext(s)[-1] in self.ext and '{}'.format(self.ele) in s]            
             new_files.sort()
 
             for fullname in new_files:
@@ -295,6 +276,9 @@ class PXReader(JRODataReader, ProcessingUnit):
 
             self.datatime = datetime.datetime.utcfromtimestamp(self.header[0]['Time'])
             
+            if self.online:
+                break
+
             if (self.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or \
                (self.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
                 log.warning(

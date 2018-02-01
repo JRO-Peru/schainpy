@@ -415,9 +415,9 @@ class PlotData(Operation, Process):
             if not self.polar:
                 ax.set_xlim(xmin, xmax)
                 ax.set_ylim(ymin, ymax)
-                ax.set_title('{} - {} {}'.format(
+                ax.set_title('{} {} {}'.format(
                     self.titles[n],
-                    self.getDateTime(self.max_time).strftime('%H:%M:%S'),
+                    self.getDateTime(self.max_time).strftime('%Y-%m-%dT%H:%M:%S'),
                     self.time_label),
                     size=8)
             else:
