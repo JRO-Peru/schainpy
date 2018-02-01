@@ -30,24 +30,29 @@ PLOT_CODES = {
     'coh': 3,            # Coherence map.
     'base': 4,           # Base lines graphic.
     'row': 5,            # Row Spectra.
-    'total' : 6,         # Total Power.
-    'drift' : 7,         # Drifts graphics.
-    'height' : 8,        # Height profile.
-    'phase' : 9,         # Signal Phase.
-    'power' : 16,
-    'noise' : 17,
-    'beacon' : 18,
-    'wind' : 22,
-    'skymap' : 23,
-    'V-E' : 25,
-    'Z-E' : 26,
-    'V-A' : 27,
-    'Z-A' : 28,
+    'total': 6,          # Total Power.
+    'drift': 7,          # Drifts graphics.
+    'height': 8,         # Height profile.
+    'phase': 9,          # Signal Phase.
+    'power': 16,
+    'noise': 17,
+    'beacon': 18,
+    'wind': 22,
+    'skymap': 23,
+    'Unknown': 24,
+    'V-E': 25,          # PIP Velocity.
+    'Z-E': 26,          # PIP Reflectivity.
+    'V-A': 27,          # RHI Velocity.
+    'Z-A': 28,          # RHI Reflectivity.
 }
 
-class PrettyFloat(float):
-    def __repr__(self):
-        return '%.2f' % self
+def get_plot_code(s):
+    label = s.split('_')[0]
+    codes = [key for key in PLOT_CODES if key in label]
+    if codes:        
+        return PLOT_CODES[codes[0]]
+    else:
+        return 24
 
 def roundFloats(obj):
     if isinstance(obj, list):
@@ -753,7 +758,7 @@ class SendToFTP(Operation, Process):
         DOY_STR = '%3.3d'%thisDatetime.timetuple().tm_yday
         exp_code = '%3.3d'%exp_code
         sub_exp_code = '%2.2d'%sub_exp_code
-        plot_code = '%2.2d'% PLOT_CODES[filename.split('_')[0].split('-')[1]]
+        plot_code = '%2.2d'% get_plot_code(filename)
         name = YEAR_STR + DOY_STR + '00' + exp_code + sub_exp_code + plot_code + '00.png'
         return name
 
@@ -766,54 +771,52 @@ class SendToFTP(Operation, Process):
 
         try:
             self.ftp.storbinary(command, fp, blocksize=1024)
-        except ftplib.all_errors, e:
+        except Exception, e:
             log.error('{}'.format(e), self.name)
             if self.ftp is not None:
                 self.ftp.close()
             self.ftp = None
-            return
+            return 0
 
         try:
             self.ftp.sendcmd('SITE CHMOD 755 {}'.format(dst))
-        except ftplib.all_errors, e:
+        except Exception, e:
             log.error('{}'.format(e), self.name)
             if self.ftp is not None:
                 self.ftp.close()
             self.ftp = None
+            return 0
 
         fp.close()
-
         log.success('OK', tag='')
+        return 1
     
     def send_files(self):
 
         for x, pattern in enumerate(self.patterns):
             local, remote, ext, delay, exp_code, sub_exp_code = pattern
             if time.time()-self.times[x] >= delay:
-                srcname = self.find_files(local, ext)
-                
+                srcname = self.find_files(local, ext)                
+                src = os.path.join(local, srcname)                
+                if os.path.getmtime(src) < time.time() - 30*60:                    
+                    continue
+
                 if srcname is None or srcname == self.latest[x]:
                     continue
                 
                 if 'png' in ext:
                     dstname = self.getftpname(srcname, exp_code, sub_exp_code)
                 else:
-                    dstname = srcname
-
-                src = os.path.join(local, srcname)
-                
-                if os.path.getmtime(src) < time.time() - 30*60:
-                    continue
+                    dstname = srcname                
                 
                 dst = os.path.join(remote, dstname)
 
-                if self.ftp is None:
-                    continue
-
-                self.upload(src, dst)
-
-                self.times[x] = time.time()
-                self.latest[x] = srcname
+                if self.upload(src, dst):
+                    self.times[x] = time.time()
+                    self.latest[x] = srcname
+                else:                    
+                    self.isConfig = False                    
+                    break            
 
     def run(self):
 
@@ -822,7 +825,7 @@ class SendToFTP(Operation, Process):
                 self.setup()
             if self.ftp is not None:
                 self.check()
-                self.send_files()
+                self.send_files()            
             time.sleep(10)
 
     def close():
