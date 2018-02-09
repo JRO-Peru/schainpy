@@ -24,6 +24,14 @@ matplotlib.pyplot.register_cmap(cmap=ncmap)
 
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'viridis', 'plasma', 'inferno', 'Greys', 'seismic', 'bwr', 'coolwarm', 'spectral')]
 
+def ll2xy(lat1, lon1, lat2, lon2):
+
+    p = 0.017453292519943295
+    a = 0.5 - numpy.cos((lat2 - lat1) * p)/2 + numpy.cos(lat1 * p) * numpy.cos(lat2 * p) * (1 - numpy.cos((lon2 - lon1) * p)) / 2
+    r = 12742 * numpy.arcsin(numpy.sqrt(a))
+    theta = numpy.arctan2(numpy.sin((lon2-lon1)*p)*numpy.cos(lat2*p), numpy.cos(lat1*p)*numpy.sin(lat2*p)-numpy.sin(lat1*p)*numpy.cos(lat2*p)*numpy.cos((lon2-lon1)*p))
+    theta = -theta + numpy.pi/2
+    return r*numpy.cos(theta), r*numpy.sin(theta)
 
 def figpause(interval):
     backend = plt.rcParams['backend']
@@ -1051,26 +1059,21 @@ class PlotPolarMapData(PlotData):
 
             if self.data.meta['mode'] == 'A':
                 continue
-            '''
-            f = open('/data/workspace/schain_scripts/map_lima.csv')
+            
+            f = open('/home/jespinoza/workspace/schain_scripts/distrito.csv')
 
             lat1 = -11.96
             lon1 = -76.54
 
             for line in f:
-                label, x, y = [s.strip() for s in line.split(',') if s]
-                lat2 = float(y)
-                lon2 = float(x)
+                label, lon, lat = [s.strip() for s in line.split(',') if s]
+                lat = float(lat)
+                lon = float(lon)
+                x, y = ll2xy(lat1, lon1, lat, lon)
+                ax.plot(x, y, '.b', ms=2)
+                ax.text(x, y, label.decode('utf8'), ha='center', va='bottom', size='8', color='black')
 
-                dx = (lon2-lon1)*40000*numpy.cos((lat1+lat2)*numpy.pi/360)/360
-                dy = (lat1-lat2)*40000/360
-                print label, dx, dy
-                if label == 'map':
-                    print 'SDHSDHSDHSGHSDFHSDF'
-                    ax.plot([dx], [dy],'--k')
-                else:
-                    ax.plot([dx], [dy],'.b', ms=2)
-            '''
+            
         if self.data.meta['mode'] == 'E':
             title = 'El={}$^\circ$'.format(self.data.meta['elevation'])
             label = 'E{:d}'.format(int(self.data.meta['elevation']))
