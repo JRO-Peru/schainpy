@@ -24,6 +24,8 @@ matplotlib.pyplot.register_cmap(cmap=ncmap)
 
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'viridis', 'plasma', 'inferno', 'Greys', 'seismic', 'bwr', 'coolwarm', 'spectral')]
 
+EARTH_RADIUS = 6.3710e3
+
 def ll2xy(lat1, lon1, lat2, lon2):
 
     p = 0.017453292519943295
@@ -32,6 +34,13 @@ def ll2xy(lat1, lon1, lat2, lon2):
     theta = numpy.arctan2(numpy.sin((lon2-lon1)*p)*numpy.cos(lat2*p), numpy.cos(lat1*p)*numpy.sin(lat2*p)-numpy.sin(lat1*p)*numpy.cos(lat2*p)*numpy.cos((lon2-lon1)*p))
     theta = -theta + numpy.pi/2
     return r*numpy.cos(theta), r*numpy.sin(theta)
+
+def km2deg(km):
+    '''
+    Convert distance in km to degrees
+    '''
+
+    return numpy.rad2deg(km/EARTH_RADIUS)
 
 def figpause(interval):
     backend = plt.rcParams['backend']
@@ -381,9 +390,9 @@ class PlotData(Operation, Process):
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
 
-        Y = numpy.array([5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
+        Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
         i = 1 if numpy.where(abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
-        ystep = Y[i] / 5.
+        ystep = Y[i] / 5.        
 
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
@@ -1006,6 +1015,7 @@ class PlotPolarMapData(PlotData):
         self.nrows = 1
         self.width = 9
         self.height = 8
+        self.mode = self.data.meta['mode']
         if self.channels is not None:
             self.nplots = len(self.channels)
             self.nrows = len(self.channels)
@@ -1013,26 +1023,35 @@ class PlotPolarMapData(PlotData):
             self.nplots = self.data.shape(self.CODE)[0]
             self.nrows = self.nplots
             self.channels = range(self.nplots)
-        if self.data.meta['mode'] == 'E':
-            self.xlabel = 'Zonal Distance (km)'
-            self.ylabel = 'Meridional Distance (km)'
+        if self.mode == 'E':
+            self.xlabel = 'Longitude'
+            self.ylabel = 'Latitude'
         else:
             self.xlabel = 'Range (km)'
             self.ylabel = 'Height (km)'
         self.bgcolor = 'white'
         self.cb_labels = self.data.meta['units']
-        # self.polar = True
+        self.lat = self.data.meta['latitude']
+        self.lon = self.data.meta['longitude']
+        self.xmin, self.xmax = float(km2deg(-50) + self.lon), float(km2deg(50) + self.lon)
+        self.ymin, self.ymax = float(km2deg(-50) + self.lat), float(km2deg(50) + self.lat)
+        log.error(type(self.ymin))
+        #print km2deg(-50) + self.lon, km2deg(50) + self.lon
+        #print km2deg(-50) + self.lat, km2deg(50) + self.lat
+        #  self.polar = True
 
-    def plot(self):
+    def plot(self):                
         
         for n, ax in enumerate(self.axes):
             data = self.data['param'][self.channels[n]]
             
             zeniths = numpy.linspace(0, self.data.meta['max_range'], data.shape[1])
-            if self.data.meta['mode'] == 'E':    
+            if self.mode == 'E':    
                 azimuths = -numpy.radians(self.data.heights)+numpy.pi/2
                 r, theta = numpy.meshgrid(zeniths, azimuths)
                 x, y = r*numpy.cos(theta)*numpy.cos(numpy.radians(self.data.meta['elevation'])), r*numpy.sin(theta)*numpy.cos(numpy.radians(self.data.meta['elevation']))
+                x = km2deg(x) + self.lon
+                y = km2deg(y) + self.lat
             else:
                 azimuths = numpy.radians(self.data.heights)
                 r, theta = numpy.meshgrid(zeniths, azimuths)
@@ -1057,29 +1076,25 @@ class PlotPolarMapData(PlotData):
                                         vmax=self.zmax,
                                         cmap=self.cmaps[n])
 
-            if self.data.meta['mode'] == 'A':
+            if self.mode == 'A':
                 continue
             
             f = open('/home/jespinoza/workspace/schain_scripts/distrito.csv')
 
-            lat1 = -11.96
-            lon1 = -76.54
-
             for line in f:
                 label, lon, lat = [s.strip() for s in line.split(',') if s]
                 lat = float(lat)
-                lon = float(lon)
-                x, y = ll2xy(lat1, lon1, lat, lon)
-                ax.plot(x, y, '.b', ms=2)
-                ax.text(x, y, label.decode('utf8'), ha='center', va='bottom', size='8', color='black')
+                lon = float(lon)                
+                ax.plot(lon, lat, '.b', ms=2)
+                ax.text(lon, lat, label.decode('utf8'), ha='center', va='bottom', size='8', color='black')
 
             
-        if self.data.meta['mode'] == 'E':
+        if self.mode == 'E':
             title = 'El={}$^\circ$'.format(self.data.meta['elevation'])
-            label = 'E{:d}'.format(int(self.data.meta['elevation']))
+            label = 'E{:02d}'.format(int(self.data.meta['elevation']))
         else:
             title = 'Az={}$^\circ$'.format(self.data.meta['azimuth'])
-            label = 'A{:d}'.format(int(self.data.meta['azimuth']))
+            label = 'A{:02d}'.format(int(self.data.meta['azimuth']))
         
         self.save_labels = ['{}-{}'.format(lbl, label) for lbl in self.labels]
         self.titles = ['{} {}'.format(self.data.parameters[x], title) for x in self.channels]

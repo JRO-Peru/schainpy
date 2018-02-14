@@ -54,7 +54,7 @@ class PXParametersProc(ProcessingUnit):
         else:
             self.dataOut.heightList = self.dataOut.data['Elevation']
 
-        attrs = ['units', 'elevation', 'azimuth', 'max_range']
+        attrs = ['units', 'elevation', 'azimuth', 'max_range', 'latitude', 'longitude']
         meta = {}
 
         for attr in attrs:
