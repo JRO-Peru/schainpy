@@ -29,7 +29,7 @@ startTime = '15:30:00'
 filehdf5 = "SA_2014050.hdf5"
 
 #2014051    20 Feb 2014
-# path = '/home/soporte/Data/MST/SA/d2014051'
+path = '/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/' #'/home/soporte/Data/MST/SA/d2014051'
 # pathFigure = '/home/soporte/workspace/Graficos/SA/new/'
 # xmin = '0.0'
 # xmax = '8.0'
@@ -38,15 +38,15 @@ filehdf5 = "SA_2014050.hdf5"
 
 readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                             path=path,
-                                            startDate='2014/01/01',
-                                            endDate='2014/03/31',
-                                            startTime=startTime,
-                                            endTime='23:59:59',
+                                            startDate='2017/08/22',
+                                            endDate='2018/08/22',
+                                            startTime='00:00:00',
+                                            endTime='6:00:59',
                                             online=0,
                                             delay=5,
-                                            walk=0,
-                                            getblock=1,
-                                            blocksize=32768)
+                                            walk=1)
+                                            #getblock=1,
+                                            #blocksize=32768)
 
 opObj11 = readUnitConfObj.addOperation(name='printNumberOfBlock')
 
@@ -59,7 +59,7 @@ opObj11 = procUnitConfObj0.addOperation(name='Decoder', optype='other')
 
 opObj11 = procUnitConfObj0.addOperation(name='CohInt', optype='other')
 # opObj11.addParameter(name='n', value='600', format='int')
-opObj11.addParameter(name='n', value='256', format='int')
+opObj11.addParameter(name='n', value='4', format='int')
 
 opObj11 = procUnitConfObj0.addOperation(name='selectHeightsByIndex')
 opObj11.addParameter(name='minIndex', value='10', format='float')
@@ -67,7 +67,8 @@ opObj11.addParameter(name='maxIndex', value='60', format='float')
 #---------------------------------------------------------------------------------------------------
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='CorrelationProc', inputId=procUnitConfObj0.getId())
 procUnitConfObj1.addParameter(name='pairsList', value='(0,0),(1,1),(2,2),(3,3),(1,0),(2,3)', format='pairsList')
-# procUnitConfObj1.addParameter(name='removeDC', value='1', format='bool')
+
+#procUnitConfObj1.addParameter(name='removeDC', value='1', format='bool')
 # #procUnitConfObj1.addParameter(name='lagT', value='0,1,2,3', format='intlist')
 # 
 # opObj12 = procUnitConfObj1.addOperation(name='CorrelationPlot', optype='other')
@@ -98,24 +99,24 @@ opObj20 = procUnitConfObj2.addOperation(name='SALags', optype='other')
 opObj21 = procUnitConfObj2.addOperation(name='WindProfiler', optype='other')
 opObj21.addParameter(name='technique', value='SA', format='str')
 # # opObj21.addParameter(name='correctFactor', value='-1', format='float') 
-opObj21.addParameter(name='positionX', value='36,0,36,0', format='floatlist')
-opObj21.addParameter(name='positionY', value='36,0,0,36', format='floatlist')
-opObj21.addParameter(name='azimuth', value='51.06', format='float')
- 
-# opObj22 = procUnitConfObj2.addOperation(name='WindProfilerPlot', optype='other')
-# opObj22.addParameter(name='id', value='4', format='int')
-# opObj22.addParameter(name='wintitle', value='Wind Profiler', format='str')
-# opObj22.addParameter(name='save', value='1', format='bool')
-# opObj22.addParameter(name='figpath', value = pathFigure, format='str')
-# opObj22.addParameter(name='zmin', value='-15', format='int')
-# opObj22.addParameter(name='zmax', value='15', format='int')
-# opObj22.addParameter(name='zmin_ver', value='-80', format='float')
-# opObj22.addParameter(name='zmax_ver', value='80', format='float')
-# opObj22.addParameter(name='SNRmin', value='-20', format='int')
-# opObj22.addParameter(name='SNRmax', value='40', format='int')
-# opObj22.addParameter(name='SNRthresh', value='-3.5', format='float')
-# opObj22.addParameter(name='xmin', value=xmin, format='float')
-# opObj22.addParameter(name='xmax', value=xmax, format='float')
+opObj21.addParameter(name='positionX', value='1.5,0,1.5', format='floatlist')
+opObj21.addParameter(name='positionY', value='0.875,0,-0.875', format='floatlist')
+opObj21.addParameter(name='azimuth', value='0.0', format='float')
+
+opObj22 = procUnitConfObj2.addOperation(name='WindProfilerPlot', optype='other')
+opObj22.addParameter(name='id', value='4', format='int')
+opObj22.addParameter(name='wintitle', value='Wind Profiler', format='str')
+#opObj22.addParameter(name='save', value='1', format='bool')
+#opObj22.addParameter(name='figpath', value = pathFigure, format='str')
+opObj22.addParameter(name='zmin', value='-15', format='int')
+opObj22.addParameter(name='zmax', value='15', format='int')
+opObj22.addParameter(name='zmin_ver', value='-80', format='float')
+opObj22.addParameter(name='zmax_ver', value='80', format='float')
+opObj22.addParameter(name='SNRmin', value='-20', format='int')
+opObj22.addParameter(name='SNRmax', value='40', format='int')
+opObj22.addParameter(name='SNRthresh', value='-3.5', format='float')
+opObj22.addParameter(name='xmin', value=xmin, format='float')
+opObj22.addParameter(name='xmax', value=xmax, format='float')
 
 #-----------------------------------------------------------------------------------
 

@@ -626,8 +626,8 @@ class PrecipitationProc(Operation):
             ''' =============================  '''
             
             SPCmean = numpy.mean(self.spc,0)
-            ETA = numpy.zeros(self.Num_Hei)
-            Pr = numpy.sum(SPCmean,0)
+            ETA = numpy.zeros(self.Num_Hei,self.Num_Bin)
+            Pr = self.spc[0,:,:]
             
             VelMeteoro = numpy.mean(SPCmean,axis=0)
             print '==================== Vel SHAPE',VelMeteoro
@@ -640,7 +640,7 @@ class PrecipitationProc(Operation):
             
             
             for R in range(self.Num_Hei):
-                ETA[R] = RadarConstant * Pr[R] * R**2 #Reflectivity (ETA)
+                ETA[:,R] = RadarConstant * Pr[:,R] * R**2 #Reflectivity (ETA)
                 
                 h = R + Altitude #Range from ground to radar pulse altitude
                 del_V[R] = 1 + 3.68 * 10**-5 * h + 1.71 * 10**-9 * h**2    #Density change correction for velocity
@@ -1195,36 +1195,36 @@ class FullSpectralAnalysis(Operation):
             FitGaussCSPC = numpy.array([FitGauss01,FitGauss02,FitGauss12])
             
             
-            ''' Ploteo por altura '''
-        if Height == 28:    
-            for i in range(3):
-                #print 'FASE', numpy.shape(phase), y[25]
-                #print numpy.shape(coherence)
-                fig = plt.figure(10+self.indice)
-                #plt.plot( x[0:256],coherence[:,25] )
-                #cohAv = numpy.average(coherence[i],1)
-                Pendiente = FrecRange * PhaseSlope[i]                
-                plt.plot( FrecRange, Pendiente)
-                plt.plot( xFrec,phase[i])
-                 
-                CSPCmean = numpy.mean(numpy.abs(CSPCSamples),0)
-                #plt.plot(xFrec, FitGauss01)
-                #plt.plot(xFrec, CSPCmean)
-                #plt.plot(xFrec, numpy.abs(CSPCSamples[0]))
-                #plt.plot(xFrec, FitGauss)
-                #plt.plot(xFrec, yMean)
-                #plt.plot(xFrec, numpy.abs(coherence[0]))
-                 
-                #plt.axis([-12, 12, 15, 50])
-                #plt.title("%s" %(  '%s %s, Channel %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S") , i)))
-                plt.ylabel('Desfase [rad]')
-                #plt.ylabel('CSPC normalizado')
-                plt.xlabel('Frec range [Hz]')
+#             ''' Ploteo por altura '''
+#         if Height == 28:    
+#             for i in range(3):
+#                 #print 'FASE', numpy.shape(phase), y[25]
+#                 #print numpy.shape(coherence)
+#                 fig = plt.figure(10+self.indice)
+#                 #plt.plot( x[0:256],coherence[:,25] )
+#                 #cohAv = numpy.average(coherence[i],1)
+#                 Pendiente = FrecRange * PhaseSlope[i]                
+#                 plt.plot( FrecRange, Pendiente)
+#                 plt.plot( xFrec,phase[i])
+#                  
+#                 CSPCmean = numpy.mean(numpy.abs(CSPCSamples),0)
+#                 #plt.plot(xFrec, FitGauss01)
+#                 #plt.plot(xFrec, CSPCmean)
+#                 #plt.plot(xFrec, numpy.abs(CSPCSamples[0]))
+#                 #plt.plot(xFrec, FitGauss)
+#                 #plt.plot(xFrec, yMean)
+#                 #plt.plot(xFrec, numpy.abs(coherence[0]))
+#                  
+#                 #plt.axis([-12, 12, 15, 50])
+#                 #plt.title("%s" %(  '%s %s, Channel %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S") , i)))
+#                 plt.ylabel('Desfase [rad]')
+#                 #plt.ylabel('CSPC normalizado')
+#                 plt.xlabel('Frec range [Hz]')
                  
                 #fig.savefig('/home/erick/Documents/Pics/to{}.png'.format(self.indice))
                  
-                plt.show()
-                self.indice=self.indice+1    
+#                plt.show()
+#                self.indice=self.indice+1    
             
         
          

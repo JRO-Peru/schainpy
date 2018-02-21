@@ -658,7 +658,7 @@ class WindProfilerPlot(Figure):
 #         tmax = None
 
         x = dataOut.getTimeRange1(dataOut.paramInterval)
-        y = dataOut.heightList        
+        y = dataOut.heightList   
         z = dataOut.data_output.copy()        
         nplots = z.shape[0]    #Number of wind dimensions estimated
         nplotsw = nplots
@@ -743,6 +743,11 @@ class WindProfilerPlot(Figure):
             axes = self.axesList[i*self.__nsubplots]
 
             z1 = z[i,:].reshape((1,-1))*windFactor[i]
+            
+            print 'x', x
+            print datetime.datetime.utcfromtimestamp(x[0])
+            print datetime.datetime.utcfromtimestamp(x[1])
+            
             #z1=numpy.ma.masked_where(z1==0.,z1)
 
             axes.pcolorbuffer(x, y, z1,

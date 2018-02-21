@@ -636,7 +636,9 @@ class Spectra(JROData):
         return freqrange
 
     def getVelRange(self, extrapoints=0):
-
+        
+        print 'VELMAX', self.getVmax()
+        asdasdasd
         deltav = self.getVmax() / (self.nFFTPoints*self.ippFactor)
         velrange = deltav*(numpy.arange(self.nFFTPoints+extrapoints)-self.nFFTPoints/2.) #- deltav/2
 

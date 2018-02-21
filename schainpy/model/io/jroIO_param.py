@@ -791,6 +791,7 @@ class ParamWriter(Operation):
         grp.create_dataset('array dimensions', data = self.tableDim, dtype = self.dtype)
 
         for i in range(len(self.metadataList)):
+            print '#####',self.metadataList[i], getattr(self.dataOut, self.metadataList[i])
             grp.create_dataset(self.metadataList[i], data=getattr(self.dataOut, self.metadataList[i]))
         return
 

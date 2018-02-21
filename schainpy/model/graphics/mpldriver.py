@@ -176,7 +176,7 @@ def set_linedata(ax, x, y, idline):
 
 def pline(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
 
     printLabels(ax, xlabel, ylabel, title)
 
@@ -253,7 +253,7 @@ def pcolor(imesh, z, xlabel='', ylabel='', title=''):
     cmap.set_bad('white',1.)
 
     z = z.T
-    ax = imesh.get_axes()
+    ax = imesh.axes
     printLabels(ax, xlabel, ylabel, title)
     imesh.set_array(z.ravel())
     ax.grid(True)
@@ -340,7 +340,7 @@ def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', tit
 
 def pmultiline(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
 
     printLabels(ax, xlabel, ylabel, title)
 
@@ -417,7 +417,7 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
 
 def pmultilineyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
     printLabels(ax, xlabel, ylabel, title)
 
     for i in range(len(ax.lines)):
@@ -462,7 +462,7 @@ def createPolar(ax, x, y,
 
 def polar(iplot, x, y, xlabel='', ylabel='', title=''):
 
-    ax = iplot.get_axes()
+    ax = iplot.axes
 
 #     ax.text(0, -110, ylabel, rotation='vertical', va ='center', ha = 'center',size='11')
     printLabels(ax, xlabel, ylabel, title)

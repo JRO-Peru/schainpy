@@ -128,6 +128,8 @@ class SpectraPlot(Figure):
             factor = normFactor
         if xaxis == "frequency":
             x = dataOut.getFreqRange(1)/1000.
+            print 'FRECUENCIA MAXIMA', numpy.amax(x)
+            asfasfasdfaf
             print '#######################################################'
             print 'xlen', len(x)
             print x 

@@ -72,6 +72,7 @@ class SpectraProc(ProcessingUnit):
             self.dataOut.flagNoData
         """
         fft_volt = numpy.fft.fft(self.buffer,n=self.dataOut.nFFTPoints,axis=1)
+        
         fft_volt = fft_volt.astype(numpy.dtype('complex'))
         dc = fft_volt[:,0,:]
 
@@ -138,6 +139,7 @@ class SpectraProc(ProcessingUnit):
 
             if self.dataIn.flagDataAsBlock:
                 #data dimension: [nChannels, nProfiles, nSamples]
+                
                 nVoltProfiles = self.dataIn.data.shape[1]
 #                 nVoltProfiles = self.dataIn.nProfiles
 
@@ -160,6 +162,8 @@ class SpectraProc(ProcessingUnit):
                     self.dataOut.flagNoData = True
                     return 0
             else:
+                print 'DATA shape', self.dataIn.data.shape
+                sadsdf
                 self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
                 self.profIndex += 1
 

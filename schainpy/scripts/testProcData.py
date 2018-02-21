@@ -17,14 +17,22 @@ def main():
     controllerObj.setup(id = '191', name='test01', description=desc)
     
     readUnitConfObj = controllerObj.addReadUnit(datatype='Spectra',
-                                                path='/home/erick/Documents/Data/d2015106',
-                                                startDate='2010/12/18',
-                                                endDate='2017/12/22',
-                                                startTime='00:00:00',
-                                                endTime='23:59:59',
+                                                path='/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdata',
+                                                #path='/home/erick/Documents/Data/Claire_Data/raw',
+                                                startDate='2017/07/20',
+                                                endDate='2017/07/26',
+                                                startTime='10:02:00',
+                                                endTime='10:11:00',
                                                 online=0,
-                                                walk=0,
-                                                expLabel='')
+                                                walk=1)
+#                                                 path='/home/erick/Documents/Data/d2015106',
+#                                                 startDate='2010/12/18',
+#                                                 endDate='2017/12/22',
+#                                                 startTime='00:00:00',
+#                                                 endTime='23:59:59',
+#                                                 online=0,
+#                                                 walk=0,
+#                                                 expLabel='')
     
     procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
     
@@ -60,7 +68,7 @@ def main():
     
     procUnitConfObj2 = controllerObj.addProcUnit(datatype='Parameters', inputId=readUnitConfObj.getId())
     opObj11 = procUnitConfObj2.addOperation(name='GaussianFit', optype='other')
-    opObj11.addParameter(name='vel_arr', value='32,0,0,0', format='intList')
+    #opObj11.addParameter(name='vel_arr', value='32,0,0,0', format='intList')
     opObj11.addParameter(name='SNRlimit', value='-3', format='int')
     
     #opObj12 = procUnitConfObj2.addOperation(name='ParametersPlot', optype='other')

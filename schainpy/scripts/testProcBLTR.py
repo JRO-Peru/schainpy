@@ -20,9 +20,9 @@ controllerObj = Project()
     
 controllerObj.setup(id='191', name='test01', description=desc)
     
-readUnitConfObj = controllerObj.addReadUnit(datatype='BLTRReader',
-                                                path='/media/erick/6F60F7113095A154/BLTR/',
-                                                
+readUnitConfObj = controllerObj.addReadUnit(datatype='BLTRSpectraReader',
+                                                #path='/media/erick/6F60F7113095A154/BLTR/',
+                                                path='/home/erick/Documents/Data/BLTR_Data/fdt/',
                                                 endDate='2017/10/19',
                                                 startTime='13:00:00',
                                                 startDate='2016/11/8',
@@ -39,11 +39,11 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='BLTRReader',
 procUnitConfObj1 = controllerObj.addProcUnit(datatype='Spectra', inputId=readUnitConfObj.getId())
 
 
-
 opObj11 = procUnitConfObj1.addOperation(name='IncohInt', optype='other')
-opObj11.addParameter(name='n', value='3', format='float')
+opObj11.addParameter(name='n', value='2', format='float')
 
 opObj10 = procUnitConfObj1.addOperation(name='removeDC')
+#opObj10 = procUnitConfObj1.addOperation(name='removeInterference2')
 
 # opObj10 = procUnitConfObj1.addOperation(name='calcMag')
 
@@ -101,8 +101,8 @@ opObj11.addParameter(name='xaxis', value='Velocity', format='str')
 procUnitConfObj2 = controllerObj.addProcUnit(datatype='Parameters', inputId=procUnitConfObj1.getId())
 opObj11 = procUnitConfObj2.addOperation(name='SpectralMoments', optype='other')
 opObj22 = procUnitConfObj2.addOperation(name='FullSpectralAnalysis', optype='other')
-opObj22.addParameter(name='SNRlimit', value='-4', format='float')
-# 
+opObj22.addParameter(name='SNRlimit', value='7', format='float')
+
 opObj22 = procUnitConfObj2.addOperation(name='WindProfilerPlot', optype='other')
 opObj22.addParameter(name='id', value='4', format='int')
 opObj22.addParameter(name='wintitle', value='Wind Profiler', format='str')
@@ -111,8 +111,8 @@ opObj22.addParameter(name='save', value='1', format='bool')
 
 opObj22.addParameter(name='zmin', value='-20', format='int')
 opObj22.addParameter(name='zmax', value='20', format='int')
-opObj22.addParameter(name='zmin_ver', value='-250', format='float')
-opObj22.addParameter(name='zmax_ver', value='250', format='float')
+opObj22.addParameter(name='zmin_ver', value='-300', format='float')
+opObj22.addParameter(name='zmax_ver', value='300', format='float')
 opObj22.addParameter(name='SNRmin', value='-5', format='int')
 opObj22.addParameter(name='SNRmax', value='30', format='int')
 # opObj22.addParameter(name='SNRthresh', value='-3.5', format='float')
