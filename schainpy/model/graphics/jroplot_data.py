@@ -9,6 +9,7 @@ import zmq
 import numpy
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import FuncFormatter, LinearLocator, MultipleLocator
 
@@ -118,6 +119,7 @@ class PlotData(Operation, Process):
         self.channels = kwargs.get('channels', None)
         self.titles = kwargs.get('titles', [])
         self.polar = False
+        self.grid = kwargs.get('grid', False)
 
     def __fmtTime(self, x, pos):
         '''
@@ -392,7 +394,7 @@ class PlotData(Operation, Process):
 
         Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
         i = 1 if numpy.where(abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
-        ystep = Y[i] / 5.        
+        ystep = Y[i] / 10.
 
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
@@ -428,6 +430,8 @@ class PlotData(Operation, Process):
                         ax.cbar.set_label(self.cb_labels[n], size=8)
                 else:
                     ax.cbar = None
+            if self.grid:
+                ax.grid(True)
 
             if not self.polar:
                 ax.set_xlim(xmin, xmax)
@@ -1033,11 +1037,8 @@ class PlotPolarMapData(PlotData):
         self.cb_labels = self.data.meta['units']
         self.lat = self.data.meta['latitude']
         self.lon = self.data.meta['longitude']
-        self.xmin, self.xmax = float(km2deg(-50) + self.lon), float(km2deg(50) + self.lon)
-        self.ymin, self.ymax = float(km2deg(-50) + self.lat), float(km2deg(50) + self.lat)
-        log.error(type(self.ymin))
-        #print km2deg(-50) + self.lon, km2deg(50) + self.lon
-        #print km2deg(-50) + self.lat, km2deg(50) + self.lat
+        self.xmin, self.xmax = float(km2deg(self.xmin) + self.lon), float(km2deg(self.xmax) + self.lon)
+        self.ymin, self.ymax = float(km2deg(self.ymin) + self.lat), float(km2deg(self.ymax) + self.lat)
         #  self.polar = True
 
     def plot(self):                
@@ -1079,15 +1080,44 @@ class PlotPolarMapData(PlotData):
             if self.mode == 'A':
                 continue
             
-            f = open('/home/jespinoza/workspace/schain_scripts/distrito.csv')
-
+            # plot district names
+            f = open('/data/workspace/schain_scripts/distrito.csv')
             for line in f:
                 label, lon, lat = [s.strip() for s in line.split(',') if s]
                 lat = float(lat)
                 lon = float(lon)                
-                ax.plot(lon, lat, '.b', ms=2)
+                # ax.plot(lon, lat, '.b', ms=2)
                 ax.text(lon, lat, label.decode('utf8'), ha='center', va='bottom', size='8', color='black')
+            
+            # plot limites
+            limites =[]
+            tmp = []
+            for line in open('/data/workspace/schain_scripts/lima.csv'):
+                if '#' in line:
+                    if tmp:
+                        limites.append(tmp)
+                    tmp = []
+                    continue
+                values = line.strip().split(',')
+                tmp.append((float(values[0]), float(values[1])))
+            for points in limites:
+                ax.add_patch(Polygon(points, ec='k', fc='none', ls='--', lw=0.5))
 
+            # plot Cuencas
+            for cuenca in ('rimac', 'lurin', 'mala', 'chillon', 'chilca', 'chancay-huaral'):
+                f = open('/data/workspace/schain_scripts/{}.csv'.format(cuenca))
+                values = [line.strip().split(',') for line in f]
+                points = [(float(s[0]), float(s[1])) for s in values]
+                ax.add_patch(Polygon(points, ec='b', fc='none'))
+
+            # plot grid
+            for r in (15, 30, 45, 60):
+                ax.add_artist(plt.Circle((self.lon, self.lat), km2deg(r), color='0.6', fill=False, lw=0.2))
+                ax.text(
+                    self.lon + (km2deg(r))*numpy.cos(60*numpy.pi/180),
+                    self.lat + (km2deg(r))*numpy.sin(60*numpy.pi/180),
+                    '{}km'.format(r), 
+                    ha='center', va='bottom', size='8', color='0.6', weight='heavy')
             
         if self.mode == 'E':
             title = 'El={}$^\circ$'.format(self.data.meta['elevation'])
