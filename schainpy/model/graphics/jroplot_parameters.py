@@ -6,14 +6,14 @@ from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
 
-class FitGauPlot(Figure):
+class SpcParamPlot(Figure):
 
     isConfig = None
     __nsubplots = None
 
     WIDTHPROF = None
     HEIGHTPROF = None
-    PREFIX = 'fitgau'
+    PREFIX = 'SpcParam'
 
     def __init__(self, **kwargs):
         Figure.__init__(self, **kwargs)
@@ -82,7 +82,7 @@ class FitGauPlot(Figure):
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
-            xaxis="frequency", colormap='jet', normFactor=None , GauSelector = 0):
+            xaxis="frequency", colormap='jet', normFactor=None , Selector = 0):
 
         """
 
@@ -118,23 +118,23 @@ class FitGauPlot(Figure):
 #         else:
 #             factor = normFactor
         if xaxis == "frequency":
-            x = dataOut.spc_range[0]
+            x = dataOut.spcparam_range[0]
             xlabel = "Frequency (kHz)"
 
         elif xaxis == "time":
-            x = dataOut.spc_range[1]
+            x = dataOut.spcparam_range[1]
             xlabel = "Time (ms)"
 
         else:            
-            x = dataOut.spc_range[2]
+            x = dataOut.spcparam_range[2]
             xlabel = "Velocity (m/s)"
 
         ylabel = "Range (Km)"
 
         y = dataOut.getHeiRange()
 
-        z = dataOut.GauSPC[:,GauSelector,:,:] #GauSelector]    #dataOut.data_spc/factor
-        print 'GausSPC', z[0,32,10:40]
+        z = dataOut.SPCparam[Selector] #GauSelector]    #dataOut.data_spc/factor
+        #print 'GausSPC', z[0,32,10:40]
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         zdB = 10*numpy.log10(z)
 

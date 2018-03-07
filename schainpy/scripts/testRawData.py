@@ -7,8 +7,8 @@ if __name__ == '__main__':
     desc = "Segundo Test"
     filename = "schain.xml"
     
-    pathW='/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdatatest/test1024'
-    figpath = '/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/Images/test1024'
+    pathW='/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdataCLAIRE/Extra'
+    figpath = '/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdataCLAIRE/Extra'
     
     controllerObj = Project()
     
@@ -17,10 +17,10 @@ if __name__ == '__main__':
     readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
                                                 path='/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/',
                                                 #path='/home/erick/Documents/Data/Claire_Data/raw',
-                                                startDate='2017/08/22',
-                                                endDate='2017/08/22',
-                                                startTime='01:00:00',
-                                                endTime='06:00:00',
+                                                startDate='2018/02/01',
+                                                endDate='2018/02/01',
+                                                startTime='12:00:00',
+                                                endTime='20:00:00',
                                                 online=0,
                                                 walk=1)
     
@@ -54,8 +54,8 @@ if __name__ == '__main__':
     opObj10 = procUnitConfObj0.addOperation(name='setRadarFrequency')
     opObj10.addParameter(name='frequency', value='445.09e6', format='float')
     
-    #opObj10 = procUnitConfObj0.addOperation(name='CohInt', optype='external')
-    #opObj10.addParameter(name='n', value='1', format='float')
+    opObj10 = procUnitConfObj0.addOperation(name='CohInt', optype='external')
+    opObj10.addParameter(name='n', value='2', format='float')
     
     #opObj10 = procUnitConfObj0.addOperation(name='selectHeights')
     #opObj10.addParameter(name='minHei', value='1', format='float')
@@ -71,13 +71,13 @@ if __name__ == '__main__':
     # Creating a processing object with its parameters
     # schainpy.model.proc.jroproc_spectra.SpectraProc.run()    
     # If you need to add more parameters can use the "addParameter method"
-    procUnitConfObj1.addParameter(name='nFFTPoints', value='1024', format='int')
+    procUnitConfObj1.addParameter(name='nFFTPoints', value='256', format='int')
     
     
     opObj10 = procUnitConfObj1.addOperation(name='removeDC')
     #opObj10 = procUnitConfObj1.addOperation(name='removeInterference')
-    #opObj10 = procUnitConfObj1.addOperation(name='IncohInt', optype='external')
-    #opObj10.addParameter(name='n', value='30', format='float')
+    opObj10 = procUnitConfObj1.addOperation(name='IncohInt', optype='external')
+    opObj10.addParameter(name='n', value='10', format='float')
     
     
     
@@ -151,9 +151,10 @@ if __name__ == '__main__':
     opObj11.addParameter(name='ymax', value='7', format='int')
     opObj11.addParameter(name='showprofile', value='1', format='int')
 #     opObj11.addParameter(name='timerange', value=str(5*60*60*60), format='int')
-    opObj11.addParameter(name='xmin', value='1', format='float')
-    opObj11.addParameter(name='xmax', value='6', format='float')    
+    #opObj11.addParameter(name='xmin', value='1', format='float')
+    #opObj11.addParameter(name='xmax', value='6', format='float')    
     opObj11.addParameter(name='save', value='1', format='int')
+    opObj11.addParameter(name='figpath', value=figpath, format='str')
     
  
 #     '''#########################################################################################'''

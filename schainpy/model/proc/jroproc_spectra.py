@@ -162,8 +162,7 @@ class SpectraProc(ProcessingUnit):
                     self.dataOut.flagNoData = True
                     return 0
             else:
-                print 'DATA shape', self.dataIn.data.shape
-                sadsdf
+               
                 self.buffer[:,self.profIndex,:] = self.dataIn.data.copy()
                 self.profIndex += 1
 
