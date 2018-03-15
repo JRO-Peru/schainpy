@@ -28,7 +28,6 @@ from scipy.optimize import curve_fit
 import warnings
 from numpy import NaN
 from scipy.optimize.optimize import OptimizeWarning
-from IPython.parallel.controller.scheduler import numpy
 warnings.filterwarnings('ignore')
 
 
@@ -213,11 +212,12 @@ class SpectralFilters(Operation):
         Operation.__init__(self, **kwargs)
         self.i=0
         
-    def run(self, dataOut, Rain_Velocity_Limit=1.5, Wind_Velocity_Limit=2.5):    
+    def run(self, dataOut, PositiveLimit=1.5, NegativeLimit=2.5):    
+        
         
         #Limite de vientos 
-        LimitR = Rain_Velocity_Limit
-        LimitW = Wind_Velocity_Limit
+        LimitR = PositiveLimit
+        LimitN = NegativeLimit
         
         self.spc = dataOut.data_pre[0].copy()
         self.cspc = dataOut.data_pre[1].copy()
@@ -234,29 +234,31 @@ class SpectralFilters(Operation):
         Tmax= 2*numpy.max(dataOut.spc_range[1])
         Fmax= 2*numpy.max(dataOut.spc_range[0])
         
-        Breaker1R=VelRange[numpy.abs(VelRange-(-LimitR)).argmin()]
+        Breaker1R=VelRange[numpy.abs(VelRange-(-LimitN)).argmin()]
         Breaker1R=numpy.where(VelRange == Breaker1R)
         
-        Breaker1W=VelRange[numpy.abs(VelRange-(-LimitW)).argmin()]
-        Breaker1W=numpy.where(VelRange == Breaker1W)
+        Delta = self.Num_Bin/2 - Breaker1R[0] 
         
-        Breaker2W=VelRange[numpy.abs(VelRange-(LimitW)).argmin()]
-        Breaker2W=numpy.where(VelRange == Breaker2W)
+        #Breaker1W=VelRange[numpy.abs(VelRange-(-LimitW)).argmin()]
+        #Breaker1W=numpy.where(VelRange == Breaker1W)
+        
+        #Breaker2W=VelRange[numpy.abs(VelRange-(LimitW)).argmin()]
+        #Breaker2W=numpy.where(VelRange == Breaker2W)
         
         
         '''Reacomodando SPCrange'''
         
-        VelRange=numpy.roll(VelRange,-Breaker1R[0],axis=0)
+        VelRange=numpy.roll(VelRange,-(self.Num_Bin/2) ,axis=0)
         
-        VelRange[-int(Breaker1R[0]):]+= Vmax
+        VelRange[-(self.Num_Bin/2):]+= Vmax
         
-        FrecRange=numpy.roll(FrecRange,-Breaker1R[0],axis=0)
+        FrecRange=numpy.roll(FrecRange,-(self.Num_Bin/2),axis=0)
         
-        FrecRange[-int(Breaker1R[0]):]+= Fmax
+        FrecRange[-(self.Num_Bin/2):]+= Fmax
         
-        TimeRange=numpy.roll(TimeRange,-Breaker1R[0],axis=0)
+        TimeRange=numpy.roll(TimeRange,-(self.Num_Bin/2),axis=0)
         
-        TimeRange[-int(Breaker1R[0]):]+= Tmax
+        TimeRange[-(self.Num_Bin/2):]+= Tmax
         
         ''' ------------------ '''
         
@@ -264,20 +266,22 @@ class SpectralFilters(Operation):
         Breaker2R=numpy.where(VelRange == Breaker2R)
         
         
-        
-        
-        SPCroll = numpy.roll(self.spc,-Breaker1R[0],axis=1)
+        SPCroll = numpy.roll(self.spc,-(self.Num_Bin/2) ,axis=1)
         
         SPCcut = SPCroll.copy()
         for i in range(self.Num_Chn):
+            
             SPCcut[i,0:int(Breaker2R[0]),:] = dataOut.noise[i]
+            SPCcut[i,-int(Delta):,:] = dataOut.noise[i]
             
-            self.spc[i, 0:int(Breaker1W[0]) ,:] = dataOut.noise[i]
-            self.spc[i, int(Breaker2W[0]):self.Num_Bin ,:] = dataOut.noise[i]
+            #self.spc[i, 0:int(Breaker1W[0]) ,:] = dataOut.noise[i]
+            #self.spc[i, int(Breaker2W[0]):self.Num_Bin ,:] = dataOut.noise[i]
             
-            self.cspc[i, 0:int(Breaker1W[0]) ,:] = dataOut.noise[i]
-            self.cspc[i, int(Breaker2W[0]):self.Num_Bin ,:] = dataOut.noise[i]
+            #self.cspc[i, 0:int(Breaker1W[0]) ,:] = dataOut.noise[i]
+            #self.cspc[i, int(Breaker2W[0]):self.Num_Bin ,:] = dataOut.noise[i]
             
+        
+        
         
         SPC_ch1 = SPCroll
         
@@ -286,7 +290,7 @@ class SpectralFilters(Operation):
         SPCparam = (SPC_ch1, SPC_ch2, self.spc)
         dataOut.SPCparam = numpy.asarray(SPCparam) 
         
-        dataOut.data_pre= (self.spc  ,  self.cspc)
+        #dataOut.data_pre= (self.spc  ,  self.cspc)
         
         #dataOut.data_preParam = (self.spc  ,  self.cspc)
         
@@ -712,8 +716,8 @@ class PrecipitationProc(Operation):
             tauW=4e-06, ThetaT=0.1656317, ThetaR=0.36774087, Km = 0.93, Altitude=3350):
         
         
-        Velrange = dataOut.spc_range[2]
-        FrecRange = dataOut.spc_range[0]
+        Velrange = dataOut.spcparam_range[2]
+        FrecRange = dataOut.spcparam_range[0]
         
         dV= Velrange[1]-Velrange[0]
         dF= FrecRange[1]-FrecRange[0]
@@ -728,7 +732,7 @@ class PrecipitationProc(Operation):
             
         else:
             
-            self.spc = dataOut.SPCparam[1] #dataOut.data_pre[0].copy() #
+            self.spc = dataOut.SPCparam[1].copy() #dataOut.data_pre[0].copy() #
             self.Num_Hei = self.spc.shape[2]
             self.Num_Bin = self.spc.shape[1]
             self.Num_Chn = self.spc.shape[0]
@@ -748,18 +752,26 @@ class PrecipitationProc(Operation):
             
             Numerator = ( (4*numpy.pi)**3 * aL**2 * 16 * numpy.log(2) )
             Denominator = ( Pt * Gt * Gr * Lambda**2 * SPEED_OF_LIGHT * tauW * numpy.pi * ThetaT * ThetaR)
-            RadarConstant = 4.1396e+08# Numerator / Denominator
+            RadarConstant = 1/4.1396e+08# Numerator / Denominator #
             print '***'
             print '*** RadarConstant' , RadarConstant, '****'
             print '***'
             ''' =============================  '''
             
-            SPCmean = numpy.mean(self.spc,0)
-            ETAf = numpy.zeros([self.Num_Bin,self.Num_Hei])
+            self.spc[0] = self.spc[0]-dataOut.noise[0]
+            self.spc[1] = self.spc[1]-dataOut.noise[1]
+            self.spc[2] = self.spc[2]-dataOut.noise[2]
+            
+            self.spc[ numpy.where(self.spc < 0)] = 0
+                        
+            SPCmean = numpy.mean(self.spc,0) - numpy.mean(dataOut.noise)
+            SPCmean[ numpy.where(SPCmean < 0)] = 1e-20
+            
+            ETAn = numpy.zeros([self.Num_Bin,self.Num_Hei])
             ETAv = numpy.zeros([self.Num_Bin,self.Num_Hei])
             ETAd = numpy.zeros([self.Num_Bin,self.Num_Hei])
             
-            Pr = self.spc[0,:,:]
+            Pr = SPCmean[:,:]
             
             VelMeteoro = numpy.mean(SPCmean,axis=0)
             
@@ -774,23 +786,31 @@ class PrecipitationProc(Operation):
             Ze = numpy.zeros(self.Num_Hei)
             RR = numpy.zeros(self.Num_Hei)
             
+            Range = dataOut.heightList*1000.
             
             for R in range(self.Num_Hei):
                 
-                h = R*75 + Altitude #Range from ground to radar pulse altitude
+                h = Range[R] + Altitude #Range from ground to radar pulse altitude
                 del_V[R] = 1 + 3.68 * 10**-5 * h + 1.71 * 10**-9 * h**2    #Density change correction for velocity
                 
-                D_range[:,R] = numpy.log( (9.65 - (Velrange[0:self.Num_Bin] / del_V[R])) / 10.3 ) / -0.6 #Range of Diameter of drops related to velocity
+                D_range[:,R] = numpy.log( (9.65 - (Velrange[0:self.Num_Bin] / del_V[R])) / 10.3 ) / -0.6 #Diameter range [m]x10**-3
                 
-                ETAf[:,R] = 1/RadarConstant * Pr[:,R] * (R*0.075)**2 #Reflectivity (ETA)
+                '''NOTA: ETA(n) dn = ETA(f) df
+                    
+                    dn = 1     Diferencial de muestreo
+                    df = ETA(n) / ETA(f)
                 
-                ETAv[:,R]=ETAf[:,R]*dF/dV
+                '''
+                
+                ETAn[:,R] = RadarConstant * Pr[:,R] * (Range[R] )**2 #Reflectivity (ETA)
+                
+                ETAv[:,R]=ETAn[:,R]/dV
                 
                 ETAd[:,R]=ETAv[:,R]*6.18*exp(-0.6*D_range[:,R])
                 
-                SIGMA[:,R] = numpy.pi**5 / Lambda**4 * Km * D_range[:,R]**6     #Equivalent Section of drops (sigma)
+                SIGMA[:,R] = Km * (D_range[:,R] * 1e-3 )**6 * numpy.pi**5 / Lambda**4      #Equivalent Section of drops (sigma)
                 
-                N_dist[:,R] = ETAd[:,R] / SIGMA[:,R]    
+                N_dist[:,R] = ETAn[:,R] / SIGMA[:,R]    
                 
                 DMoments = self.Moments(Pr[:,R], D_range[:,R])
                 
@@ -801,11 +821,11 @@ class PrecipitationProc(Operation):
                     popt01[1]= DMoments[1]
                 D_mean[R]=popt01[1]
             
-                Z[R] = numpy.nansum( N_dist[:,R] * D_range[:,R]**6 )
+                Z[R] = numpy.nansum( N_dist[:,R] * (D_range[:,R])**6 )*1e-18
                 
                 RR[R] = 6*10**-4.*numpy.pi * numpy.nansum( D_range[:,R]**3 * N_dist[:,R] * Velrange[0:self.Num_Bin] ) #Rainfall rate
             
-                Ze[R] = (numpy.nansum(ETAd[:,R]) * Lambda**4) / (numpy.pi * Km)
+                Ze[R] = (numpy.nansum( ETAn[:,R]) * Lambda**4) / ( numpy.pi**5 * Km)
             
         
         
@@ -822,12 +842,24 @@ class PrecipitationProc(Operation):
         
         dataOut.data_param[0]=dBZ
         dataOut.data_param[1]=dBZe
-        dataOut.data_param[2]=dBRR2
-        
-        print 'RR SHAPE', dBRR.shape
-        #print 'Ze ', dBZe
+        dataOut.data_param[2]=RR
+            
+        #print 'VELRANGE', Velrange
+        print 'Range', len(Range)
+        print 'delv',del_V
+        #print 'DRANGE', D_range[:,50]
+        print 'NOISE', dataOut.noise[0]
+        print 'radarconstant', RadarConstant
+        print 'Range', Range
+        print 'ETAn SHAPE', ETAn.shape
+        print 'ETAn ', numpy.nansum(ETAn, axis=0)
+        print 'ETAd ', numpy.nansum(ETAd, axis=0)
+        print 'Pr ', numpy.nansum(Pr, axis=0)
+        print 'dataOut.SPCparam[1]', numpy.nansum(dataOut.SPCparam[1][0], axis=0)
+        print 'Ze ', dBZe
         print 'Z ', dBZ
-        print 'RR ', dBRR
+        #print 'RR2 ', RR2
+        #print 'RR ', RR
         #print 'RR2 ', dBRR2
         #print 'D_mean', D_mean
         #print 'del_V', del_V
@@ -937,9 +969,9 @@ class FullSpectralAnalysis(Operation):
         
         dataOut.data_SNR = (numpy.mean(spc,axis=1)- noise[0]) / noise[0]
         
+        dataOut.data_SNR[numpy.where( dataOut.data_SNR <0 )] = 1e-20
+                
         
-        
-        print dataOut.data_SNR.shape
         #FirstMoment = dataOut.moments[0,1,:]#numpy.average(dataOut.data_param[:,1,:],0)
         #SecondMoment = numpy.average(dataOut.moments[:,2,:],0)
         
@@ -1023,7 +1055,6 @@ class FullSpectralAnalysis(Operation):
     def Moments(self, ySamples, xSamples):
         Pot = numpy.nansum( ySamples )                              # Potencia, momento 0
         yNorm = ySamples / Pot
-        
         Vr = numpy.nansum( yNorm * xSamples )                       # Velocidad radial, mu, corrimiento doppler, primer momento
         Sigma2 = abs(numpy.nansum( yNorm * ( xSamples - Vr )**2 ))  # Segundo Momento 
         Desv = Sigma2**0.5                                          # Desv. Estandar, Ancho espectral
@@ -1032,9 +1063,7 @@ class FullSpectralAnalysis(Operation):
     
     def WindEstimation(self, spc, cspc, pairsList, ChanDist, Height, noise, AbbsisaRange, dbSNR, SNRlimit):
         
-#         print ' '
-#         print '######################## Height',Height, (1000 + 75*Height), '##############################' 
-#         print ' '
+
         
         ySamples=numpy.ones([spc.shape[0],spc.shape[1]])
         phase=numpy.ones([spc.shape[0],spc.shape[1]])
@@ -1113,7 +1142,7 @@ class FullSpectralAnalysis(Operation):
 #         print CSPCmoments
 #         print '#######################' 
         
-        popt=[1e-10,1e-10,1e-10]
+        popt=[1e-10,0,1e-10]
         popt01, popt02, popt12 = [1e-10,1e-10,1e-10], [1e-10,1e-10,1e-10] ,[1e-10,1e-10,1e-10]  
         FitGauss01, FitGauss02, FitGauss12 = numpy.empty(len(xSamples))*0, numpy.empty(len(xSamples))*0, numpy.empty(len(xSamples))*0
         
@@ -1134,7 +1163,7 @@ class FullSpectralAnalysis(Operation):
         
         
         '''***Fit Gauss CSPC01***'''
-        if dbSNR > SNRlimit:
+        if dbSNR > SNRlimit and numpy.abs(SPCmoments[1])<3 :
             try:
                 popt01,pcov = curve_fit(self.gaus,xSamples[mask01],numpy.abs(CSPCMask01),p0=CSPCmoments[0])
                 popt02,pcov = curve_fit(self.gaus,xSamples[mask02],numpy.abs(CSPCMask02),p0=CSPCmoments[1])
@@ -1160,7 +1189,7 @@ class FullSpectralAnalysis(Operation):
         
         yMoments = self.Moments(yMean, xSamples)
         
-        if dbSNR > SNRlimit: # and abs(meanGauss/sigma2) > 0.00001:
+        if dbSNR > SNRlimit and numpy.abs(SPCmoments[1])<3: # and abs(meanGauss/sigma2) > 0.00001:
             try:
                 popt,pcov = curve_fit(self.gaus,xSamples,yMean,p0=yMoments)
                 FitGauss=self.gaus(xSamples,*popt)
@@ -1177,7 +1206,7 @@ class FullSpectralAnalysis(Operation):
         '''****** Getting Fij ******'''
         Fijcspc = CSPCopt[:,2]/2*3
         
-        #GauWidth = (popt[2]/2)*3   
+           
         GaussCenter = popt[1] #xFrec[GCpos]
         #Punto en Eje X de la Gaussiana donde se encuentra el centro
         ClosestCenter = xSamples[numpy.abs(xSamples-GaussCenter).argmin()]
@@ -1242,7 +1271,7 @@ class FullSpectralAnalysis(Operation):
         
         for i in range(spc.shape[0]):
             
-            if len(FrecRange)>5 and len(FrecRange)<spc.shape[1]*0.6:
+            if len(FrecRange)>5 and len(FrecRange)<spc.shape[1]*0.3:
                 PhaseRange=self.moving_average(phase[i,Range[0]:Range[1]],N=3) 
                 
                 #print 'Ancho espectral Frecuencias', FrecRange[-1]-FrecRange[0], 'Hz'
@@ -1310,7 +1339,10 @@ class FullSpectralAnalysis(Operation):
             Vmer = Vx
             Vmag=numpy.sqrt(Vzon**2+Vmer**2)
             Vang=numpy.arctan2(Vmer,Vzon)
-            Vver=SPCmoments[1]
+            if numpy.abs( popt[1] ) < 3.5 and len(FrecRange)>4:
+                Vver=popt[1]
+            else:
+                Vver=numpy.NaN
             FitGaussCSPC = numpy.array([FitGauss01,FitGauss02,FitGauss12])
             
             
@@ -1458,6 +1490,7 @@ class SpectralMoments(Operation):
             valid = numpy.asarray(range(int(m + bb0 - ss1 + 1))) + ss1               
             power = ( (spec2[valid] - n0) * fwindow[valid] ).sum()
             fd = ( (spec2[valid]- n0) * freq[valid] * fwindow[valid] ).sum() / power
+            
             w = math.sqrt(((spec2[valid] - n0)*fwindow[valid]*(freq[valid]- fd)**2).sum()/power)
             snr = (spec2.mean()-n0)/n0               
             

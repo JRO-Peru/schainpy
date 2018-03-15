@@ -128,12 +128,13 @@ class SpcParamPlot(Figure):
         else:            
             x = dataOut.spcparam_range[2]
             xlabel = "Velocity (m/s)"
+            print "Vmax=",x[-1]
 
         ylabel = "Range (Km)"
 
         y = dataOut.getHeiRange()
 
-        z = dataOut.SPCparam[Selector] #GauSelector]    #dataOut.data_spc/factor
+        z = dataOut.SPCparam[Selector] /1966080.0#/ dataOut.normFactor#GauSelector]    #dataOut.data_spc/factor
         #print 'GausSPC', z[0,32,10:40]
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         zdB = 10*numpy.log10(z)

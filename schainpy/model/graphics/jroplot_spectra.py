@@ -141,7 +141,7 @@ class SpectraPlot(Figure):
         ylabel = "Range (Km)"
 
         y = dataOut.getHeiRange()
-
+        print 'dataOut.normFactor', dataOut.normFactor
         z = dataOut.data_spc/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         zdB = 10*numpy.log10(z)
