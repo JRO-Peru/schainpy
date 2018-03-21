@@ -23,6 +23,7 @@ except:
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jroheaderIO import get_dtype_index, get_numpy_dtype, get_procflag_dtype, get_dtype_width
 from schainpy.utils import log
+import schainpy.admin
 
 LOCALTIME = True
 
@@ -1051,6 +1052,7 @@ class JRODataReader(JRODataIO):
         # Skip block out of startTime and endTime
         while True:
             if not(self.__setNewBlock()):
+                raise(schainpy.admin.SchainWarning('No more files'))
                 return 0
 
             if not(self.readBlock()):
