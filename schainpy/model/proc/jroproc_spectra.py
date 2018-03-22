@@ -133,7 +133,7 @@ class SpectraProc(ProcessingUnit):
 
                 if self.dataOut.data_cspc is not None:
                     #desplaza a la derecha en el eje 2 determinadas posiciones
-                    self.dataOut.data_cspc = numpy.roll(self.dataOut.cspc, shift, axis=1)
+                    self.dataOut.data_cspc = numpy.roll(self.dataOut.data_cspc, shift, axis=1)
             
             return True
 
