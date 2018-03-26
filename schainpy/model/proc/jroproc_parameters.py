@@ -274,12 +274,19 @@ class SpectralFilters(Operation):
             SPCcut[i,0:int(Breaker2R[0]),:] = dataOut.noise[i]
             SPCcut[i,-int(Delta):,:] = dataOut.noise[i]
             
+            SPCcut[i]=SPCcut[i]- dataOut.noise[i]
+            SPCcut[ numpy.where( SPCcut<0 ) ] = 1e-20
+            
+            SPCroll[i]=SPCroll[i]-dataOut.noise[i]
+            SPCroll[ numpy.where( SPCroll<0 ) ] = 1e-20
+            
             #self.spc[i, 0:int(Breaker1W[0]) ,:] = dataOut.noise[i]
             #self.spc[i, int(Breaker2W[0]):self.Num_Bin ,:] = dataOut.noise[i]
             
             #self.cspc[i, 0:int(Breaker1W[0]) ,:] = dataOut.noise[i]
             #self.cspc[i, int(Breaker2W[0]):self.Num_Bin ,:] = dataOut.noise[i]
             
+        
         
         
         
@@ -752,20 +759,20 @@ class PrecipitationProc(Operation):
             
             Numerator = ( (4*numpy.pi)**3 * aL**2 * 16 * numpy.log(2) )
             Denominator = ( Pt * Gt * Gr * Lambda**2 * SPEED_OF_LIGHT * tauW * numpy.pi * ThetaT * ThetaR)
-            RadarConstant = 1/4.1396e+08# Numerator / Denominator #
+            RadarConstant = 1e-10 * Numerator / Denominator #
             print '***'
             print '*** RadarConstant' , RadarConstant, '****'
             print '***'
             ''' =============================  '''
             
-            self.spc[0] = self.spc[0]-dataOut.noise[0]
-            self.spc[1] = self.spc[1]-dataOut.noise[1]
-            self.spc[2] = self.spc[2]-dataOut.noise[2]
+            self.spc[0] = (self.spc[0]-dataOut.noise[0]) 
+            self.spc[1] = (self.spc[1]-dataOut.noise[1]) 
+            self.spc[2] = (self.spc[2]-dataOut.noise[2]) 
             
             self.spc[ numpy.where(self.spc < 0)] = 0
                         
-            SPCmean = numpy.mean(self.spc,0) - numpy.mean(dataOut.noise)
-            SPCmean[ numpy.where(SPCmean < 0)] = 1e-20
+            SPCmean = (numpy.mean(self.spc,0) - numpy.mean(dataOut.noise)) 
+            SPCmean[ numpy.where(SPCmean < 0)] = 0
             
             ETAn = numpy.zeros([self.Num_Bin,self.Num_Hei])
             ETAv = numpy.zeros([self.Num_Bin,self.Num_Hei])
@@ -823,7 +830,7 @@ class PrecipitationProc(Operation):
             
                 Z[R] = numpy.nansum( N_dist[:,R] * (D_range[:,R])**6 )*1e-18
                 
-                RR[R] = 6*10**-4.*numpy.pi * numpy.nansum( D_range[:,R]**3 * N_dist[:,R] * Velrange[0:self.Num_Bin] ) #Rainfall rate
+                RR[R] = 3.6e-6*1e-9*6*10**-4.*numpy.pi * numpy.nansum( D_range[:,R]**3 * N_dist[:,R] * Velrange[0:self.Num_Bin] ) #Rainfall rate
             
                 Ze[R] = (numpy.nansum( ETAn[:,R]) * Lambda**4) / ( numpy.pi**5 * Km)
             
@@ -841,25 +848,25 @@ class PrecipitationProc(Operation):
         dataOut.channelList = [0,1,2]
         
         dataOut.data_param[0]=dBZ
-        dataOut.data_param[1]=dBZe
+        dataOut.data_param[1]=RR2
         dataOut.data_param[2]=RR
             
         #print 'VELRANGE', Velrange
         print 'Range', len(Range)
         print 'delv',del_V
         #print 'DRANGE', D_range[:,50]
-        print 'NOISE', dataOut.noise[0]
+        print 'NOISE', dataOut.noise[0], 10*numpy.log10(dataOut.noise[0])
         print 'radarconstant', RadarConstant
         print 'Range', Range
-        print 'ETAn SHAPE', ETAn.shape
-        print 'ETAn ', numpy.nansum(ETAn, axis=0)
-        print 'ETAd ', numpy.nansum(ETAd, axis=0)
+#         print 'ETAn SHAPE', ETAn.shape
+#         print 'ETAn ', numpy.nansum(ETAn, axis=0)
+#         print 'ETAd ', numpy.nansum(ETAd, axis=0)
         print 'Pr ', numpy.nansum(Pr, axis=0)
         print 'dataOut.SPCparam[1]', numpy.nansum(dataOut.SPCparam[1][0], axis=0)
-        print 'Ze ', dBZe
-        print 'Z ', dBZ
-        #print 'RR2 ', RR2
-        #print 'RR ', RR
+#         print 'Ze ', dBZe
+#         print 'Z ', dBZ
+        print 'RR2 ', RR2
+        print 'RR ', RR
         #print 'RR2 ', dBRR2
         #print 'D_mean', D_mean
         #print 'del_V', del_V
