@@ -10,10 +10,9 @@ import importlib
 import itertools
 from multiprocessing import Pool, TimeoutError 
 from multiprocessing.pool import ThreadPool
-import copy_reg
-import cPickle
-import types
-from functools import partial
+
+
+
 import time
 #from sklearn.cluster import KMeans 
 
@@ -759,7 +758,7 @@ class PrecipitationProc(Operation):
             
             Numerator = ( (4*numpy.pi)**3 * aL**2 * 16 * numpy.log(2) )
             Denominator = ( Pt * Gt * Gr * Lambda**2 * SPEED_OF_LIGHT * tauW * numpy.pi * ThetaT * ThetaR)
-            RadarConstant = 1e-10 * Numerator / Denominator #
+            RadarConstant = 5e-27 * Numerator / Denominator #
             print '***'
             print '*** RadarConstant' , RadarConstant, '****'
             print '***'
@@ -787,7 +786,7 @@ class PrecipitationProc(Operation):
             D_range = numpy.zeros([self.Num_Bin,self.Num_Hei])
             SIGMA = numpy.zeros([self.Num_Bin,self.Num_Hei])
             N_dist = numpy.zeros([self.Num_Bin,self.Num_Hei])
-            D_mean = numpy.zeros(self.Num_Hei)
+            V_mean = numpy.zeros(self.Num_Hei)
             del_V = numpy.zeros(self.Num_Hei)
             Z = numpy.zeros(self.Num_Hei)
             Ze = numpy.zeros(self.Num_Hei)
@@ -796,7 +795,7 @@ class PrecipitationProc(Operation):
             Range = dataOut.heightList*1000.
             
             for R in range(self.Num_Hei):
-                
+                                
                 h = Range[R] + Altitude #Range from ground to radar pulse altitude
                 del_V[R] = 1 + 3.68 * 10**-5 * h + 1.71 * 10**-9 * h**2    #Density change correction for velocity
                 
@@ -819,20 +818,23 @@ class PrecipitationProc(Operation):
                 
                 N_dist[:,R] = ETAn[:,R] / SIGMA[:,R]    
                 
-                DMoments = self.Moments(Pr[:,R], D_range[:,R])
+                DMoments = self.Moments(Pr[:,R], Velrange[0:self.Num_Bin])
                 
                 try:
-                    popt01,pcov = curve_fit(self.gaus, D_range[:,R] , Pr[:,R] , p0=DMoments)
+                    popt01,pcov = curve_fit(self.gaus, Velrange[0:self.Num_Bin] , Pr[:,R] , p0=DMoments)
                 except: 
                     popt01=numpy.zeros(3)
                     popt01[1]= DMoments[1]
-                D_mean[R]=popt01[1]
+                if popt01[1]<0 or popt01[1]>20:
+                    popt01[1]=numpy.NaN
+                    
+                V_mean[R]=popt01[1]
             
-                Z[R] = numpy.nansum( N_dist[:,R] * (D_range[:,R])**6 )*1e-18
+                Z[R] = numpy.nansum( N_dist[:,R] * (D_range[:,R])**6 )#*10**-18
                 
-                RR[R] = 3.6e-6*1e-9*6*10**-4.*numpy.pi * numpy.nansum( D_range[:,R]**3 * N_dist[:,R] * Velrange[0:self.Num_Bin] ) #Rainfall rate
+                RR[R] = 0.0006*numpy.pi * numpy.nansum( D_range[:,R]**3 * N_dist[:,R] * Velrange[0:self.Num_Bin] ) #Rainfall rate
             
-                Ze[R] = (numpy.nansum( ETAn[:,R]) * Lambda**4) / ( numpy.pi**5 * Km)
+                Ze[R] = (numpy.nansum( ETAn[:,R]) * Lambda**4) / ( 10**-18*numpy.pi**5 * Km)
             
         
         
@@ -848,25 +850,26 @@ class PrecipitationProc(Operation):
         dataOut.channelList = [0,1,2]
         
         dataOut.data_param[0]=dBZ
-        dataOut.data_param[1]=RR2
+        dataOut.data_param[1]=V_mean
         dataOut.data_param[2]=RR
             
         #print 'VELRANGE', Velrange
-        print 'Range', len(Range)
-        print 'delv',del_V
-        #print 'DRANGE', D_range[:,50]
-        print 'NOISE', dataOut.noise[0], 10*numpy.log10(dataOut.noise[0])
-        print 'radarconstant', RadarConstant
-        print 'Range', Range
-#         print 'ETAn SHAPE', ETAn.shape
-#         print 'ETAn ', numpy.nansum(ETAn, axis=0)
-#         print 'ETAd ', numpy.nansum(ETAd, axis=0)
-        print 'Pr ', numpy.nansum(Pr, axis=0)
-        print 'dataOut.SPCparam[1]', numpy.nansum(dataOut.SPCparam[1][0], axis=0)
+        #print 'Range', len(Range)
+        #print 'delv',del_V
+#         print 'DRANGE', D_range[:,56]
+#         #print 'NOISE', dataOut.noise[0], 10*numpy.log10(dataOut.noise[0])
+#         print 'radarconstant', RadarConstant
+#         #print 'ETAn SHAPE', ETAn.shape
+# #         print 'ETAn ', numpy.nansum(ETAn, axis=0)
+# #         print 'ETAd ', numpy.nansum(ETAd, axis=0)
+#         print 'Pr ', numpy.nansum(Pr, axis=0)
+#         print 'dataOut.SPCparam[1]', numpy.nansum(dataOut.SPCparam[1][0], axis=0)
 #         print 'Ze ', dBZe
-#         print 'Z ', dBZ
-        print 'RR2 ', RR2
+        print 'Z ', dBZ
+#         print 'Ndist',N_dist[:,56]
+#         #print 'RR2 ', RR2
         print 'RR ', RR
+        print 'Vr', V_mean
         #print 'RR2 ', dBRR2
         #print 'D_mean', D_mean
         #print 'del_V', del_V
@@ -1029,7 +1032,7 @@ class FullSpectralAnalysis(Operation):
         data_output[1] = numpy.array(velocityY)  #self.moving_average(numpy.array(velocityY) , N=1)
         data_output[2] = -velocityV#FirstMoment
    
-        print 'FirstMoment', data_output[2]
+        print 'data_output', data_output.shape
         #print FirstMoment
 #         print 'velocityX',numpy.shape(data_output[0])
 #         print 'velocityX',data_output[0]
@@ -1058,7 +1061,7 @@ class FullSpectralAnalysis(Operation):
         return ( Amp / ((2*numpy.pi)**0.5 * Sigma) ) * numpy.exp( -( xSamples - Mu )**2 / ( 2 * (Sigma**2) ))
     
     
-        
+    
     def Moments(self, ySamples, xSamples):
         Pot = numpy.nansum( ySamples )                              # Potencia, momento 0
         yNorm = ySamples / Pot
