@@ -867,7 +867,7 @@ class PrecipitationProc(Operation):
 #         print 'Ze ', dBZe
         print 'Z ', dBZ
 #         print 'Ndist',N_dist[:,56]
-#         #print 'RR2 ', RR2
+        print 'RR2 ', RR2
         print 'RR ', RR
         print 'Vr', V_mean
         #print 'RR2 ', dBRR2
