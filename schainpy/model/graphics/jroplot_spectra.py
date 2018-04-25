@@ -138,7 +138,7 @@ class SpectraPlot(Figure):
             x = dataOut.getVelRange(1)
             xlabel = "Velocity (m/s)"
 
-        ylabel = "Range (Km)"
+        ylabel = "Range (km)"
 
         y = dataOut.getHeiRange()
         print 'dataOut.normFactor', dataOut.normFactor

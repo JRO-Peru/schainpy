@@ -769,7 +769,7 @@ class PrecipitationProc(Operation):
             self.spc[2] = (self.spc[2]-dataOut.noise[2]) 
             
             self.spc[ numpy.where(self.spc < 0)] = 0
-                        
+            
             SPCmean = (numpy.mean(self.spc,0) - numpy.mean(dataOut.noise)) 
             SPCmean[ numpy.where(SPCmean < 0)] = 0
             
@@ -795,7 +795,7 @@ class PrecipitationProc(Operation):
             Range = dataOut.heightList*1000.
             
             for R in range(self.Num_Hei):
-                                
+                
                 h = Range[R] + Altitude #Range from ground to radar pulse altitude
                 del_V[R] = 1 + 3.68 * 10**-5 * h + 1.71 * 10**-9 * h**2    #Density change correction for velocity
                 
@@ -825,17 +825,19 @@ class PrecipitationProc(Operation):
                 except: 
                     popt01=numpy.zeros(3)
                     popt01[1]= DMoments[1]
+                
                 if popt01[1]<0 or popt01[1]>20:
                     popt01[1]=numpy.NaN
-                    
+                
+                
                 V_mean[R]=popt01[1]
-            
+                
                 Z[R] = numpy.nansum( N_dist[:,R] * (D_range[:,R])**6 )#*10**-18
                 
                 RR[R] = 0.0006*numpy.pi * numpy.nansum( D_range[:,R]**3 * N_dist[:,R] * Velrange[0:self.Num_Bin] ) #Rainfall rate
-            
+                
                 Ze[R] = (numpy.nansum( ETAn[:,R]) * Lambda**4) / ( 10**-18*numpy.pi**5 * Km)
-            
+                
         
         
         RR2 = (Z/200)**(1/1.6)
@@ -852,7 +854,7 @@ class PrecipitationProc(Operation):
         dataOut.data_param[0]=dBZ
         dataOut.data_param[1]=V_mean
         dataOut.data_param[2]=RR
-            
+        
         #print 'VELRANGE', Velrange
         #print 'Range', len(Range)
         #print 'delv',del_V
@@ -947,7 +949,7 @@ class FullSpectralAnalysis(Operation):
         Parameters affected:    Winds, height range, SNR
         
     """
-    def run(self, dataOut, E01=None, E02=None, E12=None, N01=None, N02=None, N12=None, SNRlimit=7):
+    def run(self, dataOut, Xi01=None, Xi02=None, Xi12=None, Eta01=None, Eta02=None, Eta12=None, SNRlimit=7):
         
         self.indice=int(numpy.random.rand()*1000) 
         
@@ -962,7 +964,7 @@ class FullSpectralAnalysis(Operation):
         if dataOut.ChanDist is not None :
             ChanDist = dataOut.ChanDist
         else:
-            ChanDist = numpy.array([[E01, N01],[E02,N02],[E12,N12]])
+            ChanDist = numpy.array([[Xi01, Eta01],[Xi02,Eta02],[Xi12,Eta12]])
         
         FrecRange = dataOut.spc_range[0]
         
@@ -1003,7 +1005,7 @@ class FullSpectralAnalysis(Operation):
             PhaseLine = numpy.append(PhaseLine, PhaseSlope)
             
             if abs(Vzon)<100. and abs(Vzon)> 0.:
-                velocityX=numpy.append(velocityX, -Vzon)#Vmag
+                velocityX=numpy.append(velocityX, Vzon)#Vmag
                
             else:
                 #print 'Vzon',Vzon
@@ -1030,7 +1032,7 @@ class FullSpectralAnalysis(Operation):
         
         data_output[0] = numpy.array(velocityX)  #self.moving_average(numpy.array(velocityX) , N=1)
         data_output[1] = numpy.array(velocityY)  #self.moving_average(numpy.array(velocityY) , N=1)
-        data_output[2] = -velocityV#FirstMoment
+        data_output[2] = velocityV#FirstMoment
    
         print 'data_output', data_output.shape
         #print FirstMoment
@@ -1092,14 +1094,14 @@ class FullSpectralAnalysis(Operation):
         
         '''Getting Eij and Nij'''
         
-        E01=ChanDist[0][0]
-        N01=ChanDist[0][1]
+        Xi01=ChanDist[0][0]
+        Eta01=ChanDist[0][1]
         
-        E02=ChanDist[1][0]
-        N02=ChanDist[1][1]
+        Xi02=ChanDist[1][0]
+        Eta02=ChanDist[1][1]
         
-        E12=ChanDist[2][0]
-        N12=ChanDist[2][1]
+        Xi12=ChanDist[2][0]
+        Eta12=ChanDist[2][1]
         
         z = spc.copy()
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
@@ -1315,7 +1317,7 @@ class FullSpectralAnalysis(Operation):
             cC=(Fij*numpy.pi)**2
             
             '''****** Getting constants F and G ******'''
-            MijEijNij=numpy.array([[E02,N02], [E12,N12]])
+            MijEijNij=numpy.array([[Xi02,Eta02], [Xi12,Eta12]])
             MijResult0=(-PhaseSlope[1]*cC) / (2*numpy.pi)
             MijResult1=(-PhaseSlope[2]*cC) / (2*numpy.pi) 
             MijResults=numpy.array([MijResult0,MijResult1])
@@ -1326,13 +1328,13 @@ class FullSpectralAnalysis(Operation):
             W02=numpy.nanmax( FitGauss02 ) #numpy.abs(CSPCSamples[1]))
             W12=numpy.nanmax( FitGauss12 ) #numpy.abs(CSPCSamples[2]))
             
-            WijResult0=((cF*E01+cG*N01)**2)/cC - numpy.log(W01 / numpy.sqrt(numpy.pi/cC))
-            WijResult1=((cF*E02+cG*N02)**2)/cC - numpy.log(W02 / numpy.sqrt(numpy.pi/cC))
-            WijResult2=((cF*E12+cG*N12)**2)/cC - numpy.log(W12 / numpy.sqrt(numpy.pi/cC))
+            WijResult0=((cF*Xi01+cG*Eta01)**2)/cC - numpy.log(W01 / numpy.sqrt(numpy.pi/cC))
+            WijResult1=((cF*Xi02+cG*Eta02)**2)/cC - numpy.log(W02 / numpy.sqrt(numpy.pi/cC))
+            WijResult2=((cF*Xi12+cG*Eta12)**2)/cC - numpy.log(W12 / numpy.sqrt(numpy.pi/cC))
             
             WijResults=numpy.array([WijResult0, WijResult1, WijResult2])
             
-            WijEijNij=numpy.array([ [E01**2, N01**2, 2*E01*N01] , [E02**2, N02**2, 2*E02*N02] , [E12**2, N12**2, 2*E12*N12] ])    
+            WijEijNij=numpy.array([ [Xi01**2, Eta01**2, 2*Xi01*Eta01] , [Xi02**2, Eta02**2, 2*Xi02*Eta02] , [Xi12**2, Eta12**2, 2*Xi12*Eta12] ])    
             (cA,cB,cH) = numpy.linalg.solve(WijEijNij, WijResults)
             
             VxVy=numpy.array([[cA,cH],[cH,cB]])

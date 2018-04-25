@@ -130,7 +130,7 @@ class SpcParamPlot(Figure):
             xlabel = "Velocity (m/s)"
             print "Vmax=",x[-1]
 
-        ylabel = "Range (Km)"
+        ylabel = "Range (km)"
 
         y = dataOut.getHeiRange()
 
@@ -801,7 +801,7 @@ class ParametersPlot(Figure):
         self.__nsubplots = 1
 
         self.WIDTH = 800
-        self.HEIGHT = 180
+        self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
