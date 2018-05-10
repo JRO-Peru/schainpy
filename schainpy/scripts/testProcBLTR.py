@@ -13,7 +13,7 @@ xmax = '24'
 
 desc = "ProcBLTR Test"
 filename = "ProcBLTR.xml"
-figpath = '/media/erick/6F60F7113095A154/BLTR' 
+figpath = '/data/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdataCLAIRE/2018' 
     
 controllerObj = Project()
     
@@ -22,10 +22,11 @@ controllerObj.setup(id='191', name='test01', description=desc)
     
 readUnitConfObj = controllerObj.addReadUnit(datatype='BLTRSpectraReader',
                                                 #path='/media/erick/6F60F7113095A154/BLTR/',
+                                                #path='/data/BLTR',
                                                 path='/home/erick/Documents/Data/BLTR_Data/fdt/',
-                                                endDate='2017/10/19',
-                                                startTime='13:00:00',
-                                                startDate='2016/11/8',
+                                                endDate='2016/11/01',
+                                                startTime='0:00:00',
+                                                startDate='2016/11/01',
                                                 endTime='23:59:59',
                
             
@@ -82,12 +83,12 @@ opObj10 = procUnitConfObj1.addOperation(name='removeDC')
 # opObj11.addParameter(name='showprofile', value='1', format='int')
 # opObj11.addParameter(name='timerange', value=str(2*60*60), format='int')
 
-opObj11 = procUnitConfObj1.addOperation(name='CrossSpectraPlot', optype='other')
-procUnitConfObj1.addParameter(name='pairsList', value='(0,1),(0,2),(1,2)', format='pairsList')
-opObj11.addParameter(name='id', value='2005', format='int')
-opObj11.addParameter(name='wintitle', value='CrossSpectraPlot_ShortPulse', format='str')
-# opObj11.addParameter(name='exp_code', value='13', format='int')
-opObj11.addParameter(name='xaxis', value='Velocity', format='str')
+# opObj11 = procUnitConfObj1.addOperation(name='CrossSpectraPlot', optype='other')
+# procUnitConfObj1.addParameter(name='pairsList', value='(0,1),(0,2),(1,2)', format='pairsList')
+# opObj11.addParameter(name='id', value='2005', format='int')
+# opObj11.addParameter(name='wintitle', value='CrossSpectraPlot_ShortPulse', format='str')
+# # opObj11.addParameter(name='exp_code', value='13', format='int')
+# opObj11.addParameter(name='xaxis', value='Velocity', format='str')
 #opObj11.addParameter(name='xmin', value='-10', format='float')
 #opObj11.addParameter(name='xmax', value='10', format='float')
 #opObj11.addParameter(name='ymin', value='225', format='float')
@@ -99,14 +100,14 @@ opObj11.addParameter(name='xaxis', value='Velocity', format='str')
 # procUnitConfObj2.addParameter(name='pairsList', value='(0,1),(0,2),(1,2)', format='pairsList')
 
 procUnitConfObj2 = controllerObj.addProcUnit(datatype='Parameters', inputId=procUnitConfObj1.getId())
-opObj11 = procUnitConfObj2.addOperation(name='SpectralMoments', optype='other')
+#opObj11 = procUnitConfObj2.addOperation(name='SpectralMoments', optype='other')
 opObj22 = procUnitConfObj2.addOperation(name='FullSpectralAnalysis', optype='other')
-opObj22.addParameter(name='SNRlimit', value='7', format='float')
+opObj22.addParameter(name='SNRlimit', value='2', format='float')
 
 opObj22 = procUnitConfObj2.addOperation(name='WindProfilerPlot', optype='other')
 opObj22.addParameter(name='id', value='4', format='int')
 opObj22.addParameter(name='wintitle', value='Wind Profiler', format='str')
-opObj22.addParameter(name='save', value='1', format='bool')
+#opObj22.addParameter(name='save', value='1', format='bool')
 # opObj22.addParameter(name='figpath', value = '/home/erick/Pictures', format='str')
 
 opObj22.addParameter(name='zmin', value='-20', format='int')

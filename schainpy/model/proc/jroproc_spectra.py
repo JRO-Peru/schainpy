@@ -319,6 +319,17 @@ class SpectraProc(ProcessingUnit):
         return 1
     
     
+    def setH0(self, h0, deltaHeight = None):
+        
+        if not deltaHeight:
+            deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+            
+        nHeights = self.dataOut.nHeights
+        
+        newHeiRange = h0 + numpy.arange(nHeights)*deltaHeight
+        
+        self.dataOut.heightList = newHeiRange
+        
     
     def selectHeights(self, minHei, maxHei):
         """

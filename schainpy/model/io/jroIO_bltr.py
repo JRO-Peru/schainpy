@@ -568,7 +568,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'NoData se vuelve true'
+            #print 'NoData se vuelve true'
             return 0
 
         self.fp=self.path
@@ -578,7 +578,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         self.dataOut.data_cspc =self.data_cspc
         self.dataOut.data_output=self.data_output
         
-        print 'self.dataOut.data_output', shape(self.dataOut.data_output)
+        #print 'self.dataOut.data_output', shape(self.dataOut.data_output)
         
         #self.removeDC()
         return self.dataOut.data_spc  
@@ -596,7 +596,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         '''
         
         #The address of the folder is generated the name of the .fdt file that will be read
-        print "File:    ",self.fileSelector+1
+        #print "File:    ",self.fileSelector+1
         
         if self.fileSelector < len(self.filenameList):
             
@@ -608,7 +608,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
             
             self.readBlock()    #Block reading
         else:
-            print 'readFile FlagNoData becomes true'
+            #print 'readFile FlagNoData becomes true'
             self.flagNoMoreFiles=True
             self.dataOut.flagNoData = True
             return 0 
@@ -634,8 +634,8 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         
         '''
         
-        if self.BlockCounter < self.nFDTdataRecors-2:
-            print self.nFDTdataRecors, 'CONDICION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        if self.BlockCounter < self.nFDTdataRecors-1:
+            #print self.nFDTdataRecors, 'CONDICION'
             if self.ReadMode==1:
                 rheader = RecordHeaderBLTR(RecCounter=self.BlockCounter+1)
             elif self.ReadMode==0:
@@ -675,7 +675,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
             self.dataOut.outputInterval= self.dataOut.ippSeconds * self.dataOut.nCohInt * self.dataOut.nIncohInt * self.nProfiles
             
             self.data_output=numpy.ones([3,rheader.nHeights])*numpy.NaN
-            print 'self.data_output', shape(self.data_output)
+            #print 'self.data_output', shape(self.data_output)
             self.dataOut.velocityX=[]
             self.dataOut.velocityY=[]
             self.dataOut.velocityV=[]
@@ -711,8 +711,16 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
             if self.DualModeIndex==self.ReadMode:
                 
                 self.data_fft = numpy.fromfile( startDATA, [('complex','<c8')],self.nProfiles*self.nChannels*self.nHeights )
+#                 
+#                 if len(self.data_fft) is not 101376:
+#                     
+#                     self.data_fft = numpy.empty(101376)
                 
                 self.data_fft=self.data_fft.astype(numpy.dtype('complex'))
+                
+                
+                
+                
                 
                 self.data_block=numpy.reshape(self.data_fft,(self.nHeights, self.nChannels, self.nProfiles ))
                 
@@ -729,11 +737,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
                 z = self.data_spc.copy()#/factor
                 z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
                 #zdB = 10*numpy.log10(z)
-                print ' '
-                print 'Z: '
-                print shape(z) 
-                print ' '
-                print ' '
+                
                 
                 self.dataOut.data_spc=self.data_spc
                 
@@ -789,367 +793,3 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
                     self.dataOut.ChanDist = self.ChanDist
                 
                 
-#                 for Height in range(self.nHeights):
-#                       
-#                     for i in range(self.nRdPairs):
-#                           
-#                         '''****** Line of Data SPC ******'''
-#                         zline=z[i,:,Height]
-#                         
-#                         '''****** DC is removed ******'''
-#                         DC=Find(zline,numpy.amax(zline))
-#                         zline[DC]=(zline[DC-1]+zline[DC+1])/2
-#                         
-#                         
-#                         '''****** SPC is normalized ******'''
-#                         FactNorm= zline.copy() / numpy.sum(zline.copy())
-#                         FactNorm= FactNorm/numpy.sum(FactNorm)
-#                           
-#                         SmoothSPC=moving_average(FactNorm,N=3)
-#                           
-#                         xSamples = ar(range(len(SmoothSPC)))
-#                         ySamples[i] = SmoothSPC-self.noise[i]
-#                         
-#                     for i in range(self.nRdPairs):
-#                                
-#                         '''****** Line of Data CSPC ******'''
-#                         cspcLine=self.data_cspc[i,:,Height].copy()
-#                         
-#                         
-#                           
-#                         '''****** CSPC is normalized ******'''
-#                         chan_index0 = self.dataOut.pairsList[i][0]
-#                         chan_index1 = self.dataOut.pairsList[i][1]  
-#                         CSPCFactor= numpy.sum(ySamples[chan_index0]) * numpy.sum(ySamples[chan_index1])
-#                         
-#                         
-#                         CSPCNorm= cspcLine.copy() / numpy.sqrt(CSPCFactor)
-#                         
-#                         
-#                         CSPCSamples[i] = CSPCNorm-self.noise[i]
-#                         coherence[i] = numpy.abs(CSPCSamples[i]) / numpy.sqrt(CSPCFactor)
-#                           
-#                         '''****** DC is removed ******'''
-#                         DC=Find(coherence[i],numpy.amax(coherence[i]))
-#                         coherence[i][DC]=(coherence[i][DC-1]+coherence[i][DC+1])/2
-#                         coherence[i]= moving_average(coherence[i],N=2)
-#                           
-#                         phase[i] = moving_average( numpy.arctan2(CSPCSamples[i].imag, CSPCSamples[i].real),N=1)#*180/numpy.pi
-#                           
-#                       
-#                     '''****** Getting fij width ******'''
-#                        
-#                     yMean=[]
-#                     yMean2=[]    
-#                   
-#                     for j in range(len(ySamples[1])):
-#                         yMean=numpy.append(yMean,numpy.average([ySamples[0,j],ySamples[1,j],ySamples[2,j]]))
-#                       
-#                     '''******* Getting fitting Gaussian ******'''
-#                     meanGauss=sum(xSamples*yMean) / len(xSamples)
-#                     sigma=sum(yMean*(xSamples-meanGauss)**2) / len(xSamples)
-#                     #print 'Height',Height,'SNR', meanGauss/sigma**2
-#                       
-#                     if (abs(meanGauss/sigma**2) > 0.0001) :
-#                       
-#                         try:    
-#                             popt,pcov = curve_fit(gaus,xSamples,yMean,p0=[1,meanGauss,sigma])
-#                               
-#                             if numpy.amax(popt)>numpy.amax(yMean)*0.3:
-#                                 FitGauss=gaus(xSamples,*popt)
-#                                   
-#                             else: 
-#                                 FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
-#                                 print 'Verificador:     Dentro', Height
-#                         except RuntimeError:
-#                               
-#                             try:
-#                                 for j in range(len(ySamples[1])):
-#                                     yMean2=numpy.append(yMean2,numpy.average([ySamples[1,j],ySamples[2,j]]))
-#                                 popt,pcov = curve_fit(gaus,xSamples,yMean2,p0=[1,meanGauss,sigma])
-#                                 FitGauss=gaus(xSamples,*popt)
-#                                 print 'Verificador:     Exepcion1', Height
-#                             except RuntimeError:
-#                                   
-#                                 try:
-#                                     popt,pcov = curve_fit(gaus,xSamples,ySamples[1],p0=[1,meanGauss,sigma])
-#                                     FitGauss=gaus(xSamples,*popt)
-#                                     print 'Verificador:     Exepcion2', Height
-#                                 except RuntimeError:
-#                                     FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
-#                                     print 'Verificador:     Exepcion3', Height
-#                     else:
-#                         FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
-#                         #print 'Verificador:     Fuera', Height
-#                           
-#                                    
-#                                           
-#                     Maximun=numpy.amax(yMean)
-#                     eMinus1=Maximun*numpy.exp(-1)
-#                       
-#                     HWpos=Find(FitGauss,min(FitGauss, key=lambda value:abs(value-eMinus1)))
-#                     HalfWidth= xFrec[HWpos]
-#                     GCpos=Find(FitGauss, numpy.amax(FitGauss))
-#                     Vpos=Find(FactNorm, numpy.amax(FactNorm))
-#                     #Vpos=numpy.sum(FactNorm)/len(FactNorm)
-#                     #Vpos=Find(FactNorm, min(FactNorm, key=lambda value:abs(value- numpy.mean(FactNorm) )))
-#                     #print 'GCpos',GCpos, numpy.amax(FitGauss), 'HWpos',HWpos
-#                     '''****** Getting Fij ******'''
-#                       
-#                     GaussCenter=xFrec[GCpos]
-#                     if (GaussCenter<0 and HalfWidth>0) or (GaussCenter>0 and HalfWidth<0):
-#                         Fij=abs(GaussCenter)+abs(HalfWidth)+0.0000001
-#                     else:
-#                         Fij=abs(GaussCenter-HalfWidth)+0.0000001
-#                       
-#                     '''****** Getting Frecuency range of significant data ******'''
-#                       
-#                     Rangpos=Find(FitGauss,min(FitGauss, key=lambda value:abs(value-Maximun*0.10)))
-#                       
-#                     if Rangpos<GCpos:
-#                         Range=numpy.array([Rangpos,2*GCpos-Rangpos])
-#                     else:
-#                         Range=numpy.array([2*GCpos-Rangpos,Rangpos])
-#                       
-#                     FrecRange=xFrec[Range[0]:Range[1]]
-#                       
-#                     #print 'FrecRange', FrecRange
-#                     '''****** Getting SCPC Slope ******'''
-#                       
-#                     for i in range(self.nRdPairs):
-#                           
-#                         if len(FrecRange)>5 and len(FrecRange)<self.nProfiles*0.5:
-#                             PhaseRange=moving_average(phase[i,Range[0]:Range[1]],N=3) 
-#                           
-#                             slope, intercept, r_value, p_value, std_err = stats.linregress(FrecRange,PhaseRange)
-#                             PhaseSlope[i]=slope
-#                             PhaseInter[i]=intercept
-#                         else:
-#                             PhaseSlope[i]=0
-#                             PhaseInter[i]=0
-#                           
-#         #                     plt.figure(i+15)
-#         #                     plt.title('FASE ( CH%s*CH%s )' %(self.dataOut.pairsList[i][0],self.dataOut.pairsList[i][1]))
-#         #                     plt.xlabel('Frecuencia (KHz)')
-#         #                     plt.ylabel('Magnitud')
-#         #                     #plt.subplot(311+i)
-#         #                     plt.plot(FrecRange,PhaseRange,'b')
-#         #                     plt.plot(FrecRange,FrecRange*PhaseSlope[i]+PhaseInter[i],'r')
-#                           
-#                         #plt.axis([-0.6, 0.2, -3.2, 3.2])
-#                            
-#                       
-#                     '''Getting constant C'''
-#                     cC=(Fij*numpy.pi)**2
-#                       
-# #                     '''Getting Eij and Nij'''
-# #                     (AntennaX0,AntennaY0)=pol2cart(rheader.AntennaCoord0, rheader.AntennaAngl0*numpy.pi/180)
-# #                     (AntennaX1,AntennaY1)=pol2cart(rheader.AntennaCoord1, rheader.AntennaAngl1*numpy.pi/180)
-# #                     (AntennaX2,AntennaY2)=pol2cart(rheader.AntennaCoord2, rheader.AntennaAngl2*numpy.pi/180)
-# #                       
-# #                     E01=AntennaX0-AntennaX1
-# #                     N01=AntennaY0-AntennaY1
-# #                       
-# #                     E02=AntennaX0-AntennaX2
-# #                     N02=AntennaY0-AntennaY2
-# #                       
-# #                     E12=AntennaX1-AntennaX2
-# #                     N12=AntennaY1-AntennaY2
-#                       
-#                     '''****** Getting constants F and G ******'''
-#                     MijEijNij=numpy.array([[E02,N02], [E12,N12]])
-#                     MijResult0=(-PhaseSlope[1]*cC) / (2*numpy.pi)
-#                     MijResult1=(-PhaseSlope[2]*cC) / (2*numpy.pi) 
-#                     MijResults=numpy.array([MijResult0,MijResult1])
-#                     (cF,cG) = numpy.linalg.solve(MijEijNij, MijResults)
-#                       
-#                     '''****** Getting constants A, B and H ******'''
-#                     W01=numpy.amax(coherence[0])
-#                     W02=numpy.amax(coherence[1])
-#                     W12=numpy.amax(coherence[2])
-#                       
-#                     WijResult0=((cF*E01+cG*N01)**2)/cC - numpy.log(W01 / numpy.sqrt(numpy.pi/cC))
-#                     WijResult1=((cF*E02+cG*N02)**2)/cC - numpy.log(W02 / numpy.sqrt(numpy.pi/cC))
-#                     WijResult2=((cF*E12+cG*N12)**2)/cC - numpy.log(W12 / numpy.sqrt(numpy.pi/cC))
-#                       
-#                     WijResults=numpy.array([WijResult0, WijResult1, WijResult2])
-#                       
-#                     WijEijNij=numpy.array([ [E01**2, N01**2, 2*E01*N01] , [E02**2, N02**2, 2*E02*N02] , [E12**2, N12**2, 2*E12*N12] ])    
-#                     (cA,cB,cH) = numpy.linalg.solve(WijEijNij, WijResults)
-#                       
-#                     VxVy=numpy.array([[cA,cH],[cH,cB]])
-#                       
-#                     VxVyResults=numpy.array([-cF,-cG])
-#                     (Vx,Vy) = numpy.linalg.solve(VxVy, VxVyResults)
-#                     Vzon = Vy
-#                     Vmer = Vx
-#                     Vmag=numpy.sqrt(Vzon**2+Vmer**2)
-#                     Vang=numpy.arctan2(Vmer,Vzon)
-#                       
-#                     if abs(Vy)<100 and abs(Vy)> 0.:
-#                         self.dataOut.velocityX=numpy.append(self.dataOut.velocityX, Vzon) #Vmag
-#                         #print 'Vmag',Vmag
-#                     else:
-#                         self.dataOut.velocityX=numpy.append(self.dataOut.velocityX, NaN)
-#                       
-#                     if abs(Vx)<100 and abs(Vx) > 0.:
-#                         self.dataOut.velocityY=numpy.append(self.dataOut.velocityY, Vmer) #Vang
-#                         #print 'Vang',Vang 
-#                     else:
-#                         self.dataOut.velocityY=numpy.append(self.dataOut.velocityY, NaN)
-#                       
-#                     if abs(GaussCenter)<2:
-#                         self.dataOut.velocityV=numpy.append(self.dataOut.velocityV, xFrec[Vpos])
-#                           
-#                     else:
-#                         self.dataOut.velocityV=numpy.append(self.dataOut.velocityV, NaN)
-#                                   
-#                                   
-# #                 print '********************************************'
-# #                 print 'HalfWidth    ', HalfWidth
-# #                 print 'Maximun      ', Maximun
-# #                 print 'eMinus1      ', eMinus1
-# #                 print 'Rangpos      ', Rangpos
-# #                 print 'GaussCenter  ',GaussCenter
-# #                 print 'E01          ',E01
-# #                 print 'N01          ',N01
-# #                 print 'E02          ',E02
-# #                 print 'N02          ',N02
-# #                 print 'E12          ',E12
-# #                 print 'N12          ',N12
-#                 #print 'self.dataOut.velocityX          ', self.dataOut.velocityX
-# #                 print 'Fij          ', Fij
-# #                 print 'cC           ', cC
-# #                 print 'cF           ', cF
-# #                 print 'cG           ', cG
-# #                 print 'cA           ', cA
-# #                 print 'cB           ', cB
-# #                 print 'cH           ', cH
-# #                 print 'Vx           ', Vx
-# #                 print 'Vy           ', Vy
-# #                 print 'Vmag         ', Vmag
-# #                 print 'Vang         ', Vang*180/numpy.pi
-# #                 print 'PhaseSlope   ',PhaseSlope[0]
-# #                 print 'PhaseSlope   ',PhaseSlope[1]
-# #                 print 'PhaseSlope   ',PhaseSlope[2]
-# #                 print '********************************************'
-#                 #print 'data_output',shape(self.dataOut.velocityX), shape(self.dataOut.velocityY)
-#                   
-#                 #print 'self.dataOut.velocityX', len(self.dataOut.velocityX)
-#                 #print 'self.dataOut.velocityY', len(self.dataOut.velocityY)
-#                 #print 'self.dataOut.velocityV', self.dataOut.velocityV
-#                   
-#                 self.data_output[0]=numpy.array(self.dataOut.velocityX)
-#                 self.data_output[1]=numpy.array(self.dataOut.velocityY)
-#                 self.data_output[2]=numpy.array(self.dataOut.velocityV)
-#                   
-#                 prin= self.data_output[0][~numpy.isnan(self.data_output[0])]
-#                 print ' '
-#                 print 'VmagAverage',numpy.mean(prin) 
-#                 print ' '
-# #                 plt.figure(5)
-# #                 plt.subplot(211)
-# #                 plt.plot(self.dataOut.velocityX,'yo:')
-# #                 plt.subplot(212)
-# #                 plt.plot(self.dataOut.velocityY,'yo:')
-#   
-# #                 plt.figure(1)
-# # #                 plt.subplot(121)
-# # #                plt.plot(xFrec,ySamples[0],'k',label='Ch0')
-# # #                 plt.plot(xFrec,ySamples[1],'g',label='Ch1')
-# # #                 plt.plot(xFrec,ySamples[2],'r',label='Ch2')
-# # #                 plt.plot(xFrec,FitGauss,'yo:',label='fit')
-# # #                 plt.legend()
-# #                 plt.title('DATOS A ALTURA DE 2850 METROS')
-# #                 
-# #                 plt.xlabel('Frecuencia (KHz)')
-# #                 plt.ylabel('Magnitud')
-# # #                 plt.subplot(122)
-# # #                 plt.title('Fit for Time Constant')
-# #                 #plt.plot(xFrec,zline)
-# #                 #plt.plot(xFrec,SmoothSPC,'g')
-# #                 plt.plot(xFrec,FactNorm)
-# #                 plt.axis([-4, 4, 0, 0.15])
-# # #                 plt.xlabel('SelfSpectra KHz')
-# # 
-# #                 plt.figure(10)
-# # #                 plt.subplot(121)
-# #                 plt.plot(xFrec,ySamples[0],'b',label='Ch0')
-# #                 plt.plot(xFrec,ySamples[1],'y',label='Ch1')
-# #                 plt.plot(xFrec,ySamples[2],'r',label='Ch2')
-# # #                plt.plot(xFrec,FitGauss,'yo:',label='fit')
-# #                 plt.legend()
-# #                 plt.title('SELFSPECTRA EN CANALES')
-# #                 
-# #                 plt.xlabel('Frecuencia (KHz)')
-# #                 plt.ylabel('Magnitud')
-# # #                 plt.subplot(122)
-# # #                 plt.title('Fit for Time Constant')
-# #                 #plt.plot(xFrec,zline)
-# #                 #plt.plot(xFrec,SmoothSPC,'g')
-# # #                plt.plot(xFrec,FactNorm)
-# # #                plt.axis([-4, 4, 0, 0.15])
-# # #                 plt.xlabel('SelfSpectra KHz')
-# # 
-# #                 plt.figure(9)
-# #                 
-# #                 
-# #                 plt.title('DATOS SUAVIZADOS')
-# #                 plt.xlabel('Frecuencia (KHz)')
-# #                 plt.ylabel('Magnitud')
-# #                 plt.plot(xFrec,SmoothSPC,'g')
-# #                 
-# #                 #plt.plot(xFrec,FactNorm)
-# #                 plt.axis([-4, 4, 0, 0.15])
-# # #                 plt.xlabel('SelfSpectra KHz')
-# # #                   
-# #                 plt.figure(2)
-# # #                 #plt.subplot(121)
-# #                 plt.plot(xFrec,yMean,'r',label='Mean SelfSpectra')
-# #                 plt.plot(xFrec,FitGauss,'yo:',label='Ajuste Gaussiano')
-# # #                 plt.plot(xFrec[Rangpos],FitGauss[Find(FitGauss,min(FitGauss, key=lambda value:abs(value-Maximun*0.1)))],'bo')
-# # #                 #plt.plot(xFrec,phase)
-# # #                 plt.xlabel('Suavizado, promediado KHz')
-# #                 plt.title('SELFSPECTRA PROMEDIADO')
-# # #                 #plt.subplot(122)
-# # #                 #plt.plot(xSamples,zline)
-# #                 plt.xlabel('Frecuencia (KHz)')
-# #                 plt.ylabel('Magnitud')
-# #                 plt.legend()
-# # #                   
-# # #                 plt.figure(3)
-# # #                 plt.subplot(311)
-# # #                 #plt.plot(xFrec,phase[0])
-# # #                 plt.plot(xFrec,phase[0],'g')
-# # #                 plt.subplot(312)
-# # #                 plt.plot(xFrec,phase[1],'g')
-# # #                 plt.subplot(313)
-# # #                 plt.plot(xFrec,phase[2],'g')
-# # #                 #plt.plot(xFrec,phase[2])
-# # #                   
-# # #                 plt.figure(4)
-# # #                   
-# # #                 plt.plot(xSamples,coherence[0],'b')
-# # #                 plt.plot(xSamples,coherence[1],'r')
-# # #                 plt.plot(xSamples,coherence[2],'g')
-# #                 plt.show()
-# # #                   
-# # #                 plt.clf()
-# # #                 plt.cla()
-# # #                 plt.close()    
-#                   
-#                 print ' ' 
-                
-                
-                
-            self.BlockCounter+=2
-            
-        else:
-            self.fileSelector+=1    
-            self.BlockCounter=0
-            print "Next File"
-        
-        
-        
-
-    

@@ -7,20 +7,20 @@ if __name__ == '__main__':
     desc = "Segundo Test"
     filename = "schain.xml"
     
-    pathW='/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdataCLAIRE/Extra'
-    figpath = '/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdataCLAIRE/Extra'
+    pathW='/data/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdataCLAIRE/Extra'
+    figpath = '/data/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/pdataCLAIRE/Extra'
     
     controllerObj = Project()
     
     controllerObj.setup(id='191', name='test01', description=desc)
     
     readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
-                                                path='/media/erick/6F60F7113095A154/CLAIRE/CLAIRE_WINDS_2MHZ/DATA/',
+                                                path='/data/CLAIRE/CLAIRE_WINDS_2MHZ/DATA',
                                                 #path='/home/erick/Documents/Data/Claire_Data/raw',
-                                                startDate='2018/02/01',
-                                                endDate='2018/02/01',
-                                                startTime='12:00:00',
-                                                endTime='20:00:00',
+                                                startDate='2018/02/22',
+                                                endDate='2018/02/24',
+                                                startTime='00:00:00',
+                                                endTime='23:59:00',
                                                 online=0,
                                                 walk=1)
     

@@ -5,6 +5,181 @@ import inspect
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
+class ParamLine(Figure):
+    
+    isConfig = None
+    
+    def __init__(self):
+        
+        self.isConfig = False
+        self.WIDTH = 300
+        self.HEIGHT = 200
+        self.counter_imagwr = 0
+    
+    def getSubplots(self):
+        
+        nrow = self.nplots
+        ncol = 3
+        return nrow, ncol
+    
+    def setup(self, id, nplots, wintitle, show):
+        
+        self.nplots = nplots
+        
+        self.createFigure(id=id, 
+                          wintitle=wintitle, 
+                          show=show)
+        
+        nrow,ncol = self.getSubplots()
+        colspan = 3
+        rowspan = 1
+        
+        for i in range(nplots):
+            self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
+    
+    def plot_iq(self, x, y, id, channelIndexList, thisDatetime, wintitle, show, xmin, xmax, ymin, ymax):
+        yreal = y[channelIndexList,:].real
+        yimag = y[channelIndexList,:].imag
+        
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Range (Km)"
+        ylabel = "Intensity - IQ"
+        
+        if not self.isConfig:
+            nplots = len(channelIndexList)
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle='',
+                       show=show)
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = min(numpy.nanmin(yreal),numpy.nanmin(yimag))
+            if ymax == None: ymax = max(numpy.nanmax(yreal),numpy.nanmax(yimag))
+                
+            self.isConfig = True
+        
+        self.setWinTitle(title)
+        
+        for i in range(len(self.axesList)):
+            title = "Channel %d" %(i)
+            axes = self.axesList[i]
+
+            axes.pline(x, yreal[i,:],
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        xlabel=xlabel, ylabel=ylabel, title=title)
+
+            axes.addpline(x, yimag[i,:], idline=1, color="red", linestyle="solid", lw=2)
+            
+    def plot_power(self, x, y, id, channelIndexList, thisDatetime, wintitle, show, xmin, xmax, ymin, ymax):
+        y = y[channelIndexList,:] * numpy.conjugate(y[channelIndexList,:])
+        yreal = y.real
+        
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Range (Km)"
+        ylabel = "Intensity"
+        
+        if not self.isConfig:
+            nplots = len(channelIndexList)
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle='',
+                       show=show)
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(yreal)
+            if ymax == None: ymax = numpy.nanmax(yreal)
+                
+            self.isConfig = True
+        
+        self.setWinTitle(title)
+        
+        for i in range(len(self.axesList)):
+            title = "Channel %d" %(i)
+            axes = self.axesList[i]
+            ychannel = yreal[i,:]
+            axes.pline(x, ychannel,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        xlabel=xlabel, ylabel=ylabel, title=title)
+
+    
+    def run(self, dataOut, id, wintitle="", channelList=None,
+            xmin=None, xmax=None, ymin=None, ymax=None, save=False,
+            figpath='./', figfile=None, show=True, wr_period=1,
+            ftp=False, server=None, folder=None, username=None, password=None):
+        
+        """
+        
+        Input:
+            dataOut         :
+            id        :
+            wintitle        :
+            channelList     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+        """
+        
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+        
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        
+        y = dataOut.RR
+                
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        xlabel = "Range (Km)"
+        ylabel = "Intensity"
+        
+        if not self.isConfig:
+            nplots = len(channelIndexList)
+            
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle='',
+                       show=show)
+            
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+                
+            self.isConfig = True
+        
+        self.setWinTitle(title)
+        
+        for i in range(len(self.axesList)):
+            title = "Channel %d" %(i)
+            axes = self.axesList[i]
+            ychannel = y[i,:]
+            axes.pline(x, ychannel,
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        xlabel=xlabel, ylabel=ylabel, title=title)
+        
+        
+        self.draw()
+        
+        str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S") + "_" + str(dataOut.profileIndex)
+        figfile = self.getFilename(name = str_datetime) 
+                
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
+
+
 
 class SpcParamPlot(Figure):
 
@@ -800,8 +975,8 @@ class ParametersPlot(Figure):
         self.isConfig = False
         self.__nsubplots = 1
 
-        self.WIDTH = 800
-        self.HEIGHT = 250
+        self.WIDTH = 300
+        self.HEIGHT = 550
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -910,7 +1085,7 @@ class ParametersPlot(Figure):
 #         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Parameters Plot" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
-        ylabel = "Range (Km)"
+        ylabel = "Range (km)"
 
         update_figfile = False
 
@@ -954,24 +1129,81 @@ class ParametersPlot(Figure):
 
         self.setWinTitle(title)
 
-        for i in range(self.nchan):
-            index = channelIndexList[i]
-            title = "Channel %d: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
-            axes = self.axesList[i*self.plotFact]
-            z1 = z[i,:].reshape((1,-1))
-            axes.pcolorbuffer(x, y, z1,
-                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
-                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', cbsize="1%",colormap=colormap)
+#         for i in range(self.nchan):
+#             index = channelIndexList[i]
+#             title = "Channel %d: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+#             axes = self.axesList[i*self.plotFact]
+#             z1 = z[i,:].reshape((1,-1))
+#             axes.pcolorbuffer(x, y, z1,
+#                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+#                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+#                         ticksize=9, cblabel='', cbsize="1%",colormap=colormap)
+# 
+#             if showSNR:
+#                 title = "Channel %d SNR: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+#                 axes = self.axesList[i*self.plotFact + 1]
+#                 SNRdB1 = SNRdB[i,:].reshape((1,-1))
+#                 axes.pcolorbuffer(x, y, SNRdB1,
+#                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+#                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+#                         ticksize=9, cblabel='', cbsize="1%",colormap='jet')
 
-            if showSNR:
-                title = "Channel %d SNR: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
-                axes = self.axesList[i*self.plotFact + 1]
-                SNRdB1 = SNRdB[i,:].reshape((1,-1))
-                axes.pcolorbuffer(x, y, SNRdB1,
-                        xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
-                        xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-                        ticksize=9, cblabel='', cbsize="1%",colormap='jet')
+        i=0    
+        index = channelIndexList[i]
+        title = "Factor de reflectividad Z [dBZ]"
+        axes = self.axesList[i*self.plotFact]
+        z1 = z[i,:].reshape((1,-1))
+        axes.pcolorbuffer(x, y, z1,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                    ticksize=9, cblabel='', cbsize="1%",colormap=colormap)
+ 
+        if showSNR:
+            title = "Channel %d SNR: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            axes = self.axesList[i*self.plotFact + 1]
+            SNRdB1 = SNRdB[i,:].reshape((1,-1))
+            axes.pcolorbuffer(x, y, SNRdB1,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                    ticksize=9, cblabel='', cbsize="1%",colormap='jet')
+         
+        i=1
+        index = channelIndexList[i]
+        title = "Velocidad vertical Doppler [m/s]"
+        axes = self.axesList[i*self.plotFact]
+        z1 = z[i,:].reshape((1,-1))
+        axes.pcolorbuffer(x, y, z1,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=-10, zmax=10,
+                    xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                    ticksize=9, cblabel='', cbsize="1%",colormap='seismic_r')
+ 
+        if showSNR:
+            title = "Channel %d SNR: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            axes = self.axesList[i*self.plotFact + 1]
+            SNRdB1 = SNRdB[i,:].reshape((1,-1))
+            axes.pcolorbuffer(x, y, SNRdB1,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                    ticksize=9, cblabel='', cbsize="1%",colormap='jet')
+          
+        i=2       
+        index = channelIndexList[i]
+        title = "Intensidad de lluvia [mm/h]"
+        axes = self.axesList[i*self.plotFact]
+        z1 = z[i,:].reshape((1,-1))
+        axes.pcolorbuffer(x, y, z1,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=0, zmax=40,
+                    xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                    ticksize=9, cblabel='', cbsize="1%",colormap='ocean_r')
+ 
+        if showSNR:
+            title = "Channel %d SNR: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+            axes = self.axesList[i*self.plotFact + 1]
+            SNRdB1 = SNRdB[i,:].reshape((1,-1))
+            axes.pcolorbuffer(x, y, SNRdB1,
+                    xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+                    xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+                    ticksize=9, cblabel='', cbsize="1%",colormap='jet')
 
 
         self.draw()

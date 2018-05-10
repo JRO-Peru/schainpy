@@ -645,7 +645,10 @@ class ParamWriter(Operation):
             dsDict['variable'] = self.dataList[i]
             #---------------------    Conditionals    ------------------------
             #There is no data
+            
+            
             if dataAux is None:
+                
                 return 0
 
             #Not array, just a number
@@ -820,7 +823,7 @@ class ParamWriter(Operation):
             return False
 
     def setNextFile(self):
-
+        
         ext = self.ext
         path = self.path
         setFile = self.setFile
@@ -1076,10 +1079,11 @@ class ParamWriter(Operation):
         return
 
     def run(self, dataOut, **kwargs):
-
+        
         if not(self.isConfig):
+            
             flagdata = self.setup(dataOut, **kwargs)
-
+            
             if not(flagdata):
                 return
 
