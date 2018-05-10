@@ -907,7 +907,7 @@ class FullSpectralAnalysis(Operation):
 
         
         
-        
+        '''Nota: Cambiar el signo de numpy.array(velocityX) cuando se intente procesar datos de BLTR'''
         data_output[0] = numpy.array(velocityX)  #self.moving_average(numpy.array(velocityX) , N=1)
         data_output[1] = numpy.array(velocityY)  #self.moving_average(numpy.array(velocityY) , N=1)
         data_output[2] = velocityV#FirstMoment
@@ -915,6 +915,8 @@ class FullSpectralAnalysis(Operation):
         xFrec=FrecRange[0:spc.shape[1]]
         
         dataOut.data_output=data_output
+        
+        print 'velocidad zonal', data_output[0]
         
         return
     

@@ -23,7 +23,8 @@ controllerObj.setup(id='191', name='test01', description=desc)
 readUnitConfObj = controllerObj.addReadUnit(datatype='BLTRSpectraReader',
                                                 #path='/media/erick/6F60F7113095A154/BLTR/',
                                                 #path='/data/BLTR',
-                                                path='/home/erick/Documents/Data/BLTR_Data/fdt/',
+                                                path = '/data/BLTR/2018/enero',
+                                                #path='/home/erick/Documents/Data/BLTR_Data/fdt/',
                                                 endDate='2016/11/01',
                                                 startTime='0:00:00',
                                                 startDate='2016/11/01',
@@ -117,10 +118,10 @@ opObj22.addParameter(name='zmax_ver', value='300', format='float')
 opObj22.addParameter(name='SNRmin', value='-5', format='int')
 opObj22.addParameter(name='SNRmax', value='30', format='int')
 # opObj22.addParameter(name='SNRthresh', value='-3.5', format='float')
-opObj22.addParameter(name='xmin', value='0', format='float')
-opObj22.addParameter(name='xmax', value='24', format='float')
-opObj22.addParameter(name='ymin', value='225', format='float')
-#opObj22.addParameter(name='ymax', value='2000', format='float')
+opObj22.addParameter(name='xmin', value='4', format='float')
+opObj22.addParameter(name='xmax', value='9', format='float')
+opObj22.addParameter(name='ymin', value='0', format='float')
+opObj22.addParameter(name='ymax', value='4000', format='float')
 opObj22.addParameter(name='save', value='1', format='int')
 opObj22.addParameter(name='figpath', value=figpath, format='str')
 

@@ -793,3 +793,11 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
                     self.dataOut.ChanDist = self.ChanDist
                 
                 
+                
+                
+            self.BlockCounter+=2
+            
+        else:
+            self.fileSelector+=1    
+            self.BlockCounter=0
+            print "Next File"                
