@@ -1,4 +1,5 @@
-"""The admin module contains all administrative classes relating to the schain python api.
+"""
+The admin module contains all administrative classes relating to the schain python api.
 
 The main role of this module is to send some reports. It contains a
 notification class and a standard error handing class.
@@ -18,6 +19,7 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
+import schainpy
 from schainpy.utils import log
 from schainpy.model.graphics.jroplot_data import popup
 
@@ -39,13 +41,13 @@ class Alarm(Process):
     '''
     modes:
       0 - All
-      1 - Sound alarm
-      2 - Send email
-      3 - Popup message
+      1 - Send email
+      2 - Popup message
+      3 - Sound alarm
       4 - Send to alarm system TODO
     '''
 
-    def __init__(self, modes=[1], **kwargs):
+    def __init__(self, modes=[], **kwargs):
         Process.__init__(self)
         self.modes = modes
         self.kwargs = kwargs
@@ -63,10 +65,13 @@ class Alarm(Process):
     @staticmethod
     def send_email(**kwargs):
         notifier = SchainNotify()
+        print kwargs
         notifier.notify(**kwargs)            
 
     @staticmethod
-    def show_popup(message='Error'):
+    def show_popup(message):
+        if isinstance(message, list):
+            message = message[-1]
         popup(message)
 
     @staticmethod
@@ -83,15 +88,15 @@ class Alarm(Process):
     def run(self):
         tasks = {
             1 : self.send_email,
-            2 : self.play_sound,
-            3 : self.show_popup,
+            2 : self.show_popup,
+            3 : self.play_sound,
             4 : self.send_alarm,
         }
 
         tasks_args = {
             1: ['email', 'message', 'subject', 'subtitle', 'filename'],
-            2: [],
-            3: ['message'],
+            2: ['message'],
+            3: [],
             4: [],
         }
         procs = []
