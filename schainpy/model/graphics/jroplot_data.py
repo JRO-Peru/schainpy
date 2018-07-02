@@ -9,6 +9,7 @@ import zmq
 import numpy
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import FuncFormatter, LinearLocator, MultipleLocator
 
@@ -24,6 +25,23 @@ matplotlib.pyplot.register_cmap(cmap=ncmap)
 
 CMAPS = [plt.get_cmap(s) for s in ('jro', 'jet', 'viridis', 'plasma', 'inferno', 'Greys', 'seismic', 'bwr', 'coolwarm')]
 
+EARTH_RADIUS = 6.3710e3
+
+def ll2xy(lat1, lon1, lat2, lon2):
+
+    p = 0.017453292519943295
+    a = 0.5 - numpy.cos((lat2 - lat1) * p)/2 + numpy.cos(lat1 * p) * numpy.cos(lat2 * p) * (1 - numpy.cos((lon2 - lon1) * p)) / 2
+    r = 12742 * numpy.arcsin(numpy.sqrt(a))
+    theta = numpy.arctan2(numpy.sin((lon2-lon1)*p)*numpy.cos(lat2*p), numpy.cos(lat1*p)*numpy.sin(lat2*p)-numpy.sin(lat1*p)*numpy.cos(lat2*p)*numpy.cos((lon2-lon1)*p))
+    theta = -theta + numpy.pi/2
+    return r*numpy.cos(theta), r*numpy.sin(theta)
+
+def km2deg(km):
+    '''
+    Convert distance in km to degrees
+    '''
+
+    return numpy.rad2deg(km/EARTH_RADIUS)
 
 def figpause(interval):
     backend = plt.rcParams['backend']
@@ -64,7 +82,7 @@ class PlotData(Operation, Process):
     __attrs__ = ['show', 'save', 'xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax',
                  'zlimits', 'xlabel', 'ylabel', 'xaxis','cb_label', 'title',
                  'colorbar', 'bgcolor', 'width', 'height', 'localtime', 'oneFigure',
-                 'showprofile', 'decimation']
+                 'showprofile', 'decimation', 'ftp']
 
     def __init__(self, **kwargs):
 
@@ -81,6 +99,7 @@ class PlotData(Operation, Process):
         self.localtime = kwargs.pop('localtime', True)
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
+        self.ftp = kwargs.get('ftp', False)
         self.colormap = kwargs.get('colormap', self.colormap)
         self.colormap_coh = kwargs.get('colormap_coh', 'jet')
         self.colormap_phase = kwargs.get('colormap_phase', 'RdBu_r')
@@ -90,6 +109,7 @@ class PlotData(Operation, Process):
         self.title = kwargs.get('wintitle', self.CODE.upper())
         self.cb_label = kwargs.get('cb_label', None)
         self.cb_labels = kwargs.get('cb_labels', None)
+        self.labels = kwargs.get('labels', None)
         self.xaxis = kwargs.get('xaxis', 'frequency')
         self.zmin = kwargs.get('zmin', None)
         self.zmax = kwargs.get('zmax', None)
@@ -97,8 +117,10 @@ class PlotData(Operation, Process):
         self.xmin = kwargs.get('xmin', None)
         self.xmax = kwargs.get('xmax', None)
         self.xrange = kwargs.get('xrange', 24)
+        self.xscale = kwargs.get('xscale', None)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
+        self.yscale = kwargs.get('yscale', None)
         self.xlabel = kwargs.get('xlabel', None)
         self.decimation = kwargs.get('decimation', None)
         self.showSNR = kwargs.get('showSNR', False)
@@ -107,8 +129,10 @@ class PlotData(Operation, Process):
         self.height = kwargs.get('height', None)
         self.colorbar = kwargs.get('colorbar', True)
         self.factors = kwargs.get('factors', [1, 1, 1, 1, 1, 1, 1, 1])
+        self.channels = kwargs.get('channels', None)
         self.titles = kwargs.get('titles', [])
         self.polar = False
+        self.grid = kwargs.get('grid', False)
 
     def __fmtTime(self, x, pos):
         '''
@@ -381,14 +405,19 @@ class PlotData(Operation, Process):
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
 
-        Y = numpy.array([5, 10, 20, 50, 100, 200, 500, 1000, 2000])
-        i = 1 if numpy.where(ymax-ymin < Y)[0][0] < 0 else numpy.where(ymax-ymin < Y)[0][0]
-        ystep = Y[i] / 5
+        Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
+        i = 1 if numpy.where(abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
+        ystep = Y[i] / 10.
 
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
                 ax.set_facecolor(self.bgcolor)
                 ax.yaxis.set_major_locator(MultipleLocator(ystep))
+                ax.xaxis.set_major_locator(MultipleLocator(ystep))
+                if self.xscale:
+                    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: '{0:g}'.format(x*self.xscale)))
+                if self.xscale:
+                    ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: '{0:g}'.format(x*self.yscale)))
                 if self.xaxis is 'time':
                     ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
                     ax.xaxis.set_major_locator(LinearLocator(9))
@@ -414,13 +443,15 @@ class PlotData(Operation, Process):
                         ax.cbar.set_label(self.cb_labels[n], size=8)
                 else:
                     ax.cbar = None
+            if self.grid:
+                ax.grid(True)
 
             if not self.polar:
                 ax.set_xlim(xmin, xmax)
                 ax.set_ylim(ymin, ymax)
-                ax.set_title('{} - {} {}'.format(
+                ax.set_title('{} {} {}'.format(
                     self.titles[n],
-                    self.getDateTime(self.max_time).strftime('%H:%M:%S'),
+                    self.getDateTime(self.max_time).strftime('%Y-%m-%dT%H:%M:%S'),
                     self.time_label),
                     size=8)
             else:
@@ -432,13 +463,15 @@ class PlotData(Operation, Process):
     def __plot(self):
         '''
         '''
-        log.success('Plotting', self.name)
+        log.log('Plotting', self.name)
 
         try:
             self.plot()
             self.format()
-        except:
+        except Exception as e:
             log.warning('{} Plot could not be updated... check data'.format(self.CODE), self.name)
+            log.error(str(e), '')
+            return
 
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
@@ -452,14 +485,20 @@ class PlotData(Operation, Process):
                                                                  self.getDateTime(self.max_time).strftime('%Y/%m/%d')))
             fig.canvas.draw()
 
-            if self.save and self.data.ended:                
-                channels = range(self.nrows)
+            if self.save and (self.data.ended or not self.data.buffering):
+                
+                if self.save_labels:
+                    labels = self.save_labels
+                else:
+                    labels = range(self.nrows)
+                
                 if self.oneFigure:
                     label = ''
                 else:
-                    label = '_{}'.format(channels[n])
+                    label = '-{}'.format(labels[n])
                 figname = os.path.join(
                     self.save,
+                    self.CODE,
                     '{}{}_{}.png'.format(
                         self.CODE,
                         label,
@@ -468,6 +507,8 @@ class PlotData(Operation, Process):
                     )
                 )
                 log.log('Saving figure: {}'.format(figname), self.name)
+                if not os.path.isdir(os.path.dirname(figname)):
+                    os.makedirs(os.path.dirname(figname))
                 fig.savefig(figname)
 
     def plot(self):
@@ -477,7 +518,7 @@ class PlotData(Operation, Process):
 
     def run(self):
 
-        log.success('Starting', self.name)
+        log.log('Starting', self.name)
 
         context = zmq.Context()
         receiver = context.socket(zmq.SUB)
@@ -978,3 +1019,130 @@ class PlotOutputData(PlotParamData):
 
     CODE = 'output'
     colormap = 'seismic'
+
+
+class PlotPolarMapData(PlotData):
+    '''
+    Plot for meteors detection data
+    '''
+
+    CODE = 'param'
+    colormap = 'seismic'
+
+    def setup(self):
+        self.ncols = 1
+        self.nrows = 1
+        self.width = 9
+        self.height = 8
+        self.mode = self.data.meta['mode']
+        if self.channels is not None:
+            self.nplots = len(self.channels)
+            self.nrows = len(self.channels)
+        else:
+            self.nplots = self.data.shape(self.CODE)[0]
+            self.nrows = self.nplots
+            self.channels = range(self.nplots)
+        if self.mode == 'E':
+            self.xlabel = 'Longitude'
+            self.ylabel = 'Latitude'
+        else:
+            self.xlabel = 'Range (km)'
+            self.ylabel = 'Height (km)'
+        self.bgcolor = 'white'
+        self.cb_labels = self.data.meta['units']
+        self.lat = self.data.meta['latitude']
+        self.lon = self.data.meta['longitude']
+        self.xmin, self.xmax = float(km2deg(self.xmin) + self.lon), float(km2deg(self.xmax) + self.lon)
+        self.ymin, self.ymax = float(km2deg(self.ymin) + self.lat), float(km2deg(self.ymax) + self.lat)
+        #  self.polar = True
+
+    def plot(self):                
+        
+        for n, ax in enumerate(self.axes):
+            data = self.data['param'][self.channels[n]]
+            
+            zeniths = numpy.linspace(0, self.data.meta['max_range'], data.shape[1])
+            if self.mode == 'E':    
+                azimuths = -numpy.radians(self.data.heights)+numpy.pi/2
+                r, theta = numpy.meshgrid(zeniths, azimuths)
+                x, y = r*numpy.cos(theta)*numpy.cos(numpy.radians(self.data.meta['elevation'])), r*numpy.sin(theta)*numpy.cos(numpy.radians(self.data.meta['elevation']))
+                x = km2deg(x) + self.lon
+                y = km2deg(y) + self.lat
+            else:
+                azimuths = numpy.radians(self.data.heights)
+                r, theta = numpy.meshgrid(zeniths, azimuths)
+                x, y = r*numpy.cos(theta), r*numpy.sin(theta)
+            self.y = zeniths
+
+            if ax.firsttime:
+                if self.zlimits is not None:
+                    self.zmin, self.zmax = self.zlimits[n]
+                ax.plt = ax.pcolormesh(#r, theta, numpy.ma.array(data, mask=numpy.isnan(data)),
+                                       x, y, numpy.ma.array(data, mask=numpy.isnan(data)),
+                                        vmin=self.zmin,
+                                        vmax=self.zmax,
+                                        cmap=self.cmaps[n])
+            else:
+                if self.zlimits is not None:
+                    self.zmin, self.zmax = self.zlimits[n]
+                ax.collections.remove(ax.collections[0])
+                ax.plt = ax.pcolormesh(# r, theta, numpy.ma.array(data, mask=numpy.isnan(data)),
+                                       x, y, numpy.ma.array(data, mask=numpy.isnan(data)), 
+                                        vmin=self.zmin,
+                                        vmax=self.zmax,
+                                        cmap=self.cmaps[n])
+
+            if self.mode == 'A':
+                continue
+            
+            # plot district names
+            f = open('/data/workspace/schain_scripts/distrito.csv')
+            for line in f:
+                label, lon, lat = [s.strip() for s in line.split(',') if s]
+                lat = float(lat)
+                lon = float(lon)                
+                # ax.plot(lon, lat, '.b', ms=2)
+                ax.text(lon, lat, label.decode('utf8'), ha='center', va='bottom', size='8', color='black')
+            
+            # plot limites
+            limites =[]
+            tmp = []
+            for line in open('/data/workspace/schain_scripts/lima.csv'):
+                if '#' in line:
+                    if tmp:
+                        limites.append(tmp)
+                    tmp = []
+                    continue
+                values = line.strip().split(',')
+                tmp.append((float(values[0]), float(values[1])))
+            for points in limites:
+                ax.add_patch(Polygon(points, ec='k', fc='none', ls='--', lw=0.5))
+
+            # plot Cuencas
+            for cuenca in ('rimac', 'lurin', 'mala', 'chillon', 'chilca', 'chancay-huaral'):
+                f = open('/data/workspace/schain_scripts/{}.csv'.format(cuenca))
+                values = [line.strip().split(',') for line in f]
+                points = [(float(s[0]), float(s[1])) for s in values]
+                ax.add_patch(Polygon(points, ec='b', fc='none'))
+
+            # plot grid
+            for r in (15, 30, 45, 60):
+                ax.add_artist(plt.Circle((self.lon, self.lat), km2deg(r), color='0.6', fill=False, lw=0.2))
+                ax.text(
+                    self.lon + (km2deg(r))*numpy.cos(60*numpy.pi/180),
+                    self.lat + (km2deg(r))*numpy.sin(60*numpy.pi/180),
+                    '{}km'.format(r), 
+                    ha='center', va='bottom', size='8', color='0.6', weight='heavy')
+            
+        if self.mode == 'E':
+            title = 'El={}$^\circ$'.format(self.data.meta['elevation'])
+            label = 'E{:02d}'.format(int(self.data.meta['elevation']))
+        else:
+            title = 'Az={}$^\circ$'.format(self.data.meta['azimuth'])
+            label = 'A{:02d}'.format(int(self.data.meta['azimuth']))
+        
+        self.save_labels = ['{}-{}'.format(lbl, label) for lbl in self.labels]
+        self.titles = ['{} {}'.format(self.data.parameters[x], title) for x in self.channels]
+        self.saveTime = self.max_time
+
+        

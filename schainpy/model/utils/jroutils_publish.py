@@ -2,12 +2,15 @@
 @author: Juan C. Espinoza
 '''
 
+import os
+import glob
 import time
 import json
 import numpy
 import paho.mqtt.client as mqtt
 import zmq
 import datetime
+import ftplib
 from zmq.utils.monitor import recv_monitor_message
 from functools import wraps
 from threading import Thread
@@ -17,12 +20,39 @@ from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
 from schainpy.model.data.jrodata import JROData
 from schainpy.utils import log
 
-MAXNUMX = 100
-MAXNUMY = 100
+MAXNUMX = 500
+MAXNUMY = 500
 
-class PrettyFloat(float):
-    def __repr__(self):
-        return '%.2f' % self
+PLOT_CODES = {
+    'rti': 0,            # Range time intensity (RTI).
+    'spc': 1,            # Spectra (and Cross-spectra) information.
+    'cspc': 2,           # Cross-Correlation information.
+    'coh': 3,            # Coherence map.
+    'base': 4,           # Base lines graphic.
+    'row': 5,            # Row Spectra.
+    'total': 6,          # Total Power.
+    'drift': 7,          # Drifts graphics.
+    'height': 8,         # Height profile.
+    'phase': 9,          # Signal Phase.
+    'power': 16,
+    'noise': 17,
+    'beacon': 18,
+    'wind': 22,
+    'skymap': 23,
+    'Unknown': 24,
+    'V-E': 25,          # PIP Velocity.
+    'Z-E': 26,          # PIP Reflectivity.
+    'V-A': 27,          # RHI Velocity.
+    'Z-A': 28,          # RHI Reflectivity.
+}
+
+def get_plot_code(s):
+    label = s.split('_')[0]
+    codes = [key for key in PLOT_CODES if key in label]
+    if codes:        
+        return PLOT_CODES[codes[0]]
+    else:
+        return 24
 
 def roundFloats(obj):
     if isinstance(obj, list):
@@ -82,12 +112,14 @@ class Data(object):
     Object to hold data to be plotted
     '''
 
-    def __init__(self, plottypes, throttle_value, exp_code):
+    def __init__(self, plottypes, throttle_value, exp_code, buffering=True):
         self.plottypes = plottypes
         self.throttle = throttle_value
         self.exp_code = exp_code
+        self.buffering = buffering
         self.ended = False
         self.localtime = False
+        self.meta = {}
         self.__times = []
         self.__heights = []
 
@@ -102,7 +134,7 @@ class Data(object):
         if key not in self.data:
             raise KeyError(log.error('Missing key: {}'.format(key)))
 
-        if 'spc' in key:
+        if 'spc' in key or not self.buffering:
             ret = self.data[key]
         else:
             ret = numpy.array([self.data[key][x] for x in self.times])
@@ -118,6 +150,7 @@ class Data(object):
         Configure object
         '''
         
+        self.type = ''
         self.ended = False
         self.data = {}
         self.__times = []
@@ -134,7 +167,7 @@ class Data(object):
         '''
         
         if len(self.data[key]):
-            if 'spc' in key:
+            if 'spc' in key or not self.buffering:
                 return self.data[key].shape
             return self.data[key][self.__times[0]].shape
         return (0,)
@@ -147,9 +180,12 @@ class Data(object):
         if tm in self.__times:
             return
 
+        self.type = dataOut.type
         self.parameters = getattr(dataOut, 'parameters', [])
         if hasattr(dataOut, 'pairsList'):
             self.pairs = dataOut.pairsList
+        if hasattr(dataOut, 'meta'):
+            self.meta = dataOut.meta
         self.channels = dataOut.channelList
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
@@ -162,31 +198,39 @@ class Data(object):
         for plot in self.plottypes:
             if plot == 'spc':
                 z = dataOut.data_spc/dataOut.normFactor
-                self.data[plot] = 10*numpy.log10(z)
+                buffer = 10*numpy.log10(z)
             if plot == 'cspc':
-                self.data[plot] = dataOut.data_cspc
+                buffer = dataOut.data_cspc
             if plot == 'noise':
-                self.data[plot][tm] = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
+                buffer = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
             if plot == 'rti':
-                self.data[plot][tm] = dataOut.getPower()
+                buffer = dataOut.getPower()
             if plot == 'snr_db':
-                self.data['snr'][tm] = dataOut.data_SNR
+                buffer = dataOut.data_SNR
             if plot == 'snr':
-                self.data[plot][tm] = 10*numpy.log10(dataOut.data_SNR)
+                buffer = 10*numpy.log10(dataOut.data_SNR)
             if plot == 'dop':
-                self.data[plot][tm] = 10*numpy.log10(dataOut.data_DOP)
+                buffer = 10*numpy.log10(dataOut.data_DOP)
             if plot == 'mean':
-                self.data[plot][tm] = dataOut.data_MEAN
+                buffer = dataOut.data_MEAN
             if plot == 'std':
-                self.data[plot][tm] = dataOut.data_STD
+                buffer = dataOut.data_STD
             if plot == 'coh':
-                self.data[plot][tm] = dataOut.getCoherence()
+                buffer = dataOut.getCoherence()
             if plot == 'phase':
-                self.data[plot][tm] = dataOut.getCoherence(phase=True)
+                buffer = dataOut.getCoherence(phase=True)
             if plot == 'output':
-                self.data[plot][tm] = dataOut.data_output
+                buffer = dataOut.data_output
             if plot == 'param':
-                self.data[plot][tm] = dataOut.data_param
+                buffer = dataOut.data_param
+
+            if 'spc' in plot:
+                self.data[plot] = buffer
+            else:
+                if self.buffering:
+                    self.data[plot][tm] = buffer
+                else:
+                    self.data[plot] = buffer
 
     def normalize_heights(self):
         '''
@@ -220,7 +264,7 @@ class Data(object):
         tm = self.times[-1]
         dy = int(self.heights.size/MAXNUMY) + 1
         for key in self.data:
-            if key in ('spc', 'cspc'):
+            if key in ('spc', 'cspc') or not self.buffering:
                 dx = int(self.data[key].shape[1]/MAXNUMX) + 1
                 data[key] = roundFloats(self.data[key][::, ::dx, ::dy].tolist())
             else:
@@ -240,6 +284,10 @@ class Data(object):
             ret['pairs'] = self.pairs
         else:
             ret['pairs'] = []
+        
+        for key, value in self.meta.items():
+            ret[key] = value
+
         return json.dumps(ret)
 
     @property
@@ -492,7 +540,7 @@ class PlotterReceiver(ProcessingUnit, Process):
 
     throttle_value = 5
     __attrs__ = ['server', 'plottypes', 'realtime', 'localtime', 'throttle',
-        'exp_code', 'web_server']
+        'exp_code', 'web_server', 'buffering']
 
     def __init__(self, **kwargs):
 
@@ -513,6 +561,7 @@ class PlotterReceiver(ProcessingUnit, Process):
         self.plottypes = [s.strip() for s in kwargs.get('plottypes', 'rti').split(',')]
         self.realtime = kwargs.get('realtime', False)
         self.localtime = kwargs.get('localtime', True)
+        self.buffering = kwargs.get('buffering', True)
         self.throttle_value = kwargs.get('throttle', 5)
         self.exp_code = kwargs.get('exp_code', None)
         self.sendData = self.initThrottle(self.throttle_value)
@@ -521,8 +570,8 @@ class PlotterReceiver(ProcessingUnit, Process):
 
     def setup(self):
 
-        self.data = Data(self.plottypes, self.throttle_value, self.exp_code)
-        self.isConfig = True        
+        self.data = Data(self.plottypes, self.throttle_value, self.exp_code, self.buffering)
+        self.isConfig = True
 
     def event_monitor(self, monitor):
 
@@ -556,12 +605,12 @@ class PlotterReceiver(ProcessingUnit, Process):
         return sendDataThrottled
 
     def send(self, data):
-        log.success('Sending {}'.format(data), self.name)
+        log.log('Sending {}'.format(data), self.name)
         self.sender.send_pyobj(data)
 
     def run(self):
 
-        log.success(
+        log.log(
             'Starting from {}'.format(self.address),
             self.name
         )
@@ -659,3 +708,157 @@ class PlotterReceiver(ProcessingUnit, Process):
                     coerce = False
 
         return
+
+
+class SendToFTP(Operation, Process):
+
+    '''
+    Operation to send data over FTP.
+    '''
+
+    __attrs__ = ['server', 'username', 'password', 'patterns', 'timeout']
+
+    def __init__(self, **kwargs):
+        '''
+        patterns = [(local1, remote1, ext, delay, exp_code, sub_exp_code), ...]
+        '''
+        Operation.__init__(self, **kwargs)
+        Process.__init__(self)
+        self.server = kwargs.get('server')
+        self.username = kwargs.get('username')
+        self.password = kwargs.get('password')
+        self.patterns = kwargs.get('patterns')
+        self.timeout = kwargs.get('timeout', 30)
+        self.times = [time.time() for p in self.patterns]
+        self.latest = ['' for p in self.patterns]
+        self.mp = False
+        self.ftp = None
+
+    def setup(self):
+
+        log.log('Connecting to ftp://{}'.format(self.server), self.name)
+        try:
+            self.ftp = ftplib.FTP(self.server, timeout=self.timeout)
+        except ftplib.all_errors:
+            log.error('Server connection fail: {}'.format(self.server), self.name)
+            if self.ftp is not None:
+                self.ftp.close()
+            self.ftp = None
+            self.isConfig = False
+            return 
+
+        try:
+            self.ftp.login(self.username, self.password)
+        except ftplib.all_errors:
+            log.error('The given username y/o password are incorrect', self.name)
+            if self.ftp is not None:
+                self.ftp.close()
+            self.ftp = None
+            self.isConfig = False
+            return
+
+        log.success('Connection success', self.name)
+        self.isConfig = True
+        return
+
+    def check(self):
+
+        try:
+            self.ftp.voidcmd("NOOP")
+        except:
+            log.warning('Connection lost... trying to reconnect', self.name)
+            if self.ftp is not None:
+                self.ftp.close()
+            self.ftp = None
+            self.setup()
+
+    def find_files(self, path, ext):
+
+        files = glob.glob1(path, '*{}'.format(ext))
+        files.sort()
+        if files:
+            return files[-1]
+        return None
+
+    def getftpname(self, filename, exp_code, sub_exp_code):
+
+        thisDatetime = datetime.datetime.strptime(filename.split('_')[1], '%Y%m%d')
+        YEAR_STR = '%4.4d'%thisDatetime.timetuple().tm_year
+        DOY_STR = '%3.3d'%thisDatetime.timetuple().tm_yday
+        exp_code = '%3.3d'%exp_code
+        sub_exp_code = '%2.2d'%sub_exp_code
+        plot_code = '%2.2d'% get_plot_code(filename)
+        name = YEAR_STR + DOY_STR + '00' + exp_code + sub_exp_code + plot_code + '00.png'
+        return name
+
+    def upload(self, src, dst):
+
+        log.log('Uploading {} '.format(src), self.name, nl=False)
+
+        fp = open(src, 'rb')
+        command = 'STOR {}'.format(dst)
+
+        try:
+            self.ftp.storbinary(command, fp, blocksize=1024)
+        except Exception, e:
+            log.error('{}'.format(e), self.name)
+            if self.ftp is not None:
+                self.ftp.close()
+            self.ftp = None
+            return 0
+
+        try:
+            self.ftp.sendcmd('SITE CHMOD 755 {}'.format(dst))
+        except Exception, e:
+            log.error('{}'.format(e), self.name)
+            if self.ftp is not None:
+                self.ftp.close()
+            self.ftp = None
+            return 0
+
+        fp.close()
+        log.success('OK', tag='')
+        return 1
+    
+    def send_files(self):
+
+        for x, pattern in enumerate(self.patterns):
+            local, remote, ext, delay, exp_code, sub_exp_code = pattern
+            if time.time()-self.times[x] >= delay:
+                srcname = self.find_files(local, ext)                
+                src = os.path.join(local, srcname)                
+                if os.path.getmtime(src) < time.time() - 30*60:                    
+                    continue
+
+                if srcname is None or srcname == self.latest[x]:
+                    continue
+                
+                if 'png' in ext:
+                    dstname = self.getftpname(srcname, exp_code, sub_exp_code)
+                else:
+                    dstname = srcname                
+                
+                dst = os.path.join(remote, dstname)
+
+                if self.upload(src, dst):
+                    self.times[x] = time.time()
+                    self.latest[x] = srcname
+                else:                    
+                    self.isConfig = False                    
+                    break            
+
+    def run(self):
+
+        while True:
+            if not self.isConfig:
+                self.setup()
+            if self.ftp is not None:
+                self.check()
+                self.send_files()            
+            time.sleep(10)
+
+    def close():
+
+        if self.ftp is not None:
+            self.ftp.close()
+        self.terminate()

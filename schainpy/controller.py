@@ -1282,7 +1282,7 @@ class Project(Process):
 
     def run(self):
 
-        log.success('Starting {}'.format(self.name))
+        log.success('Starting {}'.format(self.name), tag='')
         self.start_time = time.time()
         self.createObjects()
         self.connectObjects()
