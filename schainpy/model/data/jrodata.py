@@ -692,7 +692,7 @@ class Spectra(JROData):
 
     def getTimeInterval(self):
 
-        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles
+        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles * self.ippFactor
 
         return timeInterval
 
