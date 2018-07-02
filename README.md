@@ -6,24 +6,47 @@ Signal Chain (SCh) is a radar data processing library developed using [Python](w
 
 ## Installation
 
-Install system dependencies, clone the latest version from [git](http://jro-dev.igp.gob.pe/rhodecode/schain/) and install it as a normal python package.
+Install system dependencies, clone the latest version from [here](http://jro-dev.igp.gob.pe/rhodecode/schain/) and install it as a normal python package.
 
+### Linux based system
 ```
 $ sudo apt-get install python-pip python-dev gfortran libpng-dev freetype* libblas-dev liblapack-dev libatlas-base-dev python-qt4 python-tk libssl-dev libhdf5-dev
-$ sudo pip install numpy
 $ git clone http://jro-dev.igp.gob.pe/rhodecode/schain/
 $ cd schain
 $ sudo pip install ./
-```
-
-**Its recommended to install schain in a virtual environment**
 
 ```
-$ sudo pip install virtualenv
-$ virtualenv /path/to/virtual --system-site-packages
+
+### MAC Os 
+```
+$ brew install python
+$ brew install cartr/qt4/pyqt
+$ git clone http://jro-dev.igp.gob.pe/rhodecode/schain/
+$ cd schain
+$ pip install ./
+```
+
+**It is recommended to install schain in a virtual environment**
+```
+$ virtualenv /path/to/virtual
 $ source /path/to/virtual/bin/activate
 (virtual) $ cd schain
 (virtual) $ pip install ./
+(virtual) $ bash link_PyQt4.sh
+```
+
+### Docker
+
+Download Dockerfile from the repository, and create a docker image
+
+```
+$ docker build -t schain .
+```
+
+You can run a container using an xml file or a schain script also you need to mount a volume for the data input and for the output files/plots
+```
+$ docker run -it --rm --volume /path/to/host/data:/data schain xml /data/test.xml
+$ docker run -it --rm --volume /path/to/host/data:/data --entrypoint=/bin/python schain /data/test.py
 ```
 
 ## First Script

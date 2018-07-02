@@ -14,23 +14,24 @@ controllerObj.setup(id = '005', name='script05', description="JASMET Wind Estima
 #Verificar estas variables
 
 #Path donde estan los archivos HDF5 de meteoros
-path = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/meteor')
+path = os.path.join(os.environ['HOME'],'Pictures/JASMET30_mp/201608/meteor')
 
 #Path para los graficos
-pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
+pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30_mp/201608/graphics')
 
 #Path donde se almacenaran las estimaciones de vientos
-pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/phase')
+pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30_mp/201608/phase')
 
 #Fechas para busqueda de archivos
-startDate = '2016/08/20'
-endDate = '2016/08/30'
+startDate = '2016/08/29'
+endDate = '2016/09/11'
 #Horas para busqueda de archivos
 startTime = '00:00:00'
 endTime = '23:59:59'
 
 #Offsets optimos obtenidos con OptimumOffset.py
-phaseOffsets = '-2.84, -1.77, 11.94, 9.71'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+phaseOffsets = '-2.84, -1.77, 11.94, 9.71'     
+phaseOffsets = '-5.86, -0.93, -7.29, 23.35'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 #------------------------------------------------------------------------------------------------
 readUnitConfObj = controllerObj.addReadUnit(datatype='ParamReader',
                                             path=path,
@@ -81,11 +82,4 @@ opObj33.addParameter(name='metadataList',value='type,outputInterval,timeZone',fo
 opObj33.addParameter(name='dataList',value='data_output,utctime',format='list')
 #--------------------------------------------------------------------------------------------------
 
-print "Escribiendo el archivo XML"
-controllerObj.writeXml("JASMET05.xml")
-print "Leyendo el archivo XML"
-controllerObj.readXml("JASMET05.xml")
-
-controllerObj.createObjects()
-controllerObj.connectObjects()
-controllerObj.run()
+controllerObj.start()

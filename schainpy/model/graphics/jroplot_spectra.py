@@ -10,6 +10,7 @@ import numpy
 from figure import Figure, isRealtime, isTimeInHourRange
 from plotting_codes import *
 
+
 class SpectraPlot(Figure):
 
     isConfig = None
@@ -19,8 +20,8 @@ class SpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc'
 
-    def __init__(self):
-
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -86,7 +87,7 @@ class SpectraPlot(Figure):
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
-            xaxis="velocity", **kwargs):
+            xaxis="frequency", colormap='jet', normFactor=None):
 
         """
 
@@ -103,9 +104,6 @@ class SpectraPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
-
-        colormap = kwargs.get('colormap','jet') 
-
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
                 print 'Skipping this plot function'
@@ -120,8 +118,10 @@ class SpectraPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList" %channel
                 channelIndexList.append(dataOut.channelList.index(channel))
 
-        factor = dataOut.normFactor
-
+        if normFactor is None:
+            factor = dataOut.normFactor
+        else:
+            factor = normFactor
         if xaxis == "frequency":
             x = dataOut.getFreqRange(1)/1000.
             xlabel = "Frequency (kHz)"
@@ -230,8 +230,8 @@ class CrossSpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'cspc'
 
-    def __init__(self):
-
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 4
         self.counter_imagwr = 0
@@ -282,7 +282,7 @@ class CrossSpectraPlot(Figure):
             save=False, figpath='./', figfile=None, ftp=False, wr_period=1,
             power_cmap='jet', coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, normFactor=None,
             xaxis='frequency'):
 
         """
@@ -315,8 +315,11 @@ class CrossSpectraPlot(Figure):
 
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-
-        factor = dataOut.normFactor
+            
+        if normFactor is None:
+            factor = dataOut.normFactor
+        else:
+            factor = normFactor
         x = dataOut.getVelRange(1)
         y = dataOut.getHeiRange()
         z = dataOut.data_spc[:,:,:]/factor
@@ -447,8 +450,9 @@ class RTIPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'rti'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
+        Figure.__init__(self, **kwargs)
         self.timerange = None
         self.isConfig = False
         self.__nsubplots = 1
@@ -516,10 +520,10 @@ class RTIPlot(Figure):
 
     def run(self, dataOut, id, wintitle="", channelList=None, showprofile='True',
             xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
-            timerange=None,
+            timerange=None, colormap='jet',
             save=False, figpath='./', lastone=0,figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
-            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, **kwargs):
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, normFactor=None, HEIGHT=None):
 
         """
 
@@ -537,7 +541,10 @@ class RTIPlot(Figure):
             zmax            :    None
         """
 
-        colormap = kwargs.get('colormap', 'jet')
+        #colormap = kwargs.get('colormap', 'jet')
+        if HEIGHT is not None:
+            self.HEIGHT  = HEIGHT
+        
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
 
@@ -550,20 +557,21 @@ class RTIPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
 
-        if hasattr(dataOut, 'normFactor'):
+        if normFactor is None:
             factor = dataOut.normFactor
         else:
-            factor = 1
+            factor = normFactor
 
 #         factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
 
-#         z = dataOut.data_spc/factor
-#         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
-#         avg = numpy.average(z, axis=1)
-#         avgdB = 10.*numpy.log10(avg)
-        avgdB = dataOut.getPower()
+        z = dataOut.data_spc/factor
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        avg = numpy.average(z, axis=1)
+        avgdB = 10.*numpy.log10(avg)
+        # avgdB = dataOut.getPower()
+
 
         thisDatetime = dataOut.datatime
 #         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
@@ -651,7 +659,8 @@ class CoherenceMap(Figure):
     HEIGHTPROF = None
     PREFIX = 'cmap'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.timerange = 2*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -855,7 +864,8 @@ class PowerProfilePlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spcprofile'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -978,7 +988,8 @@ class SpectraCutPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc_cut'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -1107,8 +1118,9 @@ class Noise(Figure):
 
     PREFIX = 'noise'
 
-    def __init__(self):
 
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -1307,8 +1319,8 @@ class BeaconPhase(Figure):
 
     PREFIX = 'beacon_phase'
 
-    def __init__(self):
-
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1

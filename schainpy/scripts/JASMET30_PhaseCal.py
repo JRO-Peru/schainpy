@@ -14,17 +14,17 @@ controllerObj.setup(id = '004', name='script04', description="JASMET Phase Calib
 #Verificar estas variables
 
 #Path donde estan los archivos HDF5 de meteoros
-path = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/meteor')
+path = os.path.join(os.environ['HOME'],'Pictures/JASMET30_mp/201608/meteor')
 
 #Path para los graficos
-pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/graphics')
+pathfig = os.path.join(os.environ['HOME'],'Pictures/JASMET30_mp/201608/graphics')
 
 #Path donde se almacenaran las fases calculadas
-pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30/201608/phase')
+pathfile = os.path.join(os.environ['HOME'],'Pictures/JASMET30_mp/201608/phase')
 
 #Fechas para busqueda de archivos
-startDate = '2016/08/20'
-endDate = '2016/08/30'
+startDate = '2016/08/29'
+endDate = '2016/09/11'
 #Horas para busqueda de archivos
 startTime = '00:00:00'
 endTime = '23:59:59'
@@ -32,8 +32,8 @@ endTime = '23:59:59'
 #------------------------------------------------------------------------------------------------
 readUnitConfObj = controllerObj.addReadUnit(datatype='ParamReader',
                                             path=path,
-                                            startDate='2016/06/02',
-                                            endDate='2017/06/03',
+                                            startDate=startDate,
+                                            endDate=endDate,
                                             startTime=startTime,
                                             endTime=endTime,
                                             walk=1)
@@ -65,13 +65,4 @@ opObj33.addParameter(name='metadataList',value='type,outputInterval,timeZone',fo
 opObj33.addParameter(name='dataList',value='data_output,utctime',format='list')
 # # opObj25.addParameter(name='mode',value='1,0,0',format='intlist')
 
-#--------------------------------------------------------------------------------------------------
-
-print "Escribiendo el archivo XML"
-controllerObj.writeXml("JASMET04.xml")
-print "Leyendo el archivo XML"
-controllerObj.readXml("JASMET04.xml")
-
-controllerObj.createObjects()
-controllerObj.connectObjects()
-controllerObj.run()
+controllerObj.start()

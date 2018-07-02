@@ -100,9 +100,17 @@ ENV/
 # eclipse
 .project
 .pydevproject
+# vscode
+
+.vscode
+
+schaingui/node_modules/
+schainpy/scripts/
 .svn/
 *.png
 *.pyc
-schainpy/scripts
 .vscode
-schaingui/node_modules
+trash
+*.log
+schainpy/scripts/testDigitalRF.py
+schainpy/scripts/testDigitalRFWriter.py
