@@ -686,18 +686,23 @@ class PlotterReceiver(ProcessingUnit, Process):
                             if socks.get(self.sender_web) == zmq.POLLIN:
                                 reply = self.sender_web.recv_string()
                                 if reply == 'ok':
+                                    log.log("Response from server ok", self.name)
                                     break
                                 else:
-                                    print("Malformed reply from server: %s" % reply)
+                                    log.warning("Malformed reply from server: {}".format(reply), self.name)
 
                             else:
-                                print("No response from server, retrying...")
+                                log.warning("No response from server, retrying...", self.name)
                             self.sender_web.setsockopt(zmq.LINGER, 0)
                             self.sender_web.close()
                             self.poll.unregister(self.sender_web)
                             retries -= 1
                             if retries == 0:
-                                print("Server seems to be offline, abandoning")
+                                log.error("Server seems to be offline, abandoning", self.name)
+                                self.sender_web = self.context.socket(zmq.REQ)
+                                self.sender_web.connect(self.web_address)
+                                self.poll.register(self.sender_web, zmq.POLLIN)
+                                time.sleep(1)
                                 break
                             self.sender_web = self.context.socket(zmq.REQ)
                             self.sender_web.connect(self.web_address)

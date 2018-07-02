@@ -12,12 +12,6 @@ import datetime
 import tarfile
 
 import numpy
-try:
-    from netCDF4 import Dataset
-except:
-    log.warning(
-        'You should install "netCDF4" module if you want to read/write NCDF files'
-        )
 
 from utils import folder_in_range
 
@@ -25,6 +19,13 @@ from schainpy.model.io.jroIO_base import JRODataReader
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Parameters
 from schainpy.utils import log
+
+try:
+    from netCDF4 import Dataset
+except:
+    log.warning(
+        'You should install "netCDF4" module if you want to read/write NCDF files'
+        )
 
 UT1970 = datetime.datetime(1970, 1, 1) - datetime.timedelta(seconds=time.timezone)
 
