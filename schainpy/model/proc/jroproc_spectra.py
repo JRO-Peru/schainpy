@@ -122,10 +122,10 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-            if not pairsList:
-                pairsList = itertools.combinations(self.dataOut.channelList, 2)
-            if self.dataOut.data_cspc is not None:
-                self.__selectPairs(pairsList)
+            # if not pairsList:
+            #     pairsList = itertools.combinations(self.dataOut.channelList, 2)
+            # if self.dataOut.data_cspc is not None:
+            #     self.__selectPairs(pairsList)
             if shift_fft:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 shift = int(self.dataOut.nFFTPoints/2)
