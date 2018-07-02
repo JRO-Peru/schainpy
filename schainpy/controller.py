@@ -956,7 +956,7 @@ class Project(Process):
 
         self.procUnitConfObjDict = newProcUnitConfObjDict
 
-    def setup(self, id, name='', description='', email=None, alarm=[3]):
+    def setup(self, id, name='', description='', email=None, alarm=[]):
 
         print
         print '*' * 60
@@ -1186,6 +1186,9 @@ class Project(Process):
 
         if modes is None:
             modes = self.alarm
+        
+        if not self.alarm:
+            modes = []
 
         err = traceback.format_exception(sys.exc_info()[0],
                                          sys.exc_info()[1],
@@ -1302,6 +1305,8 @@ class Project(Process):
                     is_ok = is_ok or sts
                 except SchainWarning:
                     err = self.__handleError(procUnitConfObj, modes=[2, 3], stdout=False)
+                    is_ok = False
+                    break
                 except KeyboardInterrupt:
                     is_ok = False
                     break

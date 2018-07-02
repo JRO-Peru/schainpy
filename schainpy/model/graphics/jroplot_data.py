@@ -512,6 +512,8 @@ class PlotData(Operation, Process):
                 self.__plot()
 
             except zmq.Again as e:
+                if self.data and self.data.ended:
+                    break
                 log.log('Waiting for data...')
                 if self.data:
                     figpause(self.data.throttle)
