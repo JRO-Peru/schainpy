@@ -218,11 +218,10 @@ class Data(object):
 
         data = {}
         tm = self.times[-1]
-        
+        dy = int(self.heights.size/MAXNUMY) + 1
         for key in self.data:
             if key in ('spc', 'cspc'):
                 dx = int(self.data[key].shape[1]/MAXNUMX) + 1
-                dy = int(self.data[key].shape[2]/MAXNUMY) + 1
                 data[key] = roundFloats(self.data[key][::, ::dx, ::dy].tolist())
             else:
                 data[key] = roundFloats(self.data[key][tm].tolist())
@@ -232,8 +231,8 @@ class Data(object):
         ret['time'] = tm
         ret['interval'] = self.interval
         ret['localtime'] = self.localtime
-        ret['yrange'] = roundFloats(self.heights.tolist())
-        if key in ('spc', 'cspc'):
+        ret['yrange'] = roundFloats(self.heights[::dy].tolist())
+        if 'spc' in self.data or 'cspc' in self.data:
             ret['xrange'] = roundFloats(self.xrange[2][::dx].tolist())
         else:
             ret['xrange'] = []
@@ -577,8 +576,10 @@ class PlotterReceiver(ProcessingUnit, Process):
                 'Sending to web: {}'.format(self.web_address),
                 self.name
             )
-            self.sender_web = self.context.socket(zmq.PUB)
+            self.sender_web = self.context.socket(zmq.REQ)
             self.sender_web.connect(self.web_address)
+            self.poll = zmq.Poller()
+            self.poll.register(self.sender_web, zmq.POLLIN)
             time.sleep(1)
 
         if 'server' in self.kwargs:
@@ -622,12 +623,37 @@ class PlotterReceiver(ProcessingUnit, Process):
                 if self.connections == 0 and dt in self.dates:
                     self.data.ended = True                    
                     self.send(self.data)
-                    self.data.setup()
+                    # self.data.setup()
+                    time.sleep(1)
+                    break
             else:
                 if self.realtime:
                     self.send(self.data)
                     if self.web_address:
-                        self.sender_web.send(self.data.jsonify())
+                        retries = 5
+                        while True:
+                            self.sender_web.send(self.data.jsonify())
+                            socks = dict(self.poll.poll(5000))
+                            if socks.get(self.sender_web) == zmq.POLLIN:
+                                reply = self.sender_web.recv_string()
+                                if reply == 'ok':
+                                    break
+                                else:
+                                    print("Malformed reply from server: %s" % reply)
+
+                            else:
+                                print("No response from server, retrying...")
+                            self.sender_web.setsockopt(zmq.LINGER, 0)
+                            self.sender_web.close()
+                            self.poll.unregister(self.sender_web)
+                            retries -= 1
+                            if retries == 0:
+                                print("Server seems to be offline, abandoning")
+                                break
+                            self.sender_web = self.context.socket(zmq.REQ)
+                            self.sender_web.connect(self.web_address)
+                            self.poll.register(self.sender_web, zmq.POLLIN)
+                            time.sleep(1)
                 else:                    
                     self.sendData(self.send, self.data, coerce=coerce)
                     coerce = False
