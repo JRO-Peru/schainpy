@@ -5,7 +5,7 @@ Created on Jul 15, 2014
 '''
 import time
 import threading
-import cPickle
+import pickle
 
 # try:
 #     from gevent import sleep
@@ -109,9 +109,9 @@ class USRPReaderAPI(USRPReader, threading.Thread):
         '''
          
         if not self.isConfig:
-            raise RuntimeError, 'setup() method has to be called before start()'
+            raise RuntimeError('setup() method has to be called before start()')
         
-        print "Running ..."
+        print("Running ...")
         
         while True:
              
@@ -122,7 +122,7 @@ class USRPReaderAPI(USRPReader, threading.Thread):
             if not self.getData():
                 break
             
-            print ".",
+            print(".", end=' ')
             
             self.__mySerial = obj2Serial(self.dataOut,
                                          keyList = self.__DATAKEYLIST,
@@ -134,6 +134,6 @@ class USRPReaderAPI(USRPReader, threading.Thread):
             
 #             sleep(0.1)
 
-        print "Closing thread"
+        print("Closing thread")
         
         return

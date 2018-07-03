@@ -13,7 +13,7 @@ import tarfile
 
 import numpy
 
-from utils import folder_in_range
+from .utils import folder_in_range
 
 from schainpy.model.io.jroIO_base import JRODataReader
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
@@ -69,14 +69,14 @@ class PXReader(JRODataReader, ProcessingUnit):
         self.ele = kwargs.get('ext', '')
 
         if self.path is None:
-            raise ValueError, 'The path is not valid'
+            raise ValueError('The path is not valid')
 
         self.search_files(path, startDate, endDate, startTime, endTime, walk)
         self.cursor = 0
         self.counter_records = 0
 
         if not self.files:
-            raise  Warning, 'There is no files matching these date in the folder: {}. \n Check startDate and endDate'.format(path)
+            raise  Warning('There is no files matching these date in the folder: {}. \n Check startDate and endDate'.format(path))
         
     def search_files(self, path, startDate, endDate, startTime, endTime, walk):
         '''
@@ -136,7 +136,7 @@ class PXReader(JRODataReader, ProcessingUnit):
                 self.files[dt] = []
             self.files[dt].append(fullname)
 
-        self.dates = self.files.keys()
+        self.dates = list(self.files.keys())
         self.dates.sort()
 
         return
@@ -203,7 +203,7 @@ class PXReader(JRODataReader, ProcessingUnit):
         if not self.files:
             return 0
 
-        self.dates = self.files.keys()
+        self.dates = list(self.files.keys())
         self.dates.sort()
         self.cursor = 0
 
@@ -348,4 +348,3 @@ class PXReader(JRODataReader, ProcessingUnit):
         self.set_output()
 
         return 1
-

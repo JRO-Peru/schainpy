@@ -67,7 +67,7 @@ def MPProject(project, n=cpu_count()):
             for process in processes:
                 process.terminate()
                 process.join()
-            print traceback.print_tb(trace)
+            print(traceback.print_tb(trace))
 
         sys.excepthook = beforeExit
 
@@ -114,7 +114,7 @@ class ParameterConf():
             return self.__formated_value
 
         if value == '':
-            raise ValueError, '%s: This parameter value is empty' % self.name
+            raise ValueError('%s: This parameter value is empty' % self.name)
 
         if format == 'list':
             strList = value.split(',')
@@ -180,16 +180,16 @@ class ParameterConf():
             new_value = ast.literal_eval(value)
 
             if type(new_value) not in (tuple, list):
-                raise ValueError, '%s has to be a tuple or list of pairs' % value
+                raise ValueError('%s has to be a tuple or list of pairs' % value)
 
             if type(new_value[0]) not in (tuple, list):
                 if len(new_value) != 2:
-                    raise ValueError, '%s has to be a tuple or list of pairs' % value
+                    raise ValueError('%s has to be a tuple or list of pairs' % value)
                 new_value = [new_value]
 
             for thisPair in new_value:
                 if len(thisPair) != 2:
-                    raise ValueError, '%s has to be a tuple or list of pairs' % value
+                    raise ValueError('%s has to be a tuple or list of pairs' % value)
 
             self.__formated_value = new_value
 
@@ -265,7 +265,7 @@ class ParameterConf():
 
     def printattr(self):
 
-        print 'Parameter[%s]: name = %s, value = %s, format = %s' % (self.id, self.name, self.value, self.format)
+        print('Parameter[%s]: name = %s, value = %s, format = %s' % (self.id, self.name, self.value, self.format))
 
 
 class OperationConf():
@@ -434,11 +434,11 @@ class OperationConf():
 
     def printattr(self):
 
-        print '%s[%s]: name = %s, type = %s, priority = %s' % (self.ELEMENTNAME,
+        print('%s[%s]: name = %s, type = %s, priority = %s' % (self.ELEMENTNAME,
                                                                self.id,
                                                                self.name,
                                                                self.type,
-                                                               self.priority)
+                                                               self.priority))
 
         for parmConfObj in self.parmConfObjList:
             parmConfObj.printattr()
@@ -446,11 +446,11 @@ class OperationConf():
     def createObject(self, plotter_queue=None):
 
         if self.type == 'self':
-            raise ValueError, 'This operation type cannot be created'
+            raise ValueError('This operation type cannot be created')
 
         if self.type == 'plotter':
             if not plotter_queue:
-                raise ValueError, 'plotter_queue is not defined. Use:\nmyProject = Project()\nmyProject.setPlotterQueue(plotter_queue)'
+                raise ValueError('plotter_queue is not defined. Use:\nmyProject = Project()\nmyProject.setPlotterQueue(plotter_queue)')
 
             opObj = Plotter(self.name, plotter_queue)
 
@@ -563,7 +563,7 @@ class ProcUnitConf():
 
         # Compatible with old signal chain version
         if datatype == None and name == None:
-            raise ValueError, 'datatype or name should be defined'
+            raise ValueError('datatype or name should be defined')
 
         if name == None:
             if 'Proc' in datatype:
@@ -652,11 +652,11 @@ class ProcUnitConf():
 
     def printattr(self):
 
-        print '%s[%s]: name = %s, datatype = %s, inputId = %s' % (self.ELEMENTNAME,
+        print('%s[%s]: name = %s, datatype = %s, inputId = %s' % (self.ELEMENTNAME,
                                                                   self.id,
                                                                   self.name,
                                                                   self.datatype,
-                                                                  self.inputId)
+                                                                  self.inputId))
 
         for opConfObj in self.opConfObjList:
             opConfObj.printattr()
@@ -759,7 +759,7 @@ class ReadUnitConf(ProcUnitConf):
 
         # Compatible with old signal chain version
         if datatype == None and name == None:
-            raise ValueError, 'datatype or name should be defined'
+            raise ValueError('datatype or name should be defined')
         if name == None:
             if 'Reader' in datatype:
                 name = datatype
@@ -831,7 +831,7 @@ class ReadUnitConf(ProcUnitConf):
             opObj.addParameter(
                 name='endTime', value=self.endTime, format='time')
 
-            for key, value in kwargs.items():
+            for key, value in list(kwargs.items()):
                 opObj.addParameter(name=key, value=value,
                                    format=type(value).__name__)
         else:
@@ -853,7 +853,7 @@ class ReadUnitConf(ProcUnitConf):
             name='startTime', value=self.startTime, format='time')
         opObj.addParameter(name='endTime', value=self.endTime, format='time')
 
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             opObj.addParameter(name=key, value=value,
                                format=type(value).__name__)
 
@@ -914,7 +914,7 @@ class Project(Process):
 
     def __getNewId(self):
 
-        idList = self.procUnitConfObjDict.keys()
+        idList = list(self.procUnitConfObjDict.keys())
 
         id = int(self.id) * 10
 
@@ -940,7 +940,7 @@ class Project(Process):
 
         self.id = str(new_id)
 
-        keyList = self.procUnitConfObjDict.keys()
+        keyList = list(self.procUnitConfObjDict.keys())
         keyList.sort()
 
         n = 1
@@ -958,11 +958,11 @@ class Project(Process):
 
     def setup(self, id, name='', description='', email=None, alarm=[]):
 
-        print
-        print '*' * 60
-        print '   Starting SIGNAL CHAIN PROCESSING v%s ' % schainpy.__version__
-        print '*' * 60
-        print
+        print()
+        print('*' * 60)
+        print('   Starting SIGNAL CHAIN PROCESSING v%s ' % schainpy.__version__)
+        print('*' * 60)
+        print()
         self.id = str(id)
         self.description = description
         self.email = email
@@ -970,7 +970,7 @@ class Project(Process):
 
     def update(self, **kwargs):
 
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(self, key, value)
 
     def clone(self):
@@ -1008,7 +1008,7 @@ class Project(Process):
 
     def removeProcUnit(self, id):
 
-        if id in self.procUnitConfObjDict.keys():
+        if id in list(self.procUnitConfObjDict.keys()):
             self.procUnitConfObjDict.pop(id)
 
     def getReadUnitId(self):
@@ -1019,7 +1019,7 @@ class Project(Process):
 
     def getReadUnitObj(self):
 
-        for obj in self.procUnitConfObjDict.values():
+        for obj in list(self.procUnitConfObjDict.values()):
             if obj.getElementName() == 'ReadUnit':
                 return obj
 
@@ -1037,7 +1037,7 @@ class Project(Process):
 
     def getProcUnitObjByName(self, name):
 
-        for obj in self.procUnitConfObjDict.values():
+        for obj in list(self.procUnitConfObjDict.values()):
             if obj.name == name:
                 return obj
 
@@ -1045,7 +1045,7 @@ class Project(Process):
 
     def procUnitItems(self):
 
-        return self.procUnitConfObjDict.items()
+        return list(self.procUnitConfObjDict.items())
 
     def makeXml(self):
 
@@ -1054,7 +1054,7 @@ class Project(Process):
         projectElement.set('name', self.name)
         projectElement.set('description', self.description)
 
-        for procUnitConfObj in self.procUnitConfObjDict.values():
+        for procUnitConfObj in list(self.procUnitConfObjDict.values()):
             procUnitConfObj.makeXml(projectElement)
 
         self.projectElement = projectElement
@@ -1068,17 +1068,17 @@ class Project(Process):
                 filename = 'schain.xml'
 
         if not filename:
-            print 'filename has not been defined. Use setFilename(filename) for do it.'
+            print('filename has not been defined. Use setFilename(filename) for do it.')
             return 0
 
         abs_file = os.path.abspath(filename)
 
         if not os.access(os.path.dirname(abs_file), os.W_OK):
-            print 'No write permission on %s' % os.path.dirname(abs_file)
+            print('No write permission on %s' % os.path.dirname(abs_file))
             return 0
 
         if os.path.isfile(abs_file) and not(os.access(abs_file, os.W_OK)):
-            print 'File %s already exists and it could not be overwriten' % abs_file
+            print('File %s already exists and it could not be overwriten' % abs_file)
             return 0
 
         self.makeXml()
@@ -1092,13 +1092,13 @@ class Project(Process):
     def readXml(self, filename=None):
 
         if not filename:
-            print 'filename is not defined'
+            print('filename is not defined')
             return 0
 
         abs_file = os.path.abspath(filename)
 
         if not os.path.isfile(abs_file):
-            print '%s file does not exist' % abs_file
+            print('%s file does not exist' % abs_file)
             return 0
 
         self.projectElement = None
@@ -1107,7 +1107,7 @@ class Project(Process):
         try:
             self.projectElement = ElementTree().parse(abs_file)
         except:
-            print 'Error reading %s, verify file format' % filename
+            print('Error reading %s, verify file format' % filename)
             return 0
 
         self.project = self.projectElement.tag
@@ -1146,16 +1146,16 @@ class Project(Process):
 
     def printattr(self):
 
-        print 'Project[%s]: name = %s, description = %s' % (self.id,
+        print('Project[%s]: name = %s, description = %s' % (self.id,
                                                             self.name,
-                                                            self.description)
+                                                            self.description))
 
-        for procUnitConfObj in self.procUnitConfObjDict.values():
+        for procUnitConfObj in list(self.procUnitConfObjDict.values()):
             procUnitConfObj.printattr()
 
     def createObjects(self):
 
-        for procUnitConfObj in self.procUnitConfObjDict.values():
+        for procUnitConfObj in list(self.procUnitConfObjDict.values()):
             procUnitConfObj.createObjects(self.plotterQueue)
 
     def __connect(self, objIN, thisObj):
@@ -1164,7 +1164,7 @@ class Project(Process):
 
     def connectObjects(self):
 
-        for thisPUConfObj in self.procUnitConfObjDict.values():
+        for thisPUConfObj in list(self.procUnitConfObjDict.values()):
 
             inputId = thisPUConfObj.getInputId()
 
@@ -1245,7 +1245,7 @@ class Project(Process):
         '''
 
         if self.isPaused():
-            print 'Process suspended'
+            print('Process suspended')
 
             while True:
                 time.sleep(0.1)
@@ -1256,10 +1256,10 @@ class Project(Process):
                 if self.isStopped():
                     break
 
-            print 'Process reinitialized'
+            print('Process reinitialized')
 
         if self.isStopped():
-            print 'Process stopped'
+            print('Process stopped')
             return 0
 
         return 1
@@ -1270,15 +1270,15 @@ class Project(Process):
 
     def setPlotterQueue(self, plotter_queue):
 
-        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
+        raise NotImplementedError('Use schainpy.controller_api.ControllerThread instead Project class')
 
     def getPlotterQueue(self):
 
-        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
+        raise NotImplementedError('Use schainpy.controller_api.ControllerThread instead Project class')
 
     def useExternalPlotter(self):
 
-        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
+        raise NotImplementedError('Use schainpy.controller_api.ControllerThread instead Project class')
 
     def run(self):
 
@@ -1287,7 +1287,7 @@ class Project(Process):
         self.createObjects()
         self.connectObjects()
 
-        keyList = self.procUnitConfObjDict.keys()
+        keyList = list(self.procUnitConfObjDict.keys())
         keyList.sort()
 
         err = None
@@ -1310,7 +1310,7 @@ class Project(Process):
                 except KeyboardInterrupt:
                     is_ok = False
                     break
-                except ValueError, e:
+                except ValueError as e:
                     time.sleep(0.5)
                     err = self.__handleError(procUnitConfObj)
                     is_ok = False

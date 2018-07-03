@@ -2,8 +2,8 @@ import os
 import datetime
 import numpy
 import inspect
-from figure import Figure, isRealtime, isTimeInHourRange
-from plotting_codes import *
+from .figure import Figure, isRealtime, isTimeInHourRange
+from .plotting_codes import *
 
 
 class FitGauPlot(Figure):
@@ -101,7 +101,7 @@ class FitGauPlot(Figure):
         """
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
-                print 'Skipping this plot function'
+                print('Skipping this plot function')
                 return
 
         if channelList == None:
@@ -110,7 +110,7 @@ class FitGauPlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList" %channel
+                    raise ValueError("Channel %d is not in dataOut.channelList" %channel)
                 channelIndexList.append(dataOut.channelList.index(channel))
 
 #         if normFactor is None:
@@ -134,7 +134,7 @@ class FitGauPlot(Figure):
         y = dataOut.getHeiRange()
 
         z = dataOut.GauSPC[:,GauSelector,:,:] #GauSelector]    #dataOut.data_spc/factor
-        print 'GausSPC', z[0,32,10:40]
+        print('GausSPC', z[0,32,10:40])
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         zdB = 10*numpy.log10(z)
 
@@ -311,7 +311,7 @@ class MomentsPlot(Figure):
 
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
-                print 'Skipping this plot function'
+                print('Skipping this plot function')
                 return
 
         if channelList == None:
@@ -320,7 +320,7 @@ class MomentsPlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         factor = dataOut.normFactor
@@ -701,7 +701,7 @@ class WindProfilerPlot(Figure):
             if ymin == None: ymin = numpy.nanmin(y)
             if ymax == None: ymax = numpy.nanmax(y)
 
-            if zmax == None: zmax = numpy.nanmax(abs(z[range(2),:]))
+            if zmax == None: zmax = numpy.nanmax(abs(z[list(range(2)),:]))
             #if numpy.isnan(zmax): zmax = 50
             if zmin == None: zmin = -zmax
 
@@ -875,12 +875,12 @@ class ParametersPlot(Figure):
             return
 
         if channelList == None:
-            channelIndexList = range(dataOut.data_param.shape[0])
+            channelIndexList = list(range(dataOut.data_param.shape[0]))
         else:
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         x = dataOut.getTimeRange1(dataOut.paramInterval)

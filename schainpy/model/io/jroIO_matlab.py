@@ -29,7 +29,7 @@ class matoffReader(ProcessingUnit):
     def __setHeader(self, datastuff):
         
         self.dataOut.pairsList=[(0,1)]
-        self.dataOut.channelList =  range(np.array(datastuff.get('power')).shape[1])
+        self.dataOut.channelList =  list(range(np.array(datastuff.get('power')).shape[1]))
         self.dataOut.nProfiles = len(np.array(datastuff.get('vel')).flatten())     #this!
         self.dataOut.nIncohInt = 20
         self.dataOut.nCohInt = 1 #this!
@@ -39,7 +39,7 @@ class matoffReader(ProcessingUnit):
         self.dataOut.heightList = np.array(datastuff.get('hts')).flatten()
     
     def __readFile(self, currentfile):
-        print "Reading from this file:" + currentfile
+        print("Reading from this file:" + currentfile)
         
         #filesplit=currentfile.split("\\")
         filesplit=currentfile.split("/")
@@ -64,7 +64,7 @@ class matoffReader(ProcessingUnit):
 #             self.utcmatcounter=0
        
 #         print self.utcmatcounter
-        print self.utcfirst
+        print(self.utcfirst)
         try:
             datastuff=sio.loadmat(currentfile)
         except:
@@ -115,7 +115,7 @@ class matoffReader(ProcessingUnit):
         utclist=[]
         
         if not dirList:
-            print "No directories found"
+            print("No directories found")
             return []
         
         #if self.online:
@@ -146,7 +146,7 @@ class matoffReader(ProcessingUnit):
             utclist.append(utctime)
         
         if not dirListFiltered:
-            print "filtro"
+            print("filtro")
             return []
         
         for thisDir in dirListFiltered:
@@ -188,7 +188,7 @@ class matoffReader(ProcessingUnit):
             if nTries > 3:
                 break
             
-            print "Waiting %d seconds ..." %seconds
+            print("Waiting %d seconds ..." %seconds)
             time.sleep(40)
         
         if not (len(filelist) > ncurrentfiles):
@@ -227,7 +227,7 @@ class matoffReader(ProcessingUnit):
             
         self.fileList = fileList
         
-        print "fin setup"
+        print("fin setup")
     
     def run(self,path=None,startDate=None, endDate=None,
             startTime=datetime.time(0,0,0),
@@ -251,7 +251,7 @@ class matoffReader(ProcessingUnit):
         
         if not self.fileList:
             self.dataOut.flagNoData = True
-            print "lista vacia"
+            print("lista vacia")
             return
         
         currentfile = self.__getNextFile()

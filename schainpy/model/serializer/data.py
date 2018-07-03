@@ -3,7 +3,7 @@ Created on Jul 15, 2014
 
 @author: Miguel Urco
 '''
-from serializer import DynamicSerializer
+from .serializer import DynamicSerializer
  
 DEFAULT_SERIALIZER = None #'cPickle', 'msgpack', "yaml"
 
@@ -20,7 +20,7 @@ def isDictFormat(thisValue):
     if type(thisValue) != type({}):
         return False
     
-    if CLASSNAME_KEY not in thisValue.keys():
+    if CLASSNAME_KEY not in list(thisValue.keys()):
         return False
     
     return True
@@ -28,13 +28,13 @@ def isDictFormat(thisValue):
 def obj2Dict(myObj, keyList=[]):
     
     if not keyList:
-        keyList = myObj.__dict__.keys()
+        keyList = list(myObj.__dict__.keys())
         
     myDict = {}
     
     myDict[CLASSNAME_KEY] = myObj.__class__.__name__
     
-    for thisKey, thisValue in myObj.__dict__.items():
+    for thisKey, thisValue in list(myObj.__dict__.items()):
         
         if thisKey not in keyList:
             continue
@@ -52,14 +52,14 @@ def dict2Obj(myDict):
     '''
     '''
     
-    if CLASSNAME_KEY not in myDict.keys():
+    if CLASSNAME_KEY not in list(myDict.keys()):
         return None
     
     className = eval(myDict[CLASSNAME_KEY])
     
     myObj = className()
     
-    for thisKey, thisValue in myDict.items():
+    for thisKey, thisValue in list(myDict.items()):
         
         if thisKey == CLASSNAME_KEY:
             continue

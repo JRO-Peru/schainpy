@@ -48,7 +48,7 @@ class Header(object):
         message += self.__class__.__name__.upper() + "\n"
         message += "#" * 50 + "\n"
 
-        keyList = self.__dict__.keys()
+        keyList = list(self.__dict__.keys())
         keyList.sort()
 
         for key in keyList:
@@ -333,7 +333,7 @@ class SRVIHeader(Header):
         self.DataBlockTitleSRVI1 = str(header['DataBlockTitleSRVI1'][0])
         self.SizeOfSRVI1 = header['SizeOfSRVI1'][0]
         # 16
-        print 'Pointer fp SRVIheader', fp.tell()
+        print('Pointer fp SRVIheader', fp.tell())
 
 
 SRVI_STRUCTURE = numpy.dtype([
@@ -435,9 +435,9 @@ class RecordHeader(Header):
         # print 'Datasize',self.Datasize
         #endFp = self.OffsetStartHeader + self.RecCounter*self.Off2StartNxtRec
 
-        print '=============================================='
+        print('==============================================')
 
-        print '=============================================='
+        print('==============================================')
 
         return 1
 
@@ -572,7 +572,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'NoData se vuelve true'
+            print('NoData se vuelve true')
             return 0
 
         self.fp = self.path
@@ -602,7 +602,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
         '''
 
         # The address of the folder is generated the name of the .fdt file that will be read
-        print "File:    ", self.fileSelector + 1
+        print("File:    ", self.fileSelector + 1)
 
         if self.fileSelector < len(self.filenameList):
 
@@ -642,7 +642,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
             self.readBlock()  # Block reading
 
         else:
-            print 'readFile FlagNoData becomes true'
+            print('readFile FlagNoData becomes true')
             self.flagNoMoreFiles = True
             self.dataOut.flagNoData = True
             self.FileHeaderFlag == True
@@ -673,7 +673,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
         self.blocksize = self.srviHeader.SizeOfDataBlock1  # Se obtiene el tamao del bloque
 
         if self.blocksize == 148:
-            print 'blocksize == 148 bug'
+            print('blocksize == 148 bug')
             jump = numpy.fromfile(self.fp, [('jump', numpy.str_, 140)], 1)
 
             # Se obtiene la cabecera del SRVI
@@ -691,7 +691,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
         npw1 = self.recordheader.npw1
         npw2 = self.recordheader.npw2
 
-        self.dataOut.channelList = range(1)
+        self.dataOut.channelList = list(range(1))
         self.dataOut.nIncohInt = self.Num_inCoh
         self.dataOut.nProfiles = self.Num_Bins
         self.dataOut.nCohInt = 1
@@ -701,7 +701,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
 
         self.dataOut.outputInterval = self.dataOut.getTimeInterval()
         self.dataOut.heightList = self.SPARrawGate1 * self.__deltaHeigth + \
-            numpy.array(range(self.Num_Hei)) * self.__deltaHeigth
+            numpy.array(list(range(self.Num_Hei))) * self.__deltaHeigth
 
         self.HSDVsign = numpy.fromfile(self.fp, [('HSDV', numpy.str_, 4)], 1)
         self.SizeHSDV = numpy.fromfile(self.fp, [('SizeHSDV', '<i4')], 1)
@@ -766,8 +766,8 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
 
         self.dataOut.COFA = numpy.array([self.COFA_Co, self.COFA_Cx])
 
-        print ' '
-        print 'SPC', numpy.shape(self.dataOut.data_spc)
+        print(' ')
+        print('SPC', numpy.shape(self.dataOut.data_spc))
         # print 'SPC',self.dataOut.data_spc
 
         noinor1 = 713031680
@@ -777,7 +777,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
         npw2 = 1  # 0**(npw2/10) * noinor1 * noinor2
         self.dataOut.NPW = numpy.array([npw1, npw2])
 
-        print ' '
+        print(' ')
 
         self.data_spc = numpy.transpose(self.data_spc, (2, 1, 0))
         self.data_spc = numpy.fft.fftshift(self.data_spc, axes=1)

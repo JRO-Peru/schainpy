@@ -7,7 +7,7 @@ Created on Jul 17, 2014
 DEFAULT_SERIALIZER = None
 
 try:
-    import cPickle
+    import pickle
     DEFAULT_SERIALIZER = 'cPickle'
 except:
     pass
@@ -86,7 +86,7 @@ class DynamicSerializer(Serializer):
     def __init__(self, module = None):
         
         if not DEFAULT_SERIALIZER:
-            raise ImportError, "Install a python serializer like cPickle or msgpack"
+            raise ImportError("Install a python serializer like cPickle or msgpack")
             
         if not module:
             module == DEFAULT_SERIALIZER

@@ -104,7 +104,7 @@ class ProcessingUnit(object):
 
     def getOperationObj(self, objId):
 
-        if objId not in self.operations2RunDict.keys():
+        if objId not in list(self.operations2RunDict.keys()):
             return None
 
         return self.operations2RunDict[objId]
@@ -248,22 +248,22 @@ class ProcessingUnit(object):
         if opType == 'self':
 
             if not opName:
-                raise ValueError, "opName parameter should be defined"
+                raise ValueError("opName parameter should be defined")
 
             sts = self.callMethod(opName, opId)
 
         elif opType == 'other' or opType == 'external' or opType == 'plotter':
 
             if not opId:
-                raise ValueError, "opId parameter should be defined"
+                raise ValueError("opId parameter should be defined")
 
-            if opId not in self.operations2RunDict.keys():
-                raise ValueError, "Any operation with id=%s has been added" %str(opId)
+            if opId not in list(self.operations2RunDict.keys()):
+                raise ValueError("Any operation with id=%s has been added" %str(opId))
 
             sts = self.callObject(opId)
 
         else:
-            raise ValueError, "opType should be 'self', 'external' or 'plotter'; and not '%s'" %opType
+            raise ValueError("opType should be 'self', 'external' or 'plotter'; and not '%s'" %opType)
 
         return sts
 

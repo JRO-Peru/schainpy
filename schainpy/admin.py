@@ -11,8 +11,8 @@ import sys
 import time
 import traceback
 import smtplib
-import ConfigParser
-import StringIO
+import configparser
+import io
 from threading import Thread
 from multiprocessing import Process
 from email.mime.text import MIMEText
@@ -65,7 +65,7 @@ class Alarm(Process):
     @staticmethod
     def send_email(**kwargs):
         notifier = SchainNotify()
-        print kwargs
+        print(kwargs)
         notifier.notify(**kwargs)            
 
     @staticmethod
@@ -144,10 +144,10 @@ class SchainConfigure():
             return
         
         # create Parser using standard module ConfigParser
-        self.__parser = ConfigParser.ConfigParser()
+        self.__parser = configparser.ConfigParser()
         
         # read conf file into a StringIO with "[madrigal]\n" section heading prepended
-        strConfFile = StringIO.StringIO("[schain]\n" + self.__confFile.read())
+        strConfFile = io.StringIO("[schain]\n" + self.__confFile.read())
 
         # parse StringIO configuration file
         self.__parser.readfp(strConfFile)
@@ -355,7 +355,7 @@ class SchainNotify:
         if not self.__emailToAddress:
             return 0
         
-        print "***** Sending alert to %s *****" %self.__emailToAddress
+        print("***** Sending alert to %s *****" %self.__emailToAddress)
         # set up message
     
         sent=self.sendEmail(email_from=self.__emailFromAddress,
@@ -500,4 +500,4 @@ if __name__ == '__main__':
 
     test.sendAlert('This is a message from the python module SchainNotify', 'Test from SchainNotify')
 
-    print 'Hopefully message sent - check.'
+    print('Hopefully message sent - check.')

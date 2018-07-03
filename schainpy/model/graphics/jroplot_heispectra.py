@@ -7,8 +7,8 @@ import os
 import datetime
 import numpy
 
-from figure import Figure, isRealtime
-from plotting_codes import *
+from .figure import Figure, isRealtime
+from .plotting_codes import *
 
 class SpectraHeisScope(Figure):
 
@@ -98,7 +98,7 @@ class SpectraHeisScope(Figure):
 
         if dataOut.realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
-                print 'Skipping this plot function'
+                print('Skipping this plot function')
                 return
 
         if channelList == None:
@@ -107,7 +107,7 @@ class SpectraHeisScope(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
 #        x = dataOut.heightList
@@ -238,7 +238,7 @@ class RTIfromSpectraHeis(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         if timerange != None:

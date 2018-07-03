@@ -1,7 +1,7 @@
 import os
 import numpy
 import time, datetime
-import mpldriver
+from schainpy.model.graphics import mpldriver
 
 from schainpy.model.proc.jroproc_base import Operation
 
@@ -130,7 +130,7 @@ class Figure(Operation):
 
     def init(self, id, nplots, wintitle):
 
-        raise NotImplementedError, "This method has been replaced by createFigure"
+        raise NotImplementedError("This method has been replaced by createFigure")
 
     def createFigure(self, id, wintitle, widthplot=None, heightplot=None, show=True):
 
@@ -188,11 +188,11 @@ class Figure(Operation):
 
     def setTextFromAxes(self, text):
 
-        raise NotImplementedError, "This method has been replaced with Axes.setText"
+        raise NotImplementedError("This method has been replaced with Axes.setText")
 
     def makeAxes(self, nrow, ncol, xpos, ypos, colspan, rowspan):
 
-        raise NotImplementedError, "This method has been replaced with Axes.addAxes"
+        raise NotImplementedError("This method has been replaced with Axes.addAxes")
 
     def addAxes(self, *args):
         """
@@ -234,7 +234,7 @@ class Figure(Operation):
             if not figfile:
 
                 if not thisDatetime:
-                    raise ValueError, "Saving figure: figfile or thisDatetime should be defined"
+                    raise ValueError("Saving figure: figfile or thisDatetime should be defined")
                     return
 
                 str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")

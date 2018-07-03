@@ -1,5 +1,5 @@
 import threading
-from Queue import Queue
+from queue import Queue
 
 from schainpy.controller import Project
 from schainpy.model.graphics.jroplotter import PlotManager
@@ -77,7 +77,7 @@ class ControllerThread(threading.Thread, Project):
 
         plotterList = PlotManager.plotterList
 
-        for thisPUConfObj in self.procUnitConfObjDict.values():
+        for thisPUConfObj in list(self.procUnitConfObjDict.values()):
 
             inputId = thisPUConfObj.getInputId()
 

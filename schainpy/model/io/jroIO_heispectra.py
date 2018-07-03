@@ -13,12 +13,12 @@ from time import sleep
 
 try:
     import pyfits
-except ImportError, e:
-    print "Fits data cannot be used. Install pyfits module"
+except ImportError as e:
+    print("Fits data cannot be used. Install pyfits module")
 
 from xml.etree.ElementTree import ElementTree
 
-from jroIO_base import isRadarFolder, isNumber
+from .jroIO_base import isRadarFolder, isNumber
 from schainpy.model.data.jrodata import Fits
 from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
 
@@ -240,7 +240,7 @@ class FitsWriter(Operation):
         self.setFile = setFile
         self.flagIsNewFile = 1
 
-        print 'Writing the file: %s'%self.filename
+        print('Writing the file: %s'%self.filename)
 
         self.setFitsHeader(self.dataOut, self.metadatafile)
 
@@ -327,7 +327,7 @@ class FitsReader(ProcessingUnit):
         try:
             fitsObj = pyfits.open(filename,'readonly')
         except:
-            print "File %s can't be opened" %(filename)
+            print("File %s can't be opened" %(filename))
             return None
 
         header = fitsObj[0].header
@@ -355,7 +355,7 @@ class FitsReader(ProcessingUnit):
             idFile += 1
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-                print "No more Files"
+                print("No more Files")
                 return 0
 
             filename = self.filenameList[idFile]
@@ -373,7 +373,7 @@ class FitsReader(ProcessingUnit):
         self.fileSize = fileSize
         self.fitsObj = fitsObj
         self.blockIndex = 0
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
 
         return 1
 
@@ -398,10 +398,10 @@ class FitsReader(ProcessingUnit):
         headerObj = self.fitsObj[0]
 
         self.header_dict = headerObj.header
-        if 'EXPNAME' in headerObj.header.keys():
+        if 'EXPNAME' in list(headerObj.header.keys()):
             self.expName = headerObj.header['EXPNAME']
 
-        if 'DATATYPE' in headerObj.header.keys():
+        if 'DATATYPE' in list(headerObj.header.keys()):
             self.dataType = headerObj.header['DATATYPE']
 
         self.datetimestr = headerObj.header['DATETIME']
@@ -421,7 +421,7 @@ class FitsReader(ProcessingUnit):
 
 #         self.timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
 
-        if 'COMMENT' in headerObj.header.keys():
+        if 'COMMENT' in list(headerObj.header.keys()):
             self.comments = headerObj.header['COMMENT']
 
         self.readHeightList()
@@ -498,10 +498,10 @@ class FitsReader(ProcessingUnit):
                 thisDate += datetime.timedelta(1)
 
         if pathList == []:
-            print "Any folder was found for the date range: %s-%s" %(startDate, endDate)
+            print("Any folder was found for the date range: %s-%s" %(startDate, endDate))
             return None, None
 
-        print "%d folder(s) was(were) found for the date range: %s - %s" %(len(pathList), startDate, endDate)
+        print("%d folder(s) was(were) found for the date range: %s - %s" %(len(pathList), startDate, endDate))
 
         filenameList = []
         datetimeList = []
@@ -525,14 +525,14 @@ class FitsReader(ProcessingUnit):
                 datetimeList.append(thisDatetime)
 
         if not(filenameList):
-            print "Any file was found for the time range %s - %s" %(startTime, endTime)
+            print("Any file was found for the time range %s - %s" %(startTime, endTime))
             return None, None
 
-        print "%d file(s) was(were) found for the time range: %s - %s" %(len(filenameList), startTime, endTime)
-        print
+        print("%d file(s) was(were) found for the time range: %s - %s" %(len(filenameList), startTime, endTime))
+        print()
 
         for i in range(len(filenameList)):
-            print "%s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
+            print("%s -> [%s]" %(filenameList[i], datetimeList[i].ctime()))
 
         self.filenameList = filenameList
         self.datetimeList = datetimeList
@@ -552,22 +552,22 @@ class FitsReader(ProcessingUnit):
                 walk = True):
 
         if path == None:
-            raise ValueError, "The path is not valid"
+            raise ValueError("The path is not valid")
 
         if ext == None:
             ext = self.ext
 
         if not(online):
-            print "Searching files in offline mode ..."
+            print("Searching files in offline mode ...")
             pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
                                                                startTime=startTime, endTime=endTime,
                                                                set=set, expLabel=expLabel, ext=ext,
                                                                walk=walk)
 
             if not(pathList):
-                print "No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
+                print("No *%s files into the folder %s \nfor the range: %s - %s"%(ext, path,
                                                         datetime.datetime.combine(startDate,startTime).ctime(),
-                                                        datetime.datetime.combine(endDate,endTime).ctime())
+                                                        datetime.datetime.combine(endDate,endTime).ctime()))
 
                 sys.exit(-1)
 
@@ -582,11 +582,11 @@ class FitsReader(ProcessingUnit):
 
         if not(self.setNextFile()):
             if (startDate!=None) and (endDate!=None):
-                print "No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
+                print("No files in range: %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime()))
             elif startDate != None:
-                print "No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime())
+                print("No files in range: %s" %(datetime.datetime.combine(startDate,startTime).ctime()))
             else:
-                print "No files"
+                print("No files")
 
             sys.exit(-1)
 
@@ -638,7 +638,7 @@ class FitsReader(ProcessingUnit):
                 self.__rdBasicHeader()
                 return 1
 
-            print "\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1)
+            print("\tWaiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries+1))
             sleep( self.delay )
 
 
@@ -691,7 +691,7 @@ class FitsReader(ProcessingUnit):
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
+            print('Process finished')
             return 0
 
         self.flagDiscontinuousBlock = 0

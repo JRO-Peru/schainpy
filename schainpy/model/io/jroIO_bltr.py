@@ -29,7 +29,7 @@ from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 #from schainpy.model.io.jroIO_bltr import BLTRReader
 from numpy import imag, shape, NaN
 
-from jroIO_base import JRODataReader
+from .jroIO_base import JRODataReader
 
 
 class Header(object):
@@ -51,7 +51,7 @@ class Header(object):
         message += self.__class__.__name__.upper() + "\n"
         message += "#" * 50 + "\n"
 
-        keyList = self.__dict__.keys()
+        keyList = list(self.__dict__.keys())
         keyList.sort()
 
         for key in keyList:
@@ -94,9 +94,9 @@ class FileHeaderBLTR(Header):
 
         header = numpy.fromfile(startFp, FILE_STRUCTURE, 1)
 
-        print ' '
-        print 'puntero file header', startFp.tell()
-        print ' '
+        print(' ')
+        print('puntero file header', startFp.tell())
+        print(' ')
 
         '''      numpy.fromfile(file, dtype, count, sep='')
             file : file or str
@@ -323,28 +323,28 @@ class RecordHeaderBLTR(Header):
         # RecCounter=0
         # Off2StartNxtRec=811248
         OffRHeader = self.OffsetStartHeader + self.RecCounter * self.Off2StartNxtRec
-        print ' '
-        print 'puntero Record Header', startFp.tell()
-        print ' '
+        print(' ')
+        print('puntero Record Header', startFp.tell())
+        print(' ')
 
         startFp.seek(OffRHeader, os.SEEK_SET)
 
-        print ' '
-        print 'puntero Record Header con seek', startFp.tell()
-        print ' '
+        print(' ')
+        print('puntero Record Header con seek', startFp.tell())
+        print(' ')
 
         # print 'Posicion del bloque:        ',OffRHeader
 
         header = numpy.fromfile(startFp, RECORD_STRUCTURE, 1)
 
-        print ' '
-        print 'puntero Record Header con seek', startFp.tell()
-        print ' '
+        print(' ')
+        print('puntero Record Header con seek', startFp.tell())
+        print(' ')
 
-        print ' '
+        print(' ')
         #
         # print 'puntero Record Header despues de seek', header.tell()
-        print ' '
+        print(' ')
 
         self.RecMgcNumber = hex(header['RecMgcNumber'][0])  # 0x23030001
         self.RecCounter = int(header['RecCounter'][0])
@@ -400,21 +400,21 @@ class RecordHeaderBLTR(Header):
         # print 'Datasize',self.Datasize
         endFp = self.OffsetStartHeader + self.RecCounter * self.Off2StartNxtRec
 
-        print '=============================================='
-        print 'RecMgcNumber         ', self.RecMgcNumber
-        print 'RecCounter           ', self.RecCounter
-        print 'Off2StartNxtRec      ', self.Off2StartNxtRec
-        print 'Off2StartData        ', self.Off2StartData
-        print 'Range Resolution     ', self.SampResolution
-        print 'First Height         ', self.StartRangeSamp
-        print 'PRF (Hz)             ', self.PRFhz
-        print 'Heights (K)          ', self.nHeights
-        print 'Channels (N)         ', self.nChannels
-        print 'Profiles (J)         ', self.nProfiles
-        print 'iCoh                 ', self.nCohInt
-        print 'iInCoh               ', self.nIncohInt
-        print 'BeamAngleAzim        ', self.BeamAngleAzim
-        print 'BeamAngleZen         ', self.BeamAngleZen
+        print('==============================================')
+        print('RecMgcNumber         ', self.RecMgcNumber)
+        print('RecCounter           ', self.RecCounter)
+        print('Off2StartNxtRec      ', self.Off2StartNxtRec)
+        print('Off2StartData        ', self.Off2StartData)
+        print('Range Resolution     ', self.SampResolution)
+        print('First Height         ', self.StartRangeSamp)
+        print('PRF (Hz)             ', self.PRFhz)
+        print('Heights (K)          ', self.nHeights)
+        print('Channels (N)         ', self.nChannels)
+        print('Profiles (J)         ', self.nProfiles)
+        print('iCoh                 ', self.nCohInt)
+        print('iInCoh               ', self.nIncohInt)
+        print('BeamAngleAzim        ', self.BeamAngleAzim)
+        print('BeamAngleZen         ', self.BeamAngleZen)
 
         # print 'ModoEnUso            ',self.DualModeIndex
         # print 'UtcTime              ',self.nUtime
@@ -423,25 +423,25 @@ class RecordHeaderBLTR(Header):
         # print 'Exp Comment          ',self.ExpComment
         # print 'FFT Window Index     ',self.FFTwindowingInd
         # print 'N Dig. Channels      ',self.nDigChannels
-        print 'Size de bloque       ', self.RHsize
-        print 'DataSize             ', self.Datasize
-        print 'BeamAngleAzim        ', self.BeamAngleAzim
+        print('Size de bloque       ', self.RHsize)
+        print('DataSize             ', self.Datasize)
+        print('BeamAngleAzim        ', self.BeamAngleAzim)
         # print 'AntennaCoord0        ',self.AntennaCoord0
         # print 'AntennaAngl0         ',self.AntennaAngl0
         # print 'AntennaCoord1        ',self.AntennaCoord1
         # print 'AntennaAngl1         ',self.AntennaAngl1
         # print 'AntennaCoord2        ',self.AntennaCoord2
         # print 'AntennaAngl2         ',self.AntennaAngl2
-        print 'RecPhaseCalibr0      ', self.RecPhaseCalibr0
-        print 'RecPhaseCalibr1      ', self.RecPhaseCalibr1
-        print 'RecPhaseCalibr2      ', self.RecPhaseCalibr2
-        print 'RecAmpCalibr0        ', self.RecAmpCalibr0
-        print 'RecAmpCalibr1        ', self.RecAmpCalibr1
-        print 'RecAmpCalibr2        ', self.RecAmpCalibr2
-        print 'ReceiverGaindB0      ', self.ReceiverGaindB0
-        print 'ReceiverGaindB1      ', self.ReceiverGaindB1
-        print 'ReceiverGaindB2      ', self.ReceiverGaindB2
-        print '=============================================='
+        print('RecPhaseCalibr0      ', self.RecPhaseCalibr0)
+        print('RecPhaseCalibr1      ', self.RecPhaseCalibr1)
+        print('RecPhaseCalibr2      ', self.RecPhaseCalibr2)
+        print('RecAmpCalibr0        ', self.RecAmpCalibr0)
+        print('RecAmpCalibr1        ', self.RecAmpCalibr1)
+        print('RecAmpCalibr2        ', self.RecAmpCalibr2)
+        print('ReceiverGaindB0      ', self.ReceiverGaindB0)
+        print('ReceiverGaindB1      ', self.ReceiverGaindB1)
+        print('ReceiverGaindB2      ', self.ReceiverGaindB2)
+        print('==============================================')
 
         if OffRHeader > endFp:
             sys.stderr.write(
@@ -590,7 +590,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'NoData se vuelve true'
+            print('NoData se vuelve true')
             return 0
 
         self.fp = self.path
@@ -600,7 +600,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         self.dataOut.data_cspc = self.data_cspc
         self.dataOut.data_output = self.data_output
 
-        print 'self.dataOut.data_output', shape(self.dataOut.data_output)
+        print('self.dataOut.data_output', shape(self.dataOut.data_output))
 
         # self.removeDC()
         return self.dataOut.data_spc
@@ -617,7 +617,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         '''
 
         # The address of the folder is generated the name of the .fdt file that will be read
-        print "File:    ", self.fileSelector + 1
+        print("File:    ", self.fileSelector + 1)
 
         if self.fileSelector < len(self.filenameList):
 
@@ -630,7 +630,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
 
             self.readBlock()  # Block reading
         else:
-            print 'readFile FlagNoData becomes true'
+            print('readFile FlagNoData becomes true')
             self.flagNoMoreFiles = True
             self.dataOut.flagNoData = True
             return 0
@@ -660,7 +660,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         '''
 
         if self.BlockCounter < self.nFDTdataRecors - 2:
-            print self.nFDTdataRecors, 'CONDICION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+            print(self.nFDTdataRecors, 'CONDICION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             if self.ReadMode == 1:
                 rheader = RecordHeaderBLTR(RecCounter=self.BlockCounter + 1)
             elif self.ReadMode == 0:
@@ -687,8 +687,8 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
             self.__firstHeigth = rheader.StartRangeSamp
             self.__deltaHeigth = rheader.SampResolution
             self.dataOut.heightList = self.__firstHeigth + \
-                numpy.array(range(self.nHeights)) * self.__deltaHeigth
-            self.dataOut.channelList = range(self.nChannels)
+                numpy.array(list(range(self.nHeights))) * self.__deltaHeigth
+            self.dataOut.channelList = list(range(self.nChannels))
             self.dataOut.nProfiles = rheader.nProfiles
             self.dataOut.nIncohInt = rheader.nIncohInt
             self.dataOut.nCohInt = rheader.nCohInt
@@ -703,7 +703,7 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
                 self.dataOut.nCohInt * self.dataOut.nIncohInt * self.nProfiles
 
             self.data_output = numpy.ones([3, rheader.nHeights]) * numpy.NaN
-            print 'self.data_output', shape(self.data_output)
+            print('self.data_output', shape(self.data_output))
             self.dataOut.velocityX = []
             self.dataOut.velocityY = []
             self.dataOut.velocityV = []
@@ -757,11 +757,11 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
                 z = self.data_spc.copy()  # /factor
                 z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
                 #zdB = 10*numpy.log10(z)
-                print ' '
-                print 'Z: '
-                print shape(z)
-                print ' '
-                print ' '
+                print(' ')
+                print('Z: ')
+                print(shape(z))
+                print(' ')
+                print(' ')
 
                 self.dataOut.data_spc = self.data_spc
 
@@ -1177,4 +1177,4 @@ class BLTRSpectraReader (ProcessingUnit, FileHeaderBLTR, RecordHeaderBLTR, JRODa
         else:
             self.fileSelector += 1
             self.BlockCounter = 0
-            print "Next File"
+            print("Next File")

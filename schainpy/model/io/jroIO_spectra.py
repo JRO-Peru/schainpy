@@ -5,7 +5,7 @@ Created on Jul 2, 2014
 '''
 import numpy
 
-from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
+from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Spectra
@@ -325,7 +325,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
         self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight)
 
-        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
+        self.dataOut.channelList = list(range(self.systemHeaderObj.nChannels))
 
         self.dataOut.flagShiftFFT = True    #Data is always shifted
 
@@ -354,7 +354,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
+            print('Process finished')
             return 0
 
         self.flagDiscontinuousBlock = 0

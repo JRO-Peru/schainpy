@@ -7,7 +7,7 @@ matching signatures.
 $Id$
 '''
 
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import os
 import re
 import yaml # YAML Ain't Markup Language
@@ -40,7 +40,7 @@ class Object(object):
         elif isinstance(object_uri, str):
             if object_uri.endswith('.yml'):
                 # URI is a web hyper-linked yaml file - read it.
-                self.yaml = urllib.urlopen(object_uri).read()
+                self.yaml = urllib.request.urlopen(object_uri).read()
             else:
                 # URI is a (hyper-linked?) directory - try reading it.
                 #print "URI is a directory."
@@ -55,12 +55,12 @@ class Object(object):
                 for fn in self.files:
                     self.yaml.append(Object(fn))
         else:
-            print "Invalid URI supplied: %s"%(object_uri,)
+            print("Invalid URI supplied: %s"%(object_uri,))
         
     def __parseLink(self, object_uri, recursive):
         """ Returns a listing of all YAML files located in the
         hyper-link directory given by page. """
-        page = urllib.urlopen(object_uri).read()
+        page = urllib.request.urlopen(object_uri).read()
         #print "URI is a URL directory: %s"%(object_uri,)
         pattern = re.compile(r'<a href="[^"]*">')
         
@@ -120,8 +120,8 @@ class Object(object):
         
         if not isinstance(obj, Object): return False
         
-        self_keys = self.__dict__.keys()
-        obj_keys = obj.__dict__.keys()
+        self_keys = list(self.__dict__.keys())
+        obj_keys = list(obj.__dict__.keys())
         if not self_keys == obj_keys:
             return False
         for key in self_keys:
@@ -132,8 +132,8 @@ class Object(object):
                 if not self_value.equals(obj_value, compare_time_created):
                     return False
             elif isinstance(self_value, np.ndarray):
-                m1 = map(repr,self_value.flat)
-                m2 = map(repr,obj_value.flat)
+                m1 = list(map(repr,self_value.flat))
+                m2 = list(map(repr,obj_value.flat))
                 ret = m1 == m2
                 if not ret:
                     return False
@@ -147,7 +147,7 @@ class Object(object):
     def sizeof(self):
         """ Recursively computes the size in bytes of the given Dynamic Object """
         sz = 0
-        values = self.__dict__.values()
+        values = list(self.__dict__.values())
         for val in values:
             if isinstance(val, Object): sz += val.sizeof()
             elif isinstance(val, np.ndarray): sz += val.nbytes
@@ -281,7 +281,7 @@ def __ref_constructor(loader, node):
         return _Reference(loader.construct_mapping(node))
     else:
         return _Reference(loader.construct_scalar(node))
-add_constructor(u'!ref', __ref_constructor)
+add_constructor('!ref', __ref_constructor)
 
 # Method constructor using !method tag:
 def __method_constructor(loader, node):
@@ -289,7 +289,7 @@ def __method_constructor(loader, node):
         return _Method(loader.construct_mapping(node))
     else:
         return _Method(loader.construct_scalar(node))
-add_constructor(u'!method', __method_constructor)
+add_constructor('!method', __method_constructor)
 
 # Generic constructor for any _BuiltinDtype
 def __dtype_constructor(loader, node):
@@ -302,8 +302,8 @@ def __dtype_constructor(loader, node):
     return ret
 
 # Register YAML constructors for each builtin type:
-for dtype in Lookup.numpy_dtypes.keys() + Lookup.builtin_objects.keys():
-    add_constructor(u'!%s'%(dtype,), __dtype_constructor)
+for dtype in list(Lookup.numpy_dtypes.keys()) + list(Lookup.builtin_objects.keys()):
+    add_constructor('!%s'%(dtype,), __dtype_constructor)
 
 class FactoryLoader(OrderedYAML.Loader):
     """ A YAML Loader specifically designed to load YAML object definitions
@@ -311,7 +311,7 @@ class FactoryLoader(OrderedYAML.Loader):
     
     def construct_yaml_timestamp(self, node):
         """ Make empty timestamps (None/null) acceptable, otherwise parse the timestamp """
-        if node.value == u'':
+        if node.value == '':
             name = 'YAML_DEFN_LOADED_INCORRECTLY' # in case we forget to fix the name...
             return _Parameter(name, hasDefault=False, classType=datetime.datetime)
         else:
@@ -319,7 +319,7 @@ class FactoryLoader(OrderedYAML.Loader):
 
 # Override default timestamp constructor:
 FactoryLoader.add_constructor(
-        u'tag:yaml.org,2002:timestamp',
+        'tag:yaml.org,2002:timestamp',
         FactoryLoader.construct_yaml_timestamp
 )
 
@@ -414,7 +414,7 @@ class Factory:
             return _Parameter(sigName, True, default, length=None)
         
         # Is the object an array with length and default value given?:
-        if isinstance(sig.yamlString, dict) and "len" in sig.yamlString.keys():
+        if isinstance(sig.yamlString, dict) and "len" in list(sig.yamlString.keys()):
             length = sig.yamlString["len"]
             
             # Shape is given as something like [[],[]], not [2,2] - convert
@@ -495,7 +495,7 @@ class Factory:
         
         # List of names of classes we've created so far:
         #print [x for x in objClasses]
-        names = objClasses.keys()
+        names = list(objClasses.keys())
         
         if ref_object.yamlString in names:
             defaultType = objClasses[ref_object.yamlString]
@@ -594,7 +594,7 @@ class Factory:
                 setattr(_self, classData[i].name, arg)
             
             # Set named attributes (given by dictionary kwargs):
-            for key,value in kwargs.items():
+            for key,value in list(kwargs.items()):
                 
                 try: keyIndex = [param.name for param in classData].index(key)
                 except ValueError:
@@ -605,7 +605,7 @@ class Factory:
             
 
             # Object instantiation / creation time (if not already present):
-            if not kwargs.has_key('__time_created'):
+            if '__time_created' not in kwargs:
                 setattr(_self, "__time_created", np.float64(time.time()))
         
         return init, attributes
@@ -616,7 +616,7 @@ class Factory:
         a KeyError if the class cannot be found. """
         
         # If class definition was in the YAML file, extend that one:
-        if className in localClasses.keys():
+        if className in list(localClasses.keys()):
             return localClasses[className]
         
         # Else try finding the class definition in our global scope:
@@ -647,7 +647,7 @@ class Factory:
             # Each document can contain multiple objects - build each one.
             # (NOTE: objects can cross reference each other in the same document
             # need to resolve Reference objects as last step)
-            for objClassName in document.keys():
+            for objClassName in list(document.keys()):
                 
                 # The dictionary containing method & data signatures:
                 objDict = document[objClassName]
@@ -659,9 +659,9 @@ class Factory:
                 classBases = [Object]
                 
                 # List structured documents result in a list of dicts each with one key:
-                if isinstance(objDict, list): keys = [param.keys()[0] for param in objDict]
+                if isinstance(objDict, list): keys = [list(param.keys())[0] for param in objDict]
                 # Otherwise the parameter names are just the  keys of the dict
-                else: keys = objDict.keys()   # if key not found, raises AttributeError
+                else: keys = list(objDict.keys())   # if key not found, raises AttributeError
                    
                 for sigName in keys:
                     #print sigName
@@ -696,7 +696,7 @@ class Factory:
                     else:
                         msg = "Factory abstract base class doesn't " +\
                         "support the following signature: %r \"%s\""%(sig.__class__,str(sig))
-                        print sig.__class__
+                        print(sig.__class__)
                         raise SignatureException(msg)
                 
                 # Built-in attribute for all Dynamic Objects:
@@ -731,12 +731,12 @@ class Factory:
                 def construct_dynamic_object(loader, node):
                     kwargs = loader.construct_mapping(node)
                     # Remove revision control from loaded objects (info is in the class object!)
-                    for arg in kwargs.keys():
+                    for arg in list(kwargs.keys()):
                         if arg in getattr(Object, 'getters') and arg != '__time_created':
                             del kwargs[arg]
                     return cls(**kwargs)
                 revision = cls.meta_attributes["__revision_number"]
-                DynamicYAML.Loader.add_constructor(u'!%s.%s'%(str(objClassName),revision), construct_dynamic_object)
+                DynamicYAML.Loader.add_constructor('!%s.%s'%(str(objClassName),revision), construct_dynamic_object)
                 
                 represent_dynamic_object = DynamicYAML.Dumper.represent_dynamic_object
                 DynamicYAML.Dumper.add_representer(cls, represent_dynamic_object)
@@ -748,19 +748,19 @@ class Factory:
             except KeyError:
                 # Now look for reference to class object loaded from any YAML defn file, loading the
                 # most recent version / revision (number) of the definition
-                for dynClass in Object.dynamicClasses.keys()[::-1]:
+                for dynClass in list(Object.dynamicClasses.keys())[::-1]:
                     if dynClass.startswith(className):
                         return Object.dynamicClasses[dynClass]
                     
                 # Still unresolved - raise exception:
-                allDynamicClasses = repr(objClasses.keys() + Object.dynamicClasses.keys())
+                allDynamicClasses = repr(list(objClasses.keys()) + list(Object.dynamicClasses.keys()))
                 raise UnresolvedTypeException("Cannot resolve type '%s': Name not found in %s"%(className,allDynamicClasses))
 
         
         def resolve(param):
             
             # Reference is just a string - that's the class name:
-            if isinstance(param.classType.yamlObject, (str, unicode)):
+            if isinstance(param.classType.yamlObject, str):
                 className = str(param.classType.yamlObject)
                 param.classType = findClass(className)
                 return
@@ -796,7 +796,7 @@ class Factory:
                 param.hasDefault = False # for good measure
             
             # Is it an object array?:
-            if "len" in refDict.keys():
+            if "len" in list(refDict.keys()):
                 param.length = refDict["len"]
         
         # Resolve any unresolved data-types:
@@ -810,7 +810,6 @@ class Factory:
 def load_defn(yaml):
     """ Shortcut for producing a single DynamicObject class object from
     the provided yaml definition in string format """
-    return Factory(yaml=yaml).classes.values()[0]
-
+    return list(Factory(yaml=yaml).classes.values())[0]
 
 

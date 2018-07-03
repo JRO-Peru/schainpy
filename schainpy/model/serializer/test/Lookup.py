@@ -15,8 +15,8 @@ import platform
 import collections
 
 # Implicit Types:
-python_dtypes = tuple([bool,int,long,float,str,datetime.datetime,list,
-                 set,dict,tuple,unicode])
+python_dtypes = tuple([bool,int,int,float,str,datetime.datetime,list,
+                 set,dict,tuple,str])
 
 # Numpy Data-types:
 numpy_dtypes = {'dtype.bool': bool, 'dtype.int': np.int, 'dtype.int8': np.int8,
@@ -53,10 +53,9 @@ builtin_objects_simple = {'nsTime': PrecisionTime.nsTime, 'psTime': PrecisionTim
                           'Binary': Binary}
 
 # Inverse lookup for accessing tags given a class instance:
-cls_dtypes = dict([(v,k) for (k,v) in numpy_dtypes.items()])
-obj_dtypes = dict([(v,k) for (k,v) in builtin_objects_simple.items()])
+cls_dtypes = dict([(v,k) for (k,v) in list(numpy_dtypes.items())])
+obj_dtypes = dict([(v,k) for (k,v) in list(builtin_objects_simple.items())])
 
 # Pointer to the list of all Object classes created, as located in the Object module / class:
 dynamicClasses = DynamicObject.Object.dynamicClasses
-
 

@@ -63,9 +63,9 @@ def formatArgs(op):
     argsAsKey = ["\t'{}'".format(x) for x in args]
     argsFormatted = ": 'string',\n".join(argsAsKey)
 
-    print op
-    print "parameters = { \n" + argsFormatted + ": 'string',\n }"
-    print '\n'
+    print(op)
+    print("parameters = { \n" + argsFormatted + ": 'string',\n }")
+    print('\n')
     
 
 if __name__ == "__main__":

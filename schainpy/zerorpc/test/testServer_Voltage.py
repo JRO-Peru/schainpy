@@ -5,7 +5,7 @@ Created on Jul 15, 2014
 '''
 
 import sys
-import cPickle
+import pickle
 
 from schainpy.model.data.jrodata import Voltage
 # from schainpy.model.io.jrodataIO import USRPReaderMP
@@ -37,10 +37,10 @@ if __name__ == "__main__":
 #     print newValue
     
     
-    print '###########CPICKLE##################'
-    print myDict
-    newSerialized = cPickle.dumps(myDict, 2)
+    print('###########CPICKLE##################')
+    print(myDict)
+    newSerialized = pickle.dumps(myDict, 2)
 #     print newValue
     
-    newDict = cPickle.loads(newSerialized)
-    print newDict
+    newDict = pickle.loads(newSerialized)
+    print(newDict)

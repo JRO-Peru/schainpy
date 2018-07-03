@@ -63,10 +63,10 @@ def load_json(obj):
         iterable = obj
 
     if isinstance(iterable, dict):
-        return {str(k): load_json(v) if isinstance(v, dict) else str(v) if isinstance(v, unicode) else v
-            for k, v in iterable.items()}
+        return {str(k): load_json(v) if isinstance(v, dict) else str(v) if isinstance(v, str) else v
+            for k, v in list(iterable.items())}
     elif isinstance(iterable, (list, tuple)):
-        return [str(v) if isinstance(v, unicode) else v for v in iterable]
+        return [str(v) if isinstance(v, str) else v for v in iterable]
     
     return iterable
 
@@ -107,10 +107,10 @@ class MADReader(JRODataReader, ProcessingUnit):
         self.ind2DList = load_json(kwargs.get('ind2DList',
                                               "[\"GDALT\"]"))
         if self.path is None:
-            raise ValueError, 'The path is not valid'
+            raise ValueError('The path is not valid')
 
         if format is None:
-            raise ValueError, 'The format is not valid choose simple or hdf5'
+            raise ValueError('The format is not valid choose simple or hdf5')
         elif format.lower() in ('simple', 'txt'):
             self.ext = '.txt'
         elif format.lower() in ('cedar',):
@@ -122,7 +122,7 @@ class MADReader(JRODataReader, ProcessingUnit):
         self.fileId = 0
 
         if not self.fileList:
-            raise  Warning, 'There is no files matching these date in the folder: {}. \n Check startDate and endDate'.format(path)
+            raise  Warning('There is no files matching these date in the folder: {}. \n Check startDate and endDate'.format(path))
 
         self.setNextFile()
         
@@ -198,7 +198,7 @@ class MADReader(JRODataReader, ProcessingUnit):
             log.success('Spatial parameters: {}'.format(','.join(s_parameters)),
                         'MADReader')
         
-        for param in self.oneDDict.keys():
+        for param in list(self.oneDDict.keys()):
             if param.lower() not in self.parameters:
                 log.warning(
                     'Parameter {} not found will be ignored'.format(
@@ -206,7 +206,7 @@ class MADReader(JRODataReader, ProcessingUnit):
                     'MADReader')
                 self.oneDDict.pop(param, None)
         
-        for param, value in self.twoDDict.items():
+        for param, value in list(self.twoDDict.items()):
             if param.lower() not in self.parameters:
                 log.warning(
                     'Parameter {} not found, it will be ignored'.format(
@@ -352,11 +352,11 @@ class MADReader(JRODataReader, ProcessingUnit):
 
         parameters = [None for __ in self.parameters]
 
-        for param, attr in self.oneDDict.items():            
+        for param, attr in list(self.oneDDict.items()):            
             x = self.parameters.index(param.lower())
             setattr(self.dataOut, attr, self.buffer[0][x])
 
-        for param, value in self.twoDDict.items():            
+        for param, value in list(self.twoDDict.items()):            
             x = self.parameters.index(param.lower())
             if self.ext == '.txt':
                 y = self.parameters.index(self.ind2DList[0].lower())            
@@ -376,7 +376,7 @@ class MADReader(JRODataReader, ProcessingUnit):
                 self.output[value[0]][value[1]] = dummy
                 parameters[value[1]] = param
 
-        for key, value in self.output.items():
+        for key, value in list(self.output.items()):
             setattr(self.dataOut, key, numpy.array(value))
 
         self.dataOut.parameters = [s for s in parameters if s]
@@ -508,7 +508,7 @@ class MADWriter(Operation):
                 'Creating file: {}'.format(self.fullname),
                 'MADWriter')
             self.fp = madrigal.cedar.MadrigalCedarFile(self.fullname, True)
-        except ValueError, e:
+        except ValueError as e:
             log.error(
                 'Impossible to create a cedar object with "madrigal.cedar.MadrigalCedarFile"',
                 'MADWriter')
@@ -528,7 +528,7 @@ class MADWriter(Operation):
         heights = self.dataOut.heightList
 
         if self.ext == '.dat':
-            for key, value in self.twoDDict.items():
+            for key, value in list(self.twoDDict.items()):
                 if isinstance(value, str):
                     data = getattr(self.dataOut, value)
                     invalid = numpy.isnan(data)
@@ -540,7 +540,7 @@ class MADWriter(Operation):
                     data[invalid] = self.missing
 
         out = {}
-        for key, value in self.twoDDict.items():
+        for key, value in list(self.twoDDict.items()):
             key = key.lower()
             if isinstance(value, str):
                 if 'db' in value.lower():
@@ -576,8 +576,8 @@ class MADWriter(Operation):
             endTime.minute,
             endTime.second,
             endTime.microsecond/10000,
-            self.oneDDict.keys(),
-            self.twoDDict.keys(),
+            list(self.oneDDict.keys()),
+            list(self.twoDDict.keys()),
             len(index),
             **self.extra_args
         )

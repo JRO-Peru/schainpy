@@ -8,8 +8,8 @@ import copy
 import numpy
 import datetime
 
-from jroheaderIO import SystemHeader, RadarControllerHeader
-from schainpy import cSchain
+from .jroheaderIO import SystemHeader, RadarControllerHeader
+# from schainpy import cSchain
 
 
 def getNumpyDtype(dataTypeCode):
@@ -27,7 +27,7 @@ def getNumpyDtype(dataTypeCode):
     elif dataTypeCode == 5:
         numpyDtype = numpy.dtype([('real', '<f8'), ('imag', '<f8')])
     else:
-        raise ValueError, 'dataTypeCode was not defined'
+        raise ValueError('dataTypeCode was not defined')
 
     return numpyDtype
 
@@ -68,41 +68,41 @@ def hildebrand_sekhon(data, navg):
     """
 
     sortdata = numpy.sort(data, axis=None)
-#     lenOfData = len(sortdata)
-#     nums_min = lenOfData*0.2
-#
-#     if nums_min <= 5:
-#         nums_min = 5
-#
-#     sump = 0.
-#
-#     sumq = 0.
-#
-#     j = 0
-#
-#     cont = 1
-#
-#     while((cont==1)and(j<lenOfData)):
-#
-#         sump += sortdata[j]
-#
-#         sumq += sortdata[j]**2
-#
-#         if j > nums_min:
-#             rtest = float(j)/(j-1) + 1.0/navg
-#             if ((sumq*j) > (rtest*sump**2)):
-#                 j = j - 1
-#                 sump  = sump - sortdata[j]
-#                 sumq =  sumq - sortdata[j]**2
-#                 cont = 0
-#
-#         j += 1
-#
-#     lnoise = sump /j
-#
-#     return lnoise
+    lenOfData = len(sortdata)
+    nums_min = lenOfData*0.2
 
-    return cSchain.hildebrand_sekhon(sortdata, navg)
+    if nums_min <= 5:
+        nums_min = 5
+
+    sump = 0.
+
+    sumq = 0.
+
+    j = 0
+
+    cont = 1
+
+    while((cont==1)and(j<lenOfData)):
+
+        sump += sortdata[j]
+
+        sumq += sortdata[j]**2
+
+        if j > nums_min:
+            rtest = float(j)/(j-1) + 1.0/navg
+            if ((sumq*j) > (rtest*sump**2)):
+                j = j - 1
+                sump  = sump - sortdata[j]
+                sumq =  sumq - sortdata[j]**2
+                cont = 0
+
+        j += 1
+
+    lnoise = sump /j
+
+    return lnoise
+
+    # return cSchain.hildebrand_sekhon(sortdata, navg)
 
 
 class Beam:
@@ -122,7 +122,7 @@ class GenericData(object):
         if inputObj == None:
             return copy.deepcopy(self)
 
-        for key in inputObj.__dict__.keys():
+        for key in list(inputObj.__dict__.keys()):
 
             attribute = inputObj.__dict__[key]
 
@@ -241,7 +241,7 @@ class JROData(GenericData):
 
     def getChannelIndexList(self):
 
-        return range(self.nChannels)
+        return list(range(self.nChannels))
 
     def getNHeights(self):
 
@@ -662,7 +662,7 @@ class Spectra(JROData):
 
     def getPairsIndexList(self):
 
-        return range(self.nPairs)
+        return list(range(self.nPairs))
 
     def getNormFactor(self):
 
@@ -714,8 +714,8 @@ class Spectra(JROData):
             pairsIndexList = []
             for pair in pairsList:
                 if pair not in self.pairsList:
-                    raise ValueError, "Pair %s is not in dataOut.pairsList" % (
-                        pair)
+                    raise ValueError("Pair %s is not in dataOut.pairsList" % (
+                        pair))
                 pairsIndexList.append(self.pairsList.index(pair))
         for i in range(len(pairsIndexList)):
             pair = self.pairsList[pairsIndexList[i]]
@@ -736,7 +736,7 @@ class Spectra(JROData):
 
     def setValue(self, value):
 
-        print "This property should not be initialized"
+        print("This property should not be initialized")
 
         return
 
@@ -941,7 +941,7 @@ class Fits(JROData):
 
     def getChannelIndexList(self):
 
-        return range(self.nChannels)
+        return list(range(self.nChannels))
 
     def getNoise(self, type=1):
 
@@ -1068,7 +1068,7 @@ class Correlation(JROData):
         ind_vel = numpy.array([-2, -1, 1, 2]) + freq_dc
 
         if ind_vel[0] < 0:
-            ind_vel[range(0, 1)] = ind_vel[range(0, 1)] + self.num_prof
+            ind_vel[list(range(0, 1))] = ind_vel[list(range(0, 1))] + self.num_prof
 
         if mode == 1:
             jspectra[:, freq_dc, :] = (
@@ -1080,7 +1080,7 @@ class Correlation(JROData):
             xx = numpy.zeros([4, 4])
 
             for fil in range(4):
-                xx[fil, :] = vel[fil]**numpy.asarray(range(4))
+                xx[fil, :] = vel[fil]**numpy.asarray(list(range(4)))
 
             xx_inv = numpy.linalg.inv(xx)
             xx_aux = xx_inv[0, :]
@@ -1239,7 +1239,7 @@ class Parameters(Spectra):
 
     def setValue(self, value):
 
-        print "This property should not be initialized"
+        print("This property should not be initialized")
 
         return
 

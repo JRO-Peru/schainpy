@@ -144,7 +144,7 @@ class AMISRReader(ProcessingUnit):
             self.status = 1
         else:
             self.status = 0
-            print 'Path:%s does not exists'%self.path
+            print('Path:%s does not exists'%self.path)
             
         return
     
@@ -169,11 +169,11 @@ class AMISRReader(ProcessingUnit):
         
         pat = '\d+.\d+'
         dirnameList = [re.search(pat,x) for x in os.listdir(self.path)]
-        dirnameList = filter(lambda x:x!=None,dirnameList)
+        dirnameList = [x for x in dirnameList if x!=None]
         dirnameList = [x.string for x in dirnameList]
         if not(online):
             dirnameList = [self.__selDates(x) for x in dirnameList]
-            dirnameList = filter(lambda x:x!=None,dirnameList)
+            dirnameList = [x for x in dirnameList if x!=None]
         if len(dirnameList)>0:
             self.status = 1
             self.dirnameList = dirnameList
@@ -186,8 +186,8 @@ class AMISRReader(ProcessingUnit):
         startDateTime_Reader = datetime.datetime.combine(self.startDate,self.startTime)
         endDateTime_Reader = datetime.datetime.combine(self.endDate,self.endTime)
 
-        print 'Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader)
-        print '........................................'
+        print('Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader))
+        print('........................................')
         filter_filenameList = []
         self.filenameList.sort()
         for i in range(len(self.filenameList)-1):
@@ -226,7 +226,7 @@ class AMISRReader(ProcessingUnit):
     
     def __getFilenameList(self, fileListInKeys, dirList):
         for value in fileListInKeys:
-            dirName = value.keys()[0]
+            dirName = list(value.keys())[0]
             for file in value[dirName]:
                 filename = os.path.join(dirName, file)
                 self.filenameList.append(filename)
@@ -304,7 +304,7 @@ class AMISRReader(ProcessingUnit):
         self.__selectDataForTimes()
         
         for i in range(len(self.filenameList)):
-            print "%s" %(self.filenameList[i])
+            print("%s" %(self.filenameList[i]))
         
         return
 
@@ -315,7 +315,7 @@ class AMISRReader(ProcessingUnit):
             idFile += 1
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-                print "No more Files"
+                print("No more Files")
                 return 0
 
             filename = self.filenameList[idFile]
@@ -330,7 +330,7 @@ class AMISRReader(ProcessingUnit):
 
         self.amisrFilePointer = amisrFilePointer
 
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
 
         return 1
     
@@ -341,7 +341,7 @@ class AMISRReader(ProcessingUnit):
             self.__selectDataForTimes(online=True)
             filename = self.filenameList[0]
             while self.__filename_online == filename:
-                print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
+                print('waiting %d seconds to get a new file...'%(self.__waitForNewFile))
                 sleep(self.__waitForNewFile)
                 self.__selectDataForTimes(online=True)
                 filename = self.filenameList[0]
@@ -351,7 +351,7 @@ class AMISRReader(ProcessingUnit):
         self.amisrFilePointer = h5py.File(filename,'r')
         self.flagIsNewFile = 1
         self.filename = filename
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
         return 1
     
     
@@ -368,12 +368,12 @@ class AMISRReader(ProcessingUnit):
         #looking index list for data
         start_index = self.radacHeaderObj.pulseCount[0,:][0]
         end_index = self.radacHeaderObj.npulses
-        range4data = range(start_index, end_index)
+        range4data = list(range(start_index, end_index))
         self.index4_schain_datablock = numpy.array(range4data)
         
         buffer_start_index = 0
         buffer_end_index = self.radacHeaderObj.pulseCount[0,:][0]
-        range4buffer = range(buffer_start_index, buffer_end_index)
+        range4buffer = list(range(buffer_start_index, buffer_end_index))
         self.index4_buffer = numpy.array(range4buffer)
         
         self.linear_pulseCount = numpy.array(range4data + range4buffer)
@@ -403,8 +403,8 @@ class AMISRReader(ProcessingUnit):
             
         just4record0 = self.radacHeaderObj.beamCodeByPulse[0,:]
         
-        for i in range(len(self.beamCodeDict.values())):
-            xx = numpy.where(just4record0==self.beamCodeDict.values()[i][0])
+        for i in range(len(list(self.beamCodeDict.values()))):
+            xx = numpy.where(just4record0==list(self.beamCodeDict.values())[i][0])
             indexPulseByBeam = self.linear_pulseCount[xx[0]]
             self.beamRangeDict[i] = indexPulseByBeam
     
@@ -499,7 +499,7 @@ class AMISRReader(ProcessingUnit):
             self.searchFilesOnLine(path, walk)
         
         if not(self.filenameList):
-            print "There is no files into the folder: %s"%(path)
+            print("There is no files into the folder: %s"%(path))
                 
             sys.exit(-1)
 
@@ -632,8 +632,8 @@ class AMISRReader(ProcessingUnit):
         return 0
     
     def printUTC(self):
-        print self.dataOut.utctime
-        print ''
+        print(self.dataOut.utctime)
+        print('')
     
     def setObjProperties(self):
         
@@ -661,7 +661,7 @@ class AMISRReader(ProcessingUnit):
         
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
+            print('Process finished')
             return 0
         
         if self.__hasNotDataInBuffer():

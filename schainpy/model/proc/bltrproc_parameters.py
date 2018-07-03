@@ -12,7 +12,7 @@ from time import gmtime
 
 from numpy import transpose
 
-from jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Parameters
 
 
@@ -95,7 +95,7 @@ class OutliersFilter(Operation):
             npoints    - number of points for mask filter
         '''
 
-        print '    Outliers Filter {} {} / threshold = {}'.format(svalue, svalue, factor)
+        print('    Outliers Filter {} {} / threshold = {}'.format(svalue, svalue, factor))
 
         
         yaxis = self.dataOut.heightList
@@ -400,4 +400,3 @@ class OutliersFilter(Operation):
         return startDTList, data_fHeigths_List, data_fZonal_List, data_fMeridional_List, data_fVertical_List
 
 
-  

@@ -7,7 +7,7 @@ import os
 import datetime
 import numpy
 
-from figure import Figure
+from .figure import Figure
 
 class Scope(Figure):
     
@@ -134,7 +134,7 @@ class Scope(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
         
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])

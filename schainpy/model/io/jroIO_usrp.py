@@ -19,7 +19,7 @@ from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 try:
     import digital_rf_hdf5
 except:
-    print 'You should install "digital_rf_hdf5" module if you want to read USRP data'
+    print('You should install "digital_rf_hdf5" module if you want to read USRP data')
 
 class USRPReader(ProcessingUnit):
     '''
@@ -209,7 +209,7 @@ class USRPReader(ProcessingUnit):
         '''
 
         if not os.path.isdir(path):
-            raise ValueError, "[Reading] Directory %s does not exist" %path
+            raise ValueError("[Reading] Directory %s does not exist" %path)
 
         try:
             self.digitalReadObj = digital_rf_hdf5.read_hdf5(path, load_all_metadata=True)
@@ -219,10 +219,10 @@ class USRPReader(ProcessingUnit):
         channelNameList = self.digitalReadObj.get_channels()
 
         if not channelNameList:
-            raise ValueError, "[Reading] Directory %s does not have any files" %path
+            raise ValueError("[Reading] Directory %s does not have any files" %path)
 
         if not channelList:
-            channelList = range(len(channelNameList))
+            channelList = list(range(len(channelNameList)))
 
         ##########  Reading metadata ######################
 
@@ -241,7 +241,7 @@ class USRPReader(ProcessingUnit):
             self.__frequency = this_metadata_file['fc'].value
 
         if not self.__frequency:
-            raise ValueError, "Center Frequency is not defined in metadata file"
+            raise ValueError("Center Frequency is not defined in metadata file")
 
         try:
             self.__timezone = this_metadata_file['timezone'].value
@@ -299,7 +299,7 @@ class USRPReader(ProcessingUnit):
 
         if not nSamples:
             if not ippKm:
-                raise ValueError, "[Reading] nSamples or ippKm should be defined"
+                raise ValueError("[Reading] nSamples or ippKm should be defined")
 
             nSamples = int(ippKm / (1e6*0.15/self.__sample_rate))
 
@@ -346,14 +346,14 @@ class USRPReader(ProcessingUnit):
         self.__setFileHeader()
         self.isConfig = True
 
-        print "[Reading] USRP Data was found from %s to %s " %(
+        print("[Reading] USRP Data was found from %s to %s " %(
                                                       datetime.datetime.utcfromtimestamp(self.__startUTCSecond - self.__timezone),
                                                       datetime.datetime.utcfromtimestamp(self.__endUTCSecond - self.__timezone)
-                                                      )
+                                                      ))
 
-        print "[Reading] Starting process from %s to %s" %(datetime.datetime.utcfromtimestamp(startUTCSecond - self.__timezone),
+        print("[Reading] Starting process from %s to %s" %(datetime.datetime.utcfromtimestamp(startUTCSecond - self.__timezone),
                                                            datetime.datetime.utcfromtimestamp(endUTCSecond - self.__timezone)
-                                                           )
+                                                           ))
 
     def __reload(self):
 
@@ -366,7 +366,7 @@ class USRPReader(ProcessingUnit):
 #                                           datetime.datetime.utcfromtimestamp(self.__startUTCSecond - self.__timezone),
 #                                           datetime.datetime.utcfromtimestamp(self.__endUTCSecond - self.__timezone)
 #                                           )
-        print "[Reading] reloading metadata ..."
+        print("[Reading] reloading metadata ...")
 
         try:
             self.digitalReadObj.reload(complete_update=True)
@@ -380,11 +380,11 @@ class USRPReader(ProcessingUnit):
 
         if end_index > self.__endUTCSecond*self.__sample_rate:
             self.__endUTCSecond = 1.0*end_index/self.__sample_rate
-            print
-            print "[Reading] New timerange found [%s, %s] " %(
+            print()
+            print("[Reading] New timerange found [%s, %s] " %(
                                                       datetime.datetime.utcfromtimestamp(self.__startUTCSecond - self.__timezone),
                                                       datetime.datetime.utcfromtimestamp(self.__endUTCSecond - self.__timezone)
-                                                      )
+                                                      ))
 
             return True
 
@@ -399,7 +399,7 @@ class USRPReader(ProcessingUnit):
         self.__thisUnixSample += self.__samples_to_read
 
         if self.__thisUnixSample + 2*self.__samples_to_read > self.__endUTCSecond*self.__sample_rate:
-            print "[Reading] There are no more data into selected time-range"
+            print("[Reading] There are no more data into selected time-range")
 
             self.__reload()
 
@@ -418,17 +418,17 @@ class USRPReader(ProcessingUnit):
                                                               self.__samples_to_read,
                                                               thisChannelName)
 
-            except IOError, e:
+            except IOError as e:
                 #read next profile
                 self.__flagDiscontinuousBlock = True
-                print "[Reading] %s" %datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone), e
+                print("[Reading] %s" %datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone), e)
                 break
 
             if result.shape[0] != self.__samples_to_read:
                 self.__flagDiscontinuousBlock = True
-                print "[Reading] %s: Too few samples were found, just %d/%d  samples" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
+                print("[Reading] %s: Too few samples were found, just %d/%d  samples" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
                                                                                 result.shape[0],
-                                                                                self.__samples_to_read)
+                                                                                self.__samples_to_read))
                 break
 
             self.__data_buffer[indexChannel,:] = result*volt_scale
@@ -442,9 +442,9 @@ class USRPReader(ProcessingUnit):
         if not dataOk:
             return False
 
-        print "[Reading] %s: %d samples <> %f sec" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
+        print("[Reading] %s: %d samples <> %f sec" %(datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
                                                          self.__samples_to_read,
-                                                         self.__timeInterval)
+                                                         self.__timeInterval))
 
         self.__bufferIndex = 0
 
@@ -490,7 +490,7 @@ class USRPReader(ProcessingUnit):
                     return False
 
                 if self.__flagDiscontinuousBlock:
-                    print '[Reading] discontinuous block found ... continue with the next block'
+                    print('[Reading] discontinuous block found ... continue with the next block')
                     continue
 
                 if not self.__online:
@@ -500,7 +500,7 @@ class USRPReader(ProcessingUnit):
                 if err_counter > nTries:
                     return False
 
-                print '[Reading] waiting %d seconds to read a new block' %seconds
+                print('[Reading] waiting %d seconds to read a new block' %seconds)
                 sleep(seconds)
 
         self.dataOut.data = self.__data_buffer[:,self.__bufferIndex:self.__bufferIndex+self.__nSamples]
@@ -532,7 +532,7 @@ class USRPReader(ProcessingUnit):
         '''
         '''
 
-        print self.profileIndex
+        print(self.profileIndex)
 
     def run(self, **kwargs):
         '''

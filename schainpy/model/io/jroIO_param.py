@@ -7,7 +7,7 @@ import datetime
 
 from schainpy.model.data.jrodata import *
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
-# from jroIO_base import *
+# from .jroIO_base import *
 from schainpy.model.io.jroIO_base import *
 import schainpy
 
@@ -87,22 +87,22 @@ class ParamReader(ProcessingUnit):
         startTime = kwargs['startTime']
         endTime = kwargs['endTime']
         walk = kwargs['walk']
-        if kwargs.has_key('ext'):
+        if 'ext' in kwargs:
             ext = kwargs['ext']
         else:
             ext = '.hdf5'
-        if kwargs.has_key('timezone'):
+        if 'timezone' in kwargs:
             self.timezone = kwargs['timezone']
         else:
             self.timezone = 'lt'
 
-        print "[Reading] Searching files in offline mode ..."
+        print("[Reading] Searching files in offline mode ...")
         pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
                                                                startTime=startTime, endTime=endTime,
                                                                ext=ext, walk=walk)
 
         if not(filenameList):
-            print "There is no files into the folder: %s"%(path)
+            print("There is no files into the folder: %s"%(path))
             sys.exit(-1)
 
         self.fileIndex = -1
@@ -134,16 +134,16 @@ class ParamReader(ProcessingUnit):
         dateList, pathList = JRODataObj.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
 
         if dateList == []:
-            print "[Reading] No *%s files in %s from %s to %s)"%(ext, path,
+            print("[Reading] No *%s files in %s from %s to %s)"%(ext, path,
                                                         datetime.datetime.combine(startDate,startTime).ctime(),
-                                                        datetime.datetime.combine(endDate,endTime).ctime())
+                                                        datetime.datetime.combine(endDate,endTime).ctime()))
 
             return None, None
 
         if len(dateList) > 1:
-            print "[Reading] %d days were found in date range: %s - %s" %(len(dateList), startDate, endDate)
+            print("[Reading] %d days were found in date range: %s - %s" %(len(dateList), startDate, endDate))
         else:
-            print "[Reading] data was found for the date %s" %(dateList[0])
+            print("[Reading] data was found for the date %s" %(dateList[0]))
 
         filenameList = []
         datetimeList = []
@@ -172,11 +172,11 @@ class ParamReader(ProcessingUnit):
                 datetimeList.append(thisDatetime)
 
         if not(filenameList):
-            print "[Reading] Any file was found int time range %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime())
+            print("[Reading] Any file was found int time range %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime()))
             return None, None
 
-        print "[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime)
-        print
+        print("[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime))
+        print()
 
 #         for i in range(len(filenameList)):
 #             print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
@@ -218,7 +218,7 @@ class ParamReader(ProcessingUnit):
 
         except IOError:
             traceback.print_exc()
-            raise IOError, "The file %s can't be opened" %(filename)
+            raise IOError("The file %s can't be opened" %(filename))
         #chino rata
         #In case has utctime attribute
         grp2 = grp1['utctime']
@@ -271,7 +271,7 @@ class ParamReader(ProcessingUnit):
         idFile = self.fileIndex
 
         if not(idFile < len(self.filenameList)):
-            print "No more Files"
+            print("No more Files")
             return 0
 
         filename = self.filenameList[idFile]
@@ -282,7 +282,7 @@ class ParamReader(ProcessingUnit):
 
         self.fp = filePointer
 
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
 
 #         self.__readMetadata()
         self.__setBlockList()
@@ -361,7 +361,7 @@ class ParamReader(ProcessingUnit):
 
         listMetaname = []
         listMetadata = []
-        for item in gp.items():
+        for item in list(gp.items()):
             name = item[0]
 
             if name=='array dimensions':
@@ -389,7 +389,7 @@ class ParamReader(ProcessingUnit):
         listdataname = []
         listdata = []
 
-        for item in grp.items():
+        for item in list(grp.items()):
             name = item[0]
             listdataname.append(name)
 
@@ -921,7 +921,7 @@ class ParamWriter(Operation):
 #         self.nDims = nDims
 #         self.nDimsForDs = nDimsForDs
         #Saving variables
-        print 'Writing the file: %s'%filename
+        print('Writing the file: %s'%filename)
         self.filename = filename
 #         self.fp = fp
 #         self.grp = grp

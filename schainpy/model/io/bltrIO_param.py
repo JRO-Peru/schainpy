@@ -121,7 +121,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.datatime = datetime.datetime(1900,1,1)
         
         if self.path is None:
-            raise ValueError, "The path is not valid"
+            raise ValueError("The path is not valid")
 
         if ext is None:
             ext = self.ext
@@ -131,8 +131,8 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.fileIndex = 0
 
         if not self.fileList:
-            raise Warning, "There is no files matching these date in the folder: %s. \n Check 'startDate' and 'endDate' " % (
-                path)
+            raise Warning("There is no files matching these date in the folder: %s. \n Check 'startDate' and 'endDate' " % (
+                path))
 
         self.setNextFile()
 
@@ -340,7 +340,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.dataOut.sizeOfFile = self.sizeOfFile
         self.dataOut.lat = self.lat
         self.dataOut.lon = self.lon
-        self.dataOut.channelList = range(self.nchannels)
+        self.dataOut.channelList = list(range(self.nchannels))
         self.dataOut.kchan = self.kchan        
         self.dataOut.delta = self.delta
         self.dataOut.correction = self.correction

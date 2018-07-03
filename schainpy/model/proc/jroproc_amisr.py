@@ -2,7 +2,7 @@
 @author: Daniel Suarez
 '''
 import numpy
-from jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroamisr import AMISR
 
 class AMISRProc(ProcessingUnit):
@@ -24,16 +24,16 @@ class PrintInfo(Operation):
     def run(self, dataOut):
         
         if not self.__isPrinted:
-            print 'Number of Records by File: %d'%dataOut.nRecords
-            print 'Number of Pulses: %d'%dataOut.nProfiles
-            print 'Number of Pulses by Frame: %d'%dataOut.npulseByFrame
-            print 'Number of Samples by Pulse: %d'%len(dataOut.heightList)
-            print 'Ipp Seconds: %f'%dataOut.ippSeconds
-            print 'Number of Beams: %d'%dataOut.nBeams
-            print 'BeamCodes:'
-            beamStrList = ['Beam %d -> Code=%d, azimuth=%2.2f,  zenith=%2.2f, gain=%2.2f'%(k,v[0],v[1],v[2],v[3]) for k,v in dataOut.beamCodeDict.items()]
+            print('Number of Records by File: %d'%dataOut.nRecords)
+            print('Number of Pulses: %d'%dataOut.nProfiles)
+            print('Number of Pulses by Frame: %d'%dataOut.npulseByFrame)
+            print('Number of Samples by Pulse: %d'%len(dataOut.heightList))
+            print('Ipp Seconds: %f'%dataOut.ippSeconds)
+            print('Number of Beams: %d'%dataOut.nBeams)
+            print('BeamCodes:')
+            beamStrList = ['Beam %d -> Code=%d, azimuth=%2.2f,  zenith=%2.2f, gain=%2.2f'%(k,v[0],v[1],v[2],v[3]) for k,v in list(dataOut.beamCodeDict.items())]
             for b in beamStrList:
-                print b
+                print(b)
             self.__isPrinted = True
         
         return
@@ -93,7 +93,7 @@ class BeamSelector(Operation):
             return 1
         
         else:
-            raise ValueError, "BeamSelector needs beam value"
+            raise ValueError("BeamSelector needs beam value")
         
         return 0
 
@@ -117,7 +117,7 @@ class ProfileToChannels(Operation):
         dataOut.flagNoData = True
         
         if not(self.__isConfig):
-            nchannels = len(dataOut.beamRangeDict.keys())
+            nchannels = len(list(dataOut.beamRangeDict.keys()))
             nsamples = dataOut.nHeights
             self.buffer = numpy.zeros((nchannels, nsamples), dtype = 'complex128')
             dataOut.beam.codeList = [dataOut.beamCodeDict[x][0] for x in range(nchannels)]
@@ -136,7 +136,7 @@ class ProfileToChannels(Operation):
         if self.__counter_chan >= self.buffer.shape[0]:
             self.__counter_chan = 0
             dataOut.data = self.buffer.copy()
-            dataOut.channelList = range(self.buffer.shape[0])
+            dataOut.channelList = list(range(self.buffer.shape[0]))
             self.__isConfig = False
             dataOut.flagNoData = False
         pass

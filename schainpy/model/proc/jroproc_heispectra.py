@@ -1,6 +1,6 @@
 import numpy
 
-from jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import SpectraHeis
 
 class SpectraHeisProc(ProcessingUnit):
@@ -99,7 +99,7 @@ class SpectraHeisProc(ProcessingUnit):
 
             return
 
-        raise ValueError, "The type object %s is not valid"%(self.dataIn.type)
+        raise ValueError("The type object %s is not valid"%(self.dataIn.type))
 
 
     def selectChannels(self, channelList):
@@ -133,8 +133,8 @@ class SpectraHeisProc(ProcessingUnit):
 
         for channelIndex in channelIndexList:
             if channelIndex not in self.dataOut.channelIndexList:
-                print channelIndexList
-                raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
+                print(channelIndexList)
+                raise ValueError("The value %d in channelIndexList is not valid" %channelIndex)
 
 #         nChannels = len(channelIndexList)
 
@@ -187,7 +187,7 @@ class IncohInt4SpectraHeis(Operation):
 
 
         if n == None and timeInterval == None:
-            raise ValueError, "n or timeInterval should be specified ..."
+            raise ValueError("n or timeInterval should be specified ...")
 
         if n != None:
             self.n = n

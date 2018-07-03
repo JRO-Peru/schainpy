@@ -157,7 +157,7 @@ datastr = serializer.toSerial(source_object)
 
 dest_object = serializer.fromSerial(datastr)
 
-print "dest_object=",dest_object
+print("dest_object=",dest_object)
 
 myObject = StateListObject(hierarchical="yes",state=np.array([1,2,3.0]))
 
@@ -168,7 +168,7 @@ packed = msgpack.packb(datastr)
 try:
   r= redis.StrictRedis(host='localhost',port=6379,db=0)
 except Exception as eobj:
-  print "is the redis server running?",eobj
+  print("is the redis server running?",eobj)
 else:
 
   r.set('baz',packed)   # converts to string
@@ -178,10 +178,9 @@ unpacked = msgpack.unpackb(x)
 
 dest_object = serializer.fromSerial(unpacked)
 
-print "val1=",dest_object.hierarchical
+print("val1=",dest_object.hierarchical)
 val2 = dest_object.state
-print "val2=",val2
+print("val2=",val2)
 # can numpy array be used as array?
-print val2.shape
-
+print(val2.shape)
 

@@ -9,7 +9,7 @@ try:
     import paramiko
     import scp
 except:
-    print "You should install paramiko and scp libraries \nif you want to use SSH protocol to upload files to the server"
+    print("You should install paramiko and scp libraries \nif you want to use SSH protocol to upload files to the server")
 
 import time
 
@@ -64,9 +64,9 @@ class Remote(Thread):
 
         self.stopFlag = False
 
-        print "[Remote Server] Opening server: %s" %self.__server
+        print("[Remote Server] Opening server: %s" %self.__server)
         if self.open(self.__server, self.__username, self.__password, self.__remotefolder):
-            print "[Remote Server] %s server was opened successfully" %self.__server
+            print("[Remote Server] %s server was opened successfully" %self.__server)
 
         self.close()
 
@@ -81,31 +81,31 @@ class Remote(Thread):
         """
         Connect to server and create a connection class (FTP or SSH) to remote server.
         """
-        raise NotImplementedError, "Implement this method in child class"
+        raise NotImplementedError("Implement this method in child class")
 
     def close(self):
         """
         Close connection to server
         """
-        raise NotImplementedError, "Implement this method in child class"
+        raise NotImplementedError("Implement this method in child class")
 
     def mkdir(self, remotefolder):
         """
         Create a folder remotely
         """
-        raise NotImplementedError, "Implement this method in child class"
+        raise NotImplementedError("Implement this method in child class")
 
     def cd(self, remotefolder):
         """
         Change working directory in remote server
         """
-        raise NotImplementedError, "Implement this method in child class"
+        raise NotImplementedError("Implement this method in child class")
 
     def download(self, filename, localfolder=None):
         """
         Download a file from server to local host
         """
-        raise NotImplementedError, "Implement this method in child class"
+        raise NotImplementedError("Implement this method in child class")
 
     def sendFile(self, fullfilename):
         """
@@ -117,7 +117,7 @@ class Remote(Thread):
         Returns:
             0 in error case else 1
         """
-        raise NotImplementedError, "Implement this method in child class"
+        raise NotImplementedError("Implement this method in child class")
 
     def upload(self, fullfilename, remotefolder=None):
         """
@@ -132,7 +132,7 @@ class Remote(Thread):
         Returns:
             0 in error case else 1
         """
-        print "[Remote Server] Uploading %s to %s:%s" %(fullfilename, self.server, self.remotefolder)
+        print("[Remote Server] Uploading %s to %s:%s" %(fullfilename, self.server, self.remotefolder))
 
         if not self.status:
             return 0
@@ -144,10 +144,10 @@ class Remote(Thread):
             return 0
 
         if not self.sendFile(fullfilename):
-            print "[Remote Server] Error uploading file %s" %fullfilename
+            print("[Remote Server] Error uploading file %s" %fullfilename)
             return 0
 
-        print "[Remote Server] upload finished successfully"
+        print("[Remote Server] upload finished successfully")
 
         return 1
 
@@ -180,11 +180,11 @@ class Remote(Thread):
     def run(self):
 
         if not self.status:
-            print "Finishing FTP service"
+            print("Finishing FTP service")
             return
 
         if not self.cd(self.remotefolder):
-            raise ValueError, "Could not access to the new remote directory: %s" %self.remotefolder
+            raise ValueError("Could not access to the new remote directory: %s" %self.remotefolder)
 
         while True:
 
@@ -199,7 +199,7 @@ class Remote(Thread):
             #   self.bussy = True
             self.mutex.acquire()
 
-            print "[Remote Server] Opening %s" %self.__server
+            print("[Remote Server] Opening %s" %self.__server)
             if not self.open(self.__server, self.__username, self.__password, self.__remotefolder):
                 self.mutex.release()
                 continue
@@ -207,13 +207,13 @@ class Remote(Thread):
             for thisFile in self.fileList:
                 self.upload(thisFile, self.remotefolder)
 
-            print "[Remote Server] Closing %s" %self.__server
+            print("[Remote Server] Closing %s" %self.__server)
             self.close()
 
             self.mutex.release()
             # self.bussy = False
 
-        print "[Remote Server] Thread stopped successfully"
+        print("[Remote Server] Thread stopped successfully")
 
 class FTPClient(Remote):
 
@@ -247,29 +247,29 @@ class FTPClient(Remote):
         """
 
         if server == None:
-            raise ValueError, "FTP server should be defined"
+            raise ValueError("FTP server should be defined")
 
         if username == None:
-            raise ValueError, "FTP username should be defined"
+            raise ValueError("FTP username should be defined")
 
         if password == None:
-            raise ValueError, "FTP password should be defined"
+            raise ValueError("FTP password should be defined")
 
         if remotefolder == None:
-            raise ValueError, "FTP remote folder should be defined"
+            raise ValueError("FTP remote folder should be defined")
 
         try:
             ftpClientObj = ftplib.FTP(server)
-        except ftplib.all_errors, e:
-            print "[FTP Server]: FTP server connection fail: %s" %server
-            print "[FTP Server]:", e
+        except ftplib.all_errors as e:
+            print("[FTP Server]: FTP server connection fail: %s" %server)
+            print("[FTP Server]:", e)
             self.status = 0
             return 0
 
         try:
             ftpClientObj.login(username, password)
         except ftplib.all_errors:
-            print "[FTP Server]: FTP username or password are incorrect"
+            print("[FTP Server]: FTP username or password are incorrect")
             self.status = 0
             return 0
 
@@ -279,7 +279,7 @@ class FTPClient(Remote):
             try:
                 ftpClientObj.cwd(remotefolder)
             except ftplib.all_errors:
-                print "[FTP Server]: FTP remote folder is invalid: %s" %remotefolder
+                print("[FTP Server]: FTP remote folder is invalid: %s" %remotefolder)
                 remotefolder = ftpClientObj.pwd()
 
         self.server = server
@@ -316,7 +316,7 @@ class FTPClient(Remote):
         try:
             self.__ftpClientObj.mkd(dirname)
         except ftplib.all_errors:
-            print "[FTP Server]: Error creating remote folder: %s" %remotefolder
+            print("[FTP Server]: Error creating remote folder: %s" %remotefolder)
             return 0
 
         return 1
@@ -343,11 +343,11 @@ class FTPClient(Remote):
         try:
             self.__ftpClientObj.cwd(remotefolder)
         except ftplib.all_errors:
-            print '[FTP Server]: Error changing to %s' %remotefolder
-            print '[FTP Server]: Trying to create remote folder'
+            print('[FTP Server]: Error changing to %s' %remotefolder)
+            print('[FTP Server]: Trying to create remote folder')
 
             if not self.mkdir(remotefolder):
-                print '[FTP Server]: Remote folder could not be created'
+                print('[FTP Server]: Remote folder could not be created')
                 return 0
 
             try:
@@ -372,14 +372,14 @@ class FTPClient(Remote):
 
         try:
             self.__ftpClientObj.storbinary(command, fp)
-        except ftplib.all_errors, e:
-            print "[FTP Server]:", e
+        except ftplib.all_errors as e:
+            print("[FTP Server]:", e)
             return 0
 
         try:
             self.__ftpClientObj.sendcmd('SITE CHMOD 755 ' + filename)
-        except ftplib.all_errors, e:
-            print "[FTP Server]:", e
+        except ftplib.all_errors as e:
+            print("[FTP Server]:", e)
 
         fp.close()
 
@@ -418,16 +418,16 @@ class SSHClient(Remote):
         import socket
 
         if server == None:
-            raise ValueError, "SSH server should be defined"
+            raise ValueError("SSH server should be defined")
 
         if username == None:
-            raise ValueError, "SSH username should be defined"
+            raise ValueError("SSH username should be defined")
 
         if password == None:
-            raise ValueError, "SSH password should be defined"
+            raise ValueError("SSH password should be defined")
 
         if remotefolder == None:
-            raise ValueError, "SSH remote folder should be defined"
+            raise ValueError("SSH remote folder should be defined")
 
         sshClientObj = paramiko.SSHClient()
 
@@ -437,16 +437,16 @@ class SSHClient(Remote):
         self.status = 0
         try:
             sshClientObj.connect(server, username=username, password=password, port=port)
-        except paramiko.AuthenticationException, e:
+        except paramiko.AuthenticationException as e:
     #             print "SSH username or password are incorrect: %s"
-            print "[SSH Server]:", e
+            print("[SSH Server]:", e)
             return 0
-        except SSHException, e:
-            print "[SSH Server]:", e
+        except SSHException as e:
+            print("[SSH Server]:", e)
             return 0
         except socket.error:
             self.status = 0
-            print "[SSH Server]:", e
+            print("[SSH Server]:", e)
             return 0
 
         self.status = 1
@@ -463,7 +463,7 @@ class SSHClient(Remote):
         self.status = 1
 
         if not self.cd(remotefolder):
-            raise ValueError, "[SSH Server]: Could not access to remote folder: %s" %remotefolder
+            raise ValueError("[SSH Server]: Could not access to remote folder: %s" %remotefolder)
             return 0
 
         self.remotefolder = remotefolder
@@ -564,8 +564,8 @@ class SSHClient(Remote):
 
         try:
             self.__scpClientObj.put(fullfilename, remote_path=self.remotefolder)
-        except scp.ScpError, e:
-            print "[SSH Server]", str(e)
+        except scp.ScpError as e:
+            print("[SSH Server]", str(e))
             return 0
 
         remotefile = os.path.join(self.remotefolder, os.path.split(fullfilename)[-1])
@@ -596,7 +596,7 @@ class SendToServer(ProcessingUnit):
             self.clientObj = SSHClient(server, username, password, remotefolder, period)
 
         if not self.clientObj:
-            raise ValueError, "%s has been chosen as remote access protocol but it is not valid" %protocol
+            raise ValueError("%s has been chosen as remote access protocol but it is not valid" %protocol)
 
         self.clientObj.start()
 
@@ -614,7 +614,7 @@ class SendToServer(ProcessingUnit):
 
         for thisFolder in folderList:
 
-            print "[Remote Server]: Searching files on %s" %thisFolder
+            print("[Remote Server]: Searching files on %s" %thisFolder)
 
             filenameList = glob.glob1(thisFolder, '*%s' %self.ext)
 
@@ -643,18 +643,18 @@ class SendToServer(ProcessingUnit):
             self.isConfig = True
         
         if not self.clientObj.is_alive():
-            print "[Remote Server]: Restarting connection "
+            print("[Remote Server]: Restarting connection ")
             self.setup(**kwargs)
         
         if time.time() - self.init >= self.period:
             fullfilenameList = self.findFiles()
 
             if self.clientObj.updateFileList(fullfilenameList):
-                print "[Remote Server]: Sending the next files ", str(fullfilenameList)
+                print("[Remote Server]: Sending the next files ", str(fullfilenameList))
             self.init = time.time()
 
     def close(self):
-        print "[Remote Server] Stopping thread"
+        print("[Remote Server] Stopping thread")
         self.clientObj.stop()
 
 
@@ -710,7 +710,7 @@ class FTP(object):
             #   print 'Connect to FTP Server: Successfully'
         
         except ftplib.all_errors:
-            print 'Error FTP Service'
+            print('Error FTP Service')
             self.status = 1
             return
 
@@ -721,14 +721,14 @@ class FTP(object):
         try:
             self.dirList = self.ftp.nlst()
 
-        except ftplib.error_perm, resp:
+        except ftplib.error_perm as resp:
             if str(resp) == "550 No files found":
-                    print "no files in this directory"
+                    print("no files in this directory")
                     self.status = 1
                     return
 
         except ftplib.all_errors:
-            print 'Error Displaying Dir-Files'
+            print('Error Displaying Dir-Files')
             self.status = 1
             return
 
@@ -763,7 +763,7 @@ class FTP(object):
         try:
             self.ftp.mkd(dirname)
         except:
-            print 'Error creating remote folder:%s'%dirname
+            print('Error creating remote folder:%s'%dirname)
             return 1
 
         return 0
@@ -783,7 +783,7 @@ class FTP(object):
         try:
             self.ftp.delete(filename)
         except:
-            print 'Error deleting remote file:%s'%filename
+            print('Error deleting remote file:%s'%filename)
             return 1
 
         return 0
@@ -805,7 +805,7 @@ class FTP(object):
 
 
         if not(filename in self.fileList):
-            print 'filename:%s not exists'%filename
+            print('filename:%s not exists'%filename)
             self.status = 1
             return self.status
 
@@ -814,11 +814,11 @@ class FTP(object):
         self.file = open(newfilename, 'wb')
 
         try:
-            print 'Download: ' + filename
+            print('Download: ' + filename)
             self.ftp.retrbinary('RETR ' + filename, self.__handleDownload)
-            print 'Download Complete'
+            print('Download Complete')
         except ftplib.all_errors:
-            print 'Error Downloading ' + filename
+            print('Error Downloading ' + filename)
             self.status = 1
             return self.status
 
@@ -861,12 +861,12 @@ class FTP(object):
 
             command = "STOR " + tail
 
-            print 'Uploading: ' + tail
+            print('Uploading: ' + tail)
             self.ftp.storbinary(command, self.file)
-            print 'Upload Completed'
+            print('Upload Completed')
 
         except ftplib.all_errors:
-            print 'Error Uploading ' + tail
+            print('Error Uploading ' + tail)
             self.status = 1
             return self.status
 
@@ -895,11 +895,11 @@ class FTP(object):
         """
 
         self.remotefolder = remotefolder
-        print 'Change to ' + self.remotefolder
+        print('Change to ' + self.remotefolder)
         try:
             self.ftp.cwd(remotefolder)
         except ftplib.all_errors:
-            print 'Error Change to ' + self.remotefolder
+            print('Error Change to ' + self.remotefolder)
             infoList = None
             self.folderList = None
             return infoList,self.folderList
@@ -909,14 +909,14 @@ class FTP(object):
         try:
             self.dirList = self.ftp.nlst()
 
-        except ftplib.error_perm, resp:
+        except ftplib.error_perm as resp:
             if str(resp) == "550 No files found":
-                    print "no files in this directory"
+                    print("no files in this directory")
                     infoList = None
                     self.folderList = None
                     return infoList,self.folderList
         except ftplib.all_errors:
-            print 'Error Displaying Dir-Files'
+            print('Error Displaying Dir-Files')
             infoList = None
             self.folderList = None
             return infoList,self.folderList
@@ -957,8 +957,8 @@ class SendByFTP(Operation):
 
     def error_print(self, ValueError):
 
-        print ValueError, 'Error FTP'
-        print "don't worry the program is running..."
+        print(ValueError, 'Error FTP')
+        print("don't worry the program is running...")
 
     def worker_ftp(self, server, username, password, remotefolder, filenameList):
 
@@ -981,7 +981,7 @@ class SendByFTP(Operation):
         if p.is_alive():
             p.terminate()
             p.join()
-            print 'killing ftp process...'
+            print('killing ftp process...')
             self.status = 0
             return
 

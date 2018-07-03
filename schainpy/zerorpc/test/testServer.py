@@ -22,7 +22,7 @@ def isDictFormat(thisValue):
     if type(thisValue) != type({}):
         return False
     
-    if '__name__' not in thisValue.keys():
+    if '__name__' not in list(thisValue.keys()):
         return False
     
     return True
@@ -33,7 +33,7 @@ def obj2Dict(myObj):
     
     myDict['__name__'] = myObj.__class__.__name__
     
-    for thisKey, thisValue in myObj.__dict__.items():
+    for thisKey, thisValue in list(myObj.__dict__.items()):
         
         if isNotClassVar(thisValue):
             myDict[thisKey] = thisValue
@@ -49,14 +49,14 @@ def dict2Obj(myDict):
     '''
     '''
     
-    if '__name__' not in myDict.keys():
+    if '__name__' not in list(myDict.keys()):
         return None
     
     className = eval(myDict['__name__'])
     
     myObj = className()
     
-    for thisKey, thisValue in myDict.items():
+    for thisKey, thisValue in list(myDict.items()):
         
         if thisKey == '__name__':
             continue
@@ -129,7 +129,7 @@ def myMsgPackTest():
     x_enc = m.encode(x)
     x_rec = m.decode(x_enc)
     
-    print x_rec
+    print(x_rec)
 #     
 #     x_enc = msgpack.packb(x, default=m.encoder)
 #     x_rec = msgpack.unpackb(x_enc, object_hook=m.decoder)
@@ -159,19 +159,19 @@ if __name__ == '__main__':
 #     print myNewObj.__dict__
     
 #     sys.exit()
-    print myDict
+    print(myDict)
     
     newSerial = serializerObj.encode(myDict)
 #     print newSerial
     
     newDict = serializerObj.decode(newSerial)
-    print newDict
+    print(newDict)
     
     myNewObj = dict2Obj(newDict)
     
-    print
-    print
-    print 50*'###'
-    print myTestObj.__dict__
-    print myNewObj.__dict__
+    print()
+    print()
+    print(50*'###')
+    print(myTestObj.__dict__)
+    print(myNewObj.__dict__)
     

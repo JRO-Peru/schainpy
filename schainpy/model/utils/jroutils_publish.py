@@ -56,7 +56,7 @@ def get_plot_code(s):
 
 def roundFloats(obj):
     if isinstance(obj, list):
-        return map(roundFloats, obj)
+        return list(map(roundFloats, obj))
     elif isinstance(obj, float):
         return round(obj, 2)
 
@@ -241,7 +241,7 @@ class Data(object):
         H.sort()
         for key in self.data:            
             shape = self.shape(key)[:-1] + H.shape
-            for tm, obj in self.data[key].items():
+            for tm, obj in list(self.data[key].items()):
                 h = self.__heights[self.__times.index(tm)]
                 if H.size == h.size:
                     continue
@@ -285,7 +285,7 @@ class Data(object):
         else:
             ret['pairs'] = []
         
-        for key, value in self.meta.items():
+        for key, value in list(self.meta.items()):
             ret[key] = value
 
         return json.dumps(ret)
@@ -460,7 +460,7 @@ class PublishData(Operation):
                     'yData': yData
                 }
             else:
-                print "Tipo de grafico invalido"
+                print("Tipo de grafico invalido")
                 payload = {
                     'data': 'None',
                     'timestamp': 'None',
@@ -805,7 +805,7 @@ class SendToFTP(Operation, Process):
 
         try:
             self.ftp.storbinary(command, fp, blocksize=1024)
-        except Exception, e:
+        except Exception as e:
             log.error('{}'.format(e), self.name)
             if self.ftp is not None:
                 self.ftp.close()
@@ -814,7 +814,7 @@ class SendToFTP(Operation, Process):
 
         try:
             self.ftp.sendcmd('SITE CHMOD 755 {}'.format(dst))
-        except Exception, e:
+        except Exception as e:
             log.error('{}'.format(e), self.name)
             if self.ftp is not None:
                 self.ftp.close()

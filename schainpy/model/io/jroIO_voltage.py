@@ -6,13 +6,13 @@ Created on Jul 2, 2014
 
 import numpy
 
-from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
+from .jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Voltage
 import zmq
 import tempfile
-from StringIO import StringIO
+from io import StringIO
 # from _sha import blocksize
 
 
@@ -286,7 +286,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.heightList = numpy.arange(
             self.processingHeaderObj.nHeights) * self.processingHeaderObj.deltaHeight + self.processingHeaderObj.firstHeight
 
-        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
+        self.dataOut.channelList = list(range(self.systemHeaderObj.nChannels))
 
         self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
 
@@ -307,12 +307,12 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             return
 
         if self.nTxs < 1 and self.processingHeaderObj.profilesPerBlock % (1. / self.nTxs) != 0:
-            raise ValueError, "1./nTxs (=%f), should be a multiple of nProfiles (=%d)" % (
-                1. / self.nTxs, self.processingHeaderObj.profilesPerBlock)
+            raise ValueError("1./nTxs (=%f), should be a multiple of nProfiles (=%d)" % (
+                1. / self.nTxs, self.processingHeaderObj.profilesPerBlock))
 
         if self.nTxs > 1 and self.processingHeaderObj.nHeights % self.nTxs != 0:
-            raise ValueError, "nTxs (=%d), should be a multiple of nHeights (=%d)" % (
-                self.nTxs, self.processingHeaderObj.nHeights)
+            raise ValueError("nTxs (=%d), should be a multiple of nHeights (=%d)" % (
+                self.nTxs, self.processingHeaderObj.nHeights))
 
         self.datablock = self.datablock.reshape(
             (self.systemHeaderObj.nChannels, self.processingHeaderObj.profilesPerBlock * self.nTxs, self.processingHeaderObj.nHeights / self.nTxs))
@@ -345,7 +345,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         elif datatype == 5:
             datatype_str = numpy.dtype([('real', '<f8'), ('imag', '<f8')])
         else:
-            raise ValueError, 'Data type was not defined'
+            raise ValueError('Data type was not defined')
 
         self.dtype = datatype_str
         #self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
@@ -378,7 +378,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.readFirstHeaderFromServer()
 
         timestamp = self.basicHeaderObj.get_datatime()
-        print '[Reading] - Block {} - {}'.format(self.nTotalBlocks, timestamp)
+        print('[Reading] - Block {} - {}'.format(self.nTotalBlocks, timestamp))
         current_pointer_location = self.blockPointer
         junk = numpy.fromstring(
             block[self.blockPointer:], self.dtype, self.blocksize)
@@ -463,7 +463,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         """
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
+            print('Process finished')
             return 0
         self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0

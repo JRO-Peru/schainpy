@@ -1,8 +1,9 @@
 import sys
 import numpy
 from scipy import interpolate
-from schainpy import cSchain
-from jroproc_base import ProcessingUnit, Operation
+#TODO
+#from schainpy import cSchain
+from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
 from time import time
 
@@ -71,7 +72,7 @@ class VoltageProc(ProcessingUnit):
 
         for channel in channelList:
             if channel not in self.dataOut.channelList:
-                raise ValueError, "Channel %d is not in %s" %(channel, str(self.dataOut.channelList))
+                raise ValueError("Channel %d is not in %s" %(channel, str(self.dataOut.channelList)))
 
             index = self.dataOut.channelList.index(channel)
             channelIndexList.append(index)
@@ -99,8 +100,8 @@ class VoltageProc(ProcessingUnit):
 
         for channelIndex in channelIndexList:
             if channelIndex not in self.dataOut.channelIndexList:
-                print channelIndexList
-                raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
+                print(channelIndexList)
+                raise ValueError("The value %d in channelIndexList is not valid" %channelIndex)
 
         if self.dataOut.flagDataAsBlock:
             """
@@ -184,7 +185,7 @@ class VoltageProc(ProcessingUnit):
         """
 
         if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "Height index range (%d,%d) is not valid" % (minIndex, maxIndex)
+            raise ValueError("Height index range (%d,%d) is not valid" % (minIndex, maxIndex))
 
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights
@@ -204,7 +205,7 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex]
 
         if self.dataOut.nHeights <= 1:
-            raise ValueError, "selectHeights: Too few heights. Current number of heights is %d" %(self.dataOut.nHeights)
+            raise ValueError("selectHeights: Too few heights. Current number of heights is %d" %(self.dataOut.nHeights))
 
         return 1
 
@@ -221,7 +222,7 @@ class VoltageProc(ProcessingUnit):
         newheights = (self.dataOut.nHeights-r)/window
 
         if newheights <= 1:
-            raise ValueError, "filterByHeights: Too few heights. Current number of heights is %d and window is %d" %(self.dataOut.nHeights, window)
+            raise ValueError("filterByHeights: Too few heights. Current number of heights is %d and window is %d" %(self.dataOut.nHeights, window))
 
         if self.dataOut.flagDataAsBlock:
             """
@@ -257,7 +258,7 @@ class VoltageProc(ProcessingUnit):
 
         if self.dataOut.flagDataAsBlock:
             flip = self.flip
-            profileList = range(self.dataOut.nProfiles)
+            profileList = list(range(self.dataOut.nProfiles))
 
             if not channelList:
                 for thisProfile in profileList:
@@ -306,7 +307,7 @@ class VoltageProc(ProcessingUnit):
         else:
             nHeights = self.dataOut.data.shape[2]
             x = numpy.hstack((numpy.arange(botLim),numpy.arange(topLim+1,nHeights)))
-            y = self.dataOut.data[:,:,range(botLim)+range(topLim+1,nHeights)]
+            y = self.dataOut.data[:,:,list(range(botLim))+list(range(topLim+1,nHeights))]
             f = interpolate.interp1d(x, y, axis = 2)
             xnew = numpy.arange(botLim,topLim+1)
             ynew = f(xnew)
@@ -355,7 +356,7 @@ class CohInt(Operation):
         self.stride = stride
 
         if n == None and timeInterval == None:
-            raise ValueError, "n or timeInterval should be specified ..."
+            raise ValueError("n or timeInterval should be specified ...")
 
         if n != None:
             self.n = n
@@ -613,7 +614,7 @@ class Decoder(Operation):
         self.__nHeis = dataOut.nHeights
 
         if self.__nHeis < self.nBaud:
-            raise ValueError, 'Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud)
+            raise ValueError('Number of heights (%d) should be greater than number of bauds (%d)' %(self.__nHeis, self.nBaud))
 
         #Frequency
         __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
@@ -666,7 +667,7 @@ class Decoder(Operation):
         junk = numpy.lib.stride_tricks.as_strided(self.code, (repetitions, self.code.size), (0, self.code.itemsize))
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
-        profilesList = xrange(self.__nProfiles)
+        profilesList = range(self.__nProfiles)
         
         for i in range(self.__nChannels):        
             for j in profilesList:         
@@ -675,7 +676,7 @@ class Decoder(Operation):
 
     def __convolutionByBlockInFreq(self, data):
 
-        raise NotImplementedError, "Decoder by frequency fro Blocks not implemented"
+        raise NotImplementedError("Decoder by frequency fro Blocks not implemented")
 
 
         fft_code = self.fft_code[self.__profIndex].reshape(1,-1)
@@ -692,13 +693,13 @@ class Decoder(Operation):
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
 
         if dataOut.flagDecodeData:
-            print "This data is already decoded, recoding again ..."
+            print("This data is already decoded, recoding again ...")
 
         if not self.isConfig:
 
             if code is None:
                 if dataOut.code is None:
-                    raise ValueError, "Code could not be read from %s instance. Enter a value in Code parameter" %dataOut.type
+                    raise ValueError("Code could not be read from %s instance. Enter a value in Code parameter" %dataOut.type)
 
                 code = dataOut.code
             else:
@@ -714,7 +715,7 @@ class Decoder(Operation):
                 sys.stderr.write("Decoder Warning: Argument 'times' in not used anymore\n")
 
         if self.code is None:
-            print "Fail decoding: Code is not defined."
+            print("Fail decoding: Code is not defined.")
             return
 
         self.__nProfiles = dataOut.nProfiles
@@ -746,7 +747,7 @@ class Decoder(Operation):
                 datadec = self.__convolutionInFreqOpt(dataOut.data)
 
         if datadec is None:
-            raise ValueError, "Codification mode selected is not valid: mode=%d. Try selecting 0 or 1" %mode
+            raise ValueError("Codification mode selected is not valid: mode=%d. Try selecting 0 or 1" %mode)
 
         dataOut.code = self.code
         dataOut.nCode = self.nCode
@@ -803,7 +804,7 @@ class ProfileConcat(Operation):
             self.isConfig = True
 
         if dataOut.flagDataAsBlock:
-            raise ValueError, "ProfileConcat can only be used when voltage have been read profile by profile, getBlock = False"
+            raise ValueError("ProfileConcat can only be used when voltage have been read profile by profile, getBlock = False")
 
         else:
             self.concat(dataOut.data)
@@ -883,7 +884,7 @@ class ProfileSelector(Operation):
             if profileRangeList != None:
                 minIndex = profileRangeList[0]
                 maxIndex = profileRangeList[1]
-                profileList = range(minIndex, maxIndex+1)
+                profileList = list(range(minIndex, maxIndex+1))
 
                 dataOut.data = dataOut.data[:,minIndex:maxIndex+1,:]
 
@@ -895,7 +896,7 @@ class ProfileSelector(Operation):
                     minIndex = thisRange[0]
                     maxIndex = thisRange[1]
 
-                    profileList.extend(range(minIndex, maxIndex+1))
+                    profileList.extend(list(range(minIndex, maxIndex+1)))
 
                 dataOut.data = dataOut.data[:,profileList,:]
 
@@ -974,7 +975,7 @@ class ProfileSelector(Operation):
 
             return True
 
-        raise ValueError, "ProfileSelector needs profileList, profileRangeList or rangeList parameter"
+        raise ValueError("ProfileSelector needs profileList, profileRangeList or rangeList parameter")
 
         return False
 
@@ -1015,21 +1016,21 @@ class Reshaper(Operation):
     def __checkInputs(self, dataOut, shape, nTxs):
 
         if shape is None and nTxs is None:
-            raise ValueError, "Reshaper: shape of factor should be defined"
+            raise ValueError("Reshaper: shape of factor should be defined")
 
         if nTxs:
             if nTxs < 0:
-                raise ValueError, "nTxs should be greater than 0"
+                raise ValueError("nTxs should be greater than 0")
 
             if nTxs < 1 and dataOut.nProfiles % (1./nTxs) != 0:
-                raise ValueError, "nProfiles= %d is not divisibled by (1./nTxs) = %f" %(dataOut.nProfiles, (1./nTxs))
+                raise ValueError("nProfiles= %d is not divisibled by (1./nTxs) = %f" %(dataOut.nProfiles, (1./nTxs)))
 
             shape = [dataOut.nChannels, dataOut.nProfiles*nTxs, dataOut.nHeights/nTxs]
 
             return shape, nTxs
 
         if len(shape) != 2 and len(shape) !=  3:
-            raise ValueError, "shape dimension should be equal to 2 or 3. shape = (nProfiles, nHeis) or (nChannels, nProfiles, nHeis). Actually shape = (%d, %d, %d)" %(dataOut.nChannels, dataOut.nProfiles, dataOut.nHeights)
+            raise ValueError("shape dimension should be equal to 2 or 3. shape = (nProfiles, nHeis) or (nChannels, nProfiles, nHeis). Actually shape = (%d, %d, %d)" %(dataOut.nChannels, dataOut.nProfiles, dataOut.nHeights))
 
         if len(shape) == 2:
             shape_tuple = [dataOut.nChannels]
@@ -1069,7 +1070,7 @@ class Reshaper(Operation):
                     profileIndex = dataOut.profileIndex*nTxs
 
             else:
-                raise ValueError, "nTxs should be greater than 0 and lower than 1, or use VoltageReader(..., getblock=True)"
+                raise ValueError("nTxs should be greater than 0 and lower than 1, or use VoltageReader(..., getblock=True)")
 
         deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
 
@@ -1098,7 +1099,7 @@ class SplitProfiles(Operation):
             shape = dataOut.data.shape
 
             if shape[2] % n != 0:
-                raise ValueError, "Could not split the data, n=%d has to be multiple of %d" %(n, shape[2])
+                raise ValueError("Could not split the data, n=%d has to be multiple of %d" %(n, shape[2]))
 
             new_shape = shape[0], shape[1]*n, shape[2]/n
 
@@ -1109,7 +1110,7 @@ class SplitProfiles(Operation):
 
         else:
 
-            raise ValueError, "Could not split the data when is read Profile by Profile. Use VoltageReader(..., getblock=True)"
+            raise ValueError("Could not split the data when is read Profile by Profile. Use VoltageReader(..., getblock=True)")
 
         deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
 
@@ -1141,7 +1142,7 @@ class CombineProfiles(Operation):
             new_shape = shape[0], shape[1]/n, shape[2]*n
 
             if shape[1] % n != 0:
-                raise ValueError, "Could not split the data, n=%d has to be multiple of %d" %(n, shape[1])
+                raise ValueError("Could not split the data, n=%d has to be multiple of %d" %(n, shape[1]))
 
             dataOut.data = numpy.reshape(dataOut.data, new_shape)
             dataOut.flagNoData = False

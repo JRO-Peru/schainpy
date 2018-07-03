@@ -18,15 +18,15 @@ class nsTime:
     def __init__(self, second, nanosecond):
         self.second = int(second)
         if self.second < 0:
-            raise ValueError, 'seconds must be greater than 0, not %i' % (self.second)
-        nanosecond = long(nanosecond)
+            raise ValueError('seconds must be greater than 0, not %i' % (self.second))
+        nanosecond = int(nanosecond)
         if nanosecond < 0:
-            raise ValueError, 'nanoseconds must be greater 0, not %i' % (nanosecond)
+            raise ValueError('nanoseconds must be greater 0, not %i' % (nanosecond))
         addSec = nanosecond / 1000000000
         if addSec > 0:
             self.second += addSec
         self.nanosecond = nanosecond % 1000000000
-        self.totalNS = long(self.nanosecond) + long(self.second) * 1000000000
+        self.totalNS = int(self.nanosecond) + int(self.second) * 1000000000
         
 
     def __add__(self, other):
@@ -46,7 +46,7 @@ class nsTime:
         addSec = int(nsResult / 1000000000)
         self.second = self.second + other.second + addSec
         self.nanosecond = nsResult % 1000000000
-        self.totalNS = long(self.nanosecond) + long(self.second) * 1000000000
+        self.totalNS = int(self.nanosecond) + int(self.second) * 1000000000
     
 
     def __sub__(self, other):
@@ -65,8 +65,8 @@ class nsTime:
     def multiply(self, factor):
         """multiply this nsTime times an integer
         """
-        if type(factor) not in (types.IntType, types.LongType):
-            raise ValueError, 'Illegal type %s passed into nsTime.multiply' % (str(type(factor)))
+        if type(factor) not in (int, int):
+            raise ValueError('Illegal type %s passed into nsTime.multiply' % (str(type(factor))))
         newTotalNS = self.totalNS * factor
         newSeconds = int(newTotalNS / 1000000000)
         newNanoseconds = int(newTotalNS - (newSeconds * 1000000000))
@@ -85,7 +85,7 @@ class nsTime:
     def __mod__(self, other):
         """__mod__ implements self % other.
         """
-        if type(other) in (types.IntType, types.LongType):
+        if type(other) in (int, int):
             return self.totalNS % other
         else:
             return self.totalNS % other.totalNS
@@ -118,15 +118,15 @@ class psTime:
     def __init__(self, second, picosecond):
         self.second = int(second)
         if self.second < 0:
-            raise ValueError, 'seconds must be greater than 0, not %i' % (self.second)
-        picosecond = long(picosecond)
+            raise ValueError('seconds must be greater than 0, not %i' % (self.second))
+        picosecond = int(picosecond)
         if picosecond < 0:
-            raise ValueError, 'picoseconds must be greater 0, not %i' % (picosecond)
+            raise ValueError('picoseconds must be greater 0, not %i' % (picosecond))
         addSec = picosecond / 1000000000000
         if addSec > 0:
             self.second += addSec
         self.picosecond = picosecond % 1000000000000
-        self.totalPS = long(self.picosecond) + long(self.second) * 1000000000000
+        self.totalPS = int(self.picosecond) + int(self.second) * 1000000000000
         
 
     def __add__(self, other):
@@ -146,7 +146,7 @@ class psTime:
         addSec = int(psResult / 1000000000000)
         self.second = self.second + other.second + addSec
         self.picosecond = psResult % 1000000000000
-        self.totalPS = long(self.picosecond) + long(self.second) * 1000000000000
+        self.totalPS = int(self.picosecond) + int(self.second) * 1000000000000
     
 
     def __sub__(self, other):
@@ -165,8 +165,8 @@ class psTime:
     def multiply(self, factor):
         """multiply this psTime times an integer
         """
-        if type(factor) not in (types.IntType, types.LongType):
-            raise ValueError, 'Illegal type %s passed into psTime.multiply' % (str(type(factor)))
+        if type(factor) not in (int, int):
+            raise ValueError('Illegal type %s passed into psTime.multiply' % (str(type(factor))))
         newTotalPS = self.totalPS * factor
         newSeconds = int(newTotalPS / 1000000000000)
         newPicoseconds = int(newTotalPS - (newSeconds * 1000000000000))
@@ -185,7 +185,7 @@ class psTime:
     def __mod__(self, other):
         """__mod__ implements self % other.
         """
-        if type(other) in (types.IntType, types.LongType):
+        if type(other) in (int, int):
             return self.totalPS % other
         else:
             return self.totalPS % other.totalPS
@@ -208,4 +208,3 @@ class psTime:
     def __str__(self):
         return '%d.%12d' % (self.second, self.picosecond)
          
-

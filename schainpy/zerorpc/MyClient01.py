@@ -103,8 +103,8 @@ def printSpeed(deltaTime, mySerial):
     size = len(mySerial)/1024.
     vel = 1.0*size / deltaTime
     
-    print "Index [", replayerObj.getProfileIndex(), "]: ",
-    print "Total time %5.2f ms, Data size %5.2f KB, Speed %5.2f MB/s" %(deltaTime, size, vel)
+    print("Index [", replayerObj.getProfileIndex(), "]: ", end=' ')
+    print("Total time %5.2f ms, Data size %5.2f KB, Speed %5.2f MB/s" %(deltaTime, size, vel))
     ####################
         
 if __name__ == '__main__':
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         deltaTime = (time.time() - ini)*1024
         
         if not mySerialData:
-            print "No more data"
+            print("No more data")
             break
         
 #         myDataDict = SERIALIZER.loads(mySerialData)

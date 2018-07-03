@@ -68,7 +68,7 @@ class AMISR:
         if inputObj is None:
             return copy.deepcopy(self)
 
-        for key in inputObj.__dict__.keys():
+        for key in list(inputObj.__dict__.keys()):
             self.__dict__[key] = inputObj.__dict__[key]
     
     def getNHeights(self):

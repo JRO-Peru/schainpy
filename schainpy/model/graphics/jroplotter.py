@@ -17,11 +17,11 @@ import schainpy.admin
 
 from schainpy.model.proc.jroproc_base import Operation
 from schainpy.model.serializer.data import obj2Dict, dict2Obj
-from jroplot_correlation import *
-from jroplot_heispectra import *
-from jroplot_parameters import *
-from jroplot_spectra import *
-from jroplot_voltage import *
+from .jroplot_correlation import *
+from .jroplot_heispectra import *
+from .jroplot_parameters import *
+from .jroplot_spectra import *
+from .jroplot_voltage import *
 
 
 class Plotter(Operation):
@@ -46,7 +46,7 @@ class Plotter(Operation):
 
     def setup(self, **kwargs):
 
-        print "Initializing ..."
+        print("Initializing ...")
 
 
     def run(self, dataOut, id=None, **kwargs):
@@ -106,8 +106,8 @@ class PlotManager():
                                          sys.exc_info()[1],
                                          sys.exc_info()[2])
 
-        print "***** Error occurred in PlotManager *****"
-        print "***** [%s]: %s" %(name, err[-1])
+        print("***** Error occurred in PlotManager *****")
+        print("***** [%s]: %s" %(name, err[-1]))
 
         message = "\nError ocurred in %s:\n" %name
         message += "".join(err)
@@ -168,7 +168,7 @@ class PlotManager():
 
             dataPlot = serial_data['data']
 
-            if plot_id not in self.plotInstanceDict.keys():
+            if plot_id not in list(self.plotInstanceDict.keys()):
                 className = eval(plot_name)
                 self.plotInstanceDict[plot_id] = className(**kwargs)
 
@@ -198,7 +198,7 @@ class PlotManager():
 
         self.__lock.acquire()
 
-        for plot_id in self.plotInstanceDict.keys():
+        for plot_id in list(self.plotInstanceDict.keys()):
             plotter = self.plotInstanceDict[plot_id]
             plotter.close()
 
@@ -211,7 +211,7 @@ class PlotManager():
     def start(self):
 
         if not self.controllerThreadObj.isRunning():
-            raise RuntimeError, "controllerThreadObj has not been initialized. Use controllerThreadObj.start() before call this method"
+            raise RuntimeError("controllerThreadObj has not been initialized. Use controllerThreadObj.start() before call this method")
 
         self.join()
 

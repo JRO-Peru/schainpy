@@ -66,4 +66,4 @@ class DynamicSerializer:
 
 if __name__ == "__main__":
     DynamicSerializer()
-    print "DynamicSerializer ran"
+    print("DynamicSerializer ran")

@@ -82,16 +82,16 @@ class YAMLSerializer(Serializer):
 
 # Regular expression taken from yaml.constructor.py
 timestamp_regexp_str = str(\
-	ur'^(?P<year>[0-9][0-9][0-9][0-9])'
-	ur'-(?P<month>[0-9][0-9]?)'
-	ur'-(?P<day>[0-9][0-9]?)'
-	ur'(?:(?:[Tt]|[ \t]+)'
-	ur'(?P<hour>[0-9][0-9]?)'
-	ur':(?P<minute>[0-9][0-9])'
-	ur':(?P<second>[0-9][0-9])'
-	ur'(?:\.(?P<fraction>[0-9]*))?'
-	ur'(?:[ \t]*(?P<tz>Z|(?P<tz_sign>[-+])(?P<tz_hour>[0-9][0-9]?)'
-	ur'(?::(?P<tz_minute>[0-9][0-9]))?))?)?$')
+	r'^(?P<year>[0-9][0-9][0-9][0-9])'
+	r'-(?P<month>[0-9][0-9]?)'
+	r'-(?P<day>[0-9][0-9]?)'
+	r'(?:(?:[Tt]|[ \t]+)'
+	r'(?P<hour>[0-9][0-9]?)'
+	r':(?P<minute>[0-9][0-9])'
+	r':(?P<second>[0-9][0-9])'
+	r'(?:\.(?P<fraction>[0-9]*))?'
+	r'(?:[ \t]*(?P<tz>Z|(?P<tz_sign>[-+])(?P<tz_hour>[0-9][0-9]?)'
+	r'(?::(?P<tz_minute>[0-9][0-9]))?))?)?$')
 timestamp_regexp = re.compile(timestamp_regexp_str, re.X)
 
 def construct_timestamp(value):
@@ -133,10 +133,10 @@ class MessagePackSerializer(Serializer):
     def __fromSerial(self, msg_dict):
         if not isinstance(msg_dict, (dict, list, tuple)):
             return msg_dict # msg_dict is a value - return it
-        if isinstance(msg_dict, dict) and msg_dict.has_key('__meta_attributes'):
+        if isinstance(msg_dict, dict) and '__meta_attributes' in msg_dict:
             meta_attr = msg_dict['__meta_attributes']
             msg_dict.pop('__meta_attributes')
-            if meta_attr.has_key('type'):
+            if 'type' in meta_attr:
                 if meta_attr['type'] == 'datetime':
                     return construct_timestamp(str(msg_dict['ts']))
                 elif meta_attr['type'] == 'nsTime':
@@ -147,7 +147,7 @@ class MessagePackSerializer(Serializer):
                 except KeyError: dtype = Lookup.builtin_objects[meta_attr['type']]
                 return dtype(**msg_dict)
             else:
-                for key in msg_dict.keys():
+                for key in list(msg_dict.keys()):
                     msg_dict[key] = self.__fromSerial(msg_dict[key])
                 cls = Lookup.dynamicClasses['%s.%s'%(meta_attr['__object_name'],meta_attr['__revision_number'])]
                 return cls(**msg_dict)
@@ -159,7 +159,7 @@ class MessagePackSerializer(Serializer):
             return np.frombuffer(value, dtype=Lookup.numpy_dtypes[msg_dict[1]])[0]
         
         tup = isinstance(msg_dict, tuple)
-        if tup and len(msg_dict) > 1 and msg_dict[0] in Lookup.numpy_dtypes.keys():
+        if tup and len(msg_dict) > 1 and msg_dict[0] in list(Lookup.numpy_dtypes.keys()):
             msg_flat = list(msg_dict)
             dtypeName = msg_flat.pop(0)
             dtype = Lookup.numpy_dtypes[dtypeName]
@@ -192,7 +192,7 @@ class MessagePackSerializer(Serializer):
             return msg_dict
         elif isinstance(obj, DynamicObject.Object):
             msg_dict = {}
-            for key, value in obj.__dict__.items():
+            for key, value in list(obj.__dict__.items()):
                 msg_dict[key] = self.__toSerial(value)
             
             msg_dict['__meta_attributes'] = obj.__class__.meta_attributes
@@ -210,7 +210,7 @@ class MessagePackSerializer(Serializer):
                     msg_flat.append(toSer)
             return list(msg_flat)
         
-        is_builtin = obj.__class__ in Lookup.numpy_dtypes.values()
+        is_builtin = obj.__class__ in list(Lookup.numpy_dtypes.values())
         #is_python = isinstance(obj, Lookup.python_dtypes)
         if is_builtin: # and not is_python:
             try:
@@ -246,7 +246,7 @@ class HDF5Serializer(Serializer):
         if isinstance(grp, h5py.Dataset):
             return grp.value
         
-        elif isinstance(grp, h5py.Group) and '__type' in grp.keys():
+        elif isinstance(grp, h5py.Group) and '__type' in list(grp.keys()):
             typ = grp['__type'].value
             if typ == 'datetime':
                 return construct_timestamp(str(grp['ts'].value))
@@ -259,7 +259,7 @@ class HDF5Serializer(Serializer):
             try: cls = Lookup.builtin_objects_simple[typ]
             except KeyError: cls = Lookup.dynamicClasses[typ]
             args = []
-            for key in grp.keys():
+            for key in list(grp.keys()):
                 fromSer = self.__fromSerial(grp[key])
                 args.append((key, fromSer))
             kwargs = dict(args)
@@ -299,7 +299,7 @@ class HDF5Serializer(Serializer):
         elif isinstance(obj, tuple(Lookup.builtin_objects_simple.values())):
             sub_grp = grp.create_group(name)
             sub_grp['__type'] = Lookup.obj_dtypes[obj.__class__]
-            for key, value in obj.__dict__.items():
+            for key, value in list(obj.__dict__.items()):
                 if value != None and key not in ['totalNS', 'totalPS']:
                     sub_grp[key] = value
         
@@ -313,7 +313,7 @@ class HDF5Serializer(Serializer):
             tag = '%s.%s'%(obj.getObjectName(), obj.getRevisionNumber())
             sub_grp['__type'] = tag
             # Put all of the DynamicObject's attributes into the new h5py group
-            for key, value in obj.__dict__.items():
+            for key, value in list(obj.__dict__.items()):
                 self.__toSerial(value, sub_grp, key)
         
         elif isinstance(obj, tuple):
@@ -356,7 +356,7 @@ class jsonSerializer(Serializer):
         #return json.dumps(string)
         return jsonpickle.encode(string, max_depth=500)
 
-# Dict mapping from serializer type to corresponding class object:
+# Dict mapping from .serializer type to corresponding class object:
 serializers = {'yaml': YAMLSerializer,
                'msgpack': MessagePackSerializer,
                'hdf5': HDF5Serializer,
@@ -367,7 +367,6 @@ instances = {'yaml': YAMLSerializer(),
              'hdf5': HDF5Serializer(),
              'json': jsonSerializer()}
 
-serial_types = dict([(v,u) for u,v in serializers.items()])
+serial_types = dict([(v,u) for u,v in list(serializers.items())])
 
 compression_types = ['gzip', '']
-

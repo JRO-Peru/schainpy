@@ -1,6 +1,6 @@
 import numpy
 
-from jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Spectra
 from schainpy.model.data.jrodata import hildebrand_sekhon
 
@@ -119,9 +119,9 @@ class SpectraAFCProc(ProcessingUnit):
             cspc = numpy.zeros((self.dataOut.nPairs, self.dataOut.nFFTPoints, self.dataOut.nHeights), dtype='complex')
             for pair in self.dataOut.pairsList:
                 if pair[0] not in self.dataOut.channelList:
-                    raise ValueError, "Error getting CrossSpectra: pair 0 of %s is not in channelList = %s" %(str(pair), str(self.dataOut.channelList))
+                    raise ValueError("Error getting CrossSpectra: pair 0 of %s is not in channelList = %s" %(str(pair), str(self.dataOut.channelList)))
                 if pair[1] not in self.dataOut.channelList:
-                    raise ValueError, "Error getting CrossSpectra: pair 1 of %s is not in channelList = %s" %(str(pair), str(self.dataOut.channelList))
+                    raise ValueError("Error getting CrossSpectra: pair 1 of %s is not in channelList = %s" %(str(pair), str(self.dataOut.channelList)))
 
                 chan_index0 = self.dataOut.channelList.index(pair[0])
                 chan_index1 = self.dataOut.channelList.index(pair[1])
@@ -148,7 +148,7 @@ class SpectraAFCProc(ProcessingUnit):
         if self.dataIn.type == "Voltage":
 
             if nFFTPoints == None:
-                raise ValueError, "This SpectraProc.run() need nFFTPoints input variable"
+                raise ValueError("This SpectraProc.run() need nFFTPoints input variable")
 
             if nProfiles == None:
                 nProfiles = nFFTPoints
@@ -172,7 +172,7 @@ class SpectraAFCProc(ProcessingUnit):
 #                 self.profIndex += 1
 
             else:
-                raise ValueError, ""
+                raise ValueError("")
 
             self.firstdatatime = self.dataIn.utctime
 
@@ -186,7 +186,7 @@ class SpectraAFCProc(ProcessingUnit):
 
             return True
 
-        raise ValueError, "The type of input object '%s' is not valid"%(self.dataIn.type)
+        raise ValueError("The type of input object '%s' is not valid"%(self.dataIn.type))
 
     def __selectPairs(self, pairsList):
 
@@ -246,7 +246,7 @@ class SpectraAFCProc(ProcessingUnit):
 
         for channel in channelList:
             if channel not in self.dataOut.channelList:
-                raise ValueError, "Error selecting channels, Channel %d is not valid.\nAvailable channels = %s" %(channel, str(self.dataOut.channelList))
+                raise ValueError("Error selecting channels, Channel %d is not valid.\nAvailable channels = %s" %(channel, str(self.dataOut.channelList)))
 
             index = self.dataOut.channelList.index(channel)
             channelIndexList.append(index)
@@ -271,7 +271,7 @@ class SpectraAFCProc(ProcessingUnit):
 
         for channelIndex in channelIndexList:
             if channelIndex not in self.dataOut.channelIndexList:
-                raise ValueError, "Error selecting channels: The value %d in channelIndexList is not valid.\nAvailable channel indexes = " %(channelIndex, self.dataOut.channelIndexList)
+                raise ValueError("Error selecting channels: The value %d in channelIndexList is not valid.\nAvailable channel indexes = " %(channelIndex, self.dataOut.channelIndexList))
 
 #         nChannels = len(channelIndexList)
 
@@ -305,7 +305,7 @@ class SpectraAFCProc(ProcessingUnit):
         """
 
         if (minHei > maxHei):
-            raise ValueError, "Error selecting heights: Height range (%d,%d) is not valid" % (minHei, maxHei)
+            raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minHei, maxHei))
 
         if (minHei < self.dataOut.heightList[0]):
             minHei = self.dataOut.heightList[0]
@@ -394,7 +394,7 @@ class SpectraAFCProc(ProcessingUnit):
         """
 
         if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "Error selecting heights: Index range (%d,%d) is not valid" % (minIndex, maxIndex)
+            raise ValueError("Error selecting heights: Index range (%d,%d) is not valid" % (minIndex, maxIndex))
 
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights-1
@@ -435,7 +435,7 @@ class SpectraAFCProc(ProcessingUnit):
         ind_vel = numpy.array([-2,-1,1,2]) + freq_dc
 
         if ind_vel[0]<0:
-            ind_vel[range(0,1)] = ind_vel[range(0,1)] + self.num_prof
+            ind_vel[list(range(0,1))] = ind_vel[list(range(0,1))] + self.num_prof
 
         if mode == 1:
             jspectra[:,freq_dc,:] = (jspectra[:,ind_vel[1],:] + jspectra[:,ind_vel[2],:])/2 #CORRECCION
@@ -449,7 +449,7 @@ class SpectraAFCProc(ProcessingUnit):
             xx = numpy.zeros([4,4])
 
             for fil in range(4):
-                xx[fil,:] = vel[fil]**numpy.asarray(range(4))
+                xx[fil,:] = vel[fil]**numpy.asarray(list(range(4)))
 
             xx_inv = numpy.linalg.inv(xx)
             xx_aux = xx_inv[0,:]
@@ -489,7 +489,7 @@ class SpectraAFCProc(ProcessingUnit):
         #hei_interf
         if hei_interf is None:
             count_hei = num_hei/2   #Como es entero no importa
-            hei_interf = numpy.asmatrix(range(count_hei)) + num_hei - count_hei
+            hei_interf = numpy.asmatrix(list(range(count_hei))) + num_hei - count_hei
             hei_interf = numpy.asarray(hei_interf)[0]
         #nhei_interf
         if (nhei_interf == None):
@@ -501,10 +501,10 @@ class SpectraAFCProc(ProcessingUnit):
         if (offhei_interf == None):
             offhei_interf = 0
 
-        ind_hei = range(num_hei)
+        ind_hei = list(range(num_hei))
 #         mask_prof = numpy.asarray(range(num_prof - 2)) + 1
 #         mask_prof[range(num_prof/2 - 1,len(mask_prof))] += 1
-        mask_prof = numpy.asarray(range(num_prof))
+        mask_prof = numpy.asarray(list(range(num_prof)))
         num_mask_prof = mask_prof.size
         comp_mask_prof = [0, num_prof/2]
 
@@ -523,7 +523,7 @@ class SpectraAFCProc(ProcessingUnit):
             psort = power.ravel().argsort()
 
             #Se estima la interferencia promedio en los Espectros de Potencia empleando
-            junkspc_interf = jspectra[ich,:,hei_interf[psort[range(offhei_interf, nhei_interf + offhei_interf)]]]
+            junkspc_interf = jspectra[ich,:,hei_interf[psort[list(range(offhei_interf, nhei_interf + offhei_interf))]]]
 
             if noise_exist:
             #    tmp_noise = jnoise[ich] / num_prof
@@ -576,7 +576,7 @@ class SpectraAFCProc(ProcessingUnit):
                 xx = numpy.zeros([4,4])
 
                 for id1 in range(4):
-                    xx[:,id1] = ind[id1]**numpy.asarray(range(4))
+                    xx[:,id1] = ind[id1]**numpy.asarray(list(range(4)))
 
                 xx_inv = numpy.linalg.inv(xx)
                 xx = xx_inv[:,0]
@@ -602,14 +602,14 @@ class SpectraAFCProc(ProcessingUnit):
             cspower = cspower.sum(axis = 0)
 
             cspsort = cspower.ravel().argsort()
-            junkcspc_interf = jcspectra[ip,:,hei_interf[cspsort[range(offhei_interf, nhei_interf + offhei_interf)]]]
+            junkcspc_interf = jcspectra[ip,:,hei_interf[cspsort[list(range(offhei_interf, nhei_interf + offhei_interf))]]]
             junkcspc_interf = junkcspc_interf.transpose()
             jcspc_interf = junkcspc_interf.sum(axis = 1)/nhei_interf
 
             ind = numpy.abs(jcspc_interf[mask_prof]).ravel().argsort()
 
-            median_real = numpy.median(numpy.real(junkcspc_interf[mask_prof[ind[range(3*num_prof/4)]],:]))
-            median_imag = numpy.median(numpy.imag(junkcspc_interf[mask_prof[ind[range(3*num_prof/4)]],:]))
+            median_real = numpy.median(numpy.real(junkcspc_interf[mask_prof[ind[list(range(3*num_prof/4))]],:]))
+            median_imag = numpy.median(numpy.imag(junkcspc_interf[mask_prof[ind[list(range(3*num_prof/4))]],:]))
             junkcspc_interf[comp_mask_prof,:] = numpy.complex(median_real, median_imag)
 
             for iprof in range(num_prof):
@@ -626,7 +626,7 @@ class SpectraAFCProc(ProcessingUnit):
             xx = numpy.zeros([4,4])
 
             for id1 in range(4):
-                xx[:,id1] = ind[id1]**numpy.asarray(range(4))
+                xx[:,id1] = ind[id1]**numpy.asarray(list(range(4)))
 
             xx_inv = numpy.linalg.inv(xx)
             xx = xx_inv[:,0]
@@ -657,13 +657,13 @@ class SpectraAFCProc(ProcessingUnit):
             maxHei = self.dataOut.heightList[-1]
 
         if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
-            print 'minHei: %.2f is out of the heights range'%(minHei)
-            print 'minHei is setting to %.2f'%(self.dataOut.heightList[0])
+            print('minHei: %.2f is out of the heights range'%(minHei))
+            print('minHei is setting to %.2f'%(self.dataOut.heightList[0]))
             minHei = self.dataOut.heightList[0]
 
         if (maxHei > self.dataOut.heightList[-1]) or (maxHei < minHei):
-            print 'maxHei: %.2f is out of the heights range'%(maxHei)
-            print 'maxHei is setting to %.2f'%(self.dataOut.heightList[-1])
+            print('maxHei: %.2f is out of the heights range'%(maxHei))
+            print('maxHei is setting to %.2f'%(self.dataOut.heightList[-1]))
             maxHei = self.dataOut.heightList[-1]
 
         # validacion de velocidades
@@ -676,13 +676,13 @@ class SpectraAFCProc(ProcessingUnit):
             maxVel = velrange[-1]
 
         if (minVel < velrange[0]) or (minVel > maxVel):
-            print 'minVel: %.2f is out of the velocity range'%(minVel)
-            print 'minVel is setting to %.2f'%(velrange[0])
+            print('minVel: %.2f is out of the velocity range'%(minVel))
+            print('minVel is setting to %.2f'%(velrange[0]))
             minVel = velrange[0]
 
         if (maxVel > velrange[-1]) or (maxVel < minVel):
-            print 'maxVel: %.2f is out of the velocity range'%(maxVel)
-            print 'maxVel is setting to %.2f'%(velrange[-1])
+            print('maxVel: %.2f is out of the velocity range'%(maxVel))
+            print('maxVel is setting to %.2f'%(velrange[-1]))
             maxVel = velrange[-1]
 
         # seleccion de indices para rango
@@ -704,7 +704,7 @@ class SpectraAFCProc(ProcessingUnit):
             maxIndex = len(heights)
 
         if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "some value in (%d,%d) is not valid" % (minIndex, maxIndex)
+            raise ValueError("some value in (%d,%d) is not valid" % (minIndex, maxIndex))
 
         if (maxIndex >= self.dataOut.nHeights):
             maxIndex = self.dataOut.nHeights-1

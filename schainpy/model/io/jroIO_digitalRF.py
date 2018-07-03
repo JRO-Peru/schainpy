@@ -27,11 +27,11 @@ from schainpy.model.data.jrodata import Voltage
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 from time import time
 
-import cPickle
+import pickle
 try:
     import digital_rf
 except:
-    print 'You should install "digital_rf" module if you want to read Digital RF data'
+    print('You should install "digital_rf" module if you want to read Digital RF data')
 
 
 class DigitalRFReader(ProcessingUnit):
@@ -59,7 +59,7 @@ class DigitalRFReader(ProcessingUnit):
         self.oldAverage = None
 
     def close(self):
-        print 'Average of writing to digital rf format is ', self.oldAverage * 1000
+        print('Average of writing to digital rf format is ', self.oldAverage * 1000)
         return
 
     def __getCurrentSecond(self):
@@ -115,7 +115,7 @@ class DigitalRFReader(ProcessingUnit):
             numpy.arange(self.__nSamples, dtype=numpy.float) * \
             self.__deltaHeigth
 
-        self.dataOut.channelList = range(self.__num_subchannels)
+        self.dataOut.channelList = list(range(self.__num_subchannels))
 
         self.dataOut.blocksize = self.dataOut.getNChannels() * self.dataOut.getNHeights()
 
@@ -256,7 +256,7 @@ class DigitalRFReader(ProcessingUnit):
         self.flagDecodeData = flagDecodeData
         self.i = 0
         if not os.path.isdir(path):
-            raise ValueError, "[Reading] Directory %s does not exist" % path
+            raise ValueError("[Reading] Directory %s does not exist" % path)
 
         try:
             self.digitalReadObj = digital_rf.DigitalRFReader(
@@ -267,10 +267,10 @@ class DigitalRFReader(ProcessingUnit):
         channelNameList = self.digitalReadObj.get_channels()
 
         if not channelNameList:
-            raise ValueError, "[Reading] Directory %s does not have any files" % path
+            raise ValueError("[Reading] Directory %s does not have any files" % path)
 
         if not channelList:
-            channelList = range(len(channelNameList))
+            channelList = list(range(len(channelNameList)))
 
         ##########  Reading metadata ######################
 
@@ -294,7 +294,7 @@ class DigitalRFReader(ProcessingUnit):
             self.__processingHeader = self.fixed_metadata_dict['processingHeader']
             self.__radarControllerHeader = self.fixed_metadata_dict['radarControllerHeader']
             self.__systemHeader = self.fixed_metadata_dict['systemHeader']
-            self.dtype = cPickle.loads(self.fixed_metadata_dict['dtype'])
+            self.dtype = pickle.loads(self.fixed_metadata_dict['dtype'])
         except:
             pass
 
@@ -361,7 +361,7 @@ class DigitalRFReader(ProcessingUnit):
             endUTCSecond = end_index / self.__sample_rate
         if not nSamples:
             if not ippKm:
-                raise ValueError, "[Reading] nSamples or ippKm should be defined"
+                raise ValueError("[Reading] nSamples or ippKm should be defined")
             nSamples = int(ippKm / (1e6 * 0.15 / self.__sample_rate))
         channelBoundList = []
         channelNameListFiltered = []
@@ -388,7 +388,7 @@ class DigitalRFReader(ProcessingUnit):
         self.__channelNameList = channelNameListFiltered
         self.__channelBoundList = channelBoundList
         self.__nSamples = nSamples
-        self.__samples_to_read = long(nSamples)  # FIJO: AHORA 40
+        self.__samples_to_read = int(nSamples)  # FIJO: AHORA 40
         self.__nChannels = len(self.__channelList)
 
         self.__startUTCSecond = startUTCSecond
@@ -402,7 +402,7 @@ class DigitalRFReader(ProcessingUnit):
             startUTCSecond = numpy.floor(endUTCSecond)
 
         # por que en el otro metodo lo primero q se hace es sumar samplestoread
-        self.__thisUnixSample = long(
+        self.__thisUnixSample = int(
             startUTCSecond * self.__sample_rate) - self.__samples_to_read
 
         self.__data_buffer = numpy.zeros(
@@ -411,17 +411,17 @@ class DigitalRFReader(ProcessingUnit):
         self.__setFileHeader()
         self.isConfig = True
 
-        print "[Reading] Digital RF Data was found from %s to %s " % (
+        print("[Reading] Digital RF Data was found from %s to %s " % (
             datetime.datetime.utcfromtimestamp(
                 self.__startUTCSecond - self.__timezone),
             datetime.datetime.utcfromtimestamp(
                 self.__endUTCSecond - self.__timezone)
-        )
+        ))
 
-        print "[Reading] Starting process from %s to %s" % (datetime.datetime.utcfromtimestamp(startUTCSecond - self.__timezone),
+        print("[Reading] Starting process from %s to %s" % (datetime.datetime.utcfromtimestamp(startUTCSecond - self.__timezone),
                                                             datetime.datetime.utcfromtimestamp(
             endUTCSecond - self.__timezone)
-        )
+        ))
         self.oldAverage = None
         self.count = 0
         self.executionTime = 0
@@ -433,7 +433,7 @@ class DigitalRFReader(ProcessingUnit):
         #                                           datetime.datetime.utcfromtimestamp(self.__startUTCSecond - self.__timezone),
         #                                           datetime.datetime.utcfromtimestamp(self.__endUTCSecond - self.__timezone)
         #                                           )
-        print "[Reading] reloading metadata ..."
+        print("[Reading] reloading metadata ...")
 
         try:
             self.digitalReadObj.reload(complete_update=True)
@@ -448,13 +448,13 @@ class DigitalRFReader(ProcessingUnit):
 
         if end_index > self.__endUTCSecond * self.__sample_rate:
             self.__endUTCSecond = 1.0 * end_index / self.__sample_rate
-            print
-            print "[Reading] New timerange found [%s, %s] " % (
+            print()
+            print("[Reading] New timerange found [%s, %s] " % (
                 datetime.datetime.utcfromtimestamp(
                     self.__startUTCSecond - self.__timezone),
                 datetime.datetime.utcfromtimestamp(
                     self.__endUTCSecond - self.__timezone)
-            )
+            ))
 
             return True
 
@@ -480,7 +480,7 @@ class DigitalRFReader(ProcessingUnit):
         self.__thisUnixSample += self.__samples_to_read
 
         if self.__thisUnixSample + 2 * self.__samples_to_read > self.__endUTCSecond * self.__sample_rate:
-            print "[Reading] There are no more data into selected time-range"
+            print("[Reading] There are no more data into selected time-range")
             if self.__online:
                 self.__reload()
             else:
@@ -507,17 +507,17 @@ class DigitalRFReader(ProcessingUnit):
                         self.executionTime + self.count * self.oldAverage) / (self.count + 1.0)
                     self.count = self.count + 1.0
 
-                except IOError, e:
+                except IOError as e:
                     # read next profile
                     self.__flagDiscontinuousBlock = True
-                    print "[Reading] %s" % datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone), e
+                    print("[Reading] %s" % datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone), e)
                     break
 
                 if result.shape[0] != self.__samples_to_read:
                     self.__flagDiscontinuousBlock = True
-                    print "[Reading] %s: Too few samples were found, just %d/%d  samples" % (datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
+                    print("[Reading] %s: Too few samples were found, just %d/%d  samples" % (datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
                                                                                              result.shape[0],
-                                                                                             self.__samples_to_read)
+                                                                                             self.__samples_to_read))
                     break
 
                 self.__data_buffer[indexSubchannel, :] = result * volt_scale
@@ -531,9 +531,9 @@ class DigitalRFReader(ProcessingUnit):
         if not dataOk:
             return False
 
-        print "[Reading] %s: %d samples <> %f sec" % (datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
+        print("[Reading] %s: %d samples <> %f sec" % (datetime.datetime.utcfromtimestamp(self.thisSecond - self.__timezone),
                                                       self.__samples_to_read,
-                                                      self.__timeInterval)
+                                                      self.__timeInterval))
 
         self.__bufferIndex = 0
 
@@ -572,7 +572,7 @@ class DigitalRFReader(ProcessingUnit):
                     return False
 
                 if self.__flagDiscontinuousBlock:
-                    print '[Reading] discontinuous block found ... continue with the next block'
+                    print('[Reading] discontinuous block found ... continue with the next block')
                     continue
 
                 if not self.__online:
@@ -582,7 +582,7 @@ class DigitalRFReader(ProcessingUnit):
                 if err_counter > nTries:
                     return False
 
-                print '[Reading] waiting %d seconds to read a new block' % seconds
+                print('[Reading] waiting %d seconds to read a new block' % seconds)
                 sleep(seconds)
 
         self.dataOut.data = self.__data_buffer[:,
@@ -650,7 +650,7 @@ class DigitalRFWriter(Operation):
 
         self.metadata_dict['frequency'] = self.dataOut.frequency
         self.metadata_dict['timezone'] = self.dataOut.timeZone
-        self.metadata_dict['dtype'] = cPickle.dumps(self.dataOut.dtype)
+        self.metadata_dict['dtype'] = pickle.dumps(self.dataOut.dtype)
         self.metadata_dict['nProfiles'] = self.dataOut.nProfiles
         self.metadata_dict['heightList'] = self.dataOut.heightList
         self.metadata_dict['channelList'] = self.dataOut.channelList
@@ -690,8 +690,8 @@ class DigitalRFWriter(Operation):
         file_cadence_millisecs = 1000
 
         sample_rate_fraction = Fraction(self.__sample_rate).limit_denominator()
-        sample_rate_numerator = long(sample_rate_fraction.numerator)
-        sample_rate_denominator = long(sample_rate_fraction.denominator)
+        sample_rate_numerator = int(sample_rate_fraction.numerator)
+        sample_rate_denominator = int(sample_rate_fraction.denominator)
         start_global_index = dataOut.utctime * self.__sample_rate
 
         uuid = 'prueba'
@@ -781,8 +781,8 @@ class DigitalRFWriter(Operation):
         ## if self.currentSample == self.__nProfiles: self.currentSample = 0
 
     def close(self):
-        print '[Writing] - Closing files '
-        print 'Average of writing to digital rf format is ', self.oldAverage * 1000
+        print('[Writing] - Closing files ')
+        print('Average of writing to digital rf format is ', self.oldAverage * 1000)
         try:
             self.digitalWriteObj.close()
         except:

@@ -7,8 +7,8 @@ import os
 import datetime
 import numpy
 
-from figure import Figure, isRealtime, isTimeInHourRange
-from plotting_codes import *
+from .figure import Figure, isRealtime, isTimeInHourRange
+from .plotting_codes import *
 
 
 class SpectraPlot(Figure):
@@ -106,7 +106,7 @@ class SpectraPlot(Figure):
         """
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
-                print 'Skipping this plot function'
+                print('Skipping this plot function')
                 return
 
         if channelList == None:
@@ -115,7 +115,7 @@ class SpectraPlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList" %channel
+                    raise ValueError("Channel %d is not in dataOut.channelList" %channel)
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         if normFactor is None:
@@ -307,7 +307,7 @@ class CrossSpectraPlot(Figure):
             pairsIndexList = []
             for pair in pairsList:
                 if pair not in dataOut.pairsList:
-                    raise ValueError, "Pair %s is not in dataOut.pairsList" %str(pair)
+                    raise ValueError("Pair %s is not in dataOut.pairsList" %str(pair))
                 pairsIndexList.append(dataOut.pairsList.index(pair))
 
         if not pairsIndexList:
@@ -554,7 +554,7 @@ class RTIPlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         if normFactor is None:
@@ -581,7 +581,7 @@ class RTIPlot(Figure):
 
         update_figfile = False
 
-        if dataOut.ltctime >= self.xmax:
+        if self.xmax is not None and dataOut.ltctime >= self.xmax: #yong
             self.counter_imagwr = wr_period
             self.isConfig = False
             update_figfile = True
@@ -732,7 +732,7 @@ class CoherenceMap(Figure):
             pairsIndexList = []
             for pair in pairsList:
                 if pair not in dataOut.pairsList:
-                    raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
+                    raise ValueError("Pair %s is not in dataOut.pairsList" %(pair))
                 pairsIndexList.append(dataOut.pairsList.index(pair))
 
         if pairsIndexList == []:
@@ -915,7 +915,7 @@ class PowerProfilePlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         factor = dataOut.normFactor
@@ -1040,7 +1040,7 @@ class SpectraCutPlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         factor = dataOut.normFactor
@@ -1219,7 +1219,7 @@ class Noise(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         x = dataOut.getTimeRange()
@@ -1408,7 +1408,7 @@ class BeaconPhase(Figure):
             pairsIndexList = []
             for pair in pairsList:
                 if pair not in dataOut.pairsList:
-                    raise ValueError, "Pair %s is not in dataOut.pairsList" %(pair)
+                    raise ValueError("Pair %s is not in dataOut.pairsList" %(pair))
                 pairsIndexList.append(dataOut.pairsList.index(pair))
 
         if pairsIndexList == []:

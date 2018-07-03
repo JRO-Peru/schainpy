@@ -10,8 +10,6 @@ import importlib
 import itertools
 from multiprocessing import Pool, TimeoutError 
 from multiprocessing.pool import ThreadPool
-import copy_reg
-import cPickle
 import types
 from functools import partial
 import time
@@ -19,7 +17,7 @@ import time
 
 
 from scipy.optimize import fmin_l_bfgs_b #optimize with bounds on state papameters
-from jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Parameters, hildebrand_sekhon
 from scipy import asarray as ar,exp
 from scipy.optimize import curve_fit
@@ -36,9 +34,9 @@ SPEED_OF_LIGHT = 299792458
 '''solving pickling issue'''
 
 def _pickle_method(method):
-    func_name = method.im_func.__name__
-    obj = method.im_self
-    cls = method.im_class
+    func_name = method.__func__.__name__
+    obj = method.__self__
+    cls = method.__self__.__class__
     return _unpickle_method, (func_name, obj, cls)
 
 def _unpickle_method(func_name, obj, cls):
@@ -213,7 +211,7 @@ class GaussianFit(Operation):
         self.spc = dataOut.data_pre[0].copy()
         
         
-        print 'SelfSpectra Shape', numpy.asarray(self.spc).shape
+        print('SelfSpectra Shape', numpy.asarray(self.spc).shape)
         
         
         #plt.figure(50)
@@ -251,7 +249,7 @@ class GaussianFit(Operation):
         pool = Pool(processes=self.Num_Chn)     
         args = [(Vrange, Ch, pnoise, noise_, num_intg, SNRlimit) for Ch in range(self.Num_Chn)]
         objs = [self for __ in range(self.Num_Chn)]          
-        attrs = zip(objs, args)          
+        attrs = list(zip(objs, args))          
         gauSPC = pool.map(target, attrs)
         dataOut.GauSPC = numpy.asarray(gauSPC)
 #         ret = []          
@@ -506,8 +504,8 @@ class GaussianFit(Operation):
 #             print 'noise', noise
 #             print 's_noise', wnoise
         
-        print '========================================================'
-        print 'total_time: ', time.time()-start_time
+        print('========================================================')
+        print('total_time: ', time.time()-start_time)
         
                 # re-normalizing spc and noise
                 # This part differs from gg1
@@ -959,12 +957,12 @@ class PrecipitationProc(Operation):
         dataOut.data_output = Ze
         dataOut.data_param = numpy.ones([2,self.Num_Hei])
         dataOut.channelList = [0,1]
-        print 'channelList', dataOut.channelList
+        print('channelList', dataOut.channelList)
         dataOut.data_param[0]=dBZe
         dataOut.data_param[1]=dBRR
-        print 'RR SHAPE', dBRR.shape
-        print 'Ze SHAPE', dBZe.shape
-        print 'dataOut.data_param SHAPE', dataOut.data_param.shape
+        print('RR SHAPE', dBRR.shape)
+        print('Ze SHAPE', dBZe.shape)
+        print('dataOut.data_param SHAPE', dataOut.data_param.shape)
     
         
     def dBZeMODE2(self, dataOut): #    Processing for MIRA35C
@@ -980,7 +978,7 @@ class PrecipitationProc(Operation):
         data_output = numpy.ones([self.Num_Chn , self.Num_Hei])*numpy.NaN
         
         ETA = numpy.sum(SNR,1)
-        print 'ETA' , ETA
+        print('ETA' , ETA)
         ETA = numpy.where(ETA is not 0. , ETA, numpy.NaN)
         
         Ze = numpy.ones([self.Num_Chn, self.Num_Hei] )
@@ -1068,7 +1066,7 @@ class FullSpectralAnalysis(Operation):
         
         data = dataOut.data_pre
         noise = dataOut.noise
-        print 'noise',noise
+        print('noise',noise)
         #SNRdB = 10*numpy.log10(dataOut.data_SNR)
         
         FirstMoment = numpy.average(dataOut.data_param[:,1,:],0)
@@ -1095,14 +1093,14 @@ class FullSpectralAnalysis(Operation):
                 velocityX=numpy.append(velocityX, Vzon)#Vmag
                
             else:
-                print 'Vzon',Vzon
+                print('Vzon',Vzon)
                 velocityX=numpy.append(velocityX, numpy.NaN)
                 
             if abs(Vmer)<100. and abs(Vmer) > 0.:
                 velocityY=numpy.append(velocityY, Vmer)#Vang
                 
             else:
-                print 'Vmer',Vmer
+                print('Vmer',Vmer)
                 velocityY=numpy.append(velocityY, numpy.NaN)
             
             if dbSNR[Height] > SNRlimit:
@@ -1120,18 +1118,18 @@ class FullSpectralAnalysis(Operation):
         data_output[1]=numpy.array(velocityY)
         data_output[2]=-velocityV#FirstMoment
         
-        print ' '
+        print(' ')
         #print 'FirstMoment'
         #print FirstMoment
-        print 'velocityX',data_output[0]
-        print ' '
-        print 'velocityY',data_output[1]
+        print('velocityX',data_output[0])
+        print(' ')
+        print('velocityY',data_output[1])
         #print numpy.array(velocityY)
-        print ' '
+        print(' ')
         #print 'SNR'
         #print 10*numpy.log10(dataOut.data_SNR)
         #print numpy.shape(10*numpy.log10(dataOut.data_SNR))
-        print ' '
+        print(' ')
         
         
         dataOut.data_output=data_output
@@ -1184,20 +1182,20 @@ class FullSpectralAnalysis(Operation):
             
             SmoothSPC=self.moving_average(FactNorm,N=3)
             
-            xSamples = ar(range(len(SmoothSPC)))
+            xSamples = ar(list(range(len(SmoothSPC))))
             ySamples[i] = SmoothSPC 
             
         #dbSNR=10*numpy.log10(dataSNR)
-        print ' '
-        print ' '
-        print ' ' 
+        print(' ')
+        print(' ')
+        print(' ') 
         
         #print 'dataSNR', dbSNR.shape, dbSNR[0,40:120]
-        print 'SmoothSPC', SmoothSPC.shape, SmoothSPC[0:20] 
-        print 'noise',noise   
-        print 'zline',zline.shape, zline[0:20] 
-        print 'FactNorm',FactNorm.shape, FactNorm[0:20]
-        print 'FactNorm suma', numpy.sum(FactNorm)
+        print('SmoothSPC', SmoothSPC.shape, SmoothSPC[0:20]) 
+        print('noise',noise)   
+        print('zline',zline.shape, zline[0:20]) 
+        print('FactNorm',FactNorm.shape, FactNorm[0:20])
+        print('FactNorm suma', numpy.sum(FactNorm))
         
         for i in range(spc.shape[0]):
             
@@ -1218,12 +1216,12 @@ class FullSpectralAnalysis(Operation):
             
             phase[i] = self.moving_average( numpy.arctan2(CSPCSamples[i].imag, CSPCSamples[i].real),N=1)#*180/numpy.pi
         
-        print 'cspcLine', cspcLine.shape, cspcLine[0:20]
-        print 'CSPCFactor', CSPCFactor#, CSPCFactor[0:20]
-        print numpy.sum(ySamples[chan_index0]), numpy.sum(ySamples[chan_index1]), -noise[i]
-        print 'CSPCNorm', CSPCNorm.shape, CSPCNorm[0:20]
-        print 'CSPCNorm suma', numpy.sum(CSPCNorm)
-        print 'CSPCSamples', CSPCSamples.shape, CSPCSamples[0,0:20]
+        print('cspcLine', cspcLine.shape, cspcLine[0:20])
+        print('CSPCFactor', CSPCFactor)#, CSPCFactor[0:20]
+        print(numpy.sum(ySamples[chan_index0]), numpy.sum(ySamples[chan_index1]), -noise[i])
+        print('CSPCNorm', CSPCNorm.shape, CSPCNorm[0:20])
+        print('CSPCNorm suma', numpy.sum(CSPCNorm))
+        print('CSPCSamples', CSPCSamples.shape, CSPCSamples[0,0:20])
         
         '''****** Getting fij width ******'''
         
@@ -1237,14 +1235,14 @@ class FullSpectralAnalysis(Operation):
         meanGauss=sum(xSamples*yMean) / len(xSamples)
         sigma=sum(yMean*(xSamples-meanGauss)**2) / len(xSamples)
         
-        print '****************************'
-        print 'len(xSamples): ',len(xSamples)
-        print 'yMean: ', yMean.shape, yMean[0:20]
-        print 'ySamples', ySamples.shape, ySamples[0,0:20]
-        print 'xSamples: ',xSamples.shape, xSamples[0:20]
+        print('****************************')
+        print('len(xSamples): ',len(xSamples))
+        print('yMean: ', yMean.shape, yMean[0:20])
+        print('ySamples', ySamples.shape, ySamples[0,0:20])
+        print('xSamples: ',xSamples.shape, xSamples[0:20])
         
-        print 'meanGauss',meanGauss
-        print 'sigma',sigma
+        print('meanGauss',meanGauss)
+        print('sigma',sigma)
         
         #if (abs(meanGauss/sigma**2) > 0.0001) : #0.000000001):
         if dbSNR > SNRlimit :
@@ -1256,7 +1254,7 @@ class FullSpectralAnalysis(Operation):
                     
                 else: 
                     FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
-                    print 'Verificador:     Dentro', Height
+                    print('Verificador:     Dentro', Height)
             except :#RuntimeError:
                 FitGauss=numpy.ones(len(xSamples))*numpy.mean(yMean)
                 
@@ -1293,10 +1291,10 @@ class FullSpectralAnalysis(Operation):
         else:
             Range = numpy.array([0,0])
         
-        print ' '
-        print 'GCpos',GCpos, ( len(xFrec)- len(xFrec)*0.1)
-        print 'Rangpos',Rangpos
-        print 'RANGE: ', Range
+        print(' ')
+        print('GCpos',GCpos, ( len(xFrec)- len(xFrec)*0.1))
+        print('Rangpos',Rangpos)
+        print('RANGE: ', Range)
         FrecRange=xFrec[Range[0]:Range[1]]
         
         '''****** Getting SCPC Slope ******'''
@@ -1306,9 +1304,9 @@ class FullSpectralAnalysis(Operation):
             if len(FrecRange)>5 and len(FrecRange)<spc.shape[1]*0.5:
                 PhaseRange=self.moving_average(phase[i,Range[0]:Range[1]],N=3) 
                 
-                print 'FrecRange', len(FrecRange) , FrecRange
-                print 'PhaseRange', len(PhaseRange), PhaseRange
-                print ' '
+                print('FrecRange', len(FrecRange) , FrecRange)
+                print('PhaseRange', len(PhaseRange), PhaseRange)
+                print(' ')
                 if len(FrecRange) == len(PhaseRange):
                     slope, intercept, r_value, p_value, std_err = stats.linregress(FrecRange,PhaseRange)
                     PhaseSlope[i]=slope
@@ -1354,7 +1352,7 @@ class FullSpectralAnalysis(Operation):
             Vmag=numpy.sqrt(Vzon**2+Vmer**2)
             Vang=numpy.arctan2(Vmer,Vzon)
             Vver=xFrec[Vpos]
-        print 'vzon y vmer', Vzon, Vmer
+        print('vzon y vmer', Vzon, Vmer)
         return Vzon, Vmer, Vver, GaussCenter
             
 class SpectralMoments(Operation):
@@ -1441,11 +1439,11 @@ class SpectralMoments(Operation):
             else:   spec2 = scipy.ndimage.filters.uniform_filter1d(spec,size=smooth)
     
             #    Calculo de Momentos
-            bb = spec2[range(m,spec2.size)]
+            bb = spec2[list(range(m,spec2.size))]
             bb = (bb<n0).nonzero()
             bb = bb[0]
             
-            ss = spec2[range(0,m + 1)]
+            ss = spec2[list(range(0,m + 1))]
             ss = (ss<n0).nonzero()
             ss = ss[0]
             
@@ -1461,7 +1459,7 @@ class SpectralMoments(Operation):
             
             if (ss1 > m):   ss1 = m
             
-            valid = numpy.asarray(range(int(m + bb0 - ss1 + 1))) + ss1               
+            valid = numpy.asarray(list(range(int(m + bb0 - ss1 + 1)))) + ss1               
             power = ((spec2[valid] - n0)*fwindow[valid]).sum()
             fd = ((spec2[valid]- n0)*freq[valid]*fwindow[valid]).sum()/power
             w = math.sqrt(((spec2[valid] - n0)*fwindow[valid]*(freq[valid]- fd)**2).sum()/power)
@@ -1809,7 +1807,7 @@ class WindProfiler(Operation):
         maxid = listPhi.index(max(listPhi))
         minid = listPhi.index(min(listPhi))
         
-        rango = range(len(phi))       
+        rango = list(range(len(phi)))       
    #     rango = numpy.delete(rango,maxid)
         
         heiRang1 = heiRang*math.cos(phi[maxid])
@@ -1867,7 +1865,7 @@ class WindProfiler(Operation):
         heiRang = kwargs['heightList']
         SNR0 = kwargs['SNR']
         
-        if kwargs.has_key('dirCosx') and kwargs.has_key('dirCosy'):
+        if 'dirCosx' in kwargs and 'dirCosy' in kwargs:
             theta_x = numpy.array(kwargs['dirCosx'])
             theta_y = numpy.array(kwargs['dirCosy'])
         else:
@@ -1875,13 +1873,13 @@ class WindProfiler(Operation):
             azim = numpy.array(kwargs['azimuth'])
             theta_x, theta_y = self.__calculateCosDir(elev, azim)
         azimuth = kwargs['correctAzimuth']    
-        if kwargs.has_key('horizontalOnly'):
+        if 'horizontalOnly' in kwargs:
             horizontalOnly = kwargs['horizontalOnly']
         else:   horizontalOnly = False
-        if kwargs.has_key('correctFactor'):
+        if 'correctFactor' in kwargs:
             correctFactor = kwargs['correctFactor']
         else:   correctFactor = 1
-        if kwargs.has_key('channelList'):
+        if 'channelList' in kwargs:
             channelList = kwargs['channelList']
             if len(channelList) == 2:
                 horizontalOnly = True
@@ -2002,7 +2000,7 @@ class WindProfiler(Operation):
         position_y = kwargs['positionY']
         azimuth = kwargs['azimuth']
         
-        if kwargs.has_key('correctFactor'):
+        if 'correctFactor' in kwargs:
             correctFactor = kwargs['correctFactor']
         else:
             correctFactor = 1
@@ -2355,20 +2353,20 @@ class WindProfiler(Operation):
             dataOut.flagNoData = True
             self.__dataReady = False
             
-            if kwargs.has_key('nHours'):
+            if 'nHours' in kwargs:
                 nHours = kwargs['nHours']
             else: 
                 nHours = 1
                 
-            if kwargs.has_key('meteorsPerBin'):
+            if 'meteorsPerBin' in kwargs:
                 meteorThresh = kwargs['meteorsPerBin']
             else:
                 meteorThresh = 6
                 
-            if kwargs.has_key('hmin'):
+            if 'hmin' in kwargs:
                 hmin = kwargs['hmin']
             else:   hmin = 70
-            if kwargs.has_key('hmax'):
+            if 'hmax' in kwargs:
                 hmax = kwargs['hmax']
             else:   hmax = 110
                      
@@ -2404,22 +2402,22 @@ class WindProfiler(Operation):
             dataOut.flagNoData = True
             self.__dataReady = False
             
-            if kwargs.has_key('nMins'):
+            if 'nMins' in kwargs:
                 nMins = kwargs['nMins']
             else: nMins = 20
-            if kwargs.has_key('rx_location'):
+            if 'rx_location' in kwargs:
                 rx_location = kwargs['rx_location']
             else: rx_location = [(0,1),(1,1),(1,0)]
-            if kwargs.has_key('azimuth'):
+            if 'azimuth' in kwargs:
                 azimuth = kwargs['azimuth']
             else: azimuth = 51.06
-            if kwargs.has_key('dfactor'):
+            if 'dfactor' in kwargs:
                 dfactor = kwargs['dfactor']
-            if kwargs.has_key('mode'):
+            if 'mode' in kwargs:
                 mode = kwargs['mode']
-            if kwargs.has_key('theta_x'):
+            if 'theta_x' in kwargs:
                 theta_x = kwargs['theta_x']  
-            if kwargs.has_key('theta_y'):
+            if 'theta_y' in kwargs:
                 theta_y = kwargs['theta_y']
             else: mode = 'SA'
 
@@ -2480,7 +2478,7 @@ class EWDriftsEstimation(Operation):
         maxid = listPhi.index(max(listPhi))
         minid = listPhi.index(min(listPhi))
         
-        rango = range(len(phi))       
+        rango = list(range(len(phi)))       
    #     rango = numpy.delete(rango,maxid)
         
         heiRang1 = heiRang*math.cos(phi[maxid])
@@ -3857,7 +3855,7 @@ class SMOperations():
     
     def getPhasePairs(self, channelPositions):
         chanPos = numpy.array(channelPositions)
-        listOper = list(itertools.combinations(range(5),2))
+        listOper = list(itertools.combinations(list(range(5)),2))
         
         distances = numpy.zeros(4)
         axisX = []

@@ -339,7 +339,7 @@ class PlotData(Operation, Process):
         self.titles: list of axes title 
 
         '''
-        raise(NotImplementedError, 'Implement this method in child class')
+        raise NotImplementedError
 
     def fill_gaps(self, x_buffer, y_buffer, z_buffer):
         '''
@@ -490,7 +490,7 @@ class PlotData(Operation, Process):
                 if self.save_labels:
                     labels = self.save_labels
                 else:
-                    labels = range(self.nrows)
+                    labels = list(range(self.nrows))
                 
                 if self.oneFigure:
                     label = ''
@@ -514,7 +514,7 @@ class PlotData(Operation, Process):
     def plot(self):
         '''
         '''
-        raise(NotImplementedError, 'Implement this method in child class')
+        raise NotImplementedError
 
     def run(self):
 
@@ -961,7 +961,7 @@ class PlotParamData(PlotRTIData):
         self.ylabel = 'Height [km]'
         if not self.titles:
             self.titles = self.data.parameters \
-                if self.data.parameters else ['Param {}'.format(x) for x in xrange(self.nrows)]
+                if self.data.parameters else ['Param {}'.format(x) for x in range(self.nrows)]
             if self.showSNR:
                 self.titles.append('SNR')
 
@@ -1041,7 +1041,7 @@ class PlotPolarMapData(PlotData):
         else:
             self.nplots = self.data.shape(self.CODE)[0]
             self.nrows = self.nplots
-            self.channels = range(self.nplots)
+            self.channels = list(range(self.nplots))
         if self.mode == 'E':
             self.xlabel = 'Longitude'
             self.ylabel = 'Latitude'

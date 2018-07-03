@@ -68,10 +68,10 @@ def getFileFromSet(path, ext, set=None):
     if set == None:
         return validFilelist[-1]
 
-    print "set =" ,set
+    print("set =" ,set)
     for thisFile in validFilelist:
         if set <= int(thisFile[6:16]):
-            print thisFile,int(thisFile[6:16])
+            print(thisFile,int(thisFile[6:16]))
             return thisFile
 
     return validFilelist[-1]
@@ -83,8 +83,8 @@ def getFileFromSet(path, ext, set=None):
         return myfile[0]
     else:
         filename = '*%10.10d%s'%(set,ext.lower())
-        print 'the filename %s does not exist'%filename
-        print '...going to the last file: '
+        print('the filename %s does not exist'%filename)
+        print('...going to the last file: ')
 
     if validFilelist:
         validFilelist = sorted( validFilelist, key=str.lower )
@@ -115,7 +115,7 @@ Depura el fileList dejando solo los que cumplan el formato de "res-xxxxxx.ext"
         try:
             number= int(thisFile[6:16])
         except:
-            print "There is a file or folder with different format"
+            print("There is a file or folder with different format")
         if not isNumber(number):
             continue
 
@@ -256,7 +256,7 @@ class HFReader(ProcessingUnit):
             self.status=1
         else:
             self.status=0
-            print 'Path %s does not exits'%self.path
+            print('Path %s does not exits'%self.path)
             return
         return
 
@@ -282,12 +282,12 @@ class HFReader(ProcessingUnit):
 
         pat = '\d+.\d+'
         dirnameList = [re.search(pat,x) for x in os.listdir(self.path)]
-        dirnameList = filter(lambda x:x!=None,dirnameList)
+        dirnameList = [x for x in dirnameList if x!=None]
         dirnameList = [x.string for x in dirnameList]
         if not(online):
 
             dirnameList = [self.__selDates(x) for x in dirnameList]
-            dirnameList = filter(lambda x:x!=None,dirnameList)
+            dirnameList = [x for x in dirnameList if x!=None]
 
         if len(dirnameList)>0:
                 self.status = 1
@@ -301,8 +301,8 @@ class HFReader(ProcessingUnit):
     def __getTimeFromData(self):
         startDateTime_Reader = datetime.datetime.combine(self.startDate,self.startTime)
         endDateTime_Reader = datetime.datetime.combine(self.endDate,self.endTime)
-        print 'Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader)
-        print '........................................'
+        print('Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader))
+        print('........................................')
         filter_filenameList=[]
         self.filenameList.sort()
         for i in range(len(self.filenameList)-1):
@@ -363,24 +363,24 @@ class HFReader(ProcessingUnit):
 
                     self.flag_nextfile=False
                 else:
-                    print filename
-                    print "PRIMERA CONDICION"
+                    print(filename)
+                    print("PRIMERA CONDICION")
                     #if self.filename_next_set== int(filename[6:16]):
-                    print "TODO BIEN"
+                    print("TODO BIEN")
 
                     if filename == None:
-                        raise ValueError, "corregir"
+                        raise ValueError("corregir")
 
                     self.dirnameList=[filename]
                     fullfilename=self.path+"/"+filename
                     self.filenameList=[fullfilename]
                     self.filename_next_set=int(filename[6:16])+10
-                    print "Setting next file",self.filename_next_set
+                    print("Setting next file",self.filename_next_set)
                     self.set=int(filename[6:16])
                     if True:
                         pass
                     else:
-                        print "ESTOY AQUI PORQUE NO EXISTE EL SIGUIENTE ARCHIVO"
+                        print("ESTOY AQUI PORQUE NO EXISTE EL SIGUIENTE ARCHIVO")
 
             else:
                 filename =getlastFileFromPath(self.path,self.ext)
@@ -394,24 +394,24 @@ class HFReader(ProcessingUnit):
                     self.flag_nextfile=False
                 else:
                    filename=getFileFromSet(self.path,self.ext,self.set)
-                   print filename
-                   print "PRIMERA CONDICION"
+                   print(filename)
+                   print("PRIMERA CONDICION")
                     #if self.filename_next_set== int(filename[6:16]):
-                   print "TODO BIEN"
+                   print("TODO BIEN")
 
                    if filename == None:
-                       raise ValueError, "corregir"
+                       raise ValueError("corregir")
 
                    self.dirnameList=[filename]
                    fullfilename=self.path+"/"+filename
                    self.filenameList=[fullfilename]
                    self.filename_next_set=int(filename[6:16])+10
-                   print "Setting next file",self.filename_next_set
+                   print("Setting next file",self.filename_next_set)
                    self.set=int(filename[6:16])
                    if True:
                        pass
                    else:
-                       print "ESTOY AQUI PORQUE NO EXISTE EL SIGUIENTE ARCHIVO"
+                       print("ESTOY AQUI PORQUE NO EXISTE EL SIGUIENTE ARCHIVO")
 
 
 
@@ -434,7 +434,7 @@ class HFReader(ProcessingUnit):
         self.__selectDataForTimes()
 
         for i in range(len(self.filenameList)):
-            print "%s"% (self.filenameList[i])
+            print("%s"% (self.filenameList[i]))
 
         return
 
@@ -456,7 +456,7 @@ class HFReader(ProcessingUnit):
         self.__checkPath()
 
         fullpath=path
-        print "%s folder was found: " %(fullpath )
+        print("%s folder was found: " %(fullpath ))
 
         if set == None:
             self.set=None
@@ -518,7 +518,7 @@ class HFReader(ProcessingUnit):
             idFile += 1
             if not (idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-                print "No more Files"
+                print("No more Files")
                 return 0
             filename = self.filenameList[idFile]
             hfFilePointer =h5py.File(filename,'r')
@@ -534,14 +534,14 @@ class HFReader(ProcessingUnit):
         self.hfFilePointer = hfFilePointer
         hfFilePointer.close()
         self.__t0=epoc
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
 
         return 1
 
     def __setNextFileOnline(self):
         """
         """
-        print "SOY NONE",self.set
+        print("SOY NONE",self.set)
         if self.set==None:
             pass
         else:
@@ -552,7 +552,7 @@ class HFReader(ProcessingUnit):
             self.__selectDataForTimes(online=True)
             filename = self.filenameList[0]
             while self.filename_online == filename:
-                print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
+                print('waiting %d seconds to get a new file...'%(self.__waitForNewFile))
                 time.sleep(self.__waitForNewFile)
                 #self.__findDataForDates(online=True)
                 self.set=self.filename_next_set
@@ -563,27 +563,27 @@ class HFReader(ProcessingUnit):
         #print filename
         sizeoffile=os.path.getsize(filename)
         if sizeoffile<1670240:
-            print "%s is not the rigth  size"%filename
+            print("%s is not the rigth  size"%filename)
             delay=50
-            print 'waiting %d seconds for delay...'%(delay)
+            print('waiting %d seconds for delay...'%(delay))
             time.sleep(delay)
         sizeoffile=os.path.getsize(filename)
         if sizeoffile<1670240:
             delay=50
-            print 'waiting %d  more seconds for delay...'%(delay)
+            print('waiting %d  more seconds for delay...'%(delay))
             time.sleep(delay)
 
         sizeoffile=os.path.getsize(filename)
         if sizeoffile<1670240:
             delay=50
-            print 'waiting %d  more seconds for delay...'%(delay)
+            print('waiting %d  more seconds for delay...'%(delay))
             time.sleep(delay)
 
         try:
             hfFilePointer=h5py.File(filename,'r')
 
         except:
-            print "Error reading file %s"%filename
+            print("Error reading file %s"%filename)
 
         self.filename_online=filename
         epoc=hfFilePointer['t'].value
@@ -596,7 +596,7 @@ class HFReader(ProcessingUnit):
         self.flagIsNewFile = 1
         self.filename = filename
 
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
         return 1
 
     def __getExpParameters(self):
@@ -622,7 +622,7 @@ class HFReader(ProcessingUnit):
 
         '''
         if path==None:
-            raise ValueError,"The path is not valid"
+            raise ValueError("The path is not valid")
 
         if ext==None:
             ext = self.ext
@@ -634,11 +634,11 @@ class HFReader(ProcessingUnit):
 
         #print set
         if not(online):
-            print "Searching files in offline mode..."
+            print("Searching files in offline mode...")
 
             self.searchFilesOffLine(path, startDate, endDate, ext, startTime, endTime, walk)
         else:
-            print "Searching files in online mode..."
+            print("Searching files in online mode...")
             self.searchFilesOnLine(path, walk,ext,set=set)
             if set==None:
                 pass
@@ -659,7 +659,7 @@ class HFReader(ProcessingUnit):
 
 
         if not(self.filenameList):
-            print "There  is no files into the folder: %s"%(path)
+            print("There  is no files into the folder: %s"%(path))
             sys.exit(-1)
 
         self.__getExpParameters()
@@ -745,7 +745,7 @@ class HFReader(ProcessingUnit):
 
         self.dataOut.heightList = self.__firstHeigth + numpy.arange(self.__nSamples, dtype = numpy.float)*self.__deltaHeigth
 
-        self.dataOut.channelList = range(self.nChannels)
+        self.dataOut.channelList = list(range(self.nChannels))
 
         #self.dataOut.channelIndexList = None
 
@@ -833,7 +833,7 @@ class HFReader(ProcessingUnit):
     def getData(self):
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
+            print('Process finished')
             return 0
 
         if self.__hasNotDataInBuffer():

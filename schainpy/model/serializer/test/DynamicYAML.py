@@ -54,7 +54,7 @@ class Loader(OrderedYAML.Loader):
             data = self.construct_mapping(self, node)
             self.constructed_objects[node] = data
             del self.recursive_objects[node]
-            if data.has_key('__revision_source'):
+            if '__revision_source' in data:
                 # TODO: Handle password authentication
                 client = pysvn.Client()
                 source = data['__revision_source']
@@ -85,11 +85,11 @@ class Dumper(OrderedYAML.Dumper):
         """
         
         state = {}
-        state.update(obj.__dict__.items())
-        state.update(obj.__class__.meta_attributes.items())
+        state.update(list(obj.__dict__.items()))
+        state.update(list(obj.__class__.meta_attributes.items()))
         name = obj.getObjectName() # obj.__class__.__name__
         revision = obj.getRevisionNumber()
-        return self.represent_mapping(u'!%s.%s' % (name, revision), state)
+        return self.represent_mapping('!%s.%s' % (name, revision), state)
 
 # Dtypes to be stored as hex in YAML streams / strings
 hex_dtypes = ['float', 'complex', 'half', 'single', 'double']
@@ -98,7 +98,7 @@ hex_dtypes = ['float', 'complex', 'half', 'single', 'double']
 dtypes = Lookup.numpy_dtypes
 
 # Inverse lookup for accessing tags given a class instance:
-cls_dtypes = dict([(v,k) for (k,v) in dtypes.items()])
+cls_dtypes = dict([(v,k) for (k,v) in list(dtypes.items())])
 
 # Representer for numpy arrays:
 def ndarray_representer(dumper, obj):
@@ -108,23 +108,23 @@ def ndarray_representer(dumper, obj):
     np_ary = obj
     #hex_ary = np.empty(np_ary.shape, dtype=yaml.nodes.ScalarNode)
     np_flat, hex_flat = np_ary.flat, [] #hex_ary.flat
-    hex_flat.append(dumper.represent_sequence(u'tag:yaml.org,2002:seq', list(np_ary.shape), flow_style=True))
+    hex_flat.append(dumper.represent_sequence('tag:yaml.org,2002:seq', list(np_ary.shape), flow_style=True))
     if hexlify:
         lst = []
         for i in range(len(np_flat)):
-            value = u'%s'%(np_flat[i],)
-            node = dumper.represent_scalar(u'tag:yaml.org,2002:str', value, style='')
+            value = '%s'%(np_flat[i],)
+            node = dumper.represent_scalar('tag:yaml.org,2002:str', value, style='')
             lst.append(node)
-        hex_flat.append(yaml.nodes.SequenceNode(u'tag:yaml.org,2002:seq', lst, flow_style=True))
+        hex_flat.append(yaml.nodes.SequenceNode('tag:yaml.org,2002:seq', lst, flow_style=True))
         lst = []
     for i in range(len(np_flat)):
-        if hexlify: value = u'%s'%(binascii.hexlify(np_flat[i]),)
-        else: value = u'%s'%(np_flat[i],)
-        node = dumper.represent_scalar(u'tag:yaml.org,2002:str', value, style='')
+        if hexlify: value = '%s'%(binascii.hexlify(np_flat[i]),)
+        else: value = '%s'%(np_flat[i],)
+        node = dumper.represent_scalar('tag:yaml.org,2002:str', value, style='')
         if hexlify: lst.append(node)
         else: hex_flat.append(node)
-    if hexlify: hex_flat.append(yaml.nodes.SequenceNode(u'tag:yaml.org,2002:seq', lst, flow_style=True))
-    return yaml.nodes.SequenceNode(u'!%s'%(tag,), hex_flat, flow_style=True)
+    if hexlify: hex_flat.append(yaml.nodes.SequenceNode('tag:yaml.org,2002:seq', lst, flow_style=True))
+    return yaml.nodes.SequenceNode('!%s'%(tag,), hex_flat, flow_style=True)
 Dumper.add_representer(np.ndarray, ndarray_representer)
 
 # Constructor for ndarrays with arbitrary (specified) dtype:
@@ -172,9 +172,9 @@ class __dtype_con:
         def dtype_representer(dumper, obj):
             tag, hexlify, dtype = self.fncn_attributes
             if isinstance(obj, float): obj = np.float64(obj)
-            if hexlify: value = u'%s'%(binascii.hexlify(obj),)
-            else: value = u'%s'%(obj,)
-            try: tag = u'!%s'%(cls_dtypes[obj.__class__]) # 'dtype.'+obj.__class__.__name__ # bullshit...
+            if hexlify: value = '%s'%(binascii.hexlify(obj),)
+            else: value = '%s'%(obj,)
+            try: tag = '!%s'%(cls_dtypes[obj.__class__]) # 'dtype.'+obj.__class__.__name__ # bullshit...
             except KeyError: tag = ''
             node = dumper.represent_scalar(tag, value, style='')
             return node
@@ -182,40 +182,39 @@ class __dtype_con:
         self.dtype_constructor = dtype_constructor
         self.dtype_representer = dtype_representer
 
-keys = [x for x in dtypes.keys() if x != 'dtype.int' and x != 'dtype.bool']
-print keys
+keys = [x for x in list(dtypes.keys()) if x != 'dtype.int' and x != 'dtype.bool']
+print(keys)
 
 n = len(keys)
-print n
+print(n)
 i=0
 
 for tag in keys:
     dtype = __dtype_con(tag)
     dtype_constructor = dtype.dtype_constructor
     dtype_representer = dtype.dtype_representer
-    Loader.add_constructor(u'!%s'%(tag,), dtype_constructor)
+    Loader.add_constructor('!%s'%(tag,), dtype_constructor)
     Dumper.add_representer(dtypes[tag], dtype_representer)
 
 # Precision time constructors & representers:
 def ns_rep(dumper, obj):
     state = {'second': obj.__dict__['second'], 'nanosecond': obj.__dict__['nanosecond']}
-    return dumper.represent_mapping(u'!timestamp_ns', state)
+    return dumper.represent_mapping('!timestamp_ns', state)
 def ps_rep(dumper, obj):
     state = {'second': obj.__dict__['second'], 'picosecond': obj.__dict__['picosecond']}
-    return dumper.represent_mapping(u'!timestamp_ps', state)
+    return dumper.represent_mapping('!timestamp_ps', state)
 def ns_con(loader, node): return PrecisionTime.nsTime(**loader.construct_mapping(node))
 def ps_con(loader, node): return PrecisionTime.psTime(**loader.construct_mapping(node))
 
 Dumper.add_representer(PrecisionTime.nsTime, ns_rep)
 Dumper.add_representer(PrecisionTime.psTime, ps_rep)
-Loader.add_constructor(u'!timestamp_ns', ns_con)
-Loader.add_constructor(u'!timestamp_nanosecond', ns_con)
-Loader.add_constructor(u'!timestamp_ps', ps_con)
-Loader.add_constructor(u'!timestamp_picosecond', ps_con)
+Loader.add_constructor('!timestamp_ns', ns_con)
+Loader.add_constructor('!timestamp_nanosecond', ns_con)
+Loader.add_constructor('!timestamp_ps', ps_con)
+Loader.add_constructor('!timestamp_picosecond', ps_con)
 
 # Binary object constructor & representer:
-def bin_rep(dumper, obj): return dumper.represent_mapping(u'!binary', obj.__dict__)
+def bin_rep(dumper, obj): return dumper.represent_mapping('!binary', obj.__dict__)
 def bin_con(loader, node): return DynamicObject.Binary(**loader.construct_mapping(node))
 Dumper.add_representer(DynamicObject.Binary, bin_rep)
-Loader.add_constructor(u'!binary', bin_con)
-
+Loader.add_constructor('!binary', bin_con)

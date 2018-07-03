@@ -171,11 +171,11 @@ def createPline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', title=''
 
     ######################################################
     if '0.' in matplotlib.__version__[0:2]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
     if '1.0.' in matplotlib.__version__[0:4]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
     if grid != None:
@@ -246,11 +246,11 @@ def createPcolor(ax, x, y, z, xmin, xmax, ymin, ymax, zmin, zmax,
     ax_cb.yaxis.tick_right()
 
     if '0.' in matplotlib.__version__[0:2]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return imesh
 
     if '1.0.' in matplotlib.__version__[0:4]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return imesh
 
     matplotlib.pyplot.tight_layout()
@@ -334,11 +334,11 @@ def createPmultiline(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel='', tit
     iplot = ax.lines[-1]
 
     if '0.' in matplotlib.__version__[0:2]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
     if '1.0.' in matplotlib.__version__[0:4]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
     if grid != None:
@@ -407,11 +407,11 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
     iplot = ax.lines[-1]
 
     if '0.' in matplotlib.__version__[0:2]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
     if '1.0.' in matplotlib.__version__[0:4]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
     if grid != None:
@@ -461,11 +461,11 @@ def createPolar(ax, x, y,
     iplot = ax.lines[-1]
 
     if '0.' in matplotlib.__version__[0:2]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
     if '1.0.' in matplotlib.__version__[0:4]:
-        print "The matplotlib version has to be updated to 1.1 or newer"
+        print("The matplotlib version has to be updated to 1.1 or newer")
         return iplot
 
 #     if grid != None:
@@ -491,7 +491,7 @@ def polar(iplot, x, y, xlabel='', ylabel='', title=''):
 def draw(fig):
 
     if type(fig) == 'int':
-        raise ValueError, "Error drawing: Fig parameter should be a matplotlib figure object figure"
+        raise ValueError("Error drawing: Fig parameter should be a matplotlib figure object figure")
 
     fig.canvas.draw()
 

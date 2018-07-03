@@ -25,9 +25,9 @@ if __name__ == '__main__':
     
     replayerObj.start()
     
-    print "Initializing 'zerorpc' server"
+    print("Initializing 'zerorpc' server")
     s = zerorpc.Server(replayerObj)
     s.bind("tcp://0.0.0.0:4242")
     s.run()
     
-    print "End"
+    print("End")
