@@ -6,6 +6,8 @@ from scipy import interpolate
 from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
 from time import time
+from schainpy.utils import log
+
 
 class VoltageProc(ProcessingUnit):  
 
@@ -1101,8 +1103,7 @@ class SplitProfiles(Operation):
             if shape[2] % n != 0:
                 raise ValueError("Could not split the data, n=%d has to be multiple of %d" %(n, shape[2]))
 
-            new_shape = shape[0], shape[1]*n, shape[2]/n
-
+            new_shape = shape[0], shape[1]*n, int(shape[2]/n)
             dataOut.data = numpy.reshape(dataOut.data, new_shape)
             dataOut.flagNoData = False
 

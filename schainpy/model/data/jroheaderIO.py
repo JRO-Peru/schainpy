@@ -439,7 +439,6 @@ class RadarControllerHeader(Header):
                     return 0
 
                 for ib in range(self.nBaud - 1, -1, -1):
-                    log.error(ib / 32)
                     code[ic, ib] = temp[int(ib / 32)] % 2
                     temp[int(ib / 32)] = temp[int(ib / 32)] / 2
 
