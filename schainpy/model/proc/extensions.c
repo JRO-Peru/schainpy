@@ -40,8 +40,8 @@ static PyObject *correlateByBlock(PyObject *self, PyObject *args) {
 
   if (!PyArg_ParseTuple(args, "OOi", &data_obj1, &data_obj2, &mode)) return NULL;
 
-  data_array1 = (PyArrayObject *) PyArray_FROM_OTF(data_obj1, NPY_COMPLEX128, NPY_ARRAY_DEFAULT);
-  data_array2 = (PyArrayObject *) PyArray_FROM_OTF(data_obj2, NPY_FLOAT64, NPY_ARRAY_DEFAULT);
+  data_array1 = (PyArrayObject *) PyArray_FROM_OTF(data_obj1, NPY_COMPLEX128, NPY_ARRAY_IN_ARRAY);
+  data_array2 = (PyArrayObject *) PyArray_FROM_OTF(data_obj2, NPY_FLOAT64, NPY_ARRAY_IN_ARRAY);
 
   npy_intp dims[1];
   dims[0] = 200;
@@ -100,7 +100,7 @@ static PyObject *hildebrand_sekhon(PyObject *self, PyObject *args) {
   PyObject *data_obj, *data_array;
 
   if (!PyArg_ParseTuple(args, "Od", &data_obj, &navg)) return NULL;
-  data_array = PyArray_FROM_OTF(data_obj, NPY_FLOAT64, NPY_ARRAY_DEFAULT);
+  data_array = PyArray_FROM_OTF(data_obj, NPY_FLOAT64, NPY_ARRAY_IN_ARRAY);
   if (data_array == NULL) {
       Py_XDECREF(data_array);
       Py_XDECREF(data_obj);
