@@ -263,7 +263,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
             dc = dc.reshape( (self.systemHeaderObj.nChannels, self.processingHeaderObj.nHeights) ) #transforma a un arreglo 2D
 
 
-        if self.processingHeaderObj.shif_fft:
+        if not self.processingHeaderObj.shif_fft:
             #desplaza a la derecha en el eje 2 determinadas posiciones
             shift = int(self.processingHeaderObj.profilesPerBlock/2)
             spc = numpy.roll( spc, shift , axis=2 )
@@ -510,7 +510,7 @@ class SpectraWriter(JRODataWriter, Operation):
         """
 
         spc = numpy.transpose( self.data_spc, (0,2,1) )
-        if self.processingHeaderObj.shif_fft:
+        if not self.processingHeaderObj.shif_fft:
             spc = numpy.roll( spc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data = spc.reshape((-1))
         data = data.astype(self.dtype[0])
@@ -519,7 +519,7 @@ class SpectraWriter(JRODataWriter, Operation):
         if self.data_cspc is not None:
             data = numpy.zeros( self.shape_cspc_Buffer, self.dtype )
             cspc = numpy.transpose( self.data_cspc, (0,2,1) )
-            if self.processingHeaderObj.shif_fft:
+            if not self.processingHeaderObj.shif_fft:
                 cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             data['real'] = cspc.real
             data['imag'] = cspc.imag

@@ -409,11 +409,15 @@ class PlotData(Operation, Process):
         i = 1 if numpy.where(abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
         ystep = Y[i] / 10.
 
+        if self.xaxis is not 'time':
+            X = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])/2.
+            i = 1 if numpy.where(abs(xmax-xmin) <= X)[0][0] < 0 else numpy.where(abs(xmax-xmin) <= X)[0][0]
+            xstep = X[i] / 10.
+
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
                 ax.set_facecolor(self.bgcolor)
                 ax.yaxis.set_major_locator(MultipleLocator(ystep))
-                ax.xaxis.set_major_locator(MultipleLocator(ystep))
                 if self.xscale:
                     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: '{0:g}'.format(x*self.xscale)))
                 if self.xscale:
@@ -421,6 +425,8 @@ class PlotData(Operation, Process):
                 if self.xaxis is 'time':
                     ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
                     ax.xaxis.set_major_locator(LinearLocator(9))
+                else:
+                    ax.xaxis.set_major_locator(MultipleLocator(xstep))
                 if self.xlabel is not None:
                     ax.set_xlabel(self.xlabel)
                 ax.set_ylabel(self.ylabel)
