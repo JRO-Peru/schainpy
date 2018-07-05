@@ -26,6 +26,7 @@ from schainpy.model.graphics import *
 from schainpy.model.proc.jroproc_base import *
 from schainpy.model.proc.bltrproc_parameters import *
 from schainpy.model.proc.jroproc_spectra import *
+from schainpy.model.proc.jroproc_voltage import *
 from schainpy.model.proc.jroproc_parameters import *
 from schainpy.model.utils.jroutils_publish import *
 from schainpy.utils import log

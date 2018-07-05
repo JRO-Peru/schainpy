@@ -6,15 +6,18 @@ Created on Jul 9, 2014
 import os
 import datetime
 import numpy
-
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator  #YONG
+from schainpy.utils import log
 from .figure import Figure
 
+
+@MPDecorator
 class Scope(Figure):
     
     isConfig = None
     
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):          #YONG
+        Figure.__init__(self)#, **kwargs)
         self.isConfig = False
         self.WIDTH = 300
         self.HEIGHT = 200
@@ -127,6 +130,8 @@ class Scope(Figure):
             ymin            :    None,
             ymax            :    None,
         """
+        if dataOut.flagNoData:  
+            return dataOut
         
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -223,3 +228,5 @@ class Scope(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
+
+        return dataOut                

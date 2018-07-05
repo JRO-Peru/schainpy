@@ -3,24 +3,28 @@ import numpy
 from scipy import interpolate
 #TODO
 #from schainpy import cSchain
-from .jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, MPDecorator, Operation
 from schainpy.model.data.jrodata import Voltage
-from time import time
 from schainpy.utils import log
+from time import time
 
 
+@MPDecorator
 class VoltageProc(ProcessingUnit):  
+    
+    METHODS = {} #yong
 
+    def __init__(self):#, **kwargs):    #yong
 
-    def __init__(self, **kwargs):
-
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)#, **kwargs)
 
         #         self.objectDict = {}
         self.dataOut = Voltage()
         self.flip = 1
+        self.setupReq = False  #yong
 
     def run(self):
+
         if self.dataIn.type == 'AMISR':
             self.__updateObjFromAmisrInput()
 
@@ -317,7 +321,7 @@ class VoltageProc(ProcessingUnit):
             self.dataOut.data[:,:,botLim:topLim+1]  = ynew
 
     # import collections
-
+@MPDecorator
 class CohInt(Operation):
 
     isConfig = False
@@ -333,9 +337,9 @@ class CohInt(Operation):
     __dataToPutStride = False
     n = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
         #   self.isConfig = False
 
@@ -549,6 +553,7 @@ class CohInt(Operation):
         return avgdata, avgdatatime
     
     def run(self, dataOut, n=None, timeInterval=None, stride=None, overlapping=False, byblock=False, **kwargs):
+
         if not self.isConfig:
             self.setup(n=n, stride=stride, timeInterval=timeInterval, overlapping=overlapping, byblock=byblock, **kwargs)
             self.isConfig = True
@@ -577,7 +582,8 @@ class CohInt(Operation):
             # raise
             #   dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt
             dataOut.flagNoData = False
-
+        return dataOut
+@MPDecorator
 class Decoder(Operation):
 
     isConfig = False
@@ -588,15 +594,15 @@ class Decoder(Operation):
     nCode = None
     nBaud = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
         self.times = None
         self.osamp = None
     #         self.__setValues = False
-        self.isConfig = False
-
+    #    self.isConfig = False
+        self.setupReq = False
     def setup(self, code, osamp, dataOut):
 
         self.__profIndex = 0
@@ -763,22 +769,22 @@ class Decoder(Operation):
 
         if self.__profIndex == self.nCode-1:
             self.__profIndex = 0
-            return 1
+            return dataOut
 
         self.__profIndex += 1
 
-        return 1
+        return dataOut
     #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
 
-
+@MPDecorator
 class ProfileConcat(Operation):
 
     isConfig = False
     buffer = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
         self.profileIndex = 0
 
     def reset(self):
@@ -820,16 +826,17 @@ class ProfileConcat(Operation):
                 xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * m
                 dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight)
                 dataOut.ippSeconds *= m
-
+        return dataOut
+@MPDecorator
 class ProfileSelector(Operation):
 
     profileIndex = None
     # Tamanho total de los perfiles
     nProfiles = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
         self.profileIndex = 0
 
     def incProfileIndex(self):
@@ -979,13 +986,14 @@ class ProfileSelector(Operation):
 
         raise ValueError("ProfileSelector needs profileList, profileRangeList or rangeList parameter")
 
-        return False
-
+        #return False
+        return dataOut
+@MPDecorator
 class Reshaper(Operation):
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
         self.__buffer = None
         self.__nitems = 0
@@ -1084,11 +1092,13 @@ class Reshaper(Operation):
 
         dataOut.ippSeconds /= self.__nTxs
 
+        return dataOut
+@MPDecorator
 class SplitProfiles(Operation):
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
     def run(self, dataOut, n):
 
@@ -1102,8 +1112,9 @@ class SplitProfiles(Operation):
 
             if shape[2] % n != 0:
                 raise ValueError("Could not split the data, n=%d has to be multiple of %d" %(n, shape[2]))
-
+                
             new_shape = shape[0], shape[1]*n, int(shape[2]/n)
+ 
             dataOut.data = numpy.reshape(dataOut.data, new_shape)
             dataOut.flagNoData = False
 
@@ -1123,10 +1134,12 @@ class SplitProfiles(Operation):
 
         dataOut.ippSeconds /= n
 
+        return dataOut
+@MPDecorator
 class CombineProfiles(Operation):
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
         self.__remData = None
         self.__profileIndex = 0
@@ -1184,6 +1197,7 @@ class CombineProfiles(Operation):
 
         dataOut.ippSeconds *= n
 
+        return dataOut
 # import collections
 # from scipy.stats import mode
 #

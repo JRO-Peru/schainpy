@@ -428,7 +428,7 @@ def MPDecorator(BaseClass):
                 if self.dataOut.flagNoData:
                     continue
               
-                print("Publishing data...")
+                #print("Publishing data...")
                 self.publishProc(self.socket_p, self.dataOut)   
                 # time.sleep(2)
                   
@@ -445,7 +445,7 @@ def MPDecorator(BaseClass):
 
             while True:
                 self.dataIn = self.listenProc(self.socket_l)
-                print("%s received data" %BaseClass.__name__)
+                #print("%s received data" %BaseClass.__name__)
                 
                 if self.dataIn == "Finish":
                     break
