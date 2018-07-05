@@ -6,10 +6,11 @@ Created on Jul 2, 2014
 import numpy
 
 from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Spectra
 
+@MPDecorator
 class SpectraReader(JRODataReader, ProcessingUnit):
     """
     Esta clase permite leer datos de espectros desde archivos procesados (.pdata). La lectura
@@ -69,7 +70,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
     rdPairList = []
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
         """
         Inicializador de la clase SpectraReader para la lectura de datos de espectros.
 
@@ -88,7 +89,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         """
 
         #Eliminar de la base la herencia
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)#, **kwargs)
 
 #         self.isConfig = False
 
@@ -510,7 +511,7 @@ class SpectraWriter(JRODataWriter, Operation):
         """
 
         spc = numpy.transpose( self.data_spc, (0,2,1) )
-        if self.processingHeaderObj.shif_fft:
+        if not( self.processingHeaderObj.shif_fft ):
             spc = numpy.roll( spc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data = spc.reshape((-1))
         data = data.astype(self.dtype[0])
@@ -519,7 +520,7 @@ class SpectraWriter(JRODataWriter, Operation):
         if self.data_cspc is not None:
             data = numpy.zeros( self.shape_cspc_Buffer, self.dtype )
             cspc = numpy.transpose( self.data_cspc, (0,2,1) )
-            if self.processingHeaderObj.shif_fft:
+            if not( self.processingHeaderObj.shif_fft ):
                 cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             data['real'] = cspc.real
             data['imag'] = cspc.imag

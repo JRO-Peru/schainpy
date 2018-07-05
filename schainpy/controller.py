@@ -1,23 +1,35 @@
 '''
+Updated on January , 2018, for multiprocessing purposes
+Author: Sergio Cortez
 Created on September , 2012
-@author:
 '''
-
+from platform import python_version
 import sys
 import ast
 import datetime
 import traceback
 import math
 import time
+import zmq
 from multiprocessing import Process, cpu_count
 
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
-import schainpy
+
 from schainpy.admin import Alarm, SchainWarning
-from schainpy.model import *
+
+### Temporary imports!!!
+# from schainpy.model import *
+from schainpy.model.io import *
+from schainpy.model.graphics import *
+from schainpy.model.proc.jroproc_base import *
+from schainpy.model.proc.bltrproc_parameters import *
+from schainpy.model.proc.jroproc_spectra import *
+from schainpy.model.proc.jroproc_parameters import *
+from schainpy.model.utils.jroutils_publish import *
 from schainpy.utils import log
+###
 
 DTYPES = {
     'Voltage': '.r',
@@ -76,7 +88,6 @@ def MPProject(project, n=cpu_count()):
             process.terminate()
 
         time.sleep(3)
-
 
 class ParameterConf():
 
@@ -267,7 +278,6 @@ class ParameterConf():
 
         print('Parameter[%s]: name = %s, value = %s, format = %s' % (self.id, self.name, self.value, self.format))
 
-
 class OperationConf():
 
     id = None
@@ -284,11 +294,14 @@ class OperationConf():
         self.id = '0'
         self.name = None
         self.priority = None
-        self.type = 'self'
+        self.topic = None
 
     def __getNewId(self):
 
         return int(self.id) * 10 + len(self.parmConfObjList) + 1
+
+    def getId(self):
+        return self.id
 
     def updateId(self, new_id):
 
@@ -361,7 +374,6 @@ class OperationConf():
         self.name = name
         self.type = type
         self.priority = priority
-
         self.parmConfObjList = []
 
     def removeParameters(self):
@@ -443,26 +455,18 @@ class OperationConf():
         for parmConfObj in self.parmConfObjList:
             parmConfObj.printattr()
 
-    def createObject(self, plotter_queue=None):
+    def createObject(self):
 
-        if self.type == 'self':
-            raise ValueError('This operation type cannot be created')
+        className = eval(self.name)
+        kwargs = self.getKwargs()
 
-        if self.type == 'plotter':
-            if not plotter_queue:
-                raise ValueError('plotter_queue is not defined. Use:\nmyProject = Project()\nmyProject.setPlotterQueue(plotter_queue)')
+        opObj = className(self.id, **kwargs)
 
-            opObj = Plotter(self.name, plotter_queue)
+        opObj.start()
 
-        if self.type == 'external' or self.type == 'other':
-
-            className = eval(self.name)
-            kwargs = self.getKwargs()
-
-            opObj = className(**kwargs)
+        print('    Operation created')
 
         return opObj
-
 
 class ProcUnitConf():
 
@@ -484,7 +488,7 @@ class ProcUnitConf():
         self.id = None
         self.datatype = None
         self.name = None
-        self.inputId = None
+        self.inputId = None 
 
         self.opConfObjList = []
 
@@ -507,14 +511,14 @@ class ProcUnitConf():
 
         return self.id
 
-    def updateId(self, new_id, parentId=parentId):
-
+    def updateId(self, new_id, parentId=parentId): 
+        '''
         new_id = int(parentId) * 10 + (int(self.id) % 10)
         new_inputId = int(parentId) * 10 + (int(self.inputId) % 10)
 
         # If this proc unit has not inputs
-        if self.inputId == '0':
-            new_inputId = 0
+        #if self.inputId == '0':
+            #new_inputId = 0
 
         n = 1
         for opConfObj in self.opConfObjList:
@@ -526,8 +530,9 @@ class ProcUnitConf():
 
         self.parentId = str(parentId)
         self.id = str(new_id)
-        self.inputId = str(new_inputId)
-
+        #self.inputId = str(new_inputId)
+        '''
+        n = 1
     def getInputId(self):
 
         return self.inputId
@@ -560,10 +565,16 @@ class ProcUnitConf():
         return self.procUnitObj
 
     def setup(self, id, name, datatype, inputId, parentId=None):
-
+        '''
+            id sera el topico a publicar
+            inputId sera el topico a subscribirse
+        '''
+        
         # Compatible with old signal chain version
         if datatype == None and name == None:
             raise ValueError('datatype or name should be defined')
+
+        #Definir una condicion para inputId cuando sea 0
 
         if name == None:
             if 'Proc' in datatype:
@@ -577,12 +588,11 @@ class ProcUnitConf():
         self.id = str(id)
         self.name = name
         self.datatype = datatype
-        self.inputId = inputId
+        self.inputId = inputId 
         self.parentId = parentId
-
         self.opConfObjList = []
 
-        self.addOperation(name='run', optype='self')
+        self.addOperation(name='run', optype='self') 
 
     def removeOperations(self):
 
@@ -602,10 +612,16 @@ class ProcUnitConf():
 
         return opObj
 
-    def addOperation(self, name, optype='self'):
+    def addOperation(self, name, optype = 'self'):
+        '''
+            Actualizacion - > proceso comunicacion
+            En el caso de optype='self', elminar. DEfinir comuncacion IPC -> Topic
+            definir el tipoc de socket o comunicacion ipc++
+
+        '''
 
         id = self.__getNewId()
-        priority = self.__getPriority()
+        priority = self.__getPriority() # Sin mucho sentido, pero puede usarse
 
         opConfObj = OperationConf()
         opConfObj.setup(id, name=name, priority=priority, type=optype)
@@ -668,11 +684,15 @@ class ProcUnitConf():
 
         return kwargs
 
-    def createObjects(self, plotter_queue=None):
+    def createObjects(self, dictUnits):
+        '''
+        Instancia de unidades de procesamiento. 
 
+        '''
         className = eval(self.name)
         kwargs = self.getKwargs()
-        procUnitObj = className(**kwargs)
+        procUnitObj = className(self.id, self.inputId, dictUnits, **kwargs) # necesitan saber su id y su entrada por fines de ipc
+
 
         for opConfObj in self.opConfObjList:
 
@@ -682,21 +702,25 @@ class ProcUnitConf():
                 procUnitObj.addOperationKwargs(
                     opConfObj.id, **opConfObj.getKwargs())
                 continue
-
-            opObj = opConfObj.createObject(plotter_queue)
-
-            self.opObjDict[opConfObj.id] = opObj
-
-            procUnitObj.addOperation(opObj, opConfObj.id)
+            print("Creating operation process:", opConfObj.name, "for", self.name)  
+            opObj = opConfObj.createObject()
+            
+            
+            #self.opObjDict[opConfObj.id] = opObj.name
+            
+            procUnitObj.addOperation(opConfObj.name, opConfObj.id)          
+     
+        procUnitObj.start()
 
         self.procUnitObj = procUnitObj
+        
 
         return procUnitObj
 
     def run(self):
-
-        is_ok = False
-
+        
+        is_ok = True
+        """
         for opConfObj in self.opConfObjList:
 
             kwargs = {}
@@ -711,9 +735,11 @@ class ProcUnitConf():
                                         opId=opConfObj.id)
 
             is_ok = is_ok or sts
-
+        
+        """
         return is_ok
-
+        
+        
     def close(self):
 
         for opConfObj in self.opConfObjList:
@@ -752,11 +778,20 @@ class ReadUnitConf(ProcUnitConf):
 
     def getElementName(self):
 
-        return self.ELEMENTNAME
-
+        return self.ELEMENTNAME 
+    
     def setup(self, id, name, datatype, path='', startDate='', endDate='',
               startTime='', endTime='', parentId=None, server=None, **kwargs):
 
+
+        '''
+        *****el id del proceso sera el Topico
+
+        Adicion de {topic}, si no esta presente -> error
+        kwargs deben ser trasmitidos en la instanciacion
+
+        '''
+        
         # Compatible with old signal chain version
         if datatype == None and name == None:
             raise ValueError('datatype or name should be defined')
@@ -814,9 +849,9 @@ class ReadUnitConf(ProcUnitConf):
 
         self.opConfObjList = []
 
-    def addRunOperation(self, **kwargs):
+    def addRunOperation(self, **kwargs): 
 
-        opObj = self.addOperation(name='run', optype='self')
+        opObj = self.addOperation(name='run', optype='self') 
 
         if self.server is None:
             opObj.addParameter(
@@ -892,7 +927,6 @@ class ReadUnitConf(ProcUnitConf):
 class Project(Process):
 
     id = None
-    # name = None
     description = None
     filename = None
 
@@ -900,16 +934,15 @@ class Project(Process):
 
     ELEMENTNAME = 'Project'
 
-    plotterQueue = None
+    
 
-    def __init__(self, plotter_queue=None):
+    def __init__(self):
 
         Process.__init__(self)
-        self.id = None        
+        self.id = None
         self.description = None
         self.email = None
         self.alarm = None
-        self.plotterQueue = plotter_queue
         self.procUnitConfObjDict = {}
 
     def __getNewId(self):
@@ -958,13 +991,15 @@ class Project(Process):
 
     def setup(self, id, name='', description='', email=None, alarm=[]):
 
-        print()
+        print(' ')
         print('*' * 60)
-        print('   Starting SIGNAL CHAIN PROCESSING v%s ' % schainpy.__version__)
+        print('*  Starting SIGNAL CHAIN PROCESSING (Multiprocessing) v%s *' % schainpy.__version__)
         print('*' * 60)
-        print()
+        print("*  Python " + python_version() + "  *")
+        print('*' * 19)
+        print(' ')
         self.id = str(id)
-        self.description = description
+        self.description = description 
         self.email = email
         self.alarm = alarm
 
@@ -981,6 +1016,14 @@ class Project(Process):
 
     def addReadUnit(self, id=None, datatype=None, name=None, **kwargs):
 
+        '''
+        Actualizacion:
+            Se agrego un nuevo argumento: topic -relativo a la forma de comunicar los procesos simultaneos
+
+            * El id del proceso sera el topico al que se deben subscribir los procUnits para recibir la informacion(data)
+
+        '''
+
         if id is None:
             idReadUnit = self.__getNewId()
         else:
@@ -991,16 +1034,26 @@ class Project(Process):
                               parentId=self.id, **kwargs)
 
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
-
+        
         return readUnitConfObj
 
     def addProcUnit(self, inputId='0', datatype=None, name=None):
 
-        idProcUnit = self.__getNewId()
+        '''
+        Actualizacion:
+            Se agrego dos nuevos argumentos: topic_read (lee data de otro procUnit) y topic_write(escribe o envia data a otro procUnit)
+            Deberia reemplazar a "inputId"
+
+            ** A fin de mantener el inputID, este sera la representaacion del topicoal que deben subscribirse. El ID propio de la intancia
+            (proceso) sera el topico de la publicacion, todo sera asignado de manera dinamica.
+
+        '''
+
+        idProcUnit = self.__getNewId() #Topico para subscripcion
 
         procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(idProcUnit, name, datatype,
-                              inputId, parentId=self.id)
+        procUnitConfObj.setup(idProcUnit, name, datatype, inputId, #topic_read, topic_write, 
+                              parentId=self.id)
 
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
@@ -1156,29 +1209,11 @@ class Project(Process):
     def createObjects(self):
 
         for procUnitConfObj in list(self.procUnitConfObjDict.values()):
-            procUnitConfObj.createObjects(self.plotterQueue)
+            print("Creating process:", procUnitConfObj.name)
+            procUnitConfObj.createObjects(self.procUnitConfObjDict)
+            
 
-    def __connect(self, objIN, thisObj):
-
-        thisObj.setInput(objIN.getOutputObj())
-
-    def connectObjects(self):
-
-        for thisPUConfObj in list(self.procUnitConfObjDict.values()):
-
-            inputId = thisPUConfObj.getInputId()
-
-            if int(inputId) == 0:
-                continue
-
-            # Get input object
-            puConfINObj = self.procUnitConfObjDict[inputId]
-            puObjIN = puConfINObj.getProcUnitObj()
-
-            # Get current object
-            thisPUObj = thisPUConfObj.getProcUnitObj()
-
-            self.__connect(puObjIN, thisPUObj)
+        print('All processes were created')
 
     def __handleError(self, procUnitConfObj, modes=None, stdout=True):
 
@@ -1193,7 +1228,7 @@ class Project(Process):
         err = traceback.format_exception(sys.exc_info()[0],
                                          sys.exc_info()[1],
                                          sys.exc_info()[2])
-        
+
         log.error('{}'.format(err[-1]), procUnitConfObj.name)
 
         message = ''.join(err)
@@ -1268,75 +1303,30 @@ class Project(Process):
 
         self.filename = filename
 
-    def setPlotterQueue(self, plotter_queue):
+    def setProxyCom(self):
+        
+        ctx = zmq.Context()
+        if not os.path.exists('/tmp/socketTmp'): os.mkdir('/tmp/socketTmp')
+        xsub = ctx.socket(zmq.XSUB)
+        xsub.bind('ipc:///tmp/socketTmp/a')
+        xpub = ctx.socket(zmq.XPUB)
+        xpub.bind('ipc:///tmp/socketTmp/b')
+        
+        print("Controller Ready: Processes and proxy created")
+        zmq.proxy(xsub, xpub)
 
-        raise NotImplementedError('Use schainpy.controller_api.ControllerThread instead Project class')
-
-    def getPlotterQueue(self):
-
-        raise NotImplementedError('Use schainpy.controller_api.ControllerThread instead Project class')
-
-    def useExternalPlotter(self):
-
-        raise NotImplementedError('Use schainpy.controller_api.ControllerThread instead Project class')
+    
 
     def run(self):
 
         log.success('Starting {}'.format(self.name), tag='')
         self.start_time = time.time()
-        self.createObjects()
-        self.connectObjects()
+        self.createObjects()        
+        self.setProxyCom()
 
-        keyList = list(self.procUnitConfObjDict.keys())
-        keyList.sort()
-
-        err = None
-
-        while(True):
-
-            is_ok = False
-
-            for procKey in keyList:
-
-                procUnitConfObj = self.procUnitConfObjDict[procKey]
-
-                try:
-                    sts = procUnitConfObj.run()
-                    is_ok = is_ok or sts
-                except SchainWarning:
-                    err = self.__handleError(procUnitConfObj, modes=[2, 3], stdout=False)
-                    is_ok = False
-                    break
-                except KeyboardInterrupt:
-                    is_ok = False
-                    break
-                except ValueError as e:
-                    time.sleep(0.5)
-                    err = self.__handleError(procUnitConfObj)
-                    is_ok = False
-                    break
-                except:
-                    time.sleep(0.5)
-                    err = self.__handleError(procUnitConfObj)
-                    is_ok = False
-                    break
-
-            # If every process unit finished so end process
-            if not(is_ok):
-                break
-
-            if not self.runController():
-                break
+        # Iniciar todos los procesos .start(), monitoreo de procesos. ELiminar lo de abajo
 
         # Closing every process
-        for procKey in keyList:
-            procUnitConfObj = self.procUnitConfObjDict[procKey]
-            procUnitConfObj.close()
-
-        if err is not None:
-            err.start()
-            # err.join()
-
         log.success('{} finished (time: {}s)'.format(
             self.name,
             time.time()-self.start_time))

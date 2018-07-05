@@ -9,8 +9,11 @@ import numpy
 
 from .figure import Figure, isRealtime, isTimeInHourRange
 from .plotting_codes import *
+from schainpy.model.proc.jroproc_base import MPDecorator
 
+from schainpy.utils import log
 
+@MPDecorator
 class SpectraPlot(Figure):
 
     isConfig = None
@@ -20,11 +23,10 @@ class SpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
-
         self.WIDTH = 250
         self.HEIGHT = 250
         self.WIDTHPROF = 120
@@ -104,6 +106,9 @@ class SpectraPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
+        if dataOut.flagNoData:
+            return dataOut
+
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
                 print('Skipping this plot function')
@@ -219,6 +224,8 @@ class SpectraPlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
+        return dataOut
+@MPDecorator
 class CrossSpectraPlot(Figure):
 
     isConfig = None
@@ -230,8 +237,8 @@ class CrossSpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'cspc'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.isConfig = False
         self.__nsubplots = 4
         self.counter_imagwr = 0
@@ -300,6 +307,9 @@ class CrossSpectraPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
+
+        if dataOut.flagNoData: 
+            return dataOut
 
         if pairsList == None:
             pairsIndexList = dataOut.pairsIndexList
@@ -440,7 +450,9 @@ class CrossSpectraPlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
+        return dataOut
 
+@MPDecorator
 class RTIPlot(Figure):
 
     __isConfig = None
@@ -450,9 +462,9 @@ class RTIPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'rti'
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Figure.__init__(self, **kwargs)
+        Figure.__init__(self)#, **kwargs)
         self.timerange = None
         self.isConfig = False
         self.__nsubplots = 1
@@ -540,6 +552,8 @@ class RTIPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
+        if dataOut.flagNoData:
+            return dataOut
 
         #colormap = kwargs.get('colormap', 'jet')
         if HEIGHT is not None:
@@ -650,7 +664,9 @@ class RTIPlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
+        return dataOut
 
+@MPDecorator
 class CoherenceMap(Figure):
     isConfig = None
     __nsubplots = None
@@ -659,8 +675,8 @@ class CoherenceMap(Figure):
     HEIGHTPROF = None
     PREFIX = 'cmap'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.timerange = 2*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -722,6 +738,10 @@ class CoherenceMap(Figure):
             coherence_cmap='jet', phase_cmap='RdBu_r', show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+
+
+        if dataOut.flagNoData:         
+            return dataOut
 
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
@@ -855,6 +875,9 @@ class CoherenceMap(Figure):
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
 
+        return dataOut
+
+@MPDecorator
 class PowerProfilePlot(Figure):
 
     isConfig = None
@@ -864,8 +887,8 @@ class PowerProfilePlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spcprofile'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -906,6 +929,9 @@ class PowerProfilePlot(Figure):
             save=False, figpath='./', figfile=None, show=True,
             ftp=False, wr_period=1, server=None,
             folder=None, username=None, password=None):
+
+        if dataOut.flagNoData:         
+            return dataOut
 
 
         if channelList == None:
@@ -978,7 +1004,10 @@ class PowerProfilePlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
+        
+        return dataOut
 
+@MPDecorator
 class SpectraCutPlot(Figure):
 
     isConfig = None
@@ -988,8 +1017,8 @@ class SpectraCutPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc_cut'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -1032,6 +1061,8 @@ class SpectraCutPlot(Figure):
             folder=None, username=None, password=None,
             xaxis="frequency"):
 
+        if dataOut.flagNoData:         
+            return dataOut
 
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -1111,6 +1142,9 @@ class SpectraCutPlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
+        return dataOut
+
+@MPDecorator
 class Noise(Figure):
 
     isConfig = None
@@ -1119,8 +1153,8 @@ class Noise(Figure):
     PREFIX = 'noise'
 
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -1208,6 +1242,9 @@ class Noise(Figure):
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+
+        if dataOut.flagNoData:         
+            return dataOut
 
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
@@ -1312,6 +1349,9 @@ class Noise(Figure):
         if save:
             self.save_data(self.filename_noise, noisedB, thisDatetime)
 
+        return dataOut
+
+@MPDecorator
 class BeaconPhase(Figure):
 
     __isConfig = None
@@ -1319,8 +1359,8 @@ class BeaconPhase(Figure):
 
     PREFIX = 'beacon_phase'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -1398,6 +1438,9 @@ class BeaconPhase(Figure):
             save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+
+        if dataOut.flagNoData:         
+            return dataOut
 
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
@@ -1540,3 +1583,5 @@ class BeaconPhase(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
+
+        return dataOut  #Yong
