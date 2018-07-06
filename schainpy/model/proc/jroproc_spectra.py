@@ -2,16 +2,24 @@ import itertools
 
 import numpy
 
-from .jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, MPDecorator, Operation
 from schainpy.model.data.jrodata import Spectra
 from schainpy.model.data.jrodata import hildebrand_sekhon
-from schainpy.utils import log #yong
+from schainpy.utils import log
 
+@MPDecorator
 class SpectraProc(ProcessingUnit):
 
-    def __init__(self, **kwargs):
+    METHODS = {'selectHeights'        : ['minHei', 'maxHei'],
+               'selectChannels'       : 'channelList',
+               'selectChannelsByIndex': 'channelIndexList',
+               'getBeaconSignal'      : ['tauindex', 'channelindex', 'hei_ref'], 
+               'selectHeightsByIndex' : ['minIndex', 'maxIndex']
+               }
 
-        ProcessingUnit.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+
+        ProcessingUnit.__init__(self)#, **kwargs)
 
         self.buffer = None
         self.firstdatatime = None
@@ -19,6 +27,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut = Spectra()
         self.id_min = None
         self.id_max = None
+        self.setupReq = False #Agregar a todas las unidades de proc
 
     def __updateSpecFromVoltage(self):
 
@@ -134,7 +143,7 @@ class SpectraProc(ProcessingUnit):
                 if self.dataOut.data_cspc is not None:
                     #desplaza a la derecha en el eje 2 determinadas posiciones
                     self.dataOut.data_cspc = numpy.roll(self.dataOut.data_cspc, shift, axis=1)
-            
+
             return True
 
         if self.dataIn.type == "Voltage":
@@ -774,7 +783,7 @@ class SpectraProc(ProcessingUnit):
 
         return 1
 
-
+@MPDecorator
 class IncohInt(Operation):
 
     __profIndex = 0
@@ -795,9 +804,11 @@ class IncohInt(Operation):
 
     n = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
+
+
 #         self.isConfig = False
 
     def setup(self, n=None, timeInterval=None, overlapping=False):
@@ -930,7 +941,7 @@ class IncohInt(Operation):
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
         if n == 1:
             return
-
+        
         dataOut.flagNoData = True
 
         if not self.isConfig:
@@ -951,3 +962,5 @@ class IncohInt(Operation):
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
+        
+        return dataOut

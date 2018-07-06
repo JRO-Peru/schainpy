@@ -6,10 +6,11 @@ Created on Jul 2, 2014
 import numpy
 
 from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Spectra
 
+@MPDecorator
 class SpectraReader(JRODataReader, ProcessingUnit):
     """
     Esta clase permite leer datos de espectros desde archivos procesados (.pdata). La lectura
@@ -69,7 +70,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
     rdPairList = []
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
         """
         Inicializador de la clase SpectraReader para la lectura de datos de espectros.
 
@@ -88,7 +89,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         """
 
         #Eliminar de la base la herencia
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)#, **kwargs)
 
 #         self.isConfig = False
 

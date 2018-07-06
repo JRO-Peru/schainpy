@@ -3,7 +3,8 @@ import numpy
 import time, datetime
 from schainpy.model.graphics import mpldriver
 
-from schainpy.model.proc.jroproc_base import Operation
+from schainpy.model.proc.jroproc_base import MPDecorator, Operation
+
 
 def isTimeInHourRange(datatime, xmin, xmax):
 
@@ -62,9 +63,9 @@ class Figure(Operation):
 
     created = False
     parameters = {}
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
     def __del__(self):
 

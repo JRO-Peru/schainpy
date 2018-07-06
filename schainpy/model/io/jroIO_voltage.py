@@ -7,7 +7,7 @@ Created on Jul 2, 2014
 import numpy
 
 from .jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Voltage
 import zmq
@@ -15,7 +15,7 @@ import tempfile
 from io import StringIO
 # from _sha import blocksize
 
-
+@MPDecorator
 class VoltageReader(JRODataReader, ProcessingUnit):
     """
     Esta clase permite leer datos de voltage desde archivos en formato rawdata (.r). La lectura
@@ -62,7 +62,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
     optchar = "D"
     dataOut = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
 
@@ -81,7 +81,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             None
         """
 
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)#, **kwargs)
 
         self.isConfig = False
 
@@ -762,3 +762,4 @@ class VoltageWriter(JRODataWriter, Operation):
         self.processingHeaderObj.processFlags = self.getProcessFlags()
 
         self.setBasicHeader()
+        
