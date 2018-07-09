@@ -9,7 +9,6 @@ import numpy
 import datetime
 
 from .jroheaderIO import SystemHeader, RadarControllerHeader
-# from schainpy import cSchain
 
 
 def getNumpyDtype(dataTypeCode):
@@ -63,46 +62,24 @@ def hildebrand_sekhon(data, navg):
         navg    :    numbers of averages
 
     Return:
-        -1        :    any error
-        anoise    :    noise's level
+        mean    :    noise's level
     """
 
-    sortdata = numpy.sort(data, axis=None)
-    lenOfData = len(sortdata)
-    nums_min = lenOfData*0.2
+    sorted_spectrum = numpy.sort(data, axis=None)
+    nnoise = len(sorted_spectrum)  # default to all points in the spectrum as noise
+    for npts in range(1, len(sorted_spectrum)+1):
+        partial = sorted_spectrum[:npts]
+        mean = partial.mean()
+        var = partial.var()
+        if var * navg < mean**2.:
+            nnoise = npts
+        else:
+            # partial spectrum no longer has characteristics of white noise
+            break
 
-    if nums_min <= 5:
-        nums_min = 5
-
-    sump = 0.
-
-    sumq = 0.
-
-    j = 0
-
-    cont = 1
-
-    while((cont==1)and(j<lenOfData)):
-
-        sump += sortdata[j]
-
-        sumq += sortdata[j]**2
-
-        if j > nums_min:
-            rtest = float(j)/(j-1) + 1.0/navg
-            if ((sumq*j) > (rtest*sump**2)):
-                j = j - 1
-                sump  = sump - sortdata[j]
-                sumq =  sumq - sortdata[j]**2
-                cont = 0
-
-        j += 1
-
-    lnoise = sump /j
-
-    return lnoise
-
-    # return cSchain.hildebrand_sekhon(sortdata, navg)
+    noise_spectrum = sorted_spectrum[:nnoise]
+    mean = noise_spectrum.mean()
+    return mean
 
 
 class Beam:
@@ -230,6 +207,12 @@ class JROData(GenericData):
     beam = Beam()
 
     profileIndex = None
+
+    error = (0, '')
+
+    def __str__(self):
+
+        return '{} - {}'.format(self.type, self.getDatatime())
 
     def getNoise(self):
 

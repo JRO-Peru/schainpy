@@ -45,9 +45,6 @@ setup(name = "schainpy",
                      },
       include_package_data = False,
       scripts = ['schainpy/gui/schainGUI'],
-      ext_modules = [
-          Extension("cSchain", ["schainpy/model/proc/extensions.c"])
-          ],
       entry_points = {
           'console_scripts': [
               'schain = schainpy.cli.cli:main',
@@ -59,9 +56,6 @@ setup(name = "schainpy",
           "scipy >= 0.14.0",
           "h5py >= 2.2.1",
           "matplotlib >= 2.0.0",
-          "pyfits >= 3.4",
-          "paramiko >= 2.1.2",
-          "paho-mqtt >= 1.2",
           "zmq",
           "fuzzywuzzy",
           "click",
