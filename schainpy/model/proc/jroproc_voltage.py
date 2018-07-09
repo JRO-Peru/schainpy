@@ -1,7 +1,7 @@
 import sys
 import numpy
 from scipy import interpolate
-from schainpy.model.proc.jroproc_base import ProcessingUnit,, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Voltage
 from schainpy.utils import log
 from time import time
