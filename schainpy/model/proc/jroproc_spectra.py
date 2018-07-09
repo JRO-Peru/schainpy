@@ -127,8 +127,6 @@ class SpectraProc(ProcessingUnit):
 
     def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None, shift_fft=False):
 
-        self.dataOut.flagNoData = True
-
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
             # if not pairsList:
@@ -783,7 +781,7 @@ class SpectraProc(ProcessingUnit):
 
         return 1
 
-@MPDecorator
+
 class IncohInt(Operation):
 
     __profIndex = 0
@@ -962,5 +960,5 @@ class IncohInt(Operation):
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
-        
+
         return dataOut

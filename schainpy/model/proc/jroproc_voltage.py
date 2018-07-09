@@ -1,7 +1,7 @@
 import sys
 import numpy
 from scipy import interpolate
-from schainpy.model.proc.jroproc_base import ProcessingUnit, MPDecorator, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit,, Operation
 from schainpy.model.data.jrodata import Voltage
 from schainpy.utils import log
 from time import time
@@ -10,16 +10,13 @@ from time import time
 @MPDecorator
 class VoltageProc(ProcessingUnit):  
     
-    METHODS = {} #yong
+    def __init__(self):
 
-    def __init__(self):#, **kwargs):    #yong
+        ProcessingUnit.__init__(self)
 
-        ProcessingUnit.__init__(self)#, **kwargs)
-
-        #         self.objectDict = {}
         self.dataOut = Voltage()
         self.flip = 1
-        self.setupReq = False  #yong
+        self.setupReq = False
 
     def run(self):
 
@@ -319,7 +316,7 @@ class VoltageProc(ProcessingUnit):
             self.dataOut.data[:,:,botLim:topLim+1]  = ynew
 
     # import collections
-@MPDecorator
+
 class CohInt(Operation):
 
     isConfig = False
@@ -581,7 +578,7 @@ class CohInt(Operation):
             #   dataOut.timeInterval = dataOut.ippSeconds * dataOut.nCohInt
             dataOut.flagNoData = False
         return dataOut
-@MPDecorator
+
 class Decoder(Operation):
 
     isConfig = False
@@ -774,7 +771,7 @@ class Decoder(Operation):
         return dataOut
     #        dataOut.flagDeflipData = True #asumo q la data no esta sin flip
 
-@MPDecorator
+
 class ProfileConcat(Operation):
 
     isConfig = False
@@ -825,7 +822,7 @@ class ProfileConcat(Operation):
                 dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight)
                 dataOut.ippSeconds *= m
         return dataOut
-@MPDecorator
+
 class ProfileSelector(Operation):
 
     profileIndex = None
@@ -986,7 +983,7 @@ class ProfileSelector(Operation):
 
         #return False
         return dataOut
-@MPDecorator
+
 class Reshaper(Operation):
 
     def __init__(self):#, **kwargs):
@@ -1091,7 +1088,7 @@ class Reshaper(Operation):
         dataOut.ippSeconds /= self.__nTxs
 
         return dataOut
-@MPDecorator
+
 class SplitProfiles(Operation):
 
     def __init__(self):#, **kwargs):
@@ -1133,7 +1130,7 @@ class SplitProfiles(Operation):
         dataOut.ippSeconds /= n
 
         return dataOut
-@MPDecorator
+
 class CombineProfiles(Operation):
     def __init__(self):#, **kwargs):
 

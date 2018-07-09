@@ -12,7 +12,7 @@ import math
 import time
 import zmq
 from multiprocessing import Process, cpu_count
-
+from threading import Thread
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
 
@@ -89,6 +89,18 @@ def MPProject(project, n=cpu_count()):
             process.terminate()
 
         time.sleep(3)
+
+def wait(context):
+    
+    time.sleep(1)
+    c = zmq.Context()
+    receiver = c.socket(zmq.SUB)
+    receiver.connect('ipc:///tmp/schain_{}_pub'.format(self.id))    
+    receiver.setsockopt(zmq.SUBSCRIBE, self.id.encode())
+    log.error('startinggg')
+    msg = receiver.recv_multipart()[1]
+    #log.error(msg)
+    context.terminate()
 
 class ParameterConf():
 
@@ -281,13 +293,6 @@ class ParameterConf():
 
 class OperationConf():
 
-    id = None
-    name = None
-    priority = None
-    type = None
-
-    parmConfObjList = []
-
     ELEMENTNAME = 'Operation'
 
     def __init__(self):
@@ -369,9 +374,10 @@ class OperationConf():
 
         return kwargs
 
-    def setup(self, id, name, priority, type):
+    def setup(self, id, name, priority, type, project_id):
 
         self.id = str(id)
+        self.project_id = project_id
         self.name = name
         self.type = type
         self.priority = priority
@@ -459,28 +465,17 @@ class OperationConf():
     def createObject(self):
 
         className = eval(self.name)
-        kwargs = self.getKwargs()
-
-        opObj = className(self.id, **kwargs)
-
-        opObj.start()
-
-        print('    Operation created')
+        
+        if self.type == 'other':
+            opObj = className()
+        elif self.type == 'external':
+            kwargs = self.getKwargs()
+            opObj = className(self.id, self.project_id, **kwargs)
+            opObj.start()
 
         return opObj
 
 class ProcUnitConf():
-
-    id = None
-    name = None
-    datatype = None
-    inputId = None
-    parentId = None
-
-    opConfObjList = []
-
-    procUnitObj = None
-    opObjList = []
 
     ELEMENTNAME = 'ProcUnit'
 
@@ -490,9 +485,7 @@ class ProcUnitConf():
         self.datatype = None
         self.name = None
         self.inputId = None 
-
         self.opConfObjList = []
-
         self.procUnitObj = None
         self.opObjDict = {}
 
@@ -512,7 +505,7 @@ class ProcUnitConf():
 
         return self.id
 
-    def updateId(self, new_id, parentId=parentId): 
+    def updateId(self, new_id): 
         '''
         new_id = int(parentId) * 10 + (int(self.id) % 10)
         new_inputId = int(parentId) * 10 + (int(self.inputId) % 10)
@@ -534,6 +527,7 @@ class ProcUnitConf():
         #self.inputId = str(new_inputId)
         '''
         n = 1
+
     def getInputId(self):
 
         return self.inputId
@@ -565,7 +559,7 @@ class ProcUnitConf():
 
         return self.procUnitObj
 
-    def setup(self, id, name, datatype, inputId, parentId=None):
+    def setup(self, project_id, id, name, datatype, inputId):
         '''
             id sera el topico a publicar
             inputId sera el topico a subscribirse
@@ -587,10 +581,10 @@ class ProcUnitConf():
             datatype = name.replace('Proc', '')
 
         self.id = str(id)
+        self.project_id = project_id
         self.name = name
         self.datatype = datatype
         self.inputId = inputId 
-        self.parentId = parentId
         self.opConfObjList = []
 
         self.addOperation(name='run', optype='self') 
@@ -613,7 +607,7 @@ class ProcUnitConf():
 
         return opObj
 
-    def addOperation(self, name, optype = 'self'):
+    def addOperation(self, name, optype='self'):
         '''
             Actualizacion - > proceso comunicacion
             En el caso de optype='self', elminar. DEfinir comuncacion IPC -> Topic
@@ -623,10 +617,8 @@ class ProcUnitConf():
 
         id = self.__getNewId()
         priority = self.__getPriority() # Sin mucho sentido, pero puede usarse
-
         opConfObj = OperationConf()
-        opConfObj.setup(id, name=name, priority=priority, type=optype)
-
+        opConfObj.setup(id, name=name, priority=priority, type=optype, project_id=self.project_id)
         self.opConfObjList.append(opConfObj)
 
         return opConfObj
@@ -685,61 +677,32 @@ class ProcUnitConf():
 
         return kwargs
 
-    def createObjects(self, dictUnits):
+    def createObjects(self):
         '''
-        Instancia de unidades de procesamiento. 
-
+        Instancia de unidades de procesamiento.
         '''
         className = eval(self.name)
         kwargs = self.getKwargs()
-        procUnitObj = className(self.id, self.inputId, dictUnits, **kwargs) # necesitan saber su id y su entrada por fines de ipc
-
+        procUnitObj = className(self.id, self.inputId, self.project_id, **kwargs) # necesitan saber su id y su entrada por fines de ipc
+        log.success('creating process...', self.name)
 
         for opConfObj in self.opConfObjList:
-
-            if opConfObj.type == 'self' and self.name == 'run':
+            
+            if opConfObj.type == 'self' and opConfObj.name == 'run':
                 continue
             elif opConfObj.type == 'self':
-                procUnitObj.addOperationKwargs(
-                    opConfObj.id, **opConfObj.getKwargs())
-                continue
-            print("Creating operation process:", opConfObj.name, "for", self.name)  
-            opObj = opConfObj.createObject()
+                opObj = getattr(procUnitObj, opConfObj.name)
+            else:
+                opObj = opConfObj.createObject()
             
+            log.success('creating operation: {}, type:{}'.format(
+                opConfObj.name,
+                opConfObj.type), self.name)
             
-            #self.opObjDict[opConfObj.id] = opObj.name
-            
-            procUnitObj.addOperation(opConfObj.name, opConfObj.id)          
+            procUnitObj.addOperation(opConfObj, opObj)
      
         procUnitObj.start()
-
         self.procUnitObj = procUnitObj
-        
-
-        return procUnitObj
-
-    def run(self):
-        
-        is_ok = True
-        """
-        for opConfObj in self.opConfObjList:
-
-            kwargs = {}
-            for parmConfObj in opConfObj.getParameterObjList():
-                if opConfObj.name == 'run' and parmConfObj.name == 'datatype':
-                    continue
-
-                kwargs[parmConfObj.name] = parmConfObj.getValue()
-
-            sts = self.procUnitObj.call(opType=opConfObj.type,
-                                        opName=opConfObj.name,
-                                        opId=opConfObj.id)
-
-            is_ok = is_ok or sts
-        
-        """
-        return is_ok
-        
         
     def close(self):
 
@@ -757,12 +720,6 @@ class ProcUnitConf():
 
 class ReadUnitConf(ProcUnitConf):
 
-    path = None
-    startDate = None
-    endDate = None
-    startTime = None
-    endTime = None
-
     ELEMENTNAME = 'ReadUnit'
 
     def __init__(self):
@@ -771,18 +728,14 @@ class ReadUnitConf(ProcUnitConf):
         self.datatype = None
         self.name = None
         self.inputId = None
-
-        self.parentId = None
-
         self.opConfObjList = []
-        self.opObjList = []
 
     def getElementName(self):
 
         return self.ELEMENTNAME 
     
-    def setup(self, id, name, datatype, path='', startDate='', endDate='',
-              startTime='', endTime='', parentId=None, server=None, **kwargs):
+    def setup(self, project_id, id, name, datatype, path='', startDate='', endDate='',
+              startTime='', endTime='', server=None, **kwargs):
 
 
         '''
@@ -810,6 +763,7 @@ class ReadUnitConf(ProcUnitConf):
                 name = '{}Reader'.format(name)
 
         self.id = id
+        self.project_id = project_id
         self.name = name
         self.datatype = datatype
         if path != '':
@@ -818,8 +772,6 @@ class ReadUnitConf(ProcUnitConf):
         self.endDate = endDate
         self.startTime = startTime
         self.endTime = endTime
-        self.inputId = '0'
-        self.parentId = parentId
         self.server = server
         self.addRunOperation(**kwargs)
 
@@ -834,13 +786,12 @@ class ReadUnitConf(ProcUnitConf):
             self.datatype = self.name.replace('Reader', '')
 
         attrs = ('path', 'startDate', 'endDate',
-                 'startTime', 'endTime', 'parentId')
+                 'startTime', 'endTime')
 
         for attr in attrs:
             if attr in kwargs:
                 setattr(self, attr, kwargs.pop(attr))
 
-        self.inputId = '0'
         self.updateRunOperation(**kwargs)
 
     def removeOperations(self):
@@ -900,13 +851,9 @@ class ReadUnitConf(ProcUnitConf):
         self.id = upElement.get('id')
         self.name = upElement.get('name')
         self.datatype = upElement.get('datatype')
-        self.inputId = upElement.get('inputId')
 
         if self.ELEMENTNAME == 'ReadUnit':
             self.datatype = self.datatype.replace('Reader', '')
-
-        if self.inputId == 'None':
-            self.inputId = '0'
 
         self.opConfObjList = []
 
@@ -927,20 +874,13 @@ class ReadUnitConf(ProcUnitConf):
 
 class Project(Process):
 
-    id = None
-    description = None
-    filename = None
-
-    procUnitConfObjDict = None
-
     ELEMENTNAME = 'Project'
-
-    
 
     def __init__(self):
 
         Process.__init__(self)
         self.id = None
+        self.filename = None
         self.description = None
         self.email = None
         self.alarm = None
@@ -949,7 +889,6 @@ class Project(Process):
     def __getNewId(self):
 
         idList = list(self.procUnitConfObjDict.keys())
-
         id = int(self.id) * 10
 
         while True:
@@ -984,13 +923,13 @@ class Project(Process):
 
             procUnitConfObj = self.procUnitConfObjDict[procKey]
             idProcUnit = str(int(self.id) * 10 + n)
-            procUnitConfObj.updateId(idProcUnit, parentId=self.id)
+            procUnitConfObj.updateId(idProcUnit)
             newProcUnitConfObjDict[idProcUnit] = procUnitConfObj
             n += 1
 
         self.procUnitConfObjDict = newProcUnitConfObjDict
 
-    def setup(self, id, name='', description='', email=None, alarm=[]):
+    def setup(self, id=1, name='', description='', email=None, alarm=[]):
 
         print(' ')
         print('*' * 60)
@@ -1031,9 +970,7 @@ class Project(Process):
             idReadUnit = str(id)
 
         readUnitConfObj = ReadUnitConf()
-        readUnitConfObj.setup(idReadUnit, name, datatype,
-                              parentId=self.id, **kwargs)
-
+        readUnitConfObj.setup(self.id, idReadUnit, name, datatype, **kwargs)
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
         return readUnitConfObj
@@ -1051,11 +988,8 @@ class Project(Process):
         '''
 
         idProcUnit = self.__getNewId() #Topico para subscripcion
-
         procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(idProcUnit, name, datatype, inputId, #topic_read, topic_write, 
-                              parentId=self.id)
-
+        procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId) #topic_read, topic_write, 
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
         return procUnitConfObj
@@ -1176,10 +1110,6 @@ class Project(Process):
         for readUnitElement in readUnitElementList:
             readUnitConfObj = ReadUnitConf()
             readUnitConfObj.readXml(readUnitElement)
-
-            if readUnitConfObj.parentId == None:
-                readUnitConfObj.parentId = self.id
-
             self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
 
         procUnitElementList = self.projectElement.iter(
@@ -1188,33 +1118,25 @@ class Project(Process):
         for procUnitElement in procUnitElementList:
             procUnitConfObj = ProcUnitConf()
             procUnitConfObj.readXml(procUnitElement)
-
-            if procUnitConfObj.parentId == None:
-                procUnitConfObj.parentId = self.id
-
             self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
         self.filename = abs_file
 
         return 1
 
-    def printattr(self):
+    def __str__(self):
 
         print('Project[%s]: name = %s, description = %s' % (self.id,
                                                             self.name,
                                                             self.description))
 
-        for procUnitConfObj in list(self.procUnitConfObjDict.values()):
-            procUnitConfObj.printattr()
+        for procUnitConfObj in self.procUnitConfObjDict.values():
+            print(procUnitConfObj)
 
     def createObjects(self):
 
-        for procUnitConfObj in list(self.procUnitConfObjDict.values()):
-            print("Creating process:", procUnitConfObj.name)
-            procUnitConfObj.createObjects(self.procUnitConfObjDict)
-            
-
-        print('All processes were created')
+        for procUnitConfObj in self.procUnitConfObjDict.values():
+            procUnitConfObj.createObjects()
 
     def __handleError(self, procUnitConfObj, modes=None, stdout=True):
 
@@ -1305,29 +1227,33 @@ class Project(Process):
         self.filename = filename
 
     def setProxyCom(self):
-        
-        ctx = zmq.Context()
-        if not os.path.exists('/tmp/socketTmp'): os.mkdir('/tmp/socketTmp')
-        xsub = ctx.socket(zmq.XSUB)
-        xsub.bind('ipc:///tmp/socketTmp/a')
-        xpub = ctx.socket(zmq.XPUB)
-        xpub.bind('ipc:///tmp/socketTmp/b')
-        
-        print("Controller Ready: Processes and proxy created")
-        zmq.proxy(xsub, xpub)
 
-    
+        if not os.path.exists('/tmp/schain'):
+            os.mkdir('/tmp/schain')
+        
+        self.ctx = zmq.Context()
+        xpub = self.ctx.socket(zmq.XPUB)
+        xpub.bind('ipc:///tmp/schain/{}_pub'.format(self.id))
+        xsub = self.ctx.socket(zmq.XSUB)
+        xsub.bind('ipc:///tmp/schain/{}_sub'.format(self.id))
+        
+        try:
+            zmq.proxy(xpub, xsub)
+        except zmq.ContextTerminated:
+            xpub.close()
+            xsub.close()
 
     def run(self):
 
-        log.success('Starting {}'.format(self.name), tag='')
+        log.success('Starting {}: {}'.format(self.name, self.id), tag='')
         self.start_time = time.time()
-        self.createObjects()        
+        self.createObjects()
+        # t = Thread(target=wait, args=(self.ctx, ))
+        # t.start()
         self.setProxyCom()
-
+        
         # Iniciar todos los procesos .start(), monitoreo de procesos. ELiminar lo de abajo
 
-        # Closing every process
         log.success('{} finished (time: {}s)'.format(
             self.name,
             time.time()-self.start_time))

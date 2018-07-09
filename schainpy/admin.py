@@ -11,7 +11,10 @@ import sys
 import time
 import traceback
 import smtplib
-import configparser
+if sys.version[0] == '3':
+    from configparser import ConfigParser
+else:
+    from ConfigParser import ConfigParser
 import io
 from threading import Thread
 from multiprocessing import Process
@@ -144,7 +147,7 @@ class SchainConfigure():
             return
         
         # create Parser using standard module ConfigParser
-        self.__parser = configparser.ConfigParser()
+        self.__parser = ConfigParser()
         
         # read conf file into a StringIO with "[madrigal]\n" section heading prepended
         strConfFile = io.StringIO("[schain]\n" + self.__confFile.read())

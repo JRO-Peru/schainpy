@@ -898,7 +898,7 @@ class JRODataReader(JRODataIO):
             newFile = self.__setNextFileOffline()
 
         if not(newFile):
-            raise(schainpy.admin.SchainWarning('No more files to read'))
+            self.dataOut.error = (-1, 'No more files to read') 
             return 0
 
         if self.verbose:
@@ -1052,7 +1052,7 @@ class JRODataReader(JRODataIO):
         # Skip block out of startTime and endTime
         while True:
             if not(self.__setNewBlock()):
-                raise(schainpy.admin.SchainWarning('No more files'))
+                self.dataOut.error = (-1, 'No more files to read') 
                 return 0
 
             if not(self.readBlock()):
@@ -1324,7 +1324,7 @@ class JRODataReader(JRODataIO):
                     sleep(self.delay)
 
                 if not(fullpath):
-                    raise(schainpy.admin.SchainWarning('There isn\'t any valid file in {}'.format(path)))
+                    self.dataOut.error = (-1, 'There isn\'t any valid file in {}'.format(path)) 
                     return
 
                 self.year = year

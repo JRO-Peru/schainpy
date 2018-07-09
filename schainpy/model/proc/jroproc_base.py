@@ -18,7 +18,6 @@ import time
 import pickle
 import os
 from multiprocessing import Process
-
 from schainpy.utils import log
 
 
@@ -36,43 +35,30 @@ class ProcessingUnit(object):
    
 
     """
-    # objeto de datos de entrada (Voltage, Spectra o Correlation)
+    
+    METHODS = {}
     dataIn = None
     dataInList = []
-
-    # objeto de datos de entrada (Voltage, Spectra o Correlation)
-
     id = None
     inputId = None
-
     dataOut = None
-
     dictProcs = None
-    
-    operations2RunDict = None
-
     isConfig = False
 
     def __init__(self):
 
         self.dataIn = None
         self.dataOut = None
-
         self.isConfig = False
+        self.operations = []
 
     def getAllowedArgs(self):
         if hasattr(self, '__attrs__'):
             return self.__attrs__
         else:
             return inspect.getargspec(self.run).args
-
-    def addOperationKwargs(self, objId, **kwargs):
-        '''
-        '''
-
-        self.operationKwargs[objId] = kwargs
  
-    def addOperation(self, opObj, objId):
+    def addOperation(self, conf, operation):
 
         """
         This method is used in the controller, and update the dictionary containing the operations to execute. The dict 
@@ -90,17 +76,14 @@ class ProcessingUnit(object):
                 objId    :    identificador del objeto, necesario para comunicar con master(procUnit)
         """
 
-        self.operations2RunDict[objId] = opObj
-
-        return objId
-
+        self.operations.append((operation, conf.type, conf.id, conf.getKwargs()))
 
     def getOperationObj(self, objId):
 
-        if objId not in list(self.operations2RunDict.keys()):
+        if objId not in list(self.operations.keys()):
             return None
 
-        return self.operations2RunDict[objId]
+        return self.operations[objId]
 
     def operation(self, **kwargs):
 
@@ -200,339 +183,185 @@ class Operation(object):
         pass
 
 
-######### Decorator #########
-
-
 def MPDecorator(BaseClass):
     
     """
-    "Multiprocessing class decorator"
+    Multiprocessing class decorator
 
-        This function add multiprocessing features to the base class. Also,
-        it handle the communication beetween processes (readers, procUnits and operations). 
-        Receive the arguments at the moment of instantiation. According to that, discriminates if it
-        is a procUnit or an operation
+    This function add multiprocessing features to a BaseClass. Also, it handle
+    the communication beetween processes (readers, procUnits and operations). 
     """
   
     class MPClass(BaseClass, Process):
-      
-        "This is the overwritten class"
-        operations2RunDict = None
-        socket_l = None
-        socket_p = None
-        socketOP = None
-        socket_router = None
-        dictProcs = None
-        typeProc = None
+
         def __init__(self, *args, **kwargs):
             super(MPClass, self).__init__()
             Process.__init__(self)
-            
-     
             self.operationKwargs = {}
             self.args = args
-            
-
-            self.operations2RunDict = {}
             self.kwargs = kwargs
-
-        # The number of arguments (args) determine the type of process
+            self.sender = None
+            self.receiver = None
+            self.name = BaseClass.__name__
 
             if len(self.args) is 3:
                 self.typeProc = "ProcUnit"
-                self.id = args[0] #topico de publicacion
-                self.inputId = args[1] #topico de  subcripcion           
-                self.dictProcs = args[2] #diccionario de procesos globales
+                self.id = args[0] 
+                self.inputId = args[1]  
+                self.project_id = args[2]        
             else:
                 self.id = args[0]
+                self.inputId = args[0]
+                self.project_id = args[1]
                 self.typeProc = "Operation"
-                         
-        def addOperationKwargs(self, objId, **kwargs):
-     
-            self.operationKwargs[objId] = kwargs
 
         def getAllowedArgs(self):
 
             if hasattr(self, '__attrs__'):
                 return self.__attrs__
             else:
-                return inspect.getargspec(self.run).args
+                return inspect.getargspec(BaseClass.run).args
 
-
-        def sockListening(self, topic):
-
-            """
-            This function create a socket to receive objects.
-                The 'topic' argument is related to the publisher process from which the self process is
-                listening (data).
-                In the case were the self process is listening to a Reader (proc Unit), 
-                special conditions are introduced to maximize parallelism.
-            """
-
-            cont = zmq.Context()
-            zmq_socket = cont.socket(zmq.SUB)
-            if not os.path.exists('/tmp/socketTmp'): 
-                os.mkdir('/tmp/socketTmp')
+        def subscribe(self):
+            '''
+            This function create a socket to receive objects from the
+            topic `inputId`.
+            '''
             
-            if 'Reader' in self.dictProcs[self.inputId].name:
-                zmq_socket.connect('ipc:///tmp/socketTmp/b')
-                
-            else:
-                zmq_socket.connect('ipc:///tmp/socketTmp/%s' % self.inputId)
-                
-            #log.error('RECEIVING FROM {} {}'.format(self.inputId, str(topic).encode()))
-            zmq_socket.setsockopt(zmq.SUBSCRIBE, str(topic).encode())   #yong
+            c = zmq.Context()
+            self.receiver = c.socket(zmq.SUB)
+            self.receiver.connect('ipc:///tmp/schain/{}_pub'.format(self.project_id))
+            self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
 
-            return zmq_socket
-
-
-        def listenProc(self, sock):
-
-            """
-            This function listen to a ipc addres until a message is recovered. To serialize the 
-            data (object), pickle has been use.
-            The 'sock' argument is the socket previously connect to an ipc address and with a topic subscription.
-            """
+        def listen(self):
+            '''
+            This function waits for objects and deserialize using pickle
+            '''
             
-            a = sock.recv_multipart()
-            a = pickle.loads(a[1])
-            return a
+            data =  pickle.loads(self.receiver.recv_multipart()[1])
+            return data
 
-        def sockPublishing(self):
+        def set_publisher(self):
+            '''
+            This function create a socket for publishing purposes. 
+            '''
 
-            """
-            This function create a socket for publishing purposes.
-            Depending on the process type from where is created, it binds or connect
-            to special IPC addresses. 
-            """
-            time.sleep(4)              #yong
-            context = zmq.Context()
-            zmq_socket = context.socket(zmq.PUB)      
-            if not os.path.exists('/tmp/socketTmp'): os.mkdir('/tmp/socketTmp')
-            if 'Reader' in self.dictProcs[self.id].name:
-                zmq_socket.connect('ipc:///tmp/socketTmp/a')        
-            else:           
-                zmq_socket.bind('ipc:///tmp/socketTmp/%s' % self.id)
+            time.sleep(1)
+            c = zmq.Context()
+            self.sender = c.socket(zmq.PUB)      
+            self.sender.connect('ipc:///tmp/schain/{}_sub'.format(self.project_id))
 
-            return zmq_socket
+        def publish(self, data, id): 
+            '''
+            This function publish an object, to a specific topic.
+            '''
 
-        def publishProc(self, sock, data): 
-
-            """
-            This function publish a python object (data) under a specific topic in a socket (sock).
-            Usually, the topic is the self id of the process.
-            """
-
-            sock.send_multipart([str(self.id).encode(), pickle.dumps(data)]) #yong
-            
-            return True
-
-        def sockOp(self):
-
-            """
-            This function create a socket for communication purposes with operation processes.
-            """
-
-            cont = zmq.Context()
-            zmq_socket = cont.socket(zmq.DEALER)
-            
-            if python_version()[0] == '2':
-                zmq_socket.setsockopt(zmq.IDENTITY, self.id)
-            if python_version()[0] == '3':
-                zmq_socket.setsockopt_string(zmq.IDENTITY, self.id)
-
-
-            return zmq_socket
-
-
-        def execOp(self, socket, opId, dataObj): 
-
-            """
-            This function 'execute' an operation main routine by establishing a
-            connection with it and sending a python object (dataOut).
-            """
-            if not os.path.exists('/tmp/socketTmp'): os.mkdir('/tmp/socketTmp')
-            socket.connect('ipc:///tmp/socketTmp/%s' %opId)
-
-            
-            socket.send(pickle.dumps(dataObj))   #yong
-
-            argument = socket.recv_multipart()[0]
-
-            argument = pickle.loads(argument)
-
-            return argument
-
-        def sockIO(self):
-
-            """
-            Socket defined for an operation process. It is able to recover the object sent from another process as well as a
-            identifier of who sent it.
-            """
-
-            cont = zmq.Context()
-            if not os.path.exists('/tmp/socketTmp'): os.mkdir('/tmp/socketTmp')
-            socket = cont.socket(zmq.ROUTER)
-            socket.bind('ipc:///tmp/socketTmp/%s' % self.id)
-
-            return socket
-
-        def funIOrec(self, socket):
-
-            """
-            Operation method, recover the id of the process who sent a python object. 
-            The 'socket' argument is the socket binded to a specific process ipc.
-            """
-
-            #id_proc = socket.recv()
-  
-            #dataObj = socket.recv_pyobj()
-            
-            dataObj = socket.recv_multipart()
-            
-            dataObj[1] = pickle.loads(dataObj[1])
-            return dataObj[0], dataObj[1]
-
-        def funIOsen(self, socket, data, dest):
-
-            """
-            Operation method, send a python object to a specific destination. 
-            The 'dest' argument is the id of a proccesinf unit. 
-            """
-    
-            socket.send_multipart([dest, pickle.dumps(data)])  #yong
-
-            return True
-
+            self.sender.send_multipart([str(id).encode(), pickle.dumps(data)])
 
         def runReader(self):
-
-            # time.sleep(3)
+            '''
+            Run fuction for read units
+            '''
             while True:
             
                 BaseClass.run(self, **self.kwargs)
 
-
-                keyList = list(self.operations2RunDict.keys())
-                keyList.sort()
-                    
-                for key in keyList:
-                    self.socketOP = self.sockOp()
-                    self.dataOut = self.execOp(self.socketOP, key, self.dataOut)
-
-                
-                if self.flagNoMoreFiles: #Usar un objeto con flags para saber si termino el proc o hubo un error
-                    self.publishProc(self.socket_p, "Finish")
+                if self.dataOut.error[0] == -1:
+                    log.error(self.dataOut.error[1])
+                    self.publish('end', self.id)
+                    #self.sender.send_multipart([str(self.project_id).encode(), 'end'.encode()])
                     break
+
+                for op, optype, id, kwargs in self.operations:
+                    if optype=='self':
+                        op(**kwargs)
+                    elif optype=='other':                        
+                        self.dataOut = op.run(self.dataOut, **self.kwargs)
+                    elif optype=='external':
+                        self.publish(self.dataOut, opId)
 
                 if self.dataOut.flagNoData:
                     continue
               
-                #print("Publishing data...")
-                self.publishProc(self.socket_p, self.dataOut)   
-                # time.sleep(2)
-                  
-            
-            print("%s done" %BaseClass.__name__)
-            return 0
- 
+                self.publish(self.dataOut, self.id)                  
+             
         def runProc(self):
-
-            # All the procUnits with kwargs that require a setup initialization must be defined here.
-
-            if self.setupReq:
-                BaseClass.setup(self, **self.kwargs)
+            '''
+            Run function for proccessing units
+            '''
 
             while True:
-                self.dataIn = self.listenProc(self.socket_l)
-                #print("%s received data" %BaseClass.__name__)
-                
-                if self.dataIn == "Finish":
+                self.dataIn = self.listen()
+
+                if self.dataIn == 'end':
+                    self.publish('end', self.id)
+                    for op, optype, opId, kwargs in self.operations:
+                        if optype == 'external':
+                            self.publish('end', opId)
                     break
 
-                m_arg = list(self.kwargs.keys())
-                num_arg = list(range(1,int(BaseClass.run.__code__.co_argcount)))
-               
-                run_arg = {}
-                
-                for var in num_arg:
-                    if BaseClass.run.__code__.co_varnames[var] in m_arg:
-                        run_arg[BaseClass.run.__code__.co_varnames[var]] = self.kwargs[BaseClass.run.__code__.co_varnames[var]]
+                if self.dataIn.flagNoData:
+                    continue
 
-                #BaseClass.run(self, **self.kwargs)
-                BaseClass.run(self, **run_arg)
+                BaseClass.run(self, **self.kwargs)
 
-                ## Iterar sobre una serie de data que podrias aplicarse
-
-                for m_name in BaseClass.METHODS:
-
-                    met_arg = {}
-
-                    for arg in m_arg:
-                        if arg in BaseClass.METHODS[m_name]:
-                            for att in BaseClass.METHODS[m_name]:
-                                met_arg[att] = self.kwargs[att]
-
-                            method = getattr(BaseClass, m_name)
-                            method(self, **met_arg)
-                            break
+                for op, optype, opId, kwargs in self.operations:
+                    if optype=='self':
+                        op(**kwargs)
+                    elif optype=='other':
+                        self.dataOut = op.run(self.dataOut, **kwargs)
+                    elif optype=='external':
+                        self.publish(self.dataOut, opId)
 
                 if self.dataOut.flagNoData:
                     continue
 
-                keyList = list(self.operations2RunDict.keys())
-                keyList.sort()
-                    
-                for key in keyList:
-               
-                    self.socketOP = self.sockOp()
-                    self.dataOut = self.execOp(self.socketOP, key, self.dataOut)
-     
-                     
-                self.publishProc(self.socket_p, self.dataOut)
-                
-                    
-            print("%s done" %BaseClass.__name__)
-
-            return 0
+                self.publish(self.dataOut, self.id)
 
         def runOp(self):
+            '''
+            Run function for operations
+            '''
 
             while True:
 
-                [self.dest ,self.buffer] = self.funIOrec(self.socket_router)
-
-                self.buffer = BaseClass.run(self, self.buffer, **self.kwargs)
+                dataOut = self.listen()
                 
-                self.funIOsen(self.socket_router, self.buffer, self.dest)
-
-            print("%s done" %BaseClass.__name__)
-            return 0
-        
- 
+                if dataOut == 'end':
+                    break
+                
+                BaseClass.run(self, dataOut, **self.kwargs)
+                 
         def run(self):
-
-            if self.typeProc is "ProcUnit":
-                    
-                self.socket_p = self.sockPublishing()
             
-                if 'Reader' not in self.dictProcs[self.id].name:
-                    self.socket_l = self.sockListening(self.inputId)
-                    self.runProc()               
+            if self.typeProc is "ProcUnit":
+                
+                if self.inputId is not None:
+                    self.subscribe()
+                self.set_publisher()
 
+                if 'Reader' not in BaseClass.__name__:
+                    self.runProc()
                 else:
-     
                     self.runReader()
 
             elif self.typeProc is "Operation":
                 
-                self.socket_router = self.sockIO()
-
+                self.subscribe()
                 self.runOp()
 
             else:
                 raise ValueError("Unknown type")
 
-            return 0
-      
+            print("%s done" % BaseClass.__name__)
+            self.close()
+
+        def close(self):
+            
+            if self.sender:
+                self.sender.close()
+            
+            if self.receiver:
+                self.receiver.close()
+
     return MPClass
