@@ -4,7 +4,8 @@ import numpy
 import inspect
 from .figure import Figure, isRealtime, isTimeInHourRange
 from .plotting_codes import *
-
+from schainpy.model.proc.jroproc_base import MPDecorator
+from schainpy.utils import log
 
 class FitGauPlot(Figure):
 
@@ -225,8 +226,8 @@ class MomentsPlot(Figure):
     WIDTHPROF = None
     HEIGHTPROF = None
     PREFIX = 'prm'
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -402,7 +403,6 @@ class MomentsPlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
-
 
 
 class SkyMapPlot(Figure):
@@ -773,7 +773,7 @@ class WindProfilerPlot(Figure):
             self.isConfig = False
             update_figfile = True
 
-
+@MPDecorator
 class ParametersPlot(Figure):
 
     __isConfig = None
@@ -786,8 +786,8 @@ class ParametersPlot(Figure):
     nplots = None
     nchan = None
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.timerange = None
         self.isConfig = False
         self.__nsubplots = 1
@@ -866,6 +866,9 @@ class ParametersPlot(Figure):
             zmin            :    None,
             zmax            :    None
         """
+        if dataOut.flagNoData:
+            return dataOut
+        
         
         if HEIGHT is not None:
             self.HEIGHT = HEIGHT
@@ -981,8 +984,8 @@ class ParametersPlot(Figure):
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
 
-
-
+        return dataOut 
+@MPDecorator
 class Parameters1Plot(Figure):
 
     __isConfig = None
@@ -992,8 +995,8 @@ class Parameters1Plot(Figure):
     HEIGHTPROF = None
     PREFIX = 'prm'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.timerange = 2*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -1080,6 +1083,8 @@ class Parameters1Plot(Figure):
             zmin            :    None,
             zmax            :    None
         """
+        if dataOut.flagNoData:
+            return dataOut
 
         data_param = getattr(dataOut, parameterObject)
 
@@ -1230,6 +1235,7 @@ class Parameters1Plot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
                   update_figfile=False)
+        return dataOut
 
 class SpectralFittingPlot(Figure):
 
@@ -2149,3 +2155,4 @@ class NSMeteorDetection2Plot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
+                  

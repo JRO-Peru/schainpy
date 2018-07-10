@@ -10,16 +10,10 @@ from schainpy.utils import log
 @MPDecorator
 class SpectraProc(ProcessingUnit):
 
-    METHODS = {'selectHeights'        : ['minHei', 'maxHei'],
-               'selectChannels'       : 'channelList',
-               'selectChannelsByIndex': 'channelIndexList',
-               'getBeaconSignal'      : ['tauindex', 'channelindex', 'hei_ref'], 
-               'selectHeightsByIndex' : ['minIndex', 'maxIndex']
-               }
 
-    def __init__(self):#, **kwargs):
+    def __init__(self):
 
-        ProcessingUnit.__init__(self)#, **kwargs)
+        ProcessingUnit.__init__(self)
 
         self.buffer = None
         self.firstdatatime = None
@@ -129,10 +123,6 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-            # if not pairsList:
-            #     pairsList = itertools.combinations(self.dataOut.channelList, 2)
-            # if self.dataOut.data_cspc is not None:
-            #     self.__selectPairs(pairsList)
             if shift_fft:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 shift = int(self.dataOut.nFFTPoints/2)
@@ -802,12 +792,9 @@ class IncohInt(Operation):
 
     n = None
 
-    def __init__(self):#, **kwargs):
+    def __init__(self):
 
-        Operation.__init__(self)#, **kwargs)
-
-
-#         self.isConfig = False
+        Operation.__init__(self)
 
     def setup(self, n=None, timeInterval=None, overlapping=False):
         """
@@ -838,7 +825,7 @@ class IncohInt(Operation):
         if n is not None:
             self.n = int(n)
         else:
-            # if (type(timeInterval)!=integer) -> change this line
+            
             self.__integrationtime = int(timeInterval)
             self.n = None
             self.__byTime = True

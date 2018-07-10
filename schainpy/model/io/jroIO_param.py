@@ -6,13 +6,14 @@ import re
 import datetime
 
 from schainpy.model.data.jrodata import *
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 # from .jroIO_base import *
 from schainpy.model.io.jroIO_base import *
 import schainpy
+from schainpy.utils import log
 
-
-class ParamReader(ProcessingUnit):
+@MPDecorator
+class ParamReader(JRODataReader,ProcessingUnit):
     '''
     Reads HDF5 format files
 
@@ -74,8 +75,8 @@ class ParamReader(ProcessingUnit):
     dataOut = None
 
 
-    def __init__(self, **kwargs):
-        ProcessingUnit.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        ProcessingUnit.__init__(self) #, **kwargs)
         self.dataOut = Parameters()
         return
 
@@ -534,7 +535,7 @@ class ParamReader(ProcessingUnit):
         self.getData()
 
         return
-
+@MPDecorator
 class ParamWriter(Operation):
     '''
     HDF5 Writer, stores parameters data in HDF5 format files
@@ -602,9 +603,9 @@ class ParamWriter(Operation):
 
     lastTime = None
 
-    def __init__(self, **kwargs):
-        Operation.__init__(self, **kwargs)
-        self.isConfig = False
+    def __init__(self):#, **kwargs):
+        Operation.__init__(self)#, **kwargs)
+        #self.isConfig = False
         return
 
     def setup(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
@@ -614,11 +615,12 @@ class ParamWriter(Operation):
         self.dataList = dataList
         self.dataOut = dataOut
         self.mode = mode
-        
         if self.mode is not None:
             self.mode = numpy.zeros(len(self.dataList)) + mode
         else:
+            #self.mode = numpy.ones(len(self.dataList),int)
             self.mode = numpy.ones(len(self.dataList))
+        log.error(self.mode)#yong
 
         arrayDim = numpy.zeros((len(self.dataList),5))
 
@@ -640,6 +642,9 @@ class ParamWriter(Operation):
 
             #Not array, just a number
             #Mode 0
+            #log.error(mode)#yong
+            #log.error(len(mode))#yong
+            #log.error(type(mode))#yong
             if type(dataAux)==float or type(dataAux)==int:
                 dsDict['mode'] = 0
                 dsDict['nDim'] = 0
@@ -647,7 +652,7 @@ class ParamWriter(Operation):
                 dsList.append(dsDict)
 
             #Mode 2: meteors
-            elif mode[i] == 2:
+            elif self.mode[i] == 2:
 #                 dsDict['nDim'] = 0
                 dsDict['dsName'] = 'table0'
                 dsDict['mode'] = 2      # Mode meteors
@@ -656,7 +661,7 @@ class ParamWriter(Operation):
                 dsDict['dsNumber'] = 1
 
                 arrayDim[i,3] = dataAux.shape[-1]
-                arrayDim[i,4] = mode[i]         #Mode the data was stored
+                arrayDim[i,4] = self.mode[i]         #Mode the data was stored
 
                 dsList.append(dsDict)
 
@@ -664,7 +669,7 @@ class ParamWriter(Operation):
             else:
                 arrayDim0 = dataAux.shape       #Data dimensions
                 arrayDim[i,0] = len(arrayDim0)  #Number of array dimensions
-                arrayDim[i,4] = mode[i]         #Mode the data was stored
+                arrayDim[i,4] = self.mode[i]         #Mode the data was stored
 
                 strtable = 'table'
                 dsDict['mode'] = 1      # Mode parameters
@@ -846,7 +851,7 @@ class ParamWriter(Operation):
             os.makedirs(fullpath)
             setFile = -1 #inicializo mi contador de seteo
 
-        if self.setType is None:
+        if None is None:
             setFile += 1
             file = '%s%4.4d%3.3d%03d%s' % (self.metaoptchar,
                                            timeTuple.tm_year,
@@ -902,11 +907,13 @@ class ParamWriter(Operation):
                 for j in range(dsInfo['dsNumber']):
                     dsInfo = dsList[i]
                     tableName = dsInfo['dsName']
-                    shape = int(dsInfo['shape'])
+                    
 
                     if dsInfo['nDim'] == 3:
+                        shape = dsInfo['shape'].astype(int)
                         ds0 = grp0.create_dataset(tableName, (shape[0],shape[1],1) , data = numpy.zeros((shape[0],shape[1],1)), maxshape = (None,shape[1],None), chunks=True)
                     else:
+                        shape = int(dsInfo['shape'])
                         ds0 = grp0.create_dataset(tableName, (1,shape), data = numpy.zeros((1,shape)) , maxshape=(None,shape), chunks=True)
 
                     ds.append(ds0)
@@ -1078,7 +1085,7 @@ class ParamWriter(Operation):
         self.fp.close()
         return
 
-    def run(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
+    def run(self, dataOut, path, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
 
         if not(self.isConfig):
             flagdata = self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
@@ -1093,3 +1100,4 @@ class ParamWriter(Operation):
 
         self.putData()
         return
+        

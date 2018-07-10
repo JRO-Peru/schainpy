@@ -326,7 +326,7 @@ def MPDecorator(BaseClass):
             while True:
 
                 dataOut = self.listen()
-                
+
                 if dataOut == 'end':
                     break
                 

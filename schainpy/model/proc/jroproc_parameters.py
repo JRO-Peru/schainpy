@@ -17,11 +17,11 @@ import time
 
 
 from scipy.optimize import fmin_l_bfgs_b #optimize with bounds on state papameters
-from .jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation, MPDecorator 
 from schainpy.model.data.jrodata import Parameters, hildebrand_sekhon
 from scipy import asarray as ar,exp
 from scipy.optimize import curve_fit
-
+from schainpy.utils import log
 import warnings
 from numpy import NaN
 from scipy.optimize.optimize import OptimizeWarning
@@ -49,8 +49,10 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
+@MPDecorator
 class ParametersProc(ProcessingUnit):
     
+    METHODS = {}
     nSeconds = None
 
     def __init__(self):
@@ -61,7 +63,8 @@ class ParametersProc(ProcessingUnit):
         self.firstdatatime = None
         self.profIndex = 0
         self.dataOut = Parameters()
-        
+        self.setupReq = False #Agregar a todas las unidades de proc
+
     def __updateObjFromInput(self):
         
         self.dataOut.inputUnit = self.dataIn.type
@@ -97,7 +100,9 @@ class ParametersProc(ProcessingUnit):
         # self.dataOut.noise = self.dataIn.noise
         
     def run(self):
-        
+
+
+
         #----------------------    Voltage Data    ---------------------------
         
         if self.dataIn.type == "Voltage":
@@ -1354,7 +1359,7 @@ class FullSpectralAnalysis(Operation):
             Vver=xFrec[Vpos]
         print('vzon y vmer', Vzon, Vmer)
         return Vzon, Vmer, Vver, GaussCenter
-            
+
 class SpectralMoments(Operation):
     
     '''
@@ -1401,7 +1406,7 @@ class SpectralMoments(Operation):
         dataOut.data_DOP = data_param[:,1]
         dataOut.data_MEAN = data_param[:,2]
         dataOut.data_STD = data_param[:,3]
-        return
+        return dataOut
     
     def __calculateMoments(self, oldspec, oldfreq, n0, 
                            nicoh = None, graph = None, smooth = None, type1 = None, fwindow = None, snrth = None, dc = None, aliasing = None, oldfd = None, wwauto = None):

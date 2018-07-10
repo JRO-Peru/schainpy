@@ -9,6 +9,7 @@ from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Spectra
+from schainpy.utils import log
 
 @MPDecorator
 class SpectraReader(JRODataReader, ProcessingUnit):
@@ -388,7 +389,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         self.dataOut.realtime = self.online
 
         return self.dataOut.data_spc
-
+@MPDecorator
 class SpectraWriter(JRODataWriter, Operation):
 
     """
@@ -414,7 +415,7 @@ class SpectraWriter(JRODataWriter, Operation):
 
 #    dataOut = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
         """
         Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
 
@@ -428,9 +429,9 @@ class SpectraWriter(JRODataWriter, Operation):
         Return: None
         """
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
-        self.isConfig = False
+        #self.isConfig = False
 
         self.nTotalBlocks = 0
 
@@ -593,8 +594,6 @@ class SpectraWriter(JRODataWriter, Operation):
         if self.hasAllDataInBuffer():
 #            self.setFirstHeader()
             self.writeNextBlock()
-
-        return 1
 
     def __getBlockSize(self):
         '''

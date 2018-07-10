@@ -229,4 +229,4 @@ class Scope(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
-        return dataOut                
+        return dataOut                 

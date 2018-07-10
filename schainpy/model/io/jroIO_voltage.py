@@ -556,7 +556,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
         return self.dataOut.data
 
-
+@MPDecorator
 class VoltageWriter(JRODataWriter, Operation):
     """
     Esta clase permite escribir datos de voltajes a archivos procesados (.r). La escritura
@@ -569,7 +569,7 @@ class VoltageWriter(JRODataWriter, Operation):
 
     shapeBuffer = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
         """
         Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
 
@@ -578,7 +578,7 @@ class VoltageWriter(JRODataWriter, Operation):
 
         Return: None
         """
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
         self.nTotalBlocks = 0
 

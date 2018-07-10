@@ -39,7 +39,7 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data = self.dataIn.data
         self.dataOut.utctime = self.dataIn.utctime
         self.dataOut.channelList = self.dataIn.channelList
-        #         self.dataOut.timeInterval = self.dataIn.timeInterval
+        #self.dataOut.timeInterval = self.dataIn.timeInterval
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.nProfiles = self.dataIn.nProfiles
 
@@ -332,9 +332,9 @@ class CohInt(Operation):
     __dataToPutStride = False
     n = None
 
-    def __init__(self):#, **kwargs):
+    def __init__(self, **kwargs):
 
-        Operation.__init__(self)#, **kwargs)
+        Operation.__init__(self, **kwargs)
 
         #   self.isConfig = False
 
@@ -589,14 +589,14 @@ class Decoder(Operation):
     nCode = None
     nBaud = None
 
-    def __init__(self):#, **kwargs):
+    def __init__(self, **kwargs):
 
-        Operation.__init__(self)#, **kwargs)
+        Operation.__init__(self, **kwargs)
 
         self.times = None
         self.osamp = None
     #         self.__setValues = False
-    #    self.isConfig = False
+        self.isConfig = False
         self.setupReq = False
     def setup(self, code, osamp, dataOut):
 
@@ -777,9 +777,9 @@ class ProfileConcat(Operation):
     isConfig = False
     buffer = None
 
-    def __init__(self):#, **kwargs):
+    def __init__(self, **kwargs):
 
-        Operation.__init__(self)#, **kwargs)
+        Operation.__init__(self, **kwargs)
         self.profileIndex = 0
 
     def reset(self):
@@ -829,9 +829,9 @@ class ProfileSelector(Operation):
     # Tamanho total de los perfiles
     nProfiles = None
 
-    def __init__(self):#, **kwargs):
+    def __init__(self, **kwargs):
 
-        Operation.__init__(self)#, **kwargs)
+        Operation.__init__(self, **kwargs)
         self.profileIndex = 0
 
     def incProfileIndex(self):
@@ -986,9 +986,9 @@ class ProfileSelector(Operation):
 
 class Reshaper(Operation):
 
-    def __init__(self):#, **kwargs):
+    def __init__(self, **kwargs):
 
-        Operation.__init__(self)#, **kwargs)
+        Operation.__init__(self, **kwargs)
 
         self.__buffer = None
         self.__nitems = 0
@@ -1091,9 +1091,9 @@ class Reshaper(Operation):
 
 class SplitProfiles(Operation):
 
-    def __init__(self):#, **kwargs):
+    def __init__(self, **kwargs):
 
-        Operation.__init__(self)#, **kwargs)
+        Operation.__init__(self, **kwargs)
 
     def run(self, dataOut, n):
 
@@ -1132,9 +1132,9 @@ class SplitProfiles(Operation):
         return dataOut
 
 class CombineProfiles(Operation):
-    def __init__(self):#, **kwargs):
+    def __init__(self, **kwargs):
 
-        Operation.__init__(self)#, **kwargs)
+        Operation.__init__(self, **kwargs)
 
         self.__remData = None
         self.__profileIndex = 0

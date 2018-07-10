@@ -1823,4 +1823,6 @@ class JRODataWriter(JRODataIO):
                        set=set, ext=ext, datatype=datatype, **kwargs)
             self.isConfig = True
 
+        self.dataOut = dataOut
         self.putData()
+        return self.dataOut

@@ -23,8 +23,8 @@ class SpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc'
 
-    def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.isConfig = False
         self.__nsubplots = 1
         self.WIDTH = 250
@@ -237,8 +237,8 @@ class CrossSpectraPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'cspc'
 
-    def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.isConfig = False
         self.__nsubplots = 4
         self.counter_imagwr = 0
@@ -462,9 +462,9 @@ class RTIPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'rti'
 
-    def __init__(self):#, **kwargs):
+    def __init__(self):
 
-        Figure.__init__(self)#, **kwargs)
+        Figure.__init__(self)
         self.timerange = None
         self.isConfig = False
         self.__nsubplots = 1
@@ -576,7 +576,7 @@ class RTIPlot(Figure):
         else:
             factor = normFactor
 
-#         factor = dataOut.normFactor
+        #factor = dataOut.normFactor
         x = dataOut.getTimeRange()
         y = dataOut.getHeiRange()
 
@@ -588,7 +588,7 @@ class RTIPlot(Figure):
 
 
         thisDatetime = dataOut.datatime
-#         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        #thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " RTI" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (Km)"
@@ -675,8 +675,8 @@ class CoherenceMap(Figure):
     HEIGHTPROF = None
     PREFIX = 'cmap'
 
-    def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.timerange = 2*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -887,8 +887,8 @@ class PowerProfilePlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spcprofile'
 
-    def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -1017,8 +1017,8 @@ class SpectraCutPlot(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc_cut'
 
-    def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -1153,8 +1153,8 @@ class Noise(Figure):
     PREFIX = 'noise'
 
 
-    def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -1359,8 +1359,8 @@ class BeaconPhase(Figure):
 
     PREFIX = 'beacon_phase'
 
-    def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -1584,4 +1584,4 @@ class BeaconPhase(Figure):
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
 
-        return dataOut  #Yong
+        return dataOut
