@@ -5,7 +5,7 @@ import os
 import sys
 import glob
 save_stdout = sys.stdout
-sys.stdout = open('trash', 'w')
+sys.stdout = open('/dev/null', 'w')
 from multiprocessing import cpu_count
 from schainpy.controller import Project
 from schainpy.model import Operation, ProcessingUnit
@@ -13,9 +13,47 @@ from schainpy.utils import log
 from importlib import import_module
 from pydoc import locate
 from fuzzywuzzy import process
-from schainpy.utils import paramsFinder
-import templates
+from schainpy.cli import templates
 sys.stdout = save_stdout
+
+
+def getProcs():
+    modules = dir(schainpy.model)
+    procs = check_module(modules, ProcessingUnit)
+    try:
+        procs.remove('ProcessingUnit')
+    except Exception as e:
+        pass
+    return procs
+
+def getOperations():
+    module = dir(schainpy.model)
+    noProcs = [x for x in module if not x.endswith('Proc')]
+    operations = check_module(noProcs, Operation)
+    try:
+        operations.remove('Operation')
+    except Exception as e:
+        pass
+    return operations
+
+def getArgs(op):
+    module = locate('schainpy.model.{}'.format(op))
+    args = module().getAllowedArgs()
+    try:
+        args.remove('self')
+    except Exception as e:
+        pass
+    try:
+        args.remove('dataOut')
+    except Exception as e:
+        pass
+    return args
+
+def getAll():
+    allModules = dir(schainpy.model)
+    modules = check_module(allModules, Operation)
+    modules.extend(check_module(allModules, ProcessingUnit))
+    return modules
 
 
 def print_version(ctx, param, value):
@@ -25,9 +63,7 @@ def print_version(ctx, param, value):
     ctx.exit()
 
 
-cliLogger = log.makelogger('schain cli')
 PREFIX = 'experiment'
-
 
 @click.command()
 @click.option('--version', '-v', is_flag=True, callback=print_version, help='SChain version', type=str)
@@ -74,33 +110,29 @@ def clean_modules(module):
 
 def search(nextcommand):
     if nextcommand is None:
-        log.error('There is no Operation/ProcessingUnit to search')
+        log.error('There is no Operation/ProcessingUnit to search', '')
     elif nextcommand == 'procs':
-        procs = paramsFinder.getProcs()
+        procs = getProcs()
         log.success(
-            'Current ProcessingUnits are:\n\033[1m{}\033[0m'.format('\n'.join(procs)))
+            'Current ProcessingUnits are:\n{}'.format('\n'.join(procs)), '')
 
     elif nextcommand == 'operations':
-        operations = paramsFinder.getOperations()
-        log.success('Current Operations are:\n\033[1m{}\033[0m'.format(
-            '\n'.join(operations)))
+        operations = getOperations()
+        log.success('Current Operations are:\n{}'.format(
+            '\n'.join(operations)), '')
     else:
         try:
-            args = paramsFinder.getArgs(nextcommand)
-            log.warning(
-                'Use this feature with caution. It may not return all the allowed arguments')
+            args = getArgs(nextcommand)
             if len(args) == 0:
-                log.success('{} has no arguments'.format(nextcommand))
+                log.success('`{}` has no arguments'.format(nextcommand), '')
             else:
-                log.success('Showing {} arguments:\n\033[1m{}\033[0m'.format(
-                    nextcommand, '\n'.join(args)))
+                log.success('`{}` arguments: {}'.format(
+                    nextcommand, ', '.join(args)), '')
         except Exception as e:
-            log.error('Module {} does not exists'.format(nextcommand))
-            allModules = paramsFinder.getAll()
-            similar = process.extractOne(nextcommand, allModules)[0]
-            log.success('Showing {} instead'.format(similar))
-            search(similar)
-
+            log.error('Module `{}` does not exists'.format(nextcommand), '')
+            allModules = getAll()
+            similar = [t[0] for t in process.extract(nextcommand, allModules, limit=12) if t[1]>80]
+            log.success('Possible modules are: {}'.format(', '.join(similar)), '')
 
 def runschain(nextcommand):
     if nextcommand is None:
