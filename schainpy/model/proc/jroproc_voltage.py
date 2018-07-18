@@ -229,13 +229,13 @@ class VoltageProc(ProcessingUnit):
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
-            buffer = self.dataOut.data[:, :, 0:self.dataOut.nHeights-r]
+            buffer = self.dataOut.data[:, :, 0:int(self.dataOut.nHeights-r)]
             buffer = buffer.reshape(self.dataOut.nChannels,self.dataOut.nProfiles,self.dataOut.nHeights/window,window)
             buffer = numpy.sum(buffer,3)
 
         else:
-            buffer = self.dataOut.data[:,0:self.dataOut.nHeights-r]
-            buffer = buffer.reshape(self.dataOut.nChannels,self.dataOut.nHeights/window,window)
+            buffer = self.dataOut.data[:,0:int(self.dataOut.nHeights-r)]
+            buffer = buffer.reshape(self.dataOut.nChannels,int(self.dataOut.nHeights/window),int(window))
             buffer = numpy.sum(buffer,2)
 
         self.dataOut.data = buffer
@@ -799,7 +799,6 @@ class ProfileConcat(Operation):
         self.start_index = self.start_index + self.nHeights
 
     def run(self, dataOut, m):
-
         dataOut.flagNoData = True
 
         if not self.isConfig:
@@ -908,7 +907,7 @@ class ProfileSelector(Operation):
             dataOut.profileIndex = dataOut.nProfiles - 1
             dataOut.flagNoData = False
 
-            return True
+            return dataOut
 
         """
         data dimension  = [nChannels, nHeis]
@@ -924,7 +923,7 @@ class ProfileSelector(Operation):
                 dataOut.flagNoData = False
 
                 self.incProfileIndex()
-            return True
+            return dataOut
 
         if profileRangeList != None:
 
@@ -939,7 +938,7 @@ class ProfileSelector(Operation):
                 dataOut.flagNoData = False
 
                 self.incProfileIndex()
-            return True
+            return dataOut
 
         if rangeList != None:
 
@@ -967,7 +966,7 @@ class ProfileSelector(Operation):
 
                     break
 
-            return True
+            return dataOut
 
 
         if beam != None: #beam is only for AMISR data
@@ -977,7 +976,7 @@ class ProfileSelector(Operation):
 
                 self.incProfileIndex()
 
-            return True
+            return dataOut
 
         raise ValueError("ProfileSelector needs profileList, profileRangeList or rangeList parameter")
 
