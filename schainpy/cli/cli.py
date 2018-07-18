@@ -70,9 +70,9 @@ PREFIX = 'experiment'
 @click.argument('command', default='run', required=True)
 @click.argument('nextcommand', default=None, required=False, type=str)
 def main(command, nextcommand, version):
-    """COMMAND LINE INTERFACE FOR SIGNAL CHAIN - JICAMARCA RADIO OBSERVATORY \n
+    """COMMAND LINE INTERFACE FOR SIGNAL CHAIN - JICAMARCA RADIO OBSERVATORY V3.0\n
         Available commands.\n
-        --xml: runs a schain XML generated file\n
+        xml: runs a schain XML generated file\n
         run: runs any python script starting 'experiment_'\n
         generate: generates a template schain script\n
         search: return avilable operations, procs or arguments of the give operation/proc\n"""
@@ -153,16 +153,24 @@ def runschain(nextcommand):
 
 def basicInputs():
     inputs = {}
-    inputs['desc'] = click.prompt(
-        'Enter a description', default="A schain project", type=str)
     inputs['name'] = click.prompt(
         'Name of the project', default="project", type=str)
+    inputs['desc'] = click.prompt(
+        'Enter a description', default="A schain project", type=str)
+    inputs['multiprocess'] = click.prompt(
+        '''Select data type: 
+
+    - Voltage (*.r):                [1]
+    - Spectra (*.pdata):            [2]
+    - Voltage and Spectra (*.r):    [3]
+    
+    -->''', type=int)
     inputs['path'] = click.prompt('Data path', default=os.getcwd(
     ), type=click.Path(exists=True, resolve_path=True))
     inputs['startDate'] = click.prompt(
         'Start date', default='1970/01/01', type=str)
     inputs['endDate'] = click.prompt(
-        'End date', default='2017/12/31', type=str)
+        'End date', default='2018/12/31', type=str)
     inputs['startHour'] = click.prompt(
         'Start hour', default='00:00:00', type=str)
     inputs['endHour'] = click.prompt('End hour', default='23:59:59', type=str)
@@ -172,13 +180,13 @@ def basicInputs():
 
 def generate():
     inputs = basicInputs()
-    inputs['multiprocess'] = click.confirm('Is this a multiprocess script?')
-    if inputs['multiprocess']:
-        inputs['nProcess'] = click.prompt(
-            'How many process?', default=cpu_count(), type=int)
-        current = templates.multiprocess.format(**inputs)
-    else:
-        current = templates.basic.format(**inputs)
+
+    if inputs['multiprocess'] == 1:
+        current = templates.voltage.format(**inputs)
+    elif inputs['multiprocess'] == 2:
+        current = templates.spectra.format(**inputs)
+    elif inputs['multiprocess'] == 3:
+        current = templates.voltagespectra.format(**inputs)
     scriptname = '{}_{}.py'.format(PREFIX, inputs['name'])
     script = open(scriptname, 'w')
     try:
