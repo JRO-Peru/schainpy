@@ -12,10 +12,10 @@ from time import gmtime
 
 from numpy import transpose
 
-from .jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 
-
+@MPDecorator
 class BLTRParametersProc(ProcessingUnit):    
     '''
     Processing unit for BLTR parameters data (winds)
@@ -39,13 +39,12 @@ class BLTRParametersProc(ProcessingUnit):
         self.dataOut.year - Experiment year
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         '''
         Inputs: None           
         '''
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)
         self.dataOut = Parameters()
-        self.isConfig = False
 
     def setup(self, mode):
         '''

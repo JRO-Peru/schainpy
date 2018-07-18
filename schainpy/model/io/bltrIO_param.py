@@ -13,7 +13,7 @@ import datetime
 
 import numpy
 
-from schainpy.model.proc.jroproc_base import ProcessingUnit
+from schainpy.model.proc.jroproc_base import ProcessingUnit, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 from schainpy.model.io.jroIO_base import JRODataReader, isNumber
 from schainpy.utils import log
@@ -83,7 +83,7 @@ DATA_STRUCTURE = numpy.dtype([
     ('sea_algorithm', '<u4')
 ])
 
-
+@MPDecorator
 class BLTRParamReader(JRODataReader, ProcessingUnit):
     '''
     Boundary Layer and Tropospheric Radar (BLTR) reader, Wind velocities and SNR from *.sswma files
@@ -185,7 +185,6 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         file_id = self.fileIndex
 
         if file_id == len(self.fileList):
-            log.success('No more files in the folder', 'BLTRParamReader')
             self.flagNoMoreFiles = 1
             return 0
         
@@ -240,7 +239,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
         pointer = self.fp.tell()
         header_rec = numpy.fromfile(self.fp, REC_HEADER_STRUCTURE, 1)
-        self.nchannels = header_rec['nchan'][0] / 2
+        self.nchannels = int(header_rec['nchan'][0] / 2)
         self.kchan = header_rec['nrxs'][0]
         self.nmodes = header_rec['nmodes'][0]
         self.nranges = header_rec['nranges'][0]
@@ -357,8 +356,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            log.success('No file left to process', 'BLTRParamReader')
-            return 0
+            self.dataOut.error = (1, 'No More files to read')
 
         if not self.readNextBlock():
             self.dataOut.flagNoData = True
