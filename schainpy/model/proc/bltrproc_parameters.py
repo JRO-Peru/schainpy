@@ -76,12 +76,13 @@ class BLTRParametersProc(ProcessingUnit):
                 self.dataOut.data_param[i][SNRavgdB <= snr_threshold] = numpy.nan
 
 # TODO
+@MPDecorator
 class OutliersFilter(Operation):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         '''
         '''
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)
 
     def run(self, svalue2, method, factor, filter, npoints=9):
         '''

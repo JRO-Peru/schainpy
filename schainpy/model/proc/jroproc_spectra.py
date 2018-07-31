@@ -136,6 +136,8 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Voltage":
 
+            self.dataOut.flagNoData = True
+
             if nFFTPoints == None:
                 raise ValueError("This SpectraProc.run() need nFFTPoints input variable")
 
@@ -942,8 +944,7 @@ class IncohInt(Operation):
 
             dataOut.data_spc = avgdata_spc
             dataOut.data_cspc = avgdata_cspc
-            dataOut.data_dc = avgdata_dc
-
+            dataOut.data_dc = avgdata_dc            
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
