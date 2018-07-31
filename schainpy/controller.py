@@ -275,7 +275,7 @@ class ParameterConf():
             parmElement.set('name', self.name)
             parmElement.set('value', self.value)
             parmElement.set('format', self.format)
-
+            
     def readXml(self, parmElement):
 
         self.id = parmElement.get('id')
@@ -289,7 +289,7 @@ class ParameterConf():
 
     def printattr(self):
 
-        print('Parameter[%s]: name = %s, value = %s, format = %s' % (self.id, self.name, self.value, self.format))
+        print('Parameter[%s]: name = %s, value = %s, format = %s, project_id = %s' % (self.id, self.name, self.value, self.format, self.project_id))
 
 class OperationConf():
 
@@ -422,12 +422,13 @@ class OperationConf():
         for parmConfObj in self.parmConfObjList:
             parmConfObj.makeXml(opElement)
 
-    def readXml(self, opElement):
+    def readXml(self, opElement, project_id):
 
         self.id = opElement.get('id')
         self.name = opElement.get('name')
         self.type = opElement.get('type')
         self.priority = opElement.get('priority')
+        self.project_id = str(project_id)  #yong
 
         # Compatible with old signal chain version
         # Use of 'run' method instead 'init'
@@ -453,11 +454,12 @@ class OperationConf():
 
     def printattr(self):
 
-        print('%s[%s]: name = %s, type = %s, priority = %s' % (self.ELEMENTNAME,
+        print('%s[%s]: name = %s, type = %s, priority = %s, project_id = %s' % (self.ELEMENTNAME,
                                                                self.id,
                                                                self.name,
                                                                self.type,
-                                                               self.priority))
+                                                               self.priority,
+                                                               self.project_id))
 
         for parmConfObj in self.parmConfObjList:
             parmConfObj.printattr()
@@ -465,7 +467,7 @@ class OperationConf():
     def createObject(self):
 
         className = eval(self.name)
-        
+
         if self.type == 'other':
             opObj = className()
         elif self.type == 'external':
@@ -634,12 +636,13 @@ class ProcUnitConf():
         for opConfObj in self.opConfObjList:
             opConfObj.makeXml(procUnitElement)
 
-    def readXml(self, upElement):
+    def readXml(self, upElement, project_id):
 
         self.id = upElement.get('id')
         self.name = upElement.get('name')
         self.datatype = upElement.get('datatype')
         self.inputId = upElement.get('inputId')
+        self.project_id = str(project_id)
 
         if self.ELEMENTNAME == 'ReadUnit':
             self.datatype = self.datatype.replace('Reader', '')
@@ -656,16 +659,17 @@ class ProcUnitConf():
 
         for opElement in opElementList:
             opConfObj = OperationConf()
-            opConfObj.readXml(opElement)
+            opConfObj.readXml(opElement, project_id)
             self.opConfObjList.append(opConfObj)
 
     def printattr(self):
 
-        print('%s[%s]: name = %s, datatype = %s, inputId = %s' % (self.ELEMENTNAME,
+        print('%s[%s]: name = %s, datatype = %s, inputId = %s, project_id = %s' % (self.ELEMENTNAME,
                                                                   self.id,
                                                                   self.name,
                                                                   self.datatype,
-                                                                  self.inputId))
+                                                                  self.inputId,
+                                                                  self.project_id))
 
         for opConfObj in self.opConfObjList:
             opConfObj.printattr()
@@ -846,11 +850,12 @@ class ReadUnitConf(ProcUnitConf):
 
         return opObj
 
-    def readXml(self, upElement):
+    def readXml(self, upElement, project_id):
 
         self.id = upElement.get('id')
         self.name = upElement.get('name')
         self.datatype = upElement.get('datatype')
+        self.project_id = str(project_id)  #yong
 
         if self.ELEMENTNAME == 'ReadUnit':
             self.datatype = self.datatype.replace('Reader', '')
@@ -861,7 +866,7 @@ class ReadUnitConf(ProcUnitConf):
 
         for opElement in opElementList:
             opConfObj = OperationConf()
-            opConfObj.readXml(opElement)
+            opConfObj.readXml(opElement, project_id)
             self.opConfObjList.append(opConfObj)
 
             if opConfObj.name == 'run':
@@ -1109,7 +1114,7 @@ class Project(Process):
 
         for readUnitElement in readUnitElementList:
             readUnitConfObj = ReadUnitConf()
-            readUnitConfObj.readXml(readUnitElement)
+            readUnitConfObj.readXml(readUnitElement, self.id)
             self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
 
         procUnitElementList = self.projectElement.iter(
@@ -1117,7 +1122,7 @@ class Project(Process):
 
         for procUnitElement in procUnitElementList:
             procUnitConfObj = ProcUnitConf()
-            procUnitConfObj.readXml(procUnitElement)
+            procUnitConfObj.readXml(procUnitElement, self.id)
             self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
         self.filename = abs_file
@@ -1126,9 +1131,10 @@ class Project(Process):
 
     def __str__(self):
 
-        print('Project[%s]: name = %s, description = %s' % (self.id,
+        print('Project[%s]: name = %s, description = %s, project_id = %s' % (self.id,
                                                             self.name,
-                                                            self.description))
+                                                            self.description,
+                                                            self.project_id))
 
         for procUnitConfObj in self.procUnitConfObjDict.values():
             print(procUnitConfObj)
