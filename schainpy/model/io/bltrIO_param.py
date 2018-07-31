@@ -13,7 +13,7 @@ import datetime
 
 import numpy
 
-from schainpy.model.proc.jroproc_base import ProcessingUnit
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 from schainpy.model.io.jroIO_base import JRODataReader, isNumber
 from schainpy.utils import log
@@ -83,7 +83,7 @@ DATA_STRUCTURE = numpy.dtype([
     ('sea_algorithm', '<u4')
 ])
 
-
+@MPDecorator
 class BLTRParamReader(JRODataReader, ProcessingUnit):
     '''
     Boundary Layer and Tropospheric Radar (BLTR) reader, Wind velocities and SNR from *.sswma files
@@ -91,9 +91,9 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
     ext = '.sswma'
 
-    def __init__(self, **kwargs):
+    def __init__(self):
 
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)
 
         self.dataOut = Parameters()
         self.counter_records = 0
@@ -246,7 +246,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.nranges = header_rec['nranges'][0]
         self.fp.seek(pointer)
         self.height = numpy.empty((self.nmodes, self.nranges))
-        self.snr = numpy.empty((self.nmodes, self.nchannels, self.nranges))
+        self.snr = numpy.empty((self.nmodes, int(self.nchannels), self.nranges))
         self.buffer = numpy.empty((self.nmodes, 3, self.nranges))
         self.flagDiscontinuousBlock = 0
 
@@ -268,9 +268,9 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
         header_structure = numpy.dtype(
             REC_HEADER_STRUCTURE.descr + [
-                ('antenna_coord', 'f4', (2, self.nchannels)),
-                ('rx_gains', 'u4', (self.nchannels,)),
-                ('rx_analysis', 'u4', (self.nchannels,))
+                ('antenna_coord', 'f4', (2, int(self.nchannels))),
+                ('rx_gains', 'u4', (int(self.nchannels),)),
+                ('rx_analysis', 'u4', (int(self.nchannels),))
             ]
         )
 
@@ -296,6 +296,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
             status_value - Array data is set to NAN for values that are not equal to status_value
 
         '''
+        self.nchannels = int(self.nchannels)
 
         data_structure = numpy.dtype(
             DATA_STRUCTURE.descr + [
@@ -367,3 +368,4 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.set_output()
 
         return 1
+        

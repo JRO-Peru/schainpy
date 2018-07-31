@@ -12,11 +12,13 @@ from time import gmtime
 
 from numpy import transpose
 
-from .jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, MPDecorator, Operation
 from schainpy.model.data.jrodata import Parameters
 
+@MPDecorator
+class BLTRParametersProc(ProcessingUnit):
 
-class BLTRParametersProc(ProcessingUnit):    
+    METHODS = {}    
     '''
     Processing unit for BLTR parameters data (winds)
 
@@ -39,11 +41,12 @@ class BLTRParametersProc(ProcessingUnit):
         self.dataOut.year - Experiment year
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         '''
         Inputs: None           
         '''
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)
+        self.setupReq = False
         self.dataOut = Parameters()
         self.isConfig = False
 
@@ -77,12 +80,13 @@ class BLTRParametersProc(ProcessingUnit):
                 self.dataOut.data_param[i][SNRavgdB <= snr_threshold] = numpy.nan
 
 # TODO
+@MPDecorator
 class OutliersFilter(Operation):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         '''
         '''
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)
 
     def run(self, svalue2, method, factor, filter, npoints=9):
         '''
