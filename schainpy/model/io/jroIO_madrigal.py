@@ -15,7 +15,7 @@ import numpy
 import h5py
 
 from schainpy.model.io.jroIO_base import JRODataReader
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 from schainpy.utils import log
 
@@ -70,12 +70,12 @@ def load_json(obj):
     
     return iterable
 
-
+@MPDecorator
 class MADReader(JRODataReader, ProcessingUnit):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
 
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)
 
         self.dataOut = Parameters()    
         self.counter_records = 0
@@ -495,7 +495,7 @@ class MADWriter(Operation):
                                    self.ext)
        
         self.fullname = os.path.join(self.path, filename)
-
+    
         if os.path.isfile(self.fullname) : 
             log.warning(
                 'Destination file {} already exists, previous file deleted.'.format(
@@ -554,7 +554,7 @@ class MADWriter(Operation):
                 attr, x = value
                 data = getattr(self.dataOut, attr)
                 out[key] = data[int(x)]
-
+        
         a = numpy.array([out[k] for k in self.keys])
         nrows = numpy.array([numpy.isnan(a[:, x]).all() for x in range(len(heights))])
         index = numpy.where(nrows == False)[0]
