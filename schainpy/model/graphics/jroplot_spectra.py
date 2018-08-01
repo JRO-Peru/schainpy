@@ -42,6 +42,8 @@ class SpectraPlot_(Figure):
 
         self.__xfilter_ena = False
         self.__yfilter_ena = False
+        
+        self.indice=1
 
     def getSubplots(self):
 
@@ -139,10 +141,9 @@ class SpectraPlot_(Figure):
             x = dataOut.getVelRange(1)
             xlabel = "Velocity (m/s)"
 
-        ylabel = "Range (Km)"
+        ylabel = "Range (km)"
 
         y = dataOut.getHeiRange()
-
         z = dataOut.data_spc/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         zdB = 10*numpy.log10(z)
@@ -155,6 +156,7 @@ class SpectraPlot_(Figure):
 
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Spectra"
+
         if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
             title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
 
@@ -223,6 +225,7 @@ class SpectraPlot_(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
+        
 
         return dataOut
 @MPDecorator
@@ -252,6 +255,8 @@ class CrossSpectraPlot_(Figure):
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
+        
+        self.indice=0
 
     def getSubplots(self):
 
@@ -396,6 +401,7 @@ class CrossSpectraPlot_(Figure):
             self.isConfig = True
 
         self.setWinTitle(title)
+  
 
         for i in range(self.nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
@@ -420,7 +426,7 @@ class CrossSpectraPlot_(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=power_cmap, cblabel='')
 
-            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:])
+            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]  /  numpy.sqrt(  dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:]  )
             coherence = numpy.abs(coherenceComplex)
 #            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
             phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
@@ -438,8 +444,6 @@ class CrossSpectraPlot_(Figure):
                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=phase_min, zmax=phase_max,
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=phase_cmap, cblabel='')
-
-
 
         self.draw()
 
@@ -470,7 +474,7 @@ class RTIPlot_(Figure):
         self.__nsubplots = 1
 
         self.WIDTH = 800
-        self.HEIGHT = 180
+        self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -1496,9 +1500,6 @@ class BeaconPhase_(Figure):
             powb = numpy.average(dataOut.data_spc[pair[1], :, hmin_index:hmax_index], axis=0)
             avgcoherenceComplex = ccf/numpy.sqrt(powa*powb)
             phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
-
-            #print "Phase %d%d" %(pair[0], pair[1])
-            #print phase[dataOut.beacon_heiIndexList]
 
             if dataOut.beacon_heiIndexList:
                 phase_beacon[i] = numpy.average(phase[dataOut.beacon_heiIndexList])

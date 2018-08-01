@@ -190,8 +190,7 @@ class JROData(GenericData):
     profileIndex = None
     error = None
     data = None
-    data_plt = None
-
+    nmodes = None
 
     def __str__(self):
 
@@ -462,6 +461,7 @@ class Spectra(JROData):
     ippFactor = None
     profileIndex = 0
     plotting = "spectra"
+
     def __init__(self):
         '''
         Constructor
@@ -554,9 +554,12 @@ class Spectra(JROData):
 
         deltav = self.getVmax() / (self.nFFTPoints * self.ippFactor)
         velrange = deltav * (numpy.arange(self.nFFTPoints +
-                                          extrapoints) - self.nFFTPoints / 2.)  # - deltav/2
+                                          extrapoints) - self.nFFTPoints / 2.)
 
-        return velrange
+        if self.nmodes:
+            return velrange/self.nmodes
+        else:
+            return velrange
 
     def getNPairs(self):
 

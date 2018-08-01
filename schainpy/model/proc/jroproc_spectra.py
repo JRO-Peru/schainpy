@@ -159,9 +159,7 @@ class SpectraProc(ProcessingUnit):
                                           dtype='complex')
 
             if self.dataIn.flagDataAsBlock:
-                # data dimension: [nChannels, nProfiles, nSamples]
                 nVoltProfiles = self.dataIn.data.shape[1]
-            #                 nVoltProfiles = self.dataIn.nProfiles
 
                 if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
@@ -299,7 +297,57 @@ class SpectraProc(ProcessingUnit):
         self.__selectPairsByChannel(self.dataOut.channelList)
 
         return 1
+    
+    
+    def selectFFTs(self, minFFT, maxFFT ):
+        """
+        Selecciona un bloque de datos en base a un grupo de valores de puntos FFTs segun el rango 
+        minFFT<= FFT <= maxFFT
+        """
+        
+        if (minFFT > maxFFT):
+            raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minFFT, maxFFT))
 
+        if (minFFT < self.dataOut.getFreqRange()[0]):
+            minFFT = self.dataOut.getFreqRange()[0]
+
+        if (maxFFT > self.dataOut.getFreqRange()[-1]):
+            maxFFT = self.dataOut.getFreqRange()[-1]
+
+        minIndex = 0
+        maxIndex = 0
+        FFTs = self.dataOut.getFreqRange()
+
+        inda = numpy.where(FFTs >= minFFT)
+        indb = numpy.where(FFTs <= maxFFT)
+
+        try:
+            minIndex = inda[0][0]
+        except:
+            minIndex = 0
+
+        try:
+            maxIndex = indb[0][-1]
+        except:
+            maxIndex = len(FFTs)
+
+        self.selectFFTsByIndex(minIndex, maxIndex)
+
+        return 1
+    
+    
+    def setH0(self, h0, deltaHeight = None):
+        
+        if not deltaHeight:
+            deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+            
+        nHeights = self.dataOut.nHeights
+        
+        newHeiRange = h0 + numpy.arange(nHeights)*deltaHeight
+        
+        self.dataOut.heightList = newHeiRange
+        
+    
     def selectHeights(self, minHei, maxHei):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
@@ -316,9 +364,9 @@ class SpectraProc(ProcessingUnit):
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
 
+        
         if (minHei > maxHei):
-            raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (
-                minHei, maxHei))
+            raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minHei, maxHei))
 
         if (minHei < self.dataOut.heightList[0]):
             minHei = self.dataOut.heightList[0]
@@ -344,6 +392,7 @@ class SpectraProc(ProcessingUnit):
             maxIndex = len(heights)
 
         self.selectHeightsByIndex(minIndex, maxIndex)
+        
 
         return 1
 
@@ -388,6 +437,40 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.beacon_heiIndexList = beacon_heiIndexList
 
         return 1
+
+    def selectFFTsByIndex(self, minIndex, maxIndex):
+        """
+        
+        """
+
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError("Error selecting heights: Index range (%d,%d) is not valid" % (minIndex, maxIndex))
+
+        if (maxIndex >= self.dataOut.nProfiles):
+            maxIndex = self.dataOut.nProfiles-1
+
+        #Spectra
+        data_spc = self.dataOut.data_spc[:,minIndex:maxIndex+1,:]
+
+        data_cspc = None
+        if self.dataOut.data_cspc is not None:
+            data_cspc = self.dataOut.data_cspc[:,minIndex:maxIndex+1,:]
+
+        data_dc = None
+        if self.dataOut.data_dc is not None:
+            data_dc = self.dataOut.data_dc[minIndex:maxIndex+1,:]
+
+        self.dataOut.data_spc = data_spc
+        self.dataOut.data_cspc = data_cspc
+        self.dataOut.data_dc = data_dc
+        
+        self.dataOut.ippSeconds = self.dataOut.ippSeconds*(self.dataOut.nFFTPoints / numpy.shape(data_cspc)[1])
+        self.dataOut.nFFTPoints = numpy.shape(data_cspc)[1]
+        self.dataOut.profilesPerBlock = numpy.shape(data_cspc)[1]
+
+        return 1
+
+
 
     def selectHeightsByIndex(self, minIndex, maxIndex):
         """
@@ -494,7 +577,32 @@ class SpectraProc(ProcessingUnit):
 
         return 1
 
-    def removeInterference(self,  interf=2, hei_interf=None, nhei_interf=None, offhei_interf=None):
+    def removeInterference2(self):
+        
+        cspc = self.dataOut.data_cspc
+        spc = self.dataOut.data_spc
+        Heights = numpy.arange(cspc.shape[2]) 
+        realCspc = numpy.abs(cspc)
+        
+        for i in range(cspc.shape[0]):
+            LinePower= numpy.sum(realCspc[i], axis=0)
+            Threshold = numpy.amax(LinePower)-numpy.sort(LinePower)[len(Heights)-int(len(Heights)*0.1)]
+            SelectedHeights = Heights[ numpy.where( LinePower < Threshold ) ]
+            InterferenceSum = numpy.sum( realCspc[i,:,SelectedHeights], axis=0 )
+            InterferenceThresholdMin = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.98)]
+            InterferenceThresholdMax = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.99)]
+            
+            
+            InterferenceRange = numpy.where( ([InterferenceSum > InterferenceThresholdMin]))# , InterferenceSum < InterferenceThresholdMax]) )
+            #InterferenceRange = numpy.where( ([InterferenceRange < InterferenceThresholdMax]))
+            if len(InterferenceRange)<int(cspc.shape[1]*0.3):
+                cspc[i,InterferenceRange,:] = numpy.NaN
+            
+            
+            
+        self.dataOut.data_cspc = cspc
+        
+    def removeInterference(self,  interf = 2,hei_interf = None, nhei_interf = None, offhei_interf = None):
 
         jspectra = self.dataOut.data_spc
         jcspectra = self.dataOut.data_cspc

@@ -179,9 +179,6 @@ class ParamReader(JRODataReader,ProcessingUnit):
         print("[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime))
         print()
 
-#         for i in range(len(filenameList)):
-#             print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
-
         self.filenameList = filenameList
         self.datetimeList = datetimeList
 
@@ -504,20 +501,11 @@ class ParamReader(JRODataReader,ProcessingUnit):
 
     def getData(self):
 
-#         if self.flagNoMoreFiles:
-#             self.dataOut.flagNoData = True
-#             print 'Process finished'
-#             return 0
-#
         if self.blockIndex==self.blocksPerFile:
              if not( self.__setNextFileOffline() ):
                 self.dataOut.flagNoData = True
                 return 0
 
-#         if self.datablock == None: # setear esta condicion cuando no hayan datos por leers
-#             self.dataOut.flagNoData = True
-#             return 0
-#         self.__readData()
         self.__setDataOut()
         self.dataOut.flagNoData = False
 
@@ -637,7 +625,10 @@ class ParamWriter(Operation):
             dsDict['variable'] = self.dataList[i]
             #---------------------    Conditionals    ------------------------
             #There is no data
+            
+            
             if dataAux is None:
+                
                 return 0
 
             #Not array, just a number
@@ -821,7 +812,7 @@ class ParamWriter(Operation):
             return False
 
     def setNextFile(self):
-
+        
         ext = self.ext
         path = self.path
         setFile = self.setFile
@@ -1095,7 +1086,6 @@ class ParamWriter(Operation):
                 return
 
             self.isConfig = True
-#             self.putMetadata()
             self.setNextFile()
 
         self.putData()

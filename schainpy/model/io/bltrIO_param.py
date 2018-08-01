@@ -111,7 +111,6 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
               timezone=0,
               status_value=0,
               **kwargs):
-
         self.path = path
         self.startDate = startDate
         self.endDate = endDate

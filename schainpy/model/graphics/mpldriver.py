@@ -434,7 +434,6 @@ def createPmultilineYAxis(ax, x, y, xmin, xmax, ymin, ymax, xlabel='', ylabel=''
 def pmultilineyaxis(iplot, x, y, xlabel='', ylabel='', title=''):
 
     ax = iplot.axes
-
     printLabels(ax, xlabel, ylabel, title)
 
     for i in range(len(ax.lines)):

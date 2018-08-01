@@ -413,9 +413,7 @@ class SpectraWriter(JRODataWriter, Operation):
 
     data_dc = None
 
-#    dataOut = None
-
-    def __init__(self):#, **kwargs):
+    def __init__(self):
         """
         Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
 
@@ -429,9 +427,7 @@ class SpectraWriter(JRODataWriter, Operation):
         Return: None
         """
 
-        Operation.__init__(self)#, **kwargs)
-
-        #self.isConfig = False
+        Operation.__init__(self)
 
         self.nTotalBlocks = 0
 
@@ -496,7 +492,7 @@ class SpectraWriter(JRODataWriter, Operation):
 
 
     def writeBlock(self):
-        """
+        """processingHeaderObj
         Escribe el buffer en el file designado
 
         Affected:
@@ -519,8 +515,10 @@ class SpectraWriter(JRODataWriter, Operation):
         data.tofile(self.fp)
 
         if self.data_cspc is not None:
-            data = numpy.zeros( self.shape_cspc_Buffer, self.dtype )
+            
             cspc = numpy.transpose( self.data_cspc, (0,2,1) )
+            #data = numpy.zeros( numpy.shape(cspc), self.dtype )
+            #print 'data.shape', self.shape_cspc_Buffer
             if not self.processingHeaderObj.shif_fft:
                 cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             data['real'] = cspc.real
@@ -529,8 +527,9 @@ class SpectraWriter(JRODataWriter, Operation):
             data.tofile(self.fp)
 
         if self.data_dc is not None:
-            data = numpy.zeros( self.shape_dc_Buffer, self.dtype )
+            
             dc = self.data_dc
+            data = numpy.zeros( numpy.shape(dc), self.dtype )
             data['real'] = dc.real
             data['imag'] = dc.imag
             data = data.reshape((-1))
