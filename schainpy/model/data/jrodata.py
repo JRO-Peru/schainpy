@@ -7,7 +7,9 @@ $Id: JROData.py 173 2012-11-20 15:06:21Z murco $
 import copy
 import numpy
 import datetime
+import json
 
+from schainpy.utils import log
 from .jroheaderIO import SystemHeader, RadarControllerHeader
 
 
@@ -79,7 +81,7 @@ def hildebrand_sekhon(data, navg):
     j = 0
     cont = 1
 
-    while((cont==1)and(j<lenOfData)):
+    while((cont == 1)and(j < lenOfData)):
 
         sump += sortdata[j]
         sumq += sortdata[j]**2
@@ -88,13 +90,13 @@ def hildebrand_sekhon(data, navg):
             rtest = float(j)/(j-1) + 1.0/navg
             if ((sumq*j) > (rtest*sump**2)):
                 j = j - 1
-                sump  = sump - sortdata[j]
-                sumq =  sumq - sortdata[j]**2
+                sump = sump - sortdata[j]
+                sumq = sumq - sortdata[j]**2
                 cont = 0
 
         j += 1
 
-    lnoise = sump /j
+    lnoise = sump / j
 
     return lnoise
 
@@ -147,85 +149,48 @@ class JROData(GenericData):
     #    m_ProcessingHeader = ProcessingHeader()
 
     systemHeaderObj = SystemHeader()
-
     radarControllerHeaderObj = RadarControllerHeader()
-
 #    data = None
-
     type = None
-
     datatype = None  # dtype but in string
-
 #     dtype = None
-
 #    nChannels = None
-
 #    nHeights = None
-
     nProfiles = None
-
     heightList = None
-
     channelList = None
-
     flagDiscontinuousBlock = False
-
     useLocalTime = False
-
     utctime = None
-
     timeZone = None
-
     dstFlag = None
-
     errorCount = None
-
     blocksize = None
-
 #     nCode = None
-#
 #     nBaud = None
-#
 #     code = None
-
     flagDecodeData = False  # asumo q la data no esta decodificada
-
     flagDeflipData = False  # asumo q la data no esta sin flip
-
     flagShiftFFT = False
-
 #     ippSeconds = None
-
 #     timeInterval = None
-
     nCohInt = None
-
 #     noise = None
-
     windowOfFilter = 1
-
     # Speed of ligth
     C = 3e8
-
     frequency = 49.92e6
-
     realtime = False
-
     beacon_heiIndexList = None
-
     last_block = None
-
     blocknow = None
-
     azimuth = None
-
     zenith = None
-
     beam = Beam()
-
     profileIndex = None
-
-    error = (0, '')
+    error = None
+    data = None
+    nmodes = None
 
     def __str__(self):
 
@@ -395,53 +360,29 @@ class Voltage(JROData):
         '''
 
         self.useLocalTime = True
-
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.systemHeaderObj = SystemHeader()
-
         self.type = "Voltage"
-
         self.data = None
-
 #         self.dtype = None
-
 #        self.nChannels = 0
-
 #        self.nHeights = 0
-
         self.nProfiles = None
-
-        self.heightList = None
-
+        self.heightList = Non
         self.channelList = None
-
 #        self.channelIndexList = None
-
         self.flagNoData = True
-
         self.flagDiscontinuousBlock = False
-
         self.utctime = None
-
         self.timeZone = None
-
         self.dstFlag = None
-
         self.errorCount = None
-
         self.nCohInt = None
-
         self.blocksize = None
-
         self.flagDecodeData = False  # asumo q la data no esta decodificada
-
         self.flagDeflipData = False  # asumo q la data no esta sin flip
-
         self.flagShiftFFT = False
-
         self.flagDataAsBlock = False  # Asumo que la data es leida perfil a perfil
-
         self.profileIndex = 0
 
     def getNoisebyHildebrand(self, channel=None):
@@ -505,32 +446,20 @@ class Spectra(JROData):
 
     # data spc es un numpy array de 2 dmensiones (canales, perfiles, alturas)
     data_spc = None
-
     # data cspc es un numpy array de 2 dmensiones (canales, pares, alturas)
     data_cspc = None
-
     # data dc es un numpy array de 2 dmensiones (canales, alturas)
     data_dc = None
-
     # data power
     data_pwr = None
-
     nFFTPoints = None
-
 #     nPairs = None
-
     pairsList = None
-
     nIncohInt = None
-
     wavelength = None  # Necesario para cacular el rango de velocidad desde la frecuencia
-
     nCohInt = None  # se requiere para determinar el valor de timeInterval
-
     ippFactor = None
-
     profileIndex = 0
-
     plotting = "spectra"
 
     def __init__(self):
@@ -539,59 +468,32 @@ class Spectra(JROData):
         '''
 
         self.useLocalTime = True
-
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.systemHeaderObj = SystemHeader()
-
         self.type = "Spectra"
-
 #        self.data = None
-
 #         self.dtype = None
-
 #        self.nChannels = 0
-
 #        self.nHeights = 0
-
         self.nProfiles = None
-
         self.heightList = None
-
         self.channelList = None
-
 #        self.channelIndexList = None
-
         self.pairsList = None
-
         self.flagNoData = True
-
         self.flagDiscontinuousBlock = False
-
         self.utctime = None
-
         self.nCohInt = None
-
         self.nIncohInt = None
-
         self.blocksize = None
-
         self.nFFTPoints = None
-
         self.wavelength = None
-
         self.flagDecodeData = False  # asumo q la data no esta decodificada
-
         self.flagDeflipData = False  # asumo q la data no esta sin flip
-
         self.flagShiftFFT = False
-
         self.ippFactor = 1
-
         #self.noise = None
-
         self.beacon_heiIndexList = []
-
         self.noise_estimation = None
 
     def getNoisebyHildebrand(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
@@ -652,9 +554,12 @@ class Spectra(JROData):
 
         deltav = self.getVmax() / (self.nFFTPoints * self.ippFactor)
         velrange = deltav * (numpy.arange(self.nFFTPoints +
-                                          extrapoints) - self.nFFTPoints / 2.)  # - deltav/2
+                                          extrapoints) - self.nFFTPoints / 2.)
 
-        return velrange
+        if self.nmodes:
+            return velrange/self.nmodes
+        else:
+            return velrange
 
     def getNPairs(self):
 
@@ -692,7 +597,8 @@ class Spectra(JROData):
 
     def getTimeInterval(self):
 
-        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles * self.ippFactor
+        timeInterval = self.ippSeconds * self.nCohInt * \
+            self.nIncohInt * self.nProfiles * self.ippFactor
 
         return timeInterval
 
@@ -755,19 +661,12 @@ class Spectra(JROData):
 class SpectraHeis(Spectra):
 
     data_spc = None
-
     data_cspc = None
-
     data_dc = None
-
     nFFTPoints = None
-
 #     nPairs = None
-
     pairsList = None
-
     nCohInt = None
-
     nIncohInt = None
 
     def __init__(self):
@@ -830,36 +729,21 @@ class SpectraHeis(Spectra):
 class Fits(JROData):
 
     heightList = None
-
     channelList = None
-
     flagNoData = True
-
     flagDiscontinuousBlock = False
-
     useLocalTime = False
-
     utctime = None
-
     timeZone = None
-
 #     ippSeconds = None
-
 #     timeInterval = None
-
     nCohInt = None
-
     nIncohInt = None
-
     noise = None
-
     windowOfFilter = 1
-
     # Speed of ligth
     C = 3e8
-
     frequency = 49.92e6
-
     realtime = False
 
     def __init__(self):
@@ -978,33 +862,19 @@ class Fits(JROData):
 class Correlation(JROData):
 
     noise = None
-
     SNR = None
-
     #--------------------------------------------------
-
     mode = None
-
     split = False
-
     data_cf = None
-
     lags = None
-
     lagRange = None
-
     pairsList = None
-
     normFactor = None
-
     #--------------------------------------------------
-
 #     calculateVelocity = None
-
     nLags = None
-
     nPairs = None
-
     nAvg = None
 
     def __init__(self):
@@ -1068,7 +938,8 @@ class Correlation(JROData):
         ind_vel = numpy.array([-2, -1, 1, 2]) + freq_dc
 
         if ind_vel[0] < 0:
-            ind_vel[list(range(0, 1))] = ind_vel[list(range(0, 1))] + self.num_prof
+            ind_vel[list(range(0, 1))] = ind_vel[list(
+                range(0, 1))] + self.num_prof
 
         if mode == 1:
             jspectra[:, freq_dc, :] = (
@@ -1154,55 +1025,30 @@ class Correlation(JROData):
 class Parameters(Spectra):
 
     experimentInfo = None  # Information about the experiment
-
     # Information from previous data
-
     inputUnit = None  # Type of data to be processed
-
     operation = None  # Type of operation to parametrize
-
     # normFactor = None       #Normalization Factor
-
     groupList = None  # List of Pairs, Groups, etc
-
     # Parameters
-
     data_param = None  # Parameters obtained
-
     data_pre = None  # Data Pre Parametrization
-
     data_SNR = None  # Signal to Noise Ratio
-
 #     heightRange = None      #Heights
-
     abscissaList = None  # Abscissa, can be velocities, lags or time
-
 #    noise = None            #Noise Potency
-
     utctimeInit = None  # Initial UTC time
-
     paramInterval = None  # Time interval to calculate Parameters in seconds
-
     useLocalTime = True
-
     # Fitting
-
     data_error = None  # Error of the estimation
-
     constants = None
-
     library = None
-
     # Output signal
-
     outputInterval = None  # Time interval to calculate output signal in seconds
-
     data_output = None  # Out signal
-
     nAvg = None
-
     noise_estimation = None
-
     GauSPC = None  # Fit gaussian SPC
 
     def __init__(self):
@@ -1249,3 +1095,251 @@ class Parameters(Spectra):
 
     timeInterval = property(getTimeInterval)
     noise = property(getNoise, setValue, "I'm the 'Noise' property.")
+
+
+class PlotterData(object):
+    '''
+    Object to hold data to be plotted
+    '''
+
+    MAXNUMX = 100
+    MAXNUMY = 100
+
+    def __init__(self, code, throttle_value, exp_code, buffering=True):
+
+        self.throttle = throttle_value
+        self.exp_code = exp_code
+        self.buffering = buffering
+        self.ready = False
+        self.localtime = False
+        self.data = {}
+        self.meta = {}
+        self.__times = []
+        self.__heights = []
+
+        if 'snr' in code:
+            self.plottypes = ['snr']
+        elif code == 'spc':
+            self.plottypes = ['spc', 'noise', 'rti']
+        elif code == 'rti':
+            self.plottypes = ['noise', 'rti']
+        else:
+            self.plottypes = [code]
+            
+        for plot in self.plottypes:
+            self.data[plot] = {}
+
+    def __str__(self):
+        dum = ['{}{}'.format(key, self.shape(key)) for key in self.data]
+        return 'Data[{}][{}]'.format(';'.join(dum), len(self.__times))
+
+    def __len__(self):
+        return len(self.__times)
+
+    def __getitem__(self, key):
+
+        if key not in self.data:
+            raise KeyError(log.error('Missing key: {}'.format(key)))
+        if 'spc' in key or not self.buffering:
+            ret = self.data[key]
+        else:
+            ret = numpy.array([self.data[key][x] for x in self.times])
+            if ret.ndim > 1:
+                ret = numpy.swapaxes(ret, 0, 1)
+        return ret
+
+    def __contains__(self, key):
+        return key in self.data
+
+    def setup(self):
+        '''
+        Configure object
+        '''
+
+        self.type = ''
+        self.ready = False
+        self.data = {}
+        self.__times = []
+        self.__heights = []
+        self.__all_heights = set()
+        for plot in self.plottypes:
+            if 'snr' in plot:
+                plot = 'snr'
+            self.data[plot] = {}
+        
+        if 'spc' in self.data or 'rti' in self.data:
+            self.data['noise'] = {}
+            if 'noise' not in self.plottypes:
+                self.plottypes.append('noise')
+
+    def shape(self, key):
+        '''
+        Get the shape of the one-element data for the given key
+        '''
+
+        if len(self.data[key]):
+            if 'spc' in key or not self.buffering:
+                return self.data[key].shape
+            return self.data[key][self.__times[0]].shape
+        return (0,)
+
+    def update(self, dataOut, tm):
+        '''
+        Update data object with new dataOut
+        '''
+
+        if tm in self.__times:
+            return
+
+        self.type = dataOut.type
+        self.parameters = getattr(dataOut, 'parameters', [])
+        if hasattr(dataOut, 'pairsList'):
+            self.pairs = dataOut.pairsList
+        if hasattr(dataOut, 'meta'):
+            self.meta = dataOut.meta
+        self.channels = dataOut.channelList
+        self.interval = dataOut.getTimeInterval()
+        self.localtime = dataOut.useLocalTime
+        if 'spc' in self.plottypes or 'cspc' in self.plottypes:
+            self.xrange = (dataOut.getFreqRange(1)/1000.,
+                           dataOut.getAcfRange(1), dataOut.getVelRange(1))
+        self.__heights.append(dataOut.heightList)
+        self.__all_heights.update(dataOut.heightList)
+        self.__times.append(tm)
+
+        for plot in self.plottypes:
+            if plot == 'spc':
+                z = dataOut.data_spc/dataOut.normFactor
+                buffer = 10*numpy.log10(z)
+            if plot == 'cspc':
+                buffer = dataOut.data_cspc
+            if plot == 'noise':
+                buffer = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
+            if plot == 'rti':
+                buffer = dataOut.getPower()
+            if plot == 'snr_db':
+                buffer = dataOut.data_SNR
+            if plot == 'snr':
+                buffer = 10*numpy.log10(dataOut.data_SNR)
+            if plot == 'dop':
+                buffer = 10*numpy.log10(dataOut.data_DOP)
+            if plot == 'mean':
+                buffer = dataOut.data_MEAN
+            if plot == 'std':
+                buffer = dataOut.data_STD
+            if plot == 'coh':
+                buffer = dataOut.getCoherence()
+            if plot == 'phase':
+                buffer = dataOut.getCoherence(phase=True)
+            if plot == 'output':
+                buffer = dataOut.data_output
+            if plot == 'param':
+                buffer = dataOut.data_param
+
+            if 'spc' in plot:
+                self.data[plot] = buffer
+            else:
+                if self.buffering:
+                    self.data[plot][tm] = buffer
+                else:
+                    self.data[plot] = buffer
+
+    def normalize_heights(self):
+        '''
+        Ensure same-dimension of the data for different heighList
+        '''
+
+        H = numpy.array(list(self.__all_heights))
+        H.sort()
+        for key in self.data:
+            shape = self.shape(key)[:-1] + H.shape
+            for tm, obj in list(self.data[key].items()):
+                h = self.__heights[self.__times.index(tm)]
+                if H.size == h.size:
+                    continue
+                index = numpy.where(numpy.in1d(H, h))[0]
+                dummy = numpy.zeros(shape) + numpy.nan
+                if len(shape) == 2:
+                    dummy[:, index] = obj
+                else:
+                    dummy[index] = obj
+                self.data[key][tm] = dummy
+
+        self.__heights = [H for tm in self.__times]
+
+    def jsonify(self, decimate=False):
+        '''
+        Convert data to json
+        '''
+
+        data = {}
+        tm = self.times[-1]
+        dy = int(self.heights.size/self.MAXNUMY) + 1
+        for key in self.data:
+            if key in ('spc', 'cspc') or not self.buffering:
+                dx = int(self.data[key].shape[1]/self.MAXNUMX) + 1
+                data[key] = self.roundFloats(
+                    self.data[key][::, ::dx, ::dy].tolist())
+            else:
+                data[key] = self.roundFloats(self.data[key][tm].tolist())
+
+        ret = {'data': data}
+        ret['exp_code'] = self.exp_code
+        ret['time'] = float(tm)
+        ret['interval'] = float(self.interval)
+        ret['localtime'] = self.localtime
+        ret['yrange'] = self.roundFloats(self.heights[::dy].tolist())
+        if 'spc' in self.data or 'cspc' in self.data:
+            ret['xrange'] = self.roundFloats(self.xrange[2][::dx].tolist())
+        else:
+            ret['xrange'] = []
+        if hasattr(self, 'pairs'):
+            ret['pairs'] = [(int(p[0]), int(p[1])) for p in self.pairs]
+        else:
+            ret['pairs'] = []
+
+        for key, value in list(self.meta.items()):
+            ret[key] = value
+
+        return json.dumps(ret)
+
+    @property
+    def times(self):
+        '''
+        Return the list of times of the current data
+        '''
+
+        ret = numpy.array(self.__times)
+        ret.sort()
+        return ret
+
+    @property
+    def min_time(self):
+        '''
+        Return the minimun time value
+        '''
+
+        return self.times[0]
+
+    @property
+    def max_time(self):
+        '''
+        Return the maximun time value
+        '''
+
+        return self.times[-1]
+
+    @property
+    def heights(self):
+        '''
+        Return the list of heights of the current data
+        '''
+
+        return numpy.array(self.__heights[-1])
+
+    @staticmethod
+    def roundFloats(obj):
+        if isinstance(obj, list):
+            return list(map(PlotterData.roundFloats, obj))
+        elif isinstance(obj, float):
+            return round(obj, 2)

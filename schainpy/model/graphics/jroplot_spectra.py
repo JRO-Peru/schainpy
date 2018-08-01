@@ -14,7 +14,7 @@ from schainpy.model.proc.jroproc_base import MPDecorator
 from schainpy.utils import log
 
 @MPDecorator
-class SpectraPlot(Figure):
+class SpectraPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -42,6 +42,8 @@ class SpectraPlot(Figure):
 
         self.__xfilter_ena = False
         self.__yfilter_ena = False
+        
+        self.indice=1
 
     def getSubplots(self):
 
@@ -139,10 +141,9 @@ class SpectraPlot(Figure):
             x = dataOut.getVelRange(1)
             xlabel = "Velocity (m/s)"
 
-        ylabel = "Range (Km)"
+        ylabel = "Range (km)"
 
         y = dataOut.getHeiRange()
-
         z = dataOut.data_spc/factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         zdB = 10*numpy.log10(z)
@@ -155,6 +156,7 @@ class SpectraPlot(Figure):
 
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Spectra"
+
         if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
             title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
 
@@ -223,10 +225,11 @@ class SpectraPlot(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
+        
 
         return dataOut
 @MPDecorator
-class CrossSpectraPlot(Figure):
+class CrossSpectraPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -252,6 +255,8 @@ class CrossSpectraPlot(Figure):
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
+        
+        self.indice=0
 
     def getSubplots(self):
 
@@ -396,6 +401,7 @@ class CrossSpectraPlot(Figure):
             self.isConfig = True
 
         self.setWinTitle(title)
+  
 
         for i in range(self.nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
@@ -420,7 +426,7 @@ class CrossSpectraPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=power_cmap, cblabel='')
 
-            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]/numpy.sqrt(dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:])
+            coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]  /  numpy.sqrt(  dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:]  )
             coherence = numpy.abs(coherenceComplex)
 #            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
             phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
@@ -439,8 +445,6 @@ class CrossSpectraPlot(Figure):
                         xlabel=xlabel, ylabel=ylabel, title=title,
                         ticksize=9, colormap=phase_cmap, cblabel='')
 
-
-
         self.draw()
 
         self.save(figpath=figpath,
@@ -453,7 +457,7 @@ class CrossSpectraPlot(Figure):
         return dataOut
 
 @MPDecorator
-class RTIPlot(Figure):
+class RTIPlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -470,7 +474,7 @@ class RTIPlot(Figure):
         self.__nsubplots = 1
 
         self.WIDTH = 800
-        self.HEIGHT = 180
+        self.HEIGHT = 250
         self.WIDTHPROF = 120
         self.HEIGHTPROF = 0
         self.counter_imagwr = 0
@@ -667,7 +671,7 @@ class RTIPlot(Figure):
         return dataOut
 
 @MPDecorator
-class CoherenceMap(Figure):
+class CoherenceMap_(Figure):
     isConfig = None
     __nsubplots = None
 
@@ -878,7 +882,7 @@ class CoherenceMap(Figure):
         return dataOut
 
 @MPDecorator
-class PowerProfilePlot(Figure):
+class PowerProfilePlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -1008,7 +1012,7 @@ class PowerProfilePlot(Figure):
         return dataOut
 
 @MPDecorator
-class SpectraCutPlot(Figure):
+class SpectraCutPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -1145,7 +1149,7 @@ class SpectraCutPlot(Figure):
         return dataOut
 
 @MPDecorator
-class Noise(Figure):
+class Noise_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -1352,7 +1356,7 @@ class Noise(Figure):
         return dataOut
 
 @MPDecorator
-class BeaconPhase(Figure):
+class BeaconPhase_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -1496,9 +1500,6 @@ class BeaconPhase(Figure):
             powb = numpy.average(dataOut.data_spc[pair[1], :, hmin_index:hmax_index], axis=0)
             avgcoherenceComplex = ccf/numpy.sqrt(powa*powb)
             phase = numpy.arctan2(avgcoherenceComplex.imag, avgcoherenceComplex.real)*180/numpy.pi
-
-            #print "Phase %d%d" %(pair[0], pair[1])
-            #print phase[dataOut.beacon_heiIndexList]
 
             if dataOut.beacon_heiIndexList:
                 phase_beacon[i] = numpy.average(phase[dataOut.beacon_heiIndexList])

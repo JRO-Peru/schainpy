@@ -1,5 +1,12 @@
 ## CHANGELOG:
 
+### 3.0
+* Python 3.x compatible
+* New architecture with multiprocessing and IPC communication
+* Add @MPDecorator for multiprocessing Units and Operations
+* Added new type of operation `external` for non-locking operations
+* New plotting architecture with buffering/throttle capabilities to speed up plots
+
 ### 2.3
 * Added support for Madrigal formats (reading/writing).
 * Added support for reading BLTR parameters (*.sswma).

@@ -24,7 +24,7 @@ from email.mime.multipart import MIMEMultipart
 
 import schainpy
 from schainpy.utils import log
-from schainpy.model.graphics.jroplot_data import popup
+from schainpy.model.graphics.jroplot_base import popup
 
 def get_path():
     '''
