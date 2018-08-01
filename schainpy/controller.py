@@ -18,19 +18,9 @@ from xml.dom import minidom
 
 
 from schainpy.admin import Alarm, SchainWarning
-
-### Temporary imports!!!
-# from schainpy.model import *
-from schainpy.model.io import *
-from schainpy.model.graphics import *
-from schainpy.model.proc.jroproc_base import *
-from schainpy.model.proc.bltrproc_parameters import *
-from schainpy.model.proc.jroproc_spectra import *
-from schainpy.model.proc.jroproc_voltage import *
-from schainpy.model.proc.jroproc_parameters import *
-from schainpy.model.utils.jroutils_publish import *
+from schainpy.model import *
 from schainpy.utils import log
-###
+
 
 DTYPES = {
     'Voltage': '.r',
@@ -683,6 +673,7 @@ class ProcUnitConf():
         '''
         Instancia de unidades de procesamiento.
         '''
+        
         className = eval(self.name)
         kwargs = self.getKwargs()
         procUnitObj = className(self.id, self.inputId, self.project_id, **kwargs) # necesitan saber su id y su entrada por fines de ipc

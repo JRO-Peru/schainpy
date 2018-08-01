@@ -214,14 +214,14 @@ def MPDecorator(BaseClass):
             self.receiver.connect(
                 'ipc:///tmp/schain/{}_pub'.format(self.project_id))
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
-
+            
         def listen(self):
             '''
             This function waits for objects and deserialize using pickle
             '''
-
+            
             data = pickle.loads(self.receiver.recv_multipart()[1])
-
+            
             return data
 
         def set_publisher(self):
@@ -278,12 +278,15 @@ def MPDecorator(BaseClass):
             '''
 
             while True:
-                self.dataIn = self.listen()
+                self.dataIn = self.listen()                
 
                 if self.dataIn.flagNoData and self.dataIn.error is None:
                     continue
-
+            
                 BaseClass.run(self, **self.kwargs)
+
+                if self.dataOut.flagNoData:
+                    continue
 
                 for op, optype, opId, kwargs in self.operations:
                     if optype == 'self':
@@ -304,7 +307,7 @@ def MPDecorator(BaseClass):
             Run function for external operations (this operations just receive data
             ex: plots, writers, publishers)
             '''
-
+            
             while True:
 
                 dataOut = self.listen()
@@ -316,11 +319,12 @@ def MPDecorator(BaseClass):
             time.sleep(1)
 
         def run(self):
-
             if self.typeProc is "ProcUnit":
 
                 if self.inputId is not None:
+
                     self.subscribe()
+                    
                 self.set_publisher()
 
                 if 'Reader' not in BaseClass.__name__:

@@ -20,7 +20,9 @@ from xml.etree.ElementTree import ElementTree
 
 from .jroIO_base import isRadarFolder, isNumber
 from schainpy.model.data.jrodata import Fits
-from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit
+from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit, MPDecorator
+from schainpy.utils import log
+
 
 class PyFits(object):
     name=None
@@ -281,7 +283,7 @@ class FitsWriter(Operation):
             self.isConfig = True
         self.putData()
 
-
+@MPDecorator
 class FitsReader(ProcessingUnit):
 
 #     __TIMEZONE = time.timezone
@@ -298,8 +300,8 @@ class FitsReader(ProcessingUnit):
     data = None
     data_header_dict = None
 
-    def __init__(self, **kwargs):
-        ProcessingUnit.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        ProcessingUnit.__init__(self)#, **kwargs)
         self.isConfig = False
         self.ext = '.fits'
         self.setFile = 0
@@ -391,8 +393,7 @@ class FitsReader(ProcessingUnit):
 
         self.dataOut.nCohInt = self.nCohInt
         self.dataOut.nIncohInt = self.nIncohInt
-
-        self.dataOut.ippSeconds = self.ippSeconds
+        self.dataOut.ipp_sec = self.ippSeconds
 
     def readHeader(self):
         headerObj = self.fitsObj[0]
@@ -691,18 +692,17 @@ class FitsReader(ProcessingUnit):
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print('Process finished')
-            return 0
+            return (0, 'No more files')
 
         self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
 
         if not(self.readNextBlock()):
-            return 0
+            return (1, 'Error reading data')
 
         if self.data is None:
             self.dataOut.flagNoData = True
-            return 0
+            return (0, 'No more data')
 
         self.dataOut.data = self.data
         self.dataOut.data_header = self.data_header_dict
@@ -718,8 +718,7 @@ class FitsReader(ProcessingUnit):
 #         self.dataOut.channelList = self.channelList
 #         self.dataOut.heightList = self.heightList
         self.dataOut.flagNoData = False
-
-        return self.dataOut.data
+        # return self.dataOut.data
 
     def run(self, **kwargs):
 
@@ -729,6 +728,7 @@ class FitsReader(ProcessingUnit):
 
         self.getData()
 
+@MPDecorator
 class SpectraHeisWriter(Operation):
 #    set = None
     setFile = None
@@ -736,8 +736,8 @@ class SpectraHeisWriter(Operation):
     doypath = None
     subfolder = None
 
-    def __init__(self, **kwargs):
-        Operation.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Operation.__init__(self)#, **kwargs)
         self.wrObj = PyFits()
 #        self.dataOut = dataOut
         self.nTotalBlocks=0
@@ -846,3 +846,4 @@ class SpectraHeisWriter(Operation):
             self.isConfig = True
 
         self.putData()
+        return dataOut

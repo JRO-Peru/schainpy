@@ -368,7 +368,7 @@ class Voltage(JROData):
 #        self.nChannels = 0
 #        self.nHeights = 0
         self.nProfiles = None
-        self.heightList = Non
+        self.heightList = None
         self.channelList = None
 #        self.channelIndexList = None
         self.flagNoData = True
@@ -848,6 +848,12 @@ class Fits(JROData):
 
         return timeInterval
 
+    def get_ippSeconds(self):
+        '''
+        '''
+        return self.ipp_sec
+
+
     datatime = property(getDatatime, "I'm the 'datatime' property")
     nHeights = property(getNHeights, "I'm the 'nHeights' property.")
     nChannels = property(getNChannels, "I'm the 'nChannel' property.")
@@ -857,7 +863,7 @@ class Fits(JROData):
 
     ltctime = property(getltctime, "I'm the 'ltctime' property")
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
-
+    ippSeconds = property(get_ippSeconds, '')
 
 class Correlation(JROData):
 

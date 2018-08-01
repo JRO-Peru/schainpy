@@ -9,7 +9,10 @@ import numpy
 
 from .figure import Figure, isRealtime
 from .plotting_codes import *
+from schainpy.model.proc.jroproc_base import MPDecorator
 
+
+@MPDecorator
 class SpectraHeisScope_(Figure):
 
 
@@ -20,9 +23,9 @@ class SpectraHeisScope_(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc'
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Figure.__init__(self, **kwargs)
+        Figure.__init__(self)#, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -95,6 +98,9 @@ class SpectraHeisScope_(Figure):
             ymin            :    None,
             ymax            :    None,
         """
+
+        if dataOut.flagNoData:
+            return dataOut
 
         if dataOut.realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
@@ -173,6 +179,9 @@ class SpectraHeisScope_(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
+        return dataOut
+
+@MPDecorator
 class RTIfromSpectraHeis_(Figure):
 
     isConfig = None
@@ -180,8 +189,8 @@ class RTIfromSpectraHeis_(Figure):
 
     PREFIX = 'rtinoise'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Figure.__init__(self)#, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -230,6 +239,10 @@ class RTIfromSpectraHeis_(Figure):
             save=False, figpath='./', figfile=None, ftp=False, wr_period=1, show=True,
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
+
+        if dataOut.flagNoData:
+            return dataOut
+
 
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
@@ -327,3 +340,6 @@ class RTIfromSpectraHeis_(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
+
+
+        return dataOut
