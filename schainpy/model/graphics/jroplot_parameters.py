@@ -7,7 +7,7 @@ from .plotting_codes import *
 from schainpy.model.proc.jroproc_base import MPDecorator
 from schainpy.utils import log
 
-class FitGauPlot(Figure):
+class FitGauPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -218,7 +218,7 @@ class FitGauPlot(Figure):
 
 
 
-class MomentsPlot(Figure):
+class MomentsPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -405,7 +405,7 @@ class MomentsPlot(Figure):
                   thisDatetime=thisDatetime)
 
 
-class SkyMapPlot(Figure):
+class SkyMapPlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -561,7 +561,7 @@ class SkyMapPlot(Figure):
 
 
 
-class WindProfilerPlot(Figure):
+class WindProfilerPlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -774,7 +774,7 @@ class WindProfilerPlot(Figure):
             update_figfile = True
 
 @MPDecorator
-class ParametersPlot(Figure):
+class ParametersPlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -986,7 +986,7 @@ class ParametersPlot(Figure):
 
         return dataOut 
 @MPDecorator
-class Parameters1Plot(Figure):
+class Parameters1Plot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -1237,7 +1237,7 @@ class Parameters1Plot(Figure):
                   update_figfile=False)
         return dataOut
 
-class SpectralFittingPlot(Figure):
+class SpectralFittingPlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -1415,7 +1415,7 @@ class SpectralFittingPlot(Figure):
                   thisDatetime=thisDatetime)
 
 
-class EWDriftsPlot(Figure):
+class EWDriftsPlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -1621,7 +1621,7 @@ class EWDriftsPlot(Figure):
 
 
 
-class PhasePlot(Figure):
+class PhasePlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -1785,7 +1785,7 @@ class PhasePlot(Figure):
 
 
 
-class NSMeteorDetection1Plot(Figure):
+class NSMeteorDetection1Plot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -1969,7 +1969,7 @@ class NSMeteorDetection1Plot(Figure):
                   thisDatetime=thisDatetime)
 
 
-class NSMeteorDetection2Plot(Figure):
+class NSMeteorDetection2Plot_(Figure):
 
     isConfig = None
     __nsubplots = None

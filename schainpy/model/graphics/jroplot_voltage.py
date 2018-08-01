@@ -12,7 +12,7 @@ from .figure import Figure
 
 
 @MPDecorator
-class Scope(Figure):
+class Scope_(Figure):
     
     isConfig = None
     

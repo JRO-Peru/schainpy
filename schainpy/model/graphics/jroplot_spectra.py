@@ -14,7 +14,7 @@ from schainpy.model.proc.jroproc_base import MPDecorator
 from schainpy.utils import log
 
 @MPDecorator
-class SpectraPlot(Figure):
+class SpectraPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -226,7 +226,7 @@ class SpectraPlot(Figure):
 
         return dataOut
 @MPDecorator
-class CrossSpectraPlot(Figure):
+class CrossSpectraPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -453,7 +453,7 @@ class CrossSpectraPlot(Figure):
         return dataOut
 
 @MPDecorator
-class RTIPlot(Figure):
+class RTIPlot_(Figure):
 
     __isConfig = None
     __nsubplots = None
@@ -667,7 +667,7 @@ class RTIPlot(Figure):
         return dataOut
 
 @MPDecorator
-class CoherenceMap(Figure):
+class CoherenceMap_(Figure):
     isConfig = None
     __nsubplots = None
 
@@ -878,7 +878,7 @@ class CoherenceMap(Figure):
         return dataOut
 
 @MPDecorator
-class PowerProfilePlot(Figure):
+class PowerProfilePlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -1008,7 +1008,7 @@ class PowerProfilePlot(Figure):
         return dataOut
 
 @MPDecorator
-class SpectraCutPlot(Figure):
+class SpectraCutPlot_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -1145,7 +1145,7 @@ class SpectraCutPlot(Figure):
         return dataOut
 
 @MPDecorator
-class Noise(Figure):
+class Noise_(Figure):
 
     isConfig = None
     __nsubplots = None
@@ -1352,7 +1352,7 @@ class Noise(Figure):
         return dataOut
 
 @MPDecorator
-class BeaconPhase(Figure):
+class BeaconPhase_(Figure):
 
     __isConfig = None
     __nsubplots = None

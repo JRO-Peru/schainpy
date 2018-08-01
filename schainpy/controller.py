@@ -97,9 +97,7 @@ def wait(context):
     receiver = c.socket(zmq.SUB)
     receiver.connect('ipc:///tmp/schain_{}_pub'.format(self.id))    
     receiver.setsockopt(zmq.SUBSCRIBE, self.id.encode())
-    log.error('startinggg')
     msg = receiver.recv_multipart()[1]
-    #log.error(msg)
     context.terminate()
 
 class ParameterConf():
@@ -1245,7 +1243,7 @@ class Project(Process):
         
         try:
             zmq.proxy(xpub, xsub)
-        except zmq.ContextTerminated:
+        except: # zmq.ContextTerminated:
             xpub.close()
             xsub.close()
 
@@ -1260,6 +1258,6 @@ class Project(Process):
         
         # Iniciar todos los procesos .start(), monitoreo de procesos. ELiminar lo de abajo
 
-        log.success('{} finished (time: {}s)'.format(
+        log.success('{} Done (time: {}s)'.format(
             self.name,
             time.time()-self.start_time))

@@ -11,13 +11,15 @@ Based on:
     $Author: murco $
     $Id: jroproc_base.py 1 2012-11-12 18:56:07Z murco $
 '''
-from platform import python_version
+
 import inspect
 import zmq
 import time
 import pickle
 import os
 from multiprocessing import Process
+from zmq.utils.monitor import recv_monitor_message
+
 from schainpy.utils import log
 
 
@@ -35,15 +37,6 @@ class ProcessingUnit(object):
    
 
     """
-    
-    METHODS = {}
-    dataIn = None
-    dataInList = []
-    id = None
-    inputId = None
-    dataOut = None
-    dictProcs = None
-    isConfig = False
 
     def __init__(self):
 
@@ -51,15 +44,15 @@ class ProcessingUnit(object):
         self.dataOut = None
         self.isConfig = False
         self.operations = []
+        self.plots = []
 
     def getAllowedArgs(self):
         if hasattr(self, '__attrs__'):
             return self.__attrs__
         else:
             return inspect.getargspec(self.run).args
- 
-    def addOperation(self, conf, operation):
 
+    def addOperation(self, conf, operation):
         """
         This method is used in the controller, and update the dictionary containing the operations to execute. The dict 
         posses the id of the operation process (IPC purposes)
@@ -76,7 +69,11 @@ class ProcessingUnit(object):
                 objId    :    identificador del objeto, necesario para comunicar con master(procUnit)
         """
 
-        self.operations.append((operation, conf.type, conf.id, conf.getKwargs()))
+        self.operations.append(
+            (operation, conf.type, conf.id, conf.getKwargs()))
+        
+        if 'plot' in self.name.lower():
+            self.plots.append(operation.CODE)
 
     def getOperationObj(self, objId):
 
@@ -86,7 +83,6 @@ class ProcessingUnit(object):
         return self.operations[objId]
 
     def operation(self, **kwargs):
-
         """
         Operacion directa sobre la data (dataOut.data). Es necesario actualizar los valores de los
         atributos del objeto dataOut
@@ -96,7 +92,7 @@ class ProcessingUnit(object):
             **kwargs    :    Diccionario de argumentos de la funcion a ejecutar
         """
 
-        raise NotImplementedError    
+        raise NotImplementedError
 
     def setup(self):
 
@@ -107,9 +103,10 @@ class ProcessingUnit(object):
         raise NotImplementedError
 
     def close(self):
-        #Close every thread, queue or any other object here is it is neccesary.
+
         return
-    
+
+
 class Operation(object):
 
     """
@@ -126,22 +123,15 @@ class Operation(object):
         Ejemplo: Integraciones coherentes, necesita la informacion previa de los n perfiles anteriores (bufffer)
 
     """
-    id = None
-    __buffer = None
-    dest = None
-    isConfig = False
-    readyFlag = None
 
     def __init__(self):
 
-        self.buffer = None
-        self.dest = None
+        self.id = None
         self.isConfig = False
-        self.readyFlag = False
 
         if not hasattr(self, 'name'):
             self.name = self.__class__.__name__
-              
+
     def getAllowedArgs(self):
         if hasattr(self, '__attrs__'):
             return self.__attrs__
@@ -154,9 +144,7 @@ class Operation(object):
 
         raise NotImplementedError
 
-
     def run(self, dataIn, **kwargs):
-
         """
         Realiza las operaciones necesarias sobre la dataIn.data y actualiza los
         atributos del objeto dataIn.
@@ -180,18 +168,17 @@ class Operation(object):
 
     def close(self):
 
-        pass
+        return
 
 
 def MPDecorator(BaseClass):
-    
     """
     Multiprocessing class decorator
 
     This function add multiprocessing features to a BaseClass. Also, it handle
     the communication beetween processes (readers, procUnits and operations). 
     """
-  
+
     class MPClass(BaseClass, Process):
 
         def __init__(self, *args, **kwargs):
@@ -203,42 +190,38 @@ def MPDecorator(BaseClass):
             self.sender = None
             self.receiver = None
             self.name = BaseClass.__name__
+            self.start_time = time.time()
 
             if len(self.args) is 3:
                 self.typeProc = "ProcUnit"
-                self.id = args[0] 
-                self.inputId = args[1]  
-                self.project_id = args[2]        
-            else:
+                self.id = args[0]
+                self.inputId = args[1]
+                self.project_id = args[2]
+            elif len(self.args) is 2:
                 self.id = args[0]
                 self.inputId = args[0]
                 self.project_id = args[1]
                 self.typeProc = "Operation"
-
-        def getAllowedArgs(self):
-
-            if hasattr(self, '__attrs__'):
-                return self.__attrs__
-            else:
-                return inspect.getargspec(BaseClass.run).args
 
         def subscribe(self):
             '''
             This function create a socket to receive objects from the
             topic `inputId`.
             '''
-            
+
             c = zmq.Context()
             self.receiver = c.socket(zmq.SUB)
-            self.receiver.connect('ipc:///tmp/schain/{}_pub'.format(self.project_id))
+            self.receiver.connect(
+                'ipc:///tmp/schain/{}_pub'.format(self.project_id))
             self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
 
         def listen(self):
             '''
             This function waits for objects and deserialize using pickle
             '''
-            
-            data =  pickle.loads(self.receiver.recv_multipart()[1])
+
+            data = pickle.loads(self.receiver.recv_multipart()[1])
+
             return data
 
         def set_publisher(self):
@@ -248,14 +231,14 @@ def MPDecorator(BaseClass):
 
             time.sleep(1)
             c = zmq.Context()
-            self.sender = c.socket(zmq.PUB)      
-            self.sender.connect('ipc:///tmp/schain/{}_sub'.format(self.project_id))
+            self.sender = c.socket(zmq.PUB)
+            self.sender.connect(
+                'ipc:///tmp/schain/{}_sub'.format(self.project_id))
 
-        def publish(self, data, id): 
+        def publish(self, data, id):
             '''
             This function publish an object, to a specific topic.
             '''
-
             self.sender.send_multipart([str(id).encode(), pickle.dumps(data)])
 
         def runReader(self):
@@ -263,28 +246,32 @@ def MPDecorator(BaseClass):
             Run fuction for read units
             '''
             while True:
-            
+
                 BaseClass.run(self, **self.kwargs)
 
-                if self.dataOut.error[0] == -1:
-                    log.error(self.dataOut.error[1])
-                    self.publish('end', self.id)
-                    #self.sender.send_multipart([str(self.project_id).encode(), 'end'.encode()])
-                    break
-
-                for op, optype, id, kwargs in self.operations:
-                    if optype=='self':
+                for op, optype, opId, kwargs in self.operations:
+                    if optype == 'self':
                         op(**kwargs)
-                    elif optype=='other':                        
+                    elif optype == 'other':
                         self.dataOut = op.run(self.dataOut, **self.kwargs)
-                    elif optype=='external':
+                    elif optype == 'external':
                         self.publish(self.dataOut, opId)
 
-                if self.dataOut.flagNoData:
+                if self.dataOut.flagNoData and self.dataOut.error is None:
                     continue
-              
-                self.publish(self.dataOut, self.id)                  
-             
+
+                self.publish(self.dataOut, self.id)
+
+                if self.dataOut.error:
+                    if self.dataOut.error[0] == -1:
+                        log.error(self.dataOut.error[1], self.name)
+                    if self.dataOut.error[0] == 1:
+                        log.success(self.dataOut.error[1], self.name)
+                    # self.sender.send_multipart([str(self.project_id).encode(), 'end'.encode()])
+                    break
+
+            time.sleep(1)
+
         def runProc(self):
             '''
             Run function for proccessing units
@@ -293,49 +280,45 @@ def MPDecorator(BaseClass):
             while True:
                 self.dataIn = self.listen()
 
-                if self.dataIn == 'end':
-                    self.publish('end', self.id)
-                    for op, optype, opId, kwargs in self.operations:
-                        if optype == 'external':
-                            self.publish('end', opId)
-                    break
-
-                if self.dataIn.flagNoData:
+                if self.dataIn.flagNoData and self.dataIn.error is None:
                     continue
 
                 BaseClass.run(self, **self.kwargs)
 
                 for op, optype, opId, kwargs in self.operations:
-                    if optype=='self':
+                    if optype == 'self':
                         op(**kwargs)
-                    elif optype=='other':
+                    elif optype == 'other':
                         self.dataOut = op.run(self.dataOut, **kwargs)
-                    elif optype=='external':
+                    elif optype == 'external':
                         self.publish(self.dataOut, opId)
 
-                if self.dataOut.flagNoData:
-                    continue
-
                 self.publish(self.dataOut, self.id)
+                if self.dataIn.error:
+                    break
+            
+            time.sleep(1)
 
         def runOp(self):
             '''
-            Run function for operations
+            Run function for external operations (this operations just receive data
+            ex: plots, writers, publishers)
             '''
 
             while True:
 
                 dataOut = self.listen()
 
-                if dataOut == 'end':
-                    break
-                
                 BaseClass.run(self, dataOut, **self.kwargs)
-                 
+
+                if dataOut.error:
+                    break
+            time.sleep(1)
+
         def run(self):
-            
+
             if self.typeProc is "ProcUnit":
-                
+
                 if self.inputId is not None:
                     self.subscribe()
                 self.set_publisher()
@@ -346,22 +329,48 @@ def MPDecorator(BaseClass):
                     self.runReader()
 
             elif self.typeProc is "Operation":
-                
+
                 self.subscribe()
                 self.runOp()
 
             else:
                 raise ValueError("Unknown type")
 
-            print("%s done" % BaseClass.__name__)
             self.close()
 
+        def event_monitor(self, monitor):
+
+            events = {}
+
+            for name in dir(zmq):
+                if name.startswith('EVENT_'):
+                    value = getattr(zmq, name)
+                    events[value] = name
+
+            while monitor.poll():
+                evt = recv_monitor_message(monitor)
+                if evt['event'] == 32:
+                    self.connections += 1
+                if evt['event'] == 512:
+                    pass
+
+                evt.update({'description': events[evt['event']]})
+
+                if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
+                    break
+            monitor.close()
+            print('event monitor thread done!')
+
         def close(self):
-            
+
+            BaseClass.close(self)
+
             if self.sender:
                 self.sender.close()
-            
+
             if self.receiver:
                 self.receiver.close()
+
+            log.success('Done...(Time:{:4.2f} secs)'.format(time.time()-self.start_time), self.name)
 
     return MPClass

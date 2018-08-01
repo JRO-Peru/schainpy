@@ -5,7 +5,7 @@ import copy
 from schainpy.model import *
 from .figure import Figure, isRealtime
 
-class CorrelationPlot(Figure):
+class CorrelationPlot_(Figure):
     isConfig = None
     __nsubplots = None
 

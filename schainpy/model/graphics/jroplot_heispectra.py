@@ -10,7 +10,7 @@ import numpy
 from .figure import Figure, isRealtime
 from .plotting_codes import *
 
-class SpectraHeisScope(Figure):
+class SpectraHeisScope_(Figure):
 
 
     isConfig = None
@@ -173,7 +173,7 @@ class SpectraHeisScope(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
-class RTIfromSpectraHeis(Figure):
+class RTIfromSpectraHeis_(Figure):
 
     isConfig = None
     __nsubplots = None
