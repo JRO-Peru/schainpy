@@ -24,7 +24,7 @@ except:
 
 from schainpy.model.data.jroheaderIO import RadarControllerHeader, SystemHeader
 from schainpy.model.data.jrodata import Voltage
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from time import time
 
 import pickle
@@ -33,18 +33,18 @@ try:
 except:
     print('You should install "digital_rf" module if you want to read Digital RF data')
 
-
+@MPDecorator
 class DigitalRFReader(ProcessingUnit):
     '''
     classdocs
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         '''
         Constructor
         '''
 
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)
 
         self.dataOut = Voltage()
         self.__printInfo = True
@@ -569,18 +569,22 @@ class DigitalRFReader(ProcessingUnit):
                 if self.__readNextBlock():
                     break
                 if self.__thisUnixSample > self.__endUTCSecond * self.__sample_rate:
-                    return False
+                    self.dataOut.error = (1, '')
+                    return 
 
                 if self.__flagDiscontinuousBlock:
                     print('[Reading] discontinuous block found ... continue with the next block')
-                    continue
-
+                    self.dataOut.error = (1, '')
+                    return
+                    
                 if not self.__online:
-                    return False
+                    self.dataOut.error = (1, '')
+                    return 
 
                 err_counter += 1
                 if err_counter > nTries:
-                    return False
+                    self.dataOut.error = (1, '')
+                    return
 
                 print('[Reading] waiting %d seconds to read a new block' % seconds)
                 sleep(seconds)
@@ -599,7 +603,7 @@ class DigitalRFReader(ProcessingUnit):
         if self.profileIndex == self.dataOut.nProfiles:
             self.profileIndex = 0
 
-        return True
+        return
 
     def printInfo(self):
         '''
@@ -780,6 +784,8 @@ class DigitalRFWriter(Operation):
         # self.writeMetadata()
         ## if self.currentSample == self.__nProfiles: self.currentSample = 0
 
+        return dataOut
+
     def close(self):
         print('[Writing] - Closing files ')
         print('Average of writing to digital rf format is ', self.oldAverage * 1000)
@@ -789,12 +795,3 @@ class DigitalRFWriter(Operation):
             pass
 
 
-        # raise
-if __name__ == '__main__':
-
-    readObj = DigitalRFReader()
-
-    while True:
-        readObj.run(path='/home/jchavez/jicamarca/mocked_data/')
-        # readObj.printInfo()
-        # readObj.printNumberOfBlock()

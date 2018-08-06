@@ -416,7 +416,7 @@ class OperationConf():
         self.name = opElement.get('name')
         self.type = opElement.get('type')
         self.priority = opElement.get('priority')
-        self.project_id = str(project_id)  #yong
+        self.project_id = str(project_id)  
 
         # Compatible with old signal chain version
         # Use of 'run' method instead 'init'
@@ -673,7 +673,7 @@ class ProcUnitConf():
         '''
         Instancia de unidades de procesamiento.
         '''
-        
+
         className = eval(self.name)
         kwargs = self.getKwargs()
         procUnitObj = className(self.id, self.inputId, self.project_id, **kwargs) # necesitan saber su id y su entrada por fines de ipc
@@ -1130,8 +1130,11 @@ class Project(Process):
 
     def createObjects(self):
 
-        for procUnitConfObj in self.procUnitConfObjDict.values():
-            procUnitConfObj.createObjects()
+
+        keys = list(self.procUnitConfObjDict.keys())
+        keys.sort()
+        for key in keys:
+            self.procUnitConfObjDict[key].createObjects()
 
     def __handleError(self, procUnitConfObj, modes=None, stdout=True):
 
