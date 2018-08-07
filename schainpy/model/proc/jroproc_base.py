@@ -190,6 +190,8 @@ def MPDecorator(BaseClass):
             self.sender = None
             self.receiver = None
             self.name = BaseClass.__name__
+            if 'plot' in self.name.lower():
+                self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
             self.start_time = time.time()
 
             if len(self.args) is 3:
@@ -257,16 +259,13 @@ def MPDecorator(BaseClass):
                     elif optype == 'external':
                         self.publish(self.dataOut, opId)
 
-                if self.dataOut.flagNoData and self.dataOut.error is None:
+                if self.dataOut.flagNoData and not self.dataOut.error:
                     continue
 
                 self.publish(self.dataOut, self.id)
 
                 if self.dataOut.error:
-                    if self.dataOut.error[0] == -1:
-                        log.error(self.dataOut.error[1], self.name)
-                    if self.dataOut.error[0] == 1:
-                        log.success(self.dataOut.error[1], self.name)
+                    log.error(self.dataOut.error, self.name)
                     # self.sender.send_multipart([str(self.project_id).encode(), 'end'.encode()])
                     break
 
@@ -285,8 +284,9 @@ def MPDecorator(BaseClass):
             
                 BaseClass.run(self, **self.kwargs)
 
-                if self.dataOut.flagNoData:
-                    continue
+                if self.dataIn.error:
+                    self.dataOut.error = self.dataIn.error
+                    self.dataOut.flagNoData = True 
 
                 for op, optype, opId, kwargs in self.operations:
                     if optype == 'self':
@@ -294,7 +294,8 @@ def MPDecorator(BaseClass):
                     elif optype == 'other':
                         self.dataOut = op.run(self.dataOut, **kwargs)
                     elif optype == 'external':
-                        self.publish(self.dataOut, opId)
+                        if not self.dataOut.flagNoData or self.dataOut.error:
+                            self.publish(self.dataOut, opId)
 
                 self.publish(self.dataOut, self.id)
                 if self.dataIn.error:
@@ -316,6 +317,7 @@ def MPDecorator(BaseClass):
 
                 if dataOut.error:
                     break
+
             time.sleep(1)
 
         def run(self):

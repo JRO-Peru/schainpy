@@ -753,9 +753,6 @@ class Plot(Operation):
     
     def run(self, dataOut, **kwargs):
 
-        if dataOut.flagNoData and not dataOut.error:
-            return dataOut
-
         if dataOut.error:
             coerce = True
         else:

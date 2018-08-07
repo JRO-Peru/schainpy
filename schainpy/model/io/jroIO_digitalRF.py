@@ -569,21 +569,20 @@ class DigitalRFReader(ProcessingUnit):
                 if self.__readNextBlock():
                     break
                 if self.__thisUnixSample > self.__endUTCSecond * self.__sample_rate:
-                    self.dataOut.error = (1, '')
+                    self.dataOut.error = 'Error'
                     return 
 
                 if self.__flagDiscontinuousBlock:
-                    print('[Reading] discontinuous block found ... continue with the next block')
-                    self.dataOut.error = (1, '')
+                    self.dataOut.error = 'discontinuous block found'
                     return
                     
                 if not self.__online:
-                    self.dataOut.error = (1, '')
+                    self.dataOut.error = 'Online?'
                     return 
 
                 err_counter += 1
                 if err_counter > nTries:
-                    self.dataOut.error = (1, '')
+                    self.dataOut.error = 'Max retrys reach'
                     return
 
                 print('[Reading] waiting %d seconds to read a new block' % seconds)

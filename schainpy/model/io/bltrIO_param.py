@@ -356,7 +356,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            self.dataOut.error = (1, 'No More files to read')
+            self.dataOut.error = 'No More files to read'
 
         if not self.readNextBlock():
             self.dataOut.flagNoData = True

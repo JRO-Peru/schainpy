@@ -129,8 +129,7 @@ class ParameterConf():
             raise ValueError('%s: This parameter value is empty' % self.name)
 
         if format == 'list':
-            strList = value.split(',')
-
+            strList = [s.strip() for s in value.split(',')]
             self.__formated_value = strList
 
             return self.__formated_value

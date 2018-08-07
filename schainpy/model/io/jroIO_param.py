@@ -152,7 +152,7 @@ class ParamReader(JRODataReader,ProcessingUnit):
         #----------------------------------------------------------------------------------
 
         for thisPath in pathList:
-#             thisPath = pathList[pathDict[file]]
+ #             thisPath = pathList[pathDict[file]]
 
             fileList = glob.glob1(thisPath, "*%s" %ext)
             fileList.sort()
@@ -220,7 +220,7 @@ class ParamReader(JRODataReader,ProcessingUnit):
         #chino rata
         #In case has utctime attribute
         grp2 = grp1['utctime']
-#         thisUtcTime = grp2.value[0] - 5*3600 #To convert to local time
+ #         thisUtcTime = grp2.value[0] - 5*3600 #To convert to local time
         thisUtcTime = grp2.value[0]
 
         fp.close()
@@ -229,7 +229,7 @@ class ParamReader(JRODataReader,ProcessingUnit):
             thisUtcTime -= 5*3600
 
         thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0] + 5*3600)
-#         thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0])
+ #         thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0])
         thisDate = thisDatetime.date()
         thisTime = thisDatetime.time()
 
@@ -282,11 +282,11 @@ class ParamReader(JRODataReader,ProcessingUnit):
 
         print("Setting the file: %s"%self.filename)
 
-#         self.__readMetadata()
+ #         self.__readMetadata()
         self.__setBlockList()
         self.__readData()
-#         self.nRecords = self.fp['Data'].attrs['blocksPerFile']
-#         self.nRecords = self.fp['Data'].attrs['nRecords']
+ #         self.nRecords = self.fp['Data'].attrs['blocksPerFile']
+ #         self.nRecords = self.fp['Data'].attrs['nRecords']
         self.blockIndex = 0
         return 1
 
@@ -340,16 +340,16 @@ class ParamReader(JRODataReader,ProcessingUnit):
 
         '''
 
-#         grp = self.fp['Data']
-#         pathMeta = os.path.join(self.path, grp.attrs['metadata'])
-#
-#         if pathMeta == self.pathMeta:
-#             return
-#         else:
-#             self.pathMeta = pathMeta
-#
-#         filePointer = h5py.File(self.pathMeta,'r')
-#         groupPointer = filePointer['Metadata']
+ #         grp = self.fp['Data']
+ #         pathMeta = os.path.join(self.path, grp.attrs['metadata'])
+ #
+ #         if pathMeta == self.pathMeta:
+ #             return
+ #         else:
+ #             self.pathMeta = pathMeta
+ #
+ #         filePointer = h5py.File(self.pathMeta,'r')
+ #         groupPointer = filePointer['Metadata']
 
         filename = self.filenameList[0]
 
@@ -372,8 +372,8 @@ class ParamReader(JRODataReader,ProcessingUnit):
                 listMetaname.append(name)
                 listMetadata.append(data)
 
-#                 if name=='type':
-#                     self.__initDataOut(data)
+ #                 if name=='type':
+ #                     self.__initDataOut(data)
 
         self.listShapes = listShapes
         self.listMetaname = listMetaname
@@ -471,7 +471,7 @@ class ParamReader(JRODataReader,ProcessingUnit):
         listShapes = self.listShapes
 
         blockIndex = self.blockIndex
-#         blockList = self.blockList
+ #         blockList = self.blockList
 
         for i in range(len(listMeta)):
             setattr(self.dataOut,listMetaname[i],listMeta[i])
@@ -517,12 +517,13 @@ class ParamReader(JRODataReader,ProcessingUnit):
 
         if not(self.isConfig):
             self.setup(**kwargs)
-#             self.setObjProperties()
+ #             self.setObjProperties()
             self.isConfig = True
 
         self.getData()
 
         return
+
 @MPDecorator
 class ParamWriter(Operation):
     '''
@@ -542,61 +543,35 @@ class ParamWriter(Operation):
 
 
     ext = ".hdf5"
-
     optchar = "D"
-
     metaoptchar = "M"
-
     metaFile = None
-
     filename = None
-
     path = None
-
     setFile = None
-
     fp = None
-
     grp = None
-
     ds = None
-
     firsttime = True
-
     #Configurations
-
     blocksPerFile = None
-
     blockIndex = None
-
     dataOut = None
-
     #Data Arrays
-
     dataList = None
-
     metadataList = None
-
-#     arrayDim = None
-
     dsList = None   #List of dictionaries with dataset properties
-
     tableDim = None
-
-#     dtype = [('arrayName', 'S20'),('nChannels', 'i'), ('nPoints', 'i'), ('nSamples', 'i'),('mode', 'b')]
-
     dtype = [('arrayName', 'S20'),('nDimensions', 'i'), ('dim2', 'i'), ('dim1', 'i'),('dim0', 'i'),('mode', 'b')]
-
     currentDay = None
-
     lastTime = None
 
-    def __init__(self):#, **kwargs):
-        Operation.__init__(self)#, **kwargs)
-        #self.isConfig = False
+    def __init__(self):
+        
+        Operation.__init__(self)
         return
 
-    def setup(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
+    def setup(self, dataOut, path=None, blocksPerFile=10, metadataList=None, dataList=None, mode=None, setType=None):
         self.path = path
         self.blocksPerFile = blocksPerFile
         self.metadataList = metadataList
@@ -606,9 +581,9 @@ class ParamWriter(Operation):
         if self.mode is not None:
             self.mode = numpy.zeros(len(self.dataList)) + mode
         else:
-            #self.mode = numpy.ones(len(self.dataList),int)
             self.mode = numpy.ones(len(self.dataList))
-        log.error(self.mode)#yong
+
+        self.setType = setType
 
         arrayDim = numpy.zeros((len(self.dataList),5))
 
@@ -631,11 +606,6 @@ class ParamWriter(Operation):
                 
                 return 0
 
-            #Not array, just a number
-            #Mode 0
-            #log.error(mode)#yong
-            #log.error(len(mode))#yong
-            #log.error(type(mode))#yong
             if type(dataAux)==float or type(dataAux)==int:
                 dsDict['mode'] = 0
                 dsDict['nDim'] = 0
@@ -644,16 +614,13 @@ class ParamWriter(Operation):
 
             #Mode 2: meteors
             elif self.mode[i] == 2:
-#                 dsDict['nDim'] = 0
                 dsDict['dsName'] = 'table0'
                 dsDict['mode'] = 2      # Mode meteors
                 dsDict['shape'] = dataAux.shape[-1]
                 dsDict['nDim'] = 0
                 dsDict['dsNumber'] = 1
-
                 arrayDim[i,3] = dataAux.shape[-1]
                 arrayDim[i,4] = self.mode[i]         #Mode the data was stored
-
                 dsList.append(dsDict)
 
             #Mode 1
@@ -661,7 +628,6 @@ class ParamWriter(Operation):
                 arrayDim0 = dataAux.shape       #Data dimensions
                 arrayDim[i,0] = len(arrayDim0)  #Number of array dimensions
                 arrayDim[i,4] = self.mode[i]         #Mode the data was stored
-
                 strtable = 'table'
                 dsDict['mode'] = 1      # Mode parameters
 
@@ -703,14 +669,11 @@ class ParamWriter(Operation):
             table = numpy.array((self.dataList[i],) + tuple(arrayDim[i,:]),dtype = dtype0)
             tableList.append(table)
 
-#         self.arrayDim = arrayDim
         self.dsList = dsList
         self.tableDim = numpy.array(tableList, dtype = dtype0)
         self.blockIndex = 0
-
         timeTuple = time.localtime(dataOut.utctime)
         self.currentDay = timeTuple.tm_yday
-        return 1
 
     def putMetadata(self):
 
@@ -744,7 +707,7 @@ class ParamWriter(Operation):
             filesList = os.listdir( fullpath )
             filesList = sorted( filesList, key=str.lower )
             if len( filesList ) > 0:
-                filesList = [k for k in filesList if 'M' in k]
+                filesList = [k for k in filesList if k.startswith(self.metaoptchar)]
                 filen = filesList[-1]
                 # el filename debera tener el siguiente formato
                 # 0 1234 567 89A BCDE (hex)
@@ -825,7 +788,7 @@ class ParamWriter(Operation):
 
         if os.path.exists(fullpath):
             filesList = os.listdir( fullpath )
-            filesList = [k for k in filesList if 'D' in k]
+            filesList = [k for k in filesList if k.startswith(self.optchar)]
             if len( filesList ) > 0:
                 filesList = sorted( filesList, key=str.lower )
                 filen = filesList[-1]
@@ -842,16 +805,16 @@ class ParamWriter(Operation):
             os.makedirs(fullpath)
             setFile = -1 #inicializo mi contador de seteo
 
-        if None is None:
+        if self.setType is None:
             setFile += 1
-            file = '%s%4.4d%3.3d%03d%s' % (self.metaoptchar,
+            file = '%s%4.4d%3.3d%03d%s' % (self.optchar,
                                            timeTuple.tm_year,
                                            timeTuple.tm_yday,
                                            setFile,
                                            ext )
         else:
             setFile = timeTuple.tm_hour*60+timeTuple.tm_min
-            file = '%s%4.4d%3.3d%04d%s' % (self.metaoptchar,
+            file = '%s%4.4d%3.3d%04d%s' % (self.optchar,
                                            timeTuple.tm_year,
                                            timeTuple.tm_yday,
                                            setFile,
@@ -865,9 +828,6 @@ class ParamWriter(Operation):
         self.writeMetadata(fp)
         #Write data
         grp = fp.create_group("Data")
-#         grp.attrs['metadata'] = self.metaFile
-
-#         grp.attrs['blocksPerFile'] = 0
         ds = []
         data = []
         dsList = self.dsList
@@ -876,13 +836,11 @@ class ParamWriter(Operation):
             dsInfo = dsList[i]
             #One-dimension data
             if dsInfo['mode'] == 0:
-#                 ds0 = grp.create_dataset(self.dataList[i], (1,1), maxshape=(1,self.blocksPerFile) , chunks = True, dtype='S20')
                 ds0 = grp.create_dataset(dsInfo['variable'], (1,1), maxshape=(1,self.blocksPerFile) , chunks = True, dtype=numpy.float64)
                 ds.append(ds0)
                 data.append([])
                 i += 1
                 continue
-#                 nDimsForDs.append(nDims[i])
 
             elif dsInfo['mode'] == 2:
                 grp0 = grp.create_group(dsInfo['variable'])
@@ -910,23 +868,14 @@ class ParamWriter(Operation):
                     ds.append(ds0)
                     data.append([])
                     i += 1
-#                     nDimsForDs.append(nDims[i])
 
         fp.flush()
         fp.close()
 
-#         self.nDatas = nDatas
-#         self.nDims = nDims
-#         self.nDimsForDs = nDimsForDs
-        #Saving variables
-        print('Writing the file: %s'%filename)
+        log.log('creating file: {}'.format(filename), 'Writing')
         self.filename = filename
-#         self.fp = fp
-#         self.grp = grp
-#         self.grp.attrs.modify('nRecords', 1)
         self.ds = ds
         self.data = data
-#         self.setFile = setFile
         self.firsttime = True
         self.blockIndex = 0
         return
@@ -936,7 +885,6 @@ class ParamWriter(Operation):
         if self.blockIndex == self.blocksPerFile or self.timeFlag():
             self.setNextFile()
 
-#         if not self.firsttime:
         self.readBlock()
         self.setBlock()     #Prepare data to be written
         self.writeBlock()   #Write data
@@ -958,7 +906,6 @@ class ParamWriter(Operation):
         grp = fp["Data"]
         ind = 0
 
-#         grp.attrs['blocksPerFile'] = 0
         while ind < len(dsList):
             dsInfo = dsList[ind]
 
@@ -1004,9 +951,9 @@ class ParamWriter(Operation):
             if mode == 0 or mode == 2 or nDim == 1:
                 data[ind] = dataAux
                 ind += 1
-#             elif nDim == 1:
-#                 data[ind] = numpy.reshape(dataAux,(numpy.size(dataAux),1))
-#                 ind += 1
+ #             elif nDim == 1:
+ #                 data[ind] = numpy.reshape(dataAux,(numpy.size(dataAux),1))
+ #                 ind += 1
             elif nDim == 2:
                 for j in range(dsInfo['dsNumber']):
                     data[ind] = dataAux[j,:]
@@ -1032,8 +979,6 @@ class ParamWriter(Operation):
 
             #    First time
             if self.firsttime:
-#                 self.ds[i].resize(self.data[i].shape)
-#                 self.ds[i][self.blockIndex,:] = self.data[i]
                 if type(self.data[i]) == numpy.ndarray:
 
                     if nDim == 3:
@@ -1076,14 +1021,12 @@ class ParamWriter(Operation):
         self.fp.close()
         return
 
-    def run(self, dataOut, path, blocksPerFile=10, metadataList=None, dataList=None, mode=None, **kwargs):
+    def run(self, dataOut, path, blocksPerFile=10, metadataList=None, dataList=None, mode=None, setType=None):
 
         if not(self.isConfig):
-            flagdata = self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
-                                  metadataList=metadataList, dataList=dataList, mode=mode, **kwargs)
-
-            if not(flagdata):
-                return
+            self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
+                       metadataList=metadataList, dataList=dataList, mode=mode,
+                       setType=setType)
 
             self.isConfig = True
             self.setNextFile()

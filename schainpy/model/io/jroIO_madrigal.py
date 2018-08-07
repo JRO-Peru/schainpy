@@ -395,7 +395,7 @@ class MADReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            log.error('No file left to process', 'MADReader')
+            self.dataOut.error = 'No file left to process'
             return 0
 
         if not  self.readNextBlock():
