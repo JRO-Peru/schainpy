@@ -191,7 +191,8 @@ def MPDecorator(BaseClass):
             self.receiver = None
             self.name = BaseClass.__name__
             if 'plot' in self.name.lower():
-                self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
+                if not self.name.endswith('_'):
+                    self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
             self.start_time = time.time()
 
             if len(self.args) is 3:
@@ -252,9 +253,9 @@ def MPDecorator(BaseClass):
                 BaseClass.run(self, **self.kwargs)
 
                 for op, optype, opId, kwargs in self.operations:
-                    if optype == 'self':
+                    if optype == 'self' and not self.dataOut.flagNoData:
                         op(**kwargs)
-                    elif optype == 'other':
+                    elif optype == 'other' and not self.dataOut.flagNoData:
                         self.dataOut = op.run(self.dataOut, **self.kwargs)
                     elif optype == 'external':
                         self.publish(self.dataOut, opId)
@@ -289,15 +290,17 @@ def MPDecorator(BaseClass):
                     self.dataOut.flagNoData = True 
 
                 for op, optype, opId, kwargs in self.operations:
-                    if optype == 'self':
+                    if optype == 'self' and not self.dataOut.flagNoData:
                         op(**kwargs)
-                    elif optype == 'other':
+                    elif optype == 'other' and not self.dataOut.flagNoData:
                         self.dataOut = op.run(self.dataOut, **kwargs)
                     elif optype == 'external':
                         if not self.dataOut.flagNoData or self.dataOut.error:
                             self.publish(self.dataOut, opId)
 
-                self.publish(self.dataOut, self.id)
+                if not self.dataOut.flagNoData or self.dataOut.error:
+                    self.publish(self.dataOut, self.id)
+                
                 if self.dataIn.error:
                     break
             
