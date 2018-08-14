@@ -687,7 +687,7 @@ class SpectraProc(ProcessingUnit):
             for ip in range(new_cinterfid):
                 ind = junkspc_interf[:, new_interfid[ip]].ravel().argsort()
                 jspc_interf[new_interfid[ip]
-                            ] = junkspc_interf[ind[nhei_interf / 2], new_interfid[ip]]
+                            ] = junkspc_interf[ind[nhei_interf // 2], new_interfid[ip]]
 
             jspectra[ich, :, ind_hei] = jspectra[ich, :,
                                                  ind_hei] - jspc_interf  # Corregir indices
@@ -747,17 +747,17 @@ class SpectraProc(ProcessingUnit):
 
             ind = numpy.abs(jcspc_interf[mask_prof]).ravel().argsort()
 
-            median_real = numpy.median(numpy.real(
-                junkcspc_interf[mask_prof[ind[list(range(3 * num_prof / 4))]], :]))
-            median_imag = numpy.median(numpy.imag(
-                junkcspc_interf[mask_prof[ind[list(range(3 * num_prof / 4))]], :]))
+            median_real = int(numpy.median(numpy.real(
+                junkcspc_interf[mask_prof[ind[list(range(3 * num_prof // 4))]], :])))
+            median_imag = int(numpy.median(numpy.imag(
+                junkcspc_interf[mask_prof[ind[list(range(3 * num_prof // 4))]], :])))
+            comp_mask_prof = [int(e) for e in comp_mask_prof]
             junkcspc_interf[comp_mask_prof, :] = numpy.complex(
                 median_real, median_imag)
 
             for iprof in range(num_prof):
                 ind = numpy.abs(junkcspc_interf[iprof, :]).ravel().argsort()
-                jcspc_interf[iprof] = junkcspc_interf[iprof,
-                                                      ind[nhei_interf / 2]]
+                jcspc_interf[iprof] = junkcspc_interf[iprof, ind[nhei_interf // 2]]
 
             # Removiendo la Interferencia
             jcspectra[ip, :, ind_hei] = jcspectra[ip,
