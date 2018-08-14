@@ -601,12 +601,11 @@ class ParamWriter(Operation):
             #---------------------    Conditionals    ------------------------
             #There is no data
             
-            
             if dataAux is None:
                 
                 return 0
 
-            if type(dataAux)==float or type(dataAux)==int:
+            if isinstance(dataAux, (int, float, numpy.integer, numpy.float)):
                 dsDict['mode'] = 0
                 dsDict['nDim'] = 0
                 arrayDim[i,0] = 0
