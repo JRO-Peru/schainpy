@@ -614,18 +614,17 @@ class Plot(Operation):
 
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
-
         Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
         i = 1 if numpy.where(
             abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
         ystep = Y[i] / 10.
 
         if self.xaxis is not 'time':
-            X = numpy.array([1, 2, 5, 10, 20, 50, 100,
+            X = numpy.array([0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100,
                              200, 500, 1000, 2000, 5000])/2.
             i = 1 if numpy.where(
                 abs(xmax-xmin) <= X)[0][0] < 0 else numpy.where(abs(xmax-xmin) <= X)[0][0]
-            xstep = X[i] / 10.
+            xstep = X[i] / 5.
 
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
