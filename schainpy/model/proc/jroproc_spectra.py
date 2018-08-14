@@ -615,7 +615,7 @@ class SpectraProc(ProcessingUnit):
 
         # hei_interf
         if hei_interf is None:
-            count_hei = num_hei / 2  # Como es entero no importa
+            count_hei = int(num_hei / 2)
             hei_interf = numpy.asmatrix(list(range(count_hei))) + num_hei - count_hei
             hei_interf = numpy.asarray(hei_interf)[0]
         # nhei_interf
@@ -728,7 +728,7 @@ class SpectraProc(ProcessingUnit):
         # Remocion de Interferencia en el Cross Spectra
         if jcspectra is None:
             return jspectra, jcspectra
-        num_pairs = jcspectra.size / (num_prof * num_hei)
+        num_pairs = int(jcspectra.size / (num_prof * num_hei))
         jcspectra = jcspectra.reshape(num_pairs, num_prof, num_hei)
 
         for ip in range(num_pairs):
