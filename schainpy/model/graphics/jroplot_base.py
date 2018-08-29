@@ -672,7 +672,7 @@ class Plot(Operation):
                 ax.set_title('{} {} {}'.format(
                     self.titles[n],
                     self.getDateTime(self.data.max_time).strftime(
-                        '%Y-%m-%dT%H:%M:%S'),
+                        '%H:%M:%S'),
                     self.time_label),
                     size=8)
             else:

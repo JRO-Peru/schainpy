@@ -190,9 +190,8 @@ def MPDecorator(BaseClass):
             self.sender = None
             self.receiver = None
             self.name = BaseClass.__name__
-            if 'plot' in self.name.lower():
-                if not self.name.endswith('_'):
-                    self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
+            if 'plot' in self.name.lower() and not self.name.endswith('_'):
+                self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
             self.start_time = time.time()
 
             if len(self.args) is 3:
@@ -294,7 +293,7 @@ def MPDecorator(BaseClass):
                         op(**kwargs)
                     elif optype == 'other' and not self.dataOut.flagNoData:
                         self.dataOut = op.run(self.dataOut, **kwargs)
-                    elif optype == 'external':
+                    elif optype == 'external' and not self.dataOut.flagNoData:
                         if not self.dataOut.flagNoData or self.dataOut.error:
                             self.publish(self.dataOut, opId)
 

@@ -112,6 +112,7 @@ class SpectraPlot(Plot):
 class CrossSpectraPlot(Plot):
 
     CODE = 'cspc'
+    colormap = 'jet'
     zmin_coh = None
     zmax_coh = None
     zmin_phase = None
@@ -138,7 +139,7 @@ class CrossSpectraPlot(Plot):
         else:
             x = self.data.xrange[2]
             self.xlabel = "Velocity (m/s)"
-
+        
         self.titles = []
 
         y = self.data.heights
@@ -150,32 +151,33 @@ class CrossSpectraPlot(Plot):
             noise = self.data['noise'][n][-1]
             pair = self.data.pairs[n]
             ax = self.axes[4 * n]
-            ax3 = self.axes[4 * n + 3]
-            if ax.firsttime:
-                self.xmax = self.xmax if self.xmax else numpy.nanmax(x)
-                self.xmin = self.xmin if self.xmin else -self.xmax
-                self.zmin = self.zmin if self.zmin else numpy.nanmin(spc)
-                self.zmax = self.zmax if self.zmax else numpy.nanmax(spc)
-                ax.plt = ax.pcolormesh(x, y, spc[pair[0]].T,
+            spc0 = 10.*numpy.log10(spc[pair[0]]/self.data.factor)          
+            if ax.firsttime:                                               
+                self.xmax = self.xmax if self.xmax else numpy.nanmax(x)    
+                self.xmin = self.xmin if self.xmin else -self.xmax         
+                self.zmin = self.zmin if self.zmin else numpy.nanmin(spc)  
+                self.zmax = self.zmax if self.zmax else numpy.nanmax(spc)  
+                ax.plt = ax.pcolormesh(x , y , spc0.T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
-                                       )
-            else:
-                ax.plt.set_array(spc[pair[0]].T.ravel())
-            self.titles.append('CH {}: {:3.2f}dB'.format(n, noise))
+                                       )                                   
+            else:                                                          
+                ax.plt.set_array(spc0.T.ravel())
+            self.titles.append('CH {}: {:3.2f}dB'.format(pair[0], noise))
 
             ax = self.axes[4 * n + 1]
+            spc1 = 10.*numpy.log10(spc[pair[1]]/self.data.factor)
             if ax.firsttime:
-                ax.plt = ax.pcolormesh(x, y, spc[pair[1]].T,
+                ax.plt = ax.pcolormesh(x , y, spc1.T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
                                        )
-            else:
-                ax.plt.set_array(spc[pair[1]].T.ravel())
-            self.titles.append('CH {}: {:3.2f}dB'.format(n, noise))
-
+            else: 
+                ax.plt.set_array(spc1.T.ravel())
+            self.titles.append('CH {}: {:3.2f}dB'.format(pair[1], noise))
+            
             out = cspc[n] / numpy.sqrt(spc[pair[0]] * spc[pair[1]])
             coh = numpy.abs(out)
             phase = numpy.arctan2(out.imag, out.real) * 180 / numpy.pi
@@ -191,13 +193,13 @@ class CrossSpectraPlot(Plot):
                 ax.plt.set_array(coh.T.ravel())
             self.titles.append(
                 'Coherence Ch{} * Ch{}'.format(pair[0], pair[1]))
-
+                                   
             ax = self.axes[4 * n + 3]
             if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, phase.T,
                                        vmin=-180,
                                        vmax=180,
-                                       cmap=plt.get_cmap(self.colormap_phase)
+                                       cmap=plt.get_cmap(self.colormap_phase) 
                                        )
             else:
                 ax.plt.set_array(phase.T.ravel())
@@ -611,3 +613,4 @@ class PolarMapPlot(Plot):
         self.save_labels = ['{}-{}'.format(lbl, label) for lbl in self.labels]
         self.titles = ['{} {}'.format(
             self.data.parameters[x], title) for x in self.channels]
+       

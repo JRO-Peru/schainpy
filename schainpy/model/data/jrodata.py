@@ -1112,7 +1112,7 @@ class PlotterData(object):
     MAXNUMY = 100
 
     def __init__(self, code, throttle_value, exp_code, buffering=True):
-
+        
         self.throttle = throttle_value
         self.exp_code = exp_code
         self.buffering = buffering
@@ -1173,11 +1173,11 @@ class PlotterData(object):
                 plot = 'snr'
             self.data[plot] = {}
         
-        if 'spc' in self.data or 'rti' in self.data:
+        if 'spc' in self.data or 'rti' in self.data or 'cspc' in self.data:
             self.data['noise'] = {}
             if 'noise' not in self.plottypes:
                 self.plottypes.append('noise')
-
+        
     def shape(self, key):
         '''
         Get the shape of the one-element data for the given key
@@ -1193,10 +1193,10 @@ class PlotterData(object):
         '''
         Update data object with new dataOut
         '''
-
+        
         if tm in self.__times:
             return
-
+        
         self.type = dataOut.type
         self.parameters = getattr(dataOut, 'parameters', [])
         if hasattr(dataOut, 'pairsList'):
@@ -1209,16 +1209,18 @@ class PlotterData(object):
         if 'spc' in self.plottypes or 'cspc' in self.plottypes:
             self.xrange = (dataOut.getFreqRange(1)/1000.,
                            dataOut.getAcfRange(1), dataOut.getVelRange(1))
+            self.factor = dataOut.normFactor
         self.__heights.append(dataOut.heightList)
         self.__all_heights.update(dataOut.heightList)
         self.__times.append(tm)
-
+        
         for plot in self.plottypes:
             if plot == 'spc':
                 z = dataOut.data_spc/dataOut.normFactor
                 buffer = 10*numpy.log10(z)
             if plot == 'cspc':
-                buffer = dataOut.data_cspc
+                z = dataOut.data_spc/dataOut.normFactor
+                buffer = (dataOut.data_spc, dataOut.data_cspc)
             if plot == 'noise':
                 buffer = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
             if plot == 'rti':
@@ -1242,8 +1244,11 @@ class PlotterData(object):
             if plot == 'param':
                 buffer = dataOut.data_param
 
-            if 'spc' in plot:
+            if plot == 'spc':
                 self.data[plot] = buffer
+            elif plot == 'cspc':
+                self.data['spc'] = buffer[0]
+                self.data['cspc'] = buffer[1]
             else:
                 if self.buffering:
                     self.data[plot][tm] = buffer
