@@ -345,6 +345,7 @@ class Plot(Operation):
         self.channels = kwargs.get('channels', None)
         self.titles = kwargs.get('titles', [])
         self.polar = False
+        self.type = kwargs.get('type', 'iq')
         self.grid = kwargs.get('grid', False)
         self.pause = kwargs.get('pause', False)
         self.save_labels = kwargs.get('save_labels', None)
@@ -611,17 +612,18 @@ class Plot(Operation):
                     xmax += time.timezone
             else:
                 xmax = self.xmax
-
+        
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
-        Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
-        i = 1 if numpy.where(
-            abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
-        ystep = Y[i] / 10.
-
+        Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000])
+        #i = 1 if numpy.where(
+        #    abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
+        #ystep = Y[i] / 10.
+        ystep = round(ymax,-1)//5
         if self.xaxis is not 'time':
             X = numpy.array([0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100,
-                             200, 500, 1000, 2000, 5000])/2.
+                             200, 500, 1000, 2000, 5000, 10000, 20000, 50000])/2.
+            
             i = 1 if numpy.where(
                 abs(xmax-xmin) <= X)[0][0] < 0 else numpy.where(abs(xmax-xmin) <= X)[0][0]
             xstep = X[i] / 5.

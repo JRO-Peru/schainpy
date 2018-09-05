@@ -1143,11 +1143,13 @@ class PlotterData(object):
         return len(self.__times)
 
     def __getitem__(self, key):
-
+        
         if key not in self.data:
             raise KeyError(log.error('Missing key: {}'.format(key)))
         if 'spc' in key or not self.buffering:
             ret = self.data[key]
+        elif 'scope' in key:
+            ret = numpy.array(self.data[key][float(self.tm)])
         else:
             ret = numpy.array([self.data[key][x] for x in self.times])
             if ret.ndim > 1:
@@ -1196,7 +1198,8 @@ class PlotterData(object):
         
         if tm in self.__times:
             return
-        
+        self.profileIndex = dataOut.profileIndex
+        self.tm = tm
         self.type = dataOut.type
         self.parameters = getattr(dataOut, 'parameters', [])
         if hasattr(dataOut, 'pairsList'):
@@ -1243,7 +1246,11 @@ class PlotterData(object):
                 buffer = dataOut.data_output
             if plot == 'param':
                 buffer = dataOut.data_param
-
+            if plot == 'scope':
+                buffer = dataOut.data
+                self.flagDataAsBlock = dataOut.flagDataAsBlock
+                self.nProfiles = dataOut.nProfiles  
+                         
             if plot == 'spc':
                 self.data[plot] = buffer
             elif plot == 'cspc':
