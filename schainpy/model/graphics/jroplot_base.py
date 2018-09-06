@@ -615,21 +615,42 @@ class Plot(Operation):
         
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
-        Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000])
+        #Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000])
+        
         #i = 1 if numpy.where(
         #    abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
         #ystep = Y[i] / 10.
         dig = int(numpy.log10(ymax))
-        ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
-        ystep = ystep//10
-        if self.xaxis is not 'time':
-            X = numpy.array([0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100,
-                             200, 500, 1000, 2000, 5000, 10000, 20000, 50000])/2.
-            
-            i = 1 if numpy.where(
-                abs(xmax-xmin) <= X)[0][0] < 0 else numpy.where(abs(xmax-xmin) <= X)[0][0]
-            xstep = X[i] / 5.
+        if dig == 0:
+            digD = len(str(ymax)) - 2
+            ydec = ymax*(10**digD)
 
+            dig = int(numpy.log10(ydec))
+            ystep = ((ydec + (10**(dig)))//10**(dig))*(10**(dig))
+            ystep = ystep/5
+            ystep = ystep/(10**digD)
+
+        else:        
+            ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
+            ystep = ystep/5
+            
+        if self.xaxis is not 'time':
+            
+            dig = int(numpy.log10(xmax))
+            
+            if dig <= 0:
+                digD = len(str(xmax)) - 2
+                xdec = xmax*(10**digD)
+
+                dig = int(numpy.log10(xdec))
+                xstep = ((xdec + (10**(dig)))//10**(dig))*(10**(dig))
+                xstep = xstep*0.5
+                xstep = xstep/(10**digD)
+                
+            else:        
+                xstep = ((xmax + (10**(dig)))//10**(dig))*(10**(dig))
+                xstep = xstep/5
+            
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
                 ax.set_facecolor(self.bgcolor)
