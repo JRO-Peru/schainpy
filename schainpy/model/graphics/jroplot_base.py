@@ -619,7 +619,9 @@ class Plot(Operation):
         #i = 1 if numpy.where(
         #    abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
         #ystep = Y[i] / 10.
-        ystep = round(ymax,-1)//5
+        dig = int(numpy.log10(ymax))
+        ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
+        ystep = ystep//10
         if self.xaxis is not 'time':
             X = numpy.array([0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100,
                              200, 500, 1000, 2000, 5000, 10000, 20000, 50000])/2.
