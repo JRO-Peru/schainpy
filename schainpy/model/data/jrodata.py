@@ -526,36 +526,29 @@ class Spectra(JROData):
     def getFreqRangeTimeResponse(self, extrapoints=0):
 
         deltafreq = self.getFmaxTimeResponse() / (self.nFFTPoints * self.ippFactor)
-        freqrange = deltafreq * \
-            (numpy.arange(self.nFFTPoints + extrapoints) -
-             self.nFFTPoints / 2.) - deltafreq / 2
+        freqrange = deltafreq * (numpy.arange(self.nFFTPoints + extrapoints) -self.nFFTPoints / 2.) - deltafreq / 2
 
         return freqrange
 
     def getAcfRange(self, extrapoints=0):
 
         deltafreq = 10. / (self.getFmax() / (self.nFFTPoints * self.ippFactor))
-        freqrange = deltafreq * \
-            (numpy.arange(self.nFFTPoints + extrapoints) -
-             self.nFFTPoints / 2.) - deltafreq / 2
+        freqrange = deltafreq * (numpy.arange(self.nFFTPoints + extrapoints) -self.nFFTPoints / 2.) - deltafreq / 2
 
         return freqrange
 
     def getFreqRange(self, extrapoints=0):
 
         deltafreq = self.getFmax() / (self.nFFTPoints * self.ippFactor)
-        freqrange = deltafreq * \
-            (numpy.arange(self.nFFTPoints + extrapoints) -
-             self.nFFTPoints / 2.) - deltafreq / 2
+        freqrange = deltafreq * (numpy.arange(self.nFFTPoints + extrapoints) -self.nFFTPoints / 2.) - deltafreq / 2
 
         return freqrange
 
     def getVelRange(self, extrapoints=0):
 
         deltav = self.getVmax() / (self.nFFTPoints * self.ippFactor)
-        velrange = deltav * (numpy.arange(self.nFFTPoints +
-                                          extrapoints) - self.nFFTPoints / 2.)
-
+        velrange = deltav * (numpy.arange(self.nFFTPoints + extrapoints) - self.nFFTPoints / 2.)
+        
         if self.nmodes:
             return velrange/self.nmodes
         else:
@@ -576,8 +569,7 @@ class Spectra(JROData):
         if self.flagDecodeData:
             pwcode = numpy.sum(self.code[0]**2)
         #normFactor = min(self.nFFTPoints,self.nProfiles)*self.nIncohInt*self.nCohInt*pwcode*self.windowOfFilter
-        normFactor = self.nProfiles * self.nIncohInt * \
-            self.nCohInt * pwcode * self.windowOfFilter
+        normFactor = self.nProfiles * self.nIncohInt * self.nCohInt * pwcode * self.windowOfFilter
 
         return normFactor
 
@@ -597,8 +589,7 @@ class Spectra(JROData):
 
     def getTimeInterval(self):
 
-        timeInterval = self.ippSeconds * self.nCohInt * \
-            self.nIncohInt * self.nProfiles * self.ippFactor
+        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles * self.ippFactor
 
         return timeInterval
 
@@ -625,8 +616,7 @@ class Spectra(JROData):
                 pairsIndexList.append(self.pairsList.index(pair))
         for i in range(len(pairsIndexList)):
             pair = self.pairsList[pairsIndexList[i]]
-            ccf = numpy.average(
-                self.data_cspc[pairsIndexList[i], :, :], axis=0)
+            ccf = numpy.average(self.data_cspc[pairsIndexList[i], :, :], axis=0)
             powa = numpy.average(self.data_spc[pair[0], :, :], axis=0)
             powb = numpy.average(self.data_spc[pair[1], :, :], axis=0)
             avgcoherenceComplex = ccf / numpy.sqrt(powa * powb)

@@ -735,7 +735,7 @@ class SkyMapPlot_(Figure):
 
 
 
-
+@MPDecorator
 class WindProfilerPlot_(Figure):
 
     __isConfig = None
@@ -745,8 +745,8 @@ class WindProfilerPlot_(Figure):
     HEIGHTPROF = None
     PREFIX = 'wind'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):
+        Figure.__init__(self)
         self.timerange = None
         self.isConfig = False
         self.__nsubplots = 1
@@ -825,6 +825,9 @@ class WindProfilerPlot_(Figure):
             zmax            :    None
         """
 
+        if dataOut.flagNoData:
+            return dataOut
+
 #         if timerange is not None:
 #             self.timerange = timerange
 #
@@ -836,8 +839,8 @@ class WindProfilerPlot_(Figure):
         z = dataOut.data_output.copy()        
         nplots = z.shape[0]    #Number of wind dimensions estimated
         nplotsw = nplots
-
-
+        
+        
         #If there is a SNR function defined
         if dataOut.data_SNR is not None:
             nplots += 1
@@ -948,6 +951,8 @@ class WindProfilerPlot_(Figure):
             self.isConfig = False
             update_figfile = True
 
+        return dataOut
+
 @MPDecorator
 class ParametersPlot_(Figure):
 
@@ -1051,7 +1056,7 @@ class ParametersPlot_(Figure):
         
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
-
+        
         if channelList == None:
             channelIndexList = list(range(dataOut.data_param.shape[0]))
         else:

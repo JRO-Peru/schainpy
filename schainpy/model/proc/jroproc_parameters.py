@@ -123,7 +123,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.ippFactor = self.dataIn.ippFactor
             self.dataOut.abscissaList = self.dataIn.getVelRange(1)
             self.dataOut.spc_noise = self.dataIn.getNoise()
-            self.dataOut.spc_range = (self.dataIn.getFreqRange(1)/1000. , self.dataIn.getAcfRange(1) , self.dataIn.getVelRange(1))
+            self.dataOut.spc_range = (self.dataIn.getFreqRange(1) , self.dataIn.getAcfRange(1) , self.dataIn.getVelRange(1))
             # self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.pairsList = self.dataIn.pairsList            
             self.dataOut.groupList = self.dataIn.pairsList
@@ -239,18 +239,18 @@ class SpectralFilters(Operation):
         
         
         '''Reacomodando SPCrange'''
+
+        VelRange=numpy.roll(VelRange,-(int(self.Num_Bin/2)) ,axis=0)
         
-        VelRange=numpy.roll(VelRange,-(self.Num_Bin/2) ,axis=0)
+        VelRange[-(int(self.Num_Bin/2)):]+= Vmax
         
-        VelRange[-(self.Num_Bin/2):]+= Vmax
+        FrecRange=numpy.roll(FrecRange,-(int(self.Num_Bin/2)),axis=0)
         
-        FrecRange=numpy.roll(FrecRange,-(self.Num_Bin/2),axis=0)
+        FrecRange[-(int(self.Num_Bin/2)):]+= Fmax
         
-        FrecRange[-(self.Num_Bin/2):]+= Fmax
+        TimeRange=numpy.roll(TimeRange,-(int(self.Num_Bin/2)),axis=0)
         
-        TimeRange=numpy.roll(TimeRange,-(self.Num_Bin/2),axis=0)
-        
-        TimeRange[-(self.Num_Bin/2):]+= Tmax
+        TimeRange[-(int(self.Num_Bin/2)):]+= Tmax
         
         ''' ------------------ '''
         
@@ -258,7 +258,7 @@ class SpectralFilters(Operation):
         Breaker2R=numpy.where(VelRange == Breaker2R)
         
         
-        SPCroll = numpy.roll(self.spc,-(self.Num_Bin/2) ,axis=1)
+        SPCroll = numpy.roll(self.spc,-(int(self.Num_Bin/2)) ,axis=1)
         
         SPCcut = SPCroll.copy()
         for i in range(self.Num_Chn):
@@ -285,7 +285,7 @@ class SpectralFilters(Operation):
         dataOut.spcparam_range[2]=VelRange
         dataOut.spcparam_range[1]=TimeRange
         dataOut.spcparam_range[0]=FrecRange
-        
+        return dataOut
         
 class GaussianFit(Operation):
     
@@ -660,7 +660,7 @@ class PrecipitationProc(Operation):
             
             Numerator = ( (4*numpy.pi)**3 * aL**2 * 16 * numpy.log(2) )
             Denominator = ( Pt * Gt * Gr * Lambda**2 * SPEED_OF_LIGHT * tauW * numpy.pi * ThetaT * ThetaR)
-            RadarConstant = 5e-26 * Numerator / Denominator #
+            RadarConstant = 10e-26 * Numerator / Denominator #
             
             ''' =============================  '''
             
@@ -753,6 +753,7 @@ class PrecipitationProc(Operation):
         dataOut.data_param[1]=V_mean
         dataOut.data_param[2]=RR
         
+        return dataOut
         
     def dBZeMODE2(self, dataOut): #    Processing for MIRA35C
         
@@ -833,7 +834,7 @@ class FullSpectralAnalysis(Operation):
             
         SNRspc = spc.copy()
         SNRspc[:,:,0:7]= numpy.NaN
-            
+           
         """##########################################"""
         
         
@@ -876,8 +877,8 @@ class FullSpectralAnalysis(Operation):
         dbSNR = numpy.average(dbSNR,0)
         
         for Height in range(nHeights):
-                
-            [Vzon,Vmer,Vver, GaussCenter, PhaseSlope, FitGaussCSPC]= self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, dataOut.spc_range.copy(), dbSNR[Height], SNRlimit)
+   
+            [Vzon,Vmer,Vver, GaussCenter, PhaseSlope, FitGaussCSPC]= self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, dataOut.spc_range, dbSNR[Height], SNRlimit)
             PhaseLine = numpy.append(PhaseLine, PhaseSlope)
             
             if abs(Vzon)<100. and abs(Vzon)> 0.:
@@ -908,7 +909,7 @@ class FullSpectralAnalysis(Operation):
         
         dataOut.data_output=data_output
                 
-        return
+        return dataOut
     
     
     def moving_average(self,x, N=2):

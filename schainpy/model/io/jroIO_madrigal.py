@@ -192,10 +192,10 @@ class MADReader(JRODataReader, ProcessingUnit):
             self.parameters = one + two
             self.parameters_d = one_d + two_d
 
-        log.success('Parameters found: {}'.format(','.join(self.parameters)),
+        log.success('Parameters found: {}'.format(','.join(str(self.parameters))),
                     'MADReader')
         if s_parameters:
-            log.success('Spatial parameters: {}'.format(','.join(s_parameters)),
+            log.success('Spatial parameters: {}'.format(','.join(str(s_parameters))),
                         'MADReader')
         
         for param in list(self.oneDDict.keys()):
