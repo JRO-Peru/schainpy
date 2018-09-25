@@ -13,8 +13,7 @@ import datetime
 
 import numpy
 import h5py
-
-from schainpy.model.io.jroIO_base import JRODataReader
+from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 from schainpy.utils import log
@@ -28,18 +27,20 @@ except:
 
 DEF_CATALOG = {
     'principleInvestigator': 'Marco Milla',
-    'expPurpose': None,
-    'cycleTime': None,
-    'correlativeExp': None,
-    'sciRemarks': None,
-    'instRemarks': None
+    'expPurpose': '',
+    'cycleTime': '',
+    'correlativeExp': '',
+    'sciRemarks': '',
+    'instRemarks': ''
     }
+    
 DEF_HEADER = {
-    'kindatDesc': None,
+    'kindatDesc': '',
     'analyst': 'Jicamarca User',
-    'comments': None,
-    'history': None
+    'comments': '',
+    'history': ''
     }
+
 MNEMONICS = {
     10: 'jro',
     11: 'jbr',
@@ -48,6 +49,8 @@ MNEMONICS = {
     1000: 'pbr',
     1001: 'hbr',
     1002: 'obr',
+    400: 'clr'
+
 }
 
 UT1970 = datetime.datetime(1970, 1, 1) - datetime.timedelta(seconds=time.timezone)
@@ -63,7 +66,7 @@ def load_json(obj):
         iterable = obj
 
     if isinstance(iterable, dict):
-        return {str(k): load_json(v) if isinstance(v, dict) else str(v) if isinstance(v, str) else v
+        return {str(k): load_json(v) if isinstance(v, dict) else str(v) if isinstance(v, (str,unicode)) else v
             for k, v in list(iterable.items())}
     elif isinstance(iterable, (list, tuple)):
         return [str(v) if isinstance(v, str) else v for v in iterable]
@@ -192,7 +195,7 @@ class MADReader(JRODataReader, ProcessingUnit):
             self.parameters = one + two
             self.parameters_d = one_d + two_d
 
-        log.success('Parameters found: {}'.format(','.join(str(self.parameters))),
+        log.success('Parameters found: {}'.format(self.parameters),
                     'MADReader')
         if s_parameters:
             log.success('Spatial parameters: {}'.format(','.join(str(s_parameters))),
@@ -356,19 +359,19 @@ class MADReader(JRODataReader, ProcessingUnit):
             x = self.parameters.index(param.lower())
             setattr(self.dataOut, attr, self.buffer[0][x])
 
-        for param, value in list(self.twoDDict.items()):            
+        for param, value in list(self.twoDDict.items()):                     
             x = self.parameters.index(param.lower())
             if self.ext == '.txt':
                 y = self.parameters.index(self.ind2DList[0].lower())            
                 ranges = self.buffer[:,y]
-                if self.ranges.size == ranges.size:
-                    continue
+                #if self.ranges.size == ranges.size:
+                #    continue
                 index = numpy.where(numpy.in1d(self.ranges, ranges))[0]
                 dummy = numpy.zeros(self.ranges.shape) + numpy.nan
                 dummy[index] = self.buffer[:,x]
             else:                
                 dummy = self.buffer[x]                
-
+            
             if isinstance(value, str):
                 if value not in self.ind2DList:             
                     setattr(self.dataOut, value, dummy.reshape(1,-1))
@@ -406,14 +409,14 @@ class MADReader(JRODataReader, ProcessingUnit):
 
         return 1
 
-
+@MPDecorator
 class MADWriter(Operation):
 
     missing = -32767    
     
-    def __init__(self, **kwargs):
+    def __init__(self):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)
         self.dataOut = Parameters()
         self.counter = 0
         self.path = None
@@ -451,7 +454,7 @@ class MADWriter(Operation):
         
         self.dataOut = dataOut        
         self.putData() 
-        return
+        return 1
     
     def setup(self, path, oneDDict, ind2DList, twoDDict, metadata, format, **kwargs):
         '''
@@ -596,7 +599,7 @@ class MADWriter(Operation):
         self.fp.append(rec)
         if self.ext == '.hdf5' and self.counter % 500 == 0 and self.counter > 0:
             self.fp.dump()
-        if self.counter % 100 == 0 and self.counter > 0:
+        if self.counter % 20 == 0 and self.counter > 0:
             log.log(
                 'Writing {} records'.format(
                     self.counter),

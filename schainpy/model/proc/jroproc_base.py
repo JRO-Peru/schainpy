@@ -286,19 +286,25 @@ def MPDecorator(BaseClass):
 
                 if self.dataIn.error:
                     self.dataOut.error = self.dataIn.error
-                    self.dataOut.flagNoData = True 
-
+                    self.dataOut.flagNoData = True
+                     
                 for op, optype, opId, kwargs in self.operations:
                     if optype == 'self' and not self.dataOut.flagNoData:
                         op(**kwargs)
                     elif optype == 'other' and not self.dataOut.flagNoData:
                         self.dataOut = op.run(self.dataOut, **kwargs)
-                    elif optype == 'external' and not self.dataOut.flagNoData:
-                        if not self.dataOut.flagNoData or self.dataOut.error:
-                            self.publish(self.dataOut, opId)
+                    elif optype == 'external' and not self.dataOut.flagNoData:                        
+                        self.publish(self.dataOut, opId)
 
                 if not self.dataOut.flagNoData or self.dataOut.error:
                     self.publish(self.dataOut, self.id)
+                    for op, optype, opId, kwargs in self.operations:
+                        if optype == 'self' and self.dataOut.error:
+                            op(**kwargs)
+                        elif optype == 'other' and self.dataOut.error:
+                            self.dataOut = op.run(self.dataOut, **kwargs)
+                        elif optype == 'external' and self.dataOut.error:                        
+                            self.publish(self.dataOut, opId)
                 
                 if self.dataIn.error:
                     break

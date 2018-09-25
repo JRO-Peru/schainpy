@@ -94,6 +94,7 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.heightList = self.dataIn.getHeiRange()   
         self.dataOut.frequency = self.dataIn.frequency
         # self.dataOut.noise = self.dataIn.noise
+        self.dataOut.error = self.dataIn.error
         
     def run(self):
 
@@ -127,7 +128,7 @@ class ParametersProc(ProcessingUnit):
             # self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.pairsList = self.dataIn.pairsList            
             self.dataOut.groupList = self.dataIn.pairsList
-            self.dataOut.flagNoData = False
+            self.dataOut.flagNoData = False            
             
             if hasattr(self.dataIn, 'ChanDist'): #Distances of receiver channels
                 self.dataOut.ChanDist = self.dataIn.ChanDist
@@ -752,7 +753,7 @@ class PrecipitationProc(Operation):
         dataOut.data_param[0]=dBZ
         dataOut.data_param[1]=V_mean
         dataOut.data_param[2]=RR
-        
+
         return dataOut
         
     def dBZeMODE2(self, dataOut): #    Processing for MIRA35C
