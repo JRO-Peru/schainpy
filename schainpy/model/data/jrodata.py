@@ -1163,9 +1163,11 @@ class PlotterData(object):
         for plot in self.plottypes:
             if 'snr' in plot:
                 plot = 'snr'
+            elif 'spc_moments' == plot:
+                plot = 'moments'
             self.data[plot] = {}
         
-        if 'spc' in self.data or 'rti' in self.data or 'cspc' in self.data:
+        if 'spc' in self.data or 'rti' in self.data or 'cspc' in self.data or 'moments' in self.data:
             self.data['noise'] = {}
             if 'noise' not in self.plottypes:
                 self.plottypes.append('noise')
@@ -1199,7 +1201,7 @@ class PlotterData(object):
         self.channels = dataOut.channelList
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
-        if 'spc' in self.plottypes or 'cspc' in self.plottypes:
+        if 'spc' in self.plottypes or 'cspc' in self.plottypes or 'spc_moments' in self.plottypes:
             self.xrange = (dataOut.getFreqRange(1)/1000.,
                            dataOut.getAcfRange(1), dataOut.getVelRange(1))
             self.factor = dataOut.normFactor
@@ -1208,7 +1210,7 @@ class PlotterData(object):
         self.__times.append(tm)
         
         for plot in self.plottypes:
-            if plot == 'spc':
+            if plot in ('spc', 'spc_moments'):
                 z = dataOut.data_spc/dataOut.normFactor
                 buffer = 10*numpy.log10(z)
             if plot == 'cspc':
@@ -1246,6 +1248,9 @@ class PlotterData(object):
             elif plot == 'cspc':
                 self.data['spc'] = buffer[0]
                 self.data['cspc'] = buffer[1]
+            elif plot == 'spc_moments':
+                self.data['spc'] = buffer
+                self.data['moments'][tm] = dataOut.moments
             else:
                 if self.buffering:
                     self.data[plot][tm] = buffer

@@ -228,6 +228,7 @@ class SpectraPlot_(Figure):
         
 
         return dataOut
+
 @MPDecorator
 class CrossSpectraPlot_(Figure):
 
@@ -358,7 +359,7 @@ class CrossSpectraPlot_(Figure):
         #thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Cross-Spectra: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-#         xlabel = "Velocity (m/s)"
+ #         xlabel = "Velocity (m/s)"
         ylabel = "Range (Km)"
 
         if xaxis == "frequency":
@@ -428,7 +429,7 @@ class CrossSpectraPlot_(Figure):
 
             coherenceComplex = dataOut.data_cspc[pairsIndexList[i],:,:]  /  numpy.sqrt(  dataOut.data_spc[chan_index0,:,:]*dataOut.data_spc[chan_index1,:,:]  )
             coherence = numpy.abs(coherenceComplex)
-#            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
+ #            phase = numpy.arctan(-1*coherenceComplex.imag/coherenceComplex.real)*180/numpy.pi
             phase = numpy.arctan2(coherenceComplex.imag, coherenceComplex.real)*180/numpy.pi
 
             title = "Coherence Ch%d * Ch%d" %(pair[0], pair[1])
@@ -1461,8 +1462,8 @@ class BeaconPhase_(Figure):
         if pairsIndexList == []:
             return
 
-#         if len(pairsIndexList) > 4:
-#             pairsIndexList = pairsIndexList[0:4]
+ #         if len(pairsIndexList) > 4:
+ #             pairsIndexList = pairsIndexList[0:4]
 
         hmin_index = None
         hmax_index = None

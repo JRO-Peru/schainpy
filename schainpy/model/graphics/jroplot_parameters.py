@@ -290,10 +290,10 @@ class SpcParamPlot_(Figure):
                     raise ValueError("Channel %d is not in dataOut.channelList" %channel)
                 channelIndexList.append(dataOut.channelList.index(channel))
 
-#         if normFactor is None:
-#             factor = dataOut.normFactor
-#         else:
-#             factor = normFactor
+ #         if normFactor is None:
+ #             factor = dataOut.normFactor
+ #         else:
+ #             factor = normFactor
         if xaxis == "frequency":
             x = dataOut.spcparam_range[0]
             xlabel = "Frequency (kHz)"
@@ -594,8 +594,8 @@ class SkyMapPlot_(Figure):
         self.isConfig = False
         self.__nsubplots = 1
 
-#         self.WIDTH = 280
-#         self.HEIGHT = 250
+ #         self.WIDTH = 280
+ #         self.HEIGHT = 250
         self.WIDTH = 600
         self.HEIGHT = 600
         self.WIDTHPROF = 120
@@ -828,11 +828,11 @@ class WindProfilerPlot_(Figure):
         if dataOut.flagNoData:
             return dataOut
 
-#         if timerange is not None:
-#             self.timerange = timerange
-#
-#         tmin = None
-#         tmax = None
+ #         if timerange is not None:
+ #             self.timerange = timerange
+ #
+ #         tmin = None
+ #         tmax = None
 
         x = dataOut.getTimeRange1(dataOut.paramInterval)
         y = dataOut.heightList   
@@ -1082,7 +1082,7 @@ class ParametersPlot_(Figure):
             z[ind] = numpy.nan
 
         thisDatetime = dataOut.datatime
-#         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+ #         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
         title = wintitle + " Parameters Plot" #: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         xlabel = ""
         ylabel = "Range (km)"
@@ -1129,24 +1129,24 @@ class ParametersPlot_(Figure):
 
         self.setWinTitle(title)
 
-#         for i in range(self.nchan):
-#             index = channelIndexList[i]
-#             title = "Channel %d: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
-#             axes = self.axesList[i*self.plotFact]
-#             z1 = z[i,:].reshape((1,-1))
-#             axes.pcolorbuffer(x, y, z1,
-#                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
-#                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-#                         ticksize=9, cblabel='', cbsize="1%",colormap=colormap)
-# 
-#             if showSNR:
-#                 title = "Channel %d SNR: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
-#                 axes = self.axesList[i*self.plotFact + 1]
-#                 SNRdB1 = SNRdB[i,:].reshape((1,-1))
-#                 axes.pcolorbuffer(x, y, SNRdB1,
-#                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
-#                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
-#                         ticksize=9, cblabel='', cbsize="1%",colormap='jet')
+    #         for i in range(self.nchan):
+    #             index = channelIndexList[i]
+    #             title = "Channel %d: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+    #             axes = self.axesList[i*self.plotFact]
+    #             z1 = z[i,:].reshape((1,-1))
+    #             axes.pcolorbuffer(x, y, z1,
+    #                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+    #                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+    #                         ticksize=9, cblabel='', cbsize="1%",colormap=colormap)
+    # 
+    #             if showSNR:
+    #                 title = "Channel %d SNR: %s" %(dataOut.channelList[index], thisDatetime.strftime("%Y/%m/%d %H:%M:%S"))
+    #                 axes = self.axesList[i*self.plotFact + 1]
+    #                 SNRdB1 = SNRdB[i,:].reshape((1,-1))
+    #                 axes.pcolorbuffer(x, y, SNRdB1,
+    #                         xmin=self.xmin, xmax=self.xmax, ymin=ymin, ymax=ymax, zmin=SNRmin, zmax=SNRmax,
+    #                         xlabel=xlabel, ylabel=ylabel, title=title, rti=True, XAxisAsTime=True,
+ #                         ticksize=9, cblabel='', cbsize="1%",colormap='jet')
 
         i=0    
         index = channelIndexList[i]
@@ -1587,11 +1587,11 @@ class SpectralFittingPlot_(Figure):
             for f in range(nGroups):
                 groupChann = groupArray[f,:]
                 p = dataOut.data_param[f,:,heightindex]
-#                 p = numpy.array([ 89.343967,0.14036615,0.17086219,18.89835291,1.58388365,1.55099167])
+ #                 p = numpy.array([ 89.343967,0.14036615,0.17086219,18.89835291,1.58388365,1.55099167])
                 fitLineAux = dataOut.library.modelFunction(p, constants)*nProfiles
                 fitLineAux = fitLineAux.reshape((nChannels,nProfiles))
                 spcFitLine[groupChann,:] = fitLineAux
-#             spcFitLine = spcFitLine/factor
+ #             spcFitLine = spcFitLine/factor
 
             z = z[listChannels,:]
             spcFitLine = spcFitLine[listChannels,:]
@@ -1623,7 +1623,7 @@ class SpectralFittingPlot_(Figure):
 
         self.setWinTitle(title)
         for i in range(self.nplots):
-#             title = "Channel %d: %4.2fdB" %(dataOut.channelList[i]+1, noisedB[i])
+ #             title = "Channel %d: %4.2fdB" %(dataOut.channelList[i]+1, noisedB[i])
             title = "Height %4.1f km\nChannel %d:" %(cutHeight, listChannels[i])
             axes = self.axesList[i*self.__nsubplots]
             if fit == False:
@@ -1747,7 +1747,7 @@ class EWDriftsPlot_(Figure):
         tmax = None
 
         x = dataOut.getTimeRange1(dataOut.outputInterval)
-#         y = dataOut.heightList
+ #         y = dataOut.heightList
         y = dataOut.heightList
 
         z = dataOut.data_output
@@ -1774,7 +1774,7 @@ class EWDriftsPlot_(Figure):
 
 
         showprofile = False
-#        thisDatetime = dataOut.datatime
+ #        thisDatetime = dataOut.datatime
         thisDatetime = datetime.datetime.utcfromtimestamp(x[1])
         title = wintitle + " EW Drifts"
         xlabel = ""

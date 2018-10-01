@@ -1197,8 +1197,8 @@ class SpectralMoments(Operation):
             self.dataOut.noise           :    Noise level per channel
             
         Affected:
-            self.dataOut.moments      :    Parameters per channel
-            self.dataOut.data_SNR        :    SNR per channel
+            self.dataOut.moments        :    Parameters per channel
+            self.dataOut.data_SNR       :    SNR per channel
             
     '''
     

@@ -66,7 +66,7 @@ class SpectraPlot(Plot):
             x = self.data.xrange[2]
             self.xlabel = "Velocity (m/s)"
 
-        if self.CODE == 'spc_mean':
+        if self.CODE == 'spc_moments':
             x = self.data.xrange[2]
             self.xlabel = "Velocity (m/s)"
 
@@ -78,8 +78,8 @@ class SpectraPlot(Plot):
 
         for n, ax in enumerate(self.axes):
             noise = self.data['noise'][n][-1]
-            if self.CODE == 'spc_mean':
-                mean = self.data['mean'][n][-1]
+            if self.CODE == 'spc_moments':
+                mean = self.data['moments'][n, :, 1, :][-1]
             if ax.firsttime:
                 self.xmax = self.xmax if self.xmax else numpy.nanmax(x)
                 self.xmin = self.xmin if self.xmin else -self.xmax
@@ -96,16 +96,15 @@ class SpectraPlot(Plot):
                         self.data['rti'][n][-1], y)[0]
                     ax.plt_noise = self.pf_axes[n].plot(numpy.repeat(noise, len(y)), y,
                                                         color="k", linestyle="dashed", lw=1)[0]
-                if self.CODE == 'spc_mean':
+                if self.CODE == 'spc_moments':
                     ax.plt_mean = ax.plot(mean, y, color='k')[0]
             else:
                 ax.plt.set_array(z[n].T.ravel())
                 if self.showprofile:
                     ax.plt_profile.set_data(self.data['rti'][n][-1], y)
                     ax.plt_noise.set_data(numpy.repeat(noise, len(y)), y)
-                if self.CODE == 'spc_mean':
+                if self.CODE == 'spc_moments':
                     ax.plt_mean.set_data(mean, y)
-
             self.titles.append('CH {}: {:3.2f}dB'.format(n, noise))
 
 
@@ -206,11 +205,11 @@ class CrossSpectraPlot(Plot):
             self.titles.append('Phase CH{} * CH{}'.format(pair[0], pair[1]))
 
 
-class SpectraMeanPlot(SpectraPlot):
+class SpectralMomentsPlot(SpectraPlot):
     '''
-    Plot for Spectra and Mean
+    Plot for Spectral Moments
     '''
-    CODE = 'spc_mean'
+    CODE = 'spc_moments'
     colormap = 'jro'
 
 

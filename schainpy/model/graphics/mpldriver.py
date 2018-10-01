@@ -2,37 +2,7 @@ import os
 import sys
 import datetime
 import numpy
-import matplotlib
-
-if 'BACKEND' in os.environ:
-    matplotlib.use(os.environ['BACKEND'])
-elif 'linux' in sys.platform:
-    matplotlib.use("TkAgg")
-elif 'darwin' in sys.platform:
-    matplotlib.use('TkAgg')
-else:
-    from schainpy.utils import log
-    log.warning('Using default Backend="Agg"', 'INFO')
-    matplotlib.use('Agg')
-# Qt4Agg', 'GTK', 'GTKAgg', 'ps', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'template', 'TkAgg', 'GTK3Cairo', 'GTK3Agg', 'svg', 'WebAgg', 'CocoaAgg', 'emf', 'gdk', 'WX'
-import matplotlib.pyplot
-
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.ticker import FuncFormatter, LinearLocator
-
-###########################################
-# Actualizacion de las funciones del driver
-###########################################
-
-# create jro colormap
-
-jet_values = matplotlib.pyplot.get_cmap("jet", 100)(numpy.arange(100))[10:90]
-blu_values = matplotlib.pyplot.get_cmap(
-    "seismic_r", 20)(numpy.arange(20))[10:15]
-ncmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-    "jro", numpy.vstack((blu_values, jet_values)))
-matplotlib.pyplot.register_cmap(cmap=ncmap)
-
+from .jroplot_base import matplotlib, make_axes_locatable, FuncFormatter, LinearLocator
 
 def createFigure(id, wintitle, width, height, facecolor="w", show=True, dpi=80):
 
