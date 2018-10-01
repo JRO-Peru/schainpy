@@ -1290,7 +1290,7 @@ class JRODataReader(JRODataIO):
               format=None,
               oneDDict=None,
               twoDDict=None,
-              ind2DList=None):
+              independentParam=None):
         if server is not None:
             if 'tcp://' in server:
                 address = server
@@ -1485,7 +1485,7 @@ class JRODataReader(JRODataIO):
             format=None,
             oneDDict=None,
             twoDDict=None,
-            ind2DList=None, **kwargs):
+            independentParam=None, **kwargs):
 
         if not(self.isConfig):
             self.setup(path=path,
@@ -1512,7 +1512,7 @@ class JRODataReader(JRODataIO):
                        format=format,
                        oneDDict=oneDDict,
                        twoDDict=twoDDict,
-                       ind2DList=ind2DList)
+                       independentParam=independentParam)
             self.isConfig = True
         if server is None:
             self.getData()
