@@ -613,6 +613,7 @@ class PolarMapPlot(Plot):
         self.titles = ['{} {}'.format(
             self.data.parameters[x], title) for x in self.channels]
 
+
 class ScopePlot(Plot):
 
     '''
