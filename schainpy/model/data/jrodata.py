@@ -590,8 +590,10 @@ class Spectra(JROData):
     def getTimeInterval(self):
 
         timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles * self.ippFactor
-
-        return timeInterval
+        if self.nmodes:
+            return self.nmodes*timeInterval
+        else:
+            return timeInterval
 
     def getPower(self):
 
@@ -1169,8 +1171,11 @@ class PlotterData(object):
         
         if 'spc' in self.data or 'rti' in self.data or 'cspc' in self.data or 'moments' in self.data:
             self.data['noise'] = {}
+            self.data['rti'] = {}
             if 'noise' not in self.plottypes:
                 self.plottypes.append('noise')
+            if 'rti' not in self.plottypes:
+                self.plottypes.append('rti')
         
     def shape(self, key):
         '''
@@ -1244,7 +1249,7 @@ class PlotterData(object):
                 self.nProfiles = dataOut.nProfiles  
                          
             if plot == 'spc':
-                self.data[plot] = buffer
+                self.data['spc'] = buffer
             elif plot == 'cspc':
                 self.data['spc'] = buffer[0]
                 self.data['cspc'] = buffer[1]

@@ -411,7 +411,7 @@ class BLTRSpectraReader (ProcessingUnit):
         self.dataOut.ippSeconds= 1/float(self.rheader.PRFhz)
         self.dataOut.PRF=self.rheader.PRFhz
         self.dataOut.nFFTPoints=self.rheader.nProfiles
-        self.dataOut.utctime=self.rheader.nUtime
+        self.dataOut.utctime = self.rheader.nUtime + self.rheader.nMilisec/1000.
         self.dataOut.timeZone = 0
         self.dataOut.useLocalTime = False
         self.dataOut.nmodes = 2
