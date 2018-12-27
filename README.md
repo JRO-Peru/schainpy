@@ -46,7 +46,7 @@ $ docker build -t schain .
 You can run a container using an xml file or a schain script also you need to mount a volume for the data input and for the output files/plots
 ```
 $ docker run -it --rm --volume /path/to/host/data:/data schain xml /data/test.xml
-$ docker run -it --rm --volume /path/to/host/data:/data --entrypoint=/bin/python schain /data/test.py
+$ docker run -it --rm --volume /path/to/host/data:/data --entrypoint /urs/local/bin/python schain /data/test.py
 ```
 
 ## First Script
