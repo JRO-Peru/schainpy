@@ -12,11 +12,11 @@ Based on:
     $Id: jroproc_base.py 1 2012-11-12 18:56:07Z murco $
 '''
 
+import os
 import inspect
 import zmq
 import time
 import pickle
-import os
 from multiprocessing import Process
 from zmq.utils.monitor import recv_monitor_message
 
@@ -250,7 +250,7 @@ def MPDecorator(BaseClass):
             while True:
 
                 BaseClass.run(self, **self.kwargs)
-
+                
                 for op, optype, opId, kwargs in self.operations:
                     if optype == 'self' and not self.dataOut.flagNoData:
                         op(**kwargs)
