@@ -198,7 +198,7 @@ class Plot(Operation):
         self.zlimits = kwargs.get('zlimits', None)
         self.xmin = kwargs.get('xmin', None)
         self.xmax = kwargs.get('xmax', None)
-        self.xrange = kwargs.get('xrange', 12)
+        self.xrange = kwargs.get('xrange', 24)
         self.xscale = kwargs.get('xscale', None)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
@@ -463,6 +463,7 @@ class Plot(Operation):
                         datetime.datetime(1970, 1, 1)).total_seconds()
                 if self.data.localtime:
                     xmin += time.timezone
+                self.tmin = xmin
             else:
                 xmin = self.xmin
 
@@ -758,7 +759,7 @@ class Plot(Operation):
             if self.localtime:
                 tm -= time.timezone
 
-        if self.data and (tm - self.data.min_time) >= self.xrange*60*60:
+        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:
             self.__plot()
             self.data.setup()
             self.clear_figures()
