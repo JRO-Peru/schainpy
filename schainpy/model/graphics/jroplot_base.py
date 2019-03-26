@@ -463,7 +463,6 @@ class Plot(Operation):
                         datetime.datetime(1970, 1, 1)).total_seconds()
                 if self.data.localtime:
                     xmin += time.timezone
-                self.tmin = xmin
             else:
                 xmin = self.xmin
 
@@ -563,7 +562,7 @@ class Plot(Operation):
                 ax.set_title('{} {} {}'.format(
                     self.titles[n],
                     self.getDateTime(self.data.max_time).strftime(
-                        '%H:%M:%S'),
+                        '%Y-%m-%d %H:%M:%S'),
                     self.time_label),
                     size=8)
             else:
@@ -738,6 +737,17 @@ class Plot(Operation):
         
         if self.isConfig is False:
             self.__setup(**kwargs)
+            if dataOut.type == 'Parameters':
+                self.tmin = dataOut.utctimeInit
+            else:
+                self.tmin = dataOut.utctime
+            
+            if dataOut.useLocalTime:
+                if not self.localtime:
+                    self.tmin += time.timezone
+            else:
+                if self.localtime:
+                    self.tmin -= time.timezone
             self.data.setup()
             self.isConfig = True
             if self.plot_server:
@@ -751,16 +761,21 @@ class Plot(Operation):
             tm = dataOut.utctimeInit
         else:
             tm = dataOut.utctime
-        
+
         if dataOut.useLocalTime:
             if not self.localtime:
                 tm += time.timezone
         else:
             if self.localtime:
                 tm -= time.timezone
-
-        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:
+        
+        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:            
+            self.save_counter = self.save_period
             self.__plot()
+            self.xmin += self.xrange
+            if self.xmin >= 24:
+                self.xmin -= 24
+            self.tmin += self.xrange*60*60
             self.data.setup()
             self.clear_figures()
 
@@ -775,10 +790,13 @@ class Plot(Operation):
         else:
             self.__throttle_plot(self.__plot, coerce=coerce)
 
-        figpause(0.001)
+        figpause(0.01)
 
     def close(self):
 
+        if self.data:
+            self.save_counter = self.save_period
+            self.__plot()
         if self.data and self.pause:
             figpause(10)
 
