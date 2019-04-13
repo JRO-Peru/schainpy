@@ -118,6 +118,9 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.endTime = endTime
         self.status_value = status_value
         self.datatime = datetime.datetime(1900,1,1)
+        self.delay = kwargs.get('delay', 10)
+        self.online = kwargs.get('online', False)
+        self.nTries = kwargs.get('nTries', 3)
         
         if self.path is None:
             raise ValueError("The path is not valid")
@@ -125,7 +128,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         if ext is None:
             ext = self.ext
 
-        self.search_files(self.path, startDate, endDate, ext)
+        self.fileList = self.search_files(self.path, startDate, endDate, ext)
         self.timezone = timezone
         self.fileIndex = 0
 
@@ -134,6 +137,29 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
                 path))
 
         self.setNextFile()
+
+    def search_last_file(self):
+        '''
+        Get last file and add it to the list
+        '''
+
+        for n in range(self.nTries):            
+            if n > 0:
+                log.warning(
+                    "Waiting %0.2f sec for the next file, try %03d ..." % (self.delay, self.nTries + 1),
+                    self.name
+                )
+                time.sleep(self.delay)
+            file_list = os.listdir(self.path)
+            file_list.sort()
+            if file_list:
+                if self.filename:
+                    if file_list[-1] not in self.filename:
+                        return file_list[-1]  
+                    else:
+                        continue
+                return file_list[-1]
+        return 0
 
     def search_files(self, path, startDate, endDate, ext):
         '''
@@ -152,8 +178,8 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         fileList0 = glob.glob1(path, "*%s" % ext)
         fileList0.sort()
 
-        self.fileList = []
-        self.dateFileList = []
+        #self.fileList = []
+        #self.dateFileList = []
 
         for thisFile in fileList0:
             year = thisFile[-14:-10]
@@ -174,28 +200,34 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
             if (startDate > dateFile) or (endDate < dateFile):
                 continue
 
-            self.fileList.append(thisFile)
-            self.dateFileList.append(dateFile)
+            yield thisFile
+            # self.dateFileList.append(dateFile)
 
         return
 
     def setNextFile(self):
 
-        file_id = self.fileIndex
-
-        if file_id == len(self.fileList):
-            self.flagNoMoreFiles = 1
-            return 0
-        
-        log.success('Opening {}'.format(self.fileList[file_id]), 'BLTRParamReader')
-        filename = os.path.join(self.path, self.fileList[file_id])
+        if self.online:
+            filename = self.search_last_file()
+            if not filename:
+                self.flagNoMoreFiles = 1
+                return 0
+        else:
+            try:
+                filename = next(self.fileList)
+            except StopIteration:
+                print('Noooo files')
+                self.flagNoMoreFiles = 1
+                return 0
+                
+        log.success('Opening {}'.format(filename), 'BLTRParamReader')
 
         dirname, name = os.path.split(filename)
         # 'peru2' ---> Piura  -   'peru1' ---> Huancayo or Porcuya
-        self.siteFile = name.split('.')[0]
+        self.siteFile = filename.split('.')[0]
         if self.filename is not None:
             self.fp.close()
-        self.filename = filename
+        self.filename = os.path.join(self.path, filename)
         self.fp = open(self.filename, 'rb')
         self.header_file = numpy.fromfile(self.fp, FILE_HEADER_STRUCTURE, 1)
         self.nrecords = self.header_file['nrec'][0]
@@ -214,7 +246,15 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
                 if not self.setNextFile():
                     return 0
 
-            self.readBlock()
+            try:
+                pointer = self.fp.tell()
+                self.readBlock()
+            except:
+                if self.waitDataBlock(pointer, 38512) == 1:
+                    continue
+                else:
+                    if not self.setNextFile():
+                        return 0
 
             if (self.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or \
                (self.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
@@ -357,10 +397,11 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
             self.dataOut.error = 'No More files to read'
+            return 
 
         if not self.readNextBlock():
             self.dataOut.flagNoData = True
-            return 0
+            self.dataOut.error = 'Time for wait new file reach!!!'
 
         self.set_output()
 
