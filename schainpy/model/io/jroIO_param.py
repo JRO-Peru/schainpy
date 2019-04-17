@@ -829,7 +829,7 @@ class ParamWriter(Operation):
 
         if os.path.exists(fullpath):
             filesList = os.listdir( fullpath )
-            filesList = [k for k in filesList if 'D' in k]
+            filesList = [k for k in filesList if 'M' in k]
             if len( filesList ) > 0:
                 filesList = sorted( filesList, key=str.lower )
                 filen = filesList[-1]
