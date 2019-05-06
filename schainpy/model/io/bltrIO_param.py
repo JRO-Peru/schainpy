@@ -86,7 +86,8 @@ DATA_STRUCTURE = numpy.dtype([
 @MPDecorator
 class BLTRParamReader(JRODataReader, ProcessingUnit):
     '''
-    Boundary Layer and Tropospheric Radar (BLTR) reader, Wind velocities and SNR from *.sswma files
+    Boundary Layer and Tropospheric Radar (BLTR) reader, Wind velocities and SNR 
+    from *.sswma files
     '''
 
     ext = '.sswma'
@@ -144,12 +145,11 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
 
         for n in range(self.nTries):            
-            if n > 0:
-                log.warning(
-                    "Waiting %0.2f sec for the next file, try %03d ..." % (self.delay, self.nTries + 1),
-                    self.name
-                )
-                time.sleep(self.delay)
+            log.warning(
+                "Waiting %0.2f seconds for the next file, try %03d ..." % (self.delay, n+1),
+                self.name
+            )
+            time.sleep(self.delay)
             file_list = os.listdir(self.path)
             file_list.sort()
             if file_list:
@@ -178,9 +178,6 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         fileList0 = glob.glob1(path, "*%s" % ext)
         fileList0.sort()
 
-        #self.fileList = []
-        #self.dateFileList = []
-
         for thisFile in fileList0:
             year = thisFile[-14:-10]
             if not isNumber(year):
@@ -201,7 +198,6 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
                 continue
 
             yield thisFile
-            # self.dateFileList.append(dateFile)
 
         return
 
@@ -216,7 +212,6 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
             try:
                 filename = next(self.fileList)
             except StopIteration:
-                print('Noooo files')
                 self.flagNoMoreFiles = 1
                 return 0
                 
@@ -241,7 +236,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
     def readNextBlock(self):
 
         while True:
-            if self.counter_records == self.nrecords:
+            if not self.online and self.counter_records == self.nrecords:
                 self.flagIsNewFile = 1
                 if not self.setNextFile():
                     return 0
@@ -267,9 +262,9 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
                 continue
             break
 
-        log.log('Reading Record No. {}/{} -> {}'.format(
+        log.log('Reading Record No. {} -> {}'.format(
             self.counter_records,
-            self.nrecords,
+            # self.nrecords,
             self.datatime.ctime()), 'BLTRParamReader')
 
         return 1
@@ -328,10 +323,12 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         
     def readData(self):
         '''
-        Reading and filtering data block record of BLTR rawdata file, filtering is according to status_value.
+        Reading and filtering data block record of BLTR rawdata file, 
+        filtering is according to status_value.
 
         Input:
-            status_value - Array data is set to NAN for values that are not equal to status_value
+            status_value - Array data is set to NAN for values that are not 
+            equal to status_value
 
         '''
         self.nchannels = int(self.nchannels)
