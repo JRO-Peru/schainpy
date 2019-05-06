@@ -162,6 +162,7 @@ class Plot(Operation):
         self.isPlotConfig = False
         self.save_counter = 1
         self.sender_counter = 1
+        self.data = None
 
     def __fmtTime(self, x, pos):
         '''
@@ -243,11 +244,7 @@ class Plot(Operation):
 
         self.setup()
 
-        self.time_label = 'LT' if self.localtime else 'UTC'
-        if self.data.localtime:
-            self.getDateTime = datetime.datetime.fromtimestamp
-        else:
-            self.getDateTime = datetime.datetime.utcfromtimestamp
+        self.time_label = 'LT' if self.localtime else 'UTC'        
 
         if self.width is None:
             self.width = 8
@@ -729,25 +726,27 @@ class Plot(Operation):
         raise NotImplementedError
     
     def run(self, dataOut, **kwargs):
-
-        if dataOut.error:
-            coerce = True
-        else:
-            coerce = False
+        '''
+        Main plotting routine
+        '''
         
         if self.isConfig is False:
             self.__setup(**kwargs)
             if dataOut.type == 'Parameters':
-                self.tmin = dataOut.utctimeInit
+                t = dataOut.utctimeInit
             else:
-                self.tmin = dataOut.utctime
-            
+                t = dataOut.utctime            
+
             if dataOut.useLocalTime:
-                if not self.localtime:
-                    self.tmin += time.timezone
+                self.getDateTime = datetime.datetime.fromtimestamp
             else:
-                if self.localtime:
-                    self.tmin -= time.timezone
+                self.getDateTime = datetime.datetime.utcfromtimestamp
+            
+            if self.xmin is None:
+                self.tmin = t
+            else:
+                self.tmin = (self.getDateTime(t).replace(hour=self.xmin, minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
+
             self.data.setup()
             self.isConfig = True
             if self.plot_server:
@@ -762,14 +761,12 @@ class Plot(Operation):
         else:
             tm = dataOut.utctime
 
-        if dataOut.useLocalTime:
-            if not self.localtime:
-                tm += time.timezone
-        else:
-            if self.localtime:
-                tm -= time.timezone
+        if not dataOut.useLocalTime and self.localtime:
+            tm -= time.timezone
+        if dataOut.useLocalTime and not self.localtime:
+            tm += time.timezone
         
-        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:            
+        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:    
             self.save_counter = self.save_period
             self.__plot()
             self.xmin += self.xrange
@@ -788,7 +785,7 @@ class Plot(Operation):
         if self.realtime:
             self.__plot()
         else:
-            self.__throttle_plot(self.__plot, coerce=coerce)
+            self.__throttle_plot(self.__plot)#, coerce=coerce)
 
         figpause(0.01)
 
