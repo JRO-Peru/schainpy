@@ -227,7 +227,7 @@ class Plot(Operation):
         self.sender_period = kwargs.get('sender_period', 2)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
-            self.CODE, self.throttle, self.exp_code, self.buffering)
+            self.CODE, self.throttle, self.exp_code, self.buffering, snr=self.showSNR)
         
         if self.plot_server:
             if not self.plot_server.startswith('tcp://'):
@@ -303,15 +303,13 @@ class Plot(Operation):
                 cmap = plt.get_cmap(self.colormap)
             cmap.set_bad(self.bgcolor, 1.)
             self.cmaps.append(cmap)
-
+                
         for fig in self.figures:
             fig.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             fig.canvas.mpl_connect('scroll_event', self.OnBtnScroll)
             fig.canvas.mpl_connect('button_press_event', self.onBtnPress)
             fig.canvas.mpl_connect('motion_notify_event', self.onMotion)
             fig.canvas.mpl_connect('button_release_event', self.onBtnRelease)
-            if self.show:
-                fig.show()
 
     def OnKeyPress(self, event):
         '''
@@ -604,6 +602,9 @@ class Plot(Operation):
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.data.max_time).strftime('%Y/%m/%d')))
             fig.canvas.draw()
+            if self.show:
+                fig.show()
+                figpause(0.1)
 
             if self.save:
                 self.save_figure(n)
@@ -739,13 +740,21 @@ class Plot(Operation):
 
             if dataOut.useLocalTime:
                 self.getDateTime = datetime.datetime.fromtimestamp
+                if not self.localtime:
+                    t += time.timezone
             else:
                 self.getDateTime = datetime.datetime.utcfromtimestamp
+                if self.localtime:
+                    t -= time.timezone
             
             if self.xmin is None:
                 self.tmin = t
             else:
-                self.tmin = (self.getDateTime(t).replace(hour=self.xmin, minute=0, second=0) - datetime.datetime(1970, 1, 1)).total_seconds()
+                self.tmin = (
+                    self.getDateTime(t).replace(
+                        hour=self.xmin, 
+                        minute=0, 
+                        second=0) - self.getDateTime(0)).total_seconds()
 
             self.data.setup()
             self.isConfig = True
@@ -765,7 +774,7 @@ class Plot(Operation):
             tm -= time.timezone
         if dataOut.useLocalTime and not self.localtime:
             tm += time.timezone
-        
+
         if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:    
             self.save_counter = self.save_period
             self.__plot()
@@ -786,8 +795,6 @@ class Plot(Operation):
             self.__plot()
         else:
             self.__throttle_plot(self.__plot)#, coerce=coerce)
-
-        figpause(0.01)
 
     def close(self):
 

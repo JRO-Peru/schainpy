@@ -144,12 +144,13 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         Get last file and add it to the list
         '''
 
-        for n in range(self.nTries):            
-            log.warning(
-                "Waiting %0.2f seconds for the next file, try %03d ..." % (self.delay, n+1),
-                self.name
-            )
-            time.sleep(self.delay)
+        for n in range(self.nTries+1):
+            if n>0:            
+                log.warning(
+                    "Waiting %0.2f seconds for the next file, try %03d ..." % (self.delay, n+1),
+                    self.name
+                )
+                time.sleep(self.delay)
             file_list = os.listdir(self.path)
             file_list.sort()
             if file_list:
@@ -230,6 +231,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.counter_records = 0
         self.flagIsNewFile = 0
         self.fileIndex += 1
+        time.sleep(2)
 
         return 1
 
@@ -245,7 +247,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
                 pointer = self.fp.tell()
                 self.readBlock()
             except:
-                if self.waitDataBlock(pointer, 38512) == 1:
+                if self.online and self.waitDataBlock(pointer, 38512) == 1:
                     continue
                 else:
                     if not self.setNextFile():

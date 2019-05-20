@@ -1103,7 +1103,7 @@ class PlotterData(object):
     MAXNUMX = 100
     MAXNUMY = 100
 
-    def __init__(self, code, throttle_value, exp_code, buffering=True):
+    def __init__(self, code, throttle_value, exp_code, buffering=True, snr=False):
         
         self.throttle = throttle_value
         self.exp_code = exp_code
@@ -1123,7 +1123,10 @@ class PlotterData(object):
             self.plottypes = ['noise', 'rti']
         else:
             self.plottypes = [code]
-            
+
+        if 'snr' not in self.plottypes and snr:
+            self.plottypes.append('snr')
+
         for plot in self.plottypes:
             self.data[plot] = {}
 
