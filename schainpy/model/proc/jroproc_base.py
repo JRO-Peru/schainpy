@@ -189,6 +189,7 @@ def MPDecorator(BaseClass):
             self.kwargs = kwargs
             self.sender = None
             self.receiver = None
+            self.i        = 0
             self.name = BaseClass.__name__
             if 'plot' in self.name.lower() and not self.name.endswith('_'):
                 self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
@@ -204,6 +205,9 @@ def MPDecorator(BaseClass):
                 self.inputId = args[0]
                 self.project_id = args[1]
                 self.typeProc = "Operation"
+                
+        def fix_publish(self,valor,multiple1):
+            return True if valor%multiple1 ==0 else False
 
         def subscribe(self):
             '''
@@ -221,8 +225,11 @@ def MPDecorator(BaseClass):
             '''
             This function waits for objects and deserialize using pickle
             '''
-            
-            data = pickle.loads(self.receiver.recv_multipart()[1])
+            try:
+            	data = pickle.loads(self.receiver.recv_multipart()[1])
+            except zmq.ZMQError as e:
+                if e.errno == zmq.ETERM:
+                	print (e.errno)
             
             return data
 
@@ -240,7 +247,14 @@ def MPDecorator(BaseClass):
         def publish(self, data, id):
             '''
             This function publish an object, to a specific topic.
+            The fix method only affect inputId None which is Read Unit
+            Use value between 64  80, you should notice a little retard in processing
             '''
+            if self.inputId is None:
+                self.i+=1
+                if self.fix_publish(self.i,80) == True:#  value n
+                    time.sleep(0.01)       
+            
             self.sender.send_multipart([str(id).encode(), pickle.dumps(data)])
 
         def runReader(self):
