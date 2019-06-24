@@ -236,6 +236,8 @@ class Plot(Operation):
                 'Sending to server: {}'.format(self.plot_server),
                 self.name
             )
+        if 'plot_name' in kwargs:
+            self.plot_name = kwargs['plot_name']
 
     def __setup_plot(self):
         '''
@@ -672,10 +674,10 @@ class Plot(Operation):
             self.sender_counter += 1
 
         self.sender_counter = 1
-
+        self.data.meta['titles'] = self.titles
         retries = 2
         while True:
-            self.socket.send_string(self.data.jsonify())
+            self.socket.send_string(self.data.jsonify(self.plot_name, self.plot_type))
             socks = dict(self.poll.poll(5000))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_string()

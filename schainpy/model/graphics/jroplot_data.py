@@ -42,6 +42,8 @@ class SpectraPlot(Plot):
 
     CODE = 'spc'
     colormap = 'jro'
+    plot_name = 'Spectra'
+    plot_type = 'pcolor'
 
     def setup(self):
         self.nplots = len(self.data.channels)
@@ -112,6 +114,8 @@ class CrossSpectraPlot(Plot):
 
     CODE = 'cspc'
     colormap = 'jet'
+    plot_name = 'CrossSpectra'
+    plot_type = 'pcolor'
     zmin_coh = None
     zmax_coh = None
     zmin_phase = None
@@ -211,6 +215,8 @@ class SpectralMomentsPlot(SpectraPlot):
     '''
     CODE = 'spc_moments'
     colormap = 'jro'
+    plot_name = 'SpectralMoments'
+    plot_type = 'pcolor'
 
 
 class RTIPlot(Plot):
@@ -220,6 +226,8 @@ class RTIPlot(Plot):
 
     CODE = 'rti'
     colormap = 'jro'
+    plot_name = 'RTI'
+    plot_type = 'pcolorbuffer'
 
     def setup(self):
         self.xaxis = 'time'
@@ -275,6 +283,7 @@ class CoherencePlot(RTIPlot):
     '''
 
     CODE = 'coh'
+    plot_name = 'Coherence'
 
     def setup(self):
         self.xaxis = 'time'
@@ -299,6 +308,7 @@ class PhasePlot(CoherencePlot):
 
     CODE = 'phase'
     colormap = 'seismic'
+    plot_name = 'Phase'
 
 
 class NoisePlot(Plot):
@@ -307,6 +317,9 @@ class NoisePlot(Plot):
     '''
 
     CODE = 'noise'
+    plot_name = 'Noise'
+    plot_type = 'scatterbuffer'
+
 
     def setup(self):
         self.xaxis = 'time'
@@ -345,6 +358,7 @@ class SnrPlot(RTIPlot):
 
     CODE = 'snr'
     colormap = 'jet'
+    plot_name = 'SNR'
 
 
 class DopplerPlot(RTIPlot):
@@ -354,6 +368,7 @@ class DopplerPlot(RTIPlot):
 
     CODE = 'dop'
     colormap = 'jet'
+    plot_name = 'Doppler'
 
 
 class SkyMapPlot(Plot):
@@ -411,6 +426,7 @@ class ParametersPlot(RTIPlot):
 
     CODE = 'param'
     colormap = 'seismic'
+    plot_name = 'Parameters'
 
     def setup(self):
         self.xaxis = 'time'
@@ -480,6 +496,7 @@ class OutputPlot(ParametersPlot):
 
     CODE = 'output'
     colormap = 'seismic'
+    plot_name = 'Output'
 
 
 class PolarMapPlot(Plot):
@@ -621,6 +638,8 @@ class ScopePlot(Plot):
     '''  
 
     CODE = 'scope'
+    plot_name = 'Scope'
+    plot_type = 'scatter'
     
     def setup(self):
 
@@ -720,11 +739,6 @@ class ScopePlot(Plot):
                                  thisDatetime, 
                                  wintitle1 
                                 )
-
-                
-
-                
-
         else:
             wintitle = " [Profile = %d] " %self.data.profileIndex
             
@@ -743,6 +757,3 @@ class ScopePlot(Plot):
                             thisDatetime,
                             wintitle
                             )
-
-        
-        
