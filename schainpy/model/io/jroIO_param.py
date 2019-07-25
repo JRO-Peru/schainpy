@@ -602,6 +602,8 @@ class ParamWriter(Operation):
 
     lastTime = None
 
+    setType = None
+
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
         self.isConfig = False
