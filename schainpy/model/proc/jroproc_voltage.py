@@ -113,9 +113,9 @@ class VoltageProc(ProcessingUnit):
             data = self.dataOut.data[channelIndexList,:]
 
         self.dataOut.data = data
-        self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
-        #        self.dataOut.nChannels = nChannels
-
+        # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
+        self.dataOut.channelList = range(len(channelIndexList))
+        
         return 1
 
     def selectHeights(self, minHei=None, maxHei=None):
