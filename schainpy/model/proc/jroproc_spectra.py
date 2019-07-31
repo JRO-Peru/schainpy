@@ -285,20 +285,16 @@ class SpectraProc(ProcessingUnit):
                 raise ValueError, "Error selecting channels: The value %d in channelIndexList is not valid.\nAvailable channel indexes = " % (
                     channelIndex, self.dataOut.channelIndexList)
 
-#         nChannels = len(channelIndexList)
-
         data_spc = self.dataOut.data_spc[channelIndexList, :]
         data_dc = self.dataOut.data_dc[channelIndexList, :]
 
         self.dataOut.data_spc = data_spc
         self.dataOut.data_dc = data_dc
 
-        self.dataOut.channelList = [
-            self.dataOut.channelList[i] for i in channelIndexList]
-#        self.dataOut.nChannels = nChannels
-
-        self.__selectPairsByChannel(self.dataOut.channelList)
-
+        # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
+        self.dataOut.channelList = range(len(channelIndexList))
+        self.__selectPairsByChannel(channelIndexList)
+        
         return 1
 
     def selectHeights(self, minHei, maxHei):
