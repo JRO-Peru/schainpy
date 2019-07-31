@@ -517,7 +517,7 @@ class SpectraWriter(JRODataWriter, Operation):
         if self.data_cspc is not None:
             
             cspc = numpy.transpose( self.data_cspc, (0,2,1) )
-            #data = numpy.zeros( numpy.shape(cspc), self.dtype )
+            data = numpy.zeros( numpy.shape(cspc), self.dtype )
             #print 'data.shape', self.shape_cspc_Buffer
             if not self.processingHeaderObj.shif_fft:
                 cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
