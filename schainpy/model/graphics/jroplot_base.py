@@ -162,6 +162,7 @@ class Plot(Operation):
         self.isPlotConfig = False
         self.save_counter = 1
         self.sender_counter = 1
+        self.data = None
 
     def __fmtTime(self, x, pos):
         '''
@@ -226,7 +227,7 @@ class Plot(Operation):
         self.sender_period = kwargs.get('sender_period', 2)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
-            self.CODE, self.throttle, self.exp_code, self.buffering)
+            self.CODE, self.throttle, self.exp_code, self.buffering, snr=self.showSNR)
         
         if self.plot_server:
             if not self.plot_server.startswith('tcp://'):
@@ -235,6 +236,8 @@ class Plot(Operation):
                 'Sending to server: {}'.format(self.plot_server),
                 self.name
             )
+        if 'plot_name' in kwargs:
+            self.plot_name = kwargs['plot_name']
 
     def __setup_plot(self):
         '''
@@ -243,11 +246,7 @@ class Plot(Operation):
 
         self.setup()
 
-        self.time_label = 'LT' if self.localtime else 'UTC'
-        if self.data.localtime:
-            self.getDateTime = datetime.datetime.fromtimestamp
-        else:
-            self.getDateTime = datetime.datetime.utcfromtimestamp
+        self.time_label = 'LT' if self.localtime else 'UTC'        
 
         if self.width is None:
             self.width = 8
@@ -306,15 +305,13 @@ class Plot(Operation):
                 cmap = plt.get_cmap(self.colormap)
             cmap.set_bad(self.bgcolor, 1.)
             self.cmaps.append(cmap)
-
+                
         for fig in self.figures:
             fig.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             fig.canvas.mpl_connect('scroll_event', self.OnBtnScroll)
             fig.canvas.mpl_connect('button_press_event', self.onBtnPress)
             fig.canvas.mpl_connect('motion_notify_event', self.onMotion)
             fig.canvas.mpl_connect('button_release_event', self.onBtnRelease)
-            if self.show:
-                fig.show()
 
     def OnKeyPress(self, event):
         '''
@@ -463,7 +460,6 @@ class Plot(Operation):
                         datetime.datetime(1970, 1, 1)).total_seconds()
                 if self.data.localtime:
                     xmin += time.timezone
-                self.tmin = xmin
             else:
                 xmin = self.xmin
 
@@ -563,7 +559,7 @@ class Plot(Operation):
                 ax.set_title('{} {} {}'.format(
                     self.titles[n],
                     self.getDateTime(self.data.max_time).strftime(
-                        '%H:%M:%S'),
+                        '%Y-%m-%d %H:%M:%S'),
                     self.time_label),
                     size=8)
             else:
@@ -608,6 +604,9 @@ class Plot(Operation):
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.data.max_time).strftime('%Y/%m/%d')))
             fig.canvas.draw()
+            if self.show:
+                fig.show()
+                figpause(0.1)
 
             if self.save:
                 self.save_figure(n)
@@ -675,10 +674,10 @@ class Plot(Operation):
             self.sender_counter += 1
 
         self.sender_counter = 1
-
+        self.data.meta['titles'] = self.titles
         retries = 2
         while True:
-            self.socket.send_string(self.data.jsonify())
+            self.socket.send_string(self.data.jsonify(self.plot_name, self.plot_type))
             socks = dict(self.poll.poll(5000))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_string()
@@ -730,14 +729,35 @@ class Plot(Operation):
         raise NotImplementedError
     
     def run(self, dataOut, **kwargs):
-
-        if dataOut.error:
-            coerce = True
-        else:
-            coerce = False
+        '''
+        Main plotting routine
+        '''
         
         if self.isConfig is False:
             self.__setup(**kwargs)
+            if dataOut.type == 'Parameters':
+                t = dataOut.utctimeInit
+            else:
+                t = dataOut.utctime            
+
+            if dataOut.useLocalTime:
+                self.getDateTime = datetime.datetime.fromtimestamp
+                if not self.localtime:
+                    t += time.timezone
+            else:
+                self.getDateTime = datetime.datetime.utcfromtimestamp
+                if self.localtime:
+                    t -= time.timezone
+            
+            if self.xmin is None:
+                self.tmin = t
+            else:
+                self.tmin = (
+                    self.getDateTime(t).replace(
+                        hour=self.xmin, 
+                        minute=0, 
+                        second=0) - self.getDateTime(0)).total_seconds()
+
             self.data.setup()
             self.isConfig = True
             if self.plot_server:
@@ -751,16 +771,19 @@ class Plot(Operation):
             tm = dataOut.utctimeInit
         else:
             tm = dataOut.utctime
-        
-        if dataOut.useLocalTime:
-            if not self.localtime:
-                tm += time.timezone
-        else:
-            if self.localtime:
-                tm -= time.timezone
 
-        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:
+        if not dataOut.useLocalTime and self.localtime:
+            tm -= time.timezone
+        if dataOut.useLocalTime and not self.localtime:
+            tm += time.timezone
+
+        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:    
+            self.save_counter = self.save_period
             self.__plot()
+            self.xmin += self.xrange
+            if self.xmin >= 24:
+                self.xmin -= 24
+            self.tmin += self.xrange*60*60
             self.data.setup()
             self.clear_figures()
 
@@ -773,12 +796,13 @@ class Plot(Operation):
         if self.realtime:
             self.__plot()
         else:
-            self.__throttle_plot(self.__plot, coerce=coerce)
-
-        figpause(0.001)
+            self.__throttle_plot(self.__plot)#, coerce=coerce)
 
     def close(self):
 
+        if self.data:
+            self.save_counter = self.save_period
+            self.__plot()
         if self.data and self.pause:
             figpause(10)
 

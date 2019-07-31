@@ -1103,8 +1103,9 @@ class PlotterData(object):
     MAXNUMX = 100
     MAXNUMY = 100
 
-    def __init__(self, code, throttle_value, exp_code, buffering=True):
+    def __init__(self, code, throttle_value, exp_code, buffering=True, snr=False):
         
+        self.key = code
         self.throttle = throttle_value
         self.exp_code = exp_code
         self.buffering = buffering
@@ -1123,7 +1124,10 @@ class PlotterData(object):
             self.plottypes = ['noise', 'rti']
         else:
             self.plottypes = [code]
-            
+
+        if 'snr' not in self.plottypes and snr:
+            self.plottypes.append('snr')
+
         for plot in self.plottypes:
             self.data[plot] = {}
 
@@ -1199,10 +1203,8 @@ class PlotterData(object):
         self.tm = tm
         self.type = dataOut.type
         self.parameters = getattr(dataOut, 'parameters', [])
-        if hasattr(dataOut, 'pairsList'):
-            self.pairs = dataOut.pairsList
         if hasattr(dataOut, 'meta'):
-            self.meta = dataOut.meta
+            self.meta.update(dataOut.meta)
         self.channels = dataOut.channelList
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
@@ -1285,40 +1287,40 @@ class PlotterData(object):
 
         self.__heights = [H for tm in self.__times]
 
-    def jsonify(self, decimate=False):
+    def jsonify(self, plot_name, plot_type, decimate=False):
         '''
         Convert data to json
         '''
 
-        data = {}
         tm = self.times[-1]
         dy = int(self.heights.size/self.MAXNUMY) + 1
-        for key in self.data:
-            if key in ('spc', 'cspc') or not self.buffering:
-                dx = int(self.data[key].shape[1]/self.MAXNUMX) + 1
-                data[key] = self.roundFloats(
-                    self.data[key][::, ::dx, ::dy].tolist())
-            else:
-                data[key] = self.roundFloats(self.data[key][tm].tolist())
+        if self.key in ('spc', 'cspc') or not self.buffering:
+            dx = int(self.data[self.key].shape[1]/self.MAXNUMX) + 1
+            data = self.roundFloats(
+                self.data[self.key][::, ::dx, ::dy].tolist())
+        else:
+            data = self.roundFloats(self.data[self.key][tm].tolist())
+            if self.key is 'noise':
+                data = [[x] for x in data]
 
-        ret = {'data': data}
-        ret['exp_code'] = self.exp_code
-        ret['time'] = float(tm)
-        ret['interval'] = float(self.interval)
-        ret['localtime'] = self.localtime
-        ret['yrange'] = self.roundFloats(self.heights[::dy].tolist())
+        meta = {}
+        ret = {
+            'plot': plot_name,
+            'code': self.exp_code,
+            'time': float(tm),
+            'data': data,
+            }
+        meta['type'] = plot_type
+        meta['interval'] = float(self.interval)
+        meta['localtime'] = self.localtime
+        meta['yrange'] = self.roundFloats(self.heights[::dy].tolist())
         if 'spc' in self.data or 'cspc' in self.data:
-            ret['xrange'] = self.roundFloats(self.xrange[2][::dx].tolist())
+            meta['xrange'] = self.roundFloats(self.xrange[2][::dx].tolist())
         else:
-            ret['xrange'] = []
-        if hasattr(self, 'pairs'):
-            ret['pairs'] = [(int(p[0]), int(p[1])) for p in self.pairs]
-        else:
-            ret['pairs'] = []
+            meta['xrange'] = []
 
-        for key, value in list(self.meta.items()):
-            ret[key] = value
-
+        meta.update(self.meta)        
+        ret['metadata'] = meta
         return json.dumps(ret)
 
     @property

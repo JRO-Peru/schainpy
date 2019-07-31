@@ -946,11 +946,13 @@ class JRODataReader(JRODataIO):
 
         return 0
 
-    def waitDataBlock(self, pointer_location):
+    def waitDataBlock(self, pointer_location, blocksize=None):
 
         currentPointer = pointer_location
-
-        neededSize = self.processingHeaderObj.blockSize  # + self.basicHeaderSize
+        if blocksize is None:
+            neededSize = self.processingHeaderObj.blockSize  # + self.basicHeaderSize
+        else:
+            neededSize = blocksize
 
         for nTries in range(self.nTries):
             self.fp.close()
@@ -963,7 +965,10 @@ class JRODataReader(JRODataIO):
             if (currentSize >= neededSize):
                 return 1
 
-            print("[Reading] Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries + 1))
+            log.warning(
+                "Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries + 1),
+                self.name
+                )
             sleep(self.delay)
 
         return 0
