@@ -565,6 +565,7 @@ class ParamWriter(Operation):
     dtype = [('arrayName', 'S20'),('nDimensions', 'i'), ('dim2', 'i'), ('dim1', 'i'),('dim0', 'i'),('mode', 'b')]
     currentDay = None
     lastTime = None
+    setType = None
 
     def __init__(self):
         
@@ -787,7 +788,7 @@ class ParamWriter(Operation):
 
         if os.path.exists(fullpath):
             filesList = os.listdir( fullpath )
-            filesList = [k for k in filesList if k.startswith(self.optchar)]
+            filesList = [k for k in filesList if 'M' in k]
             if len( filesList ) > 0:
                 filesList = sorted( filesList, key=str.lower )
                 filen = filesList[-1]
@@ -1022,6 +1023,7 @@ class ParamWriter(Operation):
 
     def run(self, dataOut, path, blocksPerFile=10, metadataList=None, dataList=None, mode=None, setType=None):
 
+        self.dataOut = dataOut
         if not(self.isConfig):
             self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
                        metadataList=metadataList, dataList=dataList, mode=mode,
