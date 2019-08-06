@@ -53,12 +53,11 @@ setup(name = "schainpy",
       cmdclass = {'build_ext': build_ext},
       setup_requires = ["numpy >= 1.11.2"],
       install_requires = [
-          "scipy >= 0.14.0",
-          "h5py >= 2.2.1",
-          "matplotlib >= 2.0.0",
-          "zmq",
+          "scipy",
+          "h5py",
+          "matplotlib",
+          "pyzmq",
           "fuzzywuzzy",
           "click",
-          "python-Levenshtein"
           ],
 )
