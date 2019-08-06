@@ -1216,9 +1216,9 @@ class SpectralMoments(Operation):
         
         dataOut.moments = data_param[:,1:,:]
         dataOut.data_SNR = data_param[:,0]
-        dataOut.data_DOP = data_param[:,1]
-        dataOut.data_MEAN = data_param[:,2]
-        dataOut.data_STD = data_param[:,3]
+        dataOut.data_POW = data_param[:,1]
+        dataOut.data_DOP = data_param[:,2]
+        dataOut.data_WIDTH = data_param[:,3]
         return dataOut
     
     def __calculateMoments(self, oldspec, oldfreq, n0, 
