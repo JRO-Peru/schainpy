@@ -58,7 +58,7 @@ class USRPReader(ProcessingUnit):
 
         nProfiles = 1.0/ippSeconds  #Number of profiles in one second
 
-        self.dataOut.radarControllerHeaderObj = RadarControllerHeader(ippKm=self.__ippKm,
+        self.dataOut.radarControllerHeaderObj = RadarControllerHeader(ipp=self.__ippKm,
                                                                       txA=0,
                                                                       txB=0,
                                                                       nWindows=1,
