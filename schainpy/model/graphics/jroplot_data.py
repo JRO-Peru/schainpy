@@ -154,7 +154,7 @@ class CrossSpectraPlot(Plot):
             noise = self.data['noise'][n][-1]
             pair = self.data.pairs[n]
             ax = self.axes[4 * n]
-            spc0 = 10.*numpy.log10(spc[pair[0]]/self.data.factor)          
+            spc0 = 10.*numpy.log10(spc[pair[0]]/self.data.factor)
             if ax.firsttime:                                               
                 self.xmax = self.xmax if self.xmax else numpy.nanmax(x)    
                 self.xmin = self.xmin if self.xmin else -self.xmax         
@@ -363,12 +363,32 @@ class SnrPlot(RTIPlot):
 
 class DopplerPlot(RTIPlot):
     '''
-    Plot for DOPPLER Data
+    Plot for DOPPLER Data (1st moment)
     '''
 
     CODE = 'dop'
     colormap = 'jet'
-    plot_name = 'Doppler'
+    plot_name = 'DopplerShift'
+
+
+class PowerPlot(RTIPlot):
+    '''
+    Plot for Power Data (0 moment)
+    '''
+
+    CODE = 'pow'
+    colormap = 'jet'
+    plot_name = 'TotalPower'
+
+
+class SpectralWidthPlot(RTIPlot):
+    '''
+    Plot for Spectral Width Data (2nd moment)
+    '''
+
+    CODE = 'width'
+    colormap = 'jet'
+    plot_name = 'SpectralWidth'
 
 
 class SkyMapPlot(Plot):

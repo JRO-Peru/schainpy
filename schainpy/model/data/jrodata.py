@@ -1203,9 +1203,11 @@ class PlotterData(object):
         self.tm = tm
         self.type = dataOut.type
         self.parameters = getattr(dataOut, 'parameters', [])
+        
         if hasattr(dataOut, 'meta'):
             self.meta.update(dataOut.meta)
-        self.channels = dataOut.channelList
+        
+        self.pairs = dataOut.pairsList
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
         if 'spc' in self.plottypes or 'cspc' in self.plottypes or 'spc_moments' in self.plottypes:
@@ -1263,6 +1265,11 @@ class PlotterData(object):
                     self.data[plot][tm] = buffer
                 else:
                     self.data[plot] = buffer
+
+        if dataOut.channelList is None:
+            self.channels = range(buffer.shape[0])
+        else:
+            self.channels = dataOut.channelList
 
     def normalize_heights(self):
         '''

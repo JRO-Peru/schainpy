@@ -224,7 +224,7 @@ class Plot(Operation):
         self.throttle = kwargs.get('throttle', 2)
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
-        self.sender_period = kwargs.get('sender_period', 2)
+        self.sender_period = kwargs.get('sender_period', 1)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
             self.CODE, self.throttle, self.exp_code, self.buffering, snr=self.showSNR)
@@ -672,6 +672,7 @@ class Plot(Operation):
 
         if self.sender_counter < self.sender_period:
             self.sender_counter += 1
+            return
 
         self.sender_counter = 1
         self.data.meta['titles'] = self.titles
@@ -749,14 +750,15 @@ class Plot(Operation):
                 if self.localtime:
                     t -= time.timezone
             
-            if self.xmin is None:
-                self.tmin = t
-            else:
-                self.tmin = (
-                    self.getDateTime(t).replace(
-                        hour=self.xmin, 
-                        minute=0, 
-                        second=0) - self.getDateTime(0)).total_seconds()
+            if 'buffer' in self.plot_type:
+                if self.xmin is None:
+                    self.tmin = t
+                else:
+                    self.tmin = (
+                        self.getDateTime(t).replace(
+                            hour=self.xmin, 
+                            minute=0, 
+                            second=0) - self.getDateTime(0)).total_seconds()
 
             self.data.setup()
             self.isConfig = True
