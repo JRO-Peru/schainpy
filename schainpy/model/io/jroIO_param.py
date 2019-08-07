@@ -1195,12 +1195,12 @@ class ParameterReader(JRODataReader,ProcessingUnit):
         endTime = self.endTime
 
         grp = fp['Data']
-        thisUtcTime = grp['utctime'].value.astype(numpy.float)[0]
+        thisUtcTime = grp['utctime'].value
 
         if self.timezone == 'lt':
             thisUtcTime -= 5*3600
 
-        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime + 5*3600)
+        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0] + 5*3600)
 
         thisDate = thisDatetime.date()
         thisTime = thisDatetime.time()
@@ -1212,7 +1212,6 @@ class ParameterReader(JRODataReader,ProcessingUnit):
 
         self.blockList = ind
         self.blocksPerFile = len(ind)
-
         return
 
     def __readMetadata(self):
@@ -1294,7 +1293,7 @@ class ParameterReader(JRODataReader,ProcessingUnit):
             self.isConfig = True
 
         if self.blockIndex == self.blocksPerFile:
-             if not(self.__setNextFileOffline()):
+            if not(self.__setNextFileOffline()):
                 self.dataOut.flagNoData = True
                 return 0
 
