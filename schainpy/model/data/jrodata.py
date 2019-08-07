@@ -1234,11 +1234,11 @@ class PlotterData(object):
             if plot == 'snr':
                 buffer = 10*numpy.log10(dataOut.data_SNR)
             if plot == 'dop':
-                buffer = 10*numpy.log10(dataOut.data_DOP)
-            if plot == 'mean':
-                buffer = dataOut.data_MEAN
-            if plot == 'std':
-                buffer = dataOut.data_STD
+                buffer = dataOut.data_DOP
+            if plot == 'pow':
+                buffer = 10*numpy.log10(dataOut.data_POW)
+            if plot == 'width':
+                buffer = dataOut.data_WIDTH
             if plot == 'coh':
                 buffer = dataOut.getCoherence()
             if plot == 'phase':

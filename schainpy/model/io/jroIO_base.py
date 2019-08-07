@@ -1205,7 +1205,7 @@ class JRODataReader(JRODataIO):
 
                     thisDate = getDateFromRadarFile(thisFile)
 
-                    if thisDate in dateList:
+                    if thisDate in dateList or single_path in pathList:
                         continue
 
                     dateList.append(thisDate)
@@ -1599,10 +1599,10 @@ class JRODataWriter(JRODataIO):
         self.basicHeaderObj.size = self.basicHeaderSize  # bytes
         self.basicHeaderObj.version = self.versionFile
         self.basicHeaderObj.dataBlock = self.nTotalBlocks
-
+        log.warning(datetime.datetime.fromtimestamp(self.dataOut.utctime))
         utc = numpy.floor(self.dataOut.utctime)
         milisecond = (self.dataOut.utctime - utc) * 1000.0
-
+        log.warning(milisecond)
         self.basicHeaderObj.utc = utc
         self.basicHeaderObj.miliSecond = milisecond
         self.basicHeaderObj.timeZone = self.dataOut.timeZone
