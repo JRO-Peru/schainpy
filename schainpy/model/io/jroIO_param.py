@@ -1503,7 +1503,7 @@ class ParameterWriter(Operation):
                     data.append((dsInfo['variable'], i))
         fp.flush()
 
-        log.log('creating file: {}'.format(fp.filename), 'Writing')
+        log.log('Creating file: {}'.format(fp.filename), self.name)
         
         self.ds = dtsets
         self.data = data
@@ -1526,6 +1526,7 @@ class ParameterWriter(Operation):
 
         self.fp.flush()
         self.blockIndex += 1
+        log.log('Block No. {}/{}'.format(self.blockIndex, self.blocksPerFile), self.name)
 
         return
 

@@ -230,8 +230,7 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.sizeOfFile = os.path.getsize(self.filename)
         self.counter_records = 0
         self.flagIsNewFile = 0
-        self.fileIndex += 1
-        time.sleep(2)
+        self.fileIndex += 1        
 
         return 1
 

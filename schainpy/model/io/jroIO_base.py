@@ -1598,11 +1598,9 @@ class JRODataWriter(JRODataIO):
 
         self.basicHeaderObj.size = self.basicHeaderSize  # bytes
         self.basicHeaderObj.version = self.versionFile
-        self.basicHeaderObj.dataBlock = self.nTotalBlocks
-        log.warning(datetime.datetime.fromtimestamp(self.dataOut.utctime))
+        self.basicHeaderObj.dataBlock = self.nTotalBlocks        
         utc = numpy.floor(self.dataOut.utctime)
-        milisecond = (self.dataOut.utctime - utc) * 1000.0
-        log.warning(milisecond)
+        milisecond = (self.dataOut.utctime - utc) * 1000.0        
         self.basicHeaderObj.utc = utc
         self.basicHeaderObj.miliSecond = milisecond
         self.basicHeaderObj.timeZone = self.dataOut.timeZone

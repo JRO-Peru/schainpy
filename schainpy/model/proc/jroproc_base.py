@@ -17,6 +17,8 @@ import inspect
 import zmq
 import time
 import pickle
+from queue import Queue
+from threading import Thread
 from multiprocessing import Process
 from zmq.utils.monitor import recv_monitor_message
 
@@ -170,6 +172,32 @@ class Operation(object):
 
         return
 
+class InputQueue(Thread):
+    '''
+    Class to hold input data for Proccessing Units and external Operations,
+    '''
+
+    def __init__(self, project_id, inputId):
+        Thread.__init__(self)
+        self.queue = Queue()
+        self.project_id = project_id
+        self.inputId = inputId
+
+    def run(self):
+
+        c = zmq.Context()
+        self.receiver = c.socket(zmq.SUB)
+        self.receiver.connect(
+            'ipc:///tmp/schain/{}_pub'.format(self.project_id))
+        self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
+
+        while True:
+            self.queue.put(self.receiver.recv_multipart()[1])
+
+    def get(self):
+
+        return pickle.loads(self.queue.get())
+
 
 def MPDecorator(BaseClass):
     """
@@ -189,7 +217,7 @@ def MPDecorator(BaseClass):
             self.kwargs = kwargs
             self.sender = None
             self.receiver = None
-            self.i        = 0
+            self.i = 0
             self.name = BaseClass.__name__
             if 'plot' in self.name.lower() and not self.name.endswith('_'):
                 self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
@@ -205,33 +233,23 @@ def MPDecorator(BaseClass):
                 self.inputId = args[0]
                 self.project_id = args[1]
                 self.typeProc = "Operation"
-                
-        def fix_publish(self,valor,multiple1):
-            return True if valor%multiple1 ==0 else False
+         
+            self.queue = InputQueue(self.project_id, self.inputId)
 
         def subscribe(self):
             '''
-            This function create a socket to receive objects from the
-            topic `inputId`.
+            This function start the input queue.
             '''
-
-            c = zmq.Context()
-            self.receiver = c.socket(zmq.SUB)
-            self.receiver.connect(
-                'ipc:///tmp/schain/{}_pub'.format(self.project_id))
-            self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
+            
+            self.queue.start()
+            
             
         def listen(self):
             '''
-            This function waits for objects and deserialize using pickle
+            This function waits for objects
             '''
-            try:
-            	data = pickle.loads(self.receiver.recv_multipart()[1])
-            except zmq.ZMQError as e:
-                if e.errno == zmq.ETERM:
-                	print (e.errno)
-            
-            return data
+
+            return self.queue.get()
 
         def set_publisher(self):
             '''
@@ -247,13 +265,15 @@ def MPDecorator(BaseClass):
         def publish(self, data, id):
             '''
             This function publish an object, to a specific topic.
-            The fix method only affect inputId None which is Read Unit
-            Use value between 64  80, you should notice a little retard in processing
+            For Read Units (inputId == None) adds a little delay
+            to avoid data loss
             '''
+
             if self.inputId is None:
-                self.i+=1
-                if self.fix_publish(self.i,80) == True:#  value n
-                    time.sleep(0.01)       
+                self.i += 1
+                if self.i % 100 == 0:
+                    self.i = 0
+                    time.sleep(0.01)      
             
             self.sender.send_multipart([str(id).encode(), pickle.dumps(data)])
 
