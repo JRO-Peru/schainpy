@@ -315,7 +315,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
                 self.nTxs, self.processingHeaderObj.nHeights))
 
         self.datablock = self.datablock.reshape(
-            (self.systemHeaderObj.nChannels, self.processingHeaderObj.profilesPerBlock * self.nTxs, self.processingHeaderObj.nHeights / self.nTxs))
+            (self.systemHeaderObj.nChannels, self.processingHeaderObj.profilesPerBlock * self.nTxs, int(self.processingHeaderObj.nHeights / self.nTxs)))
 
         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock * self.nTxs
         self.dataOut.heightList = numpy.arange(self.processingHeaderObj.nHeights / self.nTxs) * \
@@ -463,7 +463,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         """
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print('Process finished')
             return 0
         self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
@@ -491,16 +490,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.dataOut.profileIndex = self.profileIndex
 
             self.profileIndex += 1
-
-            #         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
-            #             """
-            #             Return all block
-            #             """
-            #             self.dataOut.flagDataAsBlock = True
-            #             self.dataOut.data = self.datablock
-            #             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
-            #
-            #             self.profileIndex = self.dataOut.nProfiles
 
         else:
             """

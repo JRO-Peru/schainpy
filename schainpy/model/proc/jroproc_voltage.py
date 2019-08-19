@@ -229,8 +229,8 @@ class VoltageProc(ProcessingUnit):
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
-            buffer = self.dataOut.data[:, :, 0:int(self.dataOut.nHeights-r)]
-            buffer = buffer.reshape(self.dataOut.nChannels,self.dataOut.nProfiles,self.dataOut.nHeights/window,window)
+            buffer = self.dataOut.data[:, :, 0:int(self.dataOut.nHeights-r)]            
+            buffer = buffer.reshape(self.dataOut.nChannels, self.dataOut.nProfiles, int(self.dataOut.nHeights/window), window)
             buffer = numpy.sum(buffer,3)
 
         else:
@@ -665,8 +665,7 @@ class Decoder(Operation):
 
     def __convolutionByBlockInTime(self, data):
 
-        repetitions = self.__nProfiles / self.nCode
-        
+        repetitions = int(self.__nProfiles / self.nCode)
         junk = numpy.lib.stride_tricks.as_strided(self.code, (repetitions, self.code.size), (0, self.code.itemsize))
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
