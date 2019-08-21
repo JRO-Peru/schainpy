@@ -6,7 +6,7 @@ from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
 from time import time
 
-class VoltageProc(ProcessingUnit):  
+class VoltageProc(ProcessingUnit):
 
 
     def __init__(self, **kwargs):
@@ -495,8 +495,8 @@ class CohInt(Operation):
             # print self.__bufferStride[self.__profIndexStride - 1]
             # raise
             return self.__bufferStride[self.__profIndexStride - 1]
-            
-       
+
+
         return None, None
 
     def integrate(self, data, datatime=None):
@@ -518,7 +518,7 @@ class CohInt(Operation):
         avgdatatime = self.__initime
 
         deltatime = datatime - self.__lastdatatime
-        
+
         if not self.__withOverlapping:
             self.__initime = datatime
         else:
@@ -544,7 +544,7 @@ class CohInt(Operation):
         avgdatatime = (times - 1) * timeInterval + dataOut.utctime
         self.__dataReady = True
         return avgdata, avgdatatime
-    
+
     def run(self, dataOut, n=None, timeInterval=None, stride=None, overlapping=False, byblock=False, **kwargs):
         if not self.isConfig:
             self.setup(n=n, stride=stride, timeInterval=timeInterval, overlapping=overlapping, byblock=byblock, **kwargs)
@@ -557,12 +557,12 @@ class CohInt(Operation):
             avgdata, avgdatatime = self.integrateByBlock(dataOut)
             dataOut.nProfiles /= self.n
         else:
-            if stride is None: 
+            if stride is None:
                 avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
             else:
                 avgdata, avgdatatime = self.integrateByStride(dataOut.data, dataOut.utctime)
 
-        
+
         #   dataOut.timeInterval *= n
         dataOut.flagNoData = True
 
@@ -662,16 +662,16 @@ class Decoder(Operation):
     def __convolutionByBlockInTime(self, data):
 
         repetitions = self.__nProfiles / self.nCode
-        
+
         junk = numpy.lib.stride_tricks.as_strided(self.code, (repetitions, self.code.size), (0, self.code.itemsize))
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
         profilesList = xrange(self.__nProfiles)
-        
-        for i in range(self.__nChannels):        
-            for j in profilesList:         
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]            
-        return self.datadecTime        
+
+        for i in range(self.__nChannels):
+            for j in profilesList:
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
+        return self.datadecTime
 
     def __convolutionByBlockInFreq(self, data):
 
@@ -688,7 +688,7 @@ class Decoder(Operation):
 
         return data
 
-    
+
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
 
         if dataOut.flagDecodeData:
@@ -719,7 +719,7 @@ class Decoder(Operation):
 
         self.__nProfiles = dataOut.nProfiles
         datadec = None
-        
+
         if mode == 3:
             mode = 0
 
@@ -1122,6 +1122,7 @@ class SplitProfiles(Operation):
         dataOut.ippSeconds /= n
 
 class CombineProfiles(Operation):
+
     def __init__(self, **kwargs):
 
         Operation.__init__(self, **kwargs)
@@ -1181,6 +1182,81 @@ class CombineProfiles(Operation):
         dataOut.profileIndex = profileIndex
 
         dataOut.ippSeconds *= n
+
+
+class SSheightProfiles(Operation):
+
+    step        = None
+    nsamples    = None
+    bufferShape = None
+    profileShape= None
+    sshProfiles = None
+    profileIndex= None
+
+    def __init__(self, **kwargs):
+
+        Operation.__init__(self, **kwargs)
+        self.isConfig = False
+
+    def setup(self,dataOut ,step = None , nsamples = None):
+
+        if step == None and nsamples == None:
+            raise ValueError, "step or nheights should be specified ..."
+
+        self.step        = step
+        self.nsamples    = nsamples
+        self.__nChannels = dataOut.nChannels
+        self.__nProfiles = dataOut.nProfiles
+        self.__nHeis     = dataOut.nHeights
+        shape            = dataOut.data.shape #nchannels, nprofiles, nsamples
+
+        #last test
+        residue =  (shape[1] - self.nsamples) % self.step
+        if residue != 0:
+            print "The residue is %d, step=%d should be multiple of %d to avoid loss of %d samples"%(residue,step,shape[1] - self.nsamples,residue)
+
+        deltaHeight     = dataOut.heightList[1] - dataOut.heightList[0]
+        numberProfile   = self.nsamples
+        numberSamples   = (shape[1] - self.nsamples)/self.step
+
+        print "New number of profile: %d, number of height: %d, Resolution %d"%(numberProfile,numberSamples,deltaHeight*self.step)
+
+        self.bufferShape  = shape[0], numberSamples, numberProfile  # nchannels, nsamples , nprofiles
+        self.profileShape = shape[0], numberProfile, numberSamples  # nchannels, nprofiles, nsamples
+
+        self.buffer      = numpy.zeros(self.bufferShape , dtype=numpy.complex)
+        self.sshProfiles = numpy.zeros(self.profileShape, dtype=numpy.complex)
+
+    def run(self, dataOut, step, nsamples):
+
+        dataOut.flagNoData = True
+        dataOut.flagDataAsBlock =False
+        profileIndex = None
+
+        if not self.isConfig:
+            self.setup(dataOut, step=step , nsamples=nsamples)
+            self.isConfig = True
+
+        for i in range(self.buffer.shape[1]):
+            self.buffer[:,i]    = numpy.flip(dataOut.data[:,i*self.step:i*self.step + self.nsamples])
+            #self.buffer[:,j,self.__nHeis-j*self.step - self.nheights:self.__nHeis-j*self.step] = numpy.flip(dataOut.data[:,j*self.step:j*self.step + self.nheights])
+
+        for j in range(self.buffer.shape[0]):
+            self.sshProfiles[j] = numpy.transpose(self.buffer[j])
+
+        profileIndex =  self.nsamples
+        deltaHeight  =  dataOut.heightList[1] - dataOut.heightList[0]
+        ippSeconds   =  (deltaHeight*1.0e-6)/(0.15)
+
+        dataOut.data            = self.sshProfiles
+        dataOut.flagNoData      = False
+        dataOut.heightList      = numpy.arange(self.buffer.shape[1]) *self.step*deltaHeight + dataOut.heightList[0]
+        dataOut.nProfiles       = int(dataOut.nProfiles*self.nsamples)
+        dataOut.profileIndex    = profileIndex
+        dataOut.flagDataAsBlock = True
+        dataOut.ippSeconds      = ippSeconds
+
+
 
 # import collections
 # from scipy.stats import mode

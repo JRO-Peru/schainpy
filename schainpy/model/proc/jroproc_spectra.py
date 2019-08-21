@@ -34,6 +34,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList
+        #print self.dataOut.heightList.shape,"spec4"
         self.dataOut.dtype = numpy.dtype([('real', '<f4'), ('imag', '<f4')])
 
         self.dataOut.nBaud = self.dataIn.nBaud
@@ -134,7 +135,7 @@ class SpectraProc(ProcessingUnit):
                 if self.dataOut.data_cspc is not None:
                     #desplaza a la derecha en el eje 2 determinadas posiciones
                     self.dataOut.data_cspc = numpy.roll(self.dataOut.data_cspc, shift, axis=1)
-            
+
             return True
 
         if self.dataIn.type == "Voltage":
@@ -156,14 +157,19 @@ class SpectraProc(ProcessingUnit):
             if self.buffer is None:
                 self.buffer = numpy.zeros((self.dataIn.nChannels,
                                            nProfiles,
-                                           self.dataIn.nHeights),
+                                           self.dataIn.heightList.shape[0]),
                                           dtype='complex')
+
+                #print self.buffer.shape,"spec2"
+                #print self.dataIn.heightList.shape[0],"spec3"
 
             if self.dataIn.flagDataAsBlock:
                 # data dimension: [nChannels, nProfiles, nSamples]
                 nVoltProfiles = self.dataIn.data.shape[1]
             #                 nVoltProfiles = self.dataIn.nProfiles
 
+                #print nVoltProfiles,"spec1"
+                #print nProfiles
                 if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
                     self.profIndex = nVoltProfiles
@@ -174,8 +180,7 @@ class SpectraProc(ProcessingUnit):
                         self.id_min = 0
                         self.id_max = nVoltProfiles
 
-                    self.buffer[:, self.id_min:self.id_max,
-                                :] = self.dataIn.data
+                    self.buffer[:, self.id_min:self.id_max,:] = self.dataIn.data
                     self.profIndex += nVoltProfiles
                     self.id_min += nVoltProfiles
                     self.id_max += nVoltProfiles
@@ -187,6 +192,7 @@ class SpectraProc(ProcessingUnit):
             else:
                 self.buffer[:, self.profIndex, :] = self.dataIn.data.copy()
                 self.profIndex += 1
+                #print self.profIndex,"spectra D"
 
             if self.firstdatatime == None:
                 self.firstdatatime = self.dataIn.utctime
