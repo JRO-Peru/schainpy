@@ -303,7 +303,7 @@ class DigitalRFReader(ProcessingUnit):
 
         self.__frequency = self.fixed_metadata_dict.get('frequency', 1)
 
-        self.__timezone = self.fixed_metadata_dict.get('timezone', 300)
+        self.__timezone = self.fixed_metadata_dict.get('timezone', 18000)
 
         try:
             nSamples = self.fixed_metadata_dict['nSamples']
