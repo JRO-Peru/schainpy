@@ -1209,7 +1209,7 @@ class SSheightProfiles(Operation):
         self.__nProfiles = dataOut.nProfiles
         self.__nHeis     = dataOut.nHeights
         shape            = dataOut.data.shape #nchannels, nprofiles, nsamples
-
+        print  "shape",shape
         #last test
         residue =  (shape[1] - self.nsamples) % self.step
         if residue != 0:
@@ -1219,7 +1219,7 @@ class SSheightProfiles(Operation):
         numberProfile   = self.nsamples
         numberSamples   = (shape[1] - self.nsamples)/self.step
 
-        print "New number of profile: %d, number of height: %d, Resolution %d"%(numberProfile,numberSamples,deltaHeight*self.step)
+        print "New number of profile: %d, number of height: %d, Resolution %d Km"%(numberProfile,numberSamples,deltaHeight*self.step)
 
         self.bufferShape  = shape[0], numberSamples, numberProfile  # nchannels, nsamples , nprofiles
         self.profileShape = shape[0], numberProfile, numberSamples  # nchannels, nprofiles, nsamples

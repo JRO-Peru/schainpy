@@ -605,8 +605,11 @@ class Spectra(JROData):
         noise = numpy.zeros(self.nChannels)
 
         for channel in range(self.nChannels):
+            #print "confuse",self.data_spc.dtype
             daux = self.data_spc[channel,
                                  xmin_index:xmax_index, ymin_index:ymax_index]
+
+            #print "HI3.0",(daux.dtype),daux.shape
             noise[channel] = hildebrand_sekhon(daux, self.nIncohInt)
 
         return noise

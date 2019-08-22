@@ -85,8 +85,10 @@ class SpectraProc(ProcessingUnit):
 
         # calculo de self-spectra
         fft_volt = numpy.fft.fftshift(fft_volt, axes=(1,))
+        #print "spec dtype 0",fft_volt.dtype
         spc = fft_volt * numpy.conjugate(fft_volt)
         spc = spc.real
+        #print "spec dtype 1",spc.dtype
 
         blocksize = 0
         blocksize += dc.size

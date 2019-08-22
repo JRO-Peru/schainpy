@@ -142,9 +142,10 @@ class SpectraPlot(Figure):
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
         zdB = 10*numpy.log10(z)
 
+        #print "a000",dataOut.data_spc.dtype
         avg = numpy.average(z, axis=1)
         avgdB = 10*numpy.log10(avg)
-
+        #print "before plot"
         noise = dataOut.getNoise()/factor
         noisedB = 10*numpy.log10(noise)
 
@@ -315,7 +316,7 @@ class CrossSpectraPlot(Figure):
 
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-            
+
         if normFactor is None:
             factor = dataOut.normFactor
         else:
@@ -544,7 +545,7 @@ class RTIPlot(Figure):
         #colormap = kwargs.get('colormap', 'jet')
         if HEIGHT is not None:
             self.HEIGHT  = HEIGHT
-        
+
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
 
