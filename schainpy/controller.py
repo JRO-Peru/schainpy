@@ -11,7 +11,7 @@ import traceback
 import math
 import time
 import zmq
-from multiprocessing import Process, cpu_count
+from multiprocessing import Process, Queue, cpu_count
 from threading import Thread
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
@@ -361,13 +361,14 @@ class OperationConf():
 
         return kwargs
 
-    def setup(self, id, name, priority, type, project_id):
+    def setup(self, id, name, priority, type, project_id, err_queue):
 
         self.id = str(id)
         self.project_id = project_id
         self.name = name
         self.type = type
         self.priority = priority
+        self.err_queue = err_queue
         self.parmConfObjList = []
 
     def removeParameters(self):
@@ -459,8 +460,9 @@ class OperationConf():
             opObj = className()
         elif self.type == 'external':
             kwargs = self.getKwargs()
-            opObj = className(self.id, self.project_id, **kwargs)
+            opObj = className(self.id, self.id, self.project_id, self.err_queue, 'Operation', **kwargs)
             opObj.start()
+            self.opObj = opObj
 
         return opObj
 
@@ -548,7 +550,7 @@ class ProcUnitConf():
 
         return self.procUnitObj
 
-    def setup(self, project_id, id, name, datatype, inputId):
+    def setup(self, project_id, id, name, datatype, inputId, err_queue):
         '''
             id sera el topico a publicar
             inputId sera el topico a subscribirse
@@ -573,7 +575,8 @@ class ProcUnitConf():
         self.project_id = project_id
         self.name = name
         self.datatype = datatype
-        self.inputId = inputId 
+        self.inputId = inputId
+        self.err_queue = err_queue
         self.opConfObjList = []
 
         self.addOperation(name='run', optype='self') 
@@ -607,7 +610,7 @@ class ProcUnitConf():
         id = self.__getNewId()
         priority = self.__getPriority() # Sin mucho sentido, pero puede usarse
         opConfObj = OperationConf()
-        opConfObj.setup(id, name=name, priority=priority, type=optype, project_id=self.project_id)
+        opConfObj.setup(id, name=name, priority=priority, type=optype, project_id=self.project_id, err_queue=self.err_queue)
         self.opConfObjList.append(opConfObj)
 
         return opConfObj
@@ -675,7 +678,7 @@ class ProcUnitConf():
 
         className = eval(self.name)
         kwargs = self.getKwargs()
-        procUnitObj = className(self.id, self.inputId, self.project_id, **kwargs) # necesitan saber su id y su entrada por fines de ipc
+        procUnitObj = className(self.id, self.inputId, self.project_id, self.err_queue, 'ProcUnit', **kwargs)
         log.success('creating process...', self.name)
 
         for opConfObj in self.opConfObjList:
@@ -687,7 +690,7 @@ class ProcUnitConf():
             else:
                 opObj = opConfObj.createObject()
             
-            log.success('creating operation: {}, type:{}'.format(
+            log.success('adding operation: {}, type:{}'.format(
                 opConfObj.name,
                 opConfObj.type), self.name)
             
@@ -726,7 +729,7 @@ class ReadUnitConf(ProcUnitConf):
 
         return self.ELEMENTNAME 
     
-    def setup(self, project_id, id, name, datatype, path='', startDate='', endDate='',
+    def setup(self, project_id, id, name, datatype, err_queue, path='', startDate='', endDate='',
               startTime='', endTime='', server=None, **kwargs):
 
 
@@ -765,6 +768,7 @@ class ReadUnitConf(ProcUnitConf):
         self.startTime = startTime
         self.endTime = endTime
         self.server = server
+        self.err_queue = err_queue
         self.addRunOperation(**kwargs)
 
     def update(self, **kwargs):
@@ -878,6 +882,7 @@ class Project(Process):
         self.email = None
         self.alarm = None
         self.procUnitConfObjDict = {}
+        self.err_queue = Queue()
 
     def __getNewId(self):
 
@@ -935,6 +940,8 @@ class Project(Process):
         self.description = description 
         self.email = email
         self.alarm = alarm
+        if name:
+            self.name = '{} ({})'.format(Process.__name__, name)
 
     def update(self, **kwargs):
 
@@ -963,7 +970,7 @@ class Project(Process):
             idReadUnit = str(id)
 
         readUnitConfObj = ReadUnitConf()
-        readUnitConfObj.setup(self.id, idReadUnit, name, datatype, **kwargs)
+        readUnitConfObj.setup(self.id, idReadUnit, name, datatype, self.err_queue, **kwargs)
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
         
         return readUnitConfObj
@@ -980,9 +987,9 @@ class Project(Process):
 
         '''
 
-        idProcUnit = self.__getNewId() #Topico para subscripcion
+        idProcUnit = self.__getNewId()
         procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId) #topic_read, topic_write, 
+        procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId, self.err_queue)
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
         return procUnitConfObj
@@ -1119,10 +1126,10 @@ class Project(Process):
 
     def __str__(self):
 
-        print('Project[%s]: name = %s, description = %s, project_id = %s' % (self.id,
+        print('Project: name = %s, description = %s, id = %s' % (
                                                             self.name,
                                                             self.description,
-                                                            self.project_id))
+                                                            self.id))
 
         for procUnitConfObj in self.procUnitConfObjDict.values():
             print(procUnitConfObj)
@@ -1135,58 +1142,84 @@ class Project(Process):
         for key in keys:
             self.procUnitConfObjDict[key].createObjects()
 
-    def __handleError(self, procUnitConfObj, modes=None, stdout=True):
+    def monitor(self):
+
+        t = Thread(target=self.__monitor, args=(self.err_queue, self.ctx))
+        t.start()
+    
+    def __monitor(self, queue, ctx):
 
         import socket
-
-        if modes is None:
-            modes = self.alarm
         
-        if not self.alarm:
-            modes = []
+        procs = 0
+        err_msg = ''
+        
+        while True:
+            msg = queue.get()
+            if '#_start_#' in msg:
+                procs += 1
+            elif '#_end_#' in msg:
+                procs -=1
+            else:
+                err_msg = msg
+            
+            if procs == 0 or 'Traceback' in err_msg:                
+                break
+            time.sleep(0.1)
+        
+        if '|' in err_msg:
+            name, err = err_msg.split('|')
+            if 'SchainWarning' in err:
+                log.warning(err.split('SchainWarning:')[-1].split('\n')[0].strip(), name)
+            elif 'SchainError' in err:
+                log.error(err.split('SchainError:')[-1].split('\n')[0].strip(), name)
+            else:
+                log.error(err, name)
+        else:            
+            name, err = self.name, err_msg
+        
+        time.sleep(2)
 
-        err = traceback.format_exception(sys.exc_info()[0],
-                                         sys.exc_info()[1],
-                                         sys.exc_info()[2])
-
-        log.error('{}'.format(err[-1]), procUnitConfObj.name)
+        for conf in self.procUnitConfObjDict.values():
+            for confop in conf.opConfObjList:
+                if confop.type == 'external':
+                    confop.opObj.terminate()
+            conf.procUnitObj.terminate()
+            
+        ctx.term()
 
         message = ''.join(err)
 
-        if stdout:
-            sys.stderr.write(message)
+        if err_msg:
+            subject = 'SChain v%s: Error running %s\n' % (
+                schainpy.__version__, self.name)
 
-        subject = 'SChain v%s: Error running %s\n' % (
-            schainpy.__version__, procUnitConfObj.name)
+            subtitle = 'Hostname: %s\n' % socket.gethostbyname(
+                socket.gethostname())
+            subtitle += 'Working directory: %s\n' % os.path.abspath('./')
+            subtitle += 'Configuration file: %s\n' % self.filename
+            subtitle += 'Time: %s\n' % str(datetime.datetime.now())
 
-        subtitle = '%s: %s\n' % (
-            procUnitConfObj.getElementName(), procUnitConfObj.name)
-        subtitle += 'Hostname: %s\n' % socket.gethostbyname(
-            socket.gethostname())
-        subtitle += 'Working directory: %s\n' % os.path.abspath('./')
-        subtitle += 'Configuration file: %s\n' % self.filename
-        subtitle += 'Time: %s\n' % str(datetime.datetime.now())
+            readUnitConfObj = self.getReadUnitObj()
+            if readUnitConfObj:
+                subtitle += '\nInput parameters:\n'
+                subtitle += '[Data path = %s]\n' % readUnitConfObj.path
+                subtitle += '[Data type = %s]\n' % readUnitConfObj.datatype
+                subtitle += '[Start date = %s]\n' % readUnitConfObj.startDate
+                subtitle += '[End date = %s]\n' % readUnitConfObj.endDate
+                subtitle += '[Start time = %s]\n' % readUnitConfObj.startTime
+                subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
 
-        readUnitConfObj = self.getReadUnitObj()
-        if readUnitConfObj:
-            subtitle += '\nInput parameters:\n'
-            subtitle += '[Data path = %s]\n' % readUnitConfObj.path
-            subtitle += '[Data type = %s]\n' % readUnitConfObj.datatype
-            subtitle += '[Start date = %s]\n' % readUnitConfObj.startDate
-            subtitle += '[End date = %s]\n' % readUnitConfObj.endDate
-            subtitle += '[Start time = %s]\n' % readUnitConfObj.startTime
-            subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
+            a = Alarm(
+                modes=self.alarm, 
+                email=self.email,
+                message=message,
+                subject=subject,
+                subtitle=subtitle,
+                filename=self.filename
+            )
 
-        a = Alarm(
-            modes=modes, 
-            email=self.email,
-            message=message,
-            subject=subject,
-            subtitle=subtitle,
-            filename=self.filename
-        )
-
-        return a
+            a.start()
 
     def isPaused(self):
         return 0
@@ -1223,7 +1256,7 @@ class Project(Process):
 
         self.filename = filename
 
-    def setProxyCom(self):
+    def setProxy(self):
 
         if not os.path.exists('/tmp/schain'):
             os.mkdir('/tmp/schain')
@@ -1233,24 +1266,19 @@ class Project(Process):
         xpub.bind('ipc:///tmp/schain/{}_pub'.format(self.id))
         xsub = self.ctx.socket(zmq.XSUB)
         xsub.bind('ipc:///tmp/schain/{}_sub'.format(self.id))
-        
+        self.monitor()
         try:
             zmq.proxy(xpub, xsub)
-        except: # zmq.ContextTerminated:
+        except zmq.ContextTerminated:
             xpub.close()
             xsub.close()
 
     def run(self):
 
         log.success('Starting {}: {}'.format(self.name, self.id), tag='')
-        self.start_time = time.time()
-        self.createObjects()
-        # t = Thread(target=wait, args=(self.ctx, ))
-        # t.start()
-        self.setProxyCom()
-        
-        # Iniciar todos los procesos .start(), monitoreo de procesos. ELiminar lo de abajo
-
-        log.success('{} Done (time: {}s)'.format(
+        self.start_time = time.time()        
+        self.createObjects()        
+        self.setProxy()        
+        log.success('{} Done (Time: {}s)'.format(
             self.name,
-            time.time()-self.start_time))
+            time.time()-self.start_time), '')

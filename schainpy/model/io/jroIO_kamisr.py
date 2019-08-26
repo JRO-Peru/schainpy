@@ -585,7 +585,6 @@ class AMISRReader(ProcessingUnit):
         
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print('Process finished')
             return 0
         
         if self.__hasNotDataInBuffer():

@@ -5,6 +5,7 @@ import h5py
 import re
 import datetime
 
+import schainpy.admin
 from schainpy.model.data.jrodata import *
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.io.jroIO_base import *
@@ -233,7 +234,7 @@ class ParamReader(JRODataReader,ProcessingUnit):
         idFile = self.fileIndex
 
         if not(idFile < len(self.filenameList)):
-            self.dataOut.error = "No more Files"
+            raise schainpy.admin.SchainError("No more Files")
             return 0
 
         filename = self.filenameList[idFile]
@@ -1165,8 +1166,7 @@ class ParameterReader(JRODataReader,ProcessingUnit):
         idFile = self.fileIndex
 
         if not(idFile < len(self.filenameList)):
-            self.dataOut.error = 'No more files'
-            return 0
+            raise schainpy.admin.SchainError('No more files')            
 
         filename = self.filenameList[idFile]
         self.fp = h5py.File(filename, 'r')

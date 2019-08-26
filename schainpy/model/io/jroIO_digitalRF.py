@@ -12,20 +12,16 @@ Created on Jul 3, 2014
 # METADATA
 
 import os
+import time
 import datetime
 import numpy
 import timeit
 from fractions import Fraction
 
-try:
-    from gevent import sleep
-except:
-    from time import sleep
-
+import schainpy.admin
 from schainpy.model.data.jroheaderIO import RadarControllerHeader, SystemHeader
 from schainpy.model.data.jrodata import Voltage
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
-from time import time
 
 import pickle
 try:
@@ -461,9 +457,9 @@ class DigitalRFReader(ProcessingUnit):
         return False
 
     def timeit(self, toExecute):
-        t0 = time()
+        t0 = time.time()
         toExecute()
-        self.executionTime = time() - t0
+        self.executionTime = time.time() - t0
         if self.oldAverage is None:
             self.oldAverage = self.executionTime
         self.oldAverage = (self.executionTime + self.count *
@@ -569,24 +565,24 @@ class DigitalRFReader(ProcessingUnit):
                 if self.__readNextBlock():
                     break
                 if self.__thisUnixSample > self.__endUTCSecond * self.__sample_rate:
-                    self.dataOut.error = 'Error'
+                    raise schainpy.admin.SchainError('Error')
                     return 
 
                 if self.__flagDiscontinuousBlock:
-                    self.dataOut.error = 'discontinuous block found'
+                    raise schainpy.admin.SchainError('discontinuous block found')
                     return
                     
                 if not self.__online:
-                    self.dataOut.error = 'Online?'
+                    raise schainpy.admin.SchainError('Online?')
                     return 
 
                 err_counter += 1
                 if err_counter > nTries:
-                    self.dataOut.error = 'Max retrys reach'
+                    raise schainpy.admin.SchainError('Max retrys reach')
                     return
 
                 print('[Reading] waiting %d seconds to read a new block' % seconds)
-                sleep(seconds)
+                time.sleep(seconds)
 
         self.dataOut.data = self.__data_buffer[:,
                                                self.__bufferIndex:self.__bufferIndex + self.__nSamples]

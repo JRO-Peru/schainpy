@@ -94,7 +94,6 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.heightList = self.dataIn.getHeiRange()   
         self.dataOut.frequency = self.dataIn.frequency
         # self.dataOut.noise = self.dataIn.noise
-        self.dataOut.error = self.dataIn.error
         
     def run(self):
 

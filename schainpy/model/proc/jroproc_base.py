@@ -17,10 +17,10 @@ import inspect
 import zmq
 import time
 import pickle
+import traceback
 from queue import Queue
 from threading import Thread
 from multiprocessing import Process
-from zmq.utils.monitor import recv_monitor_message
 
 from schainpy.utils import log
 
@@ -219,22 +219,18 @@ def MPDecorator(BaseClass):
             self.receiver = None
             self.i = 0
             self.name = BaseClass.__name__
+            
             if 'plot' in self.name.lower() and not self.name.endswith('_'):
                 self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
-            self.start_time = time.time()
-
-            if len(self.args) is 3:
-                self.typeProc = "ProcUnit"
-                self.id = args[0]
-                self.inputId = args[1]
-                self.project_id = args[2]
-            elif len(self.args) is 2:
-                self.id = args[0]
-                self.inputId = args[0]
-                self.project_id = args[1]
-                self.typeProc = "Operation"
-         
+            
+            self.start_time = time.time()            
+            self.id = args[0]
+            self.inputId = args[1]
+            self.project_id = args[2]
+            self.err_queue = args[3]
+            self.typeProc = args[4]         
             self.queue = InputQueue(self.project_id, self.inputId)
+            self.err_queue.put('#_start_#')
 
         def subscribe(self):
             '''
@@ -271,7 +267,7 @@ def MPDecorator(BaseClass):
 
             if self.inputId is None:
                 self.i += 1
-                if self.i % 100 == 0:
+                if self.i % 80 == 0:
                     self.i = 0
                     time.sleep(0.01)      
             
@@ -283,7 +279,15 @@ def MPDecorator(BaseClass):
             '''
             while True:
 
-                BaseClass.run(self, **self.kwargs)
+                try:
+                    BaseClass.run(self, **self.kwargs)
+                except:
+                    err = traceback.format_exc()                    
+                    if 'No more files' in err:
+                        log.warning('No more files to read', self.name)
+                    else:
+                        self.err_queue.put('{}|{}'.format(self.name, err))
+                    self.dataOut.error = True                 
                 
                 for op, optype, opId, kwargs in self.operations:
                     if optype == 'self' and not self.dataOut.flagNoData:
@@ -298,12 +302,10 @@ def MPDecorator(BaseClass):
 
                 self.publish(self.dataOut, self.id)
 
-                if self.dataOut.error:
-                    log.error(self.dataOut.error, self.name)
-                    # self.sender.send_multipart([str(self.project_id).encode(), 'end'.encode()])
+                if self.dataOut.error:   
                     break
 
-            time.sleep(1)
+            time.sleep(0.5)
 
         def runProc(self):
             '''
@@ -315,10 +317,13 @@ def MPDecorator(BaseClass):
 
                 if self.dataIn.flagNoData and self.dataIn.error is None:
                     continue
-            
-                BaseClass.run(self, **self.kwargs)
-
-                if self.dataIn.error:
+                elif not self.dataIn.error:
+                    try:
+                        BaseClass.run(self, **self.kwargs)
+                    except:
+                        self.err_queue.put('{}|{}'.format(self.name, traceback.format_exc()))
+                        self.dataOut.error = True
+                elif self.dataIn.error:
                     self.dataOut.error = self.dataIn.error
                     self.dataOut.flagNoData = True
                      
@@ -329,21 +334,16 @@ def MPDecorator(BaseClass):
                         self.dataOut = op.run(self.dataOut, **kwargs)
                     elif optype == 'external' and not self.dataOut.flagNoData:                        
                         self.publish(self.dataOut, opId)
-
-                if not self.dataOut.flagNoData or self.dataOut.error:
-                    self.publish(self.dataOut, self.id)
-                    for op, optype, opId, kwargs in self.operations:
-                        if optype == 'self' and self.dataOut.error:
-                            op(**kwargs)
-                        elif optype == 'other' and self.dataOut.error:
-                            self.dataOut = op.run(self.dataOut, **kwargs)
-                        elif optype == 'external' and self.dataOut.error:                        
-                            self.publish(self.dataOut, opId)
                 
-                if self.dataIn.error:
+                self.publish(self.dataOut, self.id)
+                for op, optype, opId, kwargs in self.operations:
+                    if optype == 'external' and self.dataOut.error:                        
+                        self.publish(self.dataOut, opId)
+                
+                if self.dataOut.error:
                     break
             
-            time.sleep(1)
+            time.sleep(0.5)
 
         def runOp(self):
             '''
@@ -355,18 +355,15 @@ def MPDecorator(BaseClass):
 
                 dataOut = self.listen()
 
-                BaseClass.run(self, dataOut, **self.kwargs)
-
-                if dataOut.error:
-                    break
-
-            time.sleep(1)
+                if not dataOut.error:
+                    BaseClass.run(self, dataOut, **self.kwargs)
+                else:
+                    break            
 
         def run(self):
             if self.typeProc is "ProcUnit":
 
                 if self.inputId is not None:
-
                     self.subscribe()
                     
                 self.set_publisher()
@@ -386,32 +383,10 @@ def MPDecorator(BaseClass):
 
             self.close()
 
-        def event_monitor(self, monitor):
-
-            events = {}
-
-            for name in dir(zmq):
-                if name.startswith('EVENT_'):
-                    value = getattr(zmq, name)
-                    events[value] = name
-
-            while monitor.poll():
-                evt = recv_monitor_message(monitor)
-                if evt['event'] == 32:
-                    self.connections += 1
-                if evt['event'] == 512:
-                    pass
-
-                evt.update({'description': events[evt['event']]})
-
-                if evt['event'] == zmq.EVENT_MONITOR_STOPPED:
-                    break
-            monitor.close()
-            print('event monitor thread done!')
-
         def close(self):
 
             BaseClass.close(self)
+            self.err_queue.put('#_end_#')
 
             if self.sender:
                 self.sender.close()

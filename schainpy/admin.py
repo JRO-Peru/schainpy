@@ -68,7 +68,6 @@ class Alarm(Process):
     @staticmethod
     def send_email(**kwargs):
         notifier = SchainNotify()
-        print(kwargs)
         notifier.notify(**kwargs)            
 
     @staticmethod
@@ -290,7 +289,7 @@ class SchainNotify:
 
         msg = MIMEMultipart()
         msg['Subject'] = subject
-        msg['From'] = "(Python SChain API): " + email_from
+        msg['From'] = "SChain API (v{}) <{}>".format(schainpy.__version__, email_from)
         msg['Reply-to'] = email_from
         msg['To'] = email_to
         
@@ -330,7 +329,7 @@ class SchainNotify:
             smtp.login(self.__emailFromAddress, self.__emailPass)
         
         # Send the email
-        try:
+        try:            
             smtp.sendmail(msg['From'], msg['To'], msg.as_string())
         except:
             log.error('Could not send the email to {}'.format(msg['To']), 'System')

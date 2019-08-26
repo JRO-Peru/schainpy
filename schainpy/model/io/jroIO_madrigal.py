@@ -13,6 +13,8 @@ import datetime
 
 import numpy
 import h5py
+
+import schainpy.admin
 from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
@@ -390,7 +392,7 @@ class MADReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            self.dataOut.error = 'No file left to process'
+            raise schainpy.admin.SchainError('No file left to process')
             return 0
 
         if not  self.readNextBlock():

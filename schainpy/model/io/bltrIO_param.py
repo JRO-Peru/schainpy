@@ -13,6 +13,7 @@ import datetime
 
 import numpy
 
+import schainpy.admin
 from schainpy.model.proc.jroproc_base import ProcessingUnit, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 from schainpy.model.io.jroIO_base import JRODataReader, isNumber
@@ -394,12 +395,11 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            self.dataOut.error = 'No More files to read'
-            return 
+            raise schainpy.admin.SchainError('No More files to read')             
 
         if not self.readNextBlock():
             self.dataOut.flagNoData = True
-            self.dataOut.error = 'Time for wait new file reach!!!'
+            raise schainpy.admin.SchainError('Time for wait new file reach!!!')
 
         self.set_output()
 

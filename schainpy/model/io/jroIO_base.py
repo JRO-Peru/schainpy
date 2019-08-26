@@ -15,11 +15,6 @@ import datetime
 import traceback
 import zmq
 
-try:
-    from gevent import sleep
-except:
-    from time import sleep
-
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jroheaderIO import get_dtype_index, get_numpy_dtype, get_procflag_dtype, get_dtype_width
 from schainpy.utils import log
@@ -771,7 +766,6 @@ class JRODataReader(JRODataIO):
             idFile += 1
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-#                 print "[Reading] No more Files"
                 return 0
 
             filename = self.filenameList[idFile]
@@ -843,10 +837,14 @@ class JRODataReader(JRODataIO):
 
                 for nTries in range(tries):
                     if firstTime_flag:
-                        print("\t[Reading] Waiting %0.2f sec for the next file: \"%s\" , try %03d ..." % (self.delay, filename, nTries + 1))
-                        sleep(self.delay)
+                        log.warning(
+                            "Waiting %0.2f sec for the next file: \"%s\" , try %03d ..." % (self.delay, filename, nTries + 1),
+                            self.name)
+                        time.sleep(self.delay)
                     else:
-                        print("\t[Reading] Searching the next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext))
+                        log.warning(
+                            "Searching the next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext),
+                            self.name)
 
                     fullfilename, filename = checkForRealPath(
                         self.path, self.foldercounter, self.year, self.doy, self.set, self.ext)
@@ -860,7 +858,9 @@ class JRODataReader(JRODataIO):
 
                 firstTime_flag = False
 
-                log.warning('Skipping the file {} due to this file doesn\'t exist'.format(filename))
+                log.warning(
+                    'Skipping the file {} due to this file doesn\'t exist'.format(filename),
+                    self.name)
                 self.set += 1
 
                 # si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
@@ -877,14 +877,13 @@ class JRODataReader(JRODataIO):
                 self.fp.close()
             self.fp = open(fullfilename, 'rb')
             self.flagNoMoreFiles = 0
-#             print '[Reading] Setting the file: %s' % fullfilename
         else:
+            raise schainpy.admin.SchainError('Time for waiting new files reach')
             self.fileSize = 0
             self.filename = None
             self.flagIsNewFile = 0
             self.fp = None
             self.flagNoMoreFiles = 1
-#             print '[Reading] No more files to read'
 
         return fileOk_flag
 
@@ -898,8 +897,8 @@ class JRODataReader(JRODataIO):
             newFile = self.__setNextFileOffline()
 
         if not(newFile):
-            self.dataOut.error = 'No more files to read'
-            return 0
+            raise schainpy.admin.SchainWarning('No more files to read')
+            
 
         if self.verbose:
             print('[Reading] Setting the file: %s' % self.filename)
@@ -942,7 +941,7 @@ class JRODataReader(JRODataIO):
                 return 0
 
             print("[Reading] Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries + 1))
-            sleep(self.delay)
+            time.sleep(self.delay)
 
         return 0
 
@@ -969,7 +968,7 @@ class JRODataReader(JRODataIO):
                 "Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries + 1),
                 self.name
                 )
-            sleep(self.delay)
+            time.sleep(self.delay)
 
         return 0
 
@@ -1013,7 +1012,7 @@ class JRODataReader(JRODataIO):
 
 #         if self.online:
 #             self.__jumpToLastBlock()
-
+        
         if self.flagIsNewFile:
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
@@ -1057,8 +1056,7 @@ class JRODataReader(JRODataIO):
         # Skip block out of startTime and endTime
         while True:
             if not(self.__setNewBlock()):
-                self.dataOut.error = 'No more files to read'
-                return 0
+                raise schainpy.admin.SchainWarning('No more files to read')                
 
             if not(self.readBlock()):
                 return 0
@@ -1260,10 +1258,10 @@ class JRODataReader(JRODataIO):
             pattern_path = multi_path[0]
 
         if path_empty:
-            print("[Reading] No *%s files in %s for %s to %s" % (ext, pattern_path, startDate, endDate))
+            raise schainpy.admin.SchainError("[Reading] No *%s files in %s for %s to %s" % (ext, pattern_path, startDate, endDate))
         else:
             if not dateList:
-                print("[Reading] Date range selected invalid [%s - %s]: No *%s files in %s)" % (startDate, endDate, ext, path))
+                raise schainpy.admin.SchainError("[Reading] Date range selected invalid [%s - %s]: No *%s files in %s)" % (startDate, endDate, ext, path))
 
         if include_path:
             return dateList, pathList
@@ -1296,6 +1294,17 @@ class JRODataReader(JRODataIO):
               oneDDict=None,
               twoDDict=None,
               independentParam=None):
+        
+        self.online = online
+        self.realtime = realtime
+        self.delay = delay
+        self.getByBlock = getblock
+        self.nTxs = nTxs
+        self.startTime = startTime
+        self.endTime = endTime
+        self.endDate = endDate
+        self.startDate = startDate
+
         if server is not None:
             if 'tcp://' in server:
                 address = server
@@ -1326,10 +1335,10 @@ class JRODataReader(JRODataIO):
                         break
 
                     print('[Reading] Waiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries + 1))
-                    sleep(self.delay)
+                    time.sleep(self.delay)
 
                 if not(fullpath):
-                    self.dataOut.error = 'There isn\'t any valid file in {}'.format(path)
+                    raise schainpy.admin.SchainError('There isn\'t any valid file in {}'.format(path))
                     return
 
                 self.year = year
@@ -1359,17 +1368,10 @@ class JRODataReader(JRODataIO):
                 basename, ext = os.path.splitext(file_name)
                 last_set = int(basename[-3:])
 
-            self.online = online
-            self.realtime = realtime
-            self.delay = delay
+            
             ext = ext.lower()
             self.ext = ext
-            self.getByBlock = getblock
-            self.nTxs = nTxs
-            self.startTime = startTime
-            self.endTime = endTime
-            self.endDate = endDate
-            self.startDate = startDate
+            
             # Added-----------------
             self.selBlocksize = blocksize
             self.selBlocktime = blocktime
@@ -1390,8 +1392,6 @@ class JRODataReader(JRODataIO):
                     self.pathList = []
                     self.filenameList = []
                     return
-
-    #         self.getBasicHeader()
 
             if last_set != None:
                 self.dataOut.last_block = last_set * \

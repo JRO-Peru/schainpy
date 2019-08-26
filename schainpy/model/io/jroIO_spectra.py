@@ -92,7 +92,6 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         #Eliminar de la base la herencia
         ProcessingUnit.__init__(self)#, **kwargs)
 
-#         self.isConfig = False
 
         self.pts2read_SelfSpectra = 0
 
@@ -160,7 +159,6 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
         self.__isFirstTimeOnline = 1
 
-#         self.ippSeconds = 0
 
         self.flagDiscontinuousBlock = 0
 
@@ -226,7 +224,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
             self.pts2read_DCchannels = int(self.systemHeaderObj.nChannels * self.processingHeaderObj.nHeights)
             self.blocksize += self.pts2read_DCchannels
 
-#        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
+        # self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
 
 
     def readBlock(self):
@@ -356,7 +354,6 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print('Process finished')
             return 0
 
         self.flagDiscontinuousBlock = 0

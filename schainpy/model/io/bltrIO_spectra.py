@@ -15,13 +15,9 @@ from scipy import asarray as ar, exp
 SPEED_OF_LIGHT = 299792458
 SPEED_OF_LIGHT = 3e8
 
-try:
-    from gevent import sleep
-except:
-    from time import sleep
-
 from .utils import folder_in_range
 
+import schainpy.admin
 from schainpy.model.data.jrodata import Spectra
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.utils import log
@@ -341,7 +337,7 @@ class BLTRSpectraReader (ProcessingUnit):
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            self.dataOut.error = 'No more files'
+            raise schainpy.admin.SchainError('No more files')
 
         self.readBlock()
 
