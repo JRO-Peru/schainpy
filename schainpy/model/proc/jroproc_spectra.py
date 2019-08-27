@@ -65,6 +65,8 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
 
+        self.dataOut.step = self.dataIn.step
+
     def __getFft(self):
         """
         Convierte valores de Voltaje a Spectra

@@ -1209,7 +1209,7 @@ class SSheightProfiles(Operation):
         self.__nProfiles = dataOut.nProfiles
         self.__nHeis     = dataOut.nHeights
         shape            = dataOut.data.shape #nchannels, nprofiles, nsamples
-        print  "shape",shape
+        #print  "shape",shape
         #last test
         residue =  (shape[1] - self.nsamples) % self.step
         if residue != 0:
@@ -1248,6 +1248,8 @@ class SSheightProfiles(Operation):
         deltaHeight  =  dataOut.heightList[1] - dataOut.heightList[0]
         ippSeconds   =  (deltaHeight*1.0e-6)/(0.15)
 
+
+
         dataOut.data            = self.sshProfiles
         dataOut.flagNoData      = False
         dataOut.heightList      = numpy.arange(self.buffer.shape[1]) *self.step*deltaHeight + dataOut.heightList[0]
@@ -1255,7 +1257,7 @@ class SSheightProfiles(Operation):
         dataOut.profileIndex    = profileIndex
         dataOut.flagDataAsBlock = True
         dataOut.ippSeconds      = ippSeconds
-
+        dataOut.step            = self.step
 
 
 # import collections

@@ -12,6 +12,7 @@ TOTAL_CODE = 6          #Total Power.
 DRIFT_CODE = 7          #Drifts graphics.
 HEIGHT_CODE = 8         #Height profile.
 PHASE_CODE = 9          #Signal Phase.
+AFC_CODE = 10           #Autocorrelation function.
 
 POWER_CODE = 16
 NOISE_CODE = 17

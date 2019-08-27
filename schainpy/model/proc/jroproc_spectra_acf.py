@@ -149,11 +149,18 @@ class SpectraAFCProc(ProcessingUnit):
             data = numpy.fft.ifft(spc, axis=1)
             data = numpy.fft.fftshift(data, axes=(1,))
             spc = data.real
-            spc = spc[0,:,0] / numpy.max(numpy.abs(spc[0,:,0]))
-            print spc
-            import matplotlib.pyplot as plt
-            #plt.plot(spc[10:])
-            plt.show()
+            shape            = spc.shape #nchannels, nprofiles, nsamples
+
+            #print spc.shape
+            for i in range(shape[0]):
+                for j in range(shape[2]):
+                    spc[i,:,j]= spc[i,:,j] / numpy.max(numpy.abs(spc[i,:,j]))
+            #spc = spc[0,:,250] / numpy.max(numpy.abs(spc[0,:,250]))
+            #print spc.shape
+            #import matplotlib.pyplot as plt
+            #print spc[0:10]
+            #plt.plot(spc[0,:,350])
+            #plt.show()
 
 
             self.dataOut.data_spc = spc

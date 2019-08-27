@@ -220,6 +220,158 @@ class SpectraPlot(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
+class ACFPlot(Figure):
+
+    isConfig = None
+    __nsubplots = None
+
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'acf'
+
+    def __init__(self, **kwargs):
+        Figure.__init__(self, **kwargs)
+        self.isConfig = False
+        self.__nsubplots = 1
+
+        self.PLOT_CODE = POWER_CODE
+
+        self.WIDTH = 700
+        self.HEIGHT = 500
+        self.counter_imagwr = 0
+
+    def getSubplots(self):
+        ncol = 1
+        nrow = 1
+
+        return nrow, ncol
+
+    def setup(self, id, nplots, wintitle, show):
+
+        self.nplots = nplots
+
+        ncolspan = 1
+        colspan = 1
+
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH,
+                          heightplot = self.HEIGHT,
+                          show=show)
+
+        nrow, ncol = self.getSubplots()
+
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+
+    def run(self, dataOut, id, wintitle="", channelList=None,
+            xmin=None, xmax=None, ymin=None, ymax=None,
+            save=False, figpath='./', figfile=None, show=True,
+            ftp=False, wr_period=1, server=None,
+            folder=None, username=None, password=None,
+            xaxis="frequency"):
+
+
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+            channelList = dataOut.channelList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                channelIndexList.append(dataOut.channelList.index(channel))
+
+        factor = dataOut.normFactor
+
+        y = dataOut.getHeiRange()
+
+        #z = dataOut.data_spc/factor
+        deltaHeight  =  dataOut.heightList[1] - dataOut.heightList[0]
+        print deltaHeight
+        z = dataOut.data_spc
+
+        #z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        shape            = dataOut.data_spc.shape
+        for i in range(shape[0]):
+            for j in range(shape[2]):
+                z[i,:,j]= (z[i,:,j]+1.0)*deltaHeight*5/2.0 + j*deltaHeight
+                #z[i,:,j]= (z[i,:,j]+1.0)*deltaHeight*dataOut.step/2.0 + j*deltaHeight*dataOut.step
+
+        hei_index = numpy.arange(shape[2])
+        #print hei_index.shape
+        #b         = []
+        #for i in range(hei_index.shape[0]):
+        #    if hei_index[i]%30 == 0:
+        #        b.append(hei_index[i])
+
+        #hei_index= numpy.array(b)
+        hei_index = hei_index[300:320]
+        #hei_index = numpy.arange(20)*30+80
+        hei_index= numpy.arange(20)*5
+        if xaxis == "frequency":
+            x = dataOut.getFreqRange()/1000.
+            zdB = 10*numpy.log10(z[0,:,hei_index])
+            xlabel = "Frequency (kHz)"
+            ylabel = "Power (dB)"
+
+        elif xaxis == "time":
+            x = dataOut.getAcfRange()
+            zdB = z[0,:,hei_index]
+            xlabel = "Time (ms)"
+            ylabel = "ACF"
+
+        else:
+            x = dataOut.getVelRange()
+            zdB = 10*numpy.log10(z[0,:,hei_index])
+            xlabel = "Velocity (m/s)"
+            ylabel = "Power (dB)"
+
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        title = wintitle + " ACF Plot %s" %(thisDatetime.strftime("%d-%b-%Y"))
+
+        if not self.isConfig:
+
+            nplots = 1
+
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       show=show)
+
+            if xmin == None: xmin = numpy.nanmin(x)*0.9
+            if xmax == None: xmax = numpy.nanmax(x)*1.1
+            if ymin == None: ymin = numpy.nanmin(zdB)
+            if ymax == None: ymax = numpy.nanmax(zdB)
+
+            self.isConfig = True
+
+        self.setWinTitle(title)
+
+        title = "Spectra Cuts: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        axes = self.axesList[0]
+
+        legendlabels = ["Range = %dKm" %y[i] for i in hei_index]
+
+        axes.pmultilineyaxis( x, zdB,
+                xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                xlabel=xlabel, ylabel=ylabel, title=title, legendlabels=legendlabels,
+                ytick_visible=True, nxticks=5,
+                grid='x')
+
+        self.draw()
+
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
+
+
+
 class CrossSpectraPlot(Figure):
 
     isConfig = None
