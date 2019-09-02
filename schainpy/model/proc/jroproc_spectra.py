@@ -65,7 +65,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
 
-        self.dataOut.step = self.dataIn.step
+        self.dataOut.step = self.dataIn.step #
 
     def __getFft(self):
         """
@@ -87,10 +87,8 @@ class SpectraProc(ProcessingUnit):
 
         # calculo de self-spectra
         fft_volt = numpy.fft.fftshift(fft_volt, axes=(1,))
-        #print "spec dtype 0",fft_volt.dtype
         spc = fft_volt * numpy.conjugate(fft_volt)
         spc = spc.real
-        #print "spec dtype 1",spc.dtype
 
         blocksize = 0
         blocksize += dc.size
@@ -127,10 +125,7 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-            # if not pairsList:
-            #     pairsList = itertools.combinations(self.dataOut.channelList, 2)
-            # if self.dataOut.data_cspc is not None:
-            #     self.__selectPairs(pairsList)
+            print "hi",self.dataOut.ippSeconds
             if shift_fft:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 shift = int(self.dataOut.nFFTPoints/2)
@@ -164,16 +159,11 @@ class SpectraProc(ProcessingUnit):
                                            self.dataIn.heightList.shape[0]),
                                           dtype='complex')
 
-                #print self.buffer.shape,"spec2"
-                #print self.dataIn.heightList.shape[0],"spec3"
+
 
             if self.dataIn.flagDataAsBlock:
-                # data dimension: [nChannels, nProfiles, nSamples]
                 nVoltProfiles = self.dataIn.data.shape[1]
-            #                 nVoltProfiles = self.dataIn.nProfiles
 
-                #print nVoltProfiles,"spec1"
-                #print nProfiles
                 if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
                     self.profIndex = nVoltProfiles
@@ -196,7 +186,6 @@ class SpectraProc(ProcessingUnit):
             else:
                 self.buffer[:, self.profIndex, :] = self.dataIn.data.copy()
                 self.profIndex += 1
-                #print self.profIndex,"spectra D"
 
             if self.firstdatatime == None:
                 self.firstdatatime = self.dataIn.utctime

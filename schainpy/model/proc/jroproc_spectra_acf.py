@@ -99,16 +99,11 @@ class SpectraAFCProc(ProcessingUnit):
         dc = fft_volt[:,0,:]
 
         #calculo de self-spectra
-#         fft_volt = numpy.fft.fftshift(fft_volt, axes=(1,))
         spc = fft_volt * numpy.conjugate(fft_volt)
-
-
         data = numpy.fft.ifft(spc, axis=1)
         data = numpy.fft.fftshift(data, axes=(1,))
 
-        spc = data.real
-
-
+        spc = data
 
         blocksize = 0
         blocksize += dc.size
@@ -145,28 +140,30 @@ class SpectraAFCProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-            spc= self.dataOut.data_spc
-            data = numpy.fft.ifft(spc, axis=1)
-            data = numpy.fft.fftshift(data, axes=(1,))
-            spc = data.real
-            shape            = spc.shape #nchannels, nprofiles, nsamples
+            #print "hi",self.dataOut.ippSeconds
 
-            #print spc.shape
-            for i in range(shape[0]):
-                for j in range(shape[2]):
-                    spc[i,:,j]= spc[i,:,j] / numpy.max(numpy.abs(spc[i,:,j]))
-            #spc = spc[0,:,250] / numpy.max(numpy.abs(spc[0,:,250]))
-            #print spc.shape
+            spc         = self.dataOut.data_spc
+            data        = numpy.fft.ifft(spc, axis=1)
+            data        = numpy.fft.fftshift(data, axes=(1,))
+            acf         = numpy.abs(data) # Autocorrelacion LLAMAR A ESTE VALOR ACF
+            #acf         = data.imag
+            shape       = acf.shape #nchannels, nprofiles, nsamples
+
             #import matplotlib.pyplot as plt
-            #print spc[0:10]
-            #plt.plot(spc[0,:,350])
+            #plt.plot(acf[0,:,0] / numpy.max(numpy.abs(acf[0,:,0])))
             #plt.show()
 
+            # Normalizando
+            for i in range(shape[0]):
+                for j in range(shape[2]):
+                    acf[i,:,j]= acf[i,:,j] / numpy.max(numpy.abs(acf[i,:,j]))
 
-            self.dataOut.data_spc = spc
+            #import matplotlib.pyplot as plt
+            #plt.plot(acf[0,:,0])
+            #plt.show()
 
+            self.dataOut.data_acf = acf
             return True
-
 
         if code is not None:
             self.code = numpy.array(code).reshape(nCode,nBaud)

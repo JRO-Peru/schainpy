@@ -1248,8 +1248,8 @@ class SSheightProfiles(Operation):
         deltaHeight  =  dataOut.heightList[1] - dataOut.heightList[0]
         ippSeconds   =  (deltaHeight*1.0e-6)/(0.15)
 
-
-
+        #print "hi",dataOut.ippSeconds
+        #print ippSeconds
         dataOut.data            = self.sshProfiles
         dataOut.flagNoData      = False
         dataOut.heightList      = numpy.arange(self.buffer.shape[1]) *self.step*deltaHeight + dataOut.heightList[0]
@@ -1258,6 +1258,7 @@ class SSheightProfiles(Operation):
         dataOut.flagDataAsBlock = True
         dataOut.ippSeconds      = ippSeconds
         dataOut.step            = self.step
+        #print dataOut.ippSeconds
 
 
 # import collections

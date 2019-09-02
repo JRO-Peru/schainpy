@@ -234,10 +234,10 @@ class ACFPlot(Figure):
         self.isConfig = False
         self.__nsubplots = 1
 
-        self.PLOT_CODE = POWER_CODE
+        self.PLOT_CODE = ACF_CODE
 
-        self.WIDTH = 700
-        self.HEIGHT = 500
+        self.WIDTH = 900
+        self.HEIGHT = 700
         self.counter_imagwr = 0
 
     def getSubplots(self):
@@ -266,7 +266,8 @@ class ACFPlot(Figure):
             for x in range(ncol):
                 self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
 
-    def run(self, dataOut, id, wintitle="", channelList=None,
+    def run(self, dataOut, id, wintitle="", channelList=None,channel=None,nSamples=None,
+            nSampleList= None,resolutionFactor=None,
             xmin=None, xmax=None, ymin=None, ymax=None,
             save=False, figpath='./', figfile=None, show=True,
             ftp=False, wr_period=1, server=None,
@@ -274,9 +275,28 @@ class ACFPlot(Figure):
             xaxis="frequency"):
 
 
-        if channelList == None:
+        channel0      =  channel
+        nSamples      =  nSamples
+        resFactor     =  resolutionFactor
+
+        if nSamples   == None:
+            nSamples  =  20
+
+        if resFactor   == None:
+            resFactor  =  5
+        #else:
+        #    if nSamples not in dataOut.channelList:
+        #        raise ValueError, "Channel %d is not in %s dataOut.channelList"%(channel0, dataOut.channelList)
+
+        if channel0   == None:
+            channel0  =  0
+        else:
+            if channel0 not in dataOut.channelList:
+                raise ValueError, "Channel %d is not in %s dataOut.channelList"%(channel0, dataOut.channelList)
+
+        if channelList       == None:
             channelIndexList = dataOut.channelIndexList
-            channelList = dataOut.channelList
+            channelList      = dataOut.channelList
         else:
             channelIndexList = []
             for channel in channelList:
@@ -284,53 +304,70 @@ class ACFPlot(Figure):
                     raise ValueError, "Channel %d is not in dataOut.channelList"
                 channelIndexList.append(dataOut.channelList.index(channel))
 
-        factor = dataOut.normFactor
-
-        y = dataOut.getHeiRange()
-
         #z = dataOut.data_spc/factor
-        deltaHeight  =  dataOut.heightList[1] - dataOut.heightList[0]
-        print deltaHeight
-        z = dataOut.data_spc
+        factor       =  dataOut.normFactor
+        y            =  dataOut.getHeiRange()
+        deltaHeight  =  dataOut.heightList[1]-dataOut.heightList[0]
+        z            =  dataOut.data_acf
+        #z           =  numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        shape        =  dataOut.data_acf.shape
+        hei_index    =  numpy.arange(shape[2])
+        hei_plot     =  numpy.arange(nSamples)*resFactor
+        #print hei_plot
+        #import matplotlib.pyplot as plt
+        #c=z[0,:,0]*15+15
+        #plt.plot(c)
+        #plt.show()
+        #print "HOLA#
 
-        #z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
-        shape            = dataOut.data_spc.shape
+        if nSampleList    is not  None:
+            for nsample in nSampleList:
+                if nsample not in dataOut.heightList/deltaHeight:
+                    raise ValueError, "nsample %d is not in %s dataOut.heightList"%(nsample,dataOut.heightList)
+
+        if nSampleList is not  None:
+            hei_plot = numpy.array(nSampleList)*resFactor
+
+        if hei_plot[-1] >= hei_index[-1]:
+            print ("La cantidad de puntos en altura es %d y la resolucion es %d Km"%(hei_plot.shape[0],deltaHeight*resFactor ))
+            raise ValueError, "resFactor %d multiplicado por el valor de %d nSamples  es mayor a %d cantidad total de puntos"%(resFactor,nSamples,hei_index[-1])
+
+        #escalamiento  -1 a 1 a resolucion (factor de resolucion en altura)* deltaHeight
+        min = numpy.min(z[0,:,0])
+        max =numpy.max(z[0,:,0])
+
         for i in range(shape[0]):
             for j in range(shape[2]):
-                z[i,:,j]= (z[i,:,j]+1.0)*deltaHeight*5/2.0 + j*deltaHeight
+                z[i,:,j]= (((z[i,:,j]-min)/(max-min))*deltaHeight*resFactor + j*deltaHeight)
                 #z[i,:,j]= (z[i,:,j]+1.0)*deltaHeight*dataOut.step/2.0 + j*deltaHeight*dataOut.step
 
-        hei_index = numpy.arange(shape[2])
-        #print hei_index.shape
-        #b         = []
-        #for i in range(hei_index.shape[0]):
-        #    if hei_index[i]%30 == 0:
-        #        b.append(hei_index[i])
+        #print deltaHeight
+        #print resFactor
+        #print numpy.max(z[0,:,0])
+        #import matplotlib.pyplot as plt
+        #plt.plot((z[0,:,0])*deltaHeight)
+        #plt.show()
 
-        #hei_index= numpy.array(b)
-        hei_index = hei_index[300:320]
-        #hei_index = numpy.arange(20)*30+80
-        hei_index= numpy.arange(20)*5
         if xaxis == "frequency":
             x = dataOut.getFreqRange()/1000.
-            zdB = 10*numpy.log10(z[0,:,hei_index])
+            zdB = 10*numpy.log10(z[channel0,:,hei_plot])
             xlabel = "Frequency (kHz)"
             ylabel = "Power (dB)"
 
         elif xaxis == "time":
             x = dataOut.getAcfRange()
-            zdB = z[0,:,hei_index]
+            zdB = z[channel0,:,hei_plot]
             xlabel = "Time (ms)"
             ylabel = "ACF"
 
         else:
             x = dataOut.getVelRange()
-            zdB = 10*numpy.log10(z[0,:,hei_index])
+            zdB = 10*numpy.log10(z[channel0,:,hei_plot])
             xlabel = "Velocity (m/s)"
             ylabel = "Power (dB)"
 
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
-        title = wintitle + " ACF Plot %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        title = wintitle + " ACF Plot Ch %s %s" %(channel0,thisDatetime.strftime("%d-%b-%Y"))
 
         if not self.isConfig:
 
@@ -346,14 +383,18 @@ class ACFPlot(Figure):
             if ymin == None: ymin = numpy.nanmin(zdB)
             if ymax == None: ymax = numpy.nanmax(zdB)
 
+            print ("El parametro resFactor es %d y la resolucion en altura es %d"%(resFactor,deltaHeight ))
+            print ("La cantidad de puntos en altura es %d y la nueva resolucion es %d Km"%(hei_plot.shape[0],deltaHeight*resFactor ))
+            print ("La altura maxima es %d Km"%(hei_plot[-1]*deltaHeight ))
+
             self.isConfig = True
 
         self.setWinTitle(title)
 
-        title = "Spectra Cuts: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        title = "ACF Plot: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
         axes = self.axesList[0]
 
-        legendlabels = ["Range = %dKm" %y[i] for i in hei_index]
+        legendlabels = ["Range = %dKm" %y[i] for i in hei_plot]
 
         axes.pmultilineyaxis( x, zdB,
                 xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
@@ -362,6 +403,13 @@ class ACFPlot(Figure):
                 grid='x')
 
         self.draw()
+
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            name = str_datetime
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith)
+            figfile = self.getFilename(name)
 
         self.save(figpath=figpath,
                   figfile=figfile,
