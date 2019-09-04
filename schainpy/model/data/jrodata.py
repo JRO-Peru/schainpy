@@ -297,7 +297,6 @@ class JROData(GenericData):
 
     def getFmax(self):
         PRF = 1. / (self.ippSeconds * self.nCohInt)
-
         fmax = PRF
         return fmax
 
@@ -605,11 +604,9 @@ class Spectra(JROData):
         noise = numpy.zeros(self.nChannels)
 
         for channel in range(self.nChannels):
-            #print "confuse",self.data_spc.dtype
             daux = self.data_spc[channel,
                                  xmin_index:xmax_index, ymin_index:ymax_index]
 
-            #print "HI3.0",(daux.dtype),daux.shape
             noise[channel] = hildebrand_sekhon(daux, self.nIncohInt)
 
         return noise
@@ -634,9 +631,7 @@ class Spectra(JROData):
         return freqrange
 
     def getAcfRange(self, extrapoints=0):
-        #print "miay",self.ippFactor
-        deltafreq = 10. / (self.getFmax() / (self.nFFTPoints * self.ippFactor))
-        #print deltafreq
+        deltafreq = 10. / (  self.getFmax() / (self.nFFTPoints * self.ippFactor)   )
         freqrange = deltafreq * \
             (numpy.arange(self.nFFTPoints + extrapoints) -
              self.nFFTPoints / 2.) - deltafreq / 2
@@ -646,10 +641,11 @@ class Spectra(JROData):
     def getFreqRange(self, extrapoints=0):
 
         deltafreq = self.getFmax() / (self.nFFTPoints * self.ippFactor)
+        #print "deltafreq", deltafreq
         freqrange = deltafreq * \
             (numpy.arange(self.nFFTPoints + extrapoints) -
              self.nFFTPoints / 2.) - deltafreq / 2
-
+        #print "freqrange",freqrange
         return freqrange
 
     def getVelRange(self, extrapoints=0):

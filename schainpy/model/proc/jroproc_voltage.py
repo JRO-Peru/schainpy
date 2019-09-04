@@ -1186,12 +1186,12 @@ class CombineProfiles(Operation):
 
 class SSheightProfiles(Operation):
 
-    step        = None
-    nsamples    = None
-    bufferShape = None
-    profileShape= None
-    sshProfiles = None
-    profileIndex= None
+    step          = None
+    nsamples      = None
+    bufferShape   = None
+    profileShape  = None
+    sshProfiles   = None
+    profileIndex  = None
 
     def __init__(self, **kwargs):
 
@@ -1203,35 +1203,35 @@ class SSheightProfiles(Operation):
         if step == None and nsamples == None:
             raise ValueError, "step or nheights should be specified ..."
 
-        self.step        = step
-        self.nsamples    = nsamples
-        self.__nChannels = dataOut.nChannels
-        self.__nProfiles = dataOut.nProfiles
-        self.__nHeis     = dataOut.nHeights
-        shape            = dataOut.data.shape #nchannels, nprofiles, nsamples
-        #print  "shape",shape
-        #last test
-        residue =  (shape[1] - self.nsamples) % self.step
+        self.step         = step
+        self.nsamples     = nsamples
+        self.__nChannels  = dataOut.nChannels
+        self.__nProfiles  = dataOut.nProfiles
+        self.__nHeis      = dataOut.nHeights
+        shape             = dataOut.data.shape #nchannels, nprofiles, nsamples
+
+
+        residue     =  (shape[1] - self.nsamples) % self.step
         if residue != 0:
             print "The residue is %d, step=%d should be multiple of %d to avoid loss of %d samples"%(residue,step,shape[1] - self.nsamples,residue)
 
-        deltaHeight     = dataOut.heightList[1] - dataOut.heightList[0]
-        numberProfile   = self.nsamples
-        numberSamples   = (shape[1] - self.nsamples)/self.step
+        deltaHeight      =  dataOut.heightList[1] - dataOut.heightList[0]
+        numberProfile    =  self.nsamples
+        numberSamples    =  (shape[1] - self.nsamples)/self.step
 
         print "New number of profile: %d, number of height: %d, Resolution %d Km"%(numberProfile,numberSamples,deltaHeight*self.step)
 
         self.bufferShape  = shape[0], numberSamples, numberProfile  # nchannels, nsamples , nprofiles
         self.profileShape = shape[0], numberProfile, numberSamples  # nchannels, nprofiles, nsamples
 
-        self.buffer      = numpy.zeros(self.bufferShape , dtype=numpy.complex)
-        self.sshProfiles = numpy.zeros(self.profileShape, dtype=numpy.complex)
+        self.buffer       = numpy.zeros(self.bufferShape , dtype=numpy.complex)
+        self.sshProfiles  = numpy.zeros(self.profileShape, dtype=numpy.complex)
 
     def run(self, dataOut, step, nsamples):
 
-        dataOut.flagNoData = True
-        dataOut.flagDataAsBlock =False
-        profileIndex = None
+        dataOut.flagNoData      = True
+        dataOut.flagDataAsBlock = False
+        profileIndex            = None
 
         if not self.isConfig:
             self.setup(dataOut, step=step , nsamples=nsamples)
@@ -1244,12 +1244,10 @@ class SSheightProfiles(Operation):
         for j in range(self.buffer.shape[0]):
             self.sshProfiles[j] = numpy.transpose(self.buffer[j])
 
-        profileIndex =  self.nsamples
-        deltaHeight  =  dataOut.heightList[1] - dataOut.heightList[0]
-        ippSeconds   =  (deltaHeight*1.0e-6)/(0.15)
+        profileIndex  =  self.nsamples
+        deltaHeight   =  dataOut.heightList[1] - dataOut.heightList[0]
+        ippSeconds    =  (deltaHeight*1.0e-6)/(0.15)
 
-        #print "hi",dataOut.ippSeconds
-        #print ippSeconds
         dataOut.data            = self.sshProfiles
         dataOut.flagNoData      = False
         dataOut.heightList      = numpy.arange(self.buffer.shape[1]) *self.step*deltaHeight + dataOut.heightList[0]
@@ -1258,7 +1256,6 @@ class SSheightProfiles(Operation):
         dataOut.flagDataAsBlock = True
         dataOut.ippSeconds      = ippSeconds
         dataOut.step            = self.step
-        #print dataOut.ippSeconds
 
 
 # import collections

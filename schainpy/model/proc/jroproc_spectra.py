@@ -22,20 +22,19 @@ class SpectraProc(ProcessingUnit):
 
     def __updateSpecFromVoltage(self):
 
-        self.dataOut.timeZone = self.dataIn.timeZone
-        self.dataOut.dstFlag = self.dataIn.dstFlag
-        self.dataOut.errorCount = self.dataIn.errorCount
-        self.dataOut.useLocalTime = self.dataIn.useLocalTime
+        self.dataOut.timeZone    = self.dataIn.timeZone
+        self.dataOut.dstFlag     = self.dataIn.dstFlag
+        self.dataOut.errorCount  = self.dataIn.errorCount
+        self.dataOut.useLocalTime= self.dataIn.useLocalTime
         try:
             self.dataOut.processingHeaderObj = self.dataIn.processingHeaderObj.copy()
         except:
             pass
         self.dataOut.radarControllerHeaderObj = self.dataIn.radarControllerHeaderObj.copy()
-        self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()
-        self.dataOut.channelList = self.dataIn.channelList
-        self.dataOut.heightList = self.dataIn.heightList
-        #print self.dataOut.heightList.shape,"spec4"
-        self.dataOut.dtype = numpy.dtype([('real', '<f4'), ('imag', '<f4')])
+        self.dataOut.systemHeaderObj          = self.dataIn.systemHeaderObj.copy()
+        self.dataOut.channelList              = self.dataIn.channelList
+        self.dataOut.heightList               = self.dataIn.heightList
+        self.dataOut.dtype                    = numpy.dtype([('real', '<f4'), ('imag', '<f4')])
 
         self.dataOut.nBaud = self.dataIn.nBaud
         self.dataOut.nCode = self.dataIn.nCode
@@ -64,8 +63,6 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.beam.codeList = self.dataIn.beam.codeList
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
-
-        self.dataOut.step = self.dataIn.step #
 
     def __getFft(self):
         """
@@ -125,7 +122,7 @@ class SpectraProc(ProcessingUnit):
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-            print "hi",self.dataOut.ippSeconds
+
             if shift_fft:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 shift = int(self.dataOut.nFFTPoints/2)
@@ -156,7 +153,7 @@ class SpectraProc(ProcessingUnit):
             if self.buffer is None:
                 self.buffer = numpy.zeros((self.dataIn.nChannels,
                                            nProfiles,
-                                           self.dataIn.heightList.shape[0]),
+                                           self.dataIn.heightList.shape[0]),#update heightlist
                                           dtype='complex')
 
 

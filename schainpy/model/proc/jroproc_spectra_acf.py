@@ -134,33 +134,26 @@ class SpectraAFCProc(ProcessingUnit):
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = True
 
-    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], code=None, nCode=1, nBaud=1):
+    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], code=None, nCode=1, nBaud=1,real= None, imag=None):
 
         self.dataOut.flagNoData = True
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-            #print "hi",self.dataOut.ippSeconds
-
-            spc         = self.dataOut.data_spc
-            data        = numpy.fft.ifft(spc, axis=1)
-            data        = numpy.fft.fftshift(data, axes=(1,))
-            acf         = numpy.abs(data) # Autocorrelacion LLAMAR A ESTE VALOR ACF
-            #acf         = data.imag
-            shape       = acf.shape #nchannels, nprofiles, nsamples
-
-            #import matplotlib.pyplot as plt
-            #plt.plot(acf[0,:,0] / numpy.max(numpy.abs(acf[0,:,0])))
-            #plt.show()
+            spc         =  self.dataOut.data_spc
+            data        =  numpy.fft.ifft(spc, axis=1)
+            data        =  numpy.fft.fftshift(data, axes=(1,))
+            acf         =  numpy.abs(data)     #  Autocorrelacion LLAMAR A ESTE VALOR ACF
+            if real:
+                acf     = data.real
+            if imag:
+                acf     = data.imag
+            shape       =  acf.shape            #  nchannels, nprofiles, nsamples
 
             # Normalizando
             for i in range(shape[0]):
                 for j in range(shape[2]):
                     acf[i,:,j]= acf[i,:,j] / numpy.max(numpy.abs(acf[i,:,j]))
-
-            #import matplotlib.pyplot as plt
-            #plt.plot(acf[0,:,0])
-            #plt.show()
 
             self.dataOut.data_acf = acf
             return True

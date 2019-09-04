@@ -274,7 +274,6 @@ class ACFPlot(Figure):
             folder=None, username=None, password=None,
             xaxis="frequency"):
 
-
         channel0      =  channel
         nSamples      =  nSamples
         resFactor     =  resolutionFactor
@@ -313,12 +312,6 @@ class ACFPlot(Figure):
         shape        =  dataOut.data_acf.shape
         hei_index    =  numpy.arange(shape[2])
         hei_plot     =  numpy.arange(nSamples)*resFactor
-        #print hei_plot
-        #import matplotlib.pyplot as plt
-        #c=z[0,:,0]*15+15
-        #plt.plot(c)
-        #plt.show()
-        #print "HOLA#
 
         if nSampleList    is not  None:
             for nsample in nSampleList:
@@ -335,18 +328,9 @@ class ACFPlot(Figure):
         #escalamiento  -1 a 1 a resolucion (factor de resolucion en altura)* deltaHeight
         min = numpy.min(z[0,:,0])
         max =numpy.max(z[0,:,0])
-
         for i in range(shape[0]):
             for j in range(shape[2]):
                 z[i,:,j]= (((z[i,:,j]-min)/(max-min))*deltaHeight*resFactor + j*deltaHeight)
-                #z[i,:,j]= (z[i,:,j]+1.0)*deltaHeight*dataOut.step/2.0 + j*deltaHeight*dataOut.step
-
-        #print deltaHeight
-        #print resFactor
-        #print numpy.max(z[0,:,0])
-        #import matplotlib.pyplot as plt
-        #plt.plot((z[0,:,0])*deltaHeight)
-        #plt.show()
 
         if xaxis == "frequency":
             x = dataOut.getFreqRange()/1000.
@@ -355,7 +339,8 @@ class ACFPlot(Figure):
             ylabel = "Power (dB)"
 
         elif xaxis == "time":
-            x = dataOut.getAcfRange()
+            delta= dataOut.getAcfRange()[1]-dataOut.getAcfRange()[0]
+            x = dataOut.getAcfRange()+delta/2.0
             zdB = z[channel0,:,hei_plot]
             xlabel = "Time (ms)"
             ylabel = "ACF"
