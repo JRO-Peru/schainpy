@@ -150,10 +150,49 @@ class SpectraAFCProc(ProcessingUnit):
                 acf     = data.imag
             shape       =  acf.shape            #  nchannels, nprofiles, nsamples
 
+            #import matplotlib.pyplot as plt
+            #acf_tmp=acf[0,:,85]
+    	    #plt.plot(acf_tmp)
+            #plt.show()
+
+    	    for i in range(shape[1]):
+                tmp = numpy.argmax(acf[0,:,i])
+                if i>30:
+                    value  = (acf[0,:,i][tmp+3]+acf[0,:,i][tmp+4])/2.0
+                    acf[0,:,i][tmp] = value
+                    acf[0,:,i][tmp-1] = value
+                    acf[0,:,i][tmp+1] = value
+                    acf[0,:,i][tmp-2] = value
+                    acf[0,:,i][tmp+2] = value
+
+                    import scipy as sp
+                    from scipy import signal
+                    acf[0,:,i] =  sp.signal.medfilt(acf[0,:,i],21)
+
+
+
+    	    #print numpy.argmax(acf[0,:,85])
+    	    #import matplotlib.pyplot as plt
+    	    #plt.plot(acf[0,:,85])
+    	    #a= acf[0,:,85]
+    	    #b= acf[0,:,0]
+    	    #print a[200],a[198],a[199], a[201],a[202],a[203]
+    	    #plt.show()
+    	    #import time
+    	    #time.sleep(10)
+
+
             # Normalizando
             for i in range(shape[0]):
                 for j in range(shape[2]):
                     acf[i,:,j]= acf[i,:,j] / numpy.max(numpy.abs(acf[i,:,j]))
+
+	    #import matplotlib.pyplot as plt
+	    #plt.plot(acf[0,:,85])
+	    #plt.show()
+	    #import time
+	    #time.sleep(20)
+
 
             self.dataOut.data_acf = acf
             return True

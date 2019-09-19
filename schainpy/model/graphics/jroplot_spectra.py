@@ -308,6 +308,14 @@ class ACFPlot(Figure):
         y            =  dataOut.getHeiRange()
         deltaHeight  =  dataOut.heightList[1]-dataOut.heightList[0]
         z            =  dataOut.data_acf
+
+	#import matplotlib.pyplot as plt
+	#plt.plot(z[0,:,85])
+	#plt.show()
+	#import time
+	#time.sleep(20)
+
+
         #z           =  numpy.where(numpy.isfinite(z), z, numpy.NAN)
         shape        =  dataOut.data_acf.shape
         hei_index    =  numpy.arange(shape[2])

@@ -6,6 +6,70 @@ from jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Voltage
 from time import time
 
+import math
+
+def rep_seq(x, rep=10):
+    L = len(x) * rep
+    res = numpy.zeros(L, dtype=x.dtype)
+    idx = numpy.arange(len(x)) * rep
+    for i in numpy.arange(rep):
+        res[idx + i] = x
+    return(res)
+
+
+def create_pseudo_random_code(clen=10000, seed=0):
+    """
+    seed is a way of reproducing the random code without
+    having to store all actual codes. the seed can then
+    act as a sort of station_id.
+
+    """
+    numpy.random.seed(seed)
+    phases = numpy.array(
+        numpy.exp(1.0j * 2.0 * math.pi * numpy.random.random(clen)),
+        dtype=numpy.complex64,
+    )
+    return(phases)
+
+
+def periodic_convolution_matrix(envelope, rmin=0, rmax=100):
+    """
+    we imply that the number of measurements is equal to the number of elements
+    in code
+
+    """
+    L = len(envelope)
+    ridx = numpy.arange(rmin, rmax)
+    A = numpy.zeros([L, rmax-rmin], dtype=numpy.complex64)
+    for i in numpy.arange(L):
+        A[i, :] = envelope[(i-ridx) % L]
+    result = {}
+    result['A'] = A
+    result['ridx'] = ridx
+    return(result)
+
+
+B_cache = 0
+r_cache = 0
+B_cached = False
+def create_estimation_matrix(code, rmin=0, rmax=1000, cache=True):
+    global B_cache
+    global r_cache
+    global B_cached
+
+    if not cache or not B_cached:
+        r_cache = periodic_convolution_matrix(
+            envelope=code, rmin=rmin, rmax=rmax,
+        )
+        A = r_cache['A']
+        Ah = numpy.transpose(numpy.conjugate(A))
+        B_cache = numpy.dot(numpy.linalg.inv(numpy.dot(Ah, A)), Ah)
+        r_cache['B'] = B_cache
+        B_cached = True
+        return(r_cache)
+    else:
+        return(r_cache)
+
 class VoltageProc(ProcessingUnit):
 
 
@@ -1257,6 +1321,67 @@ class SSheightProfiles(Operation):
         dataOut.ippSeconds      = ippSeconds
         dataOut.step            = self.step
 
+
+import time
+#################################################
+
+class decoPseudorandom(Operation):
+
+      nProfiles= 0
+      buffer= None
+      isConfig = False
+
+      def setup(self, clen= 10000,seed= 0,Nranges= 1000,oversample=1):
+            #code = create_pseudo_random_code(clen=clen, seed=seed)
+            code= rep_seq(create_pseudo_random_code(clen=clen, seed=seed),rep=oversample)
+            #print ("code_rx", code.shape)
+            #N = int(an_len/clen) # 100
+            B_cache = 0
+            r_cache = 0
+            B_cached = False
+            r = create_estimation_matrix(code=code, cache=True, rmax=Nranges)
+            #print ("code shape", code.shape)
+            #print ("seed",seed)
+            #print ("Code", code[0:10])
+            self.B = r['B']
+
+
+      def run (self,dataOut,length_code= 10000,seed= 0,Nranges= 1000,oversample=1):
+              #print((dataOut.data.shape))
+              if not self.isConfig:
+                    self.setup(clen= length_code,seed= seed,Nranges= Nranges,oversample=oversample)
+                    self.isConfig = True
+
+              dataOut.flagNoData = True
+              data =dataOut.data
+              #print "length_CODE",length_code
+              data_shape  = (data.shape[1])
+              #print "data_shape",data_shape
+              n         = (length_code /data_shape)
+              #print "we need this number of sample",n
+
+              if n>0 and self.buffer is None:
+                  self.buffer = numpy.zeros([1, length_code], dtype=numpy.complex64)
+                  self.buffer[0][0:data_shape] = data[0]
+                  #print "FIRST CREATION",self.buffer.shape
+
+              else:
+                 self.buffer[0][self.nProfiles*data_shape:(self.nProfiles+1)*data_shape]=data[0]
+
+              #print "buffer_shape",(self.buffer.shape)
+              self.nProfiles += 1
+              #print "count",self.nProfiles
+
+              if self.nProfiles== n:
+                      temporal = numpy.dot(self.B, numpy.transpose(self.buffer))
+                      #print temporal.shape
+                      #import time
+                      #time.sleep(40)
+                      dataOut.data=numpy.transpose(temporal)
+
+                      dataOut.flagNoData = False
+                      self.buffer= None
+                      self.nProfiles = 0
 
 # import collections
 # from scipy.stats import mode
