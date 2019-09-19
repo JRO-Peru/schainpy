@@ -297,6 +297,11 @@ class JROData(GenericData):
 
     def getFmax(self):
         PRF = 1. / (self.ippSeconds * self.nCohInt)
+        #print "ippSeconds",self.ippSeconds
+        #print "nCohInt",self.nIncohInt
+        #print PRF
+        #import time
+        #time.sleep(30)
         fmax = PRF
         return fmax
 
@@ -631,7 +636,12 @@ class Spectra(JROData):
         return freqrange
 
     def getAcfRange(self, extrapoints=0):
+        #print "NFFTPoints",self.nFFTPoints
+        #print "IPPFactor", self.ippFactor
         deltafreq = 10. / (  self.getFmax() / (self.nFFTPoints * self.ippFactor)   )
+        #print "deltafreq",deltafreq
+        #import time
+        #time.sleep(30)
         freqrange = deltafreq * \
             (numpy.arange(self.nFFTPoints + extrapoints) -
              self.nFFTPoints / 2.) - deltafreq / 2

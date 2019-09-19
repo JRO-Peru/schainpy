@@ -836,6 +836,7 @@ class ProfileConcat(Operation):
 
     isConfig = False
     buffer = None
+    concat_m =None
 
     def __init__(self, **kwargs):
 
@@ -860,6 +861,7 @@ class ProfileConcat(Operation):
 
     def run(self, dataOut, m):
 
+        self.concat_m= m
         dataOut.flagNoData = True
 
         if not self.isConfig:
@@ -881,6 +883,7 @@ class ProfileConcat(Operation):
                 xf = dataOut.heightList[0] + dataOut.nHeights * deltaHeight * m
                 dataOut.heightList = numpy.arange(dataOut.heightList[0], xf, deltaHeight)
                 dataOut.ippSeconds *= m
+                dataOut.concat_m = int(m)
 
 class ProfileSelector(Operation):
 
@@ -1297,6 +1300,7 @@ class SSheightProfiles(Operation):
         dataOut.flagDataAsBlock = False
         profileIndex            = None
 
+
         if not self.isConfig:
             self.setup(dataOut, step=step , nsamples=nsamples)
             self.isConfig = True
@@ -1311,6 +1315,12 @@ class SSheightProfiles(Operation):
         profileIndex  =  self.nsamples
         deltaHeight   =  dataOut.heightList[1] - dataOut.heightList[0]
         ippSeconds    =  (deltaHeight*1.0e-6)/(0.15)
+        try:
+            if dataOut.concat_m  is not None:
+                ippSeconds= ippSeconds/float(dataOut.concat_m)
+                #print "Profile concat %d"%dataOut.concat_m
+        except:
+            pass
 
         dataOut.data            = self.sshProfiles
         dataOut.flagNoData      = False
