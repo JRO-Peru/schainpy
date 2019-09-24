@@ -181,7 +181,7 @@ class Plot(Operation):
         self.localtime = kwargs.pop('localtime', True)
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
-        self.save_period = kwargs.get('save_period', 2)
+        self.save_period = kwargs.get('save_period', 1)
         self.ftp = kwargs.get('ftp', False)
         self.colormap = kwargs.get('colormap', self.colormap)
         self.colormap_coh = kwargs.get('colormap_coh', 'jet')

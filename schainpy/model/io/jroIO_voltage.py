@@ -57,12 +57,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     """
 
-    ext = ".r"
-
-    optchar = "D"
-    dataOut = None
-
-    def __init__(self):#, **kwargs):
+    def __init__(self):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
 
@@ -81,89 +76,19 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             None
         """
 
-        ProcessingUnit.__init__(self)#, **kwargs)
-
-        self.isConfig = False
-
-        self.datablock = None
-
-        self.utc = 0
-
+        ProcessingUnit.__init__(self)
+        
         self.ext = ".r"
-
         self.optchar = "D"
-
         self.basicHeaderObj = BasicHeader(LOCALTIME)
-
         self.systemHeaderObj = SystemHeader()
-
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.processingHeaderObj = ProcessingHeader()
-
-        self.online = 0
-
-        self.fp = None
-
-        self.idFile = None
-
-        self.dtype = None
-
-        self.fileSizeByHeader = None
-
-        self.filenameList = []
-
-        self.filename = None
-
-        self.fileSize = None
-
-        self.firstHeaderSize = 0
-
-        self.basicHeaderSize = 24
-
-        self.pathList = []
-
-        self.filenameList = []
-
         self.lastUTTime = 0
-
-        self.maxTimeStep = 30
-
-        self.flagNoMoreFiles = 0
-
-        self.set = 0
-
-        self.path = None
-
-        self.profileIndex = 2**32 - 1
-
-        self.delay = 3  # seconds
-
-        self.nTries = 3  # quantity tries
-
-        self.nFiles = 3  # number of files for searching
-
-        self.nReadBlocks = 0
-
-        self.flagIsNewFile = 1
-
-        self.__isFirstTimeOnline = 1
-
-#         self.ippSeconds = 0
-
-        self.flagDiscontinuousBlock = 0
-
-        self.flagIsNewBlock = 0
-
-        self.nTotalBlocks = 0
-
-        self.blocksize = 0
-
-        self.dataOut = self.createObjByDefault()
-
-        self.nTxs = 1
-
-        self.txIndex = 0
+        self.profileIndex = 2**32 - 1        
+        self.dataOut = Voltage()
+        self.selBlocksize = None
+        self.selBlocktime = None
 
     def createObjByDefault(self):
 
@@ -544,6 +469,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.realtime = self.online
 
         return self.dataOut.data
+
 
 @MPDecorator
 class VoltageWriter(JRODataWriter, Operation):

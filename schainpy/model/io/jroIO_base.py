@@ -1,8 +1,8 @@
-'''
+"""
 Created on Jul 2, 2014
 
 @author: roj-idl71
-'''
+"""
 import os
 import sys
 import glob
@@ -12,7 +12,6 @@ import fnmatch
 import inspect
 import time
 import datetime
-import traceback
 import zmq
 
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
@@ -21,6 +20,17 @@ from schainpy.utils import log
 import schainpy.admin
 
 LOCALTIME = True
+DT_DIRECTIVES = {
+    '%Y': 4,
+    '%y': 2,
+    '%m': 2,
+    '%d': 2,
+    '%j': 3,
+    '%H': 2,
+    '%M': 2,
+    '%S': 2,
+    '%f': 6
+}
 
 
 def isNumber(cad):
@@ -362,70 +372,6 @@ def getlastFileFromPath(path, ext):
     return None
 
 
-def checkForRealPath(path, foldercounter, year, doy, set, ext):
-    """
-    Por ser Linux Case Sensitive entonces checkForRealPath encuentra el nombre correcto de un path,
-    Prueba por varias combinaciones de nombres entre mayusculas y minusculas para determinar
-    el path exacto de un determinado file.
-
-    Example    :
-        nombre correcto del file es  .../.../D2009307/P2009307367.ext
-
-        Entonces la funcion prueba con las siguientes combinaciones
-            .../.../y2009307367.ext
-            .../.../Y2009307367.ext
-            .../.../x2009307/y2009307367.ext
-            .../.../x2009307/Y2009307367.ext
-            .../.../X2009307/y2009307367.ext
-            .../.../X2009307/Y2009307367.ext
-        siendo para este caso, la ultima combinacion de letras, identica al file buscado
-
-    Return:
-        Si encuentra la cobinacion adecuada devuelve el path completo y el nombre del file
-        caso contrario devuelve None como path y el la ultima combinacion de nombre en mayusculas
-        para el filename
-    """
-    fullfilename = None
-    find_flag = False
-    filename = None
-
-    prefixDirList = [None, 'd', 'D']
-    if ext.lower() == ".r":  # voltage
-        prefixFileList = ['d', 'D']
-    elif ext.lower() == ".pdata":  # spectra
-        prefixFileList = ['p', 'P']
-    else:
-        return None, filename
-
-    # barrido por las combinaciones posibles
-    for prefixDir in prefixDirList:
-        thispath = path
-        if prefixDir != None:
-            # formo el nombre del directorio xYYYYDDD (x=d o x=D)
-            if foldercounter == 0:
-                thispath = os.path.join(path, "%s%04d%03d" %
-                                        (prefixDir, year, doy))
-            else:
-                thispath = os.path.join(path, "%s%04d%03d_%02d" % (
-                    prefixDir, year, doy, foldercounter))
-        for prefixFile in prefixFileList:  # barrido por las dos combinaciones posibles de "D"
-            # formo el nombre del file xYYYYDDDSSS.ext
-            filename = "%s%04d%03d%03d%s" % (prefixFile, year, doy, set, ext)
-            fullfilename = os.path.join(
-                thispath, filename)  # formo el path completo
-
-            if os.path.exists(fullfilename):  # verifico que exista
-                find_flag = True
-                break
-        if find_flag:
-            break
-
-    if not(find_flag):
-        return None, filename
-
-    return fullfilename, filename
-
-
 def isRadarFolder(folder):
     try:
         year = int(folder[1:5])
@@ -469,78 +415,305 @@ def getDateFromRadarFolder(folder):
     thisDate = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
     return thisDate
 
+def parse_format(s, fmt):
+    
+    for i in range(fmt.count('%')):
+        x = fmt.index('%')
+        d = DT_DIRECTIVES[fmt[x:x+2]]
+        fmt = fmt.replace(fmt[x:x+2], s[x:x+d])
+    return fmt
 
-class JRODataIO:
+class Reader(object):
 
     c = 3E8
-
     isConfig = False
-
-    basicHeaderObj = None
-
-    systemHeaderObj = None
-
-    radarControllerHeaderObj = None
-
-    processingHeaderObj = None
-
     dtype = None
-
     pathList = []
-
     filenameList = []
-
+    datetimeList = []
     filename = None
-
     ext = None
-
     flagIsNewFile = 1
-
     flagDiscontinuousBlock = 0
-
     flagIsNewBlock = 0
-
+    flagNoMoreFiles = 0
     fp = None
-
     firstHeaderSize = 0
-
     basicHeaderSize = 24
-
     versionFile = 1103
-
     fileSize = None
-
-#     ippSeconds = None
-
     fileSizeByHeader = None
-
-    fileIndex = None
-
+    fileIndex = -1
     profileIndex = None
-
-    blockIndex = None
-
-    nTotalBlocks = None
-
+    blockIndex = 0
+    nTotalBlocks = 0
     maxTimeStep = 30
-
     lastUTTime = None
-
     datablock = None
-
     dataOut = None
-
-    blocksize = None
-
     getByBlock = False
-
-    def __init__(self):
-
-        raise NotImplementedError
+    path = None
+    startDate = None
+    endDate = None
+    startTime = datetime.time(0, 0, 0)
+    endTime = datetime.time(23, 59, 59)
+    set = None
+    expLabel = ""
+    online = False
+    delay = 60
+    nTries = 3  # quantity tries
+    nFiles = 3  # number of files for searching
+    walk = True
+    getblock = False
+    nTxs = 1
+    realtime = False
+    blocksize = 0
+    blocktime = None
+    warnings = True
+    verbose = True
+    server = None
+    format = None
+    oneDDict = None
+    twoDDict = None
+    independentParam = None
+    filefmt = None
+    folderfmt = None
 
     def run(self):
 
+        raise NotImplementedError    
+
+    def getAllowedArgs(self):
+        if hasattr(self, '__attrs__'):
+            return self.__attrs__
+        else:
+            return inspect.getargspec(self.run).args
+
+    def set_kwargs(self, **kwargs):
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
+    def find_folders(self, path, startDate, endDate, folderfmt, last=False):
+
+        folders = [x for f in path.split(',') 
+                   for x in os.listdir(f) if os.path.isdir(os.path.join(f, x))]
+        folders.sort()
+
+        if last:
+            folders = [folders[-1]]
+
+        for folder in folders:            
+            try:                
+                dt = datetime.datetime.strptime(parse_format(folder, folderfmt), folderfmt).date()                
+                if dt >= startDate and dt <= endDate:
+                    yield os.path.join(path, folder)
+                else:
+                    log.log('Skiping folder {}'.format(folder), self.name)
+            except Exception as e:
+                log.log('Skiping folder {}'.format(folder), self.name)
+                continue
+        return
+    
+    def find_files(self, folders, ext, filefmt, startDate=None, endDate=None, 
+                   expLabel='', last=False):
+        
+        for path in folders:            
+            files = glob.glob1(path, '*{}'.format(ext))
+            files.sort()
+            if last:
+                if files:                    
+                    fo = files[-1]
+                    try:                
+                        dt = datetime.datetime.strptime(parse_format(fo, filefmt), filefmt).date()                        
+                        yield os.path.join(path, expLabel, fo)                            
+                    except Exception as e:                        
+                        pass
+                    return None
+                else:
+                    return None
+
+            for fo in files:
+                try:                
+                    dt = datetime.datetime.strptime(parse_format(fo, filefmt), filefmt).date()                
+                    if dt >= startDate and dt <= endDate:
+                        yield os.path.join(path, expLabel, fo)
+                    else:
+                        log.log('Skiping file {}'.format(fo), self.name)
+                except Exception as e:
+                    log.log('Skiping file {}'.format(fo), self.name)
+                    continue        
+
+    def searchFilesOffLine(self, path, startDate, endDate,
+                           expLabel, ext, walk, 
+                           filefmt, folderfmt):
+        """Search files in offline mode for the given arguments
+
+        Return:
+            Generator of files
+        """
+
+        if walk:
+            folders = self.find_folders(
+                path, startDate, endDate, folderfmt)
+        else:
+            folders = path.split(',')
+        
+        return self.find_files(
+            folders, ext, filefmt, startDate, endDate, expLabel)        
+
+    def searchFilesOnLine(self, path, startDate, endDate,
+                          expLabel, ext, walk, 
+                          filefmt, folderfmt):
+        """Search for the last file of the last folder
+
+        Arguments:
+            path        :    carpeta donde estan contenidos los files que contiene data
+            expLabel    :    Nombre del subexperimento (subfolder)
+            ext         :    extension de los files
+            walk        :    Si es habilitado no realiza busquedas dentro de los ubdirectorios (doypath)
+
+        Return:
+            generator with the full path of last filename
+        """
+     
+        if walk:
+            folders = self.find_folders(
+                path, startDate, endDate, folderfmt, last=True)
+        else:
+            folders = path.split(',')
+        
+        return self.find_files(
+            folders, ext, filefmt, startDate, endDate, expLabel, last=True)
+
+    def setNextFile(self):
+        """Set the next file to be readed open it and parse de file header"""
+
+        if self.fp != None:
+            self.fp.close()            
+
+        if self.online:
+            newFile = self.setNextFileOnline()
+        else:
+            newFile = self.setNextFileOffline()
+        
+        if not(newFile):
+            if self.online:
+                raise schainpy.admin.SchainError('Time to wait for new files reach')
+            else:
+                if self.fileIndex == -1:
+                    raise schainpy.admin.SchainWarning('No files found in the given path')
+                else:
+                    raise schainpy.admin.SchainWarning('No more files to read')
+        
+        if not(self.verifyFile(self.filename)):
+            self.setNextFile()
+        
+        log.log('Opening file: %s' % self.filename, self.name)
+
+        self.readFirstHeader()
+        self.nReadBlocks = 0
+
+    def setNextFileOnline(self):
+        """Check for the next file to be readed in online mode.
+
+        Set:
+            self.filename
+            self.fp
+            self.filesize
+        
+        Return:
+            boolean
+
+        """
+        nextFile = True
+        nextDay = False
+
+        for nFiles in range(self.nFiles+1):            
+            for nTries in range(self.nTries):
+                fullfilename, filename = self.checkForRealPath(nextFile, nextDay)
+                if fullfilename is not None:
+                    break
+                log.warning(
+                    "Waiting %0.2f sec for the next file: \"%s\" , try %02d ..." % (self.delay, filename, nTries + 1),
+                    self.name)
+                time.sleep(self.delay)
+                nextFile = False
+                continue                
+            
+            if fullfilename:
+                break
+            
+            self.nTries = 1
+            nextFile = True            
+
+            if nFiles == (self.nFiles - 1):
+                log.log('Trying with next day...', self.name)
+                nextDay = True              
+
+        if fullfilename:
+            self.fileSize = os.path.getsize(fullfilename)
+            self.filename = fullfilename
+            self.flagIsNewFile = 1
+            if self.fp != None:
+                self.fp.close()
+            self.fp = open(fullfilename, 'rb')
+            self.flagNoMoreFiles = 0
+            self.fileIndex += 1
+            return 1
+        else:            
+            return 0
+    
+    def setNextFileOffline(self):
+        """Open the next file to be readed in offline mode"""
+                
+        try:
+            filename = next(self.filenameList)
+            self.fileIndex +=1
+        except StopIteration:
+            self.flagNoMoreFiles = 1
+            return 0        
+
+        self.filename = filename
+        self.fileSize = os.path.getsize(filename)
+        self.fp = open(filename, 'rb')
+        self.flagIsNewFile = 1
+
+        return 1
+    
+    def verifyFile(self, filename):
+        """Check for a valid file
+        
+        Arguments:
+            filename -- full path filename
+        
+        Return:
+            boolean
+        """
+
+        return True
+
+    def checkForRealPath(self, nextFile, nextDay):
+        """Check if the next file to be readed exists"""
+
         raise NotImplementedError
+    
+    def readFirstHeader(self):
+        """Parse the file header"""
+
+        pass
+
+class JRODataReader(Reader):
+
+    utc = 0
+    nReadBlocks = 0
+    foldercounter = 0
+    firstHeaderSize = 0
+    basicHeaderSize = 24
+    __isFirstTimeOnline = 1
+    __printInfo = True
+    filefmt = "*%Y%j***"
+    folderfmt = "*%Y%j"
 
     def getDtypeWidth(self):
 
@@ -549,364 +722,60 @@ class JRODataIO:
 
         return dtype_width
 
-    def getAllowedArgs(self):
-        if hasattr(self, '__attrs__'):
-            return self.__attrs__
-        else:
-            return inspect.getargspec(self.run).args
+    def checkForRealPath(self, nextFile, nextDay):
+        """Check if the next file to be readed exists.
 
+        Example    :
+            nombre correcto del file es  .../.../D2009307/P2009307367.ext
 
-class JRODataReader(JRODataIO):
+            Entonces la funcion prueba con las siguientes combinaciones
+                .../.../y2009307367.ext
+                .../.../Y2009307367.ext
+                .../.../x2009307/y2009307367.ext
+                .../.../x2009307/Y2009307367.ext
+                .../.../X2009307/y2009307367.ext
+                .../.../X2009307/Y2009307367.ext
+            siendo para este caso, la ultima combinacion de letras, identica al file buscado
 
-    online = 0
-
-    realtime = 0
-
-    nReadBlocks = 0
-
-    delay = 10  # number of seconds waiting a new file
-
-    nTries = 3  # quantity tries
-
-    nFiles = 3  # number of files for searching
-
-    path = None
-
-    foldercounter = 0
-
-    flagNoMoreFiles = 0
-
-    datetimeList = []
-
-    __isFirstTimeOnline = 1
-
-    __printInfo = True
-
-    profileIndex = None
-
-    nTxs = 1
-
-    txIndex = None
-
-    # Added--------------------
-
-    selBlocksize = None
-
-    selBlocktime = None
-
-    def __init__(self):
+        Return:
+            str -- fullpath of the file
         """
-        This class is used to find data files
-
-        Example:
-            reader = JRODataReader()
-            fileList = reader.findDataFiles()
-
-        """
-        pass
-
-    def createObjByDefault(self):
-        """
-
-        """
-        raise NotImplementedError
-
-    def getBlockDimension(self):
-
-        raise NotImplementedError
-
-    def searchFilesOffLine(self,
-                           path,
-                           startDate=None,
-                           endDate=None,
-                           startTime=datetime.time(0, 0, 0),
-                           endTime=datetime.time(23, 59, 59),
-                           set=None,
-                           expLabel='',
-                           ext='.r',
-                           cursor=None,
-                           skip=None,
-                           walk=True):
-
-        self.filenameList = []
-        self.datetimeList = []
-
-        pathList = []
-
-        dateList, pathList = self.findDatafiles(
-            path, startDate, endDate, expLabel, ext, walk, include_path=True)
-
-        if dateList == []:
-            return [], []
-
-        if len(dateList) > 1:
-            print("[Reading] Data found for date range [%s - %s]: total days = %d" % (startDate, endDate, len(dateList)))
-        else:
-            print("[Reading] Data found for date range [%s - %s]: date = %s" % (startDate, endDate, dateList[0]))
-
-        filenameList = []
-        datetimeList = []
         
-        for thisPath in pathList:
-
-            fileList = glob.glob1(thisPath, "*%s" % ext)
-            fileList.sort()
-
-            for file in fileList:
-
-                filename = os.path.join(thisPath, file)
-
-                if not isFileInDateRange(filename, startDate, endDate):
-                    continue
-
-                thisDatetime = isFileInTimeRange(
-                    filename, startDate, endDate, startTime, endTime)
-
-                if not(thisDatetime):
-                    continue
-
-                filenameList.append(filename)
-                datetimeList.append(thisDatetime)
-
-        if cursor is not None and skip is not None:                            
-            filenameList = filenameList[cursor * skip:cursor * skip + skip]
-            datetimeList = datetimeList[cursor * skip:cursor * skip + skip]
-
-        if not(filenameList):
-            print("[Reading] Time range selected invalid [%s - %s]: No *%s files in %s)" % (startTime, endTime, ext, path))
-            return [], []
-
-        print("[Reading] %d file(s) was(were) found in time range: %s - %s" % (len(filenameList), startTime, endTime))        
-
-        # for i in range(len(filenameList)):
-        #     print "[Reading] %s -> [%s]" %(filenameList[i], datetimeList[i].ctime())
-
-        self.filenameList = filenameList
-        self.datetimeList = datetimeList
-
-        return pathList, filenameList
-
-    def __searchFilesOnLine(self, path, expLabel="", ext=None, walk=True, set=None):
-        """
-        Busca el ultimo archivo de la ultima carpeta (determinada o no por startDateTime) y
-        devuelve el archivo encontrado ademas de otros datos.
-
-        Input:
-            path           :    carpeta donde estan contenidos los files que contiene data
-
-            expLabel        :     Nombre del subexperimento (subfolder)
-
-            ext              :    extension de los files
-
-            walk        :    Si es habilitado no realiza busquedas dentro de los ubdirectorios (doypath)
-
-        Return:
-            directory   :    eL directorio donde esta el file encontrado
-            filename    :    el ultimo file de una determinada carpeta
-            year        :    el anho
-            doy         :    el numero de dia del anho
-            set         :    el set del archivo
-
-
-        """
-        if not os.path.isdir(path):
-            return None, None, None, None, None, None
-
-        dirList = []
-
-        if not walk:
-            fullpath = path
-            foldercounter = 0
-        else:
-            # Filtra solo los directorios
-            for thisPath in os.listdir(path):
-                if not os.path.isdir(os.path.join(path, thisPath)):
-                    continue
-                if not isRadarFolder(thisPath):
-                    continue
-
-                dirList.append(thisPath)
-
-            if not(dirList):
-                return None, None, None, None, None, None
-
-            dirList = sorted(dirList, key=str.lower)
-
-            doypath = dirList[-1]
-            foldercounter = int(doypath.split('_')[1]) if len(
-                doypath.split('_')) > 1 else 0
-            fullpath = os.path.join(path, doypath, expLabel)
-
-        print("[Reading] %s folder was found: " % (fullpath))
-
-        if set == None:
-            filename = getlastFileFromPath(fullpath, ext)
-        else:
-            filename = getFileFromSet(fullpath, ext, set)
-
-        if not(filename):
-            return None, None, None, None, None, None
-
-        print("[Reading] %s file was found" % (filename))
-
-        if not(self.__verifyFile(os.path.join(fullpath, filename))):
-            return None, None, None, None, None, None
-
-        year = int(filename[1:5])
-        doy = int(filename[5:8])
-        set = int(filename[8:11])
-
-        return fullpath, foldercounter, filename, year, doy, set
-
-    def __setNextFileOffline(self):
-
-        idFile = self.fileIndex
-
-        while (True):
-            idFile += 1
-            if not(idFile < len(self.filenameList)):
-                self.flagNoMoreFiles = 1
-                return 0
-
-            filename = self.filenameList[idFile]
-
-            if not(self.__verifyFile(filename)):
-                continue
-
-            fileSize = os.path.getsize(filename)
-            fp = open(filename, 'rb')
-            break
-
-        self.flagIsNewFile = 1
-        self.fileIndex = idFile
-        self.filename = filename
-        self.fileSize = fileSize
-        self.fp = fp
-
-#         print "[Reading] Setting the file: %s"%self.filename
-
-        return 1
-
-    def __setNextFileOnline(self):
-        """
-        Busca el siguiente file que tenga suficiente data para ser leida, dentro de un folder especifico, si
-        no encuentra un file valido espera un tiempo determinado y luego busca en los posibles n files
-        siguientes.
-
-        Affected:
-            self.flagIsNewFile
-            self.filename
-            self.fileSize
-            self.fp
-            self.set
-            self.flagNoMoreFiles
-
-        Return:
-            0    : si luego de una busqueda del siguiente file valido este no pudo ser encontrado
-            1    : si el file fue abierto con exito y esta listo a ser leido
-
-        Excepciones:
-            Si un determinado file no puede ser abierto
-        """
-        nFiles = 0
-        fileOk_flag = False
-        firstTime_flag = True
-
-        self.set += 1
-
-        if self.set > 999:
+        
+        if nextFile:
+            self.set += 1
+        if nextDay:
             self.set = 0
-            self.foldercounter += 1
-
-        # busca el 1er file disponible
-        fullfilename, filename = checkForRealPath(
-            self.path, self.foldercounter, self.year, self.doy, self.set, self.ext)
-        if fullfilename:
-            if self.__verifyFile(fullfilename, False):
-                fileOk_flag = True
-
-        # si no encuentra un file entonces espera y vuelve a buscar
-        if not(fileOk_flag):
-            # busco en los siguientes self.nFiles+1 files posibles
-            for nFiles in range(self.nFiles + 1):
-
-                if firstTime_flag:  # si es la 1era vez entonces hace el for self.nTries veces
-                    tries = self.nTries
+            self.doy += 1
+        foldercounter = 0
+        prefixDirList = [None, 'd', 'D']
+        if self.ext.lower() == ".r":  # voltage
+            prefixFileList = ['d', 'D']
+        elif self.ext.lower() == ".pdata":  # spectra
+            prefixFileList = ['p', 'P']
+        
+        # barrido por las combinaciones posibles
+        for prefixDir in prefixDirList:
+            thispath = self.path
+            if prefixDir != None:
+                # formo el nombre del directorio xYYYYDDD (x=d o x=D)
+                if foldercounter == 0:
+                    thispath = os.path.join(self.path, "%s%04d%03d" %
+                                            (prefixDir, self.year, self.doy))
                 else:
-                    tries = 1  # si no es la 1era vez entonces solo lo hace una vez
+                    thispath = os.path.join(self.path, "%s%04d%03d_%02d" % (
+                        prefixDir, self.year, self.doy, foldercounter))
+            for prefixFile in prefixFileList:  # barrido por las dos combinaciones posibles de "D"
+                # formo el nombre del file xYYYYDDDSSS.ext
+                filename = "%s%04d%03d%03d%s" % (prefixFile, self.year, self.doy, self.set, self.ext)
+                fullfilename = os.path.join(
+                    thispath, filename)
 
-                for nTries in range(tries):
-                    if firstTime_flag:
-                        log.warning(
-                            "Waiting %0.2f sec for the next file: \"%s\" , try %03d ..." % (self.delay, filename, nTries + 1),
-                            self.name)
-                        time.sleep(self.delay)
-                    else:
-                        log.warning(
-                            "Searching the next \"%s%04d%03d%03d%s\" file ..." % (self.optchar, self.year, self.doy, self.set, self.ext),
-                            self.name)
-
-                    fullfilename, filename = checkForRealPath(
-                        self.path, self.foldercounter, self.year, self.doy, self.set, self.ext)
-                    if fullfilename:
-                        if self.__verifyFile(fullfilename):
-                            fileOk_flag = True
-                            break
-
-                if fileOk_flag:
-                    break
-
-                firstTime_flag = False
-
-                log.warning(
-                    'Skipping the file {} due to this file doesn\'t exist'.format(filename),
-                    self.name)
-                self.set += 1
-
-                # si no encuentro el file buscado cambio de carpeta y busco en la siguiente carpeta
-                if nFiles == (self.nFiles - 1):
-                    self.set = 0
-                    self.doy += 1
-                    self.foldercounter = 0
-
-        if fileOk_flag:
-            self.fileSize = os.path.getsize(fullfilename)
-            self.filename = fullfilename
-            self.flagIsNewFile = 1
-            if self.fp != None:
-                self.fp.close()
-            self.fp = open(fullfilename, 'rb')
-            self.flagNoMoreFiles = 0
-        else:
-            raise schainpy.admin.SchainError('Time for waiting new files reach')
-            self.fileSize = 0
-            self.filename = None
-            self.flagIsNewFile = 0
-            self.fp = None
-            self.flagNoMoreFiles = 1
-
-        return fileOk_flag
-
-    def setNextFile(self):
-        if self.fp != None:
-            self.fp.close()
-
-        if self.online:
-            newFile = self.__setNextFileOnline()
-        else:
-            newFile = self.__setNextFileOffline()
-
-        if not(newFile):
-            raise schainpy.admin.SchainWarning('No more files to read')
+                if os.path.exists(fullfilename):
+                    return fullfilename, filename
             
-
-        if self.verbose:
-            print('[Reading] Setting the file: %s' % self.filename)
-
-        self.__readFirstHeader()
-        self.nReadBlocks = 0
-        return 1
-
+        return None, filename    
+    
     def __waitNewBlock(self):
         """
         Return 1 si se encontro un nuevo bloque de datos, 0 de otra forma.
@@ -972,48 +841,12 @@ class JRODataReader(JRODataIO):
 
         return 0
 
-    def __jumpToLastBlock(self):
-
-        if not(self.__isFirstTimeOnline):
-            return
-
-        csize = self.fileSize - self.fp.tell()
-        blocksize = self.processingHeaderObj.blockSize
-
-        # salta el primer bloque de datos
-        if csize > self.processingHeaderObj.blockSize:
-            self.fp.seek(self.fp.tell() + blocksize)
-        else:
-            return
-
-        csize = self.fileSize - self.fp.tell()
-        neededsize = self.processingHeaderObj.blockSize + self.basicHeaderSize
-        while True:
-
-            if self.fp.tell() < self.fileSize:
-                self.fp.seek(self.fp.tell() + neededsize)
-            else:
-                self.fp.seek(self.fp.tell() - neededsize)
-                break
-
-#        csize = self.fileSize - self.fp.tell()
-#        neededsize = self.processingHeaderObj.blockSize + self.basicHeaderSize
-#        factor = int(csize/neededsize)
-#        if factor > 0:
-#            self.fp.seek(self.fp.tell() + factor*neededsize)
-
-        self.flagIsNewFile = 0
-        self.__isFirstTimeOnline = 0
-
     def __setNewBlock(self):
-        # if self.server is None:
-        if self.fp == None:
-            return 0
 
-#         if self.online:
-#             self.__jumpToLastBlock()
+        if self.fp == None:
+            return 0 
         
-        if self.flagIsNewFile:
+        if self.flagIsNewFile:            
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
 
@@ -1023,21 +856,19 @@ class JRODataReader(JRODataIO):
                 return 0
             else:
                 return 1
-        # if self.server is None:
+
         currentSize = self.fileSize - self.fp.tell()
         neededSize = self.processingHeaderObj.blockSize + self.basicHeaderSize
+        
         if (currentSize >= neededSize):
             self.basicHeaderObj.read(self.fp)
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
-        # else:
-        #     self.basicHeaderObj.read(self.zHeader)
-        #     self.lastUTTime = self.basicHeaderObj.utc
-        #     return 1
+       
         if self.__waitNewBlock():
             self.lastUTTime = self.basicHeaderObj.utc
             return 1
-        # if self.server is None:
+
         if not(self.setNextFile()):
             return 0
 
@@ -1053,10 +884,8 @@ class JRODataReader(JRODataIO):
 
     def readNextBlock(self):
 
-        # Skip block out of startTime and endTime
         while True:
-            if not(self.__setNewBlock()):
-                raise schainpy.admin.SchainWarning('No more files to read')                
+            self.__setNewBlock()
 
             if not(self.readBlock()):
                 return 0
@@ -1076,13 +905,12 @@ class JRODataReader(JRODataIO):
                                                        self.dataOut.datatime.ctime()))
         return 1
 
-    def __readFirstHeader(self):
+    def readFirstHeader(self):
 
         self.basicHeaderObj.read(self.fp)
         self.systemHeaderObj.read(self.fp)
         self.radarControllerHeaderObj.read(self.fp)
         self.processingHeaderObj.read(self.fp)
-
         self.firstHeaderSize = self.basicHeaderObj.size
 
         datatype = int(numpy.log2((self.processingHeaderObj.processFlags &
@@ -1111,7 +939,7 @@ class JRODataReader(JRODataIO):
         #        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
 
-    def __verifyFile(self, filename, msgFlag=True):
+    def verifyFile(self, filename, msgFlag=True):
 
         msg = None
 
@@ -1268,48 +1096,17 @@ class JRODataReader(JRODataIO):
 
         return dateList
 
-    def setup(self,
-              path=None,
-              startDate=None,
-              endDate=None,
-              startTime=datetime.time(0, 0, 0),
-              endTime=datetime.time(23, 59, 59),
-              set=None,
-              expLabel="",
-              ext=None,
-              online=False,
-              delay=60,
-              walk=True,
-              getblock=False,
-              nTxs=1,
-              realtime=False,
-              blocksize=None,
-              blocktime=None,
-              skip=None,
-              cursor=None,
-              warnings=True,
-              verbose=True,
-              server=None,
-              format=None,
-              oneDDict=None,
-              twoDDict=None,
-              independentParam=None):
+    def setup(self, **kwargs):
         
-        self.online = online
-        self.realtime = realtime
-        self.delay = delay
-        self.getByBlock = getblock
-        self.nTxs = nTxs
-        self.startTime = startTime
-        self.endTime = endTime
-        self.endDate = endDate
-        self.startDate = startDate
-
-        if server is not None:
-            if 'tcp://' in server:
+        self.set_kwargs(**kwargs)
+        if not self.ext.startswith('.'):
+            self.ext = '.{}'.format(self.ext)
+        
+        if self.server is not None:
+            if 'tcp://' in self.server:
                 address = server
             else:
-                address = 'ipc:///tmp/%s' % server
+                address = 'ipc:///tmp/%s' % self.server
             self.server = address
             self.context = zmq.Context()
             self.receiver = self.context.socket(zmq.PULL)
@@ -1318,84 +1115,46 @@ class JRODataReader(JRODataIO):
             print('[Starting] ReceiverData from {}'.format(self.server))
         else:
             self.server = None
-            if path == None:
+            if self.path == None:
                 raise ValueError("[Reading] The path is not valid")
 
-            if ext == None:
-                ext = self.ext
-
-            if online:
-                print("[Reading] Searching files in online mode...")
+            if self.online:
+                log.log("[Reading] Searching files in online mode...", self.name)
 
                 for nTries in range(self.nTries):
-                    fullpath, foldercounter, file, year, doy, set = self.__searchFilesOnLine(
-                        path=path, expLabel=expLabel, ext=ext, walk=walk, set=set)
+                    fullpath = self.searchFilesOnLine(self.path, self.startDate,
+                        self.endDate, self.expLabel, self.ext, self.walk, 
+                        self.filefmt, self.folderfmt)
 
+                    try:
+                        fullpath = next(fullpath)
+                    except:
+                        fullpath = None
+                    
                     if fullpath:
                         break
 
-                    print('[Reading] Waiting %0.2f sec for an valid file in %s: try %02d ...' % (self.delay, path, nTries + 1))
+                    log.warning(
+                        'Waiting {} sec for a valid file in {}: try {} ...'.format(
+                            self.delay, self.path, nTries + 1), 
+                        self.name)
                     time.sleep(self.delay)
 
                 if not(fullpath):
-                    raise schainpy.admin.SchainError('There isn\'t any valid file in {}'.format(path))
-                    return
+                    raise schainpy.admin.SchainError(
+                        'There isn\'t any valid file in {}'.format(self.path))                    
 
-                self.year = year
-                self.doy = doy
-                self.set = set - 1
-                self.path = path
-                self.foldercounter = foldercounter
-                last_set = None
+                pathname, filename = os.path.split(fullpath)
+                self.year = int(filename[1:5])
+                self.doy = int(filename[5:8])
+                self.set = int(filename[8:11]) - 1                
             else:
-                print("[Reading] Searching files in offline mode ...")
-                pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
-                                                                 startTime=startTime, endTime=endTime,
-                                                                 set=set, expLabel=expLabel, ext=ext,
-                                                                 walk=walk, cursor=cursor,
-                                                                 skip=skip)
-
-                if not(pathList):
-                    self.fileIndex = -1
-                    self.pathList = []
-                    self.filenameList = []
-                    return
-
-                self.fileIndex = -1
-                self.pathList = pathList
-                self.filenameList = filenameList
-                file_name = os.path.basename(filenameList[-1])
-                basename, ext = os.path.splitext(file_name)
-                last_set = int(basename[-3:])
-
+                log.log("Searching files in {}".format(self.path), self.name)
+                self.filenameList = self.searchFilesOffLine(self.path, self.startDate, 
+                    self.endDate, self.expLabel, self.ext, self.walk, self.filefmt, self.folderfmt)
             
-            ext = ext.lower()
-            self.ext = ext
-            
-            # Added-----------------
-            self.selBlocksize = blocksize
-            self.selBlocktime = blocktime
+            self.setNextFile()
 
-            # Verbose-----------
-            self.verbose = verbose
-            self.warnings = warnings
-
-            if not(self.setNextFile()):
-                if (startDate != None) and (endDate != None):
-                    print("[Reading] No files in range: %s - %s" % (datetime.datetime.combine(startDate, startTime).ctime(), datetime.datetime.combine(endDate, endTime).ctime()))
-                elif startDate != None:
-                    print("[Reading] No files in range: %s" % (datetime.datetime.combine(startDate, startTime).ctime()))
-                else:
-                    print("[Reading] No files")
-
-                    self.fileIndex = -1
-                    self.pathList = []
-                    self.filenameList = []
-                    return
-
-            if last_set != None:
-                self.dataOut.last_block = last_set * \
-                    self.processingHeaderObj.dataBlocksPerFile + self.basicHeaderObj.dataBlock
         return
 
     def getBasicHeader(self):
@@ -1415,7 +1174,7 @@ class JRODataReader(JRODataIO):
 
         self.dataOut.ippSeconds = self.radarControllerHeaderObj.ippSeconds / self.nTxs
 
-#         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
+ #         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock*self.nTxs
 
     def getFirstHeader(self):
 
@@ -1448,10 +1207,10 @@ class JRODataReader(JRODataIO):
     def printNumberOfBlock(self):
         'SPAM!'
 
-#         if self.flagIsNewBlock:
-#             print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
-#                                                       self.processingHeaderObj.dataBlocksPerFile,
-#                                                       self.dataOut.datatime.ctime())
+ #         if self.flagIsNewBlock:
+ #             print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
+ #                                                       self.processingHeaderObj.dataBlocksPerFile,
+ #                                                       self.dataOut.datatime.ctime())
 
     def printInfo(self):
 
@@ -1465,85 +1224,57 @@ class JRODataReader(JRODataIO):
 
         self.__printInfo = False
 
-    def run(self,
-            path=None,
-            startDate=None,
-            endDate=None,
-            startTime=datetime.time(0, 0, 0),
-            endTime=datetime.time(23, 59, 59),
-            set=None,
-            expLabel="",
-            ext=None,
-            online=False,
-            delay=60,
-            walk=True,
-            getblock=False,
-            nTxs=1,
-            realtime=False,
-            blocksize=None,
-            blocktime=None,
-            skip=None,
-            cursor=None,
-            warnings=True,
-            server=None,
-            verbose=True,
-            format=None,
-            oneDDict=None,
-            twoDDict=None,
-            independentParam=None, **kwargs):
+    def run(self, **kwargs):
+        """
+
+        Arguments:
+            path        : 
+            startDate   : 
+            endDate     :
+            startTime   :
+            endTime     :
+            set         :
+            expLabel    :
+            ext         :
+            online      :
+            delay       :
+            walk        :
+            getblock    :
+            nTxs        :
+            realtime    :
+            blocksize   :
+            blocktime   :
+            skip        :
+            cursor      :
+            warnings    :
+            server      :
+            verbose     :
+            format      :
+            oneDDict    :
+            twoDDict    :
+            independentParam    :
+        """
 
         if not(self.isConfig):
-            self.setup(path=path,
-                       startDate=startDate,
-                       endDate=endDate,
-                       startTime=startTime,
-                       endTime=endTime,
-                       set=set,
-                       expLabel=expLabel,
-                       ext=ext,
-                       online=online,
-                       delay=delay,
-                       walk=walk,
-                       getblock=getblock,
-                       nTxs=nTxs,
-                       realtime=realtime,
-                       blocksize=blocksize,
-                       blocktime=blocktime,
-                       skip=skip,
-                       cursor=cursor,
-                       warnings=warnings,
-                       server=server,
-                       verbose=verbose,
-                       format=format,
-                       oneDDict=oneDDict,
-                       twoDDict=twoDDict,
-                       independentParam=independentParam)
+            self.setup(**kwargs)
             self.isConfig = True
-        if server is None:
+        if self.server is None:
             self.getData()
         else:
             self.getFromServer()
 
 
-class JRODataWriter(JRODataIO):
+class JRODataWriter(Reader):
 
     """
     Esta clase permite escribir datos a archivos procesados (.r o ,pdata). La escritura
     de los datos siempre se realiza por bloques.
     """
 
-    blockIndex = 0
-
-    path = None
-
     setFile = None
-
     profilesPerBlock = None
-
     blocksPerFile = None
-
     nWriteBlocks = 0
-
     fileDate = None
 
     def __init__(self, dataOut=None):
@@ -1561,6 +1292,13 @@ class JRODataWriter(JRODataIO):
     def putData(self):
         raise NotImplementedError
 
+    def getDtypeWidth(self):
+
+        dtype_index = get_dtype_index(self.dtype)
+        dtype_width = get_dtype_width(dtype_index)
+
+        return dtype_width
+    
     def getProcessFlags(self):
 
         processFlags = 0
@@ -1688,8 +1426,7 @@ class JRODataWriter(JRODataIO):
         return 1
 
     def setNextFile(self):
-        """
-        Determina el siguiente file que sera escrito
+        """Determina el siguiente file que sera escrito
 
         Affected:
             self.filename
@@ -1707,6 +1444,9 @@ class JRODataWriter(JRODataIO):
 
         if self.fp != None:
             self.fp.close()
+
+        if not os.path.exists(path):
+            os.mkdir(path)
 
         timeTuple = time.localtime(self.dataOut.utctime)
         subfolder = 'd%4.4d%3.3d' % (timeTuple.tm_year, timeTuple.tm_yday)
@@ -1748,15 +1488,12 @@ class JRODataWriter(JRODataIO):
         fp = open(filename, 'wb')
 
         self.blockIndex = 0
-
-        # guardando atributos
         self.filename = filename
         self.subfolder = subfolder
         self.fp = fp
         self.setFile = setFile
         self.flagIsNewFile = 1
         self.fileDate = self.dataOut.datatime.date()
-
         self.setFirstHeader()
 
         print('[Writing] Opening file: %s' % self.filename)
@@ -1799,12 +1536,9 @@ class JRODataWriter(JRODataIO):
             self.setFile = set - 1        
 
         self.blocksPerFile = blocksPerFile
-
         self.profilesPerBlock = profilesPerBlock
-
         self.dataOut = dataOut
         self.fileDate = self.dataOut.datatime.date()
-        # By default
         self.dtype = self.dataOut.dtype
 
         if datatype is not None:
