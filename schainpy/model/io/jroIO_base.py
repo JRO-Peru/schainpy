@@ -478,6 +478,8 @@ class Reader(object):
     independentParam = None
     filefmt = None
     folderfmt = None
+    open_file = open
+    open_mode = 'rb'
 
     def run(self):
 
@@ -529,9 +531,9 @@ class Reader(object):
                         yield os.path.join(path, expLabel, fo)                            
                     except Exception as e:                        
                         pass
-                    return None
+                    return
                 else:
-                    return None
+                    return
 
             for fo in files:
                 try:                
@@ -657,7 +659,7 @@ class Reader(object):
             self.flagIsNewFile = 1
             if self.fp != None:
                 self.fp.close()
-            self.fp = open(fullfilename, 'rb')
+            self.fp = self.open_file(fullfilename, self.open_mode)
             self.flagNoMoreFiles = 0
             self.fileIndex += 1
             return 1
@@ -676,7 +678,7 @@ class Reader(object):
 
         self.filename = filename
         self.fileSize = os.path.getsize(filename)
-        self.fp = open(filename, 'rb')
+        self.fp = self.open_file(filename, self.open_mode)
         self.flagIsNewFile = 1
 
         return 1

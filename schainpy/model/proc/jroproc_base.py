@@ -18,7 +18,10 @@ import zmq
 import time
 import pickle
 import traceback
-from queue import Queue
+try:
+    from queue import Queue
+except:
+    from Queue import Queue
 from threading import Thread
 from multiprocessing import Process
 
