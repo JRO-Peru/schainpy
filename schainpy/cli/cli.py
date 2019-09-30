@@ -14,12 +14,17 @@ from importlib import import_module
 from pydoc import locate
 from fuzzywuzzy import process
 from schainpy.cli import templates
+import inspect
+try:
+    from queue import Queue
+except:
+    from Queue import Queue
 sys.stdout = save_stdout
 
 
 def getProcs():
     modules = dir(schainpy.model)
-    procs = check_module(modules, ProcessingUnit)
+    procs = check_module(modules, 'processing')    
     try:
         procs.remove('ProcessingUnit')
     except Exception as e:
@@ -29,16 +34,22 @@ def getProcs():
 def getOperations():
     module = dir(schainpy.model)
     noProcs = [x for x in module if not x.endswith('Proc')]
-    operations = check_module(noProcs, Operation)
+    operations = check_module(noProcs, 'operation')
     try:
         operations.remove('Operation')
+        operations.remove('Figure')
+        operations.remove('Plot')
     except Exception as e:
         pass
     return operations
 
 def getArgs(op):
     module = locate('schainpy.model.{}'.format(op))
-    args = module().getAllowedArgs()
+    
+    if hasattr(module, '__attrs'):
+        args = module.__attrs__
+    else:
+        args = inspect.getargspec(module.run).args
     try:
         args.remove('self')
     except Exception as e:
@@ -49,10 +60,17 @@ def getArgs(op):
         pass
     return args
 
+def getDoc(obj):    
+    module = locate('schainpy.model.{}'.format(obj))
+    try:
+        obj = module(1,2,3,Queue(),5)
+    except:
+        obj = module()
+    return obj.__doc__
+
 def getAll():
-    allModules = dir(schainpy.model)
-    modules = check_module(allModules, Operation)
-    modules.extend(check_module(allModules, ProcessingUnit))
+    modules = getOperations()
+    modules.extend(getProcs())    
     return modules
 
 
@@ -75,7 +93,9 @@ def main(command, nextcommand, version):
         xml: runs a schain XML generated file\n
         run: runs any python script starting 'experiment_'\n
         generate: generates a template schain script\n
-        search: return avilable operations, procs or arguments of the give operation/proc\n"""
+        list: return a list of available procs and operations\n
+        search: return avilable operations, procs or arguments of the given
+                operation/proc\n"""
     if command == 'xml':
         runFromXML(nextcommand)
     elif command == 'generate':
@@ -86,6 +106,8 @@ def main(command, nextcommand, version):
         runschain(nextcommand)
     elif command == 'search':
         search(nextcommand)
+    elif command == 'list':
+        cmdlist(nextcommand)
     else:
         log.error('Command {} is not defined'.format(command))
 
@@ -94,7 +116,8 @@ def check_module(possible, instance):
     def check(x):
         try:
             instancia = locate('schainpy.model.{}'.format(x))
-            return isinstance(instancia(), instance)
+            ret = instancia.proc_type == instance
+            return ret
         except Exception as e:
             return False
     clean = clean_modules(possible)
@@ -107,27 +130,32 @@ def clean_modules(module):
     noFullUpper = [x for x in noStartUnder if not x.isupper()]
     return noFullUpper
 
-
-def search(nextcommand):
+def cmdlist(nextcommand):
     if nextcommand is None:
-        log.error('There is no Operation/ProcessingUnit to search', '')
+        log.error('Missing argument, available arguments: procs, operations', '')
     elif nextcommand == 'procs':
         procs = getProcs()
         log.success(
-            'Current ProcessingUnits are:\n{}'.format('\n'.join(procs)), '')
-
+            'Current ProcessingUnits are:\n  {}'.format('\n  '.join(procs)), '')
     elif nextcommand == 'operations':
         operations = getOperations()
-        log.success('Current Operations are:\n{}'.format(
-            '\n'.join(operations)), '')
+        log.success('Current Operations are:\n  {}'.format(
+            '\n  '.join(operations)), '')
+    else:
+        log.error('Wrong argument', '')
+
+def search(nextcommand):
+    if nextcommand is None:
+        log.error('There is no Operation/ProcessingUnit to search', '')    
     else:
         try:
             args = getArgs(nextcommand)
+            doc = getDoc(nextcommand)
             if len(args) == 0:
-                log.success('`{}` has no arguments'.format(nextcommand), '')
+                log.success('\n{} has no arguments'.format(nextcommand), '')
             else:
-                log.success('`{}` arguments: {}'.format(
-                    nextcommand, ', '.join(args)), '')
+                log.success('{}\n{}\n\narguments:\n  {}'.format(
+                    nextcommand, doc, ', '.join(args)), '')
         except Exception as e:
             log.error('Module `{}` does not exists'.format(nextcommand), '')
             allModules = getAll()
