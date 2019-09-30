@@ -966,218 +966,82 @@ class ParamWriter(Operation):
         
 
 @MPDecorator
-class ParameterReader(JRODataReader,ProcessingUnit):
+class ParameterReader(Reader, ProcessingUnit):
     '''
     Reads HDF5 format files
     '''
 
-    ext = ".hdf5"
-    optchar = "D"
-    timezone = None
-    startTime = None
-    endTime = None
-    fileIndex = None
-    blockList = None    #List to blocks to be read from the file
-    blocksPerFile = None    #Number of blocks to be read
-    blockIndex = None
-    path = None
-    #List of Files
-    filenameList = None
-    datetimeList = None
-    #Hdf5 File
-    listMetaname = None
-    listMeta = None
-    listDataname = None
-    listData = None
-    listShapes = None
-    fp = None
-    #dataOut reconstruction
-    dataOut = None
-
     def __init__(self):
         ProcessingUnit.__init__(self)
         self.dataOut = Parameters()
-        return
+        self.ext = ".hdf5"
+        self.optchar = "D"
+        self.timezone = "lt"
+        self.listMetaname = []
+        self.listMeta = []
+        self.listDataname = []
+        self.listData = []
+        self.listShapes = []
+        self.open_file = h5py.File
+        self.open_mode = 'r'
+        self.metadata = False
+        self.filefmt = "*%Y%j***"
+        self.folderfmt = "*%Y%j"
 
     def setup(self, **kwargs):
 
-        path = kwargs['path']
-        startDate = kwargs['startDate']
-        endDate = kwargs['endDate']
-        startTime = kwargs['startTime']
-        endTime = kwargs['endTime']
-        walk = kwargs['walk']
-        if 'ext' in kwargs:
-            ext = kwargs['ext']
+        self.set_kwargs(**kwargs)
+        if not self.ext.startswith('.'):
+            self.ext = '.{}'.format(self.ext)            
+
+        if self.online:
+            log.log("Searching files in online mode...", self.name)
+
+            for nTries in range(self.nTries):
+                fullpath = self.searchFilesOnLine(self.path, self.startDate,
+                    self.endDate, self.expLabel, self.ext, self.walk, 
+                    self.filefmt, self.folderfmt)
+
+                try:
+                    fullpath = next(fullpath)
+                except:
+                    fullpath = None
+                
+                if fullpath:
+                    break
+
+                log.warning(
+                    'Waiting {} sec for a valid file in {}: try {} ...'.format(
+                        self.delay, self.path, nTries + 1), 
+                    self.name)
+                time.sleep(self.delay)
+
+            if not(fullpath):
+                raise schainpy.admin.SchainError(
+                    'There isn\'t any valid file in {}'.format(self.path))                    
+
+            pathname, filename = os.path.split(fullpath)
+            self.year = int(filename[1:5])
+            self.doy = int(filename[5:8])
+            self.set = int(filename[8:11]) - 1                
         else:
-            ext = '.hdf5'
-        if 'timezone' in kwargs:
-            self.timezone = kwargs['timezone']
-        else:
-            self.timezone = 'lt'
-
-        print("[Reading] Searching files in offline mode ...")
-        pathList, filenameList = self.searchFilesOffLine(path, startDate=startDate, endDate=endDate,
-                                                               startTime=startTime, endTime=endTime,
-                                                               ext=ext, walk=walk)
-
-        if not(filenameList):
-            print("There is no files into the folder: %s"%(path))
-            sys.exit(-1)
-
-        self.fileIndex = -1
-        self.startTime = startTime
-        self.endTime = endTime
-        self.__readMetadata()
-        self.__setNextFileOffline()
+            log.log("Searching files in {}".format(self.path), self.name)
+            self.filenameList = self.searchFilesOffLine(self.path, self.startDate, 
+                self.endDate, self.expLabel, self.ext, self.walk, self.filefmt, self.folderfmt)
+        
+        self.setNextFile()
 
         return
 
-    def searchFilesOffLine(self, path, startDate=None, endDate=None, startTime=datetime.time(0,0,0), endTime=datetime.time(23,59,59), ext='.hdf5', walk=True):
+    def readFirstHeader(self):
+        '''Read metadata and data'''
 
-        expLabel = ''
-        self.filenameList = []
-        self.datetimeList = []
-        pathList = []
-        dateList, pathList = self.findDatafiles(path, startDate, endDate, expLabel, ext, walk, include_path=True)
-
-        if dateList == []:
-            print("[Reading] No *%s files in %s from %s to %s)"%(ext, path,
-                                                        datetime.datetime.combine(startDate,startTime).ctime(),
-                                                        datetime.datetime.combine(endDate,endTime).ctime()))
-
-            return None, None
-
-        if len(dateList) > 1:
-            print("[Reading] %d days were found in date range: %s - %s" %(len(dateList), startDate, endDate))
-        else:
-            print("[Reading] data was found for the date %s" %(dateList[0]))
-
-        filenameList = []
-        datetimeList = []
-
-        for thisPath in pathList:
-
-            fileList = glob.glob1(thisPath, "*%s" %ext)
-            fileList.sort()
-
-            for file in fileList:
-
-                filename = os.path.join(thisPath,file)
-
-                if not isFileInDateRange(filename, startDate, endDate):
-                    continue
-
-                thisDatetime = self.__isFileInTimeRange(filename, startDate, endDate, startTime, endTime)
-
-                if not(thisDatetime):
-                    continue
-
-                filenameList.append(filename)
-                datetimeList.append(thisDatetime)
-
-        if not(filenameList):
-            print("[Reading] Any file was found int time range %s - %s" %(datetime.datetime.combine(startDate,startTime).ctime(), datetime.datetime.combine(endDate,endTime).ctime()))
-            return None, None
-
-        print("[Reading] %d file(s) was(were) found in time range: %s - %s" %(len(filenameList), startTime, endTime))
-        print()
-
-        self.filenameList = filenameList
-        self.datetimeList = datetimeList
-
-        return pathList, filenameList
-
-    def __isFileInTimeRange(self,filename, startDate, endDate, startTime, endTime):
-
-        """
-        Retorna 1 si el archivo de datos se encuentra dentro del rango de horas especificado.
-
-        Inputs:
-            filename           :    nombre completo del archivo de datos en formato Jicamarca (.r)
-            startDate          :    fecha inicial del rango seleccionado en formato datetime.date
-            endDate            :    fecha final del rango seleccionado en formato datetime.date
-            startTime          :    tiempo inicial del rango seleccionado en formato datetime.time
-            endTime            :    tiempo final del rango seleccionado en formato datetime.time
-
-        Return:
-            Boolean    :    Retorna True si el archivo de datos contiene datos en el rango de
-                            fecha especificado, de lo contrario retorna False.
-
-        Excepciones:
-            Si el archivo no existe o no puede ser abierto
-            Si la cabecera no puede ser leida.
-
-        """
-
-        try:
-            fp = h5py.File(filename, 'r')
-            grp1 = fp['Data']
-
-        except IOError:
-            traceback.print_exc()
-            raise IOError("The file %s can't be opened" %(filename))
-        #In case has utctime attribute
-        grp2 = grp1['utctime']
-        thisUtcTime = grp2.value[0]
-
-        fp.close()
-
-        if self.timezone == 'lt':
-            thisUtcTime -= 5*3600
-
-        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime + 5*3600)
-        thisDate = thisDatetime.date()
-        thisTime = thisDatetime.time()
-
-        startUtcTime = (datetime.datetime.combine(thisDate,startTime)- datetime.datetime(1970, 1, 1)).total_seconds()
-        endUtcTime = (datetime.datetime.combine(thisDate,endTime)- datetime.datetime(1970, 1, 1)).total_seconds()
-
-        #General case
-        #           o>>>>>>>>>>>>>><<<<<<<<<<<<<<o
-        #-----------o----------------------------o-----------
-        #       startTime                     endTime
-
-        if endTime >= startTime:
-            thisUtcLog = numpy.logical_and(thisUtcTime > startUtcTime, thisUtcTime < endUtcTime)
-            if numpy.any(thisUtcLog):   #If there is one block between the hours mentioned
-                return thisDatetime
-            return None
-
-        #If endTime < startTime then endTime belongs to the next day
-        #<<<<<<<<<<<o                            o>>>>>>>>>>>
-        #-----------o----------------------------o-----------
-        #        endTime                    startTime
-
-        if (thisDate == startDate) and numpy.all(thisUtcTime < startUtcTime):
-            return None
-
-        if (thisDate == endDate) and numpy.all(thisUtcTime > endUtcTime):
-            return None
-
-        if numpy.all(thisUtcTime < startUtcTime) and numpy.all(thisUtcTime > endUtcTime):
-            return None
-
-        return thisDatetime
-
-    def __setNextFileOffline(self):
-
-        self.fileIndex += 1
-        idFile = self.fileIndex
-
-        if not(idFile < len(self.filenameList)):
-            raise schainpy.admin.SchainError('No more files')            
-
-        filename = self.filenameList[idFile]
-        self.fp = h5py.File(filename, 'r')
-        self.filename = filename
-
-        print("Setting the file: %s"%self.filename)
-
-        self.__setBlockList()
+        self.__readMetadata()        
         self.__readData()
+        self.__setBlockList()
         self.blockIndex = 0
-        return 1
+        
+        return
 
     def __setBlockList(self):
         '''
@@ -1190,12 +1054,13 @@ class ParameterReader(JRODataReader,ProcessingUnit):
         self.blocksPerFile
 
         '''
-        fp = self.fp
+
         startTime = self.startTime
         endTime = self.endTime
 
-        grp = fp['Data']
-        thisUtcTime = grp['utctime'].value
+        index = self.listDataname.index('utctime')
+        thisUtcTime = self.listData[index]
+        self.interval = numpy.min(thisUtcTime[1:] - thisUtcTime[:-1])
 
         if self.timezone == 'lt':
             thisUtcTime -= 5*3600
@@ -1219,51 +1084,78 @@ class ParameterReader(JRODataReader,ProcessingUnit):
         Reads Metadata
         '''
 
-        filename = self.filenameList[0]
-        fp = h5py.File(filename, 'r')
-        gp = fp['Metadata']
         listMetaname = []
         listMetadata = []
+        if 'Metadata' in self.fp:
+            gp = self.fp['Metadata']
+            for item in list(gp.items()):
+                name = item[0]
 
-        for item in list(gp.items()):
-            name = item[0]
-
-            if name=='variables':
-                table = gp[name][:]
-                listShapes = {}
-                for shapes in table:
-                    listShapes[shapes[0].decode()] = numpy.array([shapes[1]])
-            else:
-                data = gp[name].value
-                listMetaname.append(name)
-                listMetadata.append(data)
+                if name=='variables':
+                    table = gp[name][:]
+                    listShapes = {}
+                    for shapes in table:
+                        listShapes[shapes[0].decode()] = numpy.array([shapes[1]])
+                else:
+                    data = gp[name].value
+                    listMetaname.append(name)
+                    listMetadata.append(data)            
+        elif self.metadata:
+            metadata = json.loads(self.metadata)
+            listShapes = {}
+            for tup in metadata:
+                name, values, dim = tup
+                if dim == -1:
+                    listMetaname.append(name)
+                    listMetadata.append(self.fp[values].value)
+                else:
+                    listShapes[name] = numpy.array([dim])
+        else:
+            raise IOError('Missing Metadata group in file or metadata info')
 
         self.listShapes = listShapes
         self.listMetaname = listMetaname
-        self.listMeta = listMetadata
+        self.listMeta = listMetadata      
 
-        fp.close()
         return
 
     def __readData(self):
 
-        grp = self.fp['Data']
         listdataname = []
         listdata = []
-
-        for item in list(grp.items()):
-            name = item[0]
-            listdataname.append(name)
-            dim = self.listShapes[name][0]
-            if dim == 0:
-                array = grp[name].value
-            else:
-                array = []
-                for i in range(dim):
-                    array.append(grp[name]['table{:02d}'.format(i)].value)
-                array = numpy.array(array)
-                
-            listdata.append(array)
+        
+        if 'Data' in self.fp:
+            grp = self.fp['Data']
+            for item in list(grp.items()):
+                name = item[0]
+                listdataname.append(name)
+                dim = self.listShapes[name][0]
+                if dim == 0:
+                    array = grp[name].value
+                else:
+                    array = []
+                    for i in range(dim):
+                        array.append(grp[name]['table{:02d}'.format(i)].value)
+                    array = numpy.array(array)
+                    
+                listdata.append(array)
+        elif self.metadata:
+            metadata = json.loads(self.metadata)
+            for tup in metadata:
+                name, values, dim = tup
+                listdataname.append(name)
+                if dim == -1:
+                    continue
+                elif dim == 0:
+                    array = self.fp[values].value
+                else:
+                    array = []
+                    for var in values:
+                        array.append(self.fp[var].value)
+                    array = numpy.array(array)
+                listdata.append(array)
+        else:
+            raise IOError('Missing Data group in file or metadata info')
 
         self.listDataname = listdataname
         self.listData = listdata
@@ -1281,6 +1173,7 @@ class ParameterReader(JRODataReader,ProcessingUnit):
             else:
                 setattr(self.dataOut, self.listDataname[j], self.listData[j][:,self.blockIndex])
 
+        self.dataOut.paramInterval = self.interval
         self.dataOut.flagNoData = False
         self.blockIndex += 1
 
@@ -1293,9 +1186,7 @@ class ParameterReader(JRODataReader,ProcessingUnit):
             self.isConfig = True
 
         if self.blockIndex == self.blocksPerFile:
-            if not(self.__setNextFileOffline()):
-                self.dataOut.flagNoData = True
-                return 0
+            self.setNextFile()
 
         self.getData()
 

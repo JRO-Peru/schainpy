@@ -42,6 +42,8 @@ class ProcessingUnit(object):
    
 
     """
+    proc_type = 'processing'
+    __attrs__ = []
 
     def __init__(self):
 
@@ -128,6 +130,8 @@ class Operation(object):
         Ejemplo: Integraciones coherentes, necesita la informacion previa de los n perfiles anteriores (bufffer)
 
     """
+    proc_type = 'operation'
+    __attrs__ = []
 
     def __init__(self):
 
@@ -178,54 +182,31 @@ class Operation(object):
 class InputQueue(Thread):
 	
 	    '''
-	
 	    Class to hold input data for Proccessing Units and external Operations,
-	
 	    '''
-	
-	
 	
 	    def __init__(self, project_id, inputId):
 	
 	        Thread.__init__(self)
-	
 	        self.queue = Queue()
-	
 	        self.project_id = project_id
-	
 	        self.inputId = inputId
-	
-	
 	
 	    def run(self):
 	
-	
-	
 	        c = zmq.Context()
-	
 	        self.receiver = c.socket(zmq.SUB)
-	
 	        self.receiver.connect(
-	
 	            'ipc:///tmp/schain/{}_pub'.format(self.project_id))
-	
 	        self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
-	
-	
-	
+
 	        while True:
-	
 	            self.queue.put(self.receiver.recv_multipart()[1])
 	
-	
-	
 	    def get(self):
-	
-	
-	
+
 	        return pickle.loads(self.queue.get())
-	
-	
+
 
 def MPDecorator(BaseClass):
     """
@@ -248,6 +229,7 @@ def MPDecorator(BaseClass):
             self.i = 0
             self.t = time.time()
             self.name = BaseClass.__name__
+            self.__doc__ = BaseClass.__doc__
             
             if 'plot' in self.name.lower() and not self.name.endswith('_'):
                 self.name = '{}{}'.format(self.CODE.upper(), 'Plot')

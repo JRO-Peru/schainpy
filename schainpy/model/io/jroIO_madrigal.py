@@ -15,7 +15,7 @@ import numpy
 import h5py
 
 import schainpy.admin
-from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
+from schainpy.model.io.jroIO_base import LOCALTIME, Reader
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 from schainpy.utils import log
@@ -81,7 +81,7 @@ def load_json(obj):
     return iterable
 
 @MPDecorator
-class MADReader(JRODataReader, ProcessingUnit):
+class MADReader(Reader, ProcessingUnit):
 
     def __init__(self):
 
@@ -91,93 +91,78 @@ class MADReader(JRODataReader, ProcessingUnit):
         self.counter_records = 0
         self.nrecords = None
         self.flagNoMoreFiles = 0
-        self.isConfig = False        
         self.filename = None        
         self.intervals = set()
-        
-    def setup(self,
-              path=None,
-              startDate=None,
-              endDate=None,
-              format=None,
-              startTime=datetime.time(0, 0, 0),
-              endTime=datetime.time(23, 59, 59),
-              **kwargs):
-                
-        self.path = path
-        self.startDate = startDate
-        self.endDate = endDate
-        self.startTime = startTime
-        self.endTime = endTime
         self.datatime = datetime.datetime(1900,1,1)
-        self.oneDDict = load_json(kwargs.get('oneDDict', 
-                                             "{\"GDLATR\":\"lat\", \"GDLONR\":\"lon\"}"))
-        self.twoDDict = load_json(kwargs.get('twoDDict',
-                                             "{\"GDALT\": \"heightList\"}"))
-        self.independentParam = 'GDALT'
+        self.format = None
+        self.filefmt = "***%Y%m%d*******"
+        
+    def setup(self, **kwargs):
+                
+        self.set_kwargs(**kwargs)
+        self.oneDDict = load_json(self.oneDDict)
+        self.twoDDict = load_json(self.twoDDict)
+        self.ind2DList = load_json(self.ind2DList)
+        self.independentParam = self.ind2DList[0]
 
         if self.path is None:
             raise ValueError('The path is not valid')
 
-        if format is None:
+        self.open_file = open
+        self.open_mode = 'rb'
+
+        if self.format is None:
             raise ValueError('The format is not valid choose simple or hdf5')
-        elif format.lower() in ('simple', 'txt'):
+        elif self.format.lower() in ('simple', 'txt'):
             self.ext = '.txt'
-        elif format.lower() in ('cedar',):
+        elif self.format.lower() in ('cedar',):
             self.ext = '.001'
         else:
             self.ext = '.hdf5'
+            self.open_file = h5py.File
+            self.open_mode = 'r'
 
-        self.search_files(self.path)
-        self.fileId = 0
+        if self.online:
+            log.log("Searching files in online mode...", self.name)
 
-        if not self.fileList:
-            raise  Warning('There is no files matching these date in the folder: {}. \n Check startDate and endDate'.format(path))
+            for nTries in range(self.nTries):
+                fullpath = self.searchFilesOnLine(self.path, self.startDate,
+                    self.endDate, self.expLabel, self.ext, self.walk, 
+                    self.filefmt, self.folderfmt)
 
-        self.setNextFile()
+                try:
+                    fullpath = next(fullpath)
+                except:
+                    fullpath = None
+                
+                if fullpath:
+                    break
+
+                log.warning(
+                    'Waiting {} sec for a valid file in {}: try {} ...'.format(
+                        self.delay, self.path, nTries + 1), 
+                    self.name)
+                time.sleep(self.delay)
+
+            if not(fullpath):
+                raise schainpy.admin.SchainError(
+                    'There isn\'t any valid file in {}'.format(self.path))            
+           
+        else:
+            log.log("Searching files in {}".format(self.path), self.name)
+            self.filenameList = self.searchFilesOffLine(self.path, self.startDate, 
+                self.endDate, self.expLabel, self.ext, self.walk, self.filefmt, self.folderfmt)
         
-    def search_files(self, path):
-        '''
-         Searching for madrigal files in path
-         Creating a list of files to procces included in [startDate,endDate]
-         
-         Input: 
-             path - Path to find files             
-        '''    
+        self.setNextFile()
 
-        log.log('Searching files {} in {} '.format(self.ext, path), 'MADReader')
-        fileList0 = glob.glob1(path, '*{}'.format(self.ext))
-        fileList0.sort()
+    def readFirstHeader(self):
+        '''Read header and data'''
 
-        self.fileList = []
-        self.dateFileList = []
-
-        startDate = self.startDate - datetime.timedelta(1)
-        endDate = self.endDate + datetime.timedelta(1)
-
-        for thisFile in fileList0:
-            year = thisFile[3:7]
-            if not year.isdigit():
-                continue
-
-            month = thisFile[7:9]
-            if not month.isdigit():
-                continue
-
-            day = thisFile[9:11]
-            if not day.isdigit():
-                continue
-
-            year, month, day = int(year), int(month), int(day)
-            dateFile = datetime.date(year, month, day)
-
-            if (startDate > dateFile) or (endDate < dateFile):
-                continue
-
-            self.fileList.append(thisFile)
-            self.dateFileList.append(dateFile)
-
-        return
+        self.parseHeader()
+        self.parseData()
+        self.blockIndex = 0
+        
+        return        
 
     def parseHeader(self):
         '''
@@ -237,51 +222,13 @@ class MADReader(JRODataReader, ProcessingUnit):
             self.times = numpy.unique(self.data['Table Layout']['ut1_unix'])
             self.counter_records = int(self.data['Table Layout']['recno'][0])
             self.nrecords = int(self.data['Table Layout']['recno'][-1])
-            
-    def setNextFile(self):
-        '''
-        '''
-
-        file_id = self.fileId
-
-        if file_id == len(self.fileList):
-            log.success('No more files', 'MADReader')
-            self.flagNoMoreFiles = 1
-            return 0
-        
-        log.success(
-            'Opening: {}'.format(self.fileList[file_id]),
-            'MADReader'
-            )
-        
-        filename = os.path.join(self.path, self.fileList[file_id])
-        
-        if self.filename is not None:
-            self.fp.close()
-        
-        self.filename = filename
-        self.filedate = self.dateFileList[file_id]
-
-        if self.ext=='.hdf5':
-            self.fp = h5py.File(self.filename, 'r')
-        else:
-            self.fp = open(self.filename, 'rb')
-
-        self.parseHeader()
-        self.parseData()
-        self.sizeOfFile = os.path.getsize(self.filename)
-        self.flagIsNewFile = 0
-        self.fileId += 1
-
-        return 1
 
     def readNextBlock(self):
 
         while True:
             self.flagDiscontinuousBlock = 0
-            if self.flagIsNewFile:                
-                if not self.setNextFile():                    
-                    return 0
+            if self.counter_records == self.nrecords:
+                self.setNextFile()                
 
             self.readBlock()
             
@@ -321,7 +268,6 @@ class MADReader(JRODataReader, ProcessingUnit):
                     dum.append(self.data[self.counter_records])
                     self.counter_records += 1
                     if self.counter_records == self.nrecords:
-                        self.flagIsNewFile = True
                         break
                     continue
                 self.intervals.add((datatime-self.datatime).seconds)                
@@ -334,9 +280,7 @@ class MADReader(JRODataReader, ProcessingUnit):
             if datatime.date()>self.datatime.date():
                 self.flagDiscontinuousBlock = 1
             self.datatime = datatime
-            self.counter_records += 1
-            if self.counter_records == self.nrecords:
-                self.flagIsNewFile = True
+            self.counter_records += 1            
         
         self.buffer = numpy.array(dum)
         return
@@ -390,10 +334,6 @@ class MADReader(JRODataReader, ProcessingUnit):
         '''
         Storing data from databuffer to dataOut object
         '''
-        if self.flagNoMoreFiles:
-            self.dataOut.flagNoData = True
-            raise schainpy.admin.SchainError('No file left to process')
-            return 0
 
         if not  self.readNextBlock():
             self.dataOut.flagNoData = True
@@ -403,10 +343,49 @@ class MADReader(JRODataReader, ProcessingUnit):
 
         return 1
 
+    def run(self, **kwargs):
+
+        if not(self.isConfig):
+            self.setup(**kwargs)
+            self.isConfig = True
+
+        self.getData()
+
+        return
+
 @MPDecorator
 class MADWriter(Operation):
+    '''Writing module for Madrigal files
+    
+type: external
 
-    missing = -32767    
+Inputs:
+            path        path where files will be created
+            oneDDict    json of one-dimensional parameters in record where keys
+                        are Madrigal codes (integers or mnemonics) and values the corresponding
+                        dataOut attribute e.g: {
+                            'gdlatr': 'lat',
+                            'gdlonr': 'lon',
+                            'gdlat2':'lat',
+                            'glon2':'lon'}
+            ind2DList   list of independent spatial two-dimensional parameters e.g:
+                        ['heigthList']
+            twoDDict    json of two-dimensional parameters in record where keys
+                        are Madrigal codes (integers or mnemonics) and values the corresponding
+                        dataOut attribute if multidimensional array specify as tupple
+                        ('attr', pos) e.g: {
+                            'gdalt': 'heightList',
+                            'vn1p2': ('data_output', 0),
+                            'vn2p2': ('data_output', 1),
+                            'vn3': ('data_output', 2),
+                            'snl': ('data_SNR', 'db')
+                            }
+            metadata    json of madrigal metadata (kinst, kindat, catalog and header)
+            format      hdf5, cedar
+            blocks      number of blocks per file'''
+
+    __attrs__ = ['path', 'oneDDict', 'ind2DList', 'twoDDict','metadata', 'format', 'blocks']
+    missing = -32767
     
     def __init__(self):
 
@@ -416,41 +395,18 @@ class MADWriter(Operation):
         self.path = None
         self.fp = None
 
-    def run(self, dataOut, path, oneDDict, independentParam='[]', twoDDict='{}',
+    def run(self, dataOut, path, oneDDict, ind2DList='[]', twoDDict='{}',
             metadata='{}', format='cedar', **kwargs):
-        '''
-        Inputs:
-            path - path where files will be created
-            oneDDict - json of one-dimensional parameters in record where keys
-            are Madrigal codes (integers or mnemonics) and values the corresponding
-            dataOut attribute e.g: {
-                'gdlatr': 'lat',
-                'gdlonr': 'lon',
-                'gdlat2':'lat',
-                'glon2':'lon'}
-            independentParam - list of independent spatial two-dimensional parameters e.g:
-                ['heigthList']
-            twoDDict - json of two-dimensional parameters in record where keys
-            are Madrigal codes (integers or mnemonics) and values the corresponding
-            dataOut attribute if multidimensional array specify as tupple
-            ('attr', pos) e.g: {
-                'gdalt': 'heightList',
-                'vn1p2': ('data_output', 0),
-                'vn2p2': ('data_output', 1),
-                'vn3': ('data_output', 2),
-                'snl': ('data_SNR', 'db')
-                }
-            metadata - json of madrigal metadata (kinst, kindat, catalog and header)      
-        '''
+        
         if not self.isConfig:
-            self.setup(path, oneDDict, independentParam, twoDDict, metadata, format, **kwargs)
+            self.setup(path, oneDDict, ind2DList, twoDDict, metadata, format, **kwargs)
             self.isConfig = True
         
         self.dataOut = dataOut        
         self.putData() 
         return 1
     
-    def setup(self, path, oneDDict, independentParam, twoDDict, metadata, format, **kwargs):
+    def setup(self, path, oneDDict, ind2DList, twoDDict, metadata, format, **kwargs):
         '''
         Configure Operation        
         '''
@@ -460,7 +416,7 @@ class MADWriter(Operation):
         self.counter = 0
         self.oneDDict = load_json(oneDDict)
         self.twoDDict = load_json(twoDDict)
-        self.independentParam = load_json(independentParam)
+        self.ind2DList = load_json(ind2DList)
         meta = load_json(metadata)        
         self.kinst = meta.get('kinst')
         self.kindat = meta.get('kindat')
@@ -471,7 +427,7 @@ class MADWriter(Operation):
             self.extra_args = {}
         elif format == 'hdf5':
             self.ext = '.hdf5'
-            self.extra_args = {'independentParam': self.independentParam}
+            self.extra_args = {'ind2DList': self.ind2DList}
         
         self.keys = [k.lower() for k in self.twoDDict]        
         if 'range' in self.keys:
@@ -504,6 +460,8 @@ class MADWriter(Operation):
             log.success(
                 'Creating file: {}'.format(self.fullname),
                 'MADWriter')
+            if not os.path.exists(self.path):
+                os.makedirs(self.path)
             self.fp = madrigal.cedar.MadrigalCedarFile(self.fullname, True)
         except ValueError as e:
             log.error(
@@ -546,11 +504,11 @@ class MADWriter(Operation):
                     tmp = 10*numpy.log10(SNRavg)
                 else:
                     tmp = getattr(self.dataOut, value)
-                out[key] = tmp.flatten()
+                out[key] = tmp.flatten()[:len(heights)]
             elif isinstance(value, (tuple, list)):
                 attr, x = value
-                data = getattr(self.dataOut, attr)
-                out[key] = data[int(x)]
+                data = getattr(self.dataOut, attr)                
+                out[key] = data[int(x)][:len(heights)]
         
         a = numpy.array([out[k] for k in self.keys])
         nrows = numpy.array([numpy.isnan(a[:, x]).all() for x in range(len(heights))])
