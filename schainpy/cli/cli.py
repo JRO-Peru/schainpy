@@ -63,7 +63,7 @@ def getArgs(op):
 def getDoc(obj):    
     module = locate('schainpy.model.{}'.format(obj))
     try:
-        obj = module(1,2,3,Queue(),5)
+        obj = module(1,2,3,Queue(),5,6)
     except:
         obj = module()
     return obj.__doc__
@@ -148,8 +148,7 @@ def search(nextcommand):
     if nextcommand is None:
         log.error('There is no Operation/ProcessingUnit to search', '')    
     else:
-        #try:
-        if True:
+        try:        
             args = getArgs(nextcommand)
             doc = getDoc(nextcommand)
             if len(args) == 0:
@@ -157,11 +156,11 @@ def search(nextcommand):
             else:
                 log.success('{}\n{}\n\narguments:\n  {}'.format(
                     nextcommand, doc, ', '.join(args)), '')
-        # except Exception as e:
-        #     log.error('Module `{}` does not exists'.format(nextcommand), '')
-        #     allModules = getAll()
-        #     similar = [t[0] for t in process.extract(nextcommand, allModules, limit=12) if t[1]>80]
-        #     log.success('Possible modules are: {}'.format(', '.join(similar)), '')
+        except Exception as e:
+            log.error('Module `{}` does not exists'.format(nextcommand), '')
+            allModules = getAll()
+            similar = [t[0] for t in process.extract(nextcommand, allModules, limit=12) if t[1]>80]
+            log.success('Possible modules are: {}'.format(', '.join(similar)), '')
 
 def runschain(nextcommand):
     if nextcommand is None:

@@ -13,6 +13,7 @@ Based on:
 '''
 
 import os
+import sys
 import inspect
 import zmq
 import time
@@ -181,31 +182,40 @@ class Operation(object):
 
 class InputQueue(Thread):
 	
-	    '''
-	    Class to hold input data for Proccessing Units and external Operations,
-	    '''
-	
-	    def __init__(self, project_id, inputId):
-	
-	        Thread.__init__(self)
-	        self.queue = Queue()
-	        self.project_id = project_id
-	        self.inputId = inputId
-	
-	    def run(self):
-	
-	        c = zmq.Context()
-	        self.receiver = c.socket(zmq.SUB)
-	        self.receiver.connect(
-	            'ipc:///tmp/schain/{}_pub'.format(self.project_id))
-	        self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
+    '''
+    Class to hold input data for Proccessing Units and external Operations,
+    '''
 
-	        while True:
-	            self.queue.put(self.receiver.recv_multipart()[1])
-	
-	    def get(self):
+    def __init__(self, project_id, inputId, lock=None):
 
-	        return pickle.loads(self.queue.get())
+        Thread.__init__(self)
+        self.queue = Queue()
+        self.project_id = project_id
+        self.inputId = inputId
+        self.lock = lock
+        self.size = 0
+
+    def run(self):
+
+        c = zmq.Context()
+        self.receiver = c.socket(zmq.SUB)
+        self.receiver.connect(
+            'ipc:///tmp/schain/{}_pub'.format(self.project_id))
+        self.receiver.setsockopt(zmq.SUBSCRIBE, self.inputId.encode())
+
+        while True:
+            obj = self.receiver.recv_multipart()[1]
+            self.size += sys.getsizeof(obj)
+            self.queue.put(obj)
+
+    def get(self):        
+        if self.size/1000000 > 2048:
+            self.lock.clear()
+        else:
+            self.lock.set()
+        obj = self.queue.get()
+        self.size -= sys.getsizeof(obj)        
+        return pickle.loads(obj)
 
 
 def MPDecorator(BaseClass):
@@ -239,9 +249,10 @@ def MPDecorator(BaseClass):
             self.inputId = args[1]
             self.project_id = args[2]
             self.err_queue = args[3]
-            self.typeProc = args[4]            
+            self.lock = args[4]
+            self.typeProc = args[5]
             self.err_queue.put('#_start_#')
-            self.queue = InputQueue(self.project_id, self.inputId)
+            self.queue = InputQueue(self.project_id, self.inputId, self.lock)
 
         def subscribe(self):
             '''
@@ -272,21 +283,11 @@ def MPDecorator(BaseClass):
         def publish(self, data, id):
             '''
             This function publish an object, to an specific topic.
-            For Read Units (inputId == None) adds a little delay
-            to avoid data loss
+            It blocks publishing when receiver queue is full to avoid data loss
             '''
 
             if self.inputId is None:
-                self.i += 1
-                if self.i % 40 == 0 and time.time()-self.t > 0.1:                    
-                    self.i = 0
-                    self.t = time.time()
-                    time.sleep(0.05)
-                elif self.i % 40 == 0:
-                    self.i = 0
-                    self.t = time.time()
-                    time.sleep(0.01)
-            
+                self.lock.wait()
             self.sender.send_multipart([str(id).encode(), pickle.dumps(data)])
 
         def runReader(self):

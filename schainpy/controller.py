@@ -11,7 +11,7 @@ import traceback
 import math
 import time
 import zmq
-from multiprocessing import Process, Queue, cpu_count
+from multiprocessing import Process, Queue, Event, cpu_count
 from threading import Thread
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
@@ -361,7 +361,7 @@ class OperationConf():
 
         return kwargs
 
-    def setup(self, id, name, priority, type, project_id, err_queue):
+    def setup(self, id, name, priority, type, project_id, err_queue, lock):
 
         self.id = str(id)
         self.project_id = project_id
@@ -369,6 +369,7 @@ class OperationConf():
         self.type = type
         self.priority = priority
         self.err_queue = err_queue
+        self.lock = lock
         self.parmConfObjList = []
 
     def removeParameters(self):
@@ -460,7 +461,7 @@ class OperationConf():
             opObj = className()
         elif self.type == 'external':
             kwargs = self.getKwargs()
-            opObj = className(self.id, self.id, self.project_id, self.err_queue, 'Operation', **kwargs)
+            opObj = className(self.id, self.id, self.project_id, self.err_queue, self.lock, 'Operation', **kwargs)
             opObj.start()
             self.opObj = opObj
 
@@ -479,6 +480,7 @@ class ProcUnitConf():
         self.opConfObjList = []
         self.procUnitObj = None
         self.opObjDict = {}
+        self.mylock = Event()
 
     def __getPriority(self):
 
@@ -550,7 +552,7 @@ class ProcUnitConf():
 
         return self.procUnitObj
 
-    def setup(self, project_id, id, name, datatype, inputId, err_queue):
+    def setup(self, project_id, id, name, datatype, inputId, err_queue, lock):
         '''
             id sera el topico a publicar
             inputId sera el topico a subscribirse
@@ -577,6 +579,7 @@ class ProcUnitConf():
         self.datatype = datatype
         self.inputId = inputId
         self.err_queue = err_queue
+        self.lock = lock
         self.opConfObjList = []
 
         self.addOperation(name='run', optype='self') 
@@ -610,7 +613,7 @@ class ProcUnitConf():
         id = self.__getNewId()
         priority = self.__getPriority() # Sin mucho sentido, pero puede usarse
         opConfObj = OperationConf()
-        opConfObj.setup(id, name=name, priority=priority, type=optype, project_id=self.project_id, err_queue=self.err_queue)
+        opConfObj.setup(id, name=name, priority=priority, type=optype, project_id=self.project_id, err_queue=self.err_queue, lock=self.mylock)
         self.opConfObjList.append(opConfObj)
 
         return opConfObj
@@ -678,7 +681,7 @@ class ProcUnitConf():
 
         className = eval(self.name)
         kwargs = self.getKwargs()
-        procUnitObj = className(self.id, self.inputId, self.project_id, self.err_queue, 'ProcUnit', **kwargs)
+        procUnitObj = className(self.id, self.inputId, self.project_id, self.err_queue, self.lock, 'ProcUnit', **kwargs)
         log.success('creating process...', self.name)
 
         for opConfObj in self.opConfObjList:
@@ -724,6 +727,7 @@ class ReadUnitConf(ProcUnitConf):
         self.name = None
         self.inputId = None
         self.opConfObjList = []
+        self.mylock = Event()
 
     def getElementName(self):
 
@@ -769,6 +773,7 @@ class ReadUnitConf(ProcUnitConf):
         self.endTime = endTime
         self.server = server
         self.err_queue = err_queue
+        self.lock = self.mylock
         self.addRunOperation(**kwargs)
 
     def update(self, **kwargs):
@@ -989,7 +994,8 @@ class Project(Process):
 
         idProcUnit = self.__getNewId()
         procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId, self.err_queue)
+        input_proc = self.procUnitConfObjDict[inputId]        
+        procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId, self.err_queue, input_proc.mylock)
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
         return procUnitConfObj
