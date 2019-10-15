@@ -318,6 +318,7 @@ class ACFPlot(Figure):
 
         #z           =  numpy.where(numpy.isfinite(z), z, numpy.NAN)
         shape        =  dataOut.data_acf.shape
+	print "shape_plot",shape
         hei_index    =  numpy.arange(shape[2])
         hei_plot     =  numpy.arange(nSamples)*resFactor
 
@@ -330,7 +331,7 @@ class ACFPlot(Figure):
             hei_plot = numpy.array(nSampleList)*resFactor
 
         if hei_plot[-1] >= hei_index[-1]:
-            print ("La cantidad de puntos en altura es %d y la resolucion es %d Km"%(hei_plot.shape[0],deltaHeight*resFactor ))
+            print ("La cantidad de puntos en altura es %d y la resolucion es %f Km"%(hei_plot.shape[0],deltaHeight*resFactor ))
             raise ValueError, "resFactor %d multiplicado por el valor de %d nSamples  es mayor a %d cantidad total de puntos"%(resFactor,nSamples,hei_index[-1])
 
         #escalamiento  -1 a 1 a resolucion (factor de resolucion en altura)* deltaHeight
@@ -376,8 +377,8 @@ class ACFPlot(Figure):
             if ymin == None: ymin = numpy.nanmin(zdB)
             if ymax == None: ymax = numpy.nanmax(zdB)
 
-            print ("El parametro resFactor es %d y la resolucion en altura es %d"%(resFactor,deltaHeight ))
-            print ("La cantidad de puntos en altura es %d y la nueva resolucion es %d Km"%(hei_plot.shape[0],deltaHeight*resFactor ))
+            print ("El parametro resFactor es %d y la resolucion en altura es %f"%(resFactor,deltaHeight ))
+            print ("La cantidad de puntos en altura es %d y la nueva resolucion es %f Km"%(hei_plot.shape[0],deltaHeight*resFactor ))
             print ("La altura maxima es %d Km"%(hei_plot[-1]*deltaHeight ))
 
             self.isConfig = True

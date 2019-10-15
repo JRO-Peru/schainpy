@@ -1276,6 +1276,11 @@ class SSheightProfiles(Operation):
         self.__nProfiles  = dataOut.nProfiles
         self.__nHeis      = dataOut.nHeights
         shape             = dataOut.data.shape #nchannels, nprofiles, nsamples
+	print "input nChannels",self.__nChannels
+	print "input nProfiles",self.__nProfiles
+	print "input nHeis",self.__nHeis
+	print "input Shape",shape
+
 
 
         residue     =  (shape[1] - self.nsamples) % self.step
@@ -1286,7 +1291,10 @@ class SSheightProfiles(Operation):
         numberProfile    =  self.nsamples
         numberSamples    =  (shape[1] - self.nsamples)/self.step
 
-        print "New number of profile: %d, number of height: %d, Resolution %d Km"%(numberProfile,numberSamples,deltaHeight*self.step)
+	print "new numberProfile",numberProfile
+	print "new numberSamples",numberSamples
+
+        print "New number of profile: %d, number of height: %d, Resolution %f Km"%(numberProfile,numberSamples,deltaHeight*self.step)
 
         self.bufferShape  = shape[0], numberSamples, numberProfile  # nchannels, nsamples , nprofiles
         self.profileShape = shape[0], numberProfile, numberSamples  # nchannels, nprofiles, nsamples
@@ -1306,7 +1314,9 @@ class SSheightProfiles(Operation):
             self.isConfig = True
 
         for i in range(self.buffer.shape[1]):
-            self.buffer[:,i]    = numpy.flip(dataOut.data[:,i*self.step:i*self.step + self.nsamples])
+            #self.buffer[:,i]    = numpy.flip(dataOut.data[:,i*self.step:i*self.step + self.nsamples])
+            self.buffer[:,i]    = dataOut.data[:,i*self.step:i*self.step + self.nsamples]
+
             #self.buffer[:,j,self.__nHeis-j*self.step - self.nheights:self.__nHeis-j*self.step] = numpy.flip(dataOut.data[:,j*self.step:j*self.step + self.nheights])
 
         for j in range(self.buffer.shape[0]):

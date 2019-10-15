@@ -151,24 +151,28 @@ class SpectraAFCProc(ProcessingUnit):
             shape       =  acf.shape            #  nchannels, nprofiles, nsamples
 
             #import matplotlib.pyplot as plt
-            #acf_tmp=acf[0,:,85]
+	    #print "test",acf.shape
+            #acf_tmp=acf[0,:,]
     	    #plt.plot(acf_tmp)
             #plt.show()
+	    #import time
+    	    #time.sleep(10)
+  	    
+	    for j in range(shape[0]):
+	    	    for i in range(shape[1]):
+		        tmp = numpy.argmax(acf[j,:,i])
+		        if i>30:
+		            value  = (acf[j,:,i][tmp+3]+acf[j,:,i][tmp+4])/2.0
+		            acf[j,:,i][tmp] = value
+		            acf[j,:,i][tmp-1] = value
+		            acf[j,:,i][tmp+1] = value
+		            acf[j,:,i][tmp-2] = value
+		            acf[j,:,i][tmp+2] = value
 
-    	    for i in range(shape[1]):
-                tmp = numpy.argmax(acf[0,:,i])
-                if i>30:
-                    value  = (acf[0,:,i][tmp+3]+acf[0,:,i][tmp+4])/2.0
-                    acf[0,:,i][tmp] = value
-                    acf[0,:,i][tmp-1] = value
-                    acf[0,:,i][tmp+1] = value
-                    acf[0,:,i][tmp-2] = value
-                    acf[0,:,i][tmp+2] = value
-
-                    import scipy as sp
-                    from scipy import signal
-                    acf[0,:,i] =  sp.signal.medfilt(acf[0,:,i],21)
-
+		            import scipy as sp
+		            from scipy import signal
+		            #acf[3,:,i] =  sp.signal.medfilt(acf[3,:,i],21)
+		    
 
 
     	    #print numpy.argmax(acf[0,:,85])
