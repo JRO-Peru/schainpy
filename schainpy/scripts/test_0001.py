@@ -74,9 +74,10 @@ if __name__ == '__main__':
 #    procUnitConfObj1SPC.addParameter(name='pairsList', value='(1,0),(3,2),(5,4),(7,6)', format='pairsList')
 
     opObj11 = procUnitConfObj1SPC.addOperation(name='IncohInt', optype='other')
-    opObj11.addParameter(name='timeInterval', value='5', format='int')
+    opObj11.addParameter(name='timeInterval', value='10', format='int')
 
     procUnitConfObj2SPC = controllerObj.addProcUnit(datatype='SpectraAFCProc', inputId=procUnitConfObj1SPC.getId())
+    procUnitConfObj2SPC.addParameter(name='real', value='1', format='int')
     
     opObj11 = procUnitConfObj1SPC.addOperation(name='SpectraPlot', optype='other')
     opObj11.addParameter(name='id', value='1', format='int')
@@ -113,8 +114,8 @@ if __name__ == '__main__':
     opObj11.addParameter(name='wintitle', value = 'October 2019', format='str')
     opObj11.addParameter(name='xaxis', value='time', format='str')
     opObj11.addParameter(name='channel', value='0', format='int')
-    opObj11.addParameter(name='nSampleList', value='(40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70)', format='intList')
-    opObj11.addParameter(name='resolutionFactor', value='2', format='int')
+    #opObj11.addParameter(name='nSampleList', value='(50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70)', format='intList')
+    opObj11.addParameter(name='resolutionFactor', value='15', format='int')
     #opObj11.addParameter(name='zmin', value=0.5, format='int')
     #opObj11.addParameter(name='zmax', value=-0.5, format='int')
     #opObj11.addParameter(name='ymin', value='0', format='int')

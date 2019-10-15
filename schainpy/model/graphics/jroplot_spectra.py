@@ -318,7 +318,7 @@ class ACFPlot(Figure):
 
         #z           =  numpy.where(numpy.isfinite(z), z, numpy.NAN)
         shape        =  dataOut.data_acf.shape
-	print "shape_plot",shape
+	#print "shape_plot",shape
         hei_index    =  numpy.arange(shape[2])
         hei_plot     =  numpy.arange(nSamples)*resFactor
 
@@ -348,8 +348,9 @@ class ACFPlot(Figure):
             ylabel = "Power (dB)"
 
         elif xaxis == "time":
-            delta= dataOut.getAcfRange()[1]-dataOut.getAcfRange()[0]
-            x = dataOut.getAcfRange()+delta/2.0
+            #delta= dataOut.getAcfRange()[1]-dataOut.getAcfRange()[0]
+            #x = dataOut.getAcfRange()+delta/2.0
+            x = dataOut.getAcfRange()*1000
             zdB = z[channel0,:,hei_plot]
             xlabel = "Time (ms)"
             ylabel = "ACF"
@@ -372,8 +373,8 @@ class ACFPlot(Figure):
                        wintitle=wintitle,
                        show=show)
 
-            if xmin == None: xmin = numpy.nanmin(x)*0.9
-            if xmax == None: xmax = numpy.nanmax(x)*1.1
+            if xmin == None: xmin = numpy.nanmin(x)#*0.9
+            if xmax == None: xmax = numpy.nanmax(x)#*1.1
             if ymin == None: ymin = numpy.nanmin(zdB)
             if ymax == None: ymax = numpy.nanmax(zdB)
 

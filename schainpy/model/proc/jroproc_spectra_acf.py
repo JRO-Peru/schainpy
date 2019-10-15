@@ -141,62 +141,25 @@ class SpectraAFCProc(ProcessingUnit):
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
             spc         =  self.dataOut.data_spc
-            data        =  numpy.fft.ifft(spc, axis=1)
-            data        =  numpy.fft.fftshift(data, axes=(1,))
+	    data        =  numpy.fft.fftshift( spc, axes=(1,))
+            data        =  numpy.fft.ifft(data, axis=1)
+	    data        =  numpy.fft.fftshift( data, axes=(1,))
             acf         =  numpy.abs(data)     #  Autocorrelacion LLAMAR A ESTE VALOR ACF
             if real:
                 acf     = data.real
             if imag:
                 acf     = data.imag
-            shape       =  acf.shape            #  nchannels, nprofiles, nsamples
-
-            #import matplotlib.pyplot as plt
-	    #print "test",acf.shape
-            #acf_tmp=acf[0,:,]
-    	    #plt.plot(acf_tmp)
-            #plt.show()
-	    #import time
-    	    #time.sleep(10)
-  	    
+            shape       =  acf.shape            #  nchannels, nprofiles, nsamples //nchannles, lags , alturas
+ 	    
 	    for j in range(shape[0]):
-	    	    for i in range(shape[1]):
-		        tmp = numpy.argmax(acf[j,:,i])
-		        if i>30:
-		            value  = (acf[j,:,i][tmp+3]+acf[j,:,i][tmp+4])/2.0
-		            acf[j,:,i][tmp] = value
-		            acf[j,:,i][tmp-1] = value
-		            acf[j,:,i][tmp+1] = value
-		            acf[j,:,i][tmp-2] = value
-		            acf[j,:,i][tmp+2] = value
-
-		            import scipy as sp
-		            from scipy import signal
-		            #acf[3,:,i] =  sp.signal.medfilt(acf[3,:,i],21)
-		    
-
-
-    	    #print numpy.argmax(acf[0,:,85])
-    	    #import matplotlib.pyplot as plt
-    	    #plt.plot(acf[0,:,85])
-    	    #a= acf[0,:,85]
-    	    #b= acf[0,:,0]
-    	    #print a[200],a[198],a[199], a[201],a[202],a[203]
-    	    #plt.show()
-    	    #import time
-    	    #time.sleep(10)
-
-
+	    	    for i in range(shape[2]):
+		            tmp = shape[1]/2
+			    value  = (acf[j,:,i][tmp-1]+acf[j,:,i][tmp+1])/2.0
+			    acf[j,:,i][tmp] = value
             # Normalizando
             for i in range(shape[0]):
                 for j in range(shape[2]):
                     acf[i,:,j]= acf[i,:,j] / numpy.max(numpy.abs(acf[i,:,j]))
-
-	    #import matplotlib.pyplot as plt
-	    #plt.plot(acf[0,:,85])
-	    #plt.show()
-	    #import time
-	    #time.sleep(20)
-
 
             self.dataOut.data_acf = acf
             return True

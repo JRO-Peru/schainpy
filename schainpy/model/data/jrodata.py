@@ -636,17 +636,20 @@ class Spectra(JROData):
         return freqrange
 
     def getAcfRange(self, extrapoints=0):
+	#print "GET ACF RANGE"
         #print "NFFTPoints",self.nFFTPoints
         #print "IPPFactor", self.ippFactor
-        deltafreq = 10. / (  self.getFmax() / (self.nFFTPoints * self.ippFactor)   )
-        #print "deltafreq",deltafreq
+        #deltafreq = 10. / (  self.getFmax() / (self.nFFTPoints * self.ippFactor)   )
+	deltatime = 1./(self.getFmax()/ self.ippFactor)
+        #print "getFmax",self.getFmax()
         #import time
         #time.sleep(30)
-        freqrange = deltafreq * \
+        timerange = deltatime * \
             (numpy.arange(self.nFFTPoints + extrapoints) -
-             self.nFFTPoints / 2.) - deltafreq / 2
-
-        return freqrange
+             self.nFFTPoints / 2.) 
+	#- deltafreq / 2
+	#print "timerange",timerange
+        return timerange
 
     def getFreqRange(self, extrapoints=0):
 

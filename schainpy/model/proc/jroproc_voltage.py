@@ -1316,8 +1316,7 @@ class SSheightProfiles(Operation):
         for i in range(self.buffer.shape[1]):
             #self.buffer[:,i]    = numpy.flip(dataOut.data[:,i*self.step:i*self.step + self.nsamples])
             self.buffer[:,i]    = dataOut.data[:,i*self.step:i*self.step + self.nsamples]
-
-            #self.buffer[:,j,self.__nHeis-j*self.step - self.nheights:self.__nHeis-j*self.step] = numpy.flip(dataOut.data[:,j*self.step:j*self.step + self.nheights])
+	    #self.buffer[:,j,self.__nHeis-j*self.step - self.nheights:self.__nHeis-j*self.step] = numpy.flip(dataOut.data[:,j*self.step:j*self.step + self.nheights])
 
         for j in range(self.buffer.shape[0]):
             self.sshProfiles[j] = numpy.transpose(self.buffer[j])
@@ -1325,6 +1324,7 @@ class SSheightProfiles(Operation):
         profileIndex  =  self.nsamples
         deltaHeight   =  dataOut.heightList[1] - dataOut.heightList[0]
         ippSeconds    =  (deltaHeight*1.0e-6)/(0.15)
+	#print "ippSeconds",ippSeconds
         try:
             if dataOut.concat_m  is not None:
                 ippSeconds= ippSeconds/float(dataOut.concat_m)
