@@ -239,6 +239,10 @@ class ACFPlot(Figure):
         self.WIDTH = 900
         self.HEIGHT = 700
         self.counter_imagwr = 0
+	self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
 
     def getSubplots(self):
         ncol = 1
@@ -272,6 +276,7 @@ class ACFPlot(Figure):
             save=False, figpath='./', figfile=None, show=True,
             ftp=False, wr_period=1, server=None,
             folder=None, username=None, password=None,
+	    ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0,
             xaxis="frequency"):
 
         channel0      =  channel
@@ -314,7 +319,6 @@ class ACFPlot(Figure):
 	#plt.show()
 	#import time
 	#time.sleep(20)
-
 
         #z           =  numpy.where(numpy.isfinite(z), z, numpy.NAN)
         shape        =  dataOut.data_acf.shape
@@ -381,6 +385,11 @@ class ACFPlot(Figure):
             print ("El parametro resFactor es %d y la resolucion en altura es %f"%(resFactor,deltaHeight ))
             print ("La cantidad de puntos en altura es %d y la nueva resolucion es %f Km"%(hei_plot.shape[0],deltaHeight*resFactor ))
             print ("La altura maxima es %d Km"%(hei_plot[-1]*deltaHeight ))
+
+	    self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
 
             self.isConfig = True
 
