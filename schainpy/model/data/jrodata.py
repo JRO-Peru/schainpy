@@ -446,6 +446,8 @@ class Voltage(JROData):
 
         self.flagDataAsBlock = False  # Asumo que la data es leida perfil a perfil
 
+	self.ippFactor = 1
+
         self.profileIndex = 0
 
     def getNoisebyHildebrand(self, channel=None):
@@ -500,6 +502,21 @@ class Voltage(JROData):
         timeInterval = self.ippSeconds * self.nCohInt
 
         return timeInterval
+
+    def getAcfRange(self, extrapoints=0):
+	#print "GET ACF RANGE"
+        #print "NFFTPoints",self.nFFTPoints
+        #print "IPPFactor", self.ippFactor
+        #deltafreq = 10. / (  self.getFmax() / (self.nFFTPoints * self.ippFactor)   )
+	deltatime = 1./(self.getFmax()/ self.ippFactor)
+        #print "getFmax",self.getFmax()
+        #import time
+        #time.sleep(30)
+        timerange = deltatime * \
+            (numpy.arange(self.nProfiles + extrapoints))#- self.nProfiles / 2.) 
+	#- deltafreq / 2
+	#print "timerange",timerange
+        return timerange
 
     noise = property(getNoise, "I'm the 'nHeights' property.")
     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")

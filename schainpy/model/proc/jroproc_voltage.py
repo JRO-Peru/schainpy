@@ -1462,6 +1462,7 @@ class voltACFLags(Operation):
             dataOut.data      = self.tmp
 	    dataOut.mode      = self.mode
 	    dataOut.nLags     = len(self.lags)
+	    dataOut.nProfiles = len(self.lags)
 	    dataOut.pairsList = pairsList
  	    dataOut.nPairs    = len(pairsList)
             dataOut.lagRange = numpy.array(self.lags)*delta

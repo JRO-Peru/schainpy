@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     desc = "High altitude experiment SHORT "
     filename = "schain.xml"
-    dpath = '/home/soporte/test_avp'
+    dpath = '/media/soporte/APOLLO/hybrid'#'/home/soporte/test_avp'
     figpath = "/home/soporte/pics"
     remotefolder = "/home/wmaster/graficos"
     t=['0','24']
@@ -31,11 +31,11 @@ if __name__ == '__main__':
 
     readUnitConfObj = controllerObj.addReadUnit(datatype='Voltage',
                                                 path=dpath,
-                                                startDate='2019/10/14',
+                                                startDate='2019/10/16',
 #                                                startDate='2018/06/18',
-                                                endDate='2019/10/14',
+                                                endDate='2019/10/16',
 #                                                endDate='2018/06/18',
-                                                startTime='14:00:00',
+                                                startTime='00:00:00',
                                                 endTime='23:59:59',
                                                 online=0,
                                                 walk=0,

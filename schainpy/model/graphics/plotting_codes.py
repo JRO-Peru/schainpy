@@ -1,6 +1,9 @@
 '''
 @author: roj-idl71
 '''
+#USED IN jroplot_voltage.py
+VOLT_ACF_CODE =11       # Volt Autocorrelation function
+
 #USED IN jroplot_spectra.py
 RTI_CODE = 0            #Range time intensity (RTI).
 SPEC_CODE = 1           #Spectra (and Cross-spectra) information.
@@ -13,6 +16,7 @@ DRIFT_CODE = 7          #Drifts graphics.
 HEIGHT_CODE = 8         #Height profile.
 PHASE_CODE = 9          #Signal Phase.
 ACF_CODE = 10           #Autocorrelation function.
+
 
 POWER_CODE = 16
 NOISE_CODE = 17
