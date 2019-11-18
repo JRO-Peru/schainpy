@@ -18,6 +18,7 @@ import numpy
 import timeit
 from fractions import Fraction
 from time import time
+from time import sleep
 
 import schainpy.admin
 from schainpy.model.data.jroheaderIO import RadarControllerHeader, SystemHeader
@@ -480,6 +481,7 @@ class DigitalRFReader(ProcessingUnit):
         if self.__thisUnixSample + 2 * self.__samples_to_read > self.__endUTCSecond * self.__sample_rate:
             print ("[Reading] There are no more data into selected time-range")
             if self.__online:
+                sleep(3)
                 self.__reload()
             else:
                 return False
