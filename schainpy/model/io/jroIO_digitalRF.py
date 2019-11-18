@@ -1,4 +1,3 @@
-
 '''
 Created on Jul 3, 2014
 
@@ -57,6 +56,7 @@ class DigitalRFReader(ProcessingUnit):
         self.__code = None
         self.dtype = None
         self.oldAverage = None
+        self.path = None
 
     def close(self):
         print 'Average of writing to digital rf format is ', self.oldAverage * 1000
@@ -245,13 +245,14 @@ class DigitalRFReader(ProcessingUnit):
             startDate
             endDate
             startTime
-            endTime        
+            endTime
             set
             expLabel
             ext
             online
             delay
         '''
+        self.path = path
         self.nCohInt = nCohInt
         self.flagDecodeData = flagDecodeData
         self.i = 0
@@ -302,7 +303,9 @@ class DigitalRFReader(ProcessingUnit):
 
         self.__frequency = self.fixed_metadata_dict.get('frequency', 1)
 
-        self.__timezone = self.fixed_metadata_dict.get('timezone', 300)
+        self.__timezone = self.fixed_metadata_dict.get('timezone', 18000)
+
+        #print self.__timezone,"timezone"
 
         try:
             nSamples = self.fixed_metadata_dict['nSamples']
@@ -438,7 +441,8 @@ class DigitalRFReader(ProcessingUnit):
         try:
             self.digitalReadObj.reload(complete_update=True)
         except:
-            self.digitalReadObj.reload()
+            self.digitalReadObj = digital_rf.DigitalRFReader(self.path)
+            #self.digitalReadObj.reload()
 
         start_index, end_index = self.digitalReadObj.get_bounds(
             self.__channelNameList[self.__channelList[0]])
@@ -482,6 +486,7 @@ class DigitalRFReader(ProcessingUnit):
         if self.__thisUnixSample + 2 * self.__samples_to_read > self.__endUTCSecond * self.__sample_rate:
             print "[Reading] There are no more data into selected time-range"
             if self.__online:
+                sleep(3)
                 self.__reload()
             else:
                 return False
