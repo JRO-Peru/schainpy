@@ -193,6 +193,7 @@ class InputQueue(Thread):
         self.project_id = project_id
         self.inputId = inputId
         self.lock = lock
+        self.islocked = False
         self.size = 0
 
     def run(self):
@@ -208,16 +209,23 @@ class InputQueue(Thread):
             self.size += sys.getsizeof(obj)
             self.queue.put(obj)
 
-    def get(self):        
-        if self.size/1000000 > 2048:
+    def get(self):
+
+        if not self.islocked and self.size/1000000 > 512:
+            self.lock.n.value += 1            
+            self.islocked = True
             self.lock.clear()
-        else:
-            self.lock.set()
+        elif self.islocked and self.size/1000000 <= 512:
+            self.islocked = False
+            self.lock.n.value -= 1
+            if self.lock.n.value == 0:
+                self.lock.set()        
+                
         obj = self.queue.get()
-        self.size -= sys.getsizeof(obj)        
+        self.size -= sys.getsizeof(obj)
         return pickle.loads(obj)
 
-
+   
 def MPDecorator(BaseClass):
     """
     Multiprocessing class decorator
@@ -252,7 +260,8 @@ def MPDecorator(BaseClass):
             self.lock = args[4]
             self.typeProc = args[5]
             self.err_queue.put('#_start_#')
-            self.queue = InputQueue(self.project_id, self.inputId, self.lock)
+            if self.inputId is not None:
+                self.queue = InputQueue(self.project_id, self.inputId, self.lock)
 
         def subscribe(self):
             '''
@@ -284,8 +293,8 @@ def MPDecorator(BaseClass):
             '''
             This function publish an object, to an specific topic.
             It blocks publishing when receiver queue is full to avoid data loss
-            '''
-
+            ''' 
+                        
             if self.inputId is None:
                 self.lock.wait()
             self.sender.send_multipart([str(id).encode(), pickle.dumps(data)])
@@ -373,7 +382,11 @@ def MPDecorator(BaseClass):
                 dataOut = self.listen()
 
                 if not dataOut.error:
-                    BaseClass.run(self, dataOut, **self.kwargs)
+                    try:
+                        BaseClass.run(self, dataOut, **self.kwargs)
+                    except:
+                        self.err_queue.put('{}|{}'.format(self.name, traceback.format_exc()))
+                        dataOut.error = True
                 else:
                     break            
 

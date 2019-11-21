@@ -11,7 +11,7 @@ import traceback
 import math
 import time
 import zmq
-from multiprocessing import Process, Queue, Event, cpu_count
+from multiprocessing import Process, Queue, Event, Value, cpu_count
 from threading import Thread
 from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
 from xml.dom import minidom
@@ -480,7 +480,6 @@ class ProcUnitConf():
         self.opConfObjList = []
         self.procUnitObj = None
         self.opObjDict = {}
-        self.mylock = Event()
 
     def __getPriority(self):
 
@@ -613,7 +612,7 @@ class ProcUnitConf():
         id = self.__getNewId()
         priority = self.__getPriority() # Sin mucho sentido, pero puede usarse
         opConfObj = OperationConf()
-        opConfObj.setup(id, name=name, priority=priority, type=optype, project_id=self.project_id, err_queue=self.err_queue, lock=self.mylock)
+        opConfObj.setup(id, name=name, priority=priority, type=optype, project_id=self.project_id, err_queue=self.err_queue, lock=self.lock)
         self.opConfObjList.append(opConfObj)
 
         return opConfObj
@@ -727,7 +726,9 @@ class ReadUnitConf(ProcUnitConf):
         self.name = None
         self.inputId = None
         self.opConfObjList = []
-        self.mylock = Event()
+        self.lock = Event()
+        self.lock.set()
+        self.lock.n = Value('d', 0)
 
     def getElementName(self):
 
@@ -772,8 +773,7 @@ class ReadUnitConf(ProcUnitConf):
         self.startTime = startTime
         self.endTime = endTime
         self.server = server
-        self.err_queue = err_queue
-        self.lock = self.mylock
+        self.err_queue = err_queue        
         self.addRunOperation(**kwargs)
 
     def update(self, **kwargs):
@@ -802,7 +802,7 @@ class ReadUnitConf(ProcUnitConf):
 
         self.opConfObjList = []
 
-    def addRunOperation(self, **kwargs): 
+    def addRunOperation(self, **kwargs):
 
         opObj = self.addOperation(name='run', optype='self') 
 
@@ -995,7 +995,7 @@ class Project(Process):
         idProcUnit = self.__getNewId()
         procUnitConfObj = ProcUnitConf()
         input_proc = self.procUnitConfObjDict[inputId]        
-        procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId, self.err_queue, input_proc.mylock)
+        procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId, self.err_queue, input_proc.lock)
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
         return procUnitConfObj
