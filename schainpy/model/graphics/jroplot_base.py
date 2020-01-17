@@ -205,6 +205,7 @@ class Plot(Operation):
         self.ymax = kwargs.get('ymax', None)
         self.yscale = kwargs.get('yscale', None)
         self.xlabel = kwargs.get('xlabel', None)
+        self.attr_time = kwargs.get('attr_time', 'utctime')
         self.decimation = kwargs.get('decimation', None)
         self.showSNR = kwargs.get('showSNR', False)
         self.oneFigure = kwargs.get('oneFigure', True)
@@ -304,8 +305,8 @@ class Plot(Operation):
             else:
                 cmap = plt.get_cmap(self.colormap)
             cmap.set_bad(self.bgcolor, 1.)
-            self.cmaps.append(cmap)
-                
+            self.cmaps.append(cmap)        
+
         for fig in self.figures:
             fig.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             fig.canvas.mpl_connect('scroll_event', self.OnBtnScroll)
@@ -468,7 +469,8 @@ class Plot(Operation):
         else:
             if self.xaxis is 'time':
                 dt = self.getDateTime(self.data.max_time)
-                xmax = (dt.replace(hour=int(self.xmax), minute=59, second=59) -
+                xmax = self.xmax - 1
+                xmax = (dt.replace(hour=int(xmax), minute=59, second=59) -
                         datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=1)).total_seconds()
                 if self.data.localtime:
                     xmax += time.timezone
@@ -477,44 +479,41 @@ class Plot(Operation):
         
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
-        #Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000])
-        
-        #i = 1 if numpy.where(
-        #    abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
-        #ystep = Y[i] / 10.
-        dig = int(numpy.log10(ymax))
-        if dig == 0:
-            digD = len(str(ymax)) - 2
-            ydec = ymax*(10**digD)
-
-            dig = int(numpy.log10(ydec))
-            ystep = ((ydec + (10**(dig)))//10**(dig))*(10**(dig))
-            ystep = ystep/5
-            ystep = ystep/(10**digD)
-
-        else:        
-            ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
-            ystep = ystep/5
-            
-        if self.xaxis is not 'time':
-            
-            dig = int(numpy.log10(xmax))
-            
-            if dig <= 0:
-                digD = len(str(xmax)) - 2
-                xdec = xmax*(10**digD)
-
-                dig = int(numpy.log10(xdec))
-                xstep = ((xdec + (10**(dig)))//10**(dig))*(10**(dig))
-                xstep = xstep*0.5
-                xstep = xstep/(10**digD)
-                
-            else:        
-                xstep = ((xmax + (10**(dig)))//10**(dig))*(10**(dig))
-                xstep = xstep/5
             
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
+
+                dig = int(numpy.log10(ymax))
+                if dig == 0:
+                    digD = len(str(ymax)) - 2
+                    ydec = ymax*(10**digD)
+
+                    dig = int(numpy.log10(ydec))
+                    ystep = ((ydec + (10**(dig)))//10**(dig))*(10**(dig))
+                    ystep = ystep/5
+                    ystep = ystep/(10**digD)
+
+                else:        
+                    ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
+                    ystep = ystep/5
+                    
+                if self.xaxis is not 'time':
+                    
+                    dig = int(numpy.log10(xmax))
+                    
+                    if dig <= 0:
+                        digD = len(str(xmax)) - 2
+                        xdec = xmax*(10**digD)
+
+                        dig = int(numpy.log10(xdec))
+                        xstep = ((xdec + (10**(dig)))//10**(dig))*(10**(dig))
+                        xstep = xstep*0.5
+                        xstep = xstep/(10**digD)
+                        
+                    else:        
+                        xstep = ((xmax + (10**(dig)))//10**(dig))*(10**(dig))
+                        xstep = xstep/5
+
                 ax.set_facecolor(self.bgcolor)
                 ax.yaxis.set_major_locator(MultipleLocator(ystep))
                 if self.xscale:
@@ -606,15 +605,13 @@ class Plot(Operation):
             fig.canvas.draw()
             if self.show:
                 fig.show()
-                figpause(0.1)
+                # figpause(0.1)
 
             if self.save:
                 self.save_figure(n)
         
         if self.plot_server:
             self.send_to_server()
-            # t = Thread(target=self.send_to_server)
-            # t.start()
 
     def save_figure(self, n):
         '''
@@ -736,10 +733,8 @@ class Plot(Operation):
         
         if self.isConfig is False:
             self.__setup(**kwargs)
-            if dataOut.type == 'Parameters':
-                t = dataOut.utctimeInit
-            else:
-                t = dataOut.utctime            
+            
+            t = getattr(dataOut, self.attr_time)
 
             if dataOut.useLocalTime:
                 self.getDateTime = datetime.datetime.fromtimestamp
@@ -753,10 +748,11 @@ class Plot(Operation):
             if 'buffer' in self.plot_type:
                 if self.xmin is None:
                     self.tmin = t
+                    self.xmin = self.getDateTime(t).hour
                 else:
                     self.tmin = (
                         self.getDateTime(t).replace(
-                            hour=self.xmin, 
+                            hour=int(self.xmin), 
                             minute=0, 
                             second=0) - self.getDateTime(0)).total_seconds()
 
@@ -769,16 +765,13 @@ class Plot(Operation):
                 self.poll = zmq.Poller()
                 self.poll.register(self.socket, zmq.POLLIN)
 
-        if dataOut.type == 'Parameters':
-            tm = dataOut.utctimeInit
-        else:
-            tm = dataOut.utctime
+        tm = getattr(dataOut, self.attr_time)
 
         if not dataOut.useLocalTime and self.localtime:
             tm -= time.timezone
         if dataOut.useLocalTime and not self.localtime:
             tm += time.timezone
-
+        
         if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:    
             self.save_counter = self.save_period
             self.__plot()
