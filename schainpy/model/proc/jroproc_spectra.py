@@ -117,7 +117,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_cspc = cspc
         self.dataOut.data_dc = dc
         self.dataOut.blockSize = blocksize
-        self.dataOut.flagShiftFFT = True
+        self.dataOut.flagShiftFFT = False
 
     def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None, shift_fft=False):
 

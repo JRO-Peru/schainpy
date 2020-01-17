@@ -591,25 +591,26 @@ class Reader(object):
     def setNextFile(self):
         """Set the next file to be readed open it and parse de file header"""
 
-        if self.fp != None:
-            self.fp.close()            
+        while True:
+            if self.fp != None:
+                self.fp.close()            
 
-        if self.online:
-            newFile = self.setNextFileOnline()
-        else:
-            newFile = self.setNextFileOffline()
-        
-        if not(newFile):
             if self.online:
-                raise schainpy.admin.SchainError('Time to wait for new files reach')
+                newFile = self.setNextFileOnline()
             else:
-                if self.fileIndex == -1:
-                    raise schainpy.admin.SchainWarning('No files found in the given path')
+                newFile = self.setNextFileOffline()
+            
+            if not(newFile):
+                if self.online:
+                    raise schainpy.admin.SchainError('Time to wait for new files reach')
                 else:
-                    raise schainpy.admin.SchainWarning('No more files to read')
-        
-        if not(self.verifyFile(self.filename)):
-            self.setNextFile()
+                    if self.fileIndex == -1:
+                        raise schainpy.admin.SchainWarning('No files found in the given path')
+                    else:
+                        raise schainpy.admin.SchainWarning('No more files to read')
+            
+            if self.verifyFile(self.filename):
+                break
         
         log.log('Opening file: %s' % self.filename, self.name)
 
@@ -682,6 +683,15 @@ class Reader(object):
         self.flagIsNewFile = 1
 
         return 1
+    
+    @staticmethod
+    def isDateTimeInRange(dt, startDate, endDate, startTime, endTime):
+        """Check if the given datetime is in range"""
+        
+        if startDate <= dt.date() <= endDate:
+            if startTime <= dt.time() <= endTime:
+                return True
+        return False
     
     def verifyFile(self, filename):
         """Check for a valid file
@@ -893,7 +903,8 @@ class JRODataReader(Reader):
                 return 0
 
             self.getBasicHeader()
-            if (self.dataOut.datatime < datetime.datetime.combine(self.startDate, self.startTime)) or (self.dataOut.datatime > datetime.datetime.combine(self.endDate, self.endTime)):
+
+            if not self.isDateTimeInRange(self.dataOut.datatime, self.startDate, self.endDate, self.startTime, self.endTime):
                 print("[Reading] Block No. %d/%d -> %s [Skipping]" % (self.nReadBlocks,
                                                                       self.processingHeaderObj.dataBlocksPerFile,
                                                                       self.dataOut.datatime.ctime()))
@@ -953,11 +964,8 @@ class JRODataReader(Reader):
                 print("[Reading] File %s can't be opened" % (filename))
 
             return False
-
-        currentPosition = fp.tell()
-        neededSize = self.processingHeaderObj.blockSize + self.firstHeaderSize
-
-        if neededSize == 0:
+        
+        if self.waitDataBlock(0):
             basicHeaderObj = BasicHeader(LOCALTIME)
             systemHeaderObj = SystemHeader()
             radarControllerHeaderObj = RadarControllerHeader()
@@ -977,22 +985,21 @@ class JRODataReader(Reader):
 
             if not(processingHeaderObj.read(fp)):
                 fp.close()
-                return False
+                return False            
 
-            neededSize = processingHeaderObj.blockSize + basicHeaderObj.size
-        else:
-            msg = "[Reading] Skipping the file %s due to it hasn't enough data" % filename
+            if not self.online:
+                dt1 = basicHeaderObj.datatime                                
+                fp.seek(self.fileSize-processingHeaderObj.blockSize-24)
+                if not(basicHeaderObj.read(fp)):
+                    fp.close()
+                    return False
+                dt2 = basicHeaderObj.datatime
+                if not self.isDateTimeInRange(dt1, self.startDate, self.endDate, self.startTime, self.endTime) and not \
+                       self.isDateTimeInRange(dt2, self.startDate, self.endDate, self.startTime, self.endTime):
+                    return False            
 
         fp.close()
-
-        fileSize = os.path.getsize(filename)
-        currentSize = fileSize - currentPosition
-
-        if currentSize < neededSize:
-            if msgFlag and (msg != None):
-                print(msg)
-            return False
-
+        
         return True
 
     def findDatafiles(self, path, startDate=None, endDate=None, expLabel='', ext='.r', walk=True, include_path=False):
