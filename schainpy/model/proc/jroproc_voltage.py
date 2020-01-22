@@ -1352,7 +1352,10 @@ class voltACFLags(Operation):
 
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
-        self.isConfig = False
+        self.isConfig  = False
+        self.profIndex = 0
+        self.buffer    = None
+
 
     def setup(self,dataOut ,lags = None,mode =None, fullBuffer= None ,pairsList = None,nAvg = 1):
 
@@ -1378,12 +1381,18 @@ class voltACFLags(Operation):
     	   pairsList = [(0,1)]
     	   self.pairsList= pairsList
 
+        self.selectChannels(self.pairsList)
+
     	if lags == None:
             if mode=='time':
                self.lags = numpy.arange(0,nProfiles)# -nProfiles+1, nProfiles
                print "self.lags", len(self.lags)
             if mode=='height':
                self.lags = numpy.arange(0,nHeights)# -nHeights+1, nHeights
+
+        # buffer de canalaes, perfiles, alturas
+        if self.buffer is None:
+            self.buffer = numpy.zeros((len(pairsList),nProfiles,nHeights),dtype='complex')
 
        	if fullBuffer:
     	    self.tmp = numpy.zeros((len(pairsList), len(self.lags), nProfiles, nHeights), dtype = 'complex')*numpy.nan
@@ -1410,60 +1419,70 @@ class voltACFLags(Operation):
         if not self.isConfig:
             self.setup(dataOut, lags = lags,mode = mode, fullBuffer= fullBuffer ,pairsList = pairsList,nAvg=nAvg)
             self.isConfig = True
+            print "pairsList Ale", self.pairsList
+            print dataOut.data[pairsList,:].shape
         if dataOut.type == "Voltage":
-            data_pre = dataOut.data  #data
-            print "size",data_pre.shape
-            #  Here is the loop :D
-    	    for l in range(len(self.pairsList)):
-                ch0 = self.pairsList[l][0]
-                ch1 = self.pairsList[l][1]
-                for i in range(len(self.lags)):
-                    print i,"hola dios"
-                    idx = self.lags[i]
-                    if self.mode == 'time':
-                        acf0 = data_pre[ch0,:self.__nProfiles-idx,:]*numpy.conj(data_pre[ch1,idx:,:])    # pair,lag,height
-                    else:
-                        acf0 = data_pre[ch0,:,:self.__nHeights-idx]*numpy.conj(data_pre[ch1,:,idx:])   #  pair,lag,profile
+            if dataOut.flagDataAsBlock:
+                print "Not implemented yet"
+                return 0
+            else:
+                print "shapebuffer",self.buffer[:,0,:].shape
+                self.buffer[:, self.profIndex, :] = dataOut.data#error
+                self.profIndex += 1
 
-                    if self.fullBuffer:
-                        self.tmp[l,i,:acf0.shape[0],:]= acf0
-                    else:
-                        self.tmp[l,i,:]= numpy.sum(acf0,axis=0)
-            if self.fullBuffer:
-                self.tmp = numpy.sum(numpy.reshape(self.tmp,(self.tmp.shape[0],self.tmp.shape[1],self.tmp.shape[2]/self.nAvg,self.nAvg,self.tmp.shape[3])),axis=3)
-                dataOut.nAvg = self.nAvg
+            if self.profIndex == self.__nProfiles :
+                data_pre = self.buffer  #data
+                print "size",data_pre.shape
+                #  Here is the loop :D
+                for l in range(len(self.pairsList)):
+                    ch0 = self.pairsList[l][0]
+                    ch1 = self.pairsList[l][1]
+                    for i in range(len(self.lags)):
+                        idx = self.lags[i]
+                        if self.mode == 'time':
+                            acf0 = data_pre[ch0,:self.__nProfiles-idx,:]*numpy.conj(data_pre[ch1,idx:,:])    # pair,lag,height
+                        else:
+                            acf0 = data_pre[ch0,:,:self.__nHeights-idx]*numpy.conj(data_pre[ch1,:,idx:])   #  pair,lag,profile
 
-    	    if self.mode == 'time':
-    		    delta = dataOut.ippSeconds*dataOut.nCohInt
-    	    else:
-    		    delta = dataOut.heightList[1] - dataOut.heightList[0]
+                        if self.fullBuffer:
+                            self.tmp[l,i,:acf0.shape[0],:]= acf0
+                        else:
+                            self.tmp[l,i,:]= numpy.sum(acf0,axis=0)
+                if self.fullBuffer:
+                    self.tmp = numpy.sum(numpy.reshape(self.tmp,(self.tmp.shape[0],self.tmp.shape[1],self.tmp.shape[2]/self.nAvg,self.nAvg,self.tmp.shape[3])),axis=3)
+                    dataOut.nAvg = self.nAvg
 
-            shape= self.tmp.shape # mode time
-	        # Normalizando
-            for i in range(len(pairsList)):
-                for j in range(shape[2]):
-                    self.tmp[i,:,j]= self.tmp[i,:,j].real / numpy.max(numpy.abs(self.tmp[i,:,j]))
+        	    if self.mode == 'time':
+        		    delta = dataOut.ippSeconds*dataOut.nCohInt
+        	    else:
+        		    delta = dataOut.heightList[1] - dataOut.heightList[0]
 
-	        #import matplotlib.pyplot as plt
-	        #print "test",self.tmp.shape
-	        #print self.tmp[0,0,0]
-            #print numpy.max(numpy.abs(self.tmp[0,:,0]))
-            #acf_tmp=self.tmp[0,:,100].real/numpy.max(numpy.abs(self.tmp[0,:,100]))
-	        #print acf_tmp
-    	    #plt.plot(acf_tmp)
-            #plt.show()
-	        #import time
-    	    #time.sleep(20)
+                shape= self.tmp.shape # mode time
+    	        # Normalizando
+                for i in range(len(pairsList)):
+                    for j in range(shape[2]):
+                        self.tmp[i,:,j]= self.tmp[i,:,j].real / numpy.max(numpy.abs(self.tmp[i,:,j]))
 
-            dataOut.data      = self.tmp
-    	    dataOut.mode      = self.mode
-    	    dataOut.nLags     = len(self.lags)
-    	    dataOut.nProfiles = len(self.lags)
-    	    dataOut.pairsList = pairsList
-     	    dataOut.nPairs    = len(pairsList)
-            dataOut.lagRange = numpy.array(self.lags)*delta
-            dataOut.flagDataAsBlock = True
-            dataOut.flagNoData = False
+    	        #import matplotlib.pyplot as plt
+    	        #print "test",self.tmp.shape
+    	        #print self.tmp[0,0,0]
+                #print numpy.max(numpy.abs(self.tmp[0,:,0]))
+                #acf_tmp=self.tmp[0,:,100].real/numpy.max(numpy.abs(self.tmp[0,:,100]))
+    	        #print acf_tmp
+        	    #plt.plot(acf_tmp)
+                #plt.show()
+    	        #import time
+        	    #time.sleep(20)
+                dataOut.data      = self.tmp
+                dataOut.mode      = self.mode
+                dataOut.nLags     = len(self.lags)
+                dataOut.nProfiles = len(self.lags)
+                dataOut.pairsList = pairsList
+                dataOut.nPairs    = len(pairsList)
+                dataOut.lagRange = numpy.array(self.lags)*delta
+                dataOut.flagDataAsBlock = True
+                dataOut.flagNoData = False
+
 
 import time
 #################################################
