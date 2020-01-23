@@ -933,7 +933,7 @@ class ProfileSelector(Operation):
             rangeList            :    List of profile ranges. Example: rangeList = ((4, 30), (32, 64), (128, 256))
 
         """
-        print "HOLA MUNDO CRUEL"
+        #print "HOLA MUNDO CRUEL"
         if rangeList is not None:
             if type(rangeList[0]) not in (tuple, list):
                 rangeList = [rangeList]
@@ -1355,6 +1355,7 @@ class voltACFLags(Operation):
         self.isConfig  = False
         self.profIndex = 0
         self.buffer    = None
+        self.channelList = []
 
 
     def setup(self,dataOut ,lags = None,mode =None, fullBuffer= None ,pairsList = None,nAvg = 1):
@@ -1364,7 +1365,7 @@ class voltACFLags(Operation):
     	self.mode      = mode
     	self.fullBuffer= fullBuffer
     	self.nAvg      = nAvg
-        self.pairsList  = pairsList
+        self.pairsList  = [pairsList]
     	nChannels      = dataOut.nChannels
     	nProfiles      = dataOut.nProfiles
     	nHeights       = dataOut.nHeights
@@ -1381,7 +1382,10 @@ class voltACFLags(Operation):
     	   pairsList = [(0,1)]
     	   self.pairsList= pairsList
 
-        self.selectChannels(self.pairsList)
+
+        for i in range(len(self.pairsList)):
+            self.channelList.append(self.pairsList[i][0])
+            self.channelList.append(self.pairsList[i][1])
 
     	if lags == None:
             if mode=='time':
@@ -1392,20 +1396,22 @@ class voltACFLags(Operation):
 
         # buffer de canalaes, perfiles, alturas
         if self.buffer is None:
-            self.buffer = numpy.zeros((len(pairsList),nProfiles,nHeights),dtype='complex')
+            self.buffer = numpy.zeros((nChannels,nProfiles,nHeights),dtype='complex')
 
        	if fullBuffer:
-    	    self.tmp = numpy.zeros((len(pairsList), len(self.lags), nProfiles, nHeights), dtype = 'complex')*numpy.nan
+    	    self.tmp = numpy.zeros((len(self.pairsList), len(self.lags), nProfiles, nHeights), dtype = 'complex')*numpy.nan
         elif mode =='time':
-    		self.tmp = numpy.zeros((len(pairsList), len(self.lags), nHeights),dtype='complex')
+    		self.tmp = numpy.zeros((len(self.pairsList), len(self.lags), nHeights),dtype='complex')
         elif mode =='height':
-    		self.tmp = numpy.zeros(len(pairsList), (len(self.lags), nProfiles),dtype='complex')
+    		self.tmp = numpy.zeros((len(self.pairsList), len(self.lags), nProfiles),dtype='complex')
 
     	print "lags", len(self.lags),self.lags
     	print "mode",self.mode
     	print "nChannels", nChannels
     	print "nProfiles", nProfiles
     	print "nHeights" , nHeights
+        print "acf_channels",len(self.pairsList)
+        print "channelList",self.channelList
     	print "pairsList", pairsList,len(self.pairsList)
     	print "fullBuffer", fullBuffer
     	#print "type(pairsList)",type(pairsList)
@@ -1419,21 +1425,18 @@ class voltACFLags(Operation):
         if not self.isConfig:
             self.setup(dataOut, lags = lags,mode = mode, fullBuffer= fullBuffer ,pairsList = pairsList,nAvg=nAvg)
             self.isConfig = True
-            print "pairsList Ale", self.pairsList
-            print dataOut.data[pairsList,:].shape
+
         if dataOut.type == "Voltage":
             if dataOut.flagDataAsBlock:
                 print "Not implemented yet"
                 return 0
             else:
-                print "shapebuffer",self.buffer[:,0,:].shape
-                self.buffer[:, self.profIndex, :] = dataOut.data#error
+                self.buffer[:, self.profIndex, :] = dataOut.data
                 self.profIndex += 1
 
             if self.profIndex == self.__nProfiles :
+
                 data_pre = self.buffer  #data
-                print "size",data_pre.shape
-                #  Here is the loop :D
                 for l in range(len(self.pairsList)):
                     ch0 = self.pairsList[l][0]
                     ch1 = self.pairsList[l][1]
@@ -1451,17 +1454,16 @@ class voltACFLags(Operation):
                 if self.fullBuffer:
                     self.tmp = numpy.sum(numpy.reshape(self.tmp,(self.tmp.shape[0],self.tmp.shape[1],self.tmp.shape[2]/self.nAvg,self.nAvg,self.tmp.shape[3])),axis=3)
                     dataOut.nAvg = self.nAvg
-
-        	    if self.mode == 'time':
-        		    delta = dataOut.ippSeconds*dataOut.nCohInt
-        	    else:
+                if self.mode == 'time':
+                    #print "entre"
+                    delta = dataOut.ippSeconds*dataOut.nCohInt
+                else:
         		    delta = dataOut.heightList[1] - dataOut.heightList[0]
 
-                shape= self.tmp.shape # mode time
-    	        # Normalizando
-                for i in range(len(pairsList)):
+                shape= self.tmp.shape
+                for i in range(len(self.pairsList)):
                     for j in range(shape[2]):
-                        self.tmp[i,:,j]= self.tmp[i,:,j].real / numpy.max(numpy.abs(self.tmp[i,:,j]))
+                        self.tmp[i,:,j]= self.tmp[i,:,j].real/numpy.max(numpy.abs(self.tmp[i,:,j]))
 
     	        #import matplotlib.pyplot as plt
     	        #print "test",self.tmp.shape
@@ -1473,7 +1475,8 @@ class voltACFLags(Operation):
                 #plt.show()
     	        #import time
         	    #time.sleep(20)
-                dataOut.data      = self.tmp
+                dataOut.data = self.buffer
+                dataOut.data_acfLag = self.tmp
                 dataOut.mode      = self.mode
                 dataOut.nLags     = len(self.lags)
                 dataOut.nProfiles = len(self.lags)
@@ -1482,6 +1485,7 @@ class voltACFLags(Operation):
                 dataOut.lagRange = numpy.array(self.lags)*delta
                 dataOut.flagDataAsBlock = True
                 dataOut.flagNoData = False
+                self.profIndex = 0
 
 
 import time
