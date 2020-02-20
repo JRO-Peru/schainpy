@@ -23,6 +23,7 @@ from numpy import NaN
 from scipy.optimize.optimize import OptimizeWarning
 warnings.filterwarnings('ignore')
 
+import matplotlib.pyplot as plt
 
 SPEED_OF_LIGHT = 299792458
 
@@ -807,10 +808,10 @@ class PrecipitationProc(Operation):
 class FullSpectralAnalysis(Operation): 
     
     """
-        Function that implements Full Spectral Analisys technique.
+        Function that implements Full Spectral Analysis technique.
         
         Input:    
-            self.dataOut.data_pre    :    SelfSpectra and CrossSPectra data
+            self.dataOut.data_pre    :    SelfSpectra and CrossSpectra data
             self.dataOut.groupList   :    Pairlist of channels
             self.dataOut.ChanDist    :    Physical distance between receivers
         
@@ -823,15 +824,15 @@ class FullSpectralAnalysis(Operation):
         Parameters affected:    Winds, height range, SNR
         
     """
-    def run(self, dataOut, Xi01=None, Xi02=None, Xi12=None, Eta01=None, Eta02=None, Eta12=None, SNRlimit=7):
+    def run(self, dataOut, Xi01=None, Xi02=None, Xi12=None, Eta01=None, Eta02=None, Eta12=None, SNRlimit=7, minheight=None, maxheight=None):
         
         self.indice=int(numpy.random.rand()*1000) 
         
         spc = dataOut.data_pre[0].copy()
         cspc = dataOut.data_pre[1]
         
-        """NOTA SE DEBE REMOVER EL RANGO DEL PULSO TX"""
-            
+        """Erick: NOTE THE RANGE OF THE PULSE TX MUST BE REMOVED"""
+
         SNRspc = spc.copy()
         SNRspc[:,:,0:7]= numpy.NaN
            
@@ -842,6 +843,24 @@ class FullSpectralAnalysis(Operation):
         nProfiles = spc.shape[1]
         nHeights = spc.shape[2]
         
+        # first_height = 0.75 #km (ref: data header 20170822)
+        # resolution_height = 0.075 #km
+        '''
+            finding height range. check this when radar parameters are changed!
+        '''
+        if maxheight is not None:
+            # range_max = math.ceil((maxheight - first_height) / resolution_height) # theoretical
+            range_max = math.ceil(13.26 * maxheight - 3) # empirical, works better
+        else:
+            range_max = nHeights
+        if minheight is not None:
+            # range_min = int((minheight - first_height) / resolution_height) # theoretical
+            range_min = int(13.26 * minheight - 5) # empirical, works better
+            if range_min < 0:
+                range_min = 0
+        else:
+            range_min = 0
+
         pairsList = dataOut.groupList
         if dataOut.ChanDist is not None :
             ChanDist = dataOut.ChanDist
@@ -850,15 +869,7 @@ class FullSpectralAnalysis(Operation):
         
         FrecRange = dataOut.spc_range[0]
         
-        ySamples=numpy.ones([nChannel,nProfiles])
-        phase=numpy.ones([nChannel,nProfiles])
-        CSPCSamples=numpy.ones([nChannel,nProfiles],dtype=numpy.complex_)
-        coherence=numpy.ones([nChannel,nProfiles])
-        PhaseSlope=numpy.ones(nChannel)
-        PhaseInter=numpy.ones(nChannel)
         data_SNR=numpy.zeros([nProfiles])
-        
-        data = dataOut.data_pre
         noise = dataOut.noise
         
         dataOut.data_SNR = (numpy.mean(SNRspc,axis=1)- noise[0]) / noise[0]
@@ -871,48 +882,53 @@ class FullSpectralAnalysis(Operation):
         velocityX=[]
         velocityY=[]
         velocityV=[]
-        PhaseLine=[]
+        PhaseLine=[] # unused afterwards
         
         dbSNR = 10*numpy.log10(dataOut.data_SNR)
         dbSNR = numpy.average(dbSNR,0)
         
+        '''***********************************************WIND ESTIMATION**************************************'''
+        
         for Height in range(nHeights):
-   
-            [Vzon,Vmer,Vver, GaussCenter, PhaseSlope, FitGaussCSPC]= self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, dataOut.spc_range, dbSNR[Height], SNRlimit)
-            PhaseLine = numpy.append(PhaseLine, PhaseSlope)
+ 
+            if Height >= range_min and Height < range_max:    
+                # [Vzon,Vmer,Vver, GaussCenter, PhaseSlope, FitGaussCSPC] = self.WindEstimation(spc, cspc, pairsList, ChanDist, Height, noise, dataOut.spc_range, dbSNR[Height], SNRlimit)
+
+                # error_code unused, yet maybe useful for future analysis.
+                # Test
+                [Vzon,Vmer,Vver, error_code] = self.TestWindEstimation(spc[:,:,Height], cspc[:,:,Height], pairsList, ChanDist, Height, noise, dataOut.spc_range, dbSNR[Height], SNRlimit)    
+
+            else:
+                Vzon,Vmer,Vver = 0., 0., numpy.NaN
             
-            if abs(Vzon)<100. and abs(Vzon)> 0.:
-                velocityX=numpy.append(velocityX, Vzon)#Vmag
-               
+            
+            if abs(Vzon) < 100. and abs(Vzon) > 0. and abs(Vmer) < 100. and abs(Vmer) > 0.:
+                velocityX=numpy.append(velocityX, Vzon)
+                velocityY=numpy.append(velocityY, -Vmer)
+
             else:
                 velocityX=numpy.append(velocityX, numpy.NaN)
-                
-            if abs(Vmer)<100. and abs(Vmer) > 0.:
-                velocityY=numpy.append(velocityY, -Vmer)#Vang
-                
-            else:
                 velocityY=numpy.append(velocityY, numpy.NaN)
             
             if dbSNR[Height] > SNRlimit:
-                velocityV=numpy.append(velocityV, -Vver)#FirstMoment[Height])
+                velocityV=numpy.append(velocityV, -Vver) # reason for this minus sign -> convention? (taken from Ericks version)
             else:
                 velocityV=numpy.append(velocityV, numpy.NaN)
-
         
         
-        '''Nota: Cambiar el signo de numpy.array(velocityX) cuando se intente procesar datos de BLTR'''
-        data_output[0] = numpy.array(velocityX)  #self.moving_average(numpy.array(velocityX) , N=1)
-        data_output[1] = numpy.array(velocityY)  #self.moving_average(numpy.array(velocityY) , N=1)
-        data_output[2] = velocityV#FirstMoment
+        '''Change the numpy.array (velocityX) sign when trying to process BLTR data (Erick)'''
+        data_output[0] = numpy.array(velocityX)  
+        data_output[1] = numpy.array(velocityY)  
+        data_output[2] = velocityV
    
-        xFrec=FrecRange[0:spc.shape[1]]
         
-        dataOut.data_output=data_output
-                
+        dataOut.data_output = data_output
+     
         return dataOut
     
-    
+
     def moving_average(self,x, N=2):
+        """ convolution for smoothenig data. note that last N-1 values are convolution with zeroes """
         return numpy.convolve(x, numpy.ones((N,))/N)[(N-1):]
     
     def gaus(self,xSamples,Amp,Mu,Sigma):
@@ -921,11 +937,17 @@ class FullSpectralAnalysis(Operation):
     
     
     def Moments(self, ySamples, xSamples):
-        Pot = numpy.nansum( ySamples )                              # Potencia, momento 0
+        '''*** 
+        Variables corresponding to moments of distribution.
+        Also used as initial coefficients for curve_fit.
+        Vr was corrected. Only a velocity when x is velocity, of course.
+        ***'''
+        Pot = numpy.nansum( ySamples )                                  # Potencia, momento 0
         yNorm = ySamples / Pot
-        Vr = numpy.nansum( yNorm * xSamples )                       # Velocidad radial, mu, corrimiento doppler, primer momento
-        Sigma2 = abs(numpy.nansum( yNorm * ( xSamples - Vr )**2 ))  # Segundo Momento 
-        Desv = Sigma2**0.5                                          # Desv. Estandar, Ancho espectral
+        x_range = (numpy.max(xSamples)-numpy.min(xSamples))
+        Vr = numpy.nansum( yNorm * xSamples )*x_range/len(xSamples)     # Velocidad radial, mu, corrimiento doppler, primer momento
+        Sigma2 = abs(numpy.nansum( yNorm * ( xSamples - Vr )**2 ))      # Segundo Momento 
+        Desv = Sigma2**0.5                                              # Desv. Estandar, Ancho espectral
         
         return numpy.array([Pot, Vr, Desv])
     
@@ -1171,7 +1193,366 @@ class FullSpectralAnalysis(Operation):
             
             
         return Vzon, Vmer, Vver, GaussCenter, PhaseSlope, FitGaussCSPC
+
+
+
+    def StopWindEstimation(self, error_code):
+        '''
+            the wind calculation and returns zeros
+        '''
+        Vzon = 0
+        Vmer = 0
+        Vver = numpy.nan
+        return Vzon, Vmer, Vver, error_code
+
+    def AntiAliasing(self, interval, maxstep):
+        """ 
+            function to prevent errors from aliased values when computing phaseslope
+        """
+        antialiased = numpy.zeros(len(interval))*0.0
+        copyinterval = interval.copy()
+
+        antialiased[0] = copyinterval[0]
+
+        for i in range(1,len(antialiased)):
+
+            step = interval[i] - interval[i-1] 
+                    
+            if step > maxstep:
+                copyinterval -= 2*numpy.pi
+                antialiased[i] = copyinterval[i]
+
+            elif step < maxstep*(-1):
+                copyinterval += 2*numpy.pi
+                antialiased[i] = copyinterval[i]
+            
+            else:
+                antialiased[i] = copyinterval[i].copy()
+
+        return antialiased
+
+
+
+    def TestWindEstimation(self, spc, cspc, pairsList, ChanDist, Height, noise, AbbsisaRange, dbSNR, SNRlimit):
+        """
+            Function that Calculates Zonal, Meridional and Vertical wind velocities.
+            Initial Version by E. Bocanegra updated by J. Zibell until Nov. 2019.
+
+            Input:
+                spc, cspc       : self spectra and cross spectra data. In Briggs notation something like S_i*(S_i)_conj, (S_j)_conj respectively.
+                pairsList       : Pairlist of channels
+                ChanDist        : array of xi_ij and eta_ij
+                Height          : height at which data is processed
+                noise           : noise in [channels] format for specific height
+                Abbsisarange    : range of the frequencies or velocities
+                dbSNR, SNRlimit : signal to noise ratio in db, lower limit
+
+            Output:
+                Vzon, Vmer, Vver         : wind velocities
+                error_code               : int that states where code is terminated
+
+                    0 : no error detected
+                    1 : Gaussian of mean spc exceeds widthlimit
+                    2 : no Gaussian of mean spc found
+                    3 : SNR to low or velocity to high -> prec. e.g.
+                    4 : at least one Gaussian of cspc exceeds widthlimit
+                    5 : zero out of three cspc Gaussian fits converged
+                    6 : phase slope fit could not be found 
+                    7 : arrays used to fit phase have different length
+                    8 : frequency range is either too short (len <= 5) or very long (> 30% of cspc)
+
+        """
+
+        error_code = 0
+ 
+
+        SPC_Samples = numpy.ones([spc.shape[0],spc.shape[1]])           # for normalized spc values for one height
+        phase = numpy.ones([spc.shape[0],spc.shape[1]])                 # phase between channels
+        CSPC_Samples = numpy.ones([spc.shape[0],spc.shape[1]],dtype=numpy.complex_)      # for normalized cspc values
+        PhaseSlope = numpy.zeros(spc.shape[0])                          # slope of the phases, channelwise
+        PhaseInter = numpy.ones(spc.shape[0])                           # intercept to the slope of the phases, channelwise
+        xFrec = AbbsisaRange[0][0:spc.shape[1]]                         # frequency range 
+        xVel = AbbsisaRange[2][0:spc.shape[1]]                          # velocity range
+        SPCav = numpy.average(spc, axis=0)-numpy.average(noise)         # spc[0]-noise[0]
         
+        SPCmoments_vel = self.Moments(SPCav, xVel )  # SPCmoments_vel[1] corresponds to vertical velocity and is used to determine if signal corresponds to wind (if .. <3)
+        CSPCmoments = []
+        
+
+        '''Getting Eij and Nij'''
+
+        Xi01, Xi02, Xi12 = ChanDist[:,0]
+        Eta01, Eta02, Eta12 = ChanDist[:,1]
+
+        # update nov 19
+        widthlimit = 7 # maximum width in Hz of the gaussian, empirically determined. Anything above 10 is unrealistic, often values between 1 and 5 correspond to proper fits.
+
+        '''************************* SPC is normalized ********************************'''
+
+        spc_norm = spc.copy() # need copy() because untouched spc is needed for normalization of cspc below
+        spc_norm = numpy.where(numpy.isfinite(spc_norm), spc_norm, numpy.NAN)
+
+        for i in range(spc.shape[0]):  
+            
+            spc_sub = spc_norm[i,:] - noise[i] # spc not smoothed here or in previous version.
+
+            Factor_Norm = 2*numpy.max(xFrec) / numpy.count_nonzero(~numpy.isnan(spc_sub)) # usually = Freq range / nfft
+            normalized_spc = spc_sub / (numpy.nansum(numpy.abs(spc_sub)) * Factor_Norm) 
+            
+            xSamples = xFrec                   # the frequency range is taken
+            SPC_Samples[i] = normalized_spc             # Normalized SPC values are taken
+
+        '''********************** FITTING MEAN SPC GAUSSIAN **********************'''
+
+        """ the gaussian of the mean: first subtract noise, then normalize. this is legal because
+            you only fit the curve and don't need the absolute value of height for calculation,
+            only for estimation of width. for normalization of cross spectra, you need initial,
+            unnormalized self-spectra With noise.
+
+            Technically, you don't even need to normalize the self-spectra, as you only need the 
+            width of the peak. However, it was left this way. Note that the normalization has a flaw:
+            due to subtraction of the noise, some values are below zero. Raw "spc" values should be
+            >= 0, as it is the modulus squared of the signals (complex * it's conjugate)
+        """
+
+        SPCMean = numpy.average(SPC_Samples, axis=0)     
+        
+        popt = [1e-10,0,1e-10]
+        SPCMoments = self.Moments(SPCMean, xSamples)
+
+        if dbSNR > SNRlimit and numpy.abs(SPCmoments_vel[1]) < 3: 
+            try:
+                popt,pcov = curve_fit(self.gaus,xSamples,SPCMean,p0=SPCMoments)#, bounds=(-numpy.inf, [numpy.inf, numpy.inf, 10])). Setting bounds does not make the code faster but only keeps the fit from finding the minimum.
+                if popt[2] > widthlimit: # CONDITION
+                    return self.StopWindEstimation(error_code = 1)
+
+                FitGauss = self.gaus(xSamples,*popt)
+                
+            except :#RuntimeError:
+                return self.StopWindEstimation(error_code = 2)
+
+        else:
+            return self.StopWindEstimation(error_code = 3)
+        
+
+
+        '''***************************** CSPC Normalization *************************
+            new  section:
+                The Spc spectra are used to normalize the crossspectra. Peaks from precipitation
+                influence the norm which is not desired. First, a range is identified where the 
+                wind peak is estimated -> sum_wind is sum of those frequencies. Next, the area 
+                around it gets cut off and values replaced by mean determined by the boundary 
+                data -> sum_noise (spc is not normalized here, thats why the noise is important)
+
+                The sums are then added and multiplied by range/datapoints, because you need
+                an integral and not a sum for normalization.
+                
+                A norm is found according to Briggs 92.        
+        '''
+
+        radarWavelength = 0.6741 # meters
+        count_limit_freq = numpy.abs(popt[1]) + widthlimit # Hz, m/s can be also used if velocity is desired abscissa. 
+        # count_limit_freq = numpy.max(xFrec)
+
+        channel_integrals = numpy.zeros(3)
+
+        for i in range(spc.shape[0]):
+            '''
+                find the point in array corresponding to count_limit frequency.
+                sum over all frequencies in the range around zero Hz @ math.ceil(N_freq/2)
+            '''
+            N_freq = numpy.count_nonzero(~numpy.isnan(spc[i,:]))
+            count_limit_int = int(math.ceil( count_limit_freq / numpy.max(xFrec) * (N_freq / 2)  )) # gives integer point           
+            sum_wind = numpy.nansum( spc[i, (math.ceil(N_freq/2) - count_limit_int) : (math.ceil(N_freq / 2) + count_limit_int)] ) #N_freq/2 is where frequency (velocity) is zero, i.e. middle of spectrum.
+            sum_noise = (numpy.mean(spc[i, :4]) + numpy.mean(spc[i, -6:-2]))/2.0 * (N_freq - 2*count_limit_int)
+            channel_integrals[i] = (sum_noise + sum_wind) * (2*numpy.max(xFrec) / N_freq)
+        
+
+        cross_integrals_peak = numpy.zeros(3)
+        # cross_integrals_totalrange = numpy.zeros(3)
+
+        for i in range(spc.shape[0]):
+
+            cspc_norm = cspc[i,:].copy()    # cspc not smoothed here or in previous version
+
+            chan_index0 = pairsList[i][0]
+            chan_index1 = pairsList[i][1]
+
+            cross_integrals_peak[i] = channel_integrals[chan_index0]*channel_integrals[chan_index1]
+            normalized_cspc = cspc_norm / numpy.sqrt(cross_integrals_peak[i]) 
+            CSPC_Samples[i] = normalized_cspc
+
+            ''' Finding cross integrals without subtracting any peaks:'''
+            # FactorNorm0 = 2*numpy.max(xFrec) / numpy.count_nonzero(~numpy.isnan(spc[chan_index0,:]))
+            # FactorNorm1 = 2*numpy.max(xFrec) / numpy.count_nonzero(~numpy.isnan(spc[chan_index1,:]))
+            # cross_integrals_totalrange[i] = (numpy.nansum(spc[chan_index0,:])) * FactorNorm0  *  (numpy.nansum(spc[chan_index1,:])) * FactorNorm1 
+            # normalized_cspc = cspc_norm / numpy.sqrt(cross_integrals_totalrange[i]) 
+            # CSPC_Samples[i] = normalized_cspc
+           
+            
+            phase[i] = numpy.arctan2(CSPC_Samples[i].imag, CSPC_Samples[i].real)
+
+
+        CSPCmoments = numpy.vstack([self.Moments(numpy.abs(CSPC_Samples[0]), xSamples),
+                                    self.Moments(numpy.abs(CSPC_Samples[1]), xSamples),
+                                    self.Moments(numpy.abs(CSPC_Samples[2]), xSamples)])
+        
+
+        '''***Sorting out NaN entries***'''
+        CSPCMask01 = numpy.abs(CSPC_Samples[0])
+        CSPCMask02 = numpy.abs(CSPC_Samples[1])
+        CSPCMask12 = numpy.abs(CSPC_Samples[2])
+        
+        mask01 = ~numpy.isnan(CSPCMask01)
+        mask02 = ~numpy.isnan(CSPCMask02)
+        mask12 = ~numpy.isnan(CSPCMask12)
+        
+        CSPCMask01 = CSPCMask01[mask01]
+        CSPCMask02 = CSPCMask02[mask02]
+        CSPCMask12 = CSPCMask12[mask12]
+
+        
+        popt01, popt02, popt12 = [1e-10,1e-10,1e-10], [1e-10,1e-10,1e-10] ,[1e-10,1e-10,1e-10]  
+        FitGauss01, FitGauss02, FitGauss12 = numpy.empty(len(xSamples))*0, numpy.empty(len(xSamples))*0, numpy.empty(len(xSamples))*0
+        
+        '''*******************************FIT GAUSS CSPC************************************'''
+
+        try:            
+            popt01,pcov = curve_fit(self.gaus,xSamples[mask01],numpy.abs(CSPCMask01),p0=CSPCmoments[0])
+            if popt01[2] > widthlimit: # CONDITION
+                return self.StopWindEstimation(error_code = 4)
+
+            popt02,pcov = curve_fit(self.gaus,xSamples[mask02],numpy.abs(CSPCMask02),p0=CSPCmoments[1])
+            if popt02[2] > widthlimit: # CONDITION
+                return self.StopWindEstimation(error_code = 4)
+
+            popt12,pcov = curve_fit(self.gaus,xSamples[mask12],numpy.abs(CSPCMask12),p0=CSPCmoments[2])
+            if popt12[2] > widthlimit: # CONDITION
+                return self.StopWindEstimation(error_code = 4)
+
+            FitGauss01 = self.gaus(xSamples, *popt01)
+            FitGauss02 = self.gaus(xSamples, *popt02)
+            FitGauss12 = self.gaus(xSamples, *popt12)
+
+        except:
+            return self.StopWindEstimation(error_code = 5)
+
+
+        '''************* Getting Fij ***************'''
+
+        
+        #Punto en Eje X de la Gaussiana donde se encuentra el centro -- x-axis point of the gaussian where the center is located           
+        # -> PointGauCenter           
+        GaussCenter = popt[1] 
+        ClosestCenter = xSamples[numpy.abs(xSamples-GaussCenter).argmin()]
+        PointGauCenter = numpy.where(xSamples==ClosestCenter)[0][0]
+        
+        #Punto e^-1 hubicado en la Gaussiana  -- point where e^-1 is located in the gaussian
+        PeMinus1 = numpy.max(FitGauss) * numpy.exp(-1)
+        FijClosest = FitGauss[numpy.abs(FitGauss-PeMinus1).argmin()] # El punto mas cercano a "Peminus1" dentro de "FitGauss"
+        PointFij = numpy.where(FitGauss==FijClosest)[0][0]
+
+        Fij = numpy.abs(xSamples[PointFij] - xSamples[PointGauCenter])
+            
+        '''********** Taking frequency ranges from mean SPCs **********'''
+                
+        #GaussCenter = popt[1]     #Primer momento 01
+        GauWidth = popt[2] * 3/2        #Ancho de banda de Gau01 -- Bandwidth of Gau01 TODO why *3/2?
+        Range = numpy.empty(2)
+        Range[0] = GaussCenter - GauWidth
+        Range[1] = GaussCenter + GauWidth 
+        #Punto en Eje X de la Gaussiana donde se encuentra ancho de banda (min:max) -- Point in x-axis where the bandwidth is located (min:max)
+        ClosRangeMin = xSamples[numpy.abs(xSamples-Range[0]).argmin()]
+        ClosRangeMax = xSamples[numpy.abs(xSamples-Range[1]).argmin()]
+        
+        PointRangeMin = numpy.where(xSamples==ClosRangeMin)[0][0]
+        PointRangeMax = numpy.where(xSamples==ClosRangeMax)[0][0]
+        
+        Range = numpy.array([ PointRangeMin, PointRangeMax ])
+        
+        FrecRange = xFrec[ Range[0] : Range[1] ]
+
+        
+        '''************************** Getting Phase Slope ***************************''' 
+        
+        for i in range(1,3): # Changed to only compute two 
+            
+            if len(FrecRange) > 5 and len(FrecRange) < spc.shape[1] * 0.3:
+                # PhaseRange=self.moving_average(phase[i,Range[0]:Range[1]],N=1)  #used before to smooth phase with N=3
+                PhaseRange = phase[i,Range[0]:Range[1]].copy()
+                
+                mask = ~numpy.isnan(FrecRange) & ~numpy.isnan(PhaseRange)
+                
+
+                if len(FrecRange) == len(PhaseRange):
+                    
+                    try: 
+                        slope, intercept, _, _, _ = stats.linregress(FrecRange[mask], self.AntiAliasing(PhaseRange[mask], 4.5))
+                        PhaseSlope[i] = slope
+                        PhaseInter[i] = intercept
+
+                    except:
+                        return self.StopWindEstimation(error_code = 6)
+
+                else:
+                    return self.StopWindEstimation(error_code = 7)
+                
+            else:
+                return self.StopWindEstimation(error_code = 8)
+        
+            
+        
+        '''*** Constants A-H correspond to the convention as in Briggs and Vincent 1992 ***'''
+
+        '''Getting constant C'''
+        cC=(Fij*numpy.pi)**2
+        
+        '''****** Getting constants F and G ******'''
+        MijEijNij = numpy.array([[Xi02,Eta02], [Xi12,Eta12]])
+        MijResult0 = (-PhaseSlope[1] * cC) / (2*numpy.pi)
+        MijResult1 = (-PhaseSlope[2] * cC) / (2*numpy.pi) 
+        MijResults = numpy.array([MijResult0,MijResult1])
+        (cF,cG) = numpy.linalg.solve(MijEijNij, MijResults) 
+        
+        '''****** Getting constants A, B and H ******'''
+        W01 = numpy.nanmax( FitGauss01 )  
+        W02 = numpy.nanmax( FitGauss02 ) 
+        W12 = numpy.nanmax( FitGauss12 ) 
+        
+        WijResult0 = ((cF * Xi01 + cG * Eta01)**2)/cC - numpy.log(W01 / numpy.sqrt(numpy.pi / cC))
+        WijResult1 = ((cF * Xi02 + cG * Eta02)**2)/cC - numpy.log(W02 / numpy.sqrt(numpy.pi / cC))
+        WijResult2 = ((cF * Xi12 + cG * Eta12)**2)/cC - numpy.log(W12 / numpy.sqrt(numpy.pi / cC))
+        
+        WijResults = numpy.array([WijResult0, WijResult1, WijResult2])
+        
+        WijEijNij = numpy.array([ [Xi01**2, Eta01**2, 2*Xi01*Eta01] , [Xi02**2, Eta02**2, 2*Xi02*Eta02] , [Xi12**2, Eta12**2, 2*Xi12*Eta12] ])    
+        (cA,cB,cH) = numpy.linalg.solve(WijEijNij, WijResults)
+        
+        VxVy = numpy.array([[cA,cH],[cH,cB]])
+        VxVyResults = numpy.array([-cF,-cG])
+        (Vx,Vy) = numpy.linalg.solve(VxVy, VxVyResults)
+        
+        Vzon = Vy
+        Vmer = Vx
+        
+        # Vmag=numpy.sqrt(Vzon**2+Vmer**2) # unused
+        # Vang=numpy.arctan2(Vmer,Vzon)   # unused
+
+        
+        ''' using frequency as abscissa. Due to three channels, the offzenith angle is zero
+            and Vrad equal to Vver. formula taken from Briggs 92, figure 4.
+        '''
+        if numpy.abs( popt[1] ) < 3.5 and len(FrecRange) > 4:
+            Vver = 0.5 * radarWavelength * popt[1] * 100 # *100 to get cm (/s)
+        else:
+            Vver = numpy.NaN
+
+        error_code = 0
+
+        return Vzon, Vmer, Vver, error_code 
+
+
+
 class SpectralMoments(Operation):
     
     '''
