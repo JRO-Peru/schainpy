@@ -1363,6 +1363,7 @@ class voltACFLags(Operation):
     	self.lags      = lags
         print self.lags
     	self.mode      = mode
+        self.buffer2    = []
     	self.fullBuffer= fullBuffer
     	self.nAvg      = nAvg
         self.pairsList  = [pairsList]
@@ -1403,7 +1404,8 @@ class voltACFLags(Operation):
         elif mode =='time':
     		self.tmp = numpy.zeros((len(self.pairsList), len(self.lags), nHeights),dtype='complex')
         elif mode =='height':
-    		self.tmp = numpy.zeros((len(self.pairsList), len(self.lags), nProfiles),dtype='complex')
+    		self.tmp = numpy.zeros((len(self.pairsList), len(self.lags), nHeights),dtype='complex')
+    		#self.tmp = numpy.zeros((len(self.pairsList), len(self.lags), nProfiles),dtype='complex')
 
     	print "lags", len(self.lags),self.lags
     	print "mode",self.mode
@@ -1438,19 +1440,50 @@ class voltACFLags(Operation):
 
                 data_pre = self.buffer  #data
                 for l in range(len(self.pairsList)):
+                    #print "l",l
                     ch0 = self.pairsList[l][0]
                     ch1 = self.pairsList[l][1]
-                    for i in range(len(self.lags)):
-                        idx = self.lags[i]
+                    #for i in range(len(self.lags)):
+                    for i in range(self.__nProfiles):
+                        k=i%len(self.lags)
+                        idx = self.lags[k]
+
                         if self.mode == 'time':
+
                             acf0 = data_pre[ch0,:self.__nProfiles-idx,:]*numpy.conj(data_pre[ch1,idx:,:])    # pair,lag,height
                         else:
-                            acf0 = data_pre[ch0,:,:self.__nHeights-idx]*numpy.conj(data_pre[ch1,:,idx:])   #  pair,lag,profile
+                            #print "ESTE ES :D"
+                            if idx==0:
+                                    acf0 = data_pre[ch0,k,:self.__nHeis]*numpy.conj(data_pre[ch1,k,idx:])
+                                #acf0 = data_pre[ch0,:,:self.__nHeis-idx]*numpy.conj(data_pre[ch1,:,idx:])   #  pair,lag,profile
+                            else:
+                                #print "primera parte del array",(data_pre[ch1,k,idx:].shape)
+                                #print (data_pre[ch1,i+1,:])
+                                #print "segunda parte del array 6 primeros",(data_pre[ch1,i+1,:idx])
+                                acu=int(i/(len(self.lags)))*len(self.lags)
+                                #print ("acu",acu)
+                                if k+acu+1==self.__nProfiles:
+                                    acu=acu-1
+                                acf0 = data_pre[ch0,k+acu,:self.__nHeis]*numpy.conj(numpy.concatenate((data_pre[ch1,k+acu,idx:],data_pre[ch1,k+acu+1,:idx]), axis=0))   #  pair,lag,profile
 
-                        if self.fullBuffer:
-                            self.tmp[l,i,:acf0.shape[0],:]= acf0
-                        else:
-                            self.tmp[l,i,:]= numpy.sum(acf0,axis=0)
+                            #if k== len(self.lags)-1:
+                            self.tmp[l,k,:]= acf0
+                        if k == len(self.lags)-1:
+                            self.buffer2.append(self.tmp)
+
+                        if i==self.__nProfiles-1:
+                            self.tmp = numpy.sum(self.buffer2,axis  = 0)
+                            print self.tmp.shape
+                            self.buffer2=[]
+
+
+
+
+                        #if self.fullBuffer:
+                        #    self.tmp[l,i,:acf0.shape[0],:]= acf0
+                        #else:
+                        #    #print "l",l ,"i",i ,acf0.shape
+                        #    self.tmp[l,i,:]= numpy.sum(acf0,axis=0)
                 if self.fullBuffer:
                     self.tmp = numpy.sum(numpy.reshape(self.tmp,(self.tmp.shape[0],self.tmp.shape[1],self.tmp.shape[2]/self.nAvg,self.nAvg,self.tmp.shape[3])),axis=3)
                     dataOut.nAvg = self.nAvg

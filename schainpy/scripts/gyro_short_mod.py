@@ -16,8 +16,8 @@ if __name__ == '__main__':
 
     desc = "High altitude experiment SHORT "
     filename = "schain.xml"
-    dpath = '/media/soporte/UUI/gyro20'
-    figpath = "/media/soporte/UUI/pics_short"
+    dpath = '/media/topside/UUI/gyro20'
+    figpath = "/media/topside/UUI/pics_short"
     remotefolder = "/home/wmaster/graficos"
     t=['0','24']
     db_range=['15','35']
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     procUnitConfObj1SPC.addParameter(name='pairsList', value='(1,0),(3,2),(5,4),(7,6)', format='pairsList')
 
     opObj11 = procUnitConfObj1SPC.addOperation(name='IncohInt', optype='other')
-    opObj11.addParameter(name='timeInterval', value='600', format='int')
+    opObj11.addParameter(name='timeInterval', value='10', format='int')#600
 
     procUnitConfObj2SPC = controllerObj.addProcUnit(datatype='SpectraAFCProc', inputId=procUnitConfObj1SPC.getId())
 
@@ -115,8 +115,8 @@ if __name__ == '__main__':
     #opObj11.addParameter(name='zmax', value=-0.5, format='int')
     #opObj11.addParameter(name='ymin', value='0', format='int')
     #opObj11.addParameter(name='ymax', value='0.5', format='int')
-    #opObj11.addParameter(name='xmin', value='-1.2', format='int')
-    #opObj11.addParameter(name='xmax', value='1.2', format='int')
+    opObj11.addParameter(name='xmin', value='0', format='int')
+    opObj11.addParameter(name='xmax', value='1.2', format='int')
     opObj11.addParameter(name='show', value='1', format='int')
     opObj11.addParameter(name='save', value='1', format='int')
     opObj11.addParameter(name='figpath', value=figpath)

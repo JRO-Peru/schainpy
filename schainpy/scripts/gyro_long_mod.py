@@ -16,8 +16,8 @@ if __name__ == '__main__':
 
     desc = "High altitude experiment LONG "
     filename = "schain.xml"
-    dpath = '/media/soporte/UUI/gyro20'
-    figpath = "/media/soporte/UUI/pics_long_test400"
+    dpath = '/media/topside/UUI/gyro20'
+    figpath = "/media/topside/UUI/pics_long_test400"
     remotefolder = "/home/wmaster/graficos"
     t=['0','24']
     db_range=['15','35']
