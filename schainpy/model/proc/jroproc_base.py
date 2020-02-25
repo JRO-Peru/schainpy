@@ -211,11 +211,11 @@ class InputQueue(Thread):
 
     def get(self):
 
-        if not self.islocked and self.size/1000000 > 1024:
+        if not self.islocked and self.size/1000000 > 512:
             self.lock.n.value += 1            
             self.islocked = True
             self.lock.clear()
-        elif self.islocked and self.size/1000000 <= 1024:
+        elif self.islocked and self.size/1000000 <= 512:
             self.islocked = False
             self.lock.n.value -= 1
             if self.lock.n.value == 0:

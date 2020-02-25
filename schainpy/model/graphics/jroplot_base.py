@@ -219,10 +219,10 @@ class Plot(Operation):
         self.type = kwargs.get('type', 'iq')
         self.grid = kwargs.get('grid', False)
         self.pause = kwargs.get('pause', False)
-        self.save_labels = kwargs.get('save_labels', None)
+        self.save_code = kwargs.get('save_code', None)
         self.realtime = kwargs.get('realtime', True)
         self.buffering = kwargs.get('buffering', True)
-        self.throttle = kwargs.get('throttle', 2)
+        self.throttle = kwargs.get('throttle', 0)
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
         self.sender_period = kwargs.get('sender_period', 1)
@@ -625,21 +625,19 @@ class Plot(Operation):
 
         fig = self.figures[n]
 
-        if self.save_labels:
-            labels = self.save_labels
+        if self.save_code:
+            if isinstance(self.save_code, str):
+                labels = [self.save_code for x in self.figures]
+            else:
+                labels = self.save_code
         else:
-            labels = list(range(self.nrows))
+            labels = [self.CODE for x in self.figures]
 
-        if self.oneFigure:
-            label = ''
-        else:
-            label = '-{}'.format(labels[n])
         figname = os.path.join(
             self.save,
-            self.CODE,
-            '{}{}_{}.png'.format(
-                self.CODE,
-                label,
+            labels[n],
+            '{}_{}.png'.format(                
+                labels[n],
                 self.getDateTime(self.data.max_time).strftime(
                     '%Y%m%d_%H%M%S'
                     ),
@@ -650,12 +648,11 @@ class Plot(Operation):
             os.makedirs(os.path.dirname(figname))
         fig.savefig(figname)
 
-        if self.realtime:
+        if self.throttle == 0:
             figname = os.path.join(
                 self.save,
-                '{}{}_{}.png'.format(
-                    self.CODE,
-                    label,
+                '{}_{}.png'.format(
+                    labels[n],
                     self.getDateTime(self.data.min_time).strftime(
                         '%Y%m%d'
                         ),
@@ -788,7 +785,7 @@ class Plot(Operation):
             self.__setup_plot()
             self.isPlotConfig = True
 
-        if self.realtime:
+        if self.throttle == 0:
             self.__plot()
         else:
             self.__throttle_plot(self.__plot)#, coerce=coerce)

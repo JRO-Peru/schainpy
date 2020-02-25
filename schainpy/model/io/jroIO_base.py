@@ -644,7 +644,7 @@ class Reader(object):
                 nextFile = False
                 continue                
             
-            if fullfilename:
+            if fullfilename is not None:
                 break
             
             self.nTries = 1
@@ -652,7 +652,8 @@ class Reader(object):
 
             if nFiles == (self.nFiles - 1):
                 log.log('Trying with next day...', self.name)
-                nextDay = True              
+                nextDay = True
+                self.nTries = 3          
 
         if fullfilename:
             self.fileSize = os.path.getsize(fullfilename)
