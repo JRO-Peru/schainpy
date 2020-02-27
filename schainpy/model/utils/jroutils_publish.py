@@ -47,7 +47,7 @@ PLOT_CODES = {
 def get_plot_code(s):
     label = s.split('_')[0]
     codes = [key for key in PLOT_CODES if key in label]
-    if codes:        
+    if codes:
         return PLOT_CODES[codes[0]]
     else:
         return 24
@@ -69,7 +69,7 @@ class PublishData(Operation):
         self.counter = 0
         self.delay = kwargs.get('delay', 0)
         self.cnt = 0
-        self.verbose = verbose        
+        self.verbose = verbose
         context = zmq.Context()
         self.zmq_socket = context.socket(zmq.PUSH)
         server = kwargs.get('server', 'zmq.pipe')
@@ -85,7 +85,7 @@ class PublishData(Operation):
 
     def publish_data(self):
         self.dataOut.finished = False
-        
+
         if self.verbose:
             log.log(
                 'Sending {} - {}'.format(self.dataOut.type, self.dataOut.datatime),
@@ -103,12 +103,12 @@ class PublishData(Operation):
         time.sleep(self.delay)
 
     def close(self):
-        
+
         self.dataOut.finished = True
         self.zmq_socket.send_pyobj(self.dataOut)
         time.sleep(0.1)
         self.zmq_socket.close()
-        
+
 
 class ReceiverData(ProcessingUnit):
 
@@ -195,7 +195,7 @@ class SendToFTP(Operation):
                 self.ftp.close()
             self.ftp = None
             self.ready = False
-            return 
+            return
 
         try:
             self.ftp.login(self.username, self.password)
@@ -244,8 +244,8 @@ class SendToFTP(Operation):
     def upload(self, src, dst):
 
         log.log('Uploading {} -> {} '.format(
-            src.split('/')[-1], dst.split('/')[-1]), 
-            self.name, 
+            src.split('/')[-1], dst.split('/')[-1]),
+            self.name,
             nl=False
             )
 
@@ -273,7 +273,7 @@ class SendToFTP(Operation):
         fp.close()
         log.success('OK', tag='')
         return 1
-    
+
     def send_files(self):
 
         for x, pattern in enumerate(self.patterns):
@@ -282,35 +282,35 @@ class SendToFTP(Operation):
                 srcname = self.find_files(local, ext)
                 src = os.path.join(local, srcname)
                 if os.path.getmtime(src) < time.time() - 30*60:
-                    log.warning('Skipping old file {}'.format(srcname))                  
+                    log.warning('Skipping old file {}'.format(srcname))
                     continue
 
                 if srcname is None or srcname == self.latest[x]:
-                    log.warning('File alreday uploaded {}'.format(srcname))                  
+                    log.warning('File alreday uploaded {}'.format(srcname))
                     continue
-                
+
                 if 'png' in ext:
                     dstname = self.getftpname(srcname, int(exp_code), int(sub_exp_code))
                 else:
-                    dstname = srcname                
-                
+                    dstname = srcname
+
                 dst = os.path.join(remote, dstname)
 
                 if self.upload(src, dst):
                     self.times[x] = time.time()
                     self.latest[x] = srcname
-                else:                    
+                else:
                     self.ready = False
-                    break            
+                    break
 
     def run(self, dataOut, server, username, password, timeout=10, **kwargs):
 
         if not self.isConfig:
             self.setup(
-                server=server, 
-                username=username, 
-                password=password, 
-                timeout=timeout, 
+                server=server,
+                username=username,
+                password=password,
+                timeout=timeout,
                 **kwargs
                 )
             self.isConfig = True

@@ -228,7 +228,7 @@ class Plot(Operation):
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
             self.CODE, self.throttle, self.exp_code, self.buffering, snr=self.showSNR)
-        
+
         if self.plot_server:
             if not self.plot_server.startswith('tcp://'):
                 self.plot_server = 'tcp://{}'.format(self.plot_server)
@@ -246,7 +246,7 @@ class Plot(Operation):
 
         self.setup()
 
-        self.time_label = 'LT' if self.localtime else 'UTC'        
+        self.time_label = 'LT' if self.localtime else 'UTC'
 
         if self.width is None:
             self.width = 8
@@ -305,7 +305,7 @@ class Plot(Operation):
                 cmap = plt.get_cmap(self.colormap)
             cmap.set_bad(self.bgcolor, 1.)
             self.cmaps.append(cmap)
-                
+
         for fig in self.figures:
             fig.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             fig.canvas.mpl_connect('scroll_event', self.OnBtnScroll)
@@ -474,11 +474,11 @@ class Plot(Operation):
                     xmax += time.timezone
             else:
                 xmax = self.xmax
-        
+
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
         #Y = numpy.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000])
-        
+
         #i = 1 if numpy.where(
         #    abs(ymax-ymin) <= Y)[0][0] < 0 else numpy.where(abs(ymax-ymin) <= Y)[0][0]
         #ystep = Y[i] / 10.
@@ -492,14 +492,14 @@ class Plot(Operation):
             ystep = ystep/5
             ystep = ystep/(10**digD)
 
-        else:        
+        else:
             ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
             ystep = ystep/5
-            
+
         if self.xaxis is not 'time':
-            
+
             dig = int(numpy.log10(xmax))
-            
+
             if dig <= 0:
                 digD = len(str(xmax)) - 2
                 xdec = xmax*(10**digD)
@@ -508,11 +508,11 @@ class Plot(Operation):
                 xstep = ((xdec + (10**(dig)))//10**(dig))*(10**(dig))
                 xstep = xstep*0.5
                 xstep = xstep/(10**digD)
-                
-            else:        
+
+            else:
                 xstep = ((xmax + (10**(dig)))//10**(dig))*(10**(dig))
                 xstep = xstep/5
-            
+
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
                 ax.set_facecolor(self.bgcolor)
@@ -610,7 +610,7 @@ class Plot(Operation):
 
             if self.save:
                 self.save_figure(n)
-        
+
         if self.plot_server:
             self.send_to_server()
             # t = Thread(target=self.send_to_server)
@@ -643,11 +643,10 @@ class Plot(Operation):
             '{}{}_{}.png'.format(
                 self.CODE,
                 label,
-                self.getDateTime(self.data.max_time).strftime(
-                    '%Y%m%d_%H%M%S'
-                    ),
+                self.getDateTime(self.data.max_time).strftime('%Y%m%d_%H%M%S'),
                 )
             )
+
         log.log('Saving figure: {}'.format(figname), self.name)
         if not os.path.isdir(os.path.dirname(figname)):
             os.makedirs(os.path.dirname(figname))
@@ -718,7 +717,7 @@ class Plot(Operation):
         self.ncols: number of cols
         self.nplots: number of plots (channels or pairs)
         self.ylabel: label for Y axes
-        self.titles: list of axes title 
+        self.titles: list of axes title
 
         '''
         raise NotImplementedError
@@ -728,18 +727,18 @@ class Plot(Operation):
         Must be defined in the child class
         '''
         raise NotImplementedError
-    
+
     def run(self, dataOut, **kwargs):
         '''
         Main plotting routine
         '''
-        
+
         if self.isConfig is False:
             self.__setup(**kwargs)
             if dataOut.type == 'Parameters':
                 t = dataOut.utctimeInit
             else:
-                t = dataOut.utctime            
+                t = dataOut.utctime
 
             if dataOut.useLocalTime:
                 self.getDateTime = datetime.datetime.fromtimestamp
@@ -749,15 +748,15 @@ class Plot(Operation):
                 self.getDateTime = datetime.datetime.utcfromtimestamp
                 if self.localtime:
                     t -= time.timezone
-            
+
             if 'buffer' in self.plot_type:
                 if self.xmin is None:
                     self.tmin = t
                 else:
                     self.tmin = (
                         self.getDateTime(t).replace(
-                            hour=self.xmin, 
-                            minute=0, 
+                            hour=self.xmin,
+                            minute=0,
                             second=0) - self.getDateTime(0)).total_seconds()
 
             self.data.setup()
@@ -779,7 +778,7 @@ class Plot(Operation):
         if dataOut.useLocalTime and not self.localtime:
             tm += time.timezone
 
-        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:    
+        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:
             self.save_counter = self.save_period
             self.__plot()
             self.xmin += self.xrange
@@ -807,4 +806,3 @@ class Plot(Operation):
             self.__plot()
         if self.data and self.pause:
             figpause(10)
-

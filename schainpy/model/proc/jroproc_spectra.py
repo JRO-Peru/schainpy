@@ -291,16 +291,16 @@ class SpectraProc(ProcessingUnit):
         # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
         self.dataOut.channelList = range(len(channelIndexList))
         self.__selectPairsByChannel(channelIndexList)
-        
+
         return 1
-    
-    
+
+
     def selectFFTs(self, minFFT, maxFFT ):
         """
-        Selecciona un bloque de datos en base a un grupo de valores de puntos FFTs segun el rango 
+        Selecciona un bloque de datos en base a un grupo de valores de puntos FFTs segun el rango
         minFFT<= FFT <= maxFFT
         """
-        
+
         if (minFFT > maxFFT):
             raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minFFT, maxFFT))
 
@@ -330,20 +330,20 @@ class SpectraProc(ProcessingUnit):
         self.selectFFTsByIndex(minIndex, maxIndex)
 
         return 1
-    
-    
+
+
     def setH0(self, h0, deltaHeight = None):
-        
+
         if not deltaHeight:
             deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
-            
+
         nHeights = self.dataOut.nHeights
-        
+
         newHeiRange = h0 + numpy.arange(nHeights)*deltaHeight
-        
+
         self.dataOut.heightList = newHeiRange
-        
-    
+
+
     def selectHeights(self, minHei, maxHei):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
@@ -360,7 +360,7 @@ class SpectraProc(ProcessingUnit):
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
 
-        
+
         if (minHei > maxHei):
             raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minHei, maxHei))
 
@@ -388,7 +388,7 @@ class SpectraProc(ProcessingUnit):
             maxIndex = len(heights)
 
         self.selectHeightsByIndex(minIndex, maxIndex)
-        
+
 
         return 1
 
@@ -436,7 +436,7 @@ class SpectraProc(ProcessingUnit):
 
     def selectFFTsByIndex(self, minIndex, maxIndex):
         """
-        
+
         """
 
         if (minIndex < 0) or (minIndex > maxIndex):
@@ -459,7 +459,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_spc = data_spc
         self.dataOut.data_cspc = data_cspc
         self.dataOut.data_dc = data_dc
-        
+
         self.dataOut.ippSeconds = self.dataOut.ippSeconds*(self.dataOut.nFFTPoints / numpy.shape(data_cspc)[1])
         self.dataOut.nFFTPoints = numpy.shape(data_cspc)[1]
         self.dataOut.profilesPerBlock = numpy.shape(data_cspc)[1]
@@ -552,7 +552,7 @@ class SpectraProc(ProcessingUnit):
             xx_inv = numpy.linalg.inv(xx)
             xx_aux = xx_inv[0, :]
 
-            for ich in range(num_chan):                
+            for ich in range(num_chan):
                 yy = jspectra[ich, ind_vel, :]
                 jspectra[ich, freq_dc, :] = numpy.dot(xx_aux, yy)
 
@@ -574,12 +574,12 @@ class SpectraProc(ProcessingUnit):
         return 1
 
     def removeInterference2(self):
-        
+
         cspc = self.dataOut.data_cspc
         spc = self.dataOut.data_spc
-        Heights = numpy.arange(cspc.shape[2]) 
+        Heights = numpy.arange(cspc.shape[2])
         realCspc = numpy.abs(cspc)
-        
+
         for i in range(cspc.shape[0]):
             LinePower= numpy.sum(realCspc[i], axis=0)
             Threshold = numpy.amax(LinePower)-numpy.sort(LinePower)[len(Heights)-int(len(Heights)*0.1)]
@@ -587,17 +587,17 @@ class SpectraProc(ProcessingUnit):
             InterferenceSum = numpy.sum( realCspc[i,:,SelectedHeights], axis=0 )
             InterferenceThresholdMin = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.98)]
             InterferenceThresholdMax = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.99)]
-            
-            
+
+
             InterferenceRange = numpy.where( ([InterferenceSum > InterferenceThresholdMin]))# , InterferenceSum < InterferenceThresholdMax]) )
             #InterferenceRange = numpy.where( ([InterferenceRange < InterferenceThresholdMax]))
             if len(InterferenceRange)<int(cspc.shape[1]*0.3):
                 cspc[i,InterferenceRange,:] = numpy.NaN
-            
-            
-            
+
+
+
         self.dataOut.data_cspc = cspc
-        
+
     def removeInterference(self,  interf = 2,hei_interf = None, nhei_interf = None, offhei_interf = None):
 
         jspectra = self.dataOut.data_spc
@@ -931,7 +931,7 @@ class IncohInt(Operation):
         if n is not None:
             self.n = int(n)
         else:
-            
+
             self.__integrationtime = int(timeInterval)
             self.n = None
             self.__byTime = True
@@ -1032,7 +1032,7 @@ class IncohInt(Operation):
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
         if n == 1:
             return
-        
+
         dataOut.flagNoData = True
 
         if not self.isConfig:
@@ -1048,7 +1048,7 @@ class IncohInt(Operation):
 
             dataOut.data_spc = avgdata_spc
             dataOut.data_cspc = avgdata_cspc
-            dataOut.data_dc = avgdata_dc            
+            dataOut.data_dc = avgdata_dc
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False

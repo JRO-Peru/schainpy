@@ -4,8 +4,8 @@ Author : Sergio Cortez
 Jan 2018
 Abstract:
     Base class for processing units and operations. A decorator provides multiprocessing features and interconnect the processes created.
-    The argument (kwargs) sent from the controller is parsed and filtered via the decorator for each processing unit or operation instantiated. 
-    The decorator handle also the methods inside the processing unit to be called from the main script (not as operations) (OPERATION -> type ='self'). 
+    The argument (kwargs) sent from the controller is parsed and filtered via the decorator for each processing unit or operation instantiated.
+    The decorator handle also the methods inside the processing unit to be called from the main script (not as operations) (OPERATION -> type ='self').
 
 Based on:
     $Author: murco $
@@ -33,14 +33,14 @@ class ProcessingUnit(object):
 
     """
     Update - Jan 2018 - MULTIPROCESSING
-    All the "call" methods present in the previous base were removed. 
+    All the "call" methods present in the previous base were removed.
     The majority of operations are independant processes, thus
-    the decorator is in charge of communicate the operation processes 
+    the decorator is in charge of communicate the operation processes
     with the proccessing unit via IPC.
 
     The constructor does not receive any argument. The remaining methods
     are related with the operations to execute.
-   
+
 
     """
     proc_type = 'processing'
@@ -62,7 +62,7 @@ class ProcessingUnit(object):
 
     def addOperation(self, conf, operation):
         """
-        This method is used in the controller, and update the dictionary containing the operations to execute. The dict 
+        This method is used in the controller, and update the dictionary containing the operations to execute. The dict
         posses the id of the operation process (IPC purposes)
 
             Agrega un objeto del tipo "Operation" (opObj) a la lista de objetos "self.objectList" y retorna el
@@ -79,7 +79,7 @@ class ProcessingUnit(object):
 
         self.operations.append(
             (operation, conf.type, conf.id, conf.getKwargs()))
-        
+
         if 'plot' in self.name.lower():
             self.plots.append(operation.CODE)
 
@@ -181,7 +181,7 @@ class Operation(object):
         return
 
 class InputQueue(Thread):
-	
+
     '''
     Class to hold input data for Proccessing Units and external Operations,
     '''
@@ -212,26 +212,26 @@ class InputQueue(Thread):
     def get(self):
 
         if not self.islocked and self.size/1000000 > 512:
-            self.lock.n.value += 1            
+            self.lock.n.value += 1
             self.islocked = True
             self.lock.clear()
         elif self.islocked and self.size/1000000 <= 512:
             self.islocked = False
             self.lock.n.value -= 1
             if self.lock.n.value == 0:
-                self.lock.set()        
-                
+                self.lock.set()
+
         obj = self.queue.get()
         self.size -= sys.getsizeof(obj)
         return pickle.loads(obj)
 
-   
+
 def MPDecorator(BaseClass):
     """
     Multiprocessing class decorator
 
     This function add multiprocessing features to a BaseClass. Also, it handle
-    the communication beetween processes (readers, procUnits and operations). 
+    the communication beetween processes (readers, procUnits and operations).
     """
 
     class MPClass(BaseClass, Process):
@@ -248,11 +248,11 @@ def MPDecorator(BaseClass):
             self.t = time.time()
             self.name = BaseClass.__name__
             self.__doc__ = BaseClass.__doc__
-            
+
             if 'plot' in self.name.lower() and not self.name.endswith('_'):
                 self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
-            
-            self.start_time = time.time()            
+
+            self.start_time = time.time()
             self.id = args[0]
             self.inputId = args[1]
             self.project_id = args[2]
@@ -269,21 +269,21 @@ def MPDecorator(BaseClass):
             '''
 
             self.queue.start()
-            
+
         def listen(self):
             '''
             This function waits for objects
             '''
-            
-            return self.queue.get()                    
+
+            return self.queue.get()
 
         def set_publisher(self):
             '''
-            This function create a zmq socket for publishing objects. 
+            This function create a zmq socket for publishing objects.
             '''
 
             time.sleep(0.5)
-            
+
             c = zmq.Context()
             self.sender = c.socket(zmq.PUB)
             self.sender.connect(
@@ -293,12 +293,11 @@ def MPDecorator(BaseClass):
             '''
             This function publish an object, to an specific topic.
             It blocks publishing when receiver queue is full to avoid data loss
-            ''' 
-                        
+            '''
+
             if self.inputId is None:
                 self.lock.wait()
             self.sender.send_multipart([str(id).encode(), pickle.dumps(data)])
-
         def runReader(self):
             '''
             Run fuction for read units
@@ -308,13 +307,13 @@ def MPDecorator(BaseClass):
                 try:
                     BaseClass.run(self, **self.kwargs)
                 except:
-                    err = traceback.format_exc()                    
+                    err = traceback.format_exc()
                     if 'No more files' in err:
                         log.warning('No more files to read', self.name)
                     else:
                         self.err_queue.put('{}|{}'.format(self.name, err))
-                    self.dataOut.error = True                 
-                
+                    self.dataOut.error = True
+
                 for op, optype, opId, kwargs in self.operations:
                     if optype == 'self' and not self.dataOut.flagNoData:
                         op(**kwargs)
@@ -327,8 +326,7 @@ def MPDecorator(BaseClass):
                     continue
 
                 self.publish(self.dataOut, self.id)
-
-                if self.dataOut.error:   
+                if self.dataOut.error:
                     break
 
             time.sleep(0.5)
@@ -339,7 +337,7 @@ def MPDecorator(BaseClass):
             '''
 
             while True:
-                self.dataIn = self.listen()                
+                self.dataIn = self.listen()
 
                 if self.dataIn.flagNoData and self.dataIn.error is None:
                     continue
@@ -352,23 +350,23 @@ def MPDecorator(BaseClass):
                 elif self.dataIn.error:
                     self.dataOut.error = self.dataIn.error
                     self.dataOut.flagNoData = True
-                     
+
                 for op, optype, opId, kwargs in self.operations:
                     if optype == 'self' and not self.dataOut.flagNoData:
                         op(**kwargs)
                     elif optype == 'other' and not self.dataOut.flagNoData:
                         self.dataOut = op.run(self.dataOut, **kwargs)
-                    elif optype == 'external' and not self.dataOut.flagNoData:                        
+                    elif optype == 'external' and not self.dataOut.flagNoData:
                         self.publish(self.dataOut, opId)
-                
+
                 self.publish(self.dataOut, self.id)
                 for op, optype, opId, kwargs in self.operations:
-                    if optype == 'external' and self.dataOut.error:                        
+                    if optype == 'external' and self.dataOut.error:
                         self.publish(self.dataOut, opId)
-                
+
                 if self.dataOut.error:
                     break
-            
+
             time.sleep(0.5)
 
         def runOp(self):
@@ -376,7 +374,7 @@ def MPDecorator(BaseClass):
             Run function for external operations (this operations just receive data
             ex: plots, writers, publishers)
             '''
-            
+
             while True:
 
                 dataOut = self.listen()
@@ -388,21 +386,20 @@ def MPDecorator(BaseClass):
                         self.err_queue.put('{}|{}'.format(self.name, traceback.format_exc()))
                         dataOut.error = True
                 else:
-                    break            
+                    break
 
         def run(self):
             if self.typeProc is "ProcUnit":
 
                 if self.inputId is not None:
                     self.subscribe()
-                    
+
                 self.set_publisher()
 
                 if 'Reader' not in BaseClass.__name__:
                     self.runProc()
                 else:
                     self.runReader()
-
             elif self.typeProc is "Operation":
 
                 self.subscribe()

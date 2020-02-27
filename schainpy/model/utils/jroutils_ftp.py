@@ -167,12 +167,12 @@ class Remote(Thread):
 
         self.mutex.acquire()
         #         init = time.time()
-        #         
+        #
         #         while(self.bussy):
         #             sleep(0.1)
         #             if time.time() - init > 2*self.period:
         #                 return 0
-            
+
         self.fileList = fileList
         self.mutex.release()
         return 1
@@ -195,7 +195,7 @@ class Remote(Thread):
 
             if self.stopFlag:
                 break
-                
+
             #   self.bussy = True
             self.mutex.acquire()
 
@@ -399,19 +399,19 @@ class SSHClient(Remote):
 
         """
             This method is used to set SSH parameters and establish a connection to a remote server
-            
+
             Inputs:
-                server    - remote server IP Address 
-                
-                username    - remote server Username 
-                
+                server    - remote server IP Address
+
+                username    - remote server Username
+
                 password    - remote server password
-                
+
                 remotefolder    - remote server current working directory
-            
+
             Return: void
-            
-            Affects: 
+
+            Affects:
                 self.status        - in case of error or fail connection this parameter is set to 0 else 1
 
         """
@@ -483,10 +483,10 @@ class SSHClient(Remote):
     def __execute(self, command):
         """
             __execute a command on remote server
-            
+
             Input:
                 command    - Exmaple 'ls -l'
-            
+
             Return:
                 0 in error case else 1
         """
@@ -508,10 +508,10 @@ class SSHClient(Remote):
     def mkdir(self, remotefolder):
         """
             mkdir is used to make a new directory in remote server
-            
+
             Input:
                 remotefolder    - directory name
-            
+
             Return:
                 0 in error case else 1
         """
@@ -529,14 +529,14 @@ class SSHClient(Remote):
     def cd(self, remotefolder):
         """
             cd is used to change remote working directory on server
-            
+
             Input:
                 remotefolder    - current working directory
-                
+
             Affects:
                 self.remotefolder
-            
-            Return: 
+
+            Return:
                 0 in case of error else 1
         """
         if not self.status:
@@ -580,8 +580,8 @@ class SendToServer(ProcessingUnit):
         ProcessingUnit.__init__(self, **kwargs)
 
         self.isConfig = False
-        self.clientObj = None        
-    
+        self.clientObj = None
+
     def setup(self, server, username, password, remotefolder, localfolder, ext='.png', period=60, protocol='ftp', **kwargs):
 
         self.clientObj = None
@@ -641,11 +641,11 @@ class SendToServer(ProcessingUnit):
             self.init = time.time()
             self.setup(**kwargs)
             self.isConfig = True
-        
+
         if not self.clientObj.is_alive():
             print("[Remote Server]: Restarting connection ")
             self.setup(**kwargs)
-        
+
         if time.time() - self.init >= self.period:
             fullfilenameList = self.findFiles()
 
@@ -706,9 +706,9 @@ class FTP(object):
         try:
             self.ftp = ftplib.FTP(self.server)
             self.ftp.login(self.username,self.password)
-            self.ftp.cwd(self.remotefolder)            
+            self.ftp.cwd(self.remotefolder)
             #   print 'Connect to FTP Server: Successfully'
-        
+
         except ftplib.all_errors:
             print('Error FTP Service')
             self.status = 1

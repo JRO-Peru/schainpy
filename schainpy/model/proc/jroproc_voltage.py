@@ -8,8 +8,8 @@ from time import time
 
 
 @MPDecorator
-class VoltageProc(ProcessingUnit):  
-    
+class VoltageProc(ProcessingUnit):
+
     def __init__(self):
 
         ProcessingUnit.__init__(self)
@@ -115,7 +115,7 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.data = data
         # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
         self.dataOut.channelList = range(len(channelIndexList))
-        
+
         return 1
 
     def selectHeights(self, minHei=None, maxHei=None):
@@ -229,7 +229,7 @@ class VoltageProc(ProcessingUnit):
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
-            buffer = self.dataOut.data[:, :, 0:int(self.dataOut.nHeights-r)]            
+            buffer = self.dataOut.data[:, :, 0:int(self.dataOut.nHeights-r)]
             buffer = buffer.reshape(self.dataOut.nChannels, self.dataOut.nProfiles, int(self.dataOut.nHeights/window), window)
             buffer = numpy.sum(buffer,3)
 
@@ -497,8 +497,8 @@ class CohInt(Operation):
             # print self.__bufferStride[self.__profIndexStride - 1]
             # raise
             return self.__bufferStride[self.__profIndexStride - 1]
-            
-       
+
+
         return None, None
 
     def integrate(self, data, datatime=None):
@@ -520,7 +520,7 @@ class CohInt(Operation):
         avgdatatime = self.__initime
 
         deltatime = datatime - self.__lastdatatime
-        
+
         if not self.__withOverlapping:
             self.__initime = datatime
         else:
@@ -546,7 +546,7 @@ class CohInt(Operation):
         avgdatatime = (times - 1) * timeInterval + dataOut.utctime
         self.__dataReady = True
         return avgdata, avgdatatime
-    
+
     def run(self, dataOut, n=None, timeInterval=None, stride=None, overlapping=False, byblock=False, **kwargs):
 
         if not self.isConfig:
@@ -560,12 +560,12 @@ class CohInt(Operation):
             avgdata, avgdatatime = self.integrateByBlock(dataOut)
             dataOut.nProfiles /= self.n
         else:
-            if stride is None: 
+            if stride is None:
                 avgdata, avgdatatime = self.integrate(dataOut.data, dataOut.utctime)
             else:
                 avgdata, avgdatatime = self.integrateByStride(dataOut.data, dataOut.utctime)
 
-        
+
         #   dataOut.timeInterval *= n
         dataOut.flagNoData = True
 
@@ -606,7 +606,6 @@ class Decoder(Operation):
 
         self.nCode = len(code)
         self.nBaud = len(code[0])
-
         if (osamp != None) and (osamp >1):
             self.osamp = osamp
             self.code = numpy.repeat(code, repeats=self.osamp, axis=1)
@@ -621,7 +620,7 @@ class Decoder(Operation):
 
         #Frequency
         __codeBuffer = numpy.zeros((self.nCode, self.__nHeis), dtype=numpy.complex)
-
+    
         __codeBuffer[:,0:self.nBaud] = self.code
 
         self.fft_code = numpy.conj(numpy.fft.fft(__codeBuffer, axis=1))
@@ -670,11 +669,11 @@ class Decoder(Operation):
         junk = junk.flatten()
         code_block = numpy.reshape(junk, (self.nCode*repetitions, self.nBaud))
         profilesList = range(self.__nProfiles)
-        
-        for i in range(self.__nChannels):        
-            for j in profilesList:         
-                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]            
-        return self.datadecTime        
+
+        for i in range(self.__nChannels):
+            for j in profilesList:
+                self.datadecTime[i,j,:] = numpy.correlate(data[i,j,:], code_block[j,:], mode='full')[self.nBaud-1:]
+        return self.datadecTime
 
     def __convolutionByBlockInFreq(self, data):
 
@@ -691,7 +690,7 @@ class Decoder(Operation):
 
         return data
 
-    
+
     def run(self, dataOut, code=None, nCode=None, nBaud=None, mode = 0, osamp=None, times=None):
 
         if dataOut.flagDecodeData:
@@ -722,7 +721,7 @@ class Decoder(Operation):
 
         self.__nProfiles = dataOut.nProfiles
         datadec = None
-        
+
         if mode == 3:
             mode = 0
 
@@ -1105,9 +1104,9 @@ class SplitProfiles(Operation):
 
             if shape[2] % n != 0:
                 raise ValueError("Could not split the data, n=%d has to be multiple of %d" %(n, shape[2]))
-                
+
             new_shape = shape[0], shape[1]*n, int(shape[2]/n)
- 
+
             dataOut.data = numpy.reshape(dataOut.data, new_shape)
             dataOut.flagNoData = False
 

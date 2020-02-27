@@ -218,7 +218,7 @@ class SystemHeader(Header):
     structure = SYSTEM_STRUCTURE
 
     def __init__(self, nSamples=0, nProfiles=0, nChannels=0, adcResolution=14, pciDioBusWidth=0):
-
+        
         self.size = 24
         self.nSamples = nSamples
         self.nProfiles = nProfiles
