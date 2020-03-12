@@ -142,7 +142,7 @@ class CrossSpectraPlot(Plot):
         else:
             x = self.data.xrange[2]
             self.xlabel = "Velocity (m/s)"
-        
+
         self.titles = []
 
         y = self.data.heights
@@ -155,17 +155,17 @@ class CrossSpectraPlot(Plot):
             pair = self.data.pairs[n]
             ax = self.axes[4 * n]
             spc0 = 10.*numpy.log10(spc[pair[0]]/self.data.factor)
-            if ax.firsttime:                                               
-                self.xmax = self.xmax if self.xmax else numpy.nanmax(x)    
-                self.xmin = self.xmin if self.xmin else -self.xmax         
-                self.zmin = self.zmin if self.zmin else numpy.nanmin(spc)  
-                self.zmax = self.zmax if self.zmax else numpy.nanmax(spc)  
+            if ax.firsttime:
+                self.xmax = self.xmax if self.xmax else numpy.nanmax(x)
+                self.xmin = self.xmin if self.xmin else -self.xmax
+                self.zmin = self.zmin if self.zmin else numpy.nanmin(spc)
+                self.zmax = self.zmax if self.zmax else numpy.nanmax(spc)
                 ax.plt = ax.pcolormesh(x , y , spc0.T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
-                                       )                                   
-            else:                                                          
+                                       )
+            else:
                 ax.plt.set_array(spc0.T.ravel())
             self.titles.append('CH {}: {:3.2f}dB'.format(pair[0], noise))
 
@@ -177,10 +177,10 @@ class CrossSpectraPlot(Plot):
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
                                        )
-            else: 
+            else:
                 ax.plt.set_array(spc1.T.ravel())
             self.titles.append('CH {}: {:3.2f}dB'.format(pair[1], noise))
-            
+
             out = cspc[n] / numpy.sqrt(spc[pair[0]] * spc[pair[1]])
             coh = numpy.abs(out)
             phase = numpy.arctan2(out.imag, out.real) * 180 / numpy.pi
@@ -196,13 +196,13 @@ class CrossSpectraPlot(Plot):
                 ax.plt.set_array(coh.T.ravel())
             self.titles.append(
                 'Coherence Ch{} * Ch{}'.format(pair[0], pair[1]))
-                                   
+
             ax = self.axes[4 * n + 3]
             if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, phase.T,
                                        vmin=-180,
                                        vmax=180,
-                                       cmap=plt.get_cmap(self.colormap_phase) 
+                                       cmap=plt.get_cmap(self.colormap_phase)
                                        )
             else:
                 ax.plt.set_array(phase.T.ravel())
@@ -313,7 +313,7 @@ class PhasePlot(CoherencePlot):
 
 class NoisePlot(Plot):
     '''
-    Plot for noise 
+    Plot for noise
     '''
 
     CODE = 'noise'
@@ -655,12 +655,12 @@ class ScopePlot(Plot):
 
     '''
        Plot for Scope
-    '''  
+    '''
 
     CODE = 'scope'
     plot_name = 'Scope'
     plot_type = 'scatter'
-    
+
     def setup(self):
 
         self.xaxis = 'Range (Km)'
@@ -674,20 +674,20 @@ class ScopePlot(Plot):
         rowspan = 1
 
     def plot_iq(self, x, y, channelIndexList, thisDatetime, wintitle):
-        
+
         yreal = y[channelIndexList,:].real
         yimag = y[channelIndexList,:].imag
         title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y"))
         self.xlabel = "Range (Km)"
         self.ylabel = "Intensity - IQ"
-                
+
         self.y = yreal
         self.x = x
         self.xmin = min(x)
         self.xmax = max(x)
-        
 
-        self.titles[0] = title        
+
+        self.titles[0] = title
 
         for i,ax in enumerate(self.axes):
             title = "Channel %d" %(i)
@@ -698,7 +698,7 @@ class ScopePlot(Plot):
                 #pass
                 ax.plt_r.set_data(x, yreal[i,:])
                 ax.plt_i.set_data(x, yimag[i,:])
-        
+
     def plot_power(self, x, y, channelIndexList, thisDatetime, wintitle):
         y = y[channelIndexList,:] * numpy.conjugate(y[channelIndexList,:])
         yreal = y.real
@@ -708,70 +708,70 @@ class ScopePlot(Plot):
         self.ylabel = "Intensity"
         self.xmin = min(x)
         self.xmax = max(x)
-        
-        
+
+
         self.titles[0] = title
 
         for i,ax in enumerate(self.axes):
             title = "Channel %d" %(i)
-            
+
             ychannel = yreal[i,:]
-            
-            if ax.firsttime:    
+
+            if ax.firsttime:
                 ax.plt_r = ax.plot(x, ychannel)[0]
             else:
                 #pass
                 ax.plt_r.set_data(x, ychannel)
-        
+
 
     def plot(self):
-        
+
         if self.channels:
             channels = self.channels
         else:
             channels = self.data.channels
 
-        
-        
+
+
         thisDatetime = datetime.datetime.utcfromtimestamp(self.data.times[-1])
-        
+
         scope = self.data['scope']
-        
-        
+
+
         if self.data.flagDataAsBlock:
-            
+
             for i in range(self.data.nProfiles):
 
                 wintitle1 = " [Profile = %d] " %i
 
                 if self.type == "power":
-                    self.plot_power(self.data.heights, 
-                                    scope[:,i,:],                                
+                    self.plot_power(self.data.heights,
+                                    scope[:,i,:],
                                     channels,
-                                    thisDatetime, 
+                                    thisDatetime,
                                     wintitle1
                                     )
 
                 if self.type == "iq":
-                    self.plot_iq(self.data.heights, 
+                    self.plot_iq(self.data.heights,
                                  scope[:,i,:],
                                  channels,
-                                 thisDatetime, 
-                                 wintitle1 
+                                 thisDatetime,
+                                 wintitle1
                                 )
         else:
             wintitle = " [Profile = %d] " %self.data.profileIndex
-            
+
             if self.type == "power":
-                 self.plot_power(self.data.heights, 
+                 self.plot_power(self.data.heights,
                             scope,
                             channels,
                             thisDatetime,
                             wintitle
                             )
-            
+
             if self.type == "iq":
-                self.plot_iq(self.data.heights, 
+                self.plot_iq(self.data.heights,
                             scope,
                             channels,
                             thisDatetime,

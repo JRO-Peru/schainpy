@@ -324,7 +324,6 @@ class AMISRReader(ProcessingUnit):
         else:
             #get the last file - 1
             self.filenameList = [self.filenameList[-2]]
-
         new_dirnameList = []
         for dirname in self.dirnameList:
             junk = numpy.array([dirname in x for x in self.filenameList])
@@ -383,7 +382,6 @@ class AMISRReader(ProcessingUnit):
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
                 print("No more Files")
-                self.dataOut.error = True
                 return 0
 
             filename = self.filenameList[idFile]
@@ -409,9 +407,11 @@ class AMISRReader(ProcessingUnit):
             self.__selectDataForTimes(online=True)
             filename = self.filenameList[0]
             wait = 0
+            #self.__waitForNewFile=5 ## DEBUG:
             while self.__filename_online == filename:
                 print('waiting %d seconds to get a new file...'%(self.__waitForNewFile))
                 if wait == 5:
+                    self.flagNoMoreFiles = 1
                     return 0
                 sleep(self.__waitForNewFile)
                 self.__selectDataForTimes(online=True)
@@ -550,6 +550,7 @@ class AMISRReader(ProcessingUnit):
             newFile = self.__setNextFileOnline()
 
         if not(newFile):
+            self.dataOut.error = True
             return 0
         #if self.__firstFile:
         self.readAMISRHeader(self.amisrFilePointer)
