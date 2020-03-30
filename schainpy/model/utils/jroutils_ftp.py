@@ -21,8 +21,8 @@ Thread = threading.Thread
 # except:
 from time import sleep
 
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
-
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
+@MPDecorator
 class Remote(Thread):
     """
     Remote is a parent class used to define the behaviour of FTP and SSH class. These clases are
@@ -572,7 +572,7 @@ class SSHClient(Remote):
         command = 'chmod 775 %s' %remotefile
 
         return self.__execute(command)
-
+@MPDecorator
 class SendToServer(ProcessingUnit):
 
     def __init__(self, **kwargs):
@@ -599,7 +599,7 @@ class SendToServer(ProcessingUnit):
             raise ValueError("%s has been chosen as remote access protocol but it is not valid" %protocol)
 
         self.clientObj.start()
-
+        print("ftp setup complete")
     def findFiles(self):
 
         if not type(self.localfolder) == list:
