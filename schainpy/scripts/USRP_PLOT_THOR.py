@@ -25,9 +25,10 @@ controllerObj.setup(id = '191', name='Test_USRP', description=desc)
 #path = '/media/data/data/vientos/57.2063km/echoes/NCO_Woodman'
 
 
-path = '/home/soporte/data_hdf5' #### with clock   35.16 db noise
-
-figpath = '/home/soporte/data_hdf5_imag'
+#path = '/home/soporte/data_hdf5' #### with clock   35.16 db noise
+path = '/home/alex/WEATHER_DATA/DATA'
+figpath = '/home/alex/WEATHER_DATA/DATA/pic'
+#figpath = '/home/soporte/data_hdf5_imag'
 #remotefolder = "/home/wmaster/graficos"
 #######################################################################
 ################# RANGO DE PLOTEO######################################
@@ -95,14 +96,33 @@ procUnitConfObjA = controllerObj.addProcUnit(datatype='VoltageProc', inputId=rea
 #opObj11.addParameter(name='nBaud', value='28', format='int')
 
 #opObj11 = procUnitConfObjA.addOperation(name='CohInt', optype='other')
-#opObj11.addParameter(name='n', value='100', format='int')
+#opObj11.addParameter(name='n', value='10', format='int')
 
+
+opObj11 = procUnitConfObjA.addOperation(name='PulsePair', optype='other')
+opObj11.addParameter(name='n', value='10', format='int')
+
+opObj11 = procUnitConfObjA.addOperation(name='CreateBlockVoltage', optype='other')
+opObj11.addParameter(name='m', value='16', format='int')
+
+procUnitConfObj2 = controllerObj.addProcUnit(datatype='ParametersProc', inputId=procUnitConfObjA.getId())
+
+#Not used because the RGB data is obtained directly from the HF Reader.
+#opObj21 = procUnitConfObj2.addOperation(name='GetRGBData')
+
+opObj21 = procUnitConfObj2.addOperation(name='ParamWriter', optype='external')
+opObj21.addParameter(name='path', value=figpath+'/NEWData')
+opObj21.addParameter(name='blocksPerFile', value='1', format='int')
+opObj21.addParameter(name='metadataList',value='heightList',format='list')
+opObj21.addParameter(name='dataList',value='data_intensity',format='list')
+
+'''
 #######################################################################
 ########## OPERACIONES DOMINIO DE LA FRECUENCIA########################
 #######################################################################
 procUnitConfObjSousySpectra = controllerObj.addProcUnit(datatype='SpectraProc', inputId=procUnitConfObjA.getId())
-procUnitConfObjSousySpectra.addParameter(name='nFFTPoints', value='100', format='int')
-procUnitConfObjSousySpectra.addParameter(name='nProfiles', value='100', format='int')
+procUnitConfObjSousySpectra.addParameter(name='nFFTPoints', value='16', format='int')
+procUnitConfObjSousySpectra.addParameter(name='nProfiles', value='16', format='int')
 #procUnitConfObjSousySpectra.addParameter(name='pairsList', value='(0,0),(1,1),(0,1)', format='pairsList')
 
 #opObj13 = procUnitConfObjSousySpectra.addOperation(name='removeDC')
@@ -174,10 +194,10 @@ opObj11.addParameter(name='save_period', value=10, format='int')
 #opObj11 = procUnitConfObjSousySpectra.addOperation(name='SpectraWriter', optype='other')
 #opObj11.addParameter(name='path', value=wr_path)
 #opObj11.addParameter(name='blocksPerFile', value='50', format='int')
+'''
 print ("Escribiendo el archivo XML")
 print ("Leyendo el archivo XML")
 
 
 
 controllerObj.start()
-

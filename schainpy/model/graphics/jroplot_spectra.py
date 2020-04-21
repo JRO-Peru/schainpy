@@ -42,7 +42,7 @@ class SpectraPlot_(Figure):
 
         self.__xfilter_ena = False
         self.__yfilter_ena = False
-        
+
         self.indice=1
 
     def getSubplots(self):
@@ -225,8 +225,228 @@ class SpectraPlot_(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
-        
 
+
+        return dataOut
+
+@MPDecorator
+class WpowerPlot_(Figure):
+
+    isConfig = None
+    __nsubplots = None
+
+    WIDTHPROF = None
+    HEIGHTPROF = None
+    PREFIX = 'wpo'
+
+    def __init__(self):
+        Figure.__init__(self)
+        self.isConfig = False
+        self.__nsubplots = 1
+        self.WIDTH = 250
+        self.HEIGHT = 250
+        self.WIDTHPROF = 120
+        self.HEIGHTPROF = 0
+        self.counter_imagwr = 0
+
+        self.PLOT_CODE = WPO_CODE
+
+        self.FTP_WEI = None
+        self.EXP_CODE = None
+        self.SUB_EXP_CODE = None
+        self.PLOT_POS = None
+
+        self.__xfilter_ena = False
+        self.__yfilter_ena = False
+
+        self.indice=1
+
+    def getSubplots(self):
+
+        ncol = int(numpy.sqrt(self.nplots)+0.9)
+        nrow = int(self.nplots*1./ncol + 0.9)
+
+        return nrow, ncol
+
+    def setup(self, id, nplots, wintitle, showprofile=True, show=True):
+
+        self.__showprofile = showprofile
+        self.nplots = nplots
+
+        ncolspan = 1
+        colspan = 1
+        if showprofile:
+            ncolspan = 3
+            colspan = 2
+            self.__nsubplots = 2
+
+        self.createFigure(id = id,
+                          wintitle = wintitle,
+                          widthplot = self.WIDTH + self.WIDTHPROF,
+                          heightplot = self.HEIGHT + self.HEIGHTPROF,
+                          show=show)
+
+        nrow, ncol = self.getSubplots()
+
+        counter = 0
+        for y in range(nrow):
+            for x in range(ncol):
+
+                if counter >= self.nplots:
+                    break
+
+                self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan, colspan, 1)
+
+                if showprofile:
+                    self.addAxes(nrow, ncol*ncolspan, y, x*ncolspan+colspan, 1, 1)
+
+                counter += 1
+
+    def run(self, dataOut, id, wintitle="", channelList=None, showprofile=True,
+            xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None,
+            save=False, figpath='./', figfile=None, show=True, ftp=False, wr_period=1,
+            server=None, folder=None, username=None, password=None,
+            ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0, realtime=False,
+            xaxis="frequency", colormap='jet', normFactor=None):
+
+        """
+
+        Input:
+            dataOut         :
+            id        :
+            wintitle        :
+            channelList     :
+            showProfile     :
+            xmin            :    None,
+            xmax            :    None,
+            ymin            :    None,
+            ymax            :    None,
+            zmin            :    None,
+            zmax            :    None
+        """
+        print("***************PLOTEO******************")
+        print("DATAOUT SHAPE : ",dataOut.data.shape)
+        if dataOut.flagNoData:
+            return dataOut
+
+        if realtime:
+            if not(isRealtime(utcdatatime = dataOut.utctime)):
+                print('Skipping this plot function')
+                return
+
+        if channelList == None:
+            channelIndexList = dataOut.channelIndexList
+        else:
+            channelIndexList = []
+            for channel in channelList:
+                if channel not in dataOut.channelList:
+                    raise ValueError("Channel %d is not in dataOut.channelList" %channel)
+                channelIndexList.append(dataOut.channelList.index(channel))
+
+
+        print("channelIndexList",channelIndexList)
+        if normFactor is None:
+            factor = dataOut.normFactor
+        else:
+            factor = normFactor
+        if xaxis == "frequency":
+            x = dataOut.getFreqRange(1)/1000.
+            xlabel = "Frequency (kHz)"
+
+        elif xaxis == "time":
+            x = dataOut.getAcfRange(1)
+            xlabel = "Time (ms)"
+
+        else:
+            x = dataOut.getVelRange(1)
+            xlabel = "Velocity (m/s)"
+
+        ylabel = "Range (km)"
+
+        y = dataOut.getHeiRange()
+        print("factor",factor)
+
+        z = dataOut.data/factor # dividido /factor
+        z = numpy.where(numpy.isfinite(z), z, numpy.NAN)
+        zdB = 10*numpy.log10(z)
+
+        avg = numpy.average(z, axis=1)
+        avgdB = 10*numpy.log10(avg)
+
+        noise = dataOut.getNoise()/factor
+        noisedB = 10*numpy.log10(noise)
+
+        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
+        title = wintitle + "Weather Power"
+
+        if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+            title = title + '_' + 'azimuth,zenith=%2.2f,%2.2f'%(dataOut.azimuth, dataOut.zenith)
+
+        if not self.isConfig:
+
+            nplots = len(channelIndexList)
+
+            self.setup(id=id,
+                       nplots=nplots,
+                       wintitle=wintitle,
+                       showprofile=showprofile,
+                       show=show)
+
+            if xmin == None: xmin = numpy.nanmin(x)
+            if xmax == None: xmax = numpy.nanmax(x)
+            if ymin == None: ymin = numpy.nanmin(y)
+            if ymax == None: ymax = numpy.nanmax(y)
+            if zmin == None: zmin = numpy.floor(numpy.nanmin(noisedB)) - 3
+            if zmax == None: zmax = numpy.ceil(numpy.nanmax(avgdB)) + 3
+
+            self.FTP_WEI = ftp_wei
+            self.EXP_CODE = exp_code
+            self.SUB_EXP_CODE = sub_exp_code
+            self.PLOT_POS = plot_pos
+
+            self.isConfig = True
+
+        self.setWinTitle(title)
+
+        for i in range(self.nplots):
+            index = channelIndexList[i]
+            str_datetime = '%s %s'%(thisDatetime.strftime("%Y/%m/%d"),thisDatetime.strftime("%H:%M:%S"))
+            title = "Channel %d: %4.2fdB: %s" %(dataOut.channelList[index], noisedB[index], str_datetime)
+            if len(dataOut.beam.codeList) != 0:
+                title = "Ch%d:%4.2fdB,%2.2f,%2.2f:%s" %(dataOut.channelList[index], noisedB[index], dataOut.beam.azimuthList[index], dataOut.beam.zenithList[index], str_datetime)
+
+            axes = self.axesList[i*self.__nsubplots]
+            axes.pcolor(x, y, zdB[index,:,:],
+                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax,
+                        xlabel=xlabel, ylabel=ylabel, title=title, colormap=colormap,
+                        ticksize=9, cblabel='')
+
+            if self.__showprofile:
+                axes = self.axesList[i*self.__nsubplots +1]
+                axes.pline(avgdB[index,:], y,
+                        xmin=zmin, xmax=zmax, ymin=ymin, ymax=ymax,
+                        xlabel='dB', ylabel='', title='',
+                        ytick_visible=False,
+                        grid='x')
+
+                noiseline = numpy.repeat(noisedB[index], len(y))
+                axes.addpline(noiseline, y, idline=1, color="black", linestyle="dashed", lw=2)
+
+        self.draw()
+
+        if figfile == None:
+            str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
+            name = str_datetime
+            if ((dataOut.azimuth!=None) and (dataOut.zenith!=None)):
+                name = name + '_az' + '_%2.2f'%(dataOut.azimuth) + '_zn' + '_%2.2f'%(dataOut.zenith)
+            figfile = self.getFilename(name)
+
+        self.save(figpath=figpath,
+                  figfile=figfile,
+                  save=save,
+                  ftp=ftp,
+                  wr_period=wr_period,
+                  thisDatetime=thisDatetime)
         return dataOut
 
 @MPDecorator
@@ -256,7 +476,7 @@ class CrossSpectraPlot_(Figure):
         self.EXP_CODE = None
         self.SUB_EXP_CODE = None
         self.PLOT_POS = None
-        
+
         self.indice=0
 
     def getSubplots(self):
@@ -314,7 +534,7 @@ class CrossSpectraPlot_(Figure):
             zmax            :    None
         """
 
-        if dataOut.flagNoData: 
+        if dataOut.flagNoData:
             return dataOut
 
         if pairsList == None:
@@ -331,7 +551,7 @@ class CrossSpectraPlot_(Figure):
 
         if len(pairsIndexList) > 4:
             pairsIndexList = pairsIndexList[0:4]
-            
+
         if normFactor is None:
             factor = dataOut.normFactor
         else:
@@ -402,7 +622,7 @@ class CrossSpectraPlot_(Figure):
             self.isConfig = True
 
         self.setWinTitle(title)
-  
+
 
         for i in range(self.nplots):
             pair = dataOut.pairsList[pairsIndexList[i]]
@@ -563,7 +783,7 @@ class RTIPlot_(Figure):
         #colormap = kwargs.get('colormap', 'jet')
         if HEIGHT is not None:
             self.HEIGHT  = HEIGHT
-        
+
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
             return
 
@@ -745,7 +965,7 @@ class CoherenceMap_(Figure):
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
 
 
-        if dataOut.flagNoData:         
+        if dataOut.flagNoData:
             return dataOut
 
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
@@ -935,7 +1155,7 @@ class PowerProfilePlot_(Figure):
             ftp=False, wr_period=1, server=None,
             folder=None, username=None, password=None):
 
-        if dataOut.flagNoData:         
+        if dataOut.flagNoData:
             return dataOut
 
 
@@ -1009,7 +1229,7 @@ class PowerProfilePlot_(Figure):
                   ftp=ftp,
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
-        
+
         return dataOut
 
 @MPDecorator
@@ -1066,7 +1286,7 @@ class SpectraCutPlot_(Figure):
             folder=None, username=None, password=None,
             xaxis="frequency"):
 
-        if dataOut.flagNoData:         
+        if dataOut.flagNoData:
             return dataOut
 
         if channelList == None:
@@ -1248,7 +1468,7 @@ class Noise_(Figure):
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
 
-        if dataOut.flagNoData:         
+        if dataOut.flagNoData:
             return dataOut
 
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):
@@ -1444,7 +1664,7 @@ class BeaconPhase_(Figure):
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
 
-        if dataOut.flagNoData:         
+        if dataOut.flagNoData:
             return dataOut
 
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):

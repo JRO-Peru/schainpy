@@ -183,7 +183,7 @@ class ParamReader(JRODataReader,ProcessingUnit):
         except IOError:
             traceback.print_exc()
             raise IOError("The file %s can't be opened" %(filename))
-        
+
         #In case has utctime attribute
         grp2 = grp1['utctime']
  #         thisUtcTime = grp2.value[0] - 5*3600 #To convert to local time
@@ -497,7 +497,7 @@ class ParamWriter(Operation):
     setType = None
 
     def __init__(self):
-        
+
         Operation.__init__(self)
         return
 
@@ -530,9 +530,9 @@ class ParamWriter(Operation):
             dsDict['variable'] = self.dataList[i]
             #---------------------    Conditionals    ------------------------
             #There is no data
-            
+
             if dataAux is None:
-                
+
                 return 0
 
             if isinstance(dataAux, (int, float, numpy.integer, numpy.float)):
@@ -704,7 +704,7 @@ class ParamWriter(Operation):
             return False
 
     def setNextFile(self):
-        
+
         ext = self.ext
         path = self.path
         setFile = self.setFile
@@ -785,7 +785,7 @@ class ParamWriter(Operation):
                 for j in range(dsInfo['dsNumber']):
                     dsInfo = dsList[i]
                     tableName = dsInfo['dsName']
-                    
+
 
                     if dsInfo['nDim'] == 3:
                         shape = dsInfo['shape'].astype(int)
@@ -869,7 +869,8 @@ class ParamWriter(Operation):
         dsList = self.dsList
         data = self.data
         ind = 0
-
+        #print("dsList              ",dsList)
+        #print("len                 ",len(dsList))
         while ind < len(dsList):
             dsInfo = dsList[ind]
             dataAux = getattr(self.dataOut, dsInfo['variable'])
@@ -902,22 +903,41 @@ class ParamWriter(Operation):
         dsList = self.dsList
 
         for i in range(len(self.ds)):
+            print("#############", i , "#######################")
             dsInfo = dsList[i]
             nDim = dsInfo['nDim']
             mode = dsInfo['mode']
-
+            print("dsInfo",dsInfo)
+            print("nDim",nDim)
+            print("mode",mode)
             #    First time
             if self.firsttime:
+                print("ENTRE FIRSTIME")
                 if type(self.data[i]) == numpy.ndarray:
 
                     if nDim == 3:
+                        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+                        print("ndim","dentro del primer if 3")
                         self.data[i] = self.data[i].reshape((self.data[i].shape[0],self.data[i].shape[1],1))
+                        print(self.data[i].shape)
+                        print(type(self.data[i]))
                         self.ds[i].resize(self.data[i].shape)
+                        print(self.ds[i].shape)
+                        print(type(self.ds[i]))
                     if mode == 2:
                         self.ds[i].resize(self.data[i].shape)
-                self.ds[i][:] = self.data[i]
-            else:
+                try:
+                    print("PTM ODIO ESTO")
+                    print(self.ds[i][:].shape)
+                    self.ds[i][:] = self.data[i]
+                    print("*****___________********______******")
 
+                except:
+                    print("q habra pasaado")
+                    return
+                print("LLEGUE Y CUMPLI EL IF")
+            else:
+                print("ELSE -----------------------")
             #    From second time
                 #    Meteors!
                 if mode == 2:
@@ -944,7 +964,8 @@ class ParamWriter(Operation):
 
         self.firsttime = False
         self.blockIndex += 1
-
+        print("HOLA AMIGOS COMO ESTAN LLEGUE")
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         #Close to save changes
         self.fp.flush()
         self.fp.close()
@@ -954,7 +975,7 @@ class ParamWriter(Operation):
 
         self.dataOut = dataOut
         if not(self.isConfig):
-            self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
+            self.setup(dataOut, path=path, blocksPerFile=blocksPerFile,
                        metadataList=metadataList, dataList=dataList, mode=mode,
                        setType=setType)
 
@@ -963,7 +984,7 @@ class ParamWriter(Operation):
 
         self.putData()
         return
-        
+
 
 @MPDecorator
 class ParameterReader(Reader, ProcessingUnit):
@@ -992,43 +1013,43 @@ class ParameterReader(Reader, ProcessingUnit):
 
         self.set_kwargs(**kwargs)
         if not self.ext.startswith('.'):
-            self.ext = '.{}'.format(self.ext)            
+            self.ext = '.{}'.format(self.ext)
 
         if self.online:
             log.log("Searching files in online mode...", self.name)
 
             for nTries in range(self.nTries):
                 fullpath = self.searchFilesOnLine(self.path, self.startDate,
-                    self.endDate, self.expLabel, self.ext, self.walk, 
+                    self.endDate, self.expLabel, self.ext, self.walk,
                     self.filefmt, self.folderfmt)
 
                 try:
                     fullpath = next(fullpath)
                 except:
                     fullpath = None
-                
+
                 if fullpath:
                     break
 
                 log.warning(
                     'Waiting {} sec for a valid file in {}: try {} ...'.format(
-                        self.delay, self.path, nTries + 1), 
+                        self.delay, self.path, nTries + 1),
                     self.name)
                 time.sleep(self.delay)
 
             if not(fullpath):
                 raise schainpy.admin.SchainError(
-                    'There isn\'t any valid file in {}'.format(self.path))                    
+                    'There isn\'t any valid file in {}'.format(self.path))
 
             pathname, filename = os.path.split(fullpath)
             self.year = int(filename[1:5])
             self.doy = int(filename[5:8])
-            self.set = int(filename[8:11]) - 1                
+            self.set = int(filename[8:11]) - 1
         else:
             log.log("Searching files in {}".format(self.path), self.name)
-            self.filenameList = self.searchFilesOffLine(self.path, self.startDate, 
+            self.filenameList = self.searchFilesOffLine(self.path, self.startDate,
                 self.endDate, self.expLabel, self.ext, self.walk, self.filefmt, self.folderfmt)
-        
+
         self.setNextFile()
 
         return
@@ -1036,11 +1057,11 @@ class ParameterReader(Reader, ProcessingUnit):
     def readFirstHeader(self):
         '''Read metadata and data'''
 
-        self.__readMetadata()        
+        self.__readMetadata()
         self.__readData()
         self.__setBlockList()
         self.blockIndex = 0
-        
+
         return
 
     def __setBlockList(self):
@@ -1099,7 +1120,7 @@ class ParameterReader(Reader, ProcessingUnit):
                 else:
                     data = gp[name].value
                     listMetaname.append(name)
-                    listMetadata.append(data)            
+                    listMetadata.append(data)
         elif self.metadata:
             metadata = json.loads(self.metadata)
             listShapes = {}
@@ -1115,7 +1136,7 @@ class ParameterReader(Reader, ProcessingUnit):
 
         self.listShapes = listShapes
         self.listMetaname = listMetaname
-        self.listMeta = listMetadata      
+        self.listMeta = listMetadata
 
         return
 
@@ -1123,7 +1144,7 @@ class ParameterReader(Reader, ProcessingUnit):
 
         listdataname = []
         listdata = []
-        
+
         if 'Data' in self.fp:
             grp = self.fp['Data']
             for item in list(grp.items()):
@@ -1137,7 +1158,7 @@ class ParameterReader(Reader, ProcessingUnit):
                     for i in range(dim):
                         array.append(grp[name]['table{:02d}'.format(i)].value)
                     array = numpy.array(array)
-                    
+
                 listdata.append(array)
         elif self.metadata:
             metadata = json.loads(self.metadata)
@@ -1160,7 +1181,7 @@ class ParameterReader(Reader, ProcessingUnit):
         self.listDataname = listdataname
         self.listData = listdata
         return
-    
+
     def getData(self):
 
         for i in range(len(self.listMeta)):
@@ -1230,7 +1251,7 @@ class ParameterWriter(Operation):
     lastTime = None
 
     def __init__(self):
-        
+
         Operation.__init__(self)
         return
 
@@ -1257,7 +1278,7 @@ class ParameterWriter(Operation):
                 dsDict['nDim'] = len(dataAux.shape)
                 dsDict['shape'] = dataAux.shape
                 dsDict['dsNumber'] = dataAux.shape[0]
-            
+
             dsList.append(dsDict)
             tableList.append((self.dataList[i], dsDict['nDim']))
 
@@ -1274,7 +1295,7 @@ class ParameterWriter(Operation):
             self.lastTime = currentTime
             self.currentDay = dataDay
             return False
-        
+
         timeDiff = currentTime - self.lastTime
 
         #Si el dia es diferente o si la diferencia entre un dato y otro supera la hora
@@ -1292,7 +1313,7 @@ class ParameterWriter(Operation):
 
         self.dataOut = dataOut
         if not(self.isConfig):
-            self.setup(path=path, blocksPerFile=blocksPerFile, 
+            self.setup(path=path, blocksPerFile=blocksPerFile,
                        metadataList=metadataList, dataList=dataList,
                        setType=setType)
 
@@ -1301,9 +1322,9 @@ class ParameterWriter(Operation):
 
         self.putData()
         return
-        
+
     def setNextFile(self):
-        
+
         ext = self.ext
         path = self.path
         setFile = self.setFile
@@ -1369,17 +1390,17 @@ class ParameterWriter(Operation):
         return
 
     def writeData(self, fp):
-        
+
         grp = fp.create_group("Data")
         dtsets = []
         data = []
-        
+
         for dsInfo in self.dsList:
             if dsInfo['nDim'] == 0:
                 ds = grp.create_dataset(
-                    dsInfo['variable'], 
+                    dsInfo['variable'],
                     (self.blocksPerFile, ),
-                    chunks=True, 
+                    chunks=True,
                     dtype=numpy.float64)
                 dtsets.append(ds)
                 data.append((dsInfo['variable'], -1))
@@ -1387,7 +1408,7 @@ class ParameterWriter(Operation):
                 sgrp = grp.create_group(dsInfo['variable'])
                 for i in range(dsInfo['dsNumber']):
                     ds = sgrp.create_dataset(
-                        'table{:02d}'.format(i), 
+                        'table{:02d}'.format(i),
                         (self.blocksPerFile, ) + dsInfo['shape'][1:],
                         chunks=True)
                     dtsets.append(ds)
@@ -1395,7 +1416,7 @@ class ParameterWriter(Operation):
         fp.flush()
 
         log.log('Creating file: {}'.format(fp.filename), self.name)
-        
+
         self.ds = dtsets
         self.data = data
         self.firsttime = True
@@ -1409,10 +1430,12 @@ class ParameterWriter(Operation):
             self.setNextFile()
 
         for i, ds in enumerate(self.ds):
+            print(i,ds)
             attr, ch = self.data[i]
             if ch == -1:
                 ds[self.blockIndex] = getattr(self.dataOut, attr)
             else:
+                print(ch, getattr(self.dataOut, attr).shape)
                 ds[self.blockIndex] = getattr(self.dataOut, attr)[ch]
 
         self.fp.flush()

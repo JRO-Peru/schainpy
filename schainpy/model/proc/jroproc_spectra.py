@@ -94,6 +94,12 @@ class SpectraProc(ProcessingUnit):
         blocksize += dc.size
         blocksize += spc.size
 
+        #print("spc                                   :",spc.shape)
+        data_wr = None
+        if self.dataOut.flagWR:
+            data_wr   = fft_volt
+            blocksize = fft_volt.size
+
         cspc = None
         pairIndex = 0
         if self.dataOut.pairsList != None:
@@ -113,16 +119,20 @@ class SpectraProc(ProcessingUnit):
                 pairIndex += 1
             blocksize += cspc.size
 
-        self.dataOut.data_spc = spc
-        self.dataOut.data_cspc = cspc
-        self.dataOut.data_dc = dc
-        self.dataOut.blockSize = blocksize
+        self.dataOut.data_spc     = spc
+        self.dataOut.data_cspc    = cspc
+        self.dataOut.data_wr      = data_wr
+        self.dataOut.data_dc      = dc
+        self.dataOut.blockSize    = blocksize
         self.dataOut.flagShiftFFT = False
 
-    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None, shift_fft=False):
+    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None, shift_fft=False,flagWR= 0):
+
+        self.dataOut.flagWR = flagWR
 
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
+
             if shift_fft:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 shift = int(self.dataOut.nFFTPoints/2)
@@ -135,7 +145,7 @@ class SpectraProc(ProcessingUnit):
             return True
 
         if self.dataIn.type == "Voltage":
-
+            #print("VOLTAGE INPUT SPECTRA")
             self.dataOut.flagNoData = True
 
             if nFFTPoints == None:
@@ -157,6 +167,7 @@ class SpectraProc(ProcessingUnit):
                                            nProfiles,
                                            self.dataIn.nHeights),
                                           dtype='complex')
+                #print("buffer                            :",self.buffer.shape)
 
             if self.dataIn.flagDataAsBlock:
                 nVoltProfiles = self.dataIn.data.shape[1]
@@ -182,6 +193,7 @@ class SpectraProc(ProcessingUnit):
                     self.dataOut.flagNoData = True
                     return 0
             else:
+                #print("Spectra ",self.profIndex)
                 self.buffer[:, self.profIndex, :] = self.dataIn.data.copy()
                 self.profIndex += 1
 
@@ -191,6 +203,7 @@ class SpectraProc(ProcessingUnit):
             if self.profIndex == nProfiles:
                 self.__updateSpecFromVoltage()
                 self.__getFft()
+                #print(" DATAOUT SHAPE SPEC",self.dataOut.data_spc.shape)
 
                 self.dataOut.flagNoData = False
                 self.firstdatatime = None
@@ -291,16 +304,16 @@ class SpectraProc(ProcessingUnit):
         # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
         self.dataOut.channelList = range(len(channelIndexList))
         self.__selectPairsByChannel(channelIndexList)
-        
+
         return 1
-    
-    
+
+
     def selectFFTs(self, minFFT, maxFFT ):
         """
-        Selecciona un bloque de datos en base a un grupo de valores de puntos FFTs segun el rango 
+        Selecciona un bloque de datos en base a un grupo de valores de puntos FFTs segun el rango
         minFFT<= FFT <= maxFFT
         """
-        
+
         if (minFFT > maxFFT):
             raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minFFT, maxFFT))
 
@@ -330,20 +343,20 @@ class SpectraProc(ProcessingUnit):
         self.selectFFTsByIndex(minIndex, maxIndex)
 
         return 1
-    
-    
+
+
     def setH0(self, h0, deltaHeight = None):
-        
+
         if not deltaHeight:
             deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
-            
+
         nHeights = self.dataOut.nHeights
-        
+
         newHeiRange = h0 + numpy.arange(nHeights)*deltaHeight
-        
+
         self.dataOut.heightList = newHeiRange
-        
-    
+
+
     def selectHeights(self, minHei, maxHei):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
@@ -360,7 +373,7 @@ class SpectraProc(ProcessingUnit):
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
 
-        
+
         if (minHei > maxHei):
             raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minHei, maxHei))
 
@@ -388,7 +401,7 @@ class SpectraProc(ProcessingUnit):
             maxIndex = len(heights)
 
         self.selectHeightsByIndex(minIndex, maxIndex)
-        
+
 
         return 1
 
@@ -436,7 +449,7 @@ class SpectraProc(ProcessingUnit):
 
     def selectFFTsByIndex(self, minIndex, maxIndex):
         """
-        
+
         """
 
         if (minIndex < 0) or (minIndex > maxIndex):
@@ -459,7 +472,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_spc = data_spc
         self.dataOut.data_cspc = data_cspc
         self.dataOut.data_dc = data_dc
-        
+
         self.dataOut.ippSeconds = self.dataOut.ippSeconds*(self.dataOut.nFFTPoints / numpy.shape(data_cspc)[1])
         self.dataOut.nFFTPoints = numpy.shape(data_cspc)[1]
         self.dataOut.profilesPerBlock = numpy.shape(data_cspc)[1]
@@ -552,7 +565,7 @@ class SpectraProc(ProcessingUnit):
             xx_inv = numpy.linalg.inv(xx)
             xx_aux = xx_inv[0, :]
 
-            for ich in range(num_chan):                
+            for ich in range(num_chan):
                 yy = jspectra[ich, ind_vel, :]
                 jspectra[ich, freq_dc, :] = numpy.dot(xx_aux, yy)
 
@@ -574,12 +587,12 @@ class SpectraProc(ProcessingUnit):
         return 1
 
     def removeInterference2(self):
-        
+
         cspc = self.dataOut.data_cspc
         spc = self.dataOut.data_spc
-        Heights = numpy.arange(cspc.shape[2]) 
+        Heights = numpy.arange(cspc.shape[2])
         realCspc = numpy.abs(cspc)
-        
+
         for i in range(cspc.shape[0]):
             LinePower= numpy.sum(realCspc[i], axis=0)
             Threshold = numpy.amax(LinePower)-numpy.sort(LinePower)[len(Heights)-int(len(Heights)*0.1)]
@@ -587,17 +600,17 @@ class SpectraProc(ProcessingUnit):
             InterferenceSum = numpy.sum( realCspc[i,:,SelectedHeights], axis=0 )
             InterferenceThresholdMin = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.98)]
             InterferenceThresholdMax = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.99)]
-            
-            
+
+
             InterferenceRange = numpy.where( ([InterferenceSum > InterferenceThresholdMin]))# , InterferenceSum < InterferenceThresholdMax]) )
             #InterferenceRange = numpy.where( ([InterferenceRange < InterferenceThresholdMax]))
             if len(InterferenceRange)<int(cspc.shape[1]*0.3):
                 cspc[i,InterferenceRange,:] = numpy.NaN
-            
-            
-            
+
+
+
         self.dataOut.data_cspc = cspc
-        
+
     def removeInterference(self,  interf = 2,hei_interf = None, nhei_interf = None, offhei_interf = None):
 
         jspectra = self.dataOut.data_spc
@@ -931,7 +944,7 @@ class IncohInt(Operation):
         if n is not None:
             self.n = int(n)
         else:
-            
+
             self.__integrationtime = int(timeInterval)
             self.n = None
             self.__byTime = True
@@ -941,6 +954,9 @@ class IncohInt(Operation):
         Add a profile to the __buffer_spc and increase in one the __profileIndex
 
         """
+        print("profIndex:      ",self.__profIndex)
+        print("data_spc.shape: ",data_spc.shape)
+        print("data_spc.shape: ",data_spc[0,0,:])
 
         self.__buffer_spc += data_spc
 
@@ -1032,7 +1048,7 @@ class IncohInt(Operation):
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
         if n == 1:
             return
-        
+
         dataOut.flagNoData = True
 
         if not self.isConfig:
@@ -1048,9 +1064,197 @@ class IncohInt(Operation):
 
             dataOut.data_spc = avgdata_spc
             dataOut.data_cspc = avgdata_cspc
-            dataOut.data_dc = avgdata_dc            
+            dataOut.data_dc = avgdata_dc
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
 
+        return dataOut
+
+
+class PulsePair(Operation):
+    isConfig       = False
+    __profIndex    = 0
+    __profIndex2   = 0
+    __initime      = None
+    __lastdatatime = None
+    __buffer       = None
+    __buffer2      = []
+    __buffer3      = None
+    __dataReady    = False
+    n              = None
+
+    __nch          =0
+    __nProf        =0
+    __nHeis        =0
+
+    def __init__(self,**kwargs):
+        Operation.__init__(self,**kwargs)
+
+    def setup(self,dataOut,n =None, m = None):
+
+        self.__initime      = None
+        self.__lastdatatime = 0
+        self.__buffer         = 0
+        self.__bufferV        = 0
+        #self.__buffer2        = []
+        self.__buffer3        = 0
+        self.__dataReady      = False
+        self.__profIndex      = 0
+        self.__profIndex2     = 0
+        self.count            = 0
+
+
+        self.__nch            = dataOut.nChannels
+        self.__nHeis          = dataOut.nHeights
+        self.__nProf          = dataOut.nProfiles
+        self.__nFFT           = dataOut.nFFTPoints
+        #print("Valores de Ch,Samples,Perfiles,nFFT",self.__nch,self.__nHeis,self.__nProf, self.__nFFT)
+        #print("EL VALOR DE n es:",n)
+        if n == None:
+            raise ValueError("n Should be specified.")
+
+        if n != None:
+            if n<2:
+                raise ValueError("n Should be greather than 2 ")
+        self.n                = n
+        if m == None:
+            m = n
+        if m != None:
+            if  m<2:
+                raise ValueError("n Should be greather than 2 ")
+
+        self.m               = m
+        self.__buffer2        = numpy.zeros((self.__nch,self.m,self.__nHeis))
+        self.__bufferV2       = numpy.zeros((self.__nch,self.m,self.__nHeis))
+
+
+
+    def putData(self,data):
+        #print("###################################################")
+        '''
+        data_tmp   =    numpy.zeros(self.__nch,self.n,self.__nHeis, dtype= complex)
+        if self.count < self.__nProf:
+
+            for i in range(self.n):
+                data_tmp[:,i,:]    =  data[:,i+self.count,:]
+
+            self.__buffer          =  data_tmp*numpy.conjugate(data_tmp)
+
+
+        #####self.__buffer          = data*numpy.conjugate(data)
+        #####self.__bufferV         = data[:,(self.__nProf-1):,:]*numpy.conjugate(data[:,1:,:])
+
+        #self.__buffer2.append(numpy.conjugate(data))
+
+        #####self.__profIndex        = data.shape[1]
+        self.count              = self.count + self.n -1
+        self.__profIndex        = self.n
+        '''
+        self.__buffer          = data*numpy.conjugate(data)
+        self.__bufferV         = data[:,(self.__nProf-1):,:]*numpy.conjugate(data[:,1:,:])
+        self.__profIndex        = self.n
+        return
+
+    def pushData(self):
+
+        data_I           = numpy.zeros((self.__nch,self.__nHeis))
+        data_IV          = numpy.zeros((self.__nch,self.__nHeis))
+
+        for i in range(self.__nch):
+            data_I[i,:]  = numpy.sum(numpy.sum(self.__buffer[i],axis=0),axis=0)/self.n
+            data_IV[i,:] = numpy.sum(numpy.sum(self.__bufferV[i],axis=0),axis=0)/(self.n-1)
+
+        n                = self.__profIndex
+        ####data_intensity = numpy.sum(numpy.sum(self.__buffer,axis=0),axis=0)/self.n
+        #print("data_intensity push data",data_intensity.shape)
+        #data_velocity  = self.__buffer3/(self.n-1)
+        ####n              = self.__profIndex
+
+        self.__buffer    = 0
+        self.__buffer3   = 0
+        self.__profIndex = 0
+
+        #return data_intensity,data_velocity,n
+        return data_I,data_IV,n
+
+    def pulsePairbyProfiles(self,data):
+        self.__dataReady      = False
+        data_intensity        = None
+        data_velocity         = None
+
+        self.putData(data)
+
+        if self.__profIndex == self.n:
+            #data_intensity,data_velocity,n = self.pushData()
+            data_intensity,data_velocity,n = self.pushData()
+            #print(data_intensity.shape)
+            #print("self.__profIndex2", self.__profIndex2)
+            if self.__profIndex2 == 0:
+                #print("PRIMERA VEZ")
+                #print("self.__buffer2",self.__buffer2)
+                for i in range(self.__nch):
+                    self.__buffer2[i][self.__profIndex2]  = data_intensity[i]
+                    self.__bufferV2[i][self.__profIndex2] = data_velocity[i]
+                self.__profIndex2       += 1
+                return None,None
+
+            if self.__profIndex2 > 0:
+                for i in range(self.__nch):
+                    self.__buffer2[i][self.__profIndex2]  = data_intensity[i]
+                    self.__bufferV2[i][self.__profIndex2] = data_velocity[i]
+                #print("Dentro del bucle",self.__buffer2)
+                self.__profIndex2       += 1
+                if self.__profIndex2 == self.m :
+                    data_i                         = self.__buffer2
+                    data_v                         = self.__bufferV2
+                    #print(data_i.shape)
+                    self.__dataReady               = True
+                    self.__profIndex2              = 0
+                    self.__buffer2                 = numpy.zeros((self.__nch,self.m,self.__nHeis))
+                    self.__bufferV2                = numpy.zeros((self.__nch,self.m,self.__nHeis))
+                    return data_i,data_v
+                return  None,None
+
+    def pulsePairOp(self,data,datatime=None):
+        if self.__initime == None:
+            self.__initime = datatime
+
+        data_intensity,data_velocity = self.pulsePairbyProfiles(data)
+        self.__lastdatatime           = datatime
+
+        if data_intensity is None:
+            return None,None,None
+
+        avgdatatime    = self.__initime
+        self.__initime = datatime
+
+        return data_intensity,data_velocity,avgdatatime
+
+    def run(self,dataOut,n =None,m=None):
+
+        if not self.isConfig:
+            self.setup(dataOut = dataOut, n   = n, m = m)
+            self.isConfig  = True
+
+        data_intensity,data_velocity,avgdatatime  = self.pulsePairOp(dataOut.data_wr,dataOut.utctime)
+        dataOut.flagNoData                          = True
+
+        if self.__dataReady:
+            #print(" DATA " , data_intensity.shape)
+            #dataOut.data            = numpy.array([data_intensity])#aqui amigo revisa
+            #tmp                     = numpy.zeros([1,data_intensity.shape[0],data_intensity.shape[1]])
+            #tmp[0]                  = data_intensity
+            dataOut.data            = data_intensity
+            dataOut.data_velocity   = data_velocity
+            #dataOut.data            = tmp
+            #print(" DATA " , dataOut.data.shape)
+            dataOut.nIncohInt      *= self.n
+            dataOut.nProfiles       = self.m
+            dataOut.nFFTPoints      = self.m
+            #dataOut.data_intensity  = data_intensity
+            dataOut.PRFbyAngle      = self.n
+            dataOut.utctime         = avgdatatime
+            dataOut.flagNoData      = False
+            #####print("TIEMPO:                     ",dataOut.utctime)
         return dataOut
