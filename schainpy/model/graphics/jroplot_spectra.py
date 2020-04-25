@@ -324,8 +324,8 @@ class WpowerPlot_(Figure):
             zmin            :    None,
             zmax            :    None
         """
-        print("***************PLOTEO******************")
-        print("DATAOUT SHAPE : ",dataOut.data.shape)
+        #print("***************PLOTEO******************")
+        #print("DATAOUT SHAPE : ",dataOut.data.shape)
         if dataOut.flagNoData:
             return dataOut
 
@@ -344,7 +344,7 @@ class WpowerPlot_(Figure):
                 channelIndexList.append(dataOut.channelList.index(channel))
 
 
-        print("channelIndexList",channelIndexList)
+        #print("channelIndexList",channelIndexList)
         if normFactor is None:
             factor = dataOut.normFactor
         else:
@@ -364,7 +364,7 @@ class WpowerPlot_(Figure):
         ylabel = "Range (km)"
 
         y = dataOut.getHeiRange()
-        print("factor",factor)
+        #print("factor",factor)
 
         z = dataOut.data/factor # dividido /factor
         z = numpy.where(numpy.isfinite(z), z, numpy.NAN)

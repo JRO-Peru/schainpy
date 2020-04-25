@@ -88,6 +88,7 @@ class SpectraProc(ProcessingUnit):
         # calculo de self-spectra
         fft_volt = numpy.fft.fftshift(fft_volt, axes=(1,))
         spc = fft_volt * numpy.conjugate(fft_volt)
+        #print("spcch0",spc[0])
         spc = spc.real
 
         blocksize = 0
@@ -1154,6 +1155,7 @@ class PulsePair(Operation):
         self.__buffer          = data*numpy.conjugate(data)
         self.__bufferV         = data[:,(self.__nProf-1):,:]*numpy.conjugate(data[:,1:,:])
         self.__profIndex        = self.n
+        #print("spcch0",self.__buffer)
         return
 
     def pushData(self):
@@ -1162,9 +1164,13 @@ class PulsePair(Operation):
         data_IV          = numpy.zeros((self.__nch,self.__nHeis))
 
         for i in range(self.__nch):
-            data_I[i,:]  = numpy.sum(numpy.sum(self.__buffer[i],axis=0),axis=0)/self.n
-            data_IV[i,:] = numpy.sum(numpy.sum(self.__bufferV[i],axis=0),axis=0)/(self.n-1)
-
+            data_I[i,:]  = numpy.sum(self.__buffer[i],axis=0)/self.n
+            data_IV[i,:] = numpy.sum(self.__bufferV[i],axis=0)/(self.n-1)
+        ##print("******")
+        #print("data_I",data_I[0])
+        #print(self.__buffer.shape)
+        #a=numpy.average(self.__buffer,axis=1)
+        #print("average", a)
         n                = self.__profIndex
         ####data_intensity = numpy.sum(numpy.sum(self.__buffer,axis=0),axis=0)/self.n
         #print("data_intensity push data",data_intensity.shape)
