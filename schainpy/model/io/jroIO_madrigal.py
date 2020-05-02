@@ -23,9 +23,7 @@ from schainpy.utils import log
 try:
     import madrigal.cedar
 except:
-    log.warning(
-        'You should install "madrigal library" module if you want to read/write Madrigal data'
-        )
+    pass
 
 try:
     basestring

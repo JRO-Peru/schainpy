@@ -4,8 +4,6 @@ import subprocess
 import os
 import sys
 import glob
-save_stdout = sys.stdout
-sys.stdout = open('/dev/null', 'w')
 from multiprocessing import cpu_count
 from schainpy.controller import Project
 from schainpy.model import Operation, ProcessingUnit
@@ -19,7 +17,6 @@ try:
     from queue import Queue
 except:
     from Queue import Queue
-sys.stdout = save_stdout
 
 
 def getProcs():
@@ -45,11 +42,19 @@ def getOperations():
 
 def getArgs(op):
     module = locate('schainpy.model.{}'.format(op))
-    
-    if hasattr(module, '__attrs__'):
-        args = module.__attrs__
+    try:
+        obj = module(1,2,3,Queue(),5,6)
+    except:
+        obj = module()
+
+    if hasattr(obj, '__attrs__'):
+        args = obj.__attrs__
     else:
-        args = inspect.getargspec(module.run).args
+        if hasattr(obj, 'myrun'):
+            args = inspect.getfullargspec(obj.myrun).args
+        else:
+            args = inspect.getfullargspec(obj.run).args
+    
     try:
         args.remove('self')
     except Exception as e:
@@ -148,7 +153,7 @@ def search(nextcommand):
     if nextcommand is None:
         log.error('There is no Operation/ProcessingUnit to search', '')    
     else:
-        try:        
+        try:
             args = getArgs(nextcommand)
             doc = getDoc(nextcommand)
             if len(args) == 0:

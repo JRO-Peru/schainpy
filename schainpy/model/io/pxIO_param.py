@@ -23,9 +23,7 @@ from schainpy.utils import log
 try:
     from netCDF4 import Dataset
 except:
-    log.warning(
-        'You should install "netCDF4" module if you want to read/write NCDF files'
-        )
+    pass
 
 UT1970 = datetime.datetime(1970, 1, 1) - datetime.timedelta(seconds=time.timezone)
 

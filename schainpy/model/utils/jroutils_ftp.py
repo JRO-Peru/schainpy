@@ -9,7 +9,7 @@ try:
     import paramiko
     import scp
 except:
-    print("You should install paramiko and scp libraries \nif you want to use SSH protocol to upload files to the server")
+    pass
 
 import time
 

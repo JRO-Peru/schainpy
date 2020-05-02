@@ -19,7 +19,7 @@ from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
 try:
     import digital_rf_hdf5
 except:
-    print('You should install "digital_rf_hdf5" module if you want to read USRP data')
+    pass
 
 class USRPReader(ProcessingUnit):
     '''

@@ -14,7 +14,7 @@ from time import sleep
 try:
     import pyfits
 except ImportError as e:
-    print("Fits data cannot be used. Install pyfits module")
+    pass
 
 from xml.etree.ElementTree import ElementTree
 

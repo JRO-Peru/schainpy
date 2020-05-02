@@ -29,7 +29,7 @@ import pickle
 try:
     import digital_rf
 except:
-    print('You should install "digital_rf" module if you want to read Digital RF data')
+    pass
 
 @MPDecorator
 class DigitalRFReader(ProcessingUnit):
