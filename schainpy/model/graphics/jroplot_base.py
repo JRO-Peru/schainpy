@@ -148,12 +148,11 @@ class Plot(Operation):
     CODE = 'Figure'
     colormap = 'jet'
     bgcolor = 'white'
+    buffering = True
     __missing = 1E30
 
-    __attrs__ = ['show', 'save', 'xmin', 'xmax', 'ymin', 'ymax', 'zmin', 'zmax',
-                 'zlimits', 'xlabel', 'ylabel', 'xaxis', 'cb_label', 'title',
-                 'colorbar', 'bgcolor', 'width', 'height', 'localtime', 'oneFigure',
-                 'showprofile', 'decimation', 'pause']
+    __attrs__ = ['show', 'save', 'ymin', 'ymax', 'zmin', 'zmax', 'title',
+                 'showprofile']
 
     def __init__(self):
 
@@ -163,6 +162,8 @@ class Plot(Operation):
         self.save_counter = 1
         self.sender_counter = 1
         self.data = None
+        self.firsttime = True
+        self.plots_adjust = {'left': 0.125, 'right': 0.9, 'bottom': 0.15, 'top': 0.9, 'wspace': 0.2, 'hspace': 0.2}
 
     def __fmtTime(self, x, pos):
         '''
@@ -221,11 +222,11 @@ class Plot(Operation):
         self.pause = kwargs.get('pause', False)
         self.save_code = kwargs.get('save_code', None)
         self.realtime = kwargs.get('realtime', True)
-        self.buffering = kwargs.get('buffering', True)
         self.throttle = kwargs.get('throttle', 0)
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
         self.sender_period = kwargs.get('sender_period', 1)
+        self.height_index = kwargs.get('height_index', None)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
             self.CODE, self.throttle, self.exp_code, self.buffering, snr=self.showSNR)
@@ -305,106 +306,7 @@ class Plot(Operation):
             else:
                 cmap = plt.get_cmap(self.colormap)
             cmap.set_bad(self.bgcolor, 1.)
-            self.cmaps.append(cmap)        
-
-        for fig in self.figures:
-            fig.canvas.mpl_connect('key_press_event', self.OnKeyPress)
-            fig.canvas.mpl_connect('scroll_event', self.OnBtnScroll)
-            fig.canvas.mpl_connect('button_press_event', self.onBtnPress)
-            fig.canvas.mpl_connect('motion_notify_event', self.onMotion)
-            fig.canvas.mpl_connect('button_release_event', self.onBtnRelease)
-
-    def OnKeyPress(self, event):
-        '''
-        Event for pressing keys (up, down) change colormap
-        '''
-        ax = event.inaxes
-        if ax in self.axes:
-            if event.key == 'down':
-                ax.index += 1
-            elif event.key == 'up':
-                ax.index -= 1
-            if ax.index < 0:
-                ax.index = len(CMAPS) - 1
-            elif ax.index == len(CMAPS):
-                ax.index = 0
-            cmap = CMAPS[ax.index]
-            ax.cbar.set_cmap(cmap)
-            ax.cbar.draw_all()
-            ax.plt.set_cmap(cmap)
-            ax.cbar.patch.figure.canvas.draw()
-            self.colormap = cmap.name
-
-    def OnBtnScroll(self, event):
-        '''
-        Event for scrolling, scale figure
-        '''
-        cb_ax = event.inaxes
-        if cb_ax in [ax.cbar.ax for ax in self.axes if ax.cbar]:
-            ax = [ax for ax in self.axes if cb_ax == ax.cbar.ax][0]
-            pt = ax.cbar.ax.bbox.get_points()[:, 1]
-            nrm = ax.cbar.norm
-            vmin, vmax, p0, p1, pS = (
-                nrm.vmin, nrm.vmax, pt[0], pt[1], event.y)
-            scale = 2 if event.step == 1 else 0.5
-            point = vmin + (vmax - vmin) / (p1 - p0) * (pS - p0)
-            ax.cbar.norm.vmin = point - scale * (point - vmin)
-            ax.cbar.norm.vmax = point - scale * (point - vmax)
-            ax.plt.set_norm(ax.cbar.norm)
-            ax.cbar.draw_all()
-            ax.cbar.patch.figure.canvas.draw()
-
-    def onBtnPress(self, event):
-        '''
-        Event for mouse button press
-        '''
-        cb_ax = event.inaxes
-        if cb_ax is None:
-            return
-
-        if cb_ax in [ax.cbar.ax for ax in self.axes if ax.cbar]:
-            cb_ax.press = event.x, event.y
-        else:
-            cb_ax.press = None
-
-    def onMotion(self, event):
-        '''
-        Event for move inside colorbar
-        '''
-        cb_ax = event.inaxes
-        if cb_ax is None:
-            return
-        if cb_ax not in [ax.cbar.ax for ax in self.axes if ax.cbar]:
-            return
-        if cb_ax.press is None:
-            return
-
-        ax = [ax for ax in self.axes if cb_ax == ax.cbar.ax][0]
-        xprev, yprev = cb_ax.press
-        dx = event.x - xprev
-        dy = event.y - yprev
-        cb_ax.press = event.x, event.y
-        scale = ax.cbar.norm.vmax - ax.cbar.norm.vmin
-        perc = 0.03
-
-        if event.button == 1:
-            ax.cbar.norm.vmin -= (perc * scale) * numpy.sign(dy)
-            ax.cbar.norm.vmax -= (perc * scale) * numpy.sign(dy)
-        elif event.button == 3:
-            ax.cbar.norm.vmin -= (perc * scale) * numpy.sign(dy)
-            ax.cbar.norm.vmax += (perc * scale) * numpy.sign(dy)
-
-        ax.cbar.draw_all()
-        ax.plt.set_norm(ax.cbar.norm)
-        ax.cbar.patch.figure.canvas.draw()
-
-    def onBtnRelease(self, event):
-        '''
-        Event for mouse button release
-        '''
-        cb_ax = event.inaxes
-        if cb_ax is not None:
-            cb_ax.press = None
+            self.cmaps.append(cmap)
 
     def __add_axes(self, ax, size='30%', pad='8%'):
         '''
@@ -567,12 +469,17 @@ class Plot(Operation):
                 ax.set_yticks(numpy.arange(0, 90, 20))
                 ax.yaxis.labelpad = 40
 
+        if self.firsttime:
+            for n, fig in enumerate(self.figures):
+                fig.subplots_adjust(**self.plots_adjust)
+            self.firsttime = False
+
     def clear_figures(self):
         '''
         Reset axes for redraw plots
         '''
 
-        for ax in self.axes:
+        for ax in self.axes+self.pf_axes+self.cb_axes:
             ax.clear()
             ax.firsttime = True
             if ax.cbar:
@@ -583,29 +490,22 @@ class Plot(Operation):
         Main function to plot, format and save figures
         '''
 
-        try:
-            self.plot()
-            self.format()
-        except Exception as e:
-           log.warning('{} Plot could not be updated... check data'.format(
-               self.CODE), self.name)
-           log.error(str(e), '')
-           return
-
+        self.plot()
+        self.format()
+        
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
                 fig.text(0.5, 0.5, 'No Data', fontsize='large', ha='center')
                 fig.canvas.manager.set_window_title(self.CODE)
                 continue
-
-            fig.tight_layout()
+            
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.data.max_time).strftime('%Y/%m/%d')))
             fig.canvas.draw()
             if self.show:
                 fig.show()
-                # figpause(0.1)
+                figpause(0.01)
 
             if self.save:
                 self.save_figure(n)
@@ -727,7 +627,7 @@ class Plot(Operation):
         '''
         Main plotting routine
         '''
-        
+
         if self.isConfig is False:
             self.__setup(**kwargs)
             
@@ -792,9 +692,9 @@ class Plot(Operation):
 
     def close(self):
 
-        if self.data:
+        if not self.data.flagNoData:
             self.save_counter = self.save_period
             self.__plot()
-        if self.data and self.pause:
+        if not self.data.flagNoData and self.pause:
             figpause(10)
 

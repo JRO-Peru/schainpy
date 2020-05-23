@@ -9,6 +9,7 @@ import numpy
 import datetime
 import json
 
+import schainpy.admin
 from schainpy.utils import log
 from .jroheaderIO import SystemHeader, RadarControllerHeader
 
@@ -141,6 +142,10 @@ class GenericData(object):
     def isEmpty(self):
 
         return self.flagNoData
+
+    def isReady(self):
+
+        return not self.flagNoData
 
 
 class JROData(GenericData):
@@ -526,7 +531,7 @@ class Spectra(JROData):
     def getFreqRangeTimeResponse(self, extrapoints=0):
 
         deltafreq = self.getFmaxTimeResponse() / (self.nFFTPoints * self.ippFactor)
-        freqrange = deltafreq * (numpy.arange(self.nFFTPoints + extrapoints) -self.nFFTPoints / 2.) - deltafreq / 2
+        freqrange = deltafreq * (numpy.arange(self.nFFTPoints + extrapoints) - self.nFFTPoints / 2.) - deltafreq / 2
 
         return freqrange
 
@@ -1110,6 +1115,7 @@ class PlotterData(object):
         self.exp_code = exp_code
         self.buffering = buffering
         self.ready = False
+        self.flagNoData = False
         self.localtime = False
         self.data = {}
         self.meta = {}
@@ -1207,10 +1213,12 @@ class PlotterData(object):
         if hasattr(dataOut, 'meta'):
             self.meta.update(dataOut.meta)
         
-        self.pairs = dataOut.pairsList
+        if hasattr(dataOut, 'pairsList'):
+            self.pairs = dataOut.pairsList
+        
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
-        if 'spc' in self.plottypes or 'cspc' in self.plottypes or 'spc_moments' in self.plottypes:
+        if True in ['spc' in ptype for ptype in self.plottypes]:
             self.xrange = (dataOut.getFreqRange(1)/1000.,
                            dataOut.getAcfRange(1), dataOut.getVelRange(1))
             self.factor = dataOut.normFactor
@@ -1219,7 +1227,7 @@ class PlotterData(object):
         self.__times.append(tm)
         
         for plot in self.plottypes:
-            if plot in ('spc', 'spc_moments'):
+            if plot in ('spc', 'spc_moments', 'spc_cut'):
                 z = dataOut.data_spc/dataOut.normFactor
                 buffer = 10*numpy.log10(z)
             if plot == 'cspc':
@@ -1227,7 +1235,7 @@ class PlotterData(object):
                 buffer = (dataOut.data_spc, dataOut.data_cspc)
             if plot == 'noise':
                 buffer = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
-            if plot == 'rti':
+            if plot in ('rti', 'spcprofile'):
                 buffer = dataOut.getPower()
             if plot == 'snr_db':
                 buffer = dataOut.data_SNR
@@ -1270,6 +1278,10 @@ class PlotterData(object):
             self.channels = range(buffer.shape[0])
         else:
             self.channels = dataOut.channelList
+
+        if buffer is None:
+            self.flagNoData = True
+            raise schainpy.admin.SchainWarning('Attribute data_{} is empty'.format(self.key)) 
 
     def normalize_heights(self):
         '''

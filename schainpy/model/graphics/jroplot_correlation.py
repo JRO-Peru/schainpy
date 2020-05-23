@@ -2,10 +2,10 @@ import os
 import datetime
 import numpy
 import copy
-from schainpy.model import *
-from .figure import Figure, isRealtime
+from schainpy.model.graphics.jroplot_base import Plot
 
-class CorrelationPlot_(Figure):
+
+class CorrelationPlot(Plot):
     isConfig = None
     __nsubplots = None
 

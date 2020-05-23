@@ -7,13 +7,10 @@ import os
 import datetime
 import numpy
 
-from .figure import Figure, isRealtime
-from .plotting_codes import *
-from schainpy.model.proc.jroproc_base import MPDecorator
+from schainpy.model.graphics.jroplot_base import Plot
 
 
-@MPDecorator
-class SpectraHeisScope_(Figure):
+class SpectraHeisScope(Plot):
 
 
     isConfig = None
@@ -25,7 +22,7 @@ class SpectraHeisScope_(Figure):
 
     def __init__(self):#, **kwargs):
 
-        Figure.__init__(self)#, **kwargs)
+        Plot.__init__(self)#, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -181,8 +178,8 @@ class SpectraHeisScope_(Figure):
 
         return dataOut
 
-@MPDecorator
-class RTIfromSpectraHeis_(Figure):
+
+class RTIfromSpectraHeis(Plot):
 
     isConfig = None
     __nsubplots = None
@@ -190,7 +187,7 @@ class RTIfromSpectraHeis_(Figure):
     PREFIX = 'rtinoise'
 
     def __init__(self):#, **kwargs):
-        Figure.__init__(self)#, **kwargs)
+        Plot.__init__(self)#, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
