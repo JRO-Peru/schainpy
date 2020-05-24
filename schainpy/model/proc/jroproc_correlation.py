@@ -1,7 +1,7 @@
 import numpy
 
 from .jroproc_base import ProcessingUnit, Operation
-from schainpy.model.data.jrodata import Correlation, hildebrand_sekhon
+from schainpy.model.data.jrodata import Correlation
 
 class CorrelationProc(ProcessingUnit):
 

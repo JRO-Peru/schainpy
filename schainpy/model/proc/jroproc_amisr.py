@@ -16,7 +16,7 @@ class AMISRProc(ProcessingUnit):
             self.dataOut.copy(self.dataIn) 
 
 
-class PrintInfo(Operation):
+class PrintInfoAMISR(Operation):
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
         self.__isPrinted = False

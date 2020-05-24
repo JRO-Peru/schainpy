@@ -46,7 +46,7 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
-@MPDecorator
+
 class ParametersProc(ProcessingUnit):
     
     METHODS = {}
@@ -1329,13 +1329,12 @@ class SpectralMoments(Operation):
     
     def run(self, dataOut):
         
-        #dataOut.data_pre = dataOut.data_pre[0]
         data = dataOut.data_pre[0]
         absc = dataOut.abscissaList[:-1]
         noise = dataOut.noise
         nChannel = data.shape[0]
         data_param = numpy.zeros((nChannel, 4, data.shape[2]))
-                
+
         for ind in range(nChannel):
             data_param[ind,:,:] = self.__calculateMoments( data[ind,:,:] , absc , noise[ind] )
         
@@ -1344,6 +1343,7 @@ class SpectralMoments(Operation):
         dataOut.data_POW = data_param[:,1]
         dataOut.data_DOP = data_param[:,2]
         dataOut.data_WIDTH = data_param[:,3]
+
         return dataOut
     
     def __calculateMoments(self, oldspec, oldfreq, n0, 
@@ -1370,25 +1370,27 @@ class SpectralMoments(Operation):
         vec_w = numpy.zeros(oldspec.shape[1])
         vec_snr = numpy.zeros(oldspec.shape[1])
         
-        oldspec = numpy.ma.masked_invalid(oldspec)
-
+        # oldspec = numpy.ma.masked_invalid(oldspec)
+        
         for ind in range(oldspec.shape[1]):
-                        
+            
             spec = oldspec[:,ind]
             aux = spec*fwindow
             max_spec = aux.max()
-            m = list(aux).index(max_spec)
-                       
+            m = aux.tolist().index(max_spec)
+             
             #Smooth    
-            if (smooth == 0):   spec2 = spec
-            else:   spec2 = scipy.ndimage.filters.uniform_filter1d(spec,size=smooth)
-    
+            if (smooth == 0):
+                spec2 = spec
+            else:
+                spec2 = scipy.ndimage.filters.uniform_filter1d(spec,size=smooth)
+            
             #    Calculo de Momentos
-            bb = spec2[list(range(m,spec2.size))]
+            bb = spec2[numpy.arange(m,spec2.size)]
             bb = (bb<n0).nonzero()
             bb = bb[0]
             
-            ss = spec2[list(range(0,m + 1))]
+            ss = spec2[numpy.arange(0,m + 1)]
             ss = (ss<n0).nonzero()
             ss = ss[0]
             
@@ -1399,17 +1401,20 @@ class SpectralMoments(Operation):
                 if (bb0 < 0):
                     bb0 = 0
                     
-            if (ss.size == 0):   ss1 = 1
-            else: ss1 = max(ss) + 1
+            if (ss.size == 0):
+                ss1 = 1
+            else:
+                ss1 = max(ss) + 1
             
-            if (ss1 > m):   ss1 = m
+            if (ss1 > m):
+                ss1 = m
             
-            valid = numpy.asarray(list(range(int(m + bb0 - ss1 + 1)))) + ss1               
-            power = ((spec2[valid] - n0)*fwindow[valid]).sum()
-            fd = ((spec2[valid]- n0)*freq[valid]*fwindow[valid]).sum()/power
-            w = math.sqrt(((spec2[valid] - n0)*fwindow[valid]*(freq[valid]- fd)**2).sum()/power)
-            snr = (spec2.mean()-n0)/n0               
+            valid = numpy.arange(int(m + bb0 - ss1 + 1)) + ss1               
             
+            power = ((spec2[valid] - n0) * fwindow[valid]).sum()
+            fd = ((spec2[valid]- n0)*freq[valid] * fwindow[valid]).sum() / power
+            w = numpy.sqrt(((spec2[valid] - n0)*fwindow[valid]*(freq[valid]- fd)**2).sum() / power)
+            snr = (spec2.mean()-n0)/n0
             if (snr < 1.e-20) :  
                 snr = 1.e-20
             
@@ -1417,9 +1422,8 @@ class SpectralMoments(Operation):
             vec_fd[ind] = fd
             vec_w[ind] = w
             vec_snr[ind] = snr
-        
-        moments = numpy.vstack((vec_snr, vec_power, vec_fd, vec_w))
-        return moments
+
+        return numpy.vstack((vec_snr, vec_power, vec_fd, vec_w))
     
     #------------------    Get SA Parameters    --------------------------
     

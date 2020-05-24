@@ -78,7 +78,7 @@ def load_json(obj):
     
     return iterable
 
-@MPDecorator
+
 class MADReader(Reader, ProcessingUnit):
 
     def __init__(self):

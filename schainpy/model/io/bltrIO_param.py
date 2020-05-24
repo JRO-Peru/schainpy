@@ -84,7 +84,7 @@ DATA_STRUCTURE = numpy.dtype([
     ('sea_algorithm', '<u4')
 ])
 
-@MPDecorator
+
 class BLTRParamReader(JRODataReader, ProcessingUnit):
     '''
     Boundary Layer and Tropospheric Radar (BLTR) reader, Wind velocities and SNR 

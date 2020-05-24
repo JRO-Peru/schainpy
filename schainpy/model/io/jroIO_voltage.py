@@ -10,12 +10,8 @@ from .jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Voltage
-import zmq
-import tempfile
-from io import StringIO
-# from _sha import blocksize
 
-@MPDecorator
+
 class VoltageReader(JRODataReader, ProcessingUnit):
     """
     Esta clase permite leer datos de voltage desde archivos en formato rawdata (.r). La lectura

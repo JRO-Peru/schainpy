@@ -11,7 +11,7 @@ from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader,
 from schainpy.model.data.jrodata import Spectra
 from schainpy.utils import log
 
-@MPDecorator
+
 class SpectraReader(JRODataReader, ProcessingUnit):
     """
     Esta clase permite leer datos de espectros desde archivos procesados (.pdata). La lectura

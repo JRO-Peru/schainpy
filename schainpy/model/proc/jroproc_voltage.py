@@ -7,7 +7,7 @@ from schainpy.utils import log
 from time import time
 
 
-@MPDecorator
+
 class VoltageProc(ProcessingUnit):  
     
     def __init__(self):
@@ -25,8 +25,6 @@ class VoltageProc(ProcessingUnit):
 
         if self.dataIn.type == 'Voltage':
             self.dataOut.copy(self.dataIn)
-
-    #         self.dataOut.copy(self.dataIn)
 
     def __updateObjFromAmisrInput(self):
 
@@ -53,23 +51,14 @@ class VoltageProc(ProcessingUnit):
         self.dataOut.beam.codeList = self.dataIn.beam.codeList
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
-    #
-    #        pass#
-    #
-    #    def init(self):
-    #
-    #
-    #        if self.dataIn.type == 'AMISR':
-    #            self.__updateObjFromAmisrInput()
-    #
-    #        if self.dataIn.type == 'Voltage':
-    #            self.dataOut.copy(self.dataIn)
-    #        # No necesita copiar en cada init() los atributos de dataIn
-    #        # la copia deberia hacerse por cada nuevo bloque de datos
+    
 
-    def selectChannels(self, channelList):
+class selectChannels(Operation):
+    
+    def run(self, dataOut, channelList):
 
         channelIndexList = []
+        self.dataOut = dataOut
 
         for channel in channelList:
             if channel not in self.dataOut.channelList:
@@ -79,6 +68,7 @@ class VoltageProc(ProcessingUnit):
             channelIndexList.append(index)
 
         self.selectChannelsByIndex(channelIndexList)
+        return self.dataOut
 
     def selectChannelsByIndex(self, channelIndexList):
         """
@@ -101,24 +91,63 @@ class VoltageProc(ProcessingUnit):
 
         for channelIndex in channelIndexList:
             if channelIndex not in self.dataOut.channelIndexList:
-                print(channelIndexList)
                 raise ValueError("The value %d in channelIndexList is not valid" %channelIndex)
 
-        if self.dataOut.flagDataAsBlock:
-            """
-            Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
-            """
-            data = self.dataOut.data[channelIndexList,:,:]
-        else:
-            data = self.dataOut.data[channelIndexList,:]
+        if self.dataOut.type == 'Voltage':
+            if self.dataOut.flagDataAsBlock:
+                """
+                Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
+                """
+                data = self.dataOut.data[channelIndexList,:,:]
+            else:
+                data = self.dataOut.data[channelIndexList,:]
 
-        self.dataOut.data = data
-        # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
-        self.dataOut.channelList = range(len(channelIndexList))
-        
+            self.dataOut.data = data
+            # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
+            self.dataOut.channelList = range(len(channelIndexList))
+        elif self.dataOut.type == 'Spectra':
+            data_spc = self.dataOut.data_spc[channelIndexList, :]
+            data_dc = self.dataOut.data_dc[channelIndexList, :]
+
+            self.dataOut.data_spc = data_spc
+            self.dataOut.data_dc = data_dc
+
+            # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
+            self.dataOut.channelList = range(len(channelIndexList))
+            self.__selectPairsByChannel(channelIndexList)
+
         return 1
 
-    def selectHeights(self, minHei=None, maxHei=None):
+    def __selectPairsByChannel(self, channelList=None):
+
+        if channelList == None:
+            return
+
+        pairsIndexListSelected = []
+        for pairIndex in self.dataOut.pairsIndexList:
+            # First pair
+            if self.dataOut.pairsList[pairIndex][0] not in channelList:
+                continue
+            # Second pair
+            if self.dataOut.pairsList[pairIndex][1] not in channelList:
+                continue
+
+            pairsIndexListSelected.append(pairIndex)
+
+        if not pairsIndexListSelected:
+            self.dataOut.data_cspc = None
+            self.dataOut.pairsList = []
+            return
+
+        self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndexListSelected]
+        self.dataOut.pairsList = [self.dataOut.pairsList[i]
+                                  for i in pairsIndexListSelected]
+
+        return
+
+class selectHeights(Operation):
+    
+    def run(self, dataOut, minHei=None, maxHei=None):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
         minHei <= height <= maxHei
@@ -133,6 +162,8 @@ class VoltageProc(ProcessingUnit):
         Return:
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
+
+        self.dataOut = dataOut
 
         if minHei == None:
             minHei = self.dataOut.heightList[0]
@@ -165,8 +196,7 @@ class VoltageProc(ProcessingUnit):
 
         self.selectHeightsByIndex(minIndex, maxIndex)
 
-        return 1
-
+        return self.dataOut
 
     def selectHeightsByIndex(self, minIndex, maxIndex):
         """
@@ -185,81 +215,118 @@ class VoltageProc(ProcessingUnit):
             1 si el metodo se ejecuto con exito caso contrario devuelve 0
         """
 
-        if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError("Height index range (%d,%d) is not valid" % (minIndex, maxIndex))
+        if self.dataOut.type == 'Voltage':
+            if (minIndex < 0) or (minIndex > maxIndex):
+                raise ValueError("Height index range (%d,%d) is not valid" % (minIndex, maxIndex))
 
-        if (maxIndex >= self.dataOut.nHeights):
-            maxIndex = self.dataOut.nHeights
+            if (maxIndex >= self.dataOut.nHeights):
+                maxIndex = self.dataOut.nHeights
 
-        #voltage
-        if self.dataOut.flagDataAsBlock:
-            """
-            Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
-            """
-            data = self.dataOut.data[:,:, minIndex:maxIndex]
-        else:
-            data = self.dataOut.data[:, minIndex:maxIndex]
+            #voltage
+            if self.dataOut.flagDataAsBlock:
+                """
+                Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
+                """
+                data = self.dataOut.data[:,:, minIndex:maxIndex]
+            else:
+                data = self.dataOut.data[:, minIndex:maxIndex]
 
-        #         firstHeight = self.dataOut.heightList[minIndex]
+            #         firstHeight = self.dataOut.heightList[minIndex]
 
-        self.dataOut.data = data
-        self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex]
+            self.dataOut.data = data
+            self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex]
 
-        if self.dataOut.nHeights <= 1:
-            raise ValueError("selectHeights: Too few heights. Current number of heights is %d" %(self.dataOut.nHeights))
+            if self.dataOut.nHeights <= 1:
+                raise ValueError("selectHeights: Too few heights. Current number of heights is %d" %(self.dataOut.nHeights))
+        elif self.dataOut.type == 'Spectra':
+            if (minIndex < 0) or (minIndex > maxIndex):
+                raise ValueError("Error selecting heights: Index range (%d,%d) is not valid" % (
+                    minIndex, maxIndex))
 
+            if (maxIndex >= self.dataOut.nHeights):
+                maxIndex = self.dataOut.nHeights - 1
+
+            # Spectra
+            data_spc = self.dataOut.data_spc[:, :, minIndex:maxIndex + 1]
+
+            data_cspc = None
+            if self.dataOut.data_cspc is not None:
+                data_cspc = self.dataOut.data_cspc[:, :, minIndex:maxIndex + 1]
+
+            data_dc = None
+            if self.dataOut.data_dc is not None:
+                data_dc = self.dataOut.data_dc[:, minIndex:maxIndex + 1]
+
+            self.dataOut.data_spc = data_spc
+            self.dataOut.data_cspc = data_cspc
+            self.dataOut.data_dc = data_dc
+
+            self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex + 1]
+        
         return 1
 
 
-    def filterByHeights(self, window):
+class filterByHeights(Operation):
 
-        deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+    def run(self, dataOut, window):
+
+        deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
 
         if window == None:
-            window = (self.dataOut.radarControllerHeaderObj.txA/self.dataOut.radarControllerHeaderObj.nBaud) / deltaHeight
+            window = (dataOut.radarControllerHeaderObj.txA/dataOut.radarControllerHeaderObj.nBaud) / deltaHeight
 
         newdelta = deltaHeight * window
-        r = self.dataOut.nHeights % window
-        newheights = (self.dataOut.nHeights-r)/window
+        r = dataOut.nHeights % window
+        newheights = (dataOut.nHeights-r)/window
 
         if newheights <= 1:
-            raise ValueError("filterByHeights: Too few heights. Current number of heights is %d and window is %d" %(self.dataOut.nHeights, window))
+            raise ValueError("filterByHeights: Too few heights. Current number of heights is %d and window is %d" %(dataOut.nHeights, window))
 
-        if self.dataOut.flagDataAsBlock:
+        if dataOut.flagDataAsBlock:
             """
             Si la data es obtenida por bloques, dimension = [nChannels, nProfiles, nHeis]
             """
-            buffer = self.dataOut.data[:, :, 0:int(self.dataOut.nHeights-r)]            
-            buffer = buffer.reshape(self.dataOut.nChannels, self.dataOut.nProfiles, int(self.dataOut.nHeights/window), window)
+            buffer = dataOut.data[:, :, 0:int(dataOut.nHeights-r)]            
+            buffer = buffer.reshape(dataOut.nChannels, dataOut.nProfiles, int(dataOut.nHeights/window), window)
             buffer = numpy.sum(buffer,3)
 
         else:
-            buffer = self.dataOut.data[:,0:int(self.dataOut.nHeights-r)]
-            buffer = buffer.reshape(self.dataOut.nChannels,int(self.dataOut.nHeights/window),int(window))
+            buffer = dataOut.data[:,0:int(dataOut.nHeights-r)]
+            buffer = buffer.reshape(dataOut.nChannels,int(dataOut.nHeights/window),int(window))
             buffer = numpy.sum(buffer,2)
 
-        self.dataOut.data = buffer
-        self.dataOut.heightList = self.dataOut.heightList[0] + numpy.arange( newheights )*newdelta
-        self.dataOut.windowOfFilter = window
+        dataOut.data = buffer
+        dataOut.heightList = dataOut.heightList[0] + numpy.arange( newheights )*newdelta
+        dataOut.windowOfFilter = window
 
-    def setH0(self, h0, deltaHeight = None):
+        return dataOut
+
+
+class setH0(Operation):
+
+    def run(self, dataOut, h0, deltaHeight = None):
 
         if not deltaHeight:
-            deltaHeight = self.dataOut.heightList[1] - self.dataOut.heightList[0]
+            deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
 
-        nHeights = self.dataOut.nHeights
+        nHeights = dataOut.nHeights
 
         newHeiRange = h0 + numpy.arange(nHeights)*deltaHeight
 
-        self.dataOut.heightList = newHeiRange
+        dataOut.heightList = newHeiRange
 
-    def deFlip(self, channelList = []):
+        return dataOut
 
-        data = self.dataOut.data.copy()
 
-        if self.dataOut.flagDataAsBlock:
+class deFlip(Operation):
+
+    def run(self, dataOut, channelList = []):
+
+        data = dataOut.data.copy()
+
+        if dataOut.flagDataAsBlock:
             flip = self.flip
-            profileList = list(range(self.dataOut.nProfiles))
+            profileList = list(range(dataOut.nProfiles))
 
             if not channelList:
                 for thisProfile in profileList:
@@ -267,7 +334,7 @@ class VoltageProc(ProcessingUnit):
                     flip *= -1.0
             else:
                 for thisChannel in channelList:
-                    if thisChannel not in self.dataOut.channelList:
+                    if thisChannel not in dataOut.channelList:
                         continue
 
                     for thisProfile in profileList:
@@ -281,41 +348,57 @@ class VoltageProc(ProcessingUnit):
                 data[:,:] = data[:,:]*self.flip
             else:
                 for thisChannel in channelList:
-                    if thisChannel not in self.dataOut.channelList:
+                    if thisChannel not in dataOut.channelList:
                         continue
 
                     data[thisChannel,:] = data[thisChannel,:]*self.flip
 
             self.flip *= -1.
 
-        self.dataOut.data = data
+        dataOut.data = data
 
-    def setRadarFrequency(self, frequency=None):
+        return dataOut
 
-        if frequency != None:
-            self.dataOut.frequency = frequency
 
-        return 1
+class setAttribute(Operation):
+    '''
+    Set an arbitrary attribute to dataOut
+    '''
 
-    def interpolateHeights(self, topLim, botLim):
+    def __init__(self):
+
+        Operation.__init__(self)
+        self._ready = False
+
+    def run(self, dataOut, **kwargs):
+
+        for key, value in kwargs.items():
+            setattr(dataOut, key, value)
+
+        return dataOut
+
+
+class interpolateHeights(Operation):
+
+    def run(self, dataOut, topLim, botLim):
         #69 al 72 para julia
         #82-84 para meteoros
-        if len(numpy.shape(self.dataOut.data))==2:
-            sampInterp = (self.dataOut.data[:,botLim-1] + self.dataOut.data[:,topLim+1])/2
+        if len(numpy.shape(dataOut.data))==2:
+            sampInterp = (dataOut.data[:,botLim-1] + dataOut.data[:,topLim+1])/2
             sampInterp = numpy.transpose(numpy.tile(sampInterp,(topLim-botLim + 1,1)))
-            #self.dataOut.data[:,botLim:limSup+1] = sampInterp
-            self.dataOut.data[:,botLim:topLim+1] = sampInterp
+            #dataOut.data[:,botLim:limSup+1] = sampInterp
+            dataOut.data[:,botLim:topLim+1] = sampInterp
         else:
-            nHeights = self.dataOut.data.shape[2]
+            nHeights = dataOut.data.shape[2]
             x = numpy.hstack((numpy.arange(botLim),numpy.arange(topLim+1,nHeights)))
-            y = self.dataOut.data[:,:,list(range(botLim))+list(range(topLim+1,nHeights))]
+            y = dataOut.data[:,:,list(range(botLim))+list(range(topLim+1,nHeights))]
             f = interpolate.interp1d(x, y, axis = 2)
             xnew = numpy.arange(botLim,topLim+1)
             ynew = f(xnew)
+            dataOut.data[:,:,botLim:topLim+1]  = ynew
 
-            self.dataOut.data[:,:,botLim:topLim+1]  = ynew
+        return dataOut
 
-    # import collections
 
 class CohInt(Operation):
 
@@ -979,8 +1062,6 @@ class ProfileSelector(Operation):
 
         raise ValueError("ProfileSelector needs profileList, profileRangeList or rangeList parameter")
 
-        #return False
-        return dataOut
 
 class Reshaper(Operation):
 

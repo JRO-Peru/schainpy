@@ -5,7 +5,7 @@ from schainpy.model.data.jrodata import SpectraHeis
 from schainpy.utils import log
 
 
-@MPDecorator
+
 class SpectraHeisProc(ProcessingUnit):
 
     def __init__(self):#, **kwargs):

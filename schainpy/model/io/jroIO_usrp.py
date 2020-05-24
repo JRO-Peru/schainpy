@@ -14,7 +14,7 @@ except:
 
 from schainpy.model.data.jroheaderIO import RadarControllerHeader, SystemHeader
 from schainpy.model.data.jrodata import Voltage
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 
 try:
     import digital_rf_hdf5
@@ -546,6 +546,8 @@ class USRPReader(ProcessingUnit):
 
         return
 
+
+@MPDecorator
 class USRPWriter(Operation):
     '''
     classdocs

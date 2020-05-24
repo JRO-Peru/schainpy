@@ -120,6 +120,7 @@ class Metadata(object):
             parmConfObj.readXml(parmElement)
             self.parmConfObjList.append(parmConfObj)
 
+@MPDecorator
 class FitsWriter(Operation):
     def __init__(self, **kwargs):
         Operation.__init__(self, **kwargs)
@@ -283,7 +284,7 @@ class FitsWriter(Operation):
             self.isConfig = True
         self.putData()
 
-@MPDecorator
+
 class FitsReader(ProcessingUnit):
 
 #     __TIMEZONE = time.timezone

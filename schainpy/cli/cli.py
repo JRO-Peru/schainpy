@@ -1,10 +1,9 @@
 import click
-import schainpy
 import subprocess
 import os
 import sys
 import glob
-from multiprocessing import cpu_count
+import schainpy
 from schainpy.controller import Project
 from schainpy.model import Operation, ProcessingUnit
 from schainpy.utils import log
@@ -43,7 +42,7 @@ def getOperations():
 def getArgs(op):
     module = locate('schainpy.model.{}'.format(op))
     try:
-        obj = module(1,2,3,Queue(),5,6)
+        obj = module(1, 2, 3, Queue())
     except:
         obj = module()
 
@@ -68,7 +67,7 @@ def getArgs(op):
 def getDoc(obj):    
     module = locate('schainpy.model.{}'.format(obj))
     try:
-        obj = module(1,2,3,Queue(),5,6)
+        obj = module(1, 2, 3, Queue())
     except:
         obj = module()
     return obj.__doc__
@@ -94,9 +93,9 @@ PREFIX = 'experiment'
 @click.argument('nextcommand', default=None, required=False, type=str)
 def main(command, nextcommand, version):
     """COMMAND LINE INTERFACE FOR SIGNAL CHAIN - JICAMARCA RADIO OBSERVATORY V3.0\n
-        Available commands.\n
+        Available commands:\n
         xml: runs a schain XML generated file\n
-        run: runs any python script starting 'experiment_'\n
+        run: runs any python script'\n
         generate: generates a template schain script\n
         list: return a list of available procs and operations\n
         search: return avilable operations, procs or arguments of the given
@@ -156,11 +155,9 @@ def search(nextcommand):
         try:
             args = getArgs(nextcommand)
             doc = getDoc(nextcommand)
-            if len(args) == 0:
-                log.success('\n{} has no arguments'.format(nextcommand), '')
-            else:
-                log.success('{}\n{}\n\narguments:\n  {}'.format(
-                    nextcommand, doc, ', '.join(args)), '')
+            log.success('{}\n{}\n\narguments:\n  {}'.format(
+                nextcommand, doc, ', '.join(args)), ''
+                )
         except Exception as e:
             log.error('Module `{}` does not exists'.format(nextcommand), '')
             allModules = getAll()

@@ -14,6 +14,7 @@ import time
 import datetime
 import zmq
 
+from schainpy.model.proc.jroproc_base import Operation
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jroheaderIO import get_dtype_index, get_numpy_dtype, get_procflag_dtype, get_dtype_width
 from schainpy.utils import log
@@ -724,9 +725,9 @@ class JRODataReader(Reader):
     firstHeaderSize = 0
     basicHeaderSize = 24
     __isFirstTimeOnline = 1
-    __printInfo = True
     filefmt = "*%Y%j***"
     folderfmt = "*%Y%j"
+    __attrs__ = ['path', 'startDate', 'endDate', 'startTime', 'endTime', 'online', 'delay', 'walk']
 
     def getDtypeWidth(self):
 
@@ -1214,26 +1215,6 @@ class JRODataReader(Reader):
 
         print("[Reading] Number of read blocks %04d" % self.nTotalBlocks)
 
-    def printNumberOfBlock(self):
-        'SPAM!'
-
- #         if self.flagIsNewBlock:
- #             print "[Reading] Block No. %d/%d -> %s" %(self.nReadBlocks,
- #                                                       self.processingHeaderObj.dataBlocksPerFile,
- #                                                       self.dataOut.datatime.ctime())
-
-    def printInfo(self):
-
-        if self.__printInfo == False:
-            return
-
-        self.basicHeaderObj.printInfo()
-        self.systemHeaderObj.printInfo()
-        self.radarControllerHeaderObj.printInfo()
-        self.processingHeaderObj.printInfo()
-
-        self.__printInfo = False
-
     def run(self, **kwargs):
         """
 
@@ -1573,3 +1554,27 @@ class JRODataWriter(Reader):
         self.dataOut = dataOut
         self.putData()
         return self.dataOut
+
+class printInfo(Operation):
+
+    def __init__(self):
+
+        Operation.__init__(self)
+        self.__printInfo = True
+
+    def run(self, dataOut, headers = ['systemHeaderObj', 'radarControllerHeaderObj', 'processingHeaderObj']):
+        if self.__printInfo == False:
+            return dataOut
+
+        for header in headers:
+            if hasattr(dataOut, header):
+                obj = getattr(dataOut, header)
+                if hasattr(obj, 'printInfo'):
+                    obj.printInfo()
+                else:
+                    print(obj)
+            else:
+                log.warning('Header {} Not found in object'.format(header))
+
+        self.__printInfo = False
+        return dataOut

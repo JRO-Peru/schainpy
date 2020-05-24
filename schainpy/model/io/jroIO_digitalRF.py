@@ -31,7 +31,7 @@ try:
 except:
     pass
 
-@MPDecorator
+
 class DigitalRFReader(ProcessingUnit):
     '''
     classdocs
@@ -633,7 +633,7 @@ class DigitalRFReader(ProcessingUnit):
         
         return
 
-
+@MPDecorator
 class DigitalRFWriter(Operation):
     '''
     classdocs

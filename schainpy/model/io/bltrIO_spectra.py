@@ -247,7 +247,7 @@ class RecordHeaderBLTR():
 
         return 1
 
-@MPDecorator
+
 class BLTRSpectraReader (ProcessingUnit):
 
     def __init__(self):

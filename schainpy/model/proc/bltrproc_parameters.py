@@ -15,7 +15,7 @@ from numpy import transpose
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 
-@MPDecorator
+
 class BLTRParametersProc(ProcessingUnit):    
     '''
     Processing unit for BLTR parameters data (winds)
@@ -76,7 +76,7 @@ class BLTRParametersProc(ProcessingUnit):
                 self.dataOut.data_param[i][SNRavgdB <= snr_threshold] = numpy.nan
 
 # TODO
-@MPDecorator
+
 class OutliersFilter(Operation):
 
     def __init__(self):

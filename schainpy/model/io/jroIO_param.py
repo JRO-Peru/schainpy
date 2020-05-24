@@ -11,7 +11,7 @@ from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecora
 from schainpy.model.io.jroIO_base import *
 from schainpy.utils import log
 
-@MPDecorator
+
 class ParamReader(JRODataReader,ProcessingUnit):
     '''
     Reads HDF5 format files
@@ -965,7 +965,7 @@ class ParamWriter(Operation):
         return
         
 
-@MPDecorator
+
 class ParameterReader(Reader, ProcessingUnit):
     '''
     Reads HDF5 format files
