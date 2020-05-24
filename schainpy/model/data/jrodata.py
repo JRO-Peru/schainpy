@@ -12,6 +12,7 @@ import json
 import schainpy.admin
 from schainpy.utils import log
 from .jroheaderIO import SystemHeader, RadarControllerHeader
+from schainpy.model.data import _noise
 
 
 def getNumpyDtype(dataTypeCode):
@@ -69,6 +70,7 @@ def hildebrand_sekhon(data, navg):
     """
 
     sortdata = numpy.sort(data, axis=None)
+    '''
     lenOfData = len(sortdata)
     nums_min = lenOfData*0.2
 
@@ -98,8 +100,8 @@ def hildebrand_sekhon(data, navg):
         j += 1
 
     lnoise = sump / j
-
-    return lnoise
+    '''
+    return _noise.hildebrand_sekhon(sortdata, navg)
 
 
 class Beam:
