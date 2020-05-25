@@ -1,11 +1,13 @@
 ## CHANGELOG:
 
 ### 3.0
-* Python 3.x compatible
-* New architecture with multiprocessing and IPC communication
-* Add @MPDecorator for multiprocessing Units and Operations
+* Python 3.x & 2.X compatible
+* New architecture with multiprocessing support
+* Add @MPDecorator for multiprocessing Operations (Plots, Writers and Publishers)
 * Added new type of operation `external` for non-locking operations
 * New plotting architecture with buffering/throttle capabilities to speed up plots
+* Clean controller to optimize scripts (format & optype are no longer required)
+* New GUI with dinamic load of Units and operations (use Kivy framework)
 
 ### 2.3
 * Added support for Madrigal formats (reading/writing).

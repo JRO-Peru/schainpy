@@ -362,7 +362,7 @@ class deFlip(Operation):
 
 class setAttribute(Operation):
     '''
-    Set an arbitrary attribute to dataOut
+    Set an arbitrary attribute(s) to dataOut
     '''
 
     def __init__(self):
