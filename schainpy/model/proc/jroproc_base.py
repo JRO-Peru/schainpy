@@ -74,7 +74,7 @@ class ProcessingUnit(object):
             elif 'SchainError' in err:
                 log.error(err.split('SchainError:')[-1].split('\n')[0].strip(), self.name)
             else:
-                log.error(err, self.name)
+                log.error(err.split('\n')[-2], self.name)
             self.dataOut.error = True
         
         for op, optype, opkwargs in self.operations:

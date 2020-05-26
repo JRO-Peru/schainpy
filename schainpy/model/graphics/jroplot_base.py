@@ -692,9 +692,9 @@ class Plot(Operation):
 
     def close(self):
 
-        if not self.data.flagNoData:
+        if self.data and not self.data.flagNoData:
             self.save_counter = self.save_period
             self.__plot()
-        if not self.data.flagNoData and self.pause:
+        if self.data and not self.data.flagNoData and self.pause:
             figpause(10)
 
