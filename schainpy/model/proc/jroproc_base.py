@@ -304,7 +304,6 @@ def MPDecorator(BaseClass):
             Run fuction for read units
             '''
             while True:
-
                 try:
                     BaseClass.run(self, **self.kwargs)
                 except:

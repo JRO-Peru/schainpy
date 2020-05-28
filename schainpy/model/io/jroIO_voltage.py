@@ -65,7 +65,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             dataOut    :    Objeto de la clase Voltage. Este objeto sera utilizado para
                               almacenar un perfil de datos cada vez que se haga un requerimiento
                               (getData). El perfil sera obtenido a partir del buffer de datos,
-                              si el buffer esta vacio se hara un nuevo proceso de lectura de un
+                              si el buffer esta vacio se hara un nuevo proceso de lectura de unX
                               bloque de datos.
                               Si este parametro no es pasado se creara uno internamente.
 
@@ -285,7 +285,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.flagDiscontinuousBlock = 0
         self.profileIndex = 0
         self.flagIsNewBlock = 1
-        self.dataOut.flagNoData = False
+        self.dataOut.flagNoata = False
         self.nTotalBlocks += 1
         self.nReadBlocks += 1
         self.blockPointer = 0

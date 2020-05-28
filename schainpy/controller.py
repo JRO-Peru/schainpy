@@ -57,7 +57,7 @@ def MPProject(project, n=cpu_count()):
         nFiles = len(files)
         if nFiles == 0:
             continue
-        skip = int(math.ceil(nFiles / n))        
+        skip = int(math.ceil(nFiles / n))
         while nFiles > cursor * skip:
             rconf.update(startDate=dt_str, endDate=dt_str, cursor=cursor,
                          skip=skip)
@@ -81,11 +81,11 @@ def MPProject(project, n=cpu_count()):
         time.sleep(3)
 
 def wait(context):
-    
+
     time.sleep(1)
     c = zmq.Context()
     receiver = c.socket(zmq.SUB)
-    receiver.connect('ipc:///tmp/schain_{}_pub'.format(self.id))    
+    receiver.connect('ipc:///tmp/schain_{}_pub'.format(self.id))
     receiver.setsockopt(zmq.SUBSCRIBE, self.id.encode())
     msg = receiver.recv_multipart()[1]
     context.terminate()
@@ -262,7 +262,7 @@ class ParameterConf():
             parmElement.set('name', self.name)
             parmElement.set('value', self.value)
             parmElement.set('format', self.format)
-            
+
     def readXml(self, parmElement):
 
         self.id = parmElement.get('id')
@@ -417,7 +417,7 @@ class OperationConf():
         self.name = opElement.get('name')
         self.type = opElement.get('type')
         self.priority = opElement.get('priority')
-        self.project_id = str(project_id)  
+        self.project_id = str(project_id)
 
         # Compatible with old signal chain version
         # Use of 'run' method instead 'init'
@@ -476,7 +476,7 @@ class ProcUnitConf():
         self.id = None
         self.datatype = None
         self.name = None
-        self.inputId = None 
+        self.inputId = None
         self.opConfObjList = []
         self.procUnitObj = None
         self.opObjDict = {}
@@ -497,7 +497,7 @@ class ProcUnitConf():
 
         return self.id
 
-    def updateId(self, new_id): 
+    def updateId(self, new_id):
         '''
         new_id = int(parentId) * 10 + (int(self.id) % 10)
         new_inputId = int(parentId) * 10 + (int(self.inputId) % 10)
@@ -556,7 +556,7 @@ class ProcUnitConf():
             id sera el topico a publicar
             inputId sera el topico a subscribirse
         '''
-        
+
         # Compatible with old signal chain version
         if datatype == None and name == None:
             raise ValueError('datatype or name should be defined')
@@ -581,7 +581,7 @@ class ProcUnitConf():
         self.lock = lock
         self.opConfObjList = []
 
-        self.addOperation(name='run', optype='self') 
+        self.addOperation(name='run', optype='self')
 
     def removeOperations(self):
 
@@ -677,30 +677,32 @@ class ProcUnitConf():
         '''
         Instancia de unidades de procesamiento.
         '''
-
+        #print(" [ CREATE OBJ ] :",self.name)
         className = eval(self.name)
+
         kwargs = self.getKwargs()
+        #print (" [ kwargs ] : ", kwargs)
         procUnitObj = className(self.id, self.inputId, self.project_id, self.err_queue, self.lock, 'ProcUnit', **kwargs)
         log.success('creating process...', self.name)
 
         for opConfObj in self.opConfObjList:
-            
+
             if opConfObj.type == 'self' and opConfObj.name == 'run':
                 continue
             elif opConfObj.type == 'self':
                 opObj = getattr(procUnitObj, opConfObj.name)
             else:
                 opObj = opConfObj.createObject()
-            
+
             log.success('adding operation: {}, type:{}'.format(
                 opConfObj.name,
                 opConfObj.type), self.name)
-            
+
             procUnitObj.addOperation(opConfObj, opObj)
-     
+
         procUnitObj.start()
         self.procUnitObj = procUnitObj
-        
+
     def close(self):
 
         for opConfObj in self.opConfObjList:
@@ -732,8 +734,8 @@ class ReadUnitConf(ProcUnitConf):
 
     def getElementName(self):
 
-        return self.ELEMENTNAME 
-    
+        return self.ELEMENTNAME
+
     def setup(self, project_id, id, name, datatype, err_queue, path='', startDate='', endDate='',
               startTime='', endTime='', server=None, **kwargs):
 
@@ -745,8 +747,9 @@ class ReadUnitConf(ProcUnitConf):
         kwargs deben ser trasmitidos en la instanciacion
 
         '''
-        
+
         # Compatible with old signal chain version
+        #print (" [INSIDE] : setup ReadUnit", kwargs)
         if datatype == None and name == None:
             raise ValueError('datatype or name should be defined')
         if name == None:
@@ -773,7 +776,7 @@ class ReadUnitConf(ProcUnitConf):
         self.startTime = startTime
         self.endTime = endTime
         self.server = server
-        self.err_queue = err_queue        
+        self.err_queue = err_queue
         self.addRunOperation(**kwargs)
 
     def update(self, **kwargs):
@@ -804,7 +807,7 @@ class ReadUnitConf(ProcUnitConf):
 
     def addRunOperation(self, **kwargs):
 
-        opObj = self.addOperation(name='run', optype='self') 
+        opObj = self.addOperation(name='run', optype='self')
 
         if self.server is None:
             opObj.addParameter(
@@ -819,6 +822,13 @@ class ReadUnitConf(ProcUnitConf):
             opObj.addParameter(
                 name='endTime', value=self.endTime, format='time')
 
+            for key, value in list(kwargs.items()):
+                opObj.addParameter(name=key, value=value,
+                                   format=type(value).__name__)
+        elif self.server== "simulate":
+            #print(" [ INSIDE ] : AROperation simulate -True simulate")
+            opObj.addParameter(
+                name='datatype', value=self.datatype, format='str')
             for key, value in list(kwargs.items()):
                 opObj.addParameter(name=key, value=value,
                                    format=type(value).__name__)
@@ -942,7 +952,7 @@ class Project(Process):
         print('*' * 19)
         print(' ')
         self.id = str(id)
-        self.description = description 
+        self.description = description
         self.email = email
         self.alarm = alarm
         if name:
@@ -977,7 +987,7 @@ class Project(Process):
         readUnitConfObj = ReadUnitConf()
         readUnitConfObj.setup(self.id, idReadUnit, name, datatype, self.err_queue, **kwargs)
         self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
-        
+
         return readUnitConfObj
 
     def addProcUnit(self, inputId='0', datatype=None, name=None):
@@ -994,7 +1004,7 @@ class Project(Process):
 
         idProcUnit = self.__getNewId()
         procUnitConfObj = ProcUnitConf()
-        input_proc = self.procUnitConfObjDict[inputId]        
+        input_proc = self.procUnitConfObjDict[inputId]
         procUnitConfObj.setup(self.id, idProcUnit, name, datatype, inputId, self.err_queue, input_proc.lock)
         self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
 
@@ -1152,14 +1162,14 @@ class Project(Process):
 
         t = Thread(target=self.__monitor, args=(self.err_queue, self.ctx))
         t.start()
-    
+
     def __monitor(self, queue, ctx):
 
         import socket
-        
+
         procs = 0
         err_msg = ''
-        
+
         while True:
             msg = queue.get()
             if '#_start_#' in msg:
@@ -1168,11 +1178,11 @@ class Project(Process):
                 procs -=1
             else:
                 err_msg = msg
-            
-            if procs == 0 or 'Traceback' in err_msg:                
+
+            if procs == 0 or 'Traceback' in err_msg:
                 break
             time.sleep(0.1)
-        
+
         if '|' in err_msg:
             name, err = err_msg.split('|')
             if 'SchainWarning' in err:
@@ -1181,9 +1191,9 @@ class Project(Process):
                 log.error(err.split('SchainError:')[-1].split('\n')[0].strip(), name)
             else:
                 log.error(err, name)
-        else:            
+        else:
             name, err = self.name, err_msg
-        
+
         time.sleep(2)
 
         for conf in self.procUnitConfObjDict.values():
@@ -1191,7 +1201,7 @@ class Project(Process):
                 if confop.type == 'external':
                     confop.opObj.terminate()
             conf.procUnitObj.terminate()
-            
+
         ctx.term()
 
         message = ''.join(err)
@@ -1217,7 +1227,7 @@ class Project(Process):
                 subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
 
             a = Alarm(
-                modes=self.alarm, 
+                modes=self.alarm,
                 email=self.email,
                 message=message,
                 subject=subject,
@@ -1266,7 +1276,7 @@ class Project(Process):
 
         if not os.path.exists('/tmp/schain'):
             os.mkdir('/tmp/schain')
-        
+
         self.ctx = zmq.Context()
         xpub = self.ctx.socket(zmq.XPUB)
         xpub.bind('ipc:///tmp/schain/{}_pub'.format(self.id))
@@ -1282,9 +1292,9 @@ class Project(Process):
     def run(self):
 
         log.success('Starting {}: {}'.format(self.name, self.id), tag='')
-        self.start_time = time.time()        
-        self.createObjects()        
-        self.setProxy()        
+        self.start_time = time.time()
+        self.createObjects()
+        self.setProxy()
         log.success('{} Done (Time: {}s)'.format(
             self.name,
             time.time()-self.start_time), '')

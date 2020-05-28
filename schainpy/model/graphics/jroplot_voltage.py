@@ -177,9 +177,10 @@ class Scope_(Figure):
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
-        ### print("***************** PLOTEO **************************")
-        ### print(dataOut.nProfiles)
-        ### print(dataOut.heightList.shape)
+        #print("***************** PLOTEO **************************")
+        #print(dataOut.nProfiles)
+        #print(dataOut.heightList.shape)
+        #print(dataOut.data.shape)
         if dataOut.flagDataAsBlock:
 
             for i in range(dataOut.nProfiles):

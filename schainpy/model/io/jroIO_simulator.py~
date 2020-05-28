@@ -1,0 +1,336 @@
+import numpy,math
+import zmq
+import tempfile
+from io import StringIO
+########## 1  Heredamos JRODatareader
+from schainpy.model.io.jroIO_base import *
+########## 2 Heredamos las propiedades de ProcessingUnit
+from schainpy.model.proc.jroproc_base import ProcessingUnit,Operation,MPDecorator
+########## 3 Importaremos las clases BascicHeader, SystemHeader, RadarControlHeader, ProcessingHeader
+from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader,SystemHeader,RadarControllerHeader, ProcessingHeader
+########## 4 Importaremos el objeto Voltge
+from schainpy.model.data.jrodata import Voltage
+
+@MPDecorator
+class SimulatorReader(JRODataReader, ProcessingUnit):
+    incIntFactor                   = 1
+    nFFTPoints                     = 0
+    FixPP_IncInt                   = 1
+    FixRCP_IPP                     = 1000
+    FixPP_CohInt                   = 1
+    Tau_0                          = 250
+    AcqH0_0                        = 70
+    H0                             = AcqH0_0
+    AcqDH_0                        = 1.25
+    DH0                            = AcqDH_0
+    Bauds                          = 32
+    FixRCP_TXA                     = 40
+
+    fAngle                         = 2.0*math.pi*(1/16)
+    DC_level                       = 500
+    stdev                          = 8
+    Num_codes                      = 2
+    code0                          = numpy.array([1,1,1,0,1,1,0,1,1,1,1,0,0,0,1,0,1,1,1,0,1,1,0,1,0,0,0,1,1,1,0,1])
+    code1                          = numpy.array([1,1,1,0,1,1,0,1,1,1,1,0,0,0,1,0,0,0,0,1,0,0,1,0,1,1,1,0,0,0,1,0])
+    Dyn_sncode                     = numpy.array([Num_codes,Bauds])
+    samples                        = 200
+    channels                       = 1
+ 
+    
+    def __init__(self):
+        """
+        Inicializador de la clases SimulatorReader para 
+        generar datos de voltage simulados.
+        Input:
+            dataOut: Objeto de la clase Voltage.
+            Este Objeto sera utilizado apra almacenar 
+            un perfil de datos  cada vez qe se haga  psiversho
+            un requerimiento (getData)
+        """
+        ProcessingUnit.__init__(self)
+        print(" [ START ] init - Metodo Simulator Reader")
+        self.isConfig              = False
+        self.basicHeaderObj       = BasicHeader(LOCALTIME)
+        self.systemHeaderObj       = SystemHeader()
+        self.radarControlHeaderObj = RadarControllerHeader()
+        self.processingHeaderObj   = ProcessingHeader()
+        self.profileIndex          = 2**32-1
+        self.dataOut               = Voltage()
+        #self.server                = "simulate"
+        print(" [ END ] init - Metodo simulator Reader" )
+
+
+    def __hasNotDataInBuffer(self):
+        if self.profileIndex >= self.processingHeaderObj.profilesPerBlock* self.nTxs:
+            return 1
+        return 0
+
+    def __setNewBlock(self):       
+        if self.flagIsNewFile:            
+            #self.lastUTTime = self.basicHeaderObj.utc
+            return 1
+   
+    def readNextBlock(self):
+        while True:
+            self.__setNewBlock()
+            print (" [ START ] readNexBlock")
+            if not(self.readBlock()):
+                return 0
+            self.getBasicHeader()
+            break
+        if self.verbose:
+            print("[Reading] Block No. %d/%d -> %s" %(self.nReadBlock,
+                                                      self.processingHeaderObj.dataBlocksPerfile,
+                                                      self.dataOut.datatime.ctime()) )
+        return 1
+
+    def getFirstHeader(self):
+        self.getBasicHeader()
+        self.dataOut.processingHeaderObj= self.processingHeaderObj.copy()
+        
+        self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
+
+        self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+
+    def getBasicHeader(self):
+        self.dataOut.utctime = self.basicHeaderObj.utc + self.basicHeaderObj.miliSecond / \
+            1000. + self.profileIndex * self.radarControllerHeaderObj.ippSeconds
+
+        self.dataOut.flagDiscontinuousBlock = self.flagDiscontinuousBlock
+
+        self.dataOut.timeZone = self.basicHeaderObj.timeZone
+
+        self.dataOut.dstFlag = self.basicHeaderObj.dstFlag
+
+        self.dataOut.errorCount = self.basicHeaderObj.errorCount
+
+        self.dataOut.useLocalTime = self.basicHeaderObj.useLocalTime
+
+        self.dataOut.ippSeconds = self.radarControllerHeaderObj.ippSeconds / self.nTxs
+    
+    def reshapeData(self):
+        if self.nTxs==1:
+            return
+
+    def readBlock(self):
+        self.init_acquisition()
+        pulses, num_codes, pulse_size  = self.init_pulse()
+        self.jro_GenerateBlockOfData()
+        self.profileIndex = 0
+
+        self.flagIsNewFile = 0
+        self.flagIsNewBlock = 1
+
+        self.nTotalBlocks += 1
+        self.nReadBlocks += 1
+
+        return 1
+        
+
+    def getData(self): ### metodo propio de VoltageReader
+
+        if self.flagNoMoreFiles:
+            self.dataOut.flagNodata= True
+        self.flagDiscontinuousBlock=0
+        self.flagIsNewBlock       = 0
+        if self.__hasNotDataInBuffer():  # aqui es verdad
+            if not(self.readNextBlock()): # return 1 y por eso el if not salta  a getBasic Header
+                return 0
+            self.getFirstHeader() # atributo
+            self.reshapeData() # nTxx1 =1 return , n
+
+        if not self.getByBlock:
+            self.dataOut.flagDataAsBlock = False
+            self.dataOut.data = self.datablock[:, self.profileIndex, :]
+            self.dataOut.profileIndex = self.profileIndex
+
+            self.profileIndex += 1
+        else:
+            pass
+        self.getBasicHeader()
+        self.dataOut.realtime = self.searchFilesOnline
+
+        return self.dataOut.data
+
+
+    def set_kwargs(self, **kwargs):
+
+        for key, value in kwargs.items():
+            print("    set_kwargs    ",key,value)
+            setattr(self, key, value)
+    
+         
+    def setup(self,incIntFactor= 1, nFFTPoints = 0, FixPP_IncInt=1,FixRCP_IPP=100,
+                   FixPP_CohInt= 1,Tau_0= 250,AcqH0_0 = 70 ,AcqDH_0=1.25, Bauds= 32,
+                   FixRCP_TXA = 40, fAngle = 2.0*math.pi*(1/16),DC_level= 500, stdev= 8,
+                   Num_codes = None , Dyn_snCode = None, samples=200,channels=1,
+                   **kwargs):
+        print(" [ START ] - SETUP metodo")
+        self.set_kwargs(**kwargs)
+        self.processingHeaderObj.profilesPerBlock = 100
+        self.incIntFactor                   = incIntFactor
+        self.nFFTPoints                     = nFFTPoints
+        self.FixPP_IncInt                   = FixPP_IncInt
+        self.FixRCP_IPP                     = FixRCP_IPP
+        self.FixPP_CohInt                   = FixPP_CohInt
+        self.Tau_0                          = Tau_0
+        self.AcqH0_0                        = AcqH0_0
+        self.H0                             = AcqH0_0
+        self.AcqDH_0                        = AcqDH_0
+        self.DH0                            = AcqDH_0
+        self.Bauds                          = Bauds
+        self.FixRCP_TXA                     = FixRCP_TXA
+
+        self.fAngle                         = fAngle
+        self.DC_level                       = DC_level
+        self.stdev                          = stdev
+        self.Num_codes                      = Num_codes
+        #self.code0                          = code0
+        #self.code1                          = code1
+        self.Dyn_snCode                     = Dyn_snCode
+        self.samples                        = samples
+        self.channels                       = channels
+
+        print(" [ END ] - SETUP metodo")
+        return
+        
+    def run(self,**kwargs): # metodo propio
+        
+        print(" [ START ] Metodo RUN:  ", self.server)
+        if not(self.isConfig):   
+            self.setup(**kwargs)
+            self.isConfig = True
+        import time
+        time.sleep(3)
+        #if self.server is None:
+        self.getData()
+        #else:
+        #    self.getFromServer()
+##################################################################
+###### Aqui ingresamos las clases y metodos propios del simulador
+##################################################################
+
+#############################################
+############## INIT_ACQUISITION##############
+#############################################
+    def init_acquisition(self):
+
+        if self.nFFTPoints != 0:
+            self.incIntfactor = m_nProfilesperBlock/self.nFFTPoints
+            if (self.FixPP_IncInt > self.incIntfactor):
+                self.incIntfactor = self.FixPP_IncInt/ self.incIntfactor
+            elif(self.FixPP_IncInt< self.incIntfactor):
+                print("False alert...")
+                 
+        ProfilesperBLock  = self.processingHeaderObj.profilesPerBlock
+        
+        self.timeperblock =int(((self.FixRCP_m_fIPP
+                        *m_nProfilesperBlock
+                        *self.FixPP_CohInt
+                        *self.incIntfactor)
+                       /150.0)
+                      *0.9
+                      +0.5)
+        # para cada canal
+        prof_gen     =   m_nProfilesperBlock*FixPP_m_n_CoherentIntegrations
+        prof_gen     =   m_nProfilesperBlock
+
+    
+        m_nReference = int((Dyn_sfTau_0-Dyn_sfAcqH0_0)/(Dyn_sfAcqDH_0)+0.5)
+        print(m_nReference)
+        BaudWidth    =  int((FixRCP_m_fTXA/Dyn_sfAcqDH_0)/m_nBauds + 0.5 )
+        print(BaudWidth)
+        if (BaudWidth==0):
+            BaudWidth=1
+
+        
+#################################################################
+##################### init_pulse
+################################################################
+    
+    def init_pulse(m_nNum_Codes,m_nBauds,BaudWidth,Dyn_snCode):
+        fAngle                            = 2.0*math.pi*(1/16)
+        DC_level                          = 500
+        stdev                             = 8
+        m_nNum_Codes= m_nNum_Codes
+        m_nBauds    = m_nBauds
+        BaudWidth   = BaudWidth
+        Dyn_snCode  = Dyn_snCode
+
+        if m_nBauds:
+            pulses    = list(range(0,m_nNum_Codes))
+            num_codes = m_nNum_Codes
+            for i in range(num_codes):
+                pulse_size = m_nBauds*BaudWidth
+                pulses[i]  = numpy.zeros(pulse_size)
+                for j in range(m_nBauds):
+                    for k in range(BaudWidth):
+                        pulses[i][j*BaudWidth+k] = int(Dyn_snCode[i][j]*600)
+        else:
+            pulses     = list(range(1))
+            pulse_size = int(FixRCP_m_fTXB/0.15+0.5)
+            pulses[0]  = numpy.ones(pulse_size)
+            pulses     = 600*pulses[0]
+        return pulses,num_codes,pulse_size
+
+#################################################################
+##################### Generate block data
+################################################################
+# m_nChannels
+# prof_gen
+#    fAngle                            = 2.0*math.pi*(1/16)
+#    DC_level                          = 500
+#    stdev
+#    num_codes
+#fAngle                            = 2.0*math.pi*(1/16)
+#num_codes                      = 8
+
+    
+    def jro_GenerateBlockOfData(m_nSamples,DC_level,stdev,m_nReference,pulses,num_codes,pulse_size,prof_gen,H0,DH0):
+        m_nSamples = m_nSamples
+        DC_level   = DC_level
+        stdev      = stdev
+        m_nR       = m_nReference
+        pulses     = pulses
+        num_codes  = num_codes
+        ps         = pulse_size
+        prof_gen   = prof_gen
+        H0         = H0
+        DH0        = DH0
+        fAngle                            = 2.0*math.pi*(1/16)
+
+        # NOISE
+        Seed_r=random.seed(2)
+        Noise_r = numpy.random.normal(DC_level,stdev,m_nSamples)
+        Seed_i=random.seed(3)
+        Noise_i = numpy.random.normal(DC_level,stdev,m_nSamples)
+        Noise   = numpy.zeros(m_nSamples,dtype=complex)
+        Noise.real = Noise_r
+        Noise.imag = Noise_i
+        Pulso     = numpy.zeros(pulse_size,dtype=complex)
+
+        #DOPPLER
+        x          = m_nSamples
+        time_space = (DH0*numpy.linspace(0, x-1,num=x) +H0)
+        time_vec   = time_space*(1.0e-3/150.0)
+        fd         = 10
+        d_signal   = numpy.array(numpy.exp(1.0j*2.0*math.pi*fd*time_vec),dtype=numpy.complex64)
+
+
+        
+        for i in range(m_nChannels):
+            for k in range(prof_gen):
+                Pulso.real =  pulses[k%num_codes]
+                Pulso.imag =  pulses[k%num_codes]
+                InBuffer   = numpy.zeros(m_nSamples,dtype=complex)
+                InBuffer[m_nR:m_nR+ps] = Pulso
+                InBuffer = Noise+ InBuffer
+                InBuffer.real[m_nR:m_nR+ps] = InBuffer.real[m_nR:m_nR+ps]*(math.cos( fAngle)*5) 
+                InBuffer.imag[m_nR:m_nR+ps] = InBuffer.imag[m_nR:m_nR+ps]*(math.sin( fAngle)*5)
+                InBuffer=InBuffer
+                #print(InBuffer[:10])
+                #print(InBuffer.shape)
+                plot_cts(InBuffer,H0=H0,DH0=DH0)
+                #wave_fft(x=InBuffer,plot_show=True)
+                #time.sleep(1)
+        
