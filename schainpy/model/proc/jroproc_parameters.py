@@ -124,7 +124,7 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.abscissaList = self.dataIn.getVelRange(1)
             self.dataOut.spc_noise = self.dataIn.getNoise()
             self.dataOut.spc_range = (self.dataIn.getFreqRange(1) , self.dataIn.getAcfRange(1) , self.dataIn.getVelRange(1))
-            # self.dataOut.normFactor = self.dataIn.normFactor
+            self.dataOut.normFactor = self.dataIn.normFactor
             self.dataOut.pairsList = self.dataIn.pairsList
             self.dataOut.groupList = self.dataIn.pairsList
             self.dataOut.flagNoData = False
@@ -2119,7 +2119,8 @@ class WindProfiler(Operation):
     def run(self, dataOut, technique, nHours=1, hmin=70, hmax=110, **kwargs):
 
         param = dataOut.data_param
-        if dataOut.abscissaList != None:
+        if dataOut.abscissaList.any():
+        #if dataOut.abscissaList != None:
             absc = dataOut.abscissaList[:-1]
         # noise = dataOut.noise
         heightList = dataOut.heightList

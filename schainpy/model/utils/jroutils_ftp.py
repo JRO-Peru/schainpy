@@ -583,7 +583,10 @@ class SendToServer(ProcessingUnit):
         self.clientObj = None
 
     def setup(self, server, username, password, remotefolder, localfolder, ext='.png', period=60, protocol='ftp', **kwargs):
-
+        self.server = server
+        self.username = username
+        self.password = password
+        self.remotefolder = remotefolder 
         self.clientObj = None
         self.localfolder = localfolder
         self.ext = ext
@@ -947,7 +950,7 @@ class FTP(object):
 
         """
         self.ftp.close()
-
+@MPDecorator
 class SendByFTP(Operation):
 
     def __init__(self, **kwargs):
