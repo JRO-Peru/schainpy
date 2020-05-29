@@ -457,16 +457,11 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                 InBuffer[m_nR:m_nR+ps]      = Pulso
                 InBuffer                    = Noise+ InBuffer
                 #····················· ANGLE ·······························
-
-
-
-
+                InBuffer.real[m_nR:m_nR+ps] = InBuffer.real[m_nR:m_nR+ps]*(math.cos( self.fAngle)*5)
                 InBuffer.imag[m_nR:m_nR+ps] = InBuffer.imag[m_nR:m_nR+ps]*(math.sin( self.fAngle)*5)
                 InBuffer=InBuffer
                 self.datablock[i][k]= InBuffer
-                #plot_cts(InBuffer,H0=H0,DH0=DH0
-
-
+                #plot_cts(InBuffer,H0=H0,DH0=DH0)
                 #wave_fft(x=InBuffer,plot_show=True)
                 #time.sleep(1)
         #················DOPPLER SIGNAL...............................................
