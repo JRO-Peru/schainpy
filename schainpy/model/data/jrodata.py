@@ -267,7 +267,7 @@ class JROData(GenericData):
         return fmax
 
     def getVmax(self):
-
+        #print("frequency",self.frequency)
         _lambda = self.C / self.frequency
 
         vmax = self.getFmax() * _lambda / 2

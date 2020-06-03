@@ -98,7 +98,7 @@ class SpectraProc(ProcessingUnit):
         #print("spc                                   :",spc.shape)
         data_wr = None
         if self.dataOut.flagWR:
-            data_wr   = fft_volt
+            data_wr   = self.buffer
             blocksize = fft_volt.size
 
         cspc = None

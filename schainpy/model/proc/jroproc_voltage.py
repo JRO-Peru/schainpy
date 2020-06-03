@@ -1,5 +1,6 @@
 import sys
-import numpy
+import time
+import numpy,math
 from scipy import interpolate
 from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Voltage
@@ -384,16 +385,16 @@ class CohInt(Operation):
         """
 
         if not self.__withOverlapping:
-            print("inside over")
+            #print("inside over")
             self.__buffer += data.copy()
             self.__profIndex += 1
             return
 
         #Overlapping data
         nChannels, nHeis = data.shape
-        print("show me the light",data.shape)
+        #print("show me the light",data.shape)
         data = numpy.reshape(data, (1, nChannels, nHeis))
-        print(data.shape)
+        #print(data.shape)
         #If the buffer is empty then it takes the data value
         if self.__buffer is None:
             self.__buffer = data
@@ -424,7 +425,7 @@ class CohInt(Operation):
         """
 
         if not self.__withOverlapping:
-            #print("ahora que fue")
+            print("ahora que fue")
             data = self.__buffer
             n = self.__profIndex
 
@@ -1233,8 +1234,8 @@ class CreateBlockVoltage(Operation):
         #print("new numberSamples",numberSamples)
 
         self.bufferShape  = shape[0], numberProfile, numberSamples  # nchannels,nprofiles,nsamples
-        self.buffer       = numpy.zeros((self.bufferShape))
-        self.bufferVel    = numpy.zeros((self.bufferShape))
+        self.buffer       = numpy.zeros([shape[0], numberProfile, numberSamples])
+        self.bufferVel    = numpy.zeros([shape[0], numberProfile, numberSamples])
 
     def run(self, dataOut, m=None):
         #print("RUN")
@@ -1248,6 +1249,7 @@ class CreateBlockVoltage(Operation):
         if self.__Index < m:
             #print("PROFINDEX BLOCK         CBV",self.__Index)
             self.buffer[:,self.__Index,:]    = dataOut.data
+            #corregir porque debe tener un perfil menos ojo
             self.bufferVel[:,self.__Index,:] = dataOut.data_velocity
             self.__Index += 1
             dataOut.flagNoData =  True
@@ -1302,11 +1304,14 @@ class PulsePairVoltage(Operation):
     n              = None
     __nch          = 0
     __nHeis        = 0
+    removeDC       = False
+    ipp            = None
+    lambda_        = 0
 
     def __init__(self,**kwargs):
         Operation.__init__(self,**kwargs)
 
-    def setup(self, dataOut, n = None ):
+    def setup(self, dataOut, n = None, removeDC=False):
         '''
         n= Numero de PRF's de entrada
         '''
@@ -1320,6 +1325,10 @@ class PulsePairVoltage(Operation):
 
         self.__nch            = dataOut.nChannels
         self.__nHeis          = dataOut.nHeights
+        self.removeDC         = removeDC
+        self.lambda_          = 3.0e8/(9345.0e6)
+        self.ippSec           = dataOut.ippSeconds
+        print("IPPseconds",dataOut.ippSeconds)
 
         print("ELVALOR DE n es:", n)
         if n == None:
@@ -1331,115 +1340,55 @@ class PulsePairVoltage(Operation):
 
         self.n       = n
         self.__nProf = n
-        '''
-        if overlapping:
-            self.__withOverlapping = True
-            self.__buffer          = None
 
-        else:
-            #print ("estoy sin __withO")
-            self.__withOverlapping = False
-            self.__buffer          = 0
-            self.__buffer2         = []
-            self.__buffer3         = 0
-        '''
+        self.__buffer = numpy.zeros((dataOut.nChannels,
+                                           n,
+                                           dataOut.nHeights),
+                                          dtype='complex')
+
+
 
     def putData(self,data):
         '''
         Add a profile to he __buffer and increase in one the __profiel Index
         '''
-        #print("self.__profIndex             :",self.__profIndex)
-        self.__buffer         += data*numpy.conjugate(data)
-        self.__buffer2.append(numpy.conjugate(data))
-        if self.__profIndex > 0:
-            self.__buffer3    += self.__buffer2[self.__profIndex-1]*data
+        self.__buffer[:,self.__profIndex,:]= data
         self.__profIndex      += 1
         return
-        '''
-        if not self.__withOverlapping:
-            #print("Putdata inside over")
-            self.__buffer       += data* numpy.conjugate(data)
-            self.__buffer2.append(numpy.conjugate(data))
-
-            if self.__profIndex >0:
-                self.__buffer3 += self.__buffer2[self.__profIndex-1]*data
-            self.__profIndex   += 1
-            return
-
-        if self.__buffer is None:
-            #print("aqui bro")
-            self.__buffer     = data* numpy.conjugate(data)
-            self.__buffer2.append(numpy.conjugate(data))
-            self.__profIndex += 1
-
-            return
-
-        if self.__profIndex < self.n:
-            self.__buffer = numpy.vstack(self.__buffer,data* numpy.conjugate(data))
-            self.__buffer2.append(numpy.conjugate(data))
-
-            if self.__profIndex == 1:
-                self.__buffer3  =  self.__buffer2[self.__profIndex -1] * data
-            else:
-                self.__buffer3  = numpy.vstack(self.__buffer3, self.__buffer2[self.profIndex-1]*data)
-
-            self.__profIndex += 1
-            return
-        '''
 
     def pushData(self):
         '''
         Return the PULSEPAIR and the profiles used in the operation
         Affected :  self.__profileIndex
         '''
-        #print("************************************************")
-        #print("push data int vel n")
-        data_intensity   = self.__buffer/self.n
-        data_velocity    = self.__buffer3/(self.n-1)
+
+        if self.removeDC==True:
+            mean    = numpy.mean(self.__buffer,1)
+            tmp     = mean.reshape(self.__nch,1,self.__nHeis)
+            dc= numpy.tile(tmp,[1,self.__nProf,1])
+            self.__buffer = self.__buffer -  dc
+
+        data_intensity   = numpy.sum(self.__buffer*numpy.conj(self.__buffer),1)/self.n
+        pair1            = self.__buffer[:,1:,:]*numpy.conjugate(self.__buffer[:,:-1,:])
+        angle=numpy.angle(numpy.sum(pair1,1))*180/(math.pi)
+        #print(angle.shape)#print("__ANGLE__") #print("angle",angle[:,:10])
+        data_velocity    = (self.lambda_/(4*math.pi*self.ippSec))*numpy.angle(numpy.sum(pair1,1))
         n                = self.__profIndex
 
-        self.__buffer    = 0
-        self.__buffer2   = []
-        self.__buffer3   = 0
+        self.__buffer    = numpy.zeros((self.__nch, self.__nProf,self.__nHeis),  dtype='complex')
         self.__profIndex = 0
-
-        return data_intensity, data_velocity,n
-        '''
-        if not self.__withOverlapping:
-            #print("ahora que fue")
-            data_intensity = self.__buffer/self.n
-            data_velocity  = self.__buffer3/(self.n-1)
-            n = self.__profIndex
-
-            self.__buffer    = 0
-            self.__buffer2   = []
-            self.__buffer3   = 0
-            self.__profIndex = 0
-            return data_intensity, data_velocity,n
-
-        data_intensity = numpy.sum(self.__buffer,axis  = 0)
-        data_velocity  = numpy.sum(self.__buffer3,axis = 0)
-        n              = self.__profIndex
-        #self.__buffer    = 0
-        #self.__buffer2   = []
-        #self.__buffer3   = 0
-        #self.__profIndex = 0
-        return data_intensity, data_velocity,n
-        '''
+        return data_intensity,data_velocity,n
 
     def pulsePairbyProfiles(self,data):
 
         self.__dataReady     =  False
         data_intensity       =  None
         data_velocity        =  None
-        #print("beforeputada")
         self.putData(data)
-        #print("ProfileIndex:",self.__profIndex)
         if self.__profIndex  == self.n:
             data_intensity, data_velocity, n   = self.pushData()
             self.__dataReady                   = True
-            #print("-----------------------------------------------")
-            #print("data_intensity",data_intensity.shape,"data_velocity",data_velocity.shape)
+
         return data_intensity, data_velocity
 
     def pulsePairOp(self, data, datatime= None):
@@ -1456,18 +1405,13 @@ class PulsePairVoltage(Operation):
         avgdatatime    = self.__initime
         deltatime      = datatime - self.__lastdatatime
         self.__initime = datatime
-        '''
-        if not self.__withOverlapping:
-            self.__initime = datatime
-        else:
-            self.__initime += deltatime
-        '''
+
         return data_intensity, data_velocity, avgdatatime
 
-    def run(self, dataOut,n = None, overlapping= False,**kwargs):
+    def run(self, dataOut,n = None,removeDC= False, overlapping= False,**kwargs):
 
         if not self.isConfig:
-            self.setup(dataOut = dataOut, n    = n , **kwargs)
+            self.setup(dataOut = dataOut, n    = n , removeDC=removeDC , **kwargs)
             self.isConfig   = True
         #print("*******************")
         #print("print Shape input data:",dataOut.data.shape)
@@ -1485,139 +1429,3 @@ class PulsePairVoltage(Operation):
             dataOut.utctime         = avgdatatime
             dataOut.flagNoData      = False
         return dataOut
-
-# import collections
-# from scipy.stats import mode
-#
-# class Synchronize(Operation):
-#
-#     isConfig = False
-#     __profIndex = 0
-#
-#     def __init__(self, **kwargs):
-#
-#         Operation.__init__(self, **kwargs)
-# #         self.isConfig = False
-#         self.__powBuffer = None
-#         self.__startIndex = 0
-#         self.__pulseFound = False
-#
-#     def __findTxPulse(self, dataOut, channel=0, pulse_with = None):
-#
-#         #Read data
-#
-#         powerdB = dataOut.getPower(channel = channel)
-#         noisedB = dataOut.getNoise(channel = channel)[0]
-#
-#         self.__powBuffer.extend(powerdB.flatten())
-#
-#         dataArray = numpy.array(self.__powBuffer)
-#
-#         filteredPower = numpy.correlate(dataArray, dataArray[0:self.__nSamples], "same")
-#
-#         maxValue = numpy.nanmax(filteredPower)
-#
-#         if maxValue < noisedB + 10:
-#             #No se encuentra ningun pulso de transmision
-#             return None
-#
-#         maxValuesIndex = numpy.where(filteredPower > maxValue - 0.1*abs(maxValue))[0]
-#
-#         if len(maxValuesIndex) < 2:
-#             #Solo se encontro un solo pulso de transmision de un baudio, esperando por el siguiente TX
-#             return None
-#
-#         phasedMaxValuesIndex = maxValuesIndex - self.__nSamples
-#
-#         #Seleccionar solo valores con un espaciamiento de nSamples
-#         pulseIndex = numpy.intersect1d(maxValuesIndex, phasedMaxValuesIndex)
-#
-#         if len(pulseIndex) < 2:
-#             #Solo se encontro un pulso de transmision con ancho mayor a 1
-#             return None
-#
-#         spacing = pulseIndex[1:] - pulseIndex[:-1]
-#
-#         #remover senales que se distancien menos de 10 unidades o muestras
-#         #(No deberian existir IPP menor a 10 unidades)
-#
-#         realIndex = numpy.where(spacing > 10 )[0]
-#
-#         if len(realIndex) < 2:
-#             #Solo se encontro un pulso de transmision con ancho mayor a 1
-#             return None
-#
-#         #Eliminar pulsos anchos (deja solo la diferencia entre IPPs)
-#         realPulseIndex = pulseIndex[realIndex]
-#
-#         period = mode(realPulseIndex[1:] - realPulseIndex[:-1])[0][0]
-#
-#         print "IPP = %d samples" %period
-#
-#         self.__newNSamples = dataOut.nHeights #int(period)
-#         self.__startIndex = int(realPulseIndex[0])
-#
-#         return 1
-#
-#
-#     def setup(self, nSamples, nChannels, buffer_size = 4):
-#
-#         self.__powBuffer = collections.deque(numpy.zeros( buffer_size*nSamples,dtype=numpy.float),
-#                                           maxlen = buffer_size*nSamples)
-#
-#         bufferList = []
-#
-#         for i in range(nChannels):
-#             bufferByChannel = collections.deque(numpy.zeros( buffer_size*nSamples, dtype=numpy.complex) +  numpy.NAN,
-#                                           maxlen = buffer_size*nSamples)
-#
-#             bufferList.append(bufferByChannel)
-#
-#         self.__nSamples = nSamples
-#         self.__nChannels = nChannels
-#         self.__bufferList = bufferList
-#
-#     def run(self, dataOut, channel = 0):
-#
-#         if not self.isConfig:
-#             nSamples = dataOut.nHeights
-#             nChannels = dataOut.nChannels
-#             self.setup(nSamples, nChannels)
-#             self.isConfig = True
-#
-#         #Append new data to internal buffer
-#         for thisChannel in range(self.__nChannels):
-#             bufferByChannel = self.__bufferList[thisChannel]
-#             bufferByChannel.extend(dataOut.data[thisChannel])
-#
-#         if self.__pulseFound:
-#             self.__startIndex -= self.__nSamples
-#
-#         #Finding Tx Pulse
-#         if not self.__pulseFound:
-#             indexFound = self.__findTxPulse(dataOut, channel)
-#
-#             if indexFound == None:
-#                 dataOut.flagNoData = True
-#                 return
-#
-#             self.__arrayBuffer = numpy.zeros((self.__nChannels, self.__newNSamples), dtype = numpy.complex)
-#             self.__pulseFound = True
-#             self.__startIndex = indexFound
-#
-#         #If pulse was found ...
-#         for thisChannel in range(self.__nChannels):
-#             bufferByChannel = self.__bufferList[thisChannel]
-#             #print self.__startIndex
-#             x = numpy.array(bufferByChannel)
-#             self.__arrayBuffer[thisChannel] = x[self.__startIndex:self.__startIndex+self.__newNSamples]
-#
-#         deltaHeight = dataOut.heightList[1] - dataOut.heightList[0]
-#         dataOut.heightList = numpy.arange(self.__newNSamples)*deltaHeight
-# #             dataOut.ippSeconds = (self.__newNSamples / deltaHeight)/1e6
-#
-#         dataOut.data = self.__arrayBuffer
-#
-#         self.__startIndex += self.__newNSamples
-#
-#         return

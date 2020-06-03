@@ -28,3 +28,4 @@ SPECFIT_CODE = 27
 EWDRIFT_CODE = 28
 
 WPO_CODE     = 29         #Weather Intensity - Power
+RTIVOLT_CODE = 30

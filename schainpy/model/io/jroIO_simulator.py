@@ -43,6 +43,8 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
     prof_gen                       = None
     Fdoppler                       = 100
     Hdoppler                       = 36
+    Adoppler                       = 300
+    frequency                      = 9345
     def __init__(self):
         """
         Inicializador de la clases SimulatorReader para
@@ -89,7 +91,8 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         """Set the next file to be readed open it and parse de file header"""
 
         if (self.nReadBlocks >= self.processingHeaderObj.dataBlocksPerFile):
-            print('------------------- [Opening file] ------------------------------')
+            self.nReadFiles=self.nReadFiles+1
+            print('------------------- [Opening file] ------------------------------',self.nReadFiles)
             self.nReadBlocks  = 0
 
     def __setNewBlock(self):
@@ -126,6 +129,8 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         # asumo q la data no esta sin flip
         self.dataOut.flagDeflipData  = self.processingHeaderObj.flag_deflip
         self.dataOut.flagShiftFFT    = self.processingHeaderObj.shif_fft
+        #
+        self.dataOut.frequency = self.frequency
 
     def getBasicHeader(self):
 
@@ -265,14 +270,18 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         self.systemHeaderObj.adcResolution  = adcResolution
         self.systemHeaderObj.pciDioBusWidth = pciDioBusWidth
 
-    def setup(self,incIntFactor= 1, nFFTPoints = 0, FixPP_IncInt=1,FixRCP_IPP=1000,
+    def setup(self,frequency=49.92e6,incIntFactor= 1, nFFTPoints = 0, FixPP_IncInt=1,FixRCP_IPP=1000,
                    FixPP_CohInt= 1,Tau_0= 250,AcqH0_0 = 70 ,AcqDH_0=1.25, Bauds= 32,
-                   FixRCP_TXA = 40, FixRCP_TXB = 50, fAngle = 2.0*math.pi*(1/16),DC_level= 500,
-                   stdev= 8,Num_Codes = 1 , Dyn_snCode = None, samples=200,channels=1,Fdoppler=20,Hdoppler=36,
+                   FixRCP_TXA = 40, FixRCP_TXB = 50, fAngle = 2.0*math.pi*(1/16),DC_level= 50,
+                   stdev= 8,Num_Codes = 1 , Dyn_snCode = None, samples=200,
+                   channels=2,Fdoppler=20,Hdoppler=36,Adoppler=500,
                    **kwargs):
 
         self.set_kwargs(**kwargs)
         self.nReadBlocks = 0
+        self.nReadFiles  = 1
+        print('------------------- [Opening file: ] ------------------------------',self.nReadFiles)
+
         tmp              = time.time()
         tmp_utc          = int(tmp)
         tmp_milisecond   = int((tmp-tmp_utc)*1000)
@@ -301,6 +310,8 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
 
         self.set_SH(nSamples=samples, nProfiles=300, nChannels=channels)
 
+
+        self.frequency                      = frequency
         self.incIntFactor                   = incIntFactor
         self.nFFTPoints                     = nFFTPoints
         self.FixPP_IncInt                   = FixPP_IncInt
@@ -326,6 +337,7 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         self.Baudwidth                      = None
         self.Fdoppler                       = Fdoppler
         self.Hdoppler                       = Hdoppler
+        self.Adoppler                       = Adoppler
 
         print("IPP    ", self.FixRCP_IPP)
         print("Tau_0  ",self.Tau_0)
@@ -337,6 +349,7 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         print("Dyn_snCode",Dyn_snCode)
         print("Fdoppler", Fdoppler)
         print("Hdoppler",Hdoppler)
+        print("Vdopplermax",Fdoppler*(3.0e8/self.frequency)/2.0)
 
         self.init_acquisition()
         self.pulses,self.pulse_size=self.init_pulse(Num_Codes=self.Num_Codes,Bauds=self.Bauds,BaudWidth=self.BaudWidth,Dyn_snCode=Dyn_snCode)
@@ -423,7 +436,8 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
     def jro_GenerateBlockOfData(self,Samples=Samples,DC_level= DC_level,stdev=stdev,
                                 Reference= Reference,pulses= pulses,
                                 Num_Codes= Num_Codes,pulse_size=pulse_size,
-                                prof_gen= prof_gen,H0 = H0,DH0=DH0,Fdoppler= Fdoppler,Hdoppler=Hdoppler):
+                                prof_gen= prof_gen,H0 = H0,DH0=DH0,
+                                Adoppler=Adoppler,Fdoppler= Fdoppler,Hdoppler=Hdoppler):
         Samples    = Samples
         DC_level   = DC_level
         stdev      = stdev
@@ -438,6 +452,7 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         ippSec     = self.radarControllerHeaderObj.ippSeconds
         Fdoppler   = self.Fdoppler
         Hdoppler   = self.Hdoppler
+        Adoppler   = self.Adoppler
 
         self.datablock = numpy.zeros([channels,prof_gen,Samples],dtype= numpy.complex64)
         for i in range(channels):
@@ -455,7 +470,7 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                 #····················· PULSES+NOISE··········
                 InBuffer                    = numpy.zeros(Samples,dtype=complex)
                 InBuffer[m_nR:m_nR+ps]      = Pulso
-                InBuffer                    = Noise+ InBuffer
+                InBuffer                    =  InBuffer+Noise
                 #····················· ANGLE ·······························
                 InBuffer.real[m_nR:m_nR+ps] = InBuffer.real[m_nR:m_nR+ps]*(math.cos( self.fAngle)*5)
                 InBuffer.imag[m_nR:m_nR+ps] = InBuffer.imag[m_nR:m_nR+ps]*(math.sin( self.fAngle)*5)
@@ -465,12 +480,13 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                 #wave_fft(x=InBuffer,plot_show=True)
                 #time.sleep(1)
         #················DOPPLER SIGNAL...............................................
-        time_vec   = numpy.linspace(0,(prof_gen-1)*ippSec,int(prof_gen))+self.nReadBlocks*ippSec*prof_gen
+        time_vec   = numpy.linspace(0,(prof_gen-1)*ippSec,int(prof_gen))+self.nReadBlocks*ippSec*prof_gen+(self.nReadFiles-1)*ippSec*prof_gen
         fd         = Fdoppler #+(600.0/120)*self.nReadBlocks
-        d_signal   = 650*numpy.array(numpy.exp(1.0j*2.0*math.pi*fd*time_vec),dtype=numpy.complex64)
+        d_signal   = Adoppler*numpy.array(numpy.exp(1.0j*2.0*math.pi*fd*time_vec),dtype=numpy.complex64)
         #·················· DATABLOCK + DOPPLER············...........................
         HD=int(Hdoppler/self.AcqDH_0)
-        self.datablock[0,:,HD]=self.datablock[0,:,HD]+ d_signal # RESULT
+        for  i in range(12):
+            self.datablock[:,:,HD+i]=self.datablock[:,:,HD+i]+ d_signal # RESULT
         '''
         a= numpy.zeros(10)
         for i in range(10):
