@@ -509,7 +509,7 @@ class removeInterference(Operation):
             
         self.dataOut.data_cspc = cspc
         
-    def removeInterference(self):
+    def removeInterference(self, interf = 2, hei_interf = None, nhei_interf = None, offhei_interf = None):
 
         jspectra = self.dataOut.data_spc
         jcspectra = self.dataOut.data_cspc
