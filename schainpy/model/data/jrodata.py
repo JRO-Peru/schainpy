@@ -360,7 +360,8 @@ class Voltage(JROData):
 
     # data es un numpy array de 2 dmensiones (canales, alturas)
     data = None
-
+    data_intensity = None
+    data_velocity = None
     def __init__(self):
         '''
         Constructor
@@ -555,7 +556,7 @@ class Spectra(JROData):
 
         deltav = self.getVmax() / (self.nFFTPoints * self.ippFactor)
         velrange = deltav * (numpy.arange(self.nFFTPoints + extrapoints) - self.nFFTPoints / 2.)
-        
+
         if self.nmodes:
             return velrange/self.nmodes
         else:
@@ -1111,7 +1112,7 @@ class PlotterData(object):
     MAXNUMY = 100
 
     def __init__(self, code, throttle_value, exp_code, buffering=True, snr=False):
-        
+
         self.key = code
         self.throttle = throttle_value
         self.exp_code = exp_code
@@ -1139,6 +1140,7 @@ class PlotterData(object):
         for plot in self.plottypes:
             self.data[plot] = {}
 
+
     def __str__(self):
         dum = ['{}{}'.format(key, self.shape(key)) for key in self.data]
         return 'Data[{}][{}]'.format(';'.join(dum), len(self.__times))
@@ -1147,7 +1149,7 @@ class PlotterData(object):
         return len(self.__times)
 
     def __getitem__(self, key):
-        
+
         if key not in self.data:
             raise KeyError(log.error('Missing key: {}'.format(key)))
         if 'spc' in key or not self.buffering:
@@ -1167,7 +1169,6 @@ class PlotterData(object):
         '''
         Configure object
         '''
-
         self.type = ''
         self.ready = False
         self.data = {}
@@ -1180,7 +1181,7 @@ class PlotterData(object):
             elif 'spc_moments' == plot:
                 plot = 'moments'
             self.data[plot] = {}
-        
+
         if 'spc' in self.data or 'rti' in self.data or 'cspc' in self.data or 'moments' in self.data:
             self.data['noise'] = {}
             self.data['rti'] = {}
@@ -1188,7 +1189,7 @@ class PlotterData(object):
                 self.plottypes.append('noise')
             if 'rti' not in self.plottypes:
                 self.plottypes.append('rti')
-        
+
     def shape(self, key):
         '''
         Get the shape of the one-element data for the given key
@@ -1204,20 +1205,19 @@ class PlotterData(object):
         '''
         Update data object with new dataOut
         '''
-        
         if tm in self.__times:
             return
         self.profileIndex = dataOut.profileIndex
         self.tm = tm
         self.type = dataOut.type
         self.parameters = getattr(dataOut, 'parameters', [])
-        
+
         if hasattr(dataOut, 'meta'):
             self.meta.update(dataOut.meta)
-        
+
         if hasattr(dataOut, 'pairsList'):
             self.pairs = dataOut.pairsList
-        
+
         self.interval = dataOut.getTimeInterval()
         self.localtime = dataOut.useLocalTime
         if True in ['spc' in ptype for ptype in self.plottypes]:
@@ -1227,7 +1227,6 @@ class PlotterData(object):
         self.__heights.append(dataOut.heightList)
         self.__all_heights.update(dataOut.heightList)
         self.__times.append(tm)
-        
         for plot in self.plottypes:
             if plot in ('spc', 'spc_moments', 'spc_cut'):
                 z = dataOut.data_spc/dataOut.normFactor
@@ -1260,8 +1259,16 @@ class PlotterData(object):
             if plot == 'scope':
                 buffer = dataOut.data
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
-                self.nProfiles = dataOut.nProfiles  
-                         
+                self.nProfiles = dataOut.nProfiles
+            if plot == 'pp_power':
+                buffer = dataOut.data_intensity
+                self.flagDataAsBlock = dataOut.flagDataAsBlock
+                self.nProfiles = dataOut.nProfiles
+            if plot == 'pp_velocity':
+                buffer = dataOut.data_velocity
+                self.flagDataAsBlock = dataOut.flagDataAsBlock
+                self.nProfiles = dataOut.nProfiles
+
             if plot == 'spc':
                 self.data['spc'] = buffer
             elif plot == 'cspc':
@@ -1283,7 +1290,7 @@ class PlotterData(object):
 
         if buffer is None:
             self.flagNoData = True
-            raise schainpy.admin.SchainWarning('Attribute data_{} is empty'.format(self.key)) 
+            raise schainpy.admin.SchainWarning('Attribute data_{} is empty'.format(self.key))
 
     def normalize_heights(self):
         '''
@@ -1340,7 +1347,7 @@ class PlotterData(object):
         else:
             meta['xrange'] = []
 
-        meta.update(self.meta)        
+        meta.update(self.meta)
         ret['metadata'] = meta
         return json.dumps(ret)
 
