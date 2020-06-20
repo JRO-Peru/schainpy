@@ -1107,8 +1107,8 @@ class PlotterData(object):
     Object to hold data to be plotted
     '''
 
-    MAXNUMX = 100
-    MAXNUMY = 100
+    MAXNUMX = 200
+    MAXNUMY = 200
 
     def __init__(self, code, throttle_value, exp_code, buffering=True, snr=False):
         
@@ -1320,9 +1320,10 @@ class PlotterData(object):
             data = self.roundFloats(
                 self.data[self.key][::, ::dx, ::dy].tolist())
         else:
-            data = self.roundFloats(self.data[self.key][tm].tolist())
             if self.key is 'noise':
-                data = [[x] for x in data]
+                data = [[x] for x in self.roundFloats(self.data[self.key][tm].tolist())]
+            else:
+                data = self.roundFloats(self.data[self.key][tm][::, ::dy].tolist())
 
         meta = {}
         ret = {

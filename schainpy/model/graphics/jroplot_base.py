@@ -160,7 +160,7 @@ class Plot(Operation):
         self.isConfig = False
         self.isPlotConfig = False
         self.save_counter = 1
-        self.sender_counter = 1
+        self.sender_time = 0
         self.data = None
         self.firsttime = True
         self.plots_adjust = {'left': 0.125, 'right': 0.9, 'bottom': 0.15, 'top': 0.9, 'wspace': 0.2, 'hspace': 0.2}
@@ -225,7 +225,7 @@ class Plot(Operation):
         self.throttle = kwargs.get('throttle', 0)
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
-        self.sender_period = kwargs.get('sender_period', 1)
+        self.sender_period = kwargs.get('sender_period', 60)
         self.height_index = kwargs.get('height_index', None)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
@@ -564,12 +564,15 @@ class Plot(Operation):
         '''
         '''
 
-        if self.sender_counter < self.sender_period:
-            self.sender_counter += 1
+        if self.data.tm - self.sender_time < self.sender_period:
             return
 
-        self.sender_counter = 1
-        self.data.meta['titles'] = self.titles
+        self.sender_time = self.data.tm
+        
+        attrs = ['titles', 'zmin', 'zmax']
+        for attr in attrs:
+            self.data.meta[attr] = getattr(self, attr)
+
         retries = 2
         while True:
             self.socket.send_string(self.data.jsonify(self.plot_name, self.plot_type))
