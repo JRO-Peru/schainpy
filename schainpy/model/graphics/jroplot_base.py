@@ -564,7 +564,8 @@ class Plot(Operation):
         '''
         '''
 
-        if self.data.tm - self.sender_time < self.sender_period:
+        interval = self.data.tm - self.sender_time
+        if interval < self.sender_period:
             return
 
         self.sender_time = self.data.tm
@@ -572,7 +573,7 @@ class Plot(Operation):
         attrs = ['titles', 'zmin', 'zmax']
         for attr in attrs:
             self.data.meta[attr] = getattr(self, attr)
-
+        self.data.meta['interval'] = int(interval)
         retries = 2
         while True:
             self.socket.send_string(self.data.jsonify(self.plot_name, self.plot_type))
