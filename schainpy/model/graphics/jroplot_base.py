@@ -5,6 +5,7 @@ import zmq
 import time
 import numpy
 import datetime
+from queue import Queue
 from functools import wraps
 from threading import Thread
 import matplotlib
@@ -160,9 +161,10 @@ class Plot(Operation):
         self.isConfig = False
         self.isPlotConfig = False
         self.save_counter = 1
-        self.sender_counter = 1
+        self.sender_time = 0
         self.data = None
         self.firsttime = True
+        self.sender_queue = Queue(maxsize=10)
         self.plots_adjust = {'left': 0.125, 'right': 0.9, 'bottom': 0.15, 'top': 0.9, 'wspace': 0.2, 'hspace': 0.2}
 
     def __fmtTime(self, x, pos):
@@ -225,7 +227,7 @@ class Plot(Operation):
         self.throttle = kwargs.get('throttle', 0)
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
-        self.sender_period = kwargs.get('sender_period', 1)
+        self.sender_period = kwargs.get('sender_period', 60)
         self.height_index = kwargs.get('height_index', None)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
@@ -564,44 +566,47 @@ class Plot(Operation):
         '''
         '''
 
-        if self.sender_counter < self.sender_period:
-            self.sender_counter += 1
+        interval = self.data.tm - self.sender_time
+        if interval < self.sender_period:
             return
 
-        self.sender_counter = 1
-        self.data.meta['titles'] = self.titles
-        retries = 2
+        self.sender_time = self.data.tm
+        
+        attrs = ['titles', 'zmin', 'zmax', 'colormap']
+        for attr in attrs:
+            value = getattr(self, attr)
+            if value is not None:
+                self.data.meta[attr] = getattr(self, attr)
+        self.data.meta['interval'] = int(interval)
+        msg = self.data.jsonify(self.plot_name, self.plot_type)
+        self.sender_queue.put(msg)
+        
         while True:
-            self.socket.send_string(self.data.jsonify(self.plot_name, self.plot_type))
+            if self.sender_queue.empty():
+                break
+            self.socket.send_string(self.sender_queue.get())
             socks = dict(self.poll.poll(5000))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_string()
                 if reply == 'ok':
                     log.log("Response from server ok", self.name)
-                    break
+                    time.sleep(0.1)
+                    continue
                 else:
                     log.warning(
                         "Malformed reply from server: {}".format(reply), self.name)
-
             else:
                 log.warning(
                     "No response from server, retrying...", self.name)
+                self.sender_queue.put(msg)
             self.socket.setsockopt(zmq.LINGER, 0)
             self.socket.close()
             self.poll.unregister(self.socket)
-            retries -= 1
-            if retries == 0:
-                log.error(
-                    "Server seems to be offline, abandoning", self.name)
-                self.socket = self.context.socket(zmq.REQ)
-                self.socket.connect(self.plot_server)
-                self.poll.register(self.socket, zmq.POLLIN)
-                time.sleep(1)
-                break
+            time.sleep(0.1)
             self.socket = self.context.socket(zmq.REQ)
             self.socket.connect(self.plot_server)
             self.poll.register(self.socket, zmq.POLLIN)
-            time.sleep(0.5)
+            break
 
     def setup(self):
         '''
