@@ -1293,8 +1293,7 @@ class PulsePairVoltage(Operation):
     __initime      = None
     __lastdatatime = None
     __buffer       = None
-    __buffer2      = []
-    __buffer3      = None
+    noise          = None
     __dataReady    = False
     n              = None
     __nch          = 0
@@ -1314,10 +1313,8 @@ class PulsePairVoltage(Operation):
         self.__lastdatatime   = 0
         self.__dataReady      = False
         self.__buffer         = 0
-        self.__buffer2        = []
-        self.__buffer3        = 0
         self.__profIndex      = 0
-
+        self.noise            = None
         self.__nch            = dataOut.nChannels
         self.__nHeis          = dataOut.nHeights
         self.removeDC         = removeDC
@@ -1341,6 +1338,9 @@ class PulsePairVoltage(Operation):
                                            n,
                                            dataOut.nHeights),
                                           dtype='complex')
+        self.noise  = numpy.zeros([self.__nch,self.__nHeis])
+        for i in range(self.__nch):
+            self.noise[i]=dataOut.getNoise(channel=i)
 
     def putData(self,data):
         '''
@@ -1362,58 +1362,82 @@ class PulsePairVoltage(Operation):
             dc= numpy.tile(tmp,[1,self.__nProf,1])
             self.__buffer = self.__buffer -  dc
 
-        data_intensity   = numpy.sum(self.__buffer*numpy.conj(self.__buffer),1)/(self.n*self.nCohInt)#*self.nCohInt)
-        pair1            = self.__buffer[:,1:,:]*numpy.conjugate(self.__buffer[:,:-1,:])
-        angle            = numpy.angle(numpy.sum(pair1,1))*180/(math.pi)
-        #print(angle.shape)#print("__ANGLE__") #print("angle",angle[:,:10])
-        data_velocity    = (self.lambda_/(4*math.pi*self.ippSec))*numpy.angle(numpy.sum(pair1,1))#self.ippSec*self.nCohInt
+        lag_0            = numpy.sum(self.__buffer*numpy.conj(self.__buffer),1)
+        data_intensity   = lag_0/(self.n*self.nCohInt)#*self.nCohInt)
+
+        pair1            = self.__buffer[:,:-1,:]*numpy.conjugate(self.__buffer[:,1:,:])
+        lag_1            = numpy.sum(pair1,1)
+        #angle            = numpy.angle(numpy.sum(pair1,1))*180/(math.pi)
+        data_velocity    = (-1.0*self.lambda_/(4*math.pi*self.ippSec))*numpy.angle(lag_1)#self.ippSec*self.nCohInt
+
+        lag_0            = lag_0.real/(self.n)
+        lag_1            = lag_1/(self.n-1)
+        R1               = numpy.abs(lag_1)
+        S                = (lag_0-self.noise)
+        #k = R1/S
+        #k = 1-k
+        #k =numpy.absolute(k)
+        #k =numpy.sqrt(k)
+        L                = S/R1
+        #print("L",L[0])
+        L                = numpy.where(L<0,1,L)
+        L                = numpy.log(L)
+        tmp              = numpy.sqrt(numpy.absolute(L))
+        data_specwidth   = (self.lambda_/(2*math.sqrt(2)*math.pi*self.ippSec))*tmp*numpy.sign(L)
+        #data_specwidth   = (self.lambda_/(2*math.sqrt(2)*math.pi*self.ippSec))*k
         n                = self.__profIndex
 
         self.__buffer    = numpy.zeros((self.__nch, self.__nProf,self.__nHeis),  dtype='complex')
         self.__profIndex = 0
-        return data_intensity,data_velocity,n
+        return data_intensity,data_velocity,data_specwidth,n
 
     def pulsePairbyProfiles(self,data):
 
         self.__dataReady     =  False
         data_intensity       =  None
         data_velocity        =  None
+        data_specwidth       =  None
         self.putData(data)
         if self.__profIndex  == self.n:
-            data_intensity, data_velocity, n   = self.pushData()
+            #self.noise  = numpy.zeros([self.__nch,self.__nHeis])
+            #for i in range(self.__nch):
+            #    self.noise[i]=data.getNoise(channel=i)
+            #print(self.noise.shape)
+            data_intensity, data_velocity,data_specwidth, n   = self.pushData()
             self.__dataReady                   = True
 
-        return data_intensity, data_velocity
+        return data_intensity, data_velocity,data_specwidth
 
     def pulsePairOp(self, data, datatime= None):
 
         if self.__initime == None:
             self.__initime = datatime
 
-        data_intensity, data_velocity = self.pulsePairbyProfiles(data)
+        data_intensity, data_velocity,data_specwidth = self.pulsePairbyProfiles(data)
         self.__lastdatatime           = datatime
 
         if data_intensity is None:
-            return None, None, None
+            return None, None,None, None
 
         avgdatatime    = self.__initime
         deltatime      = datatime - self.__lastdatatime
         self.__initime = datatime
 
-        return data_intensity, data_velocity, avgdatatime
+        return data_intensity, data_velocity,data_specwidth,avgdatatime
 
     def run(self, dataOut,n = None,removeDC= False, overlapping= False,**kwargs):
 
         if not self.isConfig:
             self.setup(dataOut = dataOut, n    = n , removeDC=removeDC , **kwargs)
             self.isConfig   = True
-        data_intensity, data_velocity, avgdatatime = self.pulsePairOp(dataOut.data, dataOut.utctime)
+        data_intensity, data_velocity,data_specwidth, avgdatatime = self.pulsePairOp(dataOut.data, dataOut.utctime)
         dataOut.flagNoData                         = True
 
         if self.__dataReady:
             dataOut.nCohInt        *= self.n
             dataOut.data_intensity  = data_intensity #valor para intensidad
             dataOut.data_velocity   = data_velocity  #valor para velocidad
+            dataOut.data_specwidth  = data_specwidth
             dataOut.PRFbyAngle      = self.n         #numero de PRF*cada angulo rotado que equivale a un tiempo.
             dataOut.utctime         = avgdatatime
             dataOut.flagNoData      = False

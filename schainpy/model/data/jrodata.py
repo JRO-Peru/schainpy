@@ -362,6 +362,7 @@ class Voltage(JROData):
     data = None
     data_intensity = None
     data_velocity = None
+    data_specwidth = None
     def __init__(self):
         '''
         Constructor
@@ -1266,6 +1267,10 @@ class PlotterData(object):
                 self.nProfiles = dataOut.nProfiles
             if plot == 'pp_velocity':
                 buffer = dataOut.data_velocity
+                self.flagDataAsBlock = dataOut.flagDataAsBlock
+                self.nProfiles = dataOut.nProfiles
+            if plot == 'pp_specwidth':
+                buffer = dataOut.data_specwidth
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
 
