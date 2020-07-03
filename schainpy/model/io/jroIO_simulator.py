@@ -354,41 +354,27 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                 InBuffer.imag[m_nR:m_nR+ps] = InBuffer.imag[m_nR:m_nR+ps]*(math.sin( self.fAngle)*5)
                 InBuffer=InBuffer
                 self.datablock[i][k]= InBuffer
-                #plot_cts(InBuffer,H0=H0,DH0=DH0)
-                #wave_fft(x=InBuffer,plot_show=True)
-                #time.sleep(1)
+
         #················DOPPLER SIGNAL...............................................
         time_vec   = numpy.linspace(0,(prof_gen-1)*ippSec,int(prof_gen))+self.nReadBlocks*ippSec*prof_gen+(self.nReadFiles-1)*ippSec*prof_gen
         fd         = Fdoppler #+(600.0/120)*self.nReadBlocks
         d_signal   = Adoppler*numpy.array(numpy.exp(1.0j*2.0*math.pi*fd*time_vec),dtype=numpy.complex64)
         #·············Señal con ancho espectral····················
-        #specw_sig             =  numpy.zeros(int(prof_gen),dtype=complex)
-        #specw_sig.real[200:200+100] = 1*numpy.ones(100)
-        #specw_sig.imag[200:200+100] = 1*numpy.ones(100)
-        # w=2
-        specw_sig  = numpy.linspace(-149,150,300)
-        w          = 3
-        A          = 10
-        specw_sig   = specw_sig/w
-        specw_sig   = numpy.sinc(specw_sig)
-        specw_sig   =  A*numpy.array(specw_sig,dtype=numpy.complex64)
+        #specw_sig  = numpy.linspace(-149,150,300)
+        #w          = 8
+        #A          = 20
+        #specw_sig   = specw_sig/w
+        #specw_sig   = numpy.sinc(specw_sig)
+        #specw_sig   =  A*numpy.array(specw_sig,dtype=numpy.complex64)
         #·················· DATABLOCK + DOPPLER····················
         HD=int(Hdoppler/self.AcqDH_0)
         for  i in range(12):
             self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ d_signal# RESULT
-
-        HD=int(Hdoppler/self.AcqDH_0)
-        HD=int(HD/2)
-        for  i in range(12):
-            self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ specw_sig*d_signal# RESULT
-
-        '''
-        a= numpy.zeros(10)
-        for i in range(10):
-            a[i]=i+self.nReadBlocks+20
-        for i in a:
-            self.datablock[0,:,int(i)]=self.datablock[0,:,int(i)]+ d_signal # RESULT
-        '''
+        #·················· DATABLOCK + DOPPLER*Sinc(x)····················
+        #HD=int(Hdoppler/self.AcqDH_0)
+        #HD=int(HD/2)
+        #for  i in range(12):
+        #    self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ specw_sig*d_signal# RESULT
 
     def readBlock(self):
 
