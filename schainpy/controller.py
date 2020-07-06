@@ -152,7 +152,7 @@ class OperationConf(ConfBase):
 
         className = eval(self.name)
 
-        if 'Plot' in self.name or 'Writer' in self.name or 'Send' in self.name:
+        if 'Plot' in self.name or 'Writer' in self.name or 'Send' in self.name or 'print' in self.name:
             kwargs = self.getKwargs()
             opObj = className(self.id, self.id, self.project_id, self.err_queue, **kwargs)
             opObj.start()

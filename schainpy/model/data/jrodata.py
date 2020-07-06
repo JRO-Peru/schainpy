@@ -1122,13 +1122,14 @@ class PlotterData(object):
         self.localtime = False
         self.data = {}
         self.meta = {}
-        self.__times = []
         self.__heights = []
 
         if 'snr' in code:
             self.plottypes = ['snr']
         elif code == 'spc':
             self.plottypes = ['spc', 'noise', 'rti']
+        elif code == 'cspc':
+            self.plottypes = ['cspc', 'spc', 'noise', 'rti']
         elif code == 'rti':
             self.plottypes = ['noise', 'rti']
         else:
@@ -1143,17 +1144,17 @@ class PlotterData(object):
 
     def __str__(self):
         dum = ['{}{}'.format(key, self.shape(key)) for key in self.data]
-        return 'Data[{}][{}]'.format(';'.join(dum), len(self.__times))
+        return 'Data[{}][{}]'.format(';'.join(dum), len(self.times))
 
     def __len__(self):
-        return len(self.__times)
+        return len(self.data[self.key])
 
     def __getitem__(self, key):
 
         if key not in self.data:
             raise KeyError(log.error('Missing key: {}'.format(key)))
         if 'spc' in key or not self.buffering:
-            ret = self.data[key]
+            ret = self.data[key][self.tm]
         elif 'scope' in key:
             ret = numpy.array(self.data[key][float(self.tm)])
         else:
@@ -1171,8 +1172,8 @@ class PlotterData(object):
         '''
         self.type = ''
         self.ready = False
+        del self.data
         self.data = {}
-        self.__times = []
         self.__heights = []
         self.__all_heights = set()
         for plot in self.plottypes:
@@ -1198,15 +1199,14 @@ class PlotterData(object):
         if len(self.data[key]):
             if 'spc' in key or not self.buffering:
                 return self.data[key].shape
-            return self.data[key][self.__times[0]].shape
+            return self.data[key][self.times[0]].shape
         return (0,)
 
     def update(self, dataOut, tm):
         '''
         Update data object with new dataOut
         '''
-        if tm in self.__times:
-            return
+        
         self.profileIndex = dataOut.profileIndex
         self.tm = tm
         self.type = dataOut.type
@@ -1223,16 +1223,14 @@ class PlotterData(object):
         if True in ['spc' in ptype for ptype in self.plottypes]:
             self.xrange = (dataOut.getFreqRange(1)/1000.,
                            dataOut.getAcfRange(1), dataOut.getVelRange(1))
-            self.factor = dataOut.normFactor
         self.__heights.append(dataOut.heightList)
         self.__all_heights.update(dataOut.heightList)
-        self.__times.append(tm)
+
         for plot in self.plottypes:
             if plot in ('spc', 'spc_moments', 'spc_cut'):
                 z = dataOut.data_spc/dataOut.normFactor
                 buffer = 10*numpy.log10(z)
             if plot == 'cspc':
-                z = dataOut.data_spc/dataOut.normFactor
                 buffer = (dataOut.data_spc, dataOut.data_cspc)
             if plot == 'noise':
                 buffer = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
@@ -1270,18 +1268,17 @@ class PlotterData(object):
                 self.nProfiles = dataOut.nProfiles
 
             if plot == 'spc':
-                self.data['spc'] = buffer
+                self.data['spc'][tm] = buffer
             elif plot == 'cspc':
-                self.data['spc'] = buffer[0]
-                self.data['cspc'] = buffer[1]
+                self.data['cspc'][tm] = buffer
             elif plot == 'spc_moments':
-                self.data['spc'] = buffer
+                self.data['spc'][tm] = buffer
                 self.data['moments'][tm] = dataOut.moments
             else:
                 if self.buffering:
                     self.data[plot][tm] = buffer
                 else:
-                    self.data[plot] = buffer
+                    self.data[plot][tm] = buffer
 
         if dataOut.channelList is None:
             self.channels = range(buffer.shape[0])
@@ -1302,7 +1299,7 @@ class PlotterData(object):
         for key in self.data:
             shape = self.shape(key)[:-1] + H.shape
             for tm, obj in list(self.data[key].items()):
-                h = self.__heights[self.__times.index(tm)]
+                h = self.__heights[self.times.index(tm)]
                 if H.size == h.size:
                     continue
                 index = numpy.where(numpy.in1d(H, h))[0]
@@ -1313,19 +1310,18 @@ class PlotterData(object):
                     dummy[index] = obj
                 self.data[key][tm] = dummy
 
-        self.__heights = [H for tm in self.__times]
+        self.__heights = [H for tm in self.times]
 
-    def jsonify(self, plot_name, plot_type, decimate=False):
+    def jsonify(self, tm, plot_name, plot_type, decimate=False):
         '''
         Convert data to json
         '''
 
-        tm = self.times[-1]
         dy = int(self.heights.size/self.MAXNUMY) + 1
-        if self.key in ('spc', 'cspc') or not self.buffering:
-            dx = int(self.data[self.key].shape[1]/self.MAXNUMX) + 1
+        if self.key in ('spc', 'cspc'):
+            dx = int(self.data[self.key][tm].shape[1]/self.MAXNUMX) + 1
             data = self.roundFloats(
-                self.data[self.key][::, ::dx, ::dy].tolist())
+                self.data[self.key][tm][::, ::dx, ::dy].tolist())
         else:
             if self.key is 'noise':
                 data = [[x] for x in self.roundFloats(self.data[self.key][tm].tolist())]
@@ -1358,8 +1354,9 @@ class PlotterData(object):
         Return the list of times of the current data
         '''
 
-        ret = numpy.array(self.__times)
-        ret.sort()
+        ret = numpy.array([*self.data[self.key]])
+        if self:
+            ret.sort()
         return ret
 
     @property

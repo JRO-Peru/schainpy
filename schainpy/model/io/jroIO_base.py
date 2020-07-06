@@ -14,7 +14,7 @@ import time
 import datetime
 import zmq
 
-from schainpy.model.proc.jroproc_base import Operation
+from schainpy.model.proc.jroproc_base import Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jroheaderIO import get_dtype_index, get_numpy_dtype, get_procflag_dtype, get_dtype_width
 from schainpy.utils import log
@@ -1555,6 +1555,7 @@ class JRODataWriter(Reader):
         self.putData()
         return self.dataOut
 
+@MPDecorator
 class printInfo(Operation):
 
     def __init__(self):
@@ -1564,7 +1565,7 @@ class printInfo(Operation):
 
     def run(self, dataOut, headers = ['systemHeaderObj', 'radarControllerHeaderObj', 'processingHeaderObj']):
         if self.__printInfo == False:
-            return dataOut
+            return
 
         for header in headers:
             if hasattr(dataOut, header):
@@ -1577,4 +1578,3 @@ class printInfo(Operation):
                 log.warning('Header {} Not found in object'.format(header))
 
         self.__printInfo = False
-        return dataOut

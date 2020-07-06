@@ -126,39 +126,38 @@ class CrossSpectraPlot(Plot):
 
         y = self.data.heights
         self.y = y
-        spc = self.data['spc']
-        cspc = self.data['cspc']
+        nspc = self.data['spc']
+        spc = self.data['cspc'][0]
+        cspc = self.data['cspc'][1]
 
         for n in range(self.nrows):
-            noise = self.data['noise'][n][-1]
+            noise = self.data['noise'][:,-1]
             pair = self.data.pairs[n]
             ax = self.axes[4 * n]
-            spc0 = 10.*numpy.log10(spc[pair[0]]/self.data.factor)
             if ax.firsttime:                                               
                 self.xmax = self.xmax if self.xmax else numpy.nanmax(x)    
                 self.xmin = self.xmin if self.xmin else -self.xmax         
-                self.zmin = self.zmin if self.zmin else numpy.nanmin(spc)  
-                self.zmax = self.zmax if self.zmax else numpy.nanmax(spc)  
-                ax.plt = ax.pcolormesh(x , y , spc0.T,
+                self.zmin = self.zmin if self.zmin else numpy.nanmin(nspc)  
+                self.zmax = self.zmax if self.zmax else numpy.nanmax(nspc)  
+                ax.plt = ax.pcolormesh(x , y , nspc[pair[0]].T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
                                        )                                   
             else:                                                          
-                ax.plt.set_array(spc0.T.ravel())
-            self.titles.append('CH {}: {:3.2f}dB'.format(pair[0], noise))
+                ax.plt.set_array(nspc[pair[0]].T.ravel())
+            self.titles.append('CH {}: {:3.2f}dB'.format(pair[0], noise[pair[0]]))
 
             ax = self.axes[4 * n + 1]
-            spc1 = 10.*numpy.log10(spc[pair[1]]/self.data.factor)
             if ax.firsttime:
-                ax.plt = ax.pcolormesh(x , y, spc1.T,
+                ax.plt = ax.pcolormesh(x , y, nspc[pair[1]].T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
                                        )
             else: 
-                ax.plt.set_array(spc1.T.ravel())
-            self.titles.append('CH {}: {:3.2f}dB'.format(pair[1], noise))
+                ax.plt.set_array(nspc[pair[1]].T.ravel())
+            self.titles.append('CH {}: {:3.2f}dB'.format(pair[1], noise[pair[1]]))
             
             out = cspc[n] / numpy.sqrt(spc[pair[0]] * spc[pair[1]])
             coh = numpy.abs(out)
@@ -300,6 +299,7 @@ class NoisePlot(Plot):
         self.nrows = 1
         self.nplots = 1
         self.ylabel = 'Intensity [dB]'
+        self.xlabel = 'Time'
         self.titles = ['Noise']
         self.colorbar = False
 

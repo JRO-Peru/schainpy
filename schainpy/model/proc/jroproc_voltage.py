@@ -377,6 +377,23 @@ class setAttribute(Operation):
         return dataOut
 
 
+@MPDecorator
+class printAttribute(Operation):
+    '''
+    Print an arbitrary attribute of dataOut
+    '''
+
+    def __init__(self):
+
+        Operation.__init__(self)
+
+    def run(self, dataOut, attributes):
+
+        for attr in attributes:
+            if hasattr(dataOut, attr):
+                log.log(getattr(dataOut, attr), attr)
+
+
 class interpolateHeights(Operation):
 
     def run(self, dataOut, topLim, botLim):

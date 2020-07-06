@@ -202,7 +202,7 @@ class Plot(Operation):
         self.zlimits = kwargs.get('zlimits', None)
         self.xmin = kwargs.get('xmin', None)
         self.xmax = kwargs.get('xmax', None)
-        self.xrange = kwargs.get('xrange', 24)
+        self.xrange = kwargs.get('xrange', 12)
         self.xscale = kwargs.get('xscale', None)
         self.ymin = kwargs.get('ymin', None)
         self.ymax = kwargs.get('ymax', None)
@@ -228,6 +228,7 @@ class Plot(Operation):
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
         self.sender_period = kwargs.get('sender_period', 60)
+        self.tag = kwargs.get('tag', '')
         self.height_index = kwargs.get('height_index', None)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
@@ -572,19 +573,29 @@ class Plot(Operation):
 
         self.sender_time = self.data.tm
         
-        attrs = ['titles', 'zmin', 'zmax', 'colormap']
+        attrs = ['titles', 'zmin', 'zmax', 'tag', 'ymin', 'ymax']
         for attr in attrs:
             value = getattr(self, attr)
-            if value is not None:
-                self.data.meta[attr] = getattr(self, attr)
+            if value:
+                if isinstance(value, (numpy.float32, numpy.float64)):
+                    value = round(float(value), 2)
+                self.data.meta[attr] = value
+        if self.colormap == 'jet':
+            self.data.meta['colormap'] = 'Jet'
+        elif 'RdBu' in self.colormap:
+            self.data.meta['colormap'] = 'RdBu'
+        else:
+            self.data.meta['colormap'] = 'Viridis'
         self.data.meta['interval'] = int(interval)
-        msg = self.data.jsonify(self.plot_name, self.plot_type)
-        self.sender_queue.put(msg)
+        # msg = self.data.jsonify(self.data.tm, self.plot_name, self.plot_type)
+        self.sender_queue.put(self.data.tm)
         
         while True:
             if self.sender_queue.empty():
                 break
-            self.socket.send_string(self.sender_queue.get())
+            tm = self.sender_queue.get()
+            msg = self.data.jsonify(tm, self.plot_name, self.plot_type)
+            self.socket.send_string(msg)
             socks = dict(self.poll.poll(5000))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_string()
@@ -598,7 +609,7 @@ class Plot(Operation):
             else:
                 log.warning(
                     "No response from server, retrying...", self.name)
-                self.sender_queue.put(msg)
+                self.sender_queue.put(self.data.tm)
             self.socket.setsockopt(zmq.LINGER, 0)
             self.socket.close()
             self.poll.unregister(self.socket)
@@ -647,16 +658,16 @@ class Plot(Operation):
                 if self.localtime:
                     t -= time.timezone
             
-            if 'buffer' in self.plot_type:
-                if self.xmin is None:
-                    self.tmin = t
+            if self.xmin is None:
+                self.tmin = t
+                if 'buffer' in self.plot_type:
                     self.xmin = self.getDateTime(t).hour
-                else:
-                    self.tmin = (
-                        self.getDateTime(t).replace(
-                            hour=int(self.xmin), 
-                            minute=0, 
-                            second=0) - self.getDateTime(0)).total_seconds()
+            else:
+                self.tmin = (
+                    self.getDateTime(t).replace(
+                        hour=int(self.xmin), 
+                        minute=0, 
+                        second=0) - self.getDateTime(0)).total_seconds()
 
             self.data.setup()
             self.isConfig = True
@@ -674,12 +685,13 @@ class Plot(Operation):
         if dataOut.useLocalTime and not self.localtime:
             tm += time.timezone
         
-        if self.xaxis is 'time' and self.data and (tm - self.tmin) >= self.xrange*60*60:    
+        if self.data and (tm - self.tmin) >= self.xrange*60*60:    
             self.save_counter = self.save_period
             self.__plot()
-            self.xmin += self.xrange
-            if self.xmin >= 24:
-                self.xmin -= 24
+            if 'time' in self.xaxis:
+                self.xmin += self.xrange
+                if self.xmin >= 24:
+                    self.xmin -= 24
             self.tmin += self.xrange*60*60
             self.data.setup()
             self.clear_figures()
