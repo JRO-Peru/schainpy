@@ -32,7 +32,7 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
     #Dyn_snCode                     = numpy.array([Num_Codes,Bauds])
     Dyn_snCode                     = None
     Samples                        = 200
-    channels                       = 5
+    channels                       = 2
     pulses                         = None
     Reference                      = None
     pulse_size                     = None
@@ -91,12 +91,14 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
 
         if (self.nReadBlocks >= self.processingHeaderObj.dataBlocksPerFile):
             self.nReadFiles=self.nReadFiles+1
-            if self.nReadFiles ==self.nTotalReadFiles:
+            if self.nReadFiles > self.nTotalReadFiles:
                 self.flagNoMoreFiles=1
                 raise schainpy.admin.SchainWarning('No more files to read')
 
             print('------------------- [Opening file] ------------------------------',self.nReadFiles)
             self.nReadBlocks  = 0
+        #if self.nReadBlocks==0:
+        #    self.readFirstHeader()
 
     def __setNewBlock(self):
         self.setNextFile()
@@ -121,6 +123,7 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         self.dataOut.processingHeaderObj      = self.processingHeaderObj.copy()
         self.dataOut.systemHeaderObj          = self.systemHeaderObj.copy()
         self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
+        self.dataOut.dtype       = self.dtype
 
         self.dataOut.nProfiles   = self.processingHeaderObj.profilesPerBlock
         self.dataOut.heightList  = numpy.arange(self.processingHeaderObj.nHeights) * self.processingHeaderObj.deltaHeight + self.processingHeaderObj.firstHeight
@@ -144,20 +147,42 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         self.dataOut.useLocalTime           = self.basicHeaderObj.useLocalTime
         self.dataOut.ippSeconds             = self.radarControllerHeaderObj.ippSeconds / self.nTxs
 
+    def readFirstHeader(self):
+
+        datatype = int(numpy.log2((self.processingHeaderObj.processFlags &
+                                   PROCFLAG.DATATYPE_MASK)) - numpy.log2(PROCFLAG.DATATYPE_CHAR))
+        if datatype == 0:
+            datatype_str = numpy.dtype([('real', '<i1'), ('imag', '<i1')])
+        elif datatype == 1:
+            datatype_str = numpy.dtype([('real', '<i2'), ('imag', '<i2')])
+        elif datatype == 2:
+            datatype_str = numpy.dtype([('real', '<i4'), ('imag', '<i4')])
+        elif datatype == 3:
+            datatype_str = numpy.dtype([('real', '<i8'), ('imag', '<i8')])
+        elif datatype == 4:
+            datatype_str = numpy.dtype([('real', '<f4'), ('imag', '<f4')])
+        elif datatype == 5:
+            datatype_str = numpy.dtype([('real', '<f8'), ('imag', '<f8')])
+        else:
+            raise ValueError('Data type was not defined')
+
+        self.dtype = datatype_str
+
+
     def set_RCH(self, expType=2, nTx=1,ipp=None, txA=0, txB=0,
                  nWindows=None, nHeights=None, firstHeight=None, deltaHeight=None,
                  numTaus=0, line6Function=0, line5Function=0, fClock=None,
                  prePulseBefore=0, prePulseAfter=0,
                  codeType=0, nCode=0, nBaud=0, code=None,
-                 flip1=0, flip2=0):
+                 flip1=0, flip2=0,Taus=0):
         self.radarControllerHeaderObj.expType       = expType
         self.radarControllerHeaderObj.nTx           = nTx
         self.radarControllerHeaderObj.ipp           = float(ipp)
         self.radarControllerHeaderObj.txA           = float(txA)
         self.radarControllerHeaderObj.txB           = float(txB)
-        self.radarControllerHeaderObj.rangeIPP      = ipp
-        self.radarControllerHeaderObj.rangeTxA      = txA
-        self.radarControllerHeaderObj.rangeTxB      = txB
+        self.radarControllerHeaderObj.rangeIpp      = b'A\n'#ipp
+        self.radarControllerHeaderObj.rangeTxA      = b''
+        self.radarControllerHeaderObj.rangeTxB      = b''
 
         self.radarControllerHeaderObj.nHeights      = int(nHeights)
         self.radarControllerHeaderObj.firstHeight   = numpy.array([firstHeight])
@@ -170,20 +195,27 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         self.radarControllerHeaderObj.codeType      = codeType
         self.radarControllerHeaderObj.line6Function = line6Function
         self.radarControllerHeaderObj.line5Function = line5Function
-        self.radarControllerHeaderObj.fclock        = fClock
+        #self.radarControllerHeaderObj.fClock        = fClock
         self.radarControllerHeaderObj.prePulseBefore= prePulseBefore
         self.radarControllerHeaderObj.prePulseAfter = prePulseAfter
 
-        self.radarControllerHeaderObj.nCode         = nCode
-        self.radarControllerHeaderObj.nBaud         = nBaud
-        self.radarControllerHeaderObj.code          = code
         self.radarControllerHeaderObj.flip1         = flip1
         self.radarControllerHeaderObj.flip2         = flip2
 
-        self.radarControllerHeaderObj.code_size     = int(numpy.ceil(nBaud / 32.)) * nCode * 4
+        self.radarControllerHeaderObj.code_size     = 0
+        if self.radarControllerHeaderObj.codeType  != 0:
+            self.radarControllerHeaderObj.nCode         = nCode
+            self.radarControllerHeaderObj.nBaud         = nBaud
+            self.radarControllerHeaderObj.code          = code
+            self.radarControllerHeaderObj.code_size     = int(numpy.ceil(nBaud / 32.)) * nCode * 4
 
         if fClock is None and deltaHeight is not None:
             self.fClock = 0.15 / (deltaHeight * 1e-6)
+            self.radarControllerHeaderObj.fClock     = self.fClock
+        if numTaus==0:
+            self.radarControllerHeaderObj.Taus       =  numpy.array(0,'<f4')
+        else:
+            self.radarControllerHeaderObj.Taus       = numpy.array(Taus,'<f4')
 
     def set_PH(self, dtype=0, blockSize=0, profilesPerBlock=0,
                   dataBlocksPerFile=0, nWindows=0, processFlags=0, nCohInt=0,
@@ -192,23 +224,27 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                   code=0, nBaud=None, shif_fft=False, flag_dc=False,
                   flag_cspc=False, flag_decode=False, flag_deflip=False):
 
+        self.processingHeaderObj.dtype             = dtype
         self.processingHeaderObj.profilesPerBlock  = profilesPerBlock
         self.processingHeaderObj.dataBlocksPerFile = dataBlocksPerFile
         self.processingHeaderObj.nWindows          = nWindows
+        self.processingHeaderObj.processFlags      = processFlags
         self.processingHeaderObj.nCohInt           = nCohInt
         self.processingHeaderObj.nIncohInt         = nIncohInt
         self.processingHeaderObj.totalSpectra      = totalSpectra
+
         self.processingHeaderObj.nHeights          = int(nHeights)
-        self.processingHeaderObj.firstHeight       = firstHeight
-        self.processingHeaderObj.deltaHeight       = deltaHeight
-        self.processingHeaderObj.samplesWin        = nHeights
+        self.processingHeaderObj.firstHeight       = firstHeight#numpy.array([firstHeight])#firstHeight
+        self.processingHeaderObj.deltaHeight       = deltaHeight#numpy.array([deltaHeight])#deltaHeight
+        self.processingHeaderObj.samplesWin        = nHeights#numpy.array([nHeights])#nHeights
 
     def set_BH(self, utc = 0, miliSecond = 0, timeZone = 0):
         self.basicHeaderObj.utc                    = utc
         self.basicHeaderObj.miliSecond             = miliSecond
         self.basicHeaderObj.timeZone               = timeZone
 
-    def set_SH(self, nSamples=0, nProfiles=0, nChannels=0, adcResolution=14, pciDioBusWidth=0):
+    def set_SH(self, nSamples=0, nProfiles=0, nChannels=0, adcResolution=14, pciDioBusWidth=32):
+        #self.systemHeaderObj.size           = size
         self.systemHeaderObj.nSamples       = nSamples
         self.systemHeaderObj.nProfiles      = nProfiles
         self.systemHeaderObj.nChannels      = nChannels
@@ -318,24 +354,27 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                 InBuffer.imag[m_nR:m_nR+ps] = InBuffer.imag[m_nR:m_nR+ps]*(math.sin( self.fAngle)*5)
                 InBuffer=InBuffer
                 self.datablock[i][k]= InBuffer
-                #plot_cts(InBuffer,H0=H0,DH0=DH0)
-                #wave_fft(x=InBuffer,plot_show=True)
-                #time.sleep(1)
+
         #················DOPPLER SIGNAL...............................................
         time_vec   = numpy.linspace(0,(prof_gen-1)*ippSec,int(prof_gen))+self.nReadBlocks*ippSec*prof_gen+(self.nReadFiles-1)*ippSec*prof_gen
         fd         = Fdoppler #+(600.0/120)*self.nReadBlocks
         d_signal   = Adoppler*numpy.array(numpy.exp(1.0j*2.0*math.pi*fd*time_vec),dtype=numpy.complex64)
-        #·················· DATABLOCK + DOPPLER············...........................
+        #·············Señal con ancho espectral····················
+        #specw_sig  = numpy.linspace(-149,150,300)
+        #w          = 8
+        #A          = 20
+        #specw_sig   = specw_sig/w
+        #specw_sig   = numpy.sinc(specw_sig)
+        #specw_sig   =  A*numpy.array(specw_sig,dtype=numpy.complex64)
+        #·················· DATABLOCK + DOPPLER····················
         HD=int(Hdoppler/self.AcqDH_0)
         for  i in range(12):
-            self.datablock[:,:,HD+i]=self.datablock[:,:,HD+i]+ d_signal # RESULT
-        '''
-        a= numpy.zeros(10)
-        for i in range(10):
-            a[i]=i+self.nReadBlocks+20
-        for i in a:
-            self.datablock[0,:,int(i)]=self.datablock[0,:,int(i)]+ d_signal # RESULT
-        '''
+            self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ d_signal# RESULT
+        #·················· DATABLOCK + DOPPLER*Sinc(x)····················
+        #HD=int(Hdoppler/self.AcqDH_0)
+        #HD=int(HD/2)
+        #for  i in range(12):
+        #    self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ specw_sig*d_signal# RESULT
 
     def readBlock(self):
 
@@ -401,16 +440,15 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
 
 
         self.set_BH(utc= tmp_utc,miliSecond= tmp_milisecond,timeZone=300 )
-
         self.set_RCH( expType=0, nTx=150,ipp=FixRCP_IPP, txA=FixRCP_TXA, txB= FixRCP_TXB,
                  nWindows=1 , nHeights=samples, firstHeight=AcqH0_0, deltaHeight=AcqDH_0,
                  numTaus=1, line6Function=0, line5Function=0, fClock=None,
                  prePulseBefore=0, prePulseAfter=0,
-                 codeType=14, nCode=Num_Codes, nBaud=32, code=Dyn_snCode,
-                 flip1=0, flip2=0)
+                 codeType=0, nCode=Num_Codes, nBaud=32, code=Dyn_snCode,
+                 flip1=0, flip2=0,Taus=Tau_0)
 
         self.set_PH(dtype=0, blockSize=0, profilesPerBlock=300,
-                      dataBlocksPerFile=120, nWindows=1, processFlags=0, nCohInt=1,
+                      dataBlocksPerFile=120, nWindows=1, processFlags=numpy.array([1024]), nCohInt=1,
                       nIncohInt=1, totalSpectra=0, nHeights=samples, firstHeight=AcqH0_0,
                       deltaHeight=AcqDH_0, samplesWin=samples, spectraComb=0, nCode=0,
                       code=0, nBaud=None, shif_fft=False, flag_dc=False,
@@ -418,6 +456,7 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
 
         self.set_SH(nSamples=samples, nProfiles=300, nChannels=channels)
 
+        self.readFirstHeader()
 
         self.frequency                      = frequency
         self.incIntFactor                   = incIntFactor

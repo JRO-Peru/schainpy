@@ -127,6 +127,26 @@ class ScopePlot(Plot):
                 #pass
                 ax.plt_r.set_data(xchannel, yreal)
 
+    def plot_weatherspecwidth(self, x, y, channelIndexList, thisDatetime, wintitle):
+
+        x = x[channelIndexList,:]
+        yreal  = y
+        self.y = yreal
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        self.xlabel = "width "
+        self.ylabel = "Range (Km)"
+        self.xmin   = numpy.min(x)
+        self.xmax   = numpy.max(x)
+        self.titles[0] =title
+        for i,ax in enumerate(self.axes):
+            title    = "Channel %d" %(i)
+            xchannel    = x[i,:]
+            if ax.firsttime:
+                ax.plt_r = ax.plot(xchannel, yreal)[0]
+            else:
+                #pass
+                ax.plt_r.set_data(xchannel, yreal)
+
     def plot(self):
         if self.channels:
             channels = self.channels
@@ -138,6 +158,8 @@ class ScopePlot(Plot):
             scope = self.data['pp_power']
         elif self.CODE == "pp_velocity":
             scope = self.data["pp_velocity"]
+        elif self.CODE == "pp_specwidth":
+            scope = self.data["pp_specwidth"]
         else:
             scope =self.data["scope"]
 
@@ -176,6 +198,13 @@ class ScopePlot(Plot):
                                thisDatetime,
                                wintitle
                                )
+                if self.CODE=="pp_spcwidth":
+                    self.plot_weatherspecwidth(scope[:,i,:],
+                               self.data.heights,
+                               channels,
+                               thisDatetime,
+                               wintitle
+                               )
         else:
             wintitle = " [Profile = %d] " %self.data.profileIndex
             if self.CODE== "scope":
@@ -208,6 +237,13 @@ class ScopePlot(Plot):
                                        thisDatetime,
                                        wintitle
                                        )
+            if self.CODE=="pp_specwidth":
+                self.plot_weatherspecwidth(scope,
+                                       self.data.heights,
+                                       channels,
+                                       thisDatetime,
+                                       wintitle
+                                       )
 
 
 
@@ -221,13 +257,20 @@ class PulsepairPowerPlot(ScopePlot):
     plot_type = 'scatter'
     buffering = False
 
-
-
 class PulsepairVelocityPlot(ScopePlot):
     '''
     Plot for
     '''
     CODE = 'pp_velocity'
     plot_name = 'PulsepairVelocity'
+    plot_type = 'scatter'
+    buffering = False
+
+class PulsepairSpecwidthPlot(ScopePlot):
+    '''
+    Plot for
+    '''
+    CODE = 'pp_specwidth'
+    plot_name = 'PulsepairSpecwidth'
     plot_type = 'scatter'
     buffering = False
