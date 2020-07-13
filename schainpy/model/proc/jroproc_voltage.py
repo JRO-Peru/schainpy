@@ -435,8 +435,6 @@ class CohInt(Operation):
 
         Operation.__init__(self, **kwargs)
 
-        #   self.isConfig = False
-
     def setup(self, n=None, timeInterval=None, stride=None, overlapping=False, byblock=False):
         """
         Set the parameters of the integration class.
@@ -670,7 +668,9 @@ class CohInt(Operation):
 
         if self.__dataReady:
             dataOut.data = avgdata
-            dataOut.nCohInt *= self.n
+            if not dataOut.flagCohInt:
+                dataOut.nCohInt *= self.n
+                dataOut.flagCohInt = True
             dataOut.utctime = avgdatatime
             # print avgdata, avgdatatime
             # raise

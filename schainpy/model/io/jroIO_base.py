@@ -899,7 +899,8 @@ class JRODataReader(Reader):
     def readNextBlock(self):
 
         while True:
-            self.__setNewBlock()
+            if not(self.__setNewBlock()):
+                continue
 
             if not(self.readBlock()):
                 return 0
@@ -954,55 +955,49 @@ class JRODataReader(Reader):
         #        self.dataOut.channelIndexList = numpy.arange(self.systemHeaderObj.numChannels)
         self.getBlockDimension()
 
-    def verifyFile(self, filename, msgFlag=True):
+    def verifyFile(self, filename):
 
-        msg = None
+        flag = True
 
         try:
             fp = open(filename, 'rb')
         except IOError:
-
-            if msgFlag:
-                print("[Reading] File %s can't be opened" % (filename))
-
+            log.error("File {} can't be opened".format(filename), self.name)
             return False
         
-        if self.waitDataBlock(0):
-            basicHeaderObj = BasicHeader(LOCALTIME)
-            systemHeaderObj = SystemHeader()
-            radarControllerHeaderObj = RadarControllerHeader()
-            processingHeaderObj = ProcessingHeader()
+        if self.online and self.waitDataBlock(0):
+            pass
+            
+        basicHeaderObj = BasicHeader(LOCALTIME)
+        systemHeaderObj = SystemHeader()
+        radarControllerHeaderObj = RadarControllerHeader()
+        processingHeaderObj = ProcessingHeader()
 
-            if not(basicHeaderObj.read(fp)):
-                fp.close()
-                return False
-
-            if not(systemHeaderObj.read(fp)):
-                fp.close()
-                return False
-
-            if not(radarControllerHeaderObj.read(fp)):
-                fp.close()
-                return False
-
-            if not(processingHeaderObj.read(fp)):
-                fp.close()
-                return False            
-
-            if not self.online:
-                dt1 = basicHeaderObj.datatime                                
-                fp.seek(self.fileSize-processingHeaderObj.blockSize-24)
+        if not(basicHeaderObj.read(fp)):
+            flag = False
+        if not(systemHeaderObj.read(fp)):
+            flag = False
+        if not(radarControllerHeaderObj.read(fp)):
+            flag = False
+        if not(processingHeaderObj.read(fp)):
+            flag = False
+        if not self.online:
+            dt1 = basicHeaderObj.datatime
+            pos = self.fileSize-processingHeaderObj.blockSize-24
+            if pos<0:
+                flag = False
+                log.error('Invalid size for file: {}'.format(self.filename), self.name)
+            else:
+                fp.seek(pos)
                 if not(basicHeaderObj.read(fp)):
-                    fp.close()
-                    return False
-                dt2 = basicHeaderObj.datatime
-                if not self.isDateTimeInRange(dt1, self.startDate, self.endDate, self.startTime, self.endTime) and not \
-                       self.isDateTimeInRange(dt2, self.startDate, self.endDate, self.startTime, self.endTime):
-                    return False            
+                    flag = False
+            dt2 = basicHeaderObj.datatime
+            if not self.isDateTimeInRange(dt1, self.startDate, self.endDate, self.startTime, self.endTime) and not \
+                    self.isDateTimeInRange(dt2, self.startDate, self.endDate, self.startTime, self.endTime):
+                flag = False            
 
         fp.close()
-        
-        return True
+        return flag
 
     def findDatafiles(self, path, startDate=None, endDate=None, expLabel='', ext='.r', walk=True, include_path=False):
 

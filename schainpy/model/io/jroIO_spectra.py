@@ -358,7 +358,7 @@ class SpectraWriter(JRODataWriter, Operation):
 
         spc = numpy.transpose( self.data_spc, (0,2,1) )
         if not self.processingHeaderObj.shif_fft:
-            spc = numpy.roll( spc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+            spc = numpy.roll( spc, int(self.processingHeaderObj.profilesPerBlock/2), axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data = spc.reshape((-1))
         data = data.astype(self.dtype[0])
         data.tofile(self.fp)
@@ -369,7 +369,7 @@ class SpectraWriter(JRODataWriter, Operation):
             data = numpy.zeros( numpy.shape(cspc), self.dtype )
             #print 'data.shape', self.shape_cspc_Buffer
             if not self.processingHeaderObj.shif_fft:
-                cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+                cspc = numpy.roll( cspc, int(self.processingHeaderObj.profilesPerBlock/2), axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             data['real'] = cspc.real
             data['imag'] = cspc.imag
             data = data.reshape((-1))

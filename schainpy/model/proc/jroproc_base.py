@@ -74,7 +74,7 @@ class ProcessingUnit(object):
             elif 'SchainError' in err:
                 log.error(err.split('SchainError:')[-1].split('\n')[0].strip(), self.name)
             else:
-                log.error(err.split('\n')[-2], self.name)
+                log.error(err, self.name)
             self.dataOut.error = True
         
         for op, optype, opkwargs in self.operations:
@@ -193,7 +193,7 @@ def MPDecorator(BaseClass):
                         BaseClass.run(self, dataOut, **self.kwargs)
                     except:
                         err = traceback.format_exc()  
-                        log.error(err.split('\n')[-2], self.name)
+                        log.error(err, self.name)
                 else:
                     break
 

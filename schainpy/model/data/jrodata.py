@@ -388,6 +388,7 @@ class Voltage(JROData):
         self.errorCount = None
         self.nCohInt = None
         self.blocksize = None
+        self.flagCohInt = False
         self.flagDecodeData = False  # asumo q la data no esta decodificada
         self.flagDeflipData = False  # asumo q la data no esta sin flip
         self.flagShiftFFT = False
