@@ -359,10 +359,12 @@ class JROData(GenericData):
 class Voltage(JROData):
 
     # data es un numpy array de 2 dmensiones (canales, alturas)
-    data = None
-    data_intensity = None
-    data_velocity = None
-    data_specwidth = None
+    data         = None
+    dataPP_POW   = None
+    dataPP_DOP   = None
+    dataPP_WIDTH = None
+    dataPP_SNR   = None
+
     def __init__(self):
         '''
         Constructor
@@ -420,6 +422,35 @@ class Voltage(JROData):
             noise[thisChannel] = hildebrand_sekhon(daux, self.nCohInt)
 
         return noise
+
+    def getNoisebyHildebrandDC(self, channel=None,DC=0):
+            """
+            Determino el nivel de ruido usando el metodo Hildebrand-Sekhon
+
+            Return:
+                noiselevel
+            """
+
+            if channel != None:
+                data = self.data[channel]-DC
+                nChannels = 1
+            else:
+                data = self.data
+                nChannels = self.nChannels
+
+            noise = numpy.zeros(nChannels)
+            power = data * numpy.conjugate(data)
+
+            for thisChannel in range(nChannels):
+                if nChannels == 1:
+                    daux = power[:].real
+                else:
+                    daux = power[thisChannel, :].real
+                noise[thisChannel] = hildebrand_sekhon(daux, self.nCohInt)
+
+            return noise
+
+
 
     def getNoise(self, type=1, channel=None):
 
@@ -1262,15 +1293,19 @@ class PlotterData(object):
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
             if plot == 'pp_power':
-                buffer = dataOut.data_intensity
+                buffer = dataOut.dataPP_POWER
+                self.flagDataAsBlock = dataOut.flagDataAsBlock
+                self.nProfiles = dataOut.nProfiles
+            if plot == 'pp_signal':
+                buffer = dataOut.dataPP_POW
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
             if plot == 'pp_velocity':
-                buffer = dataOut.data_velocity
+                buffer = dataOut.dataPP_DOP
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
             if plot == 'pp_specwidth':
-                buffer = dataOut.data_specwidth
+                buffer = dataOut.dataPP_WIDTH
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
 

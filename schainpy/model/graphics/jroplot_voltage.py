@@ -156,6 +156,8 @@ class ScopePlot(Plot):
         thisDatetime = datetime.datetime.utcfromtimestamp(self.data.times[-1])
         if self.CODE == "pp_power":
             scope = self.data['pp_power']
+        elif self.CODE == "pp_signal":
+            scope = self.data["pp_signal"]
         elif self.CODE == "pp_velocity":
             scope = self.data["pp_velocity"]
         elif self.CODE == "pp_specwidth":
@@ -185,6 +187,13 @@ class ScopePlot(Plot):
                                      wintitle1
                                     )
                 if self.CODE=="pp_power":
+                    self.plot_weatherpower(self.data.heights,
+                               scope[:,i,:],
+                               channels,
+                               thisDatetime,
+                               wintitle
+                               )
+                if self.CODE=="pp_signal":
                     self.plot_weatherpower(self.data.heights,
                                scope[:,i,:],
                                channels,
@@ -230,6 +239,13 @@ class ScopePlot(Plot):
                                     thisDatetime,
                                     wintitle
                                        )
+            if self.CODE=="pp_signal":
+                self.plot_weatherpower(self.data.heights,
+                                    scope,
+                                    channels,
+                                    thisDatetime,
+                                    wintitle
+                                       )
             if self.CODE=="pp_velocity":
                 self.plot_weathervelocity(scope,
                                        self.data.heights,
@@ -249,7 +265,7 @@ class ScopePlot(Plot):
 
 class PulsepairPowerPlot(ScopePlot):
     '''
-    Plot for
+    Plot for  P= S+N
     '''
 
     CODE = 'pp_power'
@@ -259,7 +275,7 @@ class PulsepairPowerPlot(ScopePlot):
 
 class PulsepairVelocityPlot(ScopePlot):
     '''
-    Plot for
+    Plot for VELOCITY
     '''
     CODE = 'pp_velocity'
     plot_name = 'PulsepairVelocity'
@@ -268,9 +284,19 @@ class PulsepairVelocityPlot(ScopePlot):
 
 class PulsepairSpecwidthPlot(ScopePlot):
     '''
-    Plot for
+    Plot for WIDTH
     '''
     CODE = 'pp_specwidth'
     plot_name = 'PulsepairSpecwidth'
+    plot_type = 'scatter'
+    buffering = False
+
+class PulsepairSignalPlot(ScopePlot):
+    '''
+    Plot for S
+    '''
+
+    CODE = 'pp_signal'
+    plot_name = 'PulsepairSignal'
     plot_type = 'scatter'
     buffering = False
