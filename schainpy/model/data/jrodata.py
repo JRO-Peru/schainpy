@@ -360,9 +360,11 @@ class Voltage(JROData):
 
     # data es un numpy array de 2 dmensiones (canales, alturas)
     data = None
-    data_intensity = None
-    data_velocity = None
-    data_specwidth = None
+    dataPP_POW   = None
+    dataPP_DOP   = None
+    dataPP_WIDTH = None
+    dataPP_SNR   = None
+
     def __init__(self):
         '''
         Constructor
@@ -1208,7 +1210,7 @@ class PlotterData(object):
         '''
         Update data object with new dataOut
         '''
-        
+
         self.profileIndex = dataOut.profileIndex
         self.tm = tm
         self.type = dataOut.type
@@ -1261,15 +1263,19 @@ class PlotterData(object):
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
             if plot == 'pp_power':
-                buffer = dataOut.data_intensity
+                buffer = dataOut.dataPP_POWER
+                self.flagDataAsBlock = dataOut.flagDataAsBlock
+                self.nProfiles = dataOut.nProfiles
+            if plot == 'pp_signal':
+                buffer = dataOut.dataPP_POW
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
             if plot == 'pp_velocity':
-                buffer = dataOut.data_velocity
+                buffer = dataOut.dataPP_DOP
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
             if plot == 'pp_specwidth':
-                buffer = dataOut.data_specwidth
+                buffer = dataOut.dataPP_WIDTH
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
 
