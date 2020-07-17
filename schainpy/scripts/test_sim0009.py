@@ -25,8 +25,20 @@ readUnitConfObj = controllerObj.addReadUnit(datatype='SimulatorReader',
                                             delay=0,
                                             online=0,
                                             walk=0,
-                                            nTotalReadFiles=3)
-
+                                            profilesPerBlock=625,
+                                            dataBlocksPerFile=100)#,#nTotalReadFiles=2)
+'''
+readUnitConfObj = controllerObj.addReadUnit(datatype='VoltageReader',
+                                            path=path,
+                                            startDate="2020/01/01",   #"2020/01/01",#today,
+                                            endDate= "2020/12/01",  #"2020/12/30",#today,
+                                            startTime='00:00:00',
+                                            endTime='23:59:59',
+                                            delay=0,
+                                            #set=0,
+                                            online=0,
+                                            walk=1)
+'''
 opObj11         = readUnitConfObj.addOperation(name='printInfo')
 
 procUnitConfObjA = controllerObj.addProcUnit(datatype='VoltageProc', inputId=readUnitConfObj.getId())
@@ -36,14 +48,26 @@ procUnitConfObjA = controllerObj.addProcUnit(datatype='VoltageProc', inputId=rea
 #opObj10 = procUnitConfObjA.addOperation(name='selectChannels')
 #opObj10.addParameter(name='channelList', value=[0])
 opObj11 = procUnitConfObjA.addOperation(name='PulsePairVoltage', optype='other')
-opObj11.addParameter(name='n', value='300', format='int')#10
+opObj11.addParameter(name='n', value='625', format='int')#10
 opObj11.addParameter(name='removeDC', value=1, format='int')
 
 #opObj11 = procUnitConfObjA.addOperation(name='PulsepairPowerPlot', optype='other')
+#opObj11 = procUnitConfObjA.addOperation(name='PulsepairSignalPlot', optype='other')
 
-opObj11 = procUnitConfObjA.addOperation(name='PulsepairVelocityPlot', optype='other')
+
+#opObj11 = procUnitConfObjA.addOperation(name='PulsepairVelocityPlot', optype='other')
 #opObj11.addParameter(name='xmax', value=8)
 
-opObj11 = procUnitConfObjA.addOperation(name='PulsepairSpecwidthPlot', optype='other')
+#opObj11 = procUnitConfObjA.addOperation(name='PulsepairSpecwidthPlot', optype='other')
+
+procUnitConfObjB= controllerObj.addProcUnit(datatype='ParametersProc',inputId=procUnitConfObjA.getId())
+
+
+opObj10 = procUnitConfObjB.addOperation(name='ParameterWriter')
+opObj10.addParameter(name='path',value=figpath)
+#opObj10.addParameter(name='mode',value=0)
+opObj10.addParameter(name='blocksPerFile',value='100',format='int')
+opObj10.addParameter(name='metadataList',value='utctimeInit,timeInterval',format='list')
+opObj10.addParameter(name='dataList',value='dataPP_POW,dataPP_DOP,dataPP_SNR,dataPP_WIDTH')#,format='list'
 
 controllerObj.start()
