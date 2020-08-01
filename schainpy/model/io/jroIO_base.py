@@ -528,7 +528,7 @@ class Reader(object):
                 if files:                    
                     fo = files[-1]
                     try:                
-                        dt = datetime.datetime.strptime(parse_format(fo, filefmt), filefmt).date()                        
+                        dt = datetime.datetime.strptime(parse_format(fo, filefmt), filefmt).date()
                         yield os.path.join(path, expLabel, fo)                            
                     except Exception as e:                        
                         pass
@@ -717,6 +717,35 @@ class Reader(object):
 
         pass
 
+    def waitDataBlock(self, pointer_location, blocksize=None):
+        """
+        """
+
+        currentPointer = pointer_location
+        if blocksize is None:
+            neededSize = self.processingHeaderObj.blockSize  # + self.basicHeaderSize
+        else:
+            neededSize = blocksize
+
+        for nTries in range(self.nTries):
+            self.fp.close()
+            self.fp = open(self.filename, 'rb')
+            self.fp.seek(currentPointer)
+
+            self.fileSize = os.path.getsize(self.filename)
+            currentSize = self.fileSize - currentPointer
+
+            if (currentSize >= neededSize):
+                return 1
+
+            log.warning(
+                "Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries + 1),
+                self.name
+                )
+            time.sleep(self.delay)
+
+        return 0
+
 class JRODataReader(Reader):
 
     utc = 0
@@ -824,33 +853,6 @@ class JRODataReader(Reader):
                 return 0
 
             print("[Reading] Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries + 1))
-            time.sleep(self.delay)
-
-        return 0
-
-    def waitDataBlock(self, pointer_location, blocksize=None):
-
-        currentPointer = pointer_location
-        if blocksize is None:
-            neededSize = self.processingHeaderObj.blockSize  # + self.basicHeaderSize
-        else:
-            neededSize = blocksize
-
-        for nTries in range(self.nTries):
-            self.fp.close()
-            self.fp = open(self.filename, 'rb')
-            self.fp.seek(currentPointer)
-
-            self.fileSize = os.path.getsize(self.filename)
-            currentSize = self.fileSize - currentPointer
-
-            if (currentSize >= neededSize):
-                return 1
-
-            log.warning(
-                "Waiting %0.2f seconds for the next block, try %03d ..." % (self.delay, nTries + 1),
-                self.name
-                )
             time.sleep(self.delay)
 
         return 0

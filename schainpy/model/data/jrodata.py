@@ -1305,7 +1305,7 @@ class PlotterData(object):
         for key in self.data:
             shape = self.shape(key)[:-1] + H.shape
             for tm, obj in list(self.data[key].items()):
-                h = self.__heights[self.times.index(tm)]
+                h = self.__heights[self.times.tolist().index(tm)]
                 if H.size == h.size:
                     continue
                 index = numpy.where(numpy.in1d(H, h))[0]

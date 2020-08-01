@@ -16,7 +16,7 @@ import numpy
 import schainpy.admin
 from schainpy.model.proc.jroproc_base import ProcessingUnit, MPDecorator
 from schainpy.model.data.jrodata import Parameters
-from schainpy.model.io.jroIO_base import JRODataReader, isNumber
+from schainpy.model.io.jroIO_base import Reader
 from schainpy.utils import log
 
 FILE_HEADER_STRUCTURE = numpy.dtype([
@@ -85,7 +85,7 @@ DATA_STRUCTURE = numpy.dtype([
 ])
 
 
-class BLTRParamReader(JRODataReader, ProcessingUnit):
+class BLTRParamReader(Reader, ProcessingUnit):
     '''
     Boundary Layer and Tropospheric Radar (BLTR) reader, Wind velocities and SNR 
     from *.sswma files
@@ -98,142 +98,83 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         ProcessingUnit.__init__(self)
 
         self.dataOut = Parameters()
+        self.dataOut.timezone = 300
         self.counter_records = 0
         self.flagNoMoreFiles = 0
         self.isConfig = False
         self.filename = None
-
-    def setup(self,
-              path=None,
-              startDate=None,
-              endDate=None,
-              ext=None,
-              startTime=datetime.time(0, 0, 0),
-              endTime=datetime.time(23, 59, 59),
-              timezone=0,
-              status_value=0,
-              **kwargs):
-        self.path = path
-        self.startDate = startDate
-        self.endDate = endDate
-        self.startTime = startTime
-        self.endTime = endTime
-        self.status_value = status_value
+        self.status_value = 0
         self.datatime = datetime.datetime(1900,1,1)
-        self.delay = kwargs.get('delay', 10)
-        self.online = kwargs.get('online', False)
-        self.nTries = kwargs.get('nTries', 3)
+        self.filefmt = "*********%Y%m%d******"
+
+    def setup(self, **kwargs):
+        
+        self.set_kwargs(**kwargs)
         
         if self.path is None:
             raise ValueError("The path is not valid")
 
-        if ext is None:
-            ext = self.ext
-
-        self.fileList = self.search_files(self.path, startDate, endDate, ext)
-        self.timezone = timezone
-        self.fileIndex = 0
-
-        if not self.fileList:
-            raise Warning("There is no files matching these date in the folder: %s. \n Check 'startDate' and 'endDate' " % (
-                path))
-
-        self.setNextFile()
-
-    def search_last_file(self):
-        '''
-        Get last file and add it to the list
-        '''
-
-        for n in range(self.nTries+1):
-            if n>0:            
-                log.warning(
-                    "Waiting %0.2f seconds for the next file, try %03d ..." % (self.delay, n+1),
-                    self.name
-                )
-                time.sleep(self.delay)
-            file_list = os.listdir(self.path)
-            file_list.sort()
-            if file_list:
-                if self.filename:
-                    if file_list[-1] not in self.filename:
-                        return file_list[-1]  
-                    else:
-                        continue
-                return file_list[-1]
-        return 0
-
-    def search_files(self, path, startDate, endDate, ext):
-        '''
-         Searching for BLTR rawdata file in path
-         Creating a list of file to proces included in [startDate,endDate]
-
-         Input: 
-             path - Path to find BLTR rawdata files
-             startDate - Select file from this date
-             enDate - Select file until this date
-             ext - Extension of the file to read
-        '''
-        
-        log.success('Searching files in {} '.format(path), 'BLTRParamReader')
-        foldercounter = 0        
-        fileList0 = glob.glob1(path, "*%s" % ext)
-        fileList0.sort()
-
-        for thisFile in fileList0:
-            year = thisFile[-14:-10]
-            if not isNumber(year):
-                continue
-
-            month = thisFile[-10:-8]
-            if not isNumber(month):
-                continue
-
-            day = thisFile[-8:-6]
-            if not isNumber(day):
-                continue
-
-            year, month, day = int(year), int(month), int(day)
-            dateFile = datetime.date(year, month, day)
-
-            if (startDate > dateFile) or (endDate < dateFile):
-                continue
-
-            yield thisFile
-
-        return
-
-    def setNextFile(self):
-
         if self.online:
-            filename = self.search_last_file()
-            if not filename:
-                self.flagNoMoreFiles = 1
-                return 0
-        else:
-            try:
-                filename = next(self.fileList)
-            except StopIteration:
-                self.flagNoMoreFiles = 1
-                return 0
-                
-        log.success('Opening {}'.format(filename), 'BLTRParamReader')
+            log.log("Searching files in online mode...", self.name)
 
-        dirname, name = os.path.split(filename)
+            for nTries in range(self.nTries):
+                fullpath = self.searchFilesOnLine(self.path, self.startDate,
+                    self.endDate, self.expLabel, self.ext, self.walk, 
+                    self.filefmt, self.folderfmt)
+                try:
+                    fullpath = next(fullpath)
+                except:
+                    fullpath = None
+                
+                if fullpath:
+                    self.fileSize = os.path.getsize(fullpath)
+                    self.filename = fullpath
+                    self.flagIsNewFile = 1
+                    if self.fp != None:
+                        self.fp.close()
+                    self.fp = self.open_file(fullpath, self.open_mode)
+                    self.flagNoMoreFiles = 0
+                    break
+
+                log.warning(
+                    'Waiting {} sec for a valid file in {}: try {} ...'.format(
+                        self.delay, self.path, nTries + 1), 
+                    self.name)
+                time.sleep(self.delay)
+
+            if not(fullpath):
+                raise schainpy.admin.SchainError(
+                    'There isn\'t any valid file in {}'.format(self.path))            
+            self.readFirstHeader()
+        else:
+            log.log("Searching files in {}".format(self.path), self.name)
+            self.filenameList = self.searchFilesOffLine(self.path, self.startDate, 
+                self.endDate, self.expLabel, self.ext, self.walk, self.filefmt, self.folderfmt)
+            self.setNextFile()
+
+    def checkForRealPath(self, nextFile, nextDay):
+        '''
+        '''
+
+        dt = self.datatime + datetime.timedelta(1)
+        filename = '{}.{}{}'.format(self.siteFile, dt.strftime('%Y%m%d'), self.ext)
+        fullfilename = os.path.join(self.path, filename)
+        if os.path.exists(fullfilename):
+            return fullfilename, filename
+        return None, filename
+        
+    
+    def readFirstHeader(self):
+        '''
+        '''
+
         # 'peru2' ---> Piura  -   'peru1' ---> Huancayo or Porcuya
-        self.siteFile = filename.split('.')[0]
-        if self.filename is not None:
-            self.fp.close()
-        self.filename = os.path.join(self.path, filename)
-        self.fp = open(self.filename, 'rb')
+        self.siteFile = self.filename.split('/')[-1].split('.')[0]
         self.header_file = numpy.fromfile(self.fp, FILE_HEADER_STRUCTURE, 1)
         self.nrecords = self.header_file['nrec'][0]
-        self.sizeOfFile = os.path.getsize(self.filename)
         self.counter_records = 0
         self.flagIsNewFile = 0
         self.fileIndex += 1        
-
-        return 1
 
     def readNextBlock(self):
 
@@ -242,7 +183,6 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
                 self.flagIsNewFile = 1
                 if not self.setNextFile():
                     return 0
-
             try:
                 pointer = self.fp.tell()
                 self.readBlock()
@@ -266,7 +206,6 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
 
         log.log('Reading Record No. {} -> {}'.format(
             self.counter_records,
-            # self.nrecords,
             self.datatime.ctime()), 'BLTRParamReader')
 
         return 1
@@ -372,10 +311,8 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         self.dataOut.utctime = self.dataOut.utctimeInit
         self.dataOut.useLocalTime = False
         self.dataOut.paramInterval = 157
-        self.dataOut.timezone = self.timezone
         self.dataOut.site = self.siteFile
         self.dataOut.nrecords = self.nrecords / self.nmodes
-        self.dataOut.sizeOfFile = self.sizeOfFile
         self.dataOut.lat = self.lat
         self.dataOut.lon = self.lon
         self.dataOut.channelList = list(range(self.nchannels))
@@ -395,13 +332,24 @@ class BLTRParamReader(JRODataReader, ProcessingUnit):
         '''
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            raise schainpy.admin.SchainError('No More files to read')             
+            return 0
 
         if not self.readNextBlock():
             self.dataOut.flagNoData = True
-            raise schainpy.admin.SchainError('Time for wait new file reach!!!')
+            return 0
 
         self.set_output()
 
         return 1
         
+    def run(self, **kwargs):
+        '''
+        '''
+
+        if not(self.isConfig):
+            self.setup(**kwargs)
+            self.isConfig = True
+
+        self.getData()
+
+        return

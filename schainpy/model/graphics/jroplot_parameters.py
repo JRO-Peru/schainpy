@@ -142,6 +142,11 @@ class ParametersPlot(RTIPlot):
         self.ncols = 1
         self.nrows = self.data.shape(self.CODE)[0]
         self.nplots = self.nrows
+        self.plots_adjust.update({'hspace':0.8, 'left': 0.1, 'bottom': 0.08, 'right':0.95, 'top': 0.95})
+        
+        if not self.xlabel:
+            self.xlabel = 'Time'
+        
         if self.showSNR:
             self.nrows += 1
             self.nplots += 1
