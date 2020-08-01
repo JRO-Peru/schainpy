@@ -360,21 +360,27 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         fd         = Fdoppler #+(600.0/120)*self.nReadBlocks
         d_signal   = Adoppler*numpy.array(numpy.exp(1.0j*2.0*math.pi*fd*time_vec),dtype=numpy.complex64)
         #·············Señal con ancho espectral····················
-        #specw_sig  = numpy.linspace(-149,150,300)
-        #w          = 8
-        #A          = 20
-        #specw_sig   = specw_sig/w
-        #specw_sig   = numpy.sinc(specw_sig)
-        #specw_sig   =  A*numpy.array(specw_sig,dtype=numpy.complex64)
+        if prof_gen%2==0:
+            min = int(prof_gen/2.0-1.0)
+            max = int(prof_gen/2.0)
+        else:
+            min = int(prof_gen/2.0)
+            max = int(prof_gen/2.0)
+        specw_sig  = numpy.linspace(-min,max,prof_gen)
+        w          = 4
+        A          = 20
+        specw_sig   = specw_sig/w
+        specw_sig   = numpy.sinc(specw_sig)
+        specw_sig   =  A*numpy.array(specw_sig,dtype=numpy.complex64)
         #·················· DATABLOCK + DOPPLER····················
         HD=int(Hdoppler/self.AcqDH_0)
         for  i in range(12):
             self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ d_signal# RESULT
         #·················· DATABLOCK + DOPPLER*Sinc(x)····················
-        #HD=int(Hdoppler/self.AcqDH_0)
-        #HD=int(HD/2)
-        #for  i in range(12):
-        #    self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ specw_sig*d_signal# RESULT
+        HD=int(Hdoppler/self.AcqDH_0)
+        HD=int(HD/2)
+        for  i in range(12):
+            self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ specw_sig*d_signal# RESULT
 
     def readBlock(self):
 
@@ -421,7 +427,8 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                    FixPP_CohInt= 1,Tau_0= 250,AcqH0_0 = 70 ,AcqDH_0=1.25, Bauds= 32,
                    FixRCP_TXA = 40, FixRCP_TXB = 50, fAngle = 2.0*math.pi*(1/16),DC_level= 50,
                    stdev= 8,Num_Codes = 1 , Dyn_snCode = None, samples=200,
-                   channels=2,Fdoppler=20,Hdoppler=36,Adoppler=500,nTotalReadFiles=10000,
+                   channels=2,Fdoppler=20,Hdoppler=36,Adoppler=500,
+                   profilesPerBlock=300,dataBlocksPerFile=120,nTotalReadFiles=10000,
                    **kwargs):
 
         self.set_kwargs(**kwargs)
@@ -447,14 +454,14 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
                  codeType=0, nCode=Num_Codes, nBaud=32, code=Dyn_snCode,
                  flip1=0, flip2=0,Taus=Tau_0)
 
-        self.set_PH(dtype=0, blockSize=0, profilesPerBlock=300,
-                      dataBlocksPerFile=120, nWindows=1, processFlags=numpy.array([1024]), nCohInt=1,
+        self.set_PH(dtype=0, blockSize=0, profilesPerBlock=profilesPerBlock,
+                      dataBlocksPerFile=dataBlocksPerFile, nWindows=1, processFlags=numpy.array([1024]), nCohInt=1,
                       nIncohInt=1, totalSpectra=0, nHeights=samples, firstHeight=AcqH0_0,
                       deltaHeight=AcqDH_0, samplesWin=samples, spectraComb=0, nCode=0,
                       code=0, nBaud=None, shif_fft=False, flag_dc=False,
                       flag_cspc=False, flag_decode=False, flag_deflip=False)
 
-        self.set_SH(nSamples=samples, nProfiles=300, nChannels=channels)
+        self.set_SH(nSamples=samples, nProfiles=profilesPerBlock, nChannels=channels)
 
         self.readFirstHeader()
 
