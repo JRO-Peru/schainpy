@@ -235,7 +235,6 @@ class JROData(GenericData):
         return delta
 
     def getltctime(self):
-
         if self.useLocalTime:
             return self.utctime - self.timeZone * 60
 
@@ -1032,7 +1031,7 @@ class Correlation(JROData):
     normFactor = property(getNormFactor, "I'm the 'normFactor property'")
 
 
-class Parameters(Spectra):
+class Parameters(JROData):
 
     experimentInfo = None  # Information about the experiment
     # Information from previous data
@@ -1087,7 +1086,6 @@ class Parameters(Spectra):
         return datatime
 
     def getTimeInterval(self):
-
         if hasattr(self, 'timeInterval1'):
             return self.timeInterval1
         else:
@@ -1210,7 +1208,7 @@ class PlotterData(object):
         '''
         Update data object with new dataOut
         '''
-
+        print("UPDATE ESTOYU AQUI")
         self.profileIndex = dataOut.profileIndex
         self.tm = tm
         self.type = dataOut.type
@@ -1278,6 +1276,14 @@ class PlotterData(object):
                 buffer = dataOut.dataPP_WIDTH
                 self.flagDataAsBlock = dataOut.flagDataAsBlock
                 self.nProfiles = dataOut.nProfiles
+            if plot == 'pp_rti_power':
+                buffer = 10*numpy.log10(dataOut.dataPP_POWER)
+            if plot == 'pp_rti_signal':
+                buffer = 10*numpy.log10(dataOut.dataPP_POW)
+            if plot == 'weather':
+                print("ESTOY AQUI")
+                print("jrodata",dataOut.data_360.shape)
+                buffer = 10*numpy.log10(dataOut.data_360/(625**2))
 
             if plot == 'spc':
                 self.data['spc'][tm] = buffer

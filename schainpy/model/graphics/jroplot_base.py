@@ -9,6 +9,7 @@ from queue import Queue
 from functools import wraps
 from threading import Thread
 import matplotlib
+import wradlib as wrl
 
 if 'BACKEND' in os.environ:
     matplotlib.use(os.environ['BACKEND'])
@@ -233,7 +234,7 @@ class Plot(Operation):
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
             self.CODE, self.throttle, self.exp_code, self.buffering, snr=self.showSNR)
-        
+
         if self.plot_server:
             if not self.plot_server.startswith('tcp://'):
                 self.plot_server = 'tcp://{}'.format(self.plot_server)
@@ -250,8 +251,7 @@ class Plot(Operation):
         '''
 
         self.setup()
-
-        self.time_label = 'LT' if self.localtime else 'UTC'        
+        self.time_label = 'LT' if self.localtime else 'UTC'
 
         if self.width is None:
             self.width = 8
@@ -273,6 +273,7 @@ class Plot(Operation):
                              facecolor='w')
             self.figures.append(fig)
             for n in range(self.nplots):
+                #cgax,ax,paax = wrl.vis.create_cg(data_w,r=r,az=azi, proj='cg')
                 ax = fig.add_subplot(self.nrows, self.ncols,
                                      n + 1, polar=self.polar)
                 ax.tick_params(labelsize=8)
@@ -381,10 +382,10 @@ class Plot(Operation):
                     xmax += time.timezone
             else:
                 xmax = self.xmax
-        
+
         ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
         ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
-            
+
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
 
@@ -398,14 +399,14 @@ class Plot(Operation):
                     ystep = ystep/5
                     ystep = ystep/(10**digD)
 
-                else:        
+                else:
                     ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
                     ystep = ystep/5
-                    
+
                 if self.xaxis is not 'time':
-                    
+
                     dig = int(numpy.log10(xmax))
-                    
+
                     if dig <= 0:
                         digD = len(str(xmax)) - 2
                         xdec = xmax*(10**digD)
@@ -414,8 +415,8 @@ class Plot(Operation):
                         xstep = ((xdec + (10**(dig)))//10**(dig))*(10**(dig))
                         xstep = xstep*0.5
                         xstep = xstep/(10**digD)
-                        
-                    else:        
+
+                    else:
                         xstep = ((xmax + (10**(dig)))//10**(dig))*(10**(dig))
                         xstep = xstep/5
 
@@ -495,14 +496,14 @@ class Plot(Operation):
 
         self.plot()
         self.format()
-        
+
         for n, fig in enumerate(self.figures):
             if self.nrows == 0 or self.nplots == 0:
                 log.warning('No data', self.name)
                 fig.text(0.5, 0.5, 'No Data', fontsize='large', ha='center')
                 fig.canvas.manager.set_window_title(self.CODE)
                 continue
-            
+
             fig.canvas.manager.set_window_title('{} - {}'.format(self.title,
                                                                  self.getDateTime(self.data.max_time).strftime('%Y/%m/%d')))
             fig.canvas.draw()
@@ -512,7 +513,7 @@ class Plot(Operation):
 
             if self.save:
                 self.save_figure(n)
-        
+
         if self.plot_server:
             self.send_to_server()
 
@@ -539,7 +540,7 @@ class Plot(Operation):
         figname = os.path.join(
             self.save,
             labels[n],
-            '{}_{}.png'.format(                
+            '{}_{}.png'.format(
                 labels[n],
                 self.getDateTime(self.data.max_time).strftime(
                     '%Y%m%d_%H%M%S'
@@ -572,7 +573,7 @@ class Plot(Operation):
             return
 
         self.sender_time = self.data.tm
-        
+
         attrs = ['titles', 'zmin', 'zmax', 'tag', 'ymin', 'ymax']
         for attr in attrs:
             value = getattr(self, attr)
@@ -589,7 +590,7 @@ class Plot(Operation):
         self.data.meta['interval'] = int(interval)
         # msg = self.data.jsonify(self.data.tm, self.plot_name, self.plot_type)
         self.sender_queue.put(self.data.tm)
-        
+
         while True:
             if self.sender_queue.empty():
                 break
@@ -628,7 +629,7 @@ class Plot(Operation):
         self.ncols: number of cols
         self.nplots: number of plots (channels or pairs)
         self.ylabel: label for Y axes
-        self.titles: list of axes title 
+        self.titles: list of axes title
 
         '''
         raise NotImplementedError
@@ -638,7 +639,7 @@ class Plot(Operation):
         Must be defined in the child class
         '''
         raise NotImplementedError
-    
+
     def run(self, dataOut, **kwargs):
         '''
         Main plotting routine
@@ -646,7 +647,7 @@ class Plot(Operation):
 
         if self.isConfig is False:
             self.__setup(**kwargs)
-            
+
             t = getattr(dataOut, self.attr_time)
 
             if dataOut.useLocalTime:
@@ -657,7 +658,7 @@ class Plot(Operation):
                 self.getDateTime = datetime.datetime.utcfromtimestamp
                 if self.localtime:
                     t -= time.timezone
-            
+
             if self.xmin is None:
                 self.tmin = t
                 if 'buffer' in self.plot_type:
@@ -665,8 +666,8 @@ class Plot(Operation):
             else:
                 self.tmin = (
                     self.getDateTime(t).replace(
-                        hour=int(self.xmin), 
-                        minute=0, 
+                        hour=int(self.xmin),
+                        minute=0,
                         second=0) - self.getDateTime(0)).total_seconds()
 
             self.data.setup()
@@ -684,8 +685,8 @@ class Plot(Operation):
             tm -= time.timezone
         if dataOut.useLocalTime and not self.localtime:
             tm += time.timezone
-        
-        if self.data and (tm - self.tmin) >= self.xrange*60*60:    
+
+        if self.data and (tm - self.tmin) >= self.xrange*60*60:
             self.save_counter = self.save_period
             self.__plot()
             if 'time' in self.xaxis:
@@ -697,7 +698,7 @@ class Plot(Operation):
             self.clear_figures()
 
         self.data.update(dataOut, tm)
-
+        print("plotbase--",self.data['weather'].shape)
         if self.isPlotConfig is False:
             self.__setup_plot()
             self.isPlotConfig = True
@@ -714,4 +715,3 @@ class Plot(Operation):
             self.__plot()
         if self.data and not self.data.flagNoData and self.pause:
             figpause(10)
-

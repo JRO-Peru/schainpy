@@ -1484,6 +1484,7 @@ class PulsePairVoltage(Operation):
             dataOut.dataPP_SNR      = data_snrPP
             dataOut.dataPP_WIDTH    = data_specwidth
             dataOut.PRFbyAngle      = self.n         #numero de PRF*cada angulo rotado que equivale a un tiempo.
+            dataOut.nProfiles       = int(dataOut.nProfiles/n)
             dataOut.utctime         = avgdatatime
             dataOut.flagNoData      = False
         return dataOut

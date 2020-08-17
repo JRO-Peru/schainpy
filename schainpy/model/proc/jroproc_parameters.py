@@ -109,6 +109,13 @@ class ParametersProc(ProcessingUnit):
             self.dataOut.flagNoData = False
             self.dataOut.utctimeInit = self.dataIn.utctime
             self.dataOut.paramInterval = self.dataIn.nProfiles*self.dataIn.nCohInt*self.dataIn.ippSeconds
+
+            if hasattr(self.dataIn, 'flagDataAsBlock'):
+                self.dataOut.flagDataAsBlock = self.dataIn.flagDataAsBlock
+
+            if hasattr(self.dataIn, 'profileIndex'):
+                self.dataOut.profileIndex = self.dataIn.profileIndex
+
             if hasattr(self.dataIn, 'dataPP_POW'):
                 self.dataOut.dataPP_POW = self.dataIn.dataPP_POW
 
@@ -183,7 +190,6 @@ class ParametersProc(ProcessingUnit):
         if self.dataIn.type == "Parameters":
             self.dataOut.copy(self.dataIn)
             self.dataOut.flagNoData = False
-
             return True
 
         self.__updateObjFromInput()
@@ -592,7 +598,86 @@ class GaussianFit(Operation):
     def misfit2(self,state,y_data,x,num_intg):
         return num_intg*sum((numpy.log(y_data)-numpy.log(self.y_model2(x,state)))**2)#/(64-9.)
 
+class WeatherRadar(Operation):
+    '''
+    Function tat implements Weather Radar operations-
+    Input:
+    Output:
+    Parameters affected:
+    '''
+    isConfig  = False
 
+    def __init__(self):
+        Operation.__init__(self)
+
+    def setup(self,dataOut,Pt=0,Gt=0,Gr=0,lambda_=0, aL=0,
+                tauW= 0,thetaT=0,thetaR=0,Km =0):
+        self.nCh      = dataOut.nChannels
+        self.nHeis    = dataOut.nHeights
+        deltaHeight   = dataOut.heightList[1] - dataOut.heightList[0]
+        self.Range    = numpy.arange(dataOut.nHeights)*deltaHeight + dataOut.heightList[0]
+        self.Range    = self.Range.reshape(1,self.nHeis)
+        self.Range    = numpy.tile(self.Range,[self.nCh,1])
+        '''-----------1 Constante del Radar----------'''
+        self.Pt       = Pt
+        self.Gt       = Gt
+        self.Gr       = Gr
+        self.lambda_  = lambda_
+        self.aL       = aL
+        self.tauW     = tauW
+        self.thetaT   = thetaT
+        self.thetaR   = thetaR
+        self.Km       = Km
+        Numerator     = ((4*numpy.pi)**3 * aL**2 * 16 *numpy.log(2))
+        Denominator   = (Pt * Gt * Gr * lambda_**2 * SPEED_OF_LIGHT * tauW * numpy.pi*thetaT*thetaR)
+        self.RadarConstant = Numerator/Denominator
+        '''-----------2 Reflectividad del Radar y Factor de Reflectividad------'''
+        self.n_radar       = numpy.zeros((self.nCh,self.nHeis))
+        self.Z_radar       = numpy.zeros((self.nCh,self.nHeis))
+
+    def setMoments(self,dataOut,i):
+
+        type = dataOut.inputUnit
+        nCh  = dataOut.nChannels
+        nHeis= dataOut.nHeights
+        data_param = numpy.zeros((nCh,4,nHeis))
+        if type == "Voltage":
+            data_param[:,0,:] = dataOut.dataPP_POW/(dataOut.nCohInt**2)
+            data_param[:,1,:] = dataOut.dataPP_DOP
+            data_param[:,2,:] = dataOut.dataPP_WIDTH
+            data_param[:,3,:] = dataOut.dataPP_SNR
+        if type == "Spectra":
+            data_param[:,0,:] = dataOut.data_POW
+            data_param[:,1,:] = dataOut.data_DOP
+            data_param[:,2,:] = dataOut.data_WIDTH
+            data_param[:,3,:] = dataOut.data_SNR
+
+        return data_param[:,i,:]
+
+
+    def run(self,dataOut,Pt=25,Gt=200.0,Gr=50.0,lambda_=0.32, aL=2.5118,
+                tauW= 4.0e-6,thetaT=0.165,thetaR=0.367,Km =0.93):
+
+        if not self.isConfig:
+            self.setup(dataOut= dataOut,Pt=25,Gt=200.0,Gr=50.0,lambda_=0.32, aL=2.5118,
+                        tauW= 4.0e-6,thetaT=0.165,thetaR=0.367,Km =0.93)
+            self.isConfig = True
+        '''-----------------------------Potencia de Radar -Signal S-----------------------------'''
+        Pr               = self.setMoments(dataOut,0)
+
+        for R in range(self.nHeis):
+            self.n_radar[:,R] = self.RadarConstant*Pr[:,R]* (self.Range[:,R])**2
+
+            self.Z_radar[:,R] = self.n_radar[:,R]* self.lambda_**4/( numpy.pi**5 * self.Km**2)
+
+        '''----------- Factor de Reflectividad Equivalente lamda_ < 10 cm , lamda_= 3.2cm-------'''
+        Zeh  =  self.Z_radar
+        dBZeh = 10*numpy.log10(Zeh)
+        dataOut.factor_Zeh= dBZeh
+        self.n_radar       = numpy.zeros((self.nCh,self.nHeis))
+        self.Z_radar       = numpy.zeros((self.nCh,self.nHeis))
+
+        return dataOut
 
 class PrecipitationProc(Operation):
 
@@ -3998,3 +4083,249 @@ class SMOperations():
 #         error[indInvalid1] = 13
 #
 #         return heights, error
+
+class PulsePairVoltage(Operation):
+    '''
+    Function PulsePair(Signal Power, Velocity)
+    The real component of Lag[0] provides Intensity Information
+    The imag component of Lag[1] Phase provides Velocity Information
+
+    Configuration Parameters:
+    nPRF = Number of Several PRF
+    theta = Degree Azimuth angel Boundaries
+
+    Input:
+          self.dataOut
+          lag[N]
+    Affected:
+          self.dataOut.spc
+    '''
+    isConfig       = False
+    __profIndex    = 0
+    __initime      = None
+    __lastdatatime = None
+    __buffer       = None
+    noise          = None
+    __dataReady    = False
+    n              = None
+    __nch          = 0
+    __nHeis        = 0
+    removeDC       = False
+    ipp            = None
+    lambda_        = 0
+
+    def __init__(self,**kwargs):
+        Operation.__init__(self,**kwargs)
+
+    def setup(self, dataOut, n = None, removeDC=False):
+        '''
+        n= Numero de PRF's de entrada
+        '''
+        self.__initime        = None
+        self.__lastdatatime   = 0
+        self.__dataReady      = False
+        self.__buffer         = 0
+        self.__profIndex      = 0
+        self.noise            = None
+        self.__nch            = dataOut.nChannels
+        self.__nHeis          = dataOut.nHeights
+        self.removeDC         = removeDC
+        self.lambda_          = 3.0e8/(9345.0e6)
+        self.ippSec           = dataOut.ippSeconds
+        self.nCohInt          = dataOut.nCohInt
+        print("IPPseconds",dataOut.ippSeconds)
+
+        print("ELVALOR DE n es:", n)
+        if n == None:
+            raise ValueError("n should be specified.")
+
+        if n != None:
+            if n<2:
+                raise ValueError("n should be greater than 2")
+
+        self.n       = n
+        self.__nProf = n
+
+        self.__buffer = numpy.zeros((dataOut.nChannels,
+                                           n,
+                                           dataOut.nHeights),
+                                          dtype='complex')
+
+    def putData(self,data):
+        '''
+        Add a profile to he __buffer and increase in one the __profiel Index
+        '''
+        self.__buffer[:,self.__profIndex,:]= data
+        self.__profIndex      += 1
+        return
+
+    def pushData(self,dataOut):
+        '''
+        Return the PULSEPAIR and the profiles used in the operation
+        Affected :  self.__profileIndex
+        '''
+        #················· Remove DC···································
+        if self.removeDC==True:
+            mean    = numpy.mean(self.__buffer,1)
+            tmp     = mean.reshape(self.__nch,1,self.__nHeis)
+            dc= numpy.tile(tmp,[1,self.__nProf,1])
+            self.__buffer = self.__buffer -  dc
+        #··················Calculo de Potencia ························
+        pair0       = self.__buffer*numpy.conj(self.__buffer)
+        pair0       = pair0.real
+        lag_0       = numpy.sum(pair0,1)
+        #··················Calculo de Ruido x canal····················
+        self.noise  = numpy.zeros(self.__nch)
+        for i in range(self.__nch):
+            daux         = numpy.sort(pair0[i,:,:],axis= None)
+            self.noise[i]=hildebrand_sekhon( daux ,self.nCohInt)
+
+        self.noise       = self.noise.reshape(self.__nch,1)
+        self.noise       = numpy.tile(self.noise,[1,self.__nHeis])
+        noise_buffer     = self.noise.reshape(self.__nch,1,self.__nHeis)
+        noise_buffer     = numpy.tile(noise_buffer,[1,self.__nProf,1])
+        #·················· Potencia recibida= P , Potencia senal = S , Ruido= N··
+        #··················   P= S+N  ,P=lag_0/N ·································
+        #···················· Power ··················································
+        data_power       = lag_0/(self.n*self.nCohInt)
+        #------------------  Senal  ···················································
+        data_intensity   = pair0 - noise_buffer
+        data_intensity   = numpy.sum(data_intensity,axis=1)*(self.n*self.nCohInt)#*self.nCohInt)
+        #data_intensity   = (lag_0-self.noise*self.n)*(self.n*self.nCohInt)
+        for i in range(self.__nch):
+            for j in range(self.__nHeis):
+                if data_intensity[i][j]  < 0:
+                    data_intensity[i][j] = numpy.min(numpy.absolute(data_intensity[i][j]))
+
+        #················· Calculo de Frecuencia y Velocidad doppler········
+        pair1            = self.__buffer[:,:-1,:]*numpy.conjugate(self.__buffer[:,1:,:])
+        lag_1            = numpy.sum(pair1,1)
+        data_freq        = (-1/(2.0*math.pi*self.ippSec*self.nCohInt))*numpy.angle(lag_1)
+        data_velocity    = (self.lambda_/2.0)*data_freq
+
+        #················ Potencia promedio estimada de la Senal···········
+        lag_0            = lag_0/self.n
+        S                = lag_0-self.noise
+
+        #················ Frecuencia Doppler promedio ·····················
+        lag_1            = lag_1/(self.n-1)
+        R1               = numpy.abs(lag_1)
+
+        #················ Calculo del SNR··································
+        data_snrPP       = S/self.noise
+        for i in range(self.__nch):
+            for j in range(self.__nHeis):
+                if data_snrPP[i][j]  < 1.e-20:
+                    data_snrPP[i][j] = 1.e-20
+
+        #················· Calculo del ancho espectral ······················
+        L                = S/R1
+        L                = numpy.where(L<0,1,L)
+        L                = numpy.log(L)
+        tmp              = numpy.sqrt(numpy.absolute(L))
+        data_specwidth   = (self.lambda_/(2*math.sqrt(2)*math.pi*self.ippSec*self.nCohInt))*tmp*numpy.sign(L)
+        n                = self.__profIndex
+class Block360(Operation):
+    '''
+    '''
+    isConfig       = False
+    __profIndex    = 0
+    __initime      = None
+    __lastdatatime = None
+    __buffer       = None
+    __dataReady    = False
+    n              = None
+    __nch          = 0
+    __nHeis        = 0
+
+    def __init__(self,**kwargs):
+        Operation.__init__(self,**kwargs)
+
+    def setup(self, dataOut, n = None):
+        '''
+        n= Numero de PRF's de entrada
+        '''
+        self.__initime        = None
+        self.__lastdatatime   = 0
+        self.__dataReady      = False
+        self.__buffer         = 0
+        self.__profIndex      = 0
+
+
+        print("ELVALOR DE n es:", n)
+        if n == None:
+            raise ValueError("n should be specified.")
+
+        if n != None:
+            if n<2:
+                raise ValueError("n should be greater than 2")
+
+        self.n       = n
+
+        self.__buffer = numpy.zeros(( n, dataOut.nHeights))
+
+    def putData(self,data):
+        '''
+        Add a profile to he __buffer and increase in one the __profiel Index
+        '''
+        self.__buffer[self.__profIndex,:]= data
+        self.__profIndex      += 1
+        return        #················· Remove DC···································
+
+    def pushData(self,dataOut):
+        '''
+        Return the PULSEPAIR and the profiles used in the operation
+        Affected :  self.__profileIndex
+        '''
+
+
+        data_360 = self.__buffer
+        n                = self.__profIndex
+
+        self.__buffer    = numpy.zeros(( self.n,330))
+        self.__profIndex = 0
+        return data_360,n
+
+
+    def byProfiles(self,dataOut):
+
+        self.__dataReady     =  False
+        data_360           =  None
+        self.putData(data=dataOut.data_POW[0])
+        if self.__profIndex  == self.n:
+            data_360, n   = self.pushData(dataOut=dataOut)
+            self.__dataReady                   = True
+
+        return data_360
+
+
+    def blockOp(self, dataOut, datatime= None):
+
+        if self.__initime == None:
+            self.__initime = datatime
+        data_360 = self.byProfiles(dataOut)
+        self.__lastdatatime           = datatime
+
+        if data_360 is None:
+            return None, None
+
+        avgdatatime    = self.__initime
+        deltatime      = datatime - self.__lastdatatime
+        self.__initime = datatime
+
+        return data_360, avgdatatime
+
+    def run(self, dataOut,n = None,**kwargs):
+
+        if not self.isConfig:
+            self.setup(dataOut = dataOut, n    = n , **kwargs)
+            self.isConfig   = True
+        data_360, avgdatatime = self.blockOp(dataOut, dataOut.utctime)
+        dataOut.flagNoData                         = True
+
+        if self.__dataReady:
+            dataOut.data_360         = data_360 # S
+            print("data_360",data_360.shape,avgdatatime)
+            dataOut.utctime         = avgdatatime
+            dataOut.flagNoData      = False
+        return dataOut

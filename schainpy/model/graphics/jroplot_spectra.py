@@ -121,7 +121,7 @@ class CrossSpectraPlot(Plot):
         else:
             x = self.data.xrange[2]
             self.xlabel = "Velocity (m/s)"
-        
+
         self.titles = []
 
         y = self.data.heights
@@ -134,17 +134,17 @@ class CrossSpectraPlot(Plot):
             noise = self.data['noise'][:,-1]
             pair = self.data.pairs[n]
             ax = self.axes[4 * n]
-            if ax.firsttime:                                               
-                self.xmax = self.xmax if self.xmax else numpy.nanmax(x)    
-                self.xmin = self.xmin if self.xmin else -self.xmax         
-                self.zmin = self.zmin if self.zmin else numpy.nanmin(nspc)  
-                self.zmax = self.zmax if self.zmax else numpy.nanmax(nspc)  
+            if ax.firsttime:
+                self.xmax = self.xmax if self.xmax else numpy.nanmax(x)
+                self.xmin = self.xmin if self.xmin else -self.xmax
+                self.zmin = self.zmin if self.zmin else numpy.nanmin(nspc)
+                self.zmax = self.zmax if self.zmax else numpy.nanmax(nspc)
                 ax.plt = ax.pcolormesh(x , y , nspc[pair[0]].T,
                                        vmin=self.zmin,
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
-                                       )                                   
-            else:                                                          
+                                       )
+            else:
                 ax.plt.set_array(nspc[pair[0]].T.ravel())
             self.titles.append('CH {}: {:3.2f}dB'.format(pair[0], noise[pair[0]]))
 
@@ -155,10 +155,10 @@ class CrossSpectraPlot(Plot):
                                        vmax=self.zmax,
                                        cmap=plt.get_cmap(self.colormap)
                                        )
-            else: 
+            else:
                 ax.plt.set_array(nspc[pair[1]].T.ravel())
             self.titles.append('CH {}: {:3.2f}dB'.format(pair[1], noise[pair[1]]))
-            
+
             out = cspc[n] / numpy.sqrt(spc[pair[0]] * spc[pair[1]])
             coh = numpy.abs(out)
             phase = numpy.arctan2(out.imag, out.real) * 180 / numpy.pi
@@ -174,13 +174,13 @@ class CrossSpectraPlot(Plot):
                 ax.plt.set_array(coh.T.ravel())
             self.titles.append(
                 'Coherence Ch{} * Ch{}'.format(pair[0], pair[1]))
-                                   
+
             ax = self.axes[4 * n + 3]
             if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, phase.T,
                                        vmin=-180,
                                        vmax=180,
-                                       cmap=plt.get_cmap(self.colormap_phase) 
+                                       cmap=plt.get_cmap(self.colormap_phase)
                                        )
             else:
                 ax.plt.set_array(phase.T.ravel())
@@ -285,7 +285,7 @@ class PhasePlot(CoherencePlot):
 
 class NoisePlot(Plot):
     '''
-    Plot for noise 
+    Plot for noise
     '''
 
     CODE = 'noise'
@@ -349,10 +349,10 @@ class PowerProfilePlot(Plot):
         self.y = y
 
         x = self.data['spcprofile']
-        
+
         if self.xmin is None: self.xmin = numpy.nanmin(x)*0.9
         if self.xmax is None: self.xmax = numpy.nanmax(x)*1.1
-        
+
         if self.axes[0].firsttime:
             for ch in self.data.channels:
                 self.axes[0].plot(x[ch], y, lw=1, label='Ch{}'.format(ch))
@@ -506,7 +506,7 @@ class BeaconPhase(Plot):
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
 
-        if dataOut.flagNoData:         
+        if dataOut.flagNoData:
             return dataOut
 
         if not isTimeInHourRange(dataOut.datatime, xmin, xmax):

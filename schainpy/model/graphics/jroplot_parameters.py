@@ -6,6 +6,10 @@ from schainpy.model.graphics.jroplot_base import Plot, plt
 from schainpy.model.graphics.jroplot_spectra import SpectraPlot, RTIPlot, CoherencePlot
 from schainpy.utils import log
 
+'''-------'''
+import wradlib as wrl
+'''-------'''
+
 EARTH_RADIUS = 6.3710e3
 
 
@@ -68,6 +72,24 @@ class PowerPlot(RTIPlot):
     CODE = 'pow'
     colormap = 'jet'
     plot_name = 'TotalPower'
+
+class PPPowerPlot(RTIPlot):
+    '''
+    Plot for Pulse Pair Power Data P =S +N
+    '''
+
+    CODE = 'pp_rti_power'
+    colormap = 'jet'
+    plot_name = 'TotalPP_Power'
+
+class PPSignalPlot(RTIPlot):
+    '''
+    Plot for Pulse Pair Power Data S = P- N (0 moment)
+    '''
+
+    CODE = 'pp_rti_signal'
+    colormap = 'jet'
+    plot_name = 'TotalPP_Signal'
 
 
 class SpectralWidthPlot(RTIPlot):
@@ -339,3 +361,53 @@ class PolarMapPlot(Plot):
         self.titles = ['{} {}'.format(
             self.data.parameters[x], title) for x in self.channels]
 
+
+class WeatherPlot(Plot):
+    CODE      = 'weather'
+    plot_name = 'Weather'
+    plot_type = 'ppistyle'
+
+    def setup(self):
+        #self.xaxis = 'Range (Km)'
+        self.ncols = 1
+        self.nrows = 1
+        self.nplots = 1
+        self.ylabel = 'Range (Km)'
+        self.titles = ['Weather']
+        self.colorbar = False
+        self.width  = 8
+        self.height = 8
+        self.ini    = 50
+
+    def plot(self):
+        stoprange = float(33*1.5)
+        rangestep = float(0.15)
+        r = numpy.arange(0, stoprange, rangestep)
+        '''
+        self.x= r
+        self.y= r
+        ini       = self.ini
+        self.ini  = self.ini+100
+        azi       = numpy.linspace(0,359,360)
+        azi       = azi + ini
+        azi       = azi % 36
+        '''
+        azi       = self.data['weather'][1]
+        data      = self.data['weather'][0]
+        data_w= data[:,-1,:]
+        try:
+            zeros=numpy.zeros([(360-data_w.shape[0]),data_w.shape[1]])
+            print("zeros",zeros.shape)
+            data_w= numpy.vstack([data_w,zeros])
+        except:
+            pass
+
+        for i,ax in enumerate(self.axes):
+            if ax.firsttime:
+                plt.clf()
+                cgax, pm = wrl.vis.plot_ppi(data_w,r=r,az=azi,fig=self.figures[0], proj='cg')
+            else:
+                plt.clf()
+                cgax, pm = wrl.vis.plot_ppi(data_w,r=r,az=azi,fig=self.figures[0], proj='cg')
+
+            print("cgax",cgax)

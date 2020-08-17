@@ -82,9 +82,9 @@ num_perfiles = int(var_tiempo/IPP)
 dir_pedestal = "/home/alex/Downloads/pedestal"
 #·········· DATA ADQ······························
 if mode=="T":
-    dir_adq  = "/home/alex/Downloads/hdf5_testPP/d2020194" # Time domain
+    dir_adq  = "/home/alex/Downloads/hdf5_testPP/d2020204" # Time domain
 else:
-    dir_adq  = "/home/alex/Downloads/hdf5_test/d2020194"   # Frequency domain
+    dir_adq  = "/home/alex/Downloads/hdf5_test/d2020204"   # Frequency domain
 
 print( "Velocidad angular             :", w)
 print( "Resolucion minima en grados   :", alfa)
@@ -103,7 +103,7 @@ print("utc_pedestal                  :",utc_pedestal)
 print("utc_adq                       :",utc_adq)
 #·············Relacion:  utc_adq (+/-) var_tiempo*nro_file= utc_pedestal
 time_Interval_p   = 0.01
-n_perfiles_p      = 100
+n_perfiles_p      = 360
 if utc_adq>utc_pedestal:
     nro_file = int((int(utc_adq) - int(utc_pedestal))/(time_Interval_p*n_perfiles_p))
     ff_pedestal  = list_pedestal[nro_file]
@@ -129,7 +129,7 @@ list_adq      = getfirstFilefromPath(path=dir_adq ,meta="D",ext=".hdf5")
 
 nro_file       = nro_file #10
 nro_key_perfil = nro_key_p
-blocksPerFile  = 100
+blocksPerFile  = 360
 wr_path        = "/home/alex/Downloads/hdf5_wr/"
 # Lectura  de archivos de adquisicion para adicion de azimuth
 for thisFile in range(len(list_adq)):

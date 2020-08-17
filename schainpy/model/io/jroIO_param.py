@@ -11,6 +11,8 @@ from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecora
 from schainpy.model.io.jroIO_base import *
 from schainpy.utils import log
 
+import wradlib as wrl
+
 
 class ParamReader(JRODataReader,ProcessingUnit):
     '''
@@ -183,16 +185,17 @@ class ParamReader(JRODataReader,ProcessingUnit):
         except IOError:
             traceback.print_exc()
             raise IOError("The file %s can't be opened" %(filename))
-        
+
         #In case has utctime attribute
         grp2 = grp1['utctime']
  #         thisUtcTime = grp2.value[0] - 5*3600 #To convert to local time
         thisUtcTime = grp2.value[0]
-
+        #thisUtcTime  = grp2
         fp.close()
 
         if self.timezone == 'lt':
             thisUtcTime -= 5*3600
+
 
         thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0] + 5*3600)
         thisDate = thisDatetime.date()
@@ -266,8 +269,9 @@ class ParamReader(JRODataReader,ProcessingUnit):
         endTime = self.endTime
 
         grp = fp['Data']
+        #grp2 = grp['utctime'][()] # nuevo
+        #thisUtcTime = grp2         # nuevo
         thisUtcTime = grp['utctime'].value.astype(numpy.float)[0]
-
         #ERROOOOR
         if self.timezone == 'lt':
             thisUtcTime -= 5*3600
@@ -304,14 +308,14 @@ class ParamReader(JRODataReader,ProcessingUnit):
 
         listMetaname = []
         listMetadata = []
+        listShapes = {}
         for item in list(gp.items()):
             name = item[0]
-
             if name=='array dimensions':
                 table = gp[name][:]
                 listShapes = {}
                 for shapes in table:
-                    listShapes[shapes[0]] = numpy.array([shapes[1],shapes[2],shapes[3],shapes[4],shapes[5]])
+                    listShapes[shapes[0].decode()] = numpy.array([shapes[1],shapes[2],shapes[3],shapes[4],shapes[5]])
             else:
                 data = gp[name].value
                 listMetaname.append(name)
@@ -328,11 +332,9 @@ class ParamReader(JRODataReader,ProcessingUnit):
         grp = self.fp['Data']
         listdataname = []
         listdata = []
-
         for item in list(grp.items()):
             name = item[0]
             listdataname.append(name)
-
             array = self.__setDataArray(grp[name],self.listShapes[name])
             listdata.append(array)
 
@@ -341,7 +343,6 @@ class ParamReader(JRODataReader,ProcessingUnit):
         return
 
     def __setDataArray(self, dataset, shapes):
-
         nDims = shapes[0]
         nDim2 = shapes[1]      #Dimension 0
         nDim1 = shapes[2]      #Dimension 1, number of Points or Parameters
@@ -407,7 +408,6 @@ class ParamReader(JRODataReader,ProcessingUnit):
         listShapes = self.listShapes
 
         blockIndex = self.blockIndex
- #         blockList = self.blockList
 
         for i in range(len(listMeta)):
             setattr(self.dataOut,listMetaname[i],listMeta[i])
@@ -497,7 +497,7 @@ class ParamWriter(Operation):
     setType = None
 
     def __init__(self):
-        
+
         Operation.__init__(self)
         return
 
@@ -530,9 +530,9 @@ class ParamWriter(Operation):
             dsDict['variable'] = self.dataList[i]
             #---------------------    Conditionals    ------------------------
             #There is no data
-            
+
             if dataAux is None:
-                
+
                 return 0
 
             if isinstance(dataAux, (int, float, numpy.integer, numpy.float)):
@@ -704,7 +704,7 @@ class ParamWriter(Operation):
             return False
 
     def setNextFile(self):
-        
+
         ext = self.ext
         path = self.path
         setFile = self.setFile
@@ -785,7 +785,7 @@ class ParamWriter(Operation):
                 for j in range(dsInfo['dsNumber']):
                     dsInfo = dsList[i]
                     tableName = dsInfo['dsName']
-                    
+
 
                     if dsInfo['nDim'] == 3:
                         shape = dsInfo['shape'].astype(int)
@@ -954,7 +954,7 @@ class ParamWriter(Operation):
 
         self.dataOut = dataOut
         if not(self.isConfig):
-            self.setup(dataOut, path=path, blocksPerFile=blocksPerFile, 
+            self.setup(dataOut, path=path, blocksPerFile=blocksPerFile,
                        metadataList=metadataList, dataList=dataList, mode=mode,
                        setType=setType)
 
@@ -963,7 +963,7 @@ class ParamWriter(Operation):
 
         self.putData()
         return
-        
+
 
 
 class ParameterReader(Reader, ProcessingUnit):
@@ -992,55 +992,61 @@ class ParameterReader(Reader, ProcessingUnit):
 
         self.set_kwargs(**kwargs)
         if not self.ext.startswith('.'):
-            self.ext = '.{}'.format(self.ext)            
+            self.ext = '.{}'.format(self.ext)
 
         if self.online:
             log.log("Searching files in online mode...", self.name)
 
             for nTries in range(self.nTries):
                 fullpath = self.searchFilesOnLine(self.path, self.startDate,
-                    self.endDate, self.expLabel, self.ext, self.walk, 
+                    self.endDate, self.expLabel, self.ext, self.walk,
                     self.filefmt, self.folderfmt)
 
                 try:
                     fullpath = next(fullpath)
                 except:
                     fullpath = None
-                
+
                 if fullpath:
                     break
 
                 log.warning(
                     'Waiting {} sec for a valid file in {}: try {} ...'.format(
-                        self.delay, self.path, nTries + 1), 
+                        self.delay, self.path, nTries + 1),
                     self.name)
                 time.sleep(self.delay)
 
             if not(fullpath):
                 raise schainpy.admin.SchainError(
-                    'There isn\'t any valid file in {}'.format(self.path))                    
+                    'There isn\'t any valid file in {}'.format(self.path))
 
             pathname, filename = os.path.split(fullpath)
             self.year = int(filename[1:5])
             self.doy = int(filename[5:8])
-            self.set = int(filename[8:11]) - 1                
+            self.set = int(filename[8:11]) - 1
         else:
             log.log("Searching files in {}".format(self.path), self.name)
-            self.filenameList = self.searchFilesOffLine(self.path, self.startDate, 
+            self.filenameList = self.searchFilesOffLine(self.path, self.startDate,
                 self.endDate, self.expLabel, self.ext, self.walk, self.filefmt, self.folderfmt)
-        
-        self.setNextFile()
 
+        self.setNextFile()
+        '''
+        # try to implement wradlib
+        pathname,filename = os.path.split(self.filename)
+        f = wrl.util.get_wradlib_data_file(self.filename)
+        fcontent = wrl.io.read_generic_hdf5(f)
+        print(pathname,filename)
+        '''
         return
 
     def readFirstHeader(self):
         '''Read metadata and data'''
 
-        self.__readMetadata()        
+        self.__readMetadata()
         self.__readData()
         self.__setBlockList()
         self.blockIndex = 0
-        
+
         return
 
     def __setBlockList(self):
@@ -1057,19 +1063,27 @@ class ParameterReader(Reader, ProcessingUnit):
 
         startTime = self.startTime
         endTime = self.endTime
-
         index = self.listDataname.index('utctime')
         thisUtcTime = self.listData[index]
         self.interval = numpy.min(thisUtcTime[1:] - thisUtcTime[:-1])
-
+        try:
+            index = self.listMetaname.index('timeZone')
+            tz = self.listMeta[index]
+            if tz == 0:
+                print("[Metadata] Attribute timeZone = %d,  dataOut in utc"%(tz))
+            else:
+                print("[Metadata] Attribute timeZone = %d,  dataOut in LT"%(tz))
+            thisUtcTime += tz*60
+        except:
+            print("[Metadata] There is no attribute timeZone , by default assume dataOut was recorded in LT")
+            tz=300
+            thisUtcTime += tz*60
         if self.timezone == 'lt':
             thisUtcTime -= 5*3600
 
-        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0] + 5*3600)
-
+        thisDatetime = datetime.datetime.fromtimestamp(thisUtcTime[0])
         thisDate = thisDatetime.date()
         thisTime = thisDatetime.time()
-
         startUtcTime = (datetime.datetime.combine(thisDate,startTime) - datetime.datetime(1970, 1, 1)).total_seconds()
         endUtcTime = (datetime.datetime.combine(thisDate,endTime) - datetime.datetime(1970, 1, 1)).total_seconds()
 
@@ -1099,7 +1113,7 @@ class ParameterReader(Reader, ProcessingUnit):
                 else:
                     data = gp[name].value
                     listMetaname.append(name)
-                    listMetadata.append(data)            
+                    listMetadata.append(data)
         elif self.metadata:
             metadata = json.loads(self.metadata)
             listShapes = {}
@@ -1115,7 +1129,7 @@ class ParameterReader(Reader, ProcessingUnit):
 
         self.listShapes = listShapes
         self.listMetaname = listMetaname
-        self.listMeta = listMetadata      
+        self.listMeta = listMetadata
 
         return
 
@@ -1123,7 +1137,7 @@ class ParameterReader(Reader, ProcessingUnit):
 
         listdataname = []
         listdata = []
-        
+
         if 'Data' in self.fp:
             grp = self.fp['Data']
             for item in list(grp.items()):
@@ -1137,7 +1151,7 @@ class ParameterReader(Reader, ProcessingUnit):
                     for i in range(dim):
                         array.append(grp[name]['table{:02d}'.format(i)].value)
                     array = numpy.array(array)
-                    
+
                 listdata.append(array)
         elif self.metadata:
             metadata = json.loads(self.metadata)
@@ -1160,9 +1174,8 @@ class ParameterReader(Reader, ProcessingUnit):
         self.listDataname = listdataname
         self.listData = listdata
         return
-    
-    def getData(self):
 
+    def getData(self):
         for i in range(len(self.listMeta)):
             setattr(self.dataOut, self.listMetaname[i], self.listMeta[i])
 
@@ -1174,9 +1187,16 @@ class ParameterReader(Reader, ProcessingUnit):
                 setattr(self.dataOut, self.listDataname[j], self.listData[j][:,self.blockIndex])
 
         self.dataOut.paramInterval = self.interval
+
+        try:
+            thisDatetime = datetime.datetime.fromtimestamp(self.dataOut.utctime)
+            '''REMEMBER THIS'''
+            #print("[Reading] Block No. %d -> %s" % (self.blockIndex,thisDatetime.ctime()))
+        except:
+            pass
+
         self.dataOut.flagNoData = False
         self.blockIndex += 1
-
         return
 
     def run(self, **kwargs):
@@ -1230,7 +1250,7 @@ class ParameterWriter(Operation):
     lastTime = None
 
     def __init__(self):
-        
+
         Operation.__init__(self)
         return
 
@@ -1257,7 +1277,7 @@ class ParameterWriter(Operation):
                 dsDict['nDim'] = len(dataAux.shape)
                 dsDict['shape'] = dataAux.shape
                 dsDict['dsNumber'] = dataAux.shape[0]
-            
+
             dsList.append(dsDict)
             tableList.append((self.dataList[i], dsDict['nDim']))
 
@@ -1274,7 +1294,7 @@ class ParameterWriter(Operation):
             self.lastTime = currentTime
             self.currentDay = dataDay
             return False
-        
+
         timeDiff = currentTime - self.lastTime
 
         #Si el dia es diferente o si la diferencia entre un dato y otro supera la hora
@@ -1292,7 +1312,7 @@ class ParameterWriter(Operation):
 
         self.dataOut = dataOut
         if not(self.isConfig):
-            self.setup(path=path, blocksPerFile=blocksPerFile, 
+            self.setup(path=path, blocksPerFile=blocksPerFile,
                        metadataList=metadataList, dataList=dataList,
                        setType=setType)
 
@@ -1301,9 +1321,9 @@ class ParameterWriter(Operation):
 
         self.putData()
         return
-        
+
     def setNextFile(self):
-        
+
         ext = self.ext
         path = self.path
         setFile = self.setFile
@@ -1369,17 +1389,17 @@ class ParameterWriter(Operation):
         return
 
     def writeData(self, fp):
-        
+
         grp = fp.create_group("Data")
         dtsets = []
         data = []
-        
+
         for dsInfo in self.dsList:
             if dsInfo['nDim'] == 0:
                 ds = grp.create_dataset(
-                    dsInfo['variable'], 
+                    dsInfo['variable'],
                     (self.blocksPerFile, ),
-                    chunks=True, 
+                    chunks=True,
                     dtype=numpy.float64)
                 dtsets.append(ds)
                 data.append((dsInfo['variable'], -1))
@@ -1387,7 +1407,7 @@ class ParameterWriter(Operation):
                 sgrp = grp.create_group(dsInfo['variable'])
                 for i in range(dsInfo['dsNumber']):
                     ds = sgrp.create_dataset(
-                        'table{:02d}'.format(i), 
+                        'table{:02d}'.format(i),
                         (self.blocksPerFile, ) + dsInfo['shape'][1:],
                         chunks=True)
                     dtsets.append(ds)
@@ -1395,7 +1415,7 @@ class ParameterWriter(Operation):
         fp.flush()
 
         log.log('Creating file: {}'.format(fp.filename), self.name)
-        
+
         self.ds = dtsets
         self.data = data
         self.firsttime = True

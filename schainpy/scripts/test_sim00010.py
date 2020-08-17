@@ -76,7 +76,7 @@ opObj10 = procUnitConfObjC.addOperation(name='ParameterWriter')
 opObj10.addParameter(name='path',value=figpath)
 #opObj10.addParameter(name='mode',value=0)
 opObj10.addParameter(name='blocksPerFile',value='100',format='int')
-opObj10.addParameter(name='metadataList',value='utctimeInit,timeInterval',format='list')
-opObj10.addParameter(name='dataList',value='data_POW,data_DOP,data_WIDTH,data_SNR')#,format='list'
+opObj10.addParameter(name='metadataList',value='utctimeInit,paramInterval,heightList',format='list')
+opObj10.addParameter(name='dataList',value='data_POW,data_DOP,utctime')#,format='list'
 
 controllerObj.start()

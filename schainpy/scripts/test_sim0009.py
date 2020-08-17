@@ -2,7 +2,7 @@ import os,sys
 import datetime
 import time
 from schainpy.controller import Project
-path    = '/home/alex/Downloads/NEW_WR2/spc16removeDC'
+path    = '/home/alex/Downloads/hdf5_testPP2'
 figpath = path
 desc            = "Simulator Test"
 
@@ -51,7 +51,7 @@ opObj11 = procUnitConfObjA.addOperation(name='PulsePairVoltage', optype='other')
 opObj11.addParameter(name='n', value='625', format='int')#10
 opObj11.addParameter(name='removeDC', value=1, format='int')
 
-#opObj11 = procUnitConfObjA.addOperation(name='PulsepairPowerPlot', optype='other')
+#opObj11 = procUnitConfObjA.addOperation(name='PulsepairPowerPlot', optype='other')#,dataPP_SNR,dataPP_WIDTH
 #opObj11 = procUnitConfObjA.addOperation(name='PulsepairSignalPlot', optype='other')
 
 
@@ -61,13 +61,11 @@ opObj11.addParameter(name='removeDC', value=1, format='int')
 #opObj11 = procUnitConfObjA.addOperation(name='PulsepairSpecwidthPlot', optype='other')
 
 procUnitConfObjB= controllerObj.addProcUnit(datatype='ParametersProc',inputId=procUnitConfObjA.getId())
-
-
 opObj10 = procUnitConfObjB.addOperation(name='ParameterWriter')
 opObj10.addParameter(name='path',value=figpath)
-#opObj10.addParameter(name='mode',value=0)
-opObj10.addParameter(name='blocksPerFile',value='100',format='int')
-opObj10.addParameter(name='metadataList',value='utctimeInit,timeInterval',format='list')
-opObj10.addParameter(name='dataList',value='dataPP_POW,dataPP_DOP,dataPP_SNR,dataPP_WIDTH')#,format='list'
+#opObj10.addParameter(name='mode',value=2)
+opObj10.addParameter(name='blocksPerFile',value='50',format='int')
+opObj10.addParameter(name='metadataList',value='utctimeInit,paramInterval,heightList,profileIndex,flagDataAsBlock',format='list')
+opObj10.addParameter(name='dataList',value='dataPP_POW,dataPP_DOP,utctime',format='list')#,format='list'
 
 controllerObj.start()

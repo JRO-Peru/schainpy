@@ -47,7 +47,7 @@ while(True):
     elev.append(ang_elev)
     time0.append(seconds)
     count +=1
-    if count == 100:
+    if count == 360:
         timetuple=time.localtime()
         epoc = time.mktime(timetuple)
          #print(epoc)
