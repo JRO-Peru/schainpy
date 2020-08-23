@@ -385,7 +385,7 @@ class Voltage(JROData):
         self.flagNoData = True
         self.flagDiscontinuousBlock = False
         self.utctime = None
-        self.timeZone = None
+        self.timeZone = 0
         self.dstFlag = None
         self.errorCount = None
         self.nCohInt = None
@@ -483,6 +483,7 @@ class Spectra(JROData):
         self.radarControllerHeaderObj = RadarControllerHeader()
         self.systemHeaderObj = SystemHeader()
         self.type = "Spectra"
+        self.timeZone = 0
 #        self.data = None
 #         self.dtype = None
 #        self.nChannels = 0
@@ -738,7 +739,6 @@ class Fits(JROData):
     flagDiscontinuousBlock = False
     useLocalTime = False
     utctime = None
-    timeZone = None
 #     ippSeconds = None
 #     timeInterval = None
     nCohInt = None
@@ -775,7 +775,7 @@ class Fits(JROData):
         self.profileIndex = 0
 
 #         self.utctime = None
-#         self.timeZone = None
+        self.timeZone = 0
 #         self.ltctime = None
 #         self.timeInterval = None
 #         self.header = None
@@ -913,7 +913,7 @@ class Correlation(JROData):
 
         self.utctime = None
 
-        self.timeZone = None
+        self.timeZone = 0
 
         self.dstFlag = None
 
@@ -1066,10 +1066,9 @@ class Parameters(Spectra):
         Constructor
         '''
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.systemHeaderObj = SystemHeader()
-
         self.type = "Parameters"
+        self.timeZone = 0
 
     def getTimeRange1(self, interval):
 
