@@ -291,8 +291,8 @@ RadarConst5 = RadarConst
 # print 'OffsetStartHeader ',self.OffsetStartHeader,'RecCounter ', self.RecCounter, 'Off2StartNxtRec ' , self.Off2StartNxtRec
 #OffRHeader= self.OffsetStartHeader + self.RecCounter*self.Off2StartNxtRec
 #startFp.seek(OffRHeader, os.SEEK_SET)
-print 'debe ser 48, RecCounter*811248', self.OffsetStartHeader, self.RecCounter, self.Off2StartNxtRec
-print 'Posicion del bloque:        ', OffRHeader
+print('debe ser 48, RecCounter*811248', self.OffsetStartHeader, self.RecCounter, self.Off2StartNxtRec)
+print('Posicion del bloque:        ', OffRHeader)
 
 header = numpy.fromfile(startFp, SRVI_STRUCTURE, 1)
 
@@ -326,6 +326,6 @@ self.Datasize = self.nProfiles * self.nChannels * self.nHeights * 2 * 4
 # print 'Datasize',self.Datasize
 endFp = self.OffsetStartHeader + self.RecCounter * self.Off2StartNxtRec
 
-print '=============================================='
+print('==============================================')
 
-print '=============================================='
+print('==============================================')

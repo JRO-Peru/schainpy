@@ -11,8 +11,11 @@ import sys
 import time
 import traceback
 import smtplib
-import ConfigParser
-import StringIO
+if sys.version[0] == '3':
+    from configparser import ConfigParser
+else:
+    from ConfigParser import ConfigParser
+import io
 from threading import Thread
 from multiprocessing import Process
 from email.mime.text import MIMEText
@@ -21,7 +24,7 @@ from email.mime.multipart import MIMEMultipart
 
 import schainpy
 from schainpy.utils import log
-from schainpy.model.graphics.jroplot_data import popup
+from schainpy.model.graphics.jroplot_base import popup
 
 def get_path():
     '''
@@ -65,7 +68,6 @@ class Alarm(Process):
     @staticmethod
     def send_email(**kwargs):
         notifier = SchainNotify()
-        print kwargs
         notifier.notify(**kwargs)            
 
     @staticmethod
@@ -144,10 +146,10 @@ class SchainConfigure():
             return
         
         # create Parser using standard module ConfigParser
-        self.__parser = ConfigParser.ConfigParser()
+        self.__parser = ConfigParser()
         
         # read conf file into a StringIO with "[madrigal]\n" section heading prepended
-        strConfFile = StringIO.StringIO("[schain]\n" + self.__confFile.read())
+        strConfFile = io.StringIO("[schain]\n" + self.__confFile.read())
 
         # parse StringIO configuration file
         self.__parser.readfp(strConfFile)
@@ -287,7 +289,7 @@ class SchainNotify:
 
         msg = MIMEMultipart()
         msg['Subject'] = subject
-        msg['From'] = "(Python SChain API): " + email_from
+        msg['From'] = "SChain API (v{}) <{}>".format(schainpy.__version__, email_from)
         msg['Reply-to'] = email_from
         msg['To'] = email_to
         
@@ -327,7 +329,7 @@ class SchainNotify:
             smtp.login(self.__emailFromAddress, self.__emailPass)
         
         # Send the email
-        try:
+        try:            
             smtp.sendmail(msg['From'], msg['To'], msg.as_string())
         except:
             log.error('Could not send the email to {}'.format(msg['To']), 'System')
@@ -355,7 +357,7 @@ class SchainNotify:
         if not self.__emailToAddress:
             return 0
         
-        print "***** Sending alert to %s *****" %self.__emailToAddress
+        print("***** Sending alert to %s *****" %self.__emailToAddress)
         # set up message
     
         sent=self.sendEmail(email_from=self.__emailFromAddress,
@@ -500,4 +502,4 @@ if __name__ == '__main__':
 
     test.sendAlert('This is a message from the python module SchainNotify', 'Test from SchainNotify')
 
-    print 'Hopefully message sent - check.'
+    print('Hopefully message sent - check.')

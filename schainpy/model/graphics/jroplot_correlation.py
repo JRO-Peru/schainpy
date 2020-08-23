@@ -2,10 +2,10 @@ import os
 import datetime
 import numpy
 import copy
-from schainpy.model import *
-from figure import Figure, isRealtime
+from schainpy.model.graphics.jroplot_base import Plot
 
-class CorrelationPlot(Figure):
+
+class CorrelationPlot(Plot):
     isConfig = None
     __nsubplots = None
 
@@ -99,7 +99,7 @@ class CorrelationPlot(Figure):
 
         if realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
-                print 'Skipping this plot function'
+                print('Skipping this plot function')
                 return
 
         if channelList == None:
@@ -108,7 +108,7 @@ class CorrelationPlot(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         factor = dataOut.normFactor

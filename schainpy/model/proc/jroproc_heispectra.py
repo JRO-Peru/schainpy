@@ -1,13 +1,16 @@
 import numpy
 
-from jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import SpectraHeis
+from schainpy.utils import log
+
+
 
 class SpectraHeisProc(ProcessingUnit):
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)#, **kwargs)
 
 #        self.buffer = None
 #        self.firstdatatime = None
@@ -86,7 +89,7 @@ class SpectraHeisProc(ProcessingUnit):
         if self.dataIn.type == "Fits":
             self.__updateObjFromFits()
             self.dataOut.flagNoData = False
-            return
+            return 
 
         if self.dataIn.type == "SpectraHeis":
             self.dataOut.copy(self.dataIn)
@@ -99,7 +102,7 @@ class SpectraHeisProc(ProcessingUnit):
 
             return
 
-        raise ValueError, "The type object %s is not valid"%(self.dataIn.type)
+        raise ValueError("The type object %s is not valid"%(self.dataIn.type))
 
 
     def selectChannels(self, channelList):
@@ -133,8 +136,8 @@ class SpectraHeisProc(ProcessingUnit):
 
         for channelIndex in channelIndexList:
             if channelIndex not in self.dataOut.channelIndexList:
-                print channelIndexList
-                raise ValueError, "The value %d in channelIndexList is not valid" %channelIndex
+                print(channelIndexList)
+                raise ValueError("The value %d in channelIndexList is not valid" %channelIndex)
 
 #         nChannels = len(channelIndexList)
 
@@ -144,6 +147,7 @@ class SpectraHeisProc(ProcessingUnit):
         self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
 
         return 1
+
 
 class IncohInt4SpectraHeis(Operation):
 
@@ -163,9 +167,9 @@ class IncohInt4SpectraHeis(Operation):
 
     n = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 #         self.isConfig = False
 
     def setup(self, n=None, timeInterval=None, overlapping=False):
@@ -187,7 +191,7 @@ class IncohInt4SpectraHeis(Operation):
 
 
         if n == None and timeInterval == None:
-            raise ValueError, "n or timeInterval should be specified ..."
+            raise ValueError("n or timeInterval should be specified ...")
 
         if n != None:
             self.n = n
@@ -342,3 +346,5 @@ class IncohInt4SpectraHeis(Operation):
 #             dataOut.timeInterval = dataOut.ippSeconds * dataOut.nIncohInt
 #            dataOut.timeInterval = self.__timeInterval*self.n
             dataOut.flagNoData = False
+        
+        return dataOut

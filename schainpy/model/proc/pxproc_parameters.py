@@ -11,7 +11,7 @@ from time import gmtime
 
 from numpy import transpose
 
-from jroproc_base import ProcessingUnit, Operation
+from .jroproc_base import ProcessingUnit, Operation
 from schainpy.model.data.jrodata import Parameters
 
 

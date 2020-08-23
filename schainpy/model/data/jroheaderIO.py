@@ -8,6 +8,7 @@ import numpy
 import copy
 import datetime
 import inspect
+from schainpy.utils import log
 
 SPEED_OF_LIGHT = 299792458
 SPEED_OF_LIGHT = 3e8
@@ -110,7 +111,7 @@ class Header(object):
         message += self.__class__.__name__.upper() + "\n"
         message += "#" * 50 + "\n"
 
-        keyList = self.__dict__.keys()
+        keyList = list(self.__dict__.keys())
         keyList.sort()
 
         for key in keyList:
@@ -122,7 +123,7 @@ class Header(object):
             if attr:
                 message += "%s = %s" % ("size", attr) + "\n"
 
-        print message
+        print(message)
 
 
 class BasicHeader(Header):
@@ -161,9 +162,9 @@ class BasicHeader(Header):
                 header = numpy.fromfile(fp, BASIC_STRUCTURE, 1)
             else:
                 header = numpy.fromstring(fp, BASIC_STRUCTURE, 1)
-        except Exception, e:
-            print "BasicHeader: "
-            print e
+        except Exception as e:
+            print("BasicHeader: ")
+            print(e)
             return 0
 
         self.size = int(header['nSize'][0])
@@ -229,7 +230,7 @@ class SystemHeader(Header):
         self.length = 0
         try:
             startFp = fp.tell()
-        except Exception, e:
+        except Exception as e:
             startFp = None
             pass
 
@@ -238,8 +239,8 @@ class SystemHeader(Header):
                 header = numpy.fromfile(fp, SYSTEM_STRUCTURE, 1)
             else:
                 header = numpy.fromstring(fp, SYSTEM_STRUCTURE, 1)
-        except Exception, e:
-            print "System Header: " + str(e)
+        except Exception as e:
+            print("System Header: " + str(e))
             return 0
 
         self.size = header['nSize'][0]
@@ -344,7 +345,7 @@ class RadarControllerHeader(Header):
         self.length = 0
         try:
             startFp = fp.tell()
-        except Exception, e:
+        except Exception as e:
             startFp = None
             pass
 
@@ -354,8 +355,8 @@ class RadarControllerHeader(Header):
             else:
                 header = numpy.fromstring(fp, RADAR_STRUCTURE, 1)
             self.length += header.nbytes
-        except Exception, e:
-            print "RadarControllerHeader: " + str(e)
+        except Exception as e:
+            print("RadarControllerHeader: " + str(e))
             return 0
 
         size = int(header['nSize'][0])
@@ -384,8 +385,8 @@ class RadarControllerHeader(Header):
                 samplingWindow = numpy.fromstring(
                     fp[self.length:], SAMPLING_STRUCTURE, self.nWindows)
             self.length += samplingWindow.nbytes
-        except Exception, e:
-            print "RadarControllerHeader: " + str(e)
+        except Exception as e:
+            print("RadarControllerHeader: " + str(e))
             return 0
         self.nHeights = int(numpy.sum(samplingWindow['nsa']))
         self.firstHeight = samplingWindow['h0']
@@ -399,8 +400,8 @@ class RadarControllerHeader(Header):
                 self.Taus = numpy.fromstring(
                     fp[self.length:], '<f4', self.numTaus)
             self.length += self.Taus.nbytes
-        except Exception, e:
-            print "RadarControllerHeader: " + str(e)
+        except Exception as e:
+            print("RadarControllerHeader: " + str(e))
             return 0
 
         self.code_size = 0
@@ -419,8 +420,8 @@ class RadarControllerHeader(Header):
                     self.nBaud = numpy.fromstring(
                         fp[self.length:], '<u4', 1)[0]
                     self.length += self.nBaud.nbytes
-            except Exception, e:
-                print "RadarControllerHeader: " + str(e)
+            except Exception as e:
+                print("RadarControllerHeader: " + str(e))
                 return 0
             code = numpy.empty([self.nCode, self.nBaud], dtype='i1')
 
@@ -433,13 +434,13 @@ class RadarControllerHeader(Header):
                         temp = numpy.fromstring(
                             fp, 'u4', int(numpy.ceil(self.nBaud / 32.)))
                     self.length += temp.nbytes
-                except Exception, e:
-                    print "RadarControllerHeader: " + str(e)
+                except Exception as e:
+                    print("RadarControllerHeader: " + str(e))
                     return 0
 
                 for ib in range(self.nBaud - 1, -1, -1):
-                    code[ic, ib] = temp[ib / 32] % 2
-                    temp[ib / 32] = temp[ib / 32] / 2
+                    code[ic, ib] = temp[int(ib / 32)] % 2
+                    temp[int(ib / 32)] = temp[int(ib / 32)] / 2
 
             self.code = 2.0 * code - 1.0
             self.code_size = int(numpy.ceil(self.nBaud / 32.)) * self.nCode * 4
@@ -454,7 +455,7 @@ class RadarControllerHeader(Header):
 
             if fp.tell() != endFp:
                 #             fp.seek(endFp)
-                print "%s: Radar Controller Header size is not consistent: from data [%d] != from header field [%d]" % (fp.name, fp.tell() - startFp, size)
+                print("%s: Radar Controller Header size is not consistent: from data [%d] != from header field [%d]" % (fp.name, fp.tell() - startFp, size))
     #             return 0
 
             if fp.tell() > endFp:
@@ -557,7 +558,7 @@ class RadarControllerHeader(Header):
 
     def set_size(self, value):
 
-        raise IOError, "size is a property and it cannot be set, just read"
+        raise IOError("size is a property and it cannot be set, just read")
 
         return
 
@@ -617,7 +618,7 @@ class ProcessingHeader(Header):
         self.length = 0
         try:
             startFp = fp.tell()
-        except Exception, e:
+        except Exception as e:
             startFp = None
             pass
 
@@ -627,8 +628,8 @@ class ProcessingHeader(Header):
             else:
                 header = numpy.fromstring(fp, PROCESSING_STRUCTURE, 1)
             self.length += header.nbytes
-        except Exception, e:
-            print "ProcessingHeader: " + str(e)
+        except Exception as e:
+            print("ProcessingHeader: " + str(e))
             return 0
 
         size = int(header['nSize'][0])
@@ -650,8 +651,8 @@ class ProcessingHeader(Header):
                 samplingWindow = numpy.fromstring(
                     fp[self.length:], SAMPLING_STRUCTURE, self.nWindows)
             self.length += samplingWindow.nbytes
-        except Exception, e:
-            print "ProcessingHeader: " + str(e)
+        except Exception as e:
+            print("ProcessingHeader: " + str(e))
             return 0
 
         self.nHeights = int(numpy.sum(samplingWindow['nsa']))
@@ -667,8 +668,8 @@ class ProcessingHeader(Header):
                 self.spectraComb = numpy.fromstring(
                     fp[self.length:], 'u1', 2 * self.totalSpectra)
             self.length += self.spectraComb.nbytes
-        except Exception, e:
-            print "ProcessingHeader: " + str(e)
+        except Exception as e:
+            print("ProcessingHeader: " + str(e))
             return 0
 
         if ((self.processFlags & PROCFLAG.DEFINE_PROCESS_CODE) == PROCFLAG.DEFINE_PROCESS_CODE):
@@ -783,7 +784,7 @@ class ProcessingHeader(Header):
 
     def set_size(self, value):
 
-        raise IOError, "size is a property and it cannot be set, just read"
+        raise IOError("size is a property and it cannot be set, just read")
 
         return
 

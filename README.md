@@ -6,33 +6,29 @@ Signal Chain (SCh) is a radar data processing library developed using [Python](w
 
 ## Installation
 
-Install system dependencies, clone the latest version from [here](http://jro-dev.igp.gob.pe/rhodecode/schain/) and install it as a normal python package.
+Install system dependencies, clone the latest version from [here](http://jro-dev.igp.gob.pe/rhodecode/schain/) and install it as a normal python package, we strongly recommend to use Anaconda or a virtual environment for the installation.
 
-### Linux based system
+### Dependencies
+- GCC (gcc or gfortran)
+- Python.h (python-dev or python-devel)
+- Python-TK (python-tk)
+- HDF5 libraries (libhdf5-dev)
+
+### Linux based system (e.g. ubuntu)
 ```
-$ sudo apt-get install python-pip python-dev gfortran libpng-dev freetype* libblas-dev liblapack-dev libatlas-base-dev python-qt4 python-tk libssl-dev libhdf5-dev
 $ git clone http://jro-dev.igp.gob.pe/rhodecode/schain/
 $ cd schain
+$ git checkout `schain-branch` (optional)
 $ sudo pip install ./
-
 ```
 
 ### MAC Os 
 ```
 $ brew install python
-$ brew install cartr/qt4/pyqt
 $ git clone http://jro-dev.igp.gob.pe/rhodecode/schain/
 $ cd schain
-$ pip install ./
-```
-
-**It is recommended to install schain in a virtual environment**
-```
-$ virtualenv /path/to/virtual
-$ source /path/to/virtual/bin/activate
-(virtual) $ cd schain
-(virtual) $ pip install ./
-(virtual) $ bash link_PyQt4.sh
+$ git checkout `schain-branch` (optional)
+$ sudo pip install ./
 ```
 
 ### Docker
@@ -46,66 +42,75 @@ $ docker build -t schain .
 You can run a container using an xml file or a schain script also you need to mount a volume for the data input and for the output files/plots
 ```
 $ docker run -it --rm --volume /path/to/host/data:/data schain xml /data/test.xml
-$ docker run -it --rm --volume /path/to/host/data:/data --entrypoint=/bin/python schain /data/test.py
+$ docker run -it --rm --volume /path/to/host/data:/data --entrypoint /urs/local/bin/python schain /data/test.py
 ```
+
+## CLI (command line interface)
+
+Signal Chain provides the following commands:
+
+- schainGUI: Open the GUI
+- schain: Signal chain command line
+
 
 ## First Script
 
-Read Spectra data (.pdata) - remove dc - plot spectra & RTI
+Here you can find an script to read Spectra data (.pdata), remove dc and plot spectra & RTI
 
-Import SCh and creating a project
+First import SCh and creating a project
 
 ```python
 #!/usr/bin/python
 
 from schainpy.controller import Project
 
-controller = Project()
-controller.setup(id = '100',
-                 name='test',
-                 description='Basic experiment')
-
-
+prj = Project()
+prj.setup(
+    id = '100',
+    name='test',
+    description='Basic experiment'
+    )
 ```
 
-Adding read unit and operations
+Add read unit and operations
 
 ```python
-read_unit = controller.addReadUnit(datatype='Spectra',
-                                   path='/path/to/pdata/',
-                                   startDate='2014/01/31',
-                                   endDate='2014/03/31',
-                                   startTime='00:00:00',
-                                   endTime='23:59:59',
-                                   online=0,
-                                   walk=0)
+read_unit = prj.addReadUnit(
+    datatype='Spectra',
+    path='/path/to/pdata/',
+    startDate='2014/01/31',
+    endDate='2014/03/31',
+    startTime='00:00:00',
+    endTime='23:59:59',
+    online=0,
+    walk=0
+    )
 
-proc_unit = controller.addProcUnit(datatype='Spectra',
-                                   inputId=read_unit.getId())
+proc_unit = prj.addProcUnit(datatype='Spectra', inputId=read_unit.getId())
 
 op = proc_unit.addOperation(name='selectChannels')
-op.addParameter(name='channelList', value='0,1', format='intlist')
+op.addParameter(name='channelList', value='0,1')
 
 op = proc_unit.addOperation(name='selectHeights')
-op.addParameter(name='minHei', value='80', format='float')
-op.addParameter(name='maxHei', value='200', format='float')
+op.addParameter(name='minHei', value='80')
+op.addParameter(name='maxHei', value='200')
 
 op = proc_unit.addOperation(name='removeDC')
 
 ```
 
-Plotting data & start project
+Plot data & start project
 
 ```python
-op = proc_unit.addOperation(name='SpectraPlot', optype='other')
-op.addParameter(name='id', value='1', format='int')
-op.addParameter(name='wintitle', value='Spectra', format='str')
+op = proc_unit.addOperation(name='SpectraPlot')
+op.addParameter(name='id', value='1')
+op.addParameter(name='wintitle', value='Spectra')
 
-op = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-op.addParameter(name='id', value='2', format='int')
-op.addParameter(name='wintitle', value='RTI', format='str')
+op = procUnitConfObj1.addOperation(name='RTIPlot')
+op.addParameter(name='id', value='2')
+op.addParameter(name='wintitle', value='RTI')
 
-controller.start()
+prj.start()
 
 ```
 
@@ -115,13 +120,13 @@ Full script
 ```python
 #!/usr/bin/python
 
-from schainpy.controller import Project
+from schainpy.prj import Project
 
-controller = Project()
-controller.setup(id = '100',
+prj = Project()
+prj.setup(id = '100',
                  name='test',
                  description='Basic experiment')
-read_unit = controller.addReadUnit(datatype='Spectra',
+read_unit = prj.addReadUnit(datatype='Spectra',
                                    path='/path/to/pdata/',
                                    startDate='2014/01/31',
                                    endDate='2014/03/31',
@@ -130,26 +135,24 @@ read_unit = controller.addReadUnit(datatype='Spectra',
                                    online=0,
                                    walk=0)
 
-proc_unit = controller.addProcUnit(datatype='Spectra',
+proc_unit = prj.addProcUnit(datatype='Spectra',
                                    inputId=read_unit.getId())
 
 op = proc_unit.addOperation(name='selectChannels')
-op.addParameter(name='channelList', value='0,1', format='intlist')
+op.addParameter(name='channelList', value='0,1')
 
 op = proc_unit.addOperation(name='selectHeights')
-op.addParameter(name='minHei', value='80', format='float')
-op.addParameter(name='maxHei', value='200', format='float')
+op.addParameter(name='minHei', value='80')
+op.addParameter(name='maxHei', value='200')
 
 op = proc_unit.addOperation(name='removeDC')
 
-op = proc_unit.addOperation(name='SpectraPlot', optype='other')
-op.addParameter(name='id', value='6', format='int')
+op = proc_unit.addOperation(name='SpectraPlot')
 op.addParameter(name='wintitle', value='Spectra', format='str')
 
-op = procUnitConfObj1.addOperation(name='RTIPlot', optype='other')
-op.addParameter(name='id', value='2', format='int')
+op = procUnitConfObj1.addOperation(name='RTIPlot')
 op.addParameter(name='wintitle', value='RTI', format='str')
 
-controller.start()
+prj.start()
 
 ```

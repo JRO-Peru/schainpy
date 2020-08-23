@@ -98,7 +98,7 @@ class JULIAParamReader(JRODataReader, ProcessingUnit):
         self.format = format        
 
         if self.path is None:
-            raise ValueError, "The path is not valid"
+            raise ValueError("The path is not valid")
 
         if ext is None:
             ext = self.ext

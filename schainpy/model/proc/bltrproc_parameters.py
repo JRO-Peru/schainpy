@@ -12,7 +12,7 @@ from time import gmtime
 
 from numpy import transpose
 
-from jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jrodata import Parameters
 
 
@@ -39,13 +39,12 @@ class BLTRParametersProc(ProcessingUnit):
         self.dataOut.year - Experiment year
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         '''
         Inputs: None           
         '''
-        ProcessingUnit.__init__(self, **kwargs)
+        ProcessingUnit.__init__(self)
         self.dataOut = Parameters()
-        self.isConfig = False
 
     def setup(self, mode):
         '''
@@ -77,12 +76,13 @@ class BLTRParametersProc(ProcessingUnit):
                 self.dataOut.data_param[i][SNRavgdB <= snr_threshold] = numpy.nan
 
 # TODO
+
 class OutliersFilter(Operation):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         '''
         '''
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)
 
     def run(self, svalue2, method, factor, filter, npoints=9):
         '''
@@ -95,7 +95,7 @@ class OutliersFilter(Operation):
             npoints    - number of points for mask filter
         '''
 
-        print '    Outliers Filter {} {} / threshold = {}'.format(svalue, svalue, factor)
+        print('    Outliers Filter {} {} / threshold = {}'.format(svalue, svalue, factor))
 
         
         yaxis = self.dataOut.heightList
@@ -400,4 +400,3 @@ class OutliersFilter(Operation):
         return startDTList, data_fHeigths_List, data_fZonal_List, data_fMeridional_List, data_fVertical_List
 
 
-  

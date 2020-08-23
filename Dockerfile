@@ -1,4 +1,4 @@
-FROM python:2.7-slim
+FROM python:3.7-slim
 
 RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
 	git \
@@ -10,7 +10,7 @@ RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommend
 	libatlas-base-dev \
 	libssl-dev \
 	libhdf5-dev \
-	&& git clone --branch v2.3 --depth 1 \
+	&& git clone --branch v3.0-devel --depth 1 \
 	http://jro-dev.igp.gob.pe/rhodecode/schain \
 	&& pip install numpy \
 	&& cd schain \

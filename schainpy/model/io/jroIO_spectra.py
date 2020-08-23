@@ -5,10 +5,12 @@ Created on Jul 2, 2014
 '''
 import numpy
 
-from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from schainpy.model.io.jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Spectra
+from schainpy.utils import log
+
 
 class SpectraReader(JRODataReader, ProcessingUnit):
     """
@@ -51,25 +53,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
     """
 
-    pts2read_SelfSpectra = 0
-
-    pts2read_CrossSpectra = 0
-
-    pts2read_DCchannels = 0
-
-    ext = ".pdata"
-
-    optchar = "P"
-
-    dataOut = None
-
-    nRdChannels = None
-
-    nRdPairs = None
-
-    rdPairList = []
-
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
         """
         Inicializador de la clase SpectraReader para la lectura de datos de espectros.
 
@@ -87,91 +71,24 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         Return      : None
         """
 
-        #Eliminar de la base la herencia
-        ProcessingUnit.__init__(self, **kwargs)
-
-#         self.isConfig = False
+        ProcessingUnit.__init__(self)
 
         self.pts2read_SelfSpectra = 0
-
         self.pts2read_CrossSpectra = 0
-
-        self.pts2read_DCchannels = 0
-
-        self.datablock = None
-
-        self.utc = None
-
+        self.pts2read_DCchannels = 0        
         self.ext = ".pdata"
-
         self.optchar = "P"
-
         self.basicHeaderObj = BasicHeader(LOCALTIME)
-
         self.systemHeaderObj = SystemHeader()
-
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.processingHeaderObj = ProcessingHeader()
-
-        self.online = 0
-
-        self.fp = None
-
-        self.idFile = None
-
-        self.dtype = None
-
-        self.fileSizeByHeader = None
-
-        self.filenameList = []
-
-        self.filename = None
-
-        self.fileSize = None
-
-        self.firstHeaderSize = 0
-
-        self.basicHeaderSize = 24
-
-        self.pathList = []
-
         self.lastUTTime = 0
-
         self.maxTimeStep = 30
-
-        self.flagNoMoreFiles = 0
-
-        self.set = 0
-
-        self.path = None
-
-        self.delay  = 60   #seconds
-
-        self.nTries = 3  #quantity tries
-
-        self.nFiles = 3   #number of files for searching
-
-        self.nReadBlocks = 0
-
-        self.flagIsNewFile = 1
-
-        self.__isFirstTimeOnline = 1
-
-#         self.ippSeconds = 0
-
-        self.flagDiscontinuousBlock = 0
-
-        self.flagIsNewBlock = 0
-
-        self.nTotalBlocks = 0
-
-        self.blocksize = 0
-
-        self.dataOut = self.createObjByDefault()
-
-        self.profileIndex = 1 #Always
-
+        self.dataOut = Spectra()
+        self.profileIndex = 1
+        self.nRdChannels = None
+        self.nRdPairs = None
+        self.rdPairList = []
 
     def createObjByDefault(self):
 
@@ -224,9 +141,6 @@ class SpectraReader(JRODataReader, ProcessingUnit):
             self.pts2read_DCchannels = int(self.systemHeaderObj.nChannels * self.processingHeaderObj.nHeights)
             self.blocksize += self.pts2read_DCchannels
 
-#        self.blocksize = self.pts2read_SelfSpectra + self.pts2read_CrossSpectra + self.pts2read_DCchannels
-
-
     def readBlock(self):
         """
         Lee el bloque de datos desde la posicion actual del puntero del archivo
@@ -248,7 +162,7 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         Exceptions:
             Si un bloque leido no es un bloque valido
         """
-        blockOk_flag = False
+        
         fpointer = self.fp.tell()
 
         spc = numpy.fromfile( self.fp, self.dtype[0], self.pts2read_SelfSpectra )
@@ -261,7 +175,6 @@ class SpectraReader(JRODataReader, ProcessingUnit):
         if self.processingHeaderObj.flag_dc:
             dc = numpy.fromfile( self.fp, self.dtype, self.pts2read_DCchannels ) #int(self.processingHeaderObj.nHeights*self.systemHeaderObj.nChannels) )
             dc = dc.reshape( (self.systemHeaderObj.nChannels, self.processingHeaderObj.nHeights) ) #transforma a un arreglo 2D
-
 
         if not self.processingHeaderObj.shif_fft:
             #desplaza a la derecha en el eje 2 determinadas posiciones
@@ -298,39 +211,19 @@ class SpectraReader(JRODataReader, ProcessingUnit):
     def getFirstHeader(self):
 
         self.getBasicHeader()
-
         self.dataOut.systemHeaderObj = self.systemHeaderObj.copy()
-
         self.dataOut.radarControllerHeaderObj = self.radarControllerHeaderObj.copy()
-
-#         self.dataOut.ippSeconds = self.ippSeconds
-
-#         self.dataOut.timeInterval = self.radarControllerHeaderObj.ippSeconds * self.processingHeaderObj.nCohInt * self.processingHeaderObj.nIncohInt * self.processingHeaderObj.profilesPerBlock
-
         self.dataOut.dtype = self.dtype
-
-#         self.dataOut.nPairs = self.nPairs
-
         self.dataOut.pairsList = self.rdPairList
-
         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock
-
         self.dataOut.nFFTPoints = self.processingHeaderObj.profilesPerBlock
-
         self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
-
         self.dataOut.nIncohInt = self.processingHeaderObj.nIncohInt
-
         xf = self.processingHeaderObj.firstHeight + self.processingHeaderObj.nHeights*self.processingHeaderObj.deltaHeight
-
         self.dataOut.heightList = numpy.arange(self.processingHeaderObj.firstHeight, xf, self.processingHeaderObj.deltaHeight)
-
-        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
-
+        self.dataOut.channelList = list(range(self.systemHeaderObj.nChannels))
         self.dataOut.flagShiftFFT = True    #Data is always shifted
-
         self.dataOut.flagDecodeData = self.processingHeaderObj.flag_decode #asumo q la data no esta decodificada
-
         self.dataOut.flagDeflipData = self.processingHeaderObj.flag_deflip #asumo q la data esta sin flip
 
     def getData(self):
@@ -347,14 +240,12 @@ class SpectraReader(JRODataReader, ProcessingUnit):
 
         Affected:
             self.dataOut
-
             self.flagDiscontinuousBlock
             self.flagIsNewBlock
         """
 
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
             return 0
 
         self.flagDiscontinuousBlock = 0
@@ -373,21 +264,17 @@ class SpectraReader(JRODataReader, ProcessingUnit):
             return 0
 
         self.getBasicHeader()
-
         self.getFirstHeader()
-
         self.dataOut.data_spc = self.data_spc
-
         self.dataOut.data_cspc = self.data_cspc
-
         self.dataOut.data_dc = self.data_dc
-
         self.dataOut.flagNoData = False
-
         self.dataOut.realtime = self.online
 
         return self.dataOut.data_spc
 
+
+@MPDecorator
 class SpectraWriter(JRODataWriter, Operation):
 
     """
@@ -395,25 +282,7 @@ class SpectraWriter(JRODataWriter, Operation):
     de los datos siempre se realiza por bloques.
     """
 
-    ext = ".pdata"
-
-    optchar = "P"
-
-    shape_spc_Buffer = None
-
-    shape_cspc_Buffer = None
-
-    shape_dc_Buffer = None
-
-    data_spc = None
-
-    data_cspc = None
-
-    data_dc = None
-
-#    dataOut = None
-
-    def __init__(self, **kwargs):
+    def __init__(self):
         """
         Inicializador de la clase SpectraWriter para la escritura de datos de espectros.
 
@@ -427,44 +296,22 @@ class SpectraWriter(JRODataWriter, Operation):
         Return: None
         """
 
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)
 
-        self.isConfig = False
-
-        self.nTotalBlocks = 0
-
+        self.ext = ".pdata"
+        self.optchar = "P"
+        self.shape_spc_Buffer = None
+        self.shape_cspc_Buffer = None
+        self.shape_dc_Buffer = None
         self.data_spc = None
-
         self.data_cspc = None
-
         self.data_dc = None
-
-        self.fp = None
-
-        self.flagIsNewFile = 1
-
-        self.nTotalBlocks = 0
-
-        self.flagIsNewBlock = 0
-
         self.setFile = None
-
-        self.dtype = None
-
-        self.path = None
-
         self.noMoreFiles = 0
-
-        self.filename = None
-
         self.basicHeaderObj = BasicHeader(LOCALTIME)
-
         self.systemHeaderObj = SystemHeader()
-
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.processingHeaderObj = ProcessingHeader()
-
 
     def hasAllDataInBuffer(self):
         return 1
@@ -494,7 +341,7 @@ class SpectraWriter(JRODataWriter, Operation):
 
 
     def writeBlock(self):
-        """
+        """processingHeaderObj
         Escribe el buffer en el file designado
 
         Affected:
@@ -511,24 +358,27 @@ class SpectraWriter(JRODataWriter, Operation):
 
         spc = numpy.transpose( self.data_spc, (0,2,1) )
         if not self.processingHeaderObj.shif_fft:
-            spc = numpy.roll( spc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+            spc = numpy.roll( spc, int(self.processingHeaderObj.profilesPerBlock/2), axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
         data = spc.reshape((-1))
         data = data.astype(self.dtype[0])
         data.tofile(self.fp)
 
         if self.data_cspc is not None:
-            data = numpy.zeros( self.shape_cspc_Buffer, self.dtype )
+            
             cspc = numpy.transpose( self.data_cspc, (0,2,1) )
+            data = numpy.zeros( numpy.shape(cspc), self.dtype )
+            #print 'data.shape', self.shape_cspc_Buffer
             if not self.processingHeaderObj.shif_fft:
-                cspc = numpy.roll( cspc, self.processingHeaderObj.profilesPerBlock/2, axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
+                cspc = numpy.roll( cspc, int(self.processingHeaderObj.profilesPerBlock/2), axis=2 ) #desplaza a la derecha en el eje 2 determinadas posiciones
             data['real'] = cspc.real
             data['imag'] = cspc.imag
             data = data.reshape((-1))
             data.tofile(self.fp)
 
         if self.data_dc is not None:
-            data = numpy.zeros( self.shape_dc_Buffer, self.dtype )
+            
             dc = self.data_dc
+            data = numpy.zeros( numpy.shape(dc), self.dtype )
             data['real'] = dc.real
             data['imag'] = dc.imag
             data = data.reshape((-1))
@@ -592,8 +442,6 @@ class SpectraWriter(JRODataWriter, Operation):
         if self.hasAllDataInBuffer():
 #            self.setFirstHeader()
             self.writeNextBlock()
-
-        return 1
 
     def __getBlockSize(self):
         '''

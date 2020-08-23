@@ -1,569 +1,179 @@
 '''
-Created on September , 2012
-@author:
+Main routines to create a Signal Chain project
 '''
 
+import re
 import sys
 import ast
 import datetime
 import traceback
-import math
 import time
-from multiprocessing import Process, cpu_count
+from multiprocessing import Process, Queue
+from threading import Thread
+from xml.etree.ElementTree import ElementTree, Element, SubElement
 
-from xml.etree.ElementTree import ElementTree, Element, SubElement, tostring
-from xml.dom import minidom
-
-import schainpy
 from schainpy.admin import Alarm, SchainWarning
 from schainpy.model import *
 from schainpy.utils import log
 
-DTYPES = {
-    'Voltage': '.r',
-    'Spectra': '.pdata'
-}
 
-
-def MPProject(project, n=cpu_count()):
-    '''
-    Project wrapper to run schain in n processes
-    '''
-
-    rconf = project.getReadUnitObj()
-    op = rconf.getOperationObj('run')
-    dt1 = op.getParameterValue('startDate')
-    dt2 = op.getParameterValue('endDate')
-    tm1 = op.getParameterValue('startTime')
-    tm2 = op.getParameterValue('endTime')
-    days = (dt2 - dt1).days
-
-    for day in range(days + 1):
-        skip = 0
-        cursor = 0
-        processes = []
-        dt = dt1 + datetime.timedelta(day)
-        dt_str = dt.strftime('%Y/%m/%d')
-        reader = JRODataReader()
-        paths, files = reader.searchFilesOffLine(path=rconf.path,
-                                                 startDate=dt,
-                                                 endDate=dt,
-                                                 startTime=tm1,
-                                                 endTime=tm2,
-                                                 ext=DTYPES[rconf.datatype])
-        nFiles = len(files)
-        if nFiles == 0:
-            continue
-        skip = int(math.ceil(nFiles / n))        
-        while nFiles > cursor * skip:
-            rconf.update(startDate=dt_str, endDate=dt_str, cursor=cursor,
-                         skip=skip)
-            p = project.clone()
-            p.start()
-            processes.append(p)
-            cursor += 1
-
-        def beforeExit(exctype, value, trace):
-            for process in processes:
-                process.terminate()
-                process.join()
-            print traceback.print_tb(trace)
-
-        sys.excepthook = beforeExit
-
-        for process in processes:
-            process.join()
-            process.terminate()
-
-        time.sleep(3)
-
-
-class ParameterConf():
-
-    id = None
-    name = None
-    value = None
-    format = None
-
-    __formated_value = None
-
-    ELEMENTNAME = 'Parameter'
-
-    def __init__(self):
-
-        self.format = 'str'
-
-    def getElementName(self):
-
-        return self.ELEMENTNAME
-
-    def getValue(self):
-
-        value = self.value
-        format = self.format
-
-        if self.__formated_value != None:
-
-            return self.__formated_value
-
-        if format == 'obj':
-            return value
-
-        if format == 'str':
-            self.__formated_value = str(value)
-            return self.__formated_value
-
-        if value == '':
-            raise ValueError, '%s: This parameter value is empty' % self.name
-
-        if format == 'list':
-            strList = value.split(',')
-
-            self.__formated_value = strList
-
-            return self.__formated_value
-
-        if format == 'intlist':
-            '''
-            Example:
-                value = (0,1,2)
-            '''
-
-            new_value = ast.literal_eval(value)
-
-            if type(new_value) not in (tuple, list):
-                new_value = [int(new_value)]
-
-            self.__formated_value = new_value
-
-            return self.__formated_value
-
-        if format == 'floatlist':
-            '''
-            Example:
-                value = (0.5, 1.4, 2.7)
-            '''
-
-            new_value = ast.literal_eval(value)
-
-            if type(new_value) not in (tuple, list):
-                new_value = [float(new_value)]
-
-            self.__formated_value = new_value
-
-            return self.__formated_value
-
-        if format == 'date':
-            strList = value.split('/')
-            intList = [int(x) for x in strList]
-            date = datetime.date(intList[0], intList[1], intList[2])
-
-            self.__formated_value = date
-
-            return self.__formated_value
-
-        if format == 'time':
-            strList = value.split(':')
-            intList = [int(x) for x in strList]
-            time = datetime.time(intList[0], intList[1], intList[2])
-
-            self.__formated_value = time
-
-            return self.__formated_value
-
-        if format == 'pairslist':
-            '''
-            Example:
-                value = (0,1),(1,2)
-            '''
-
-            new_value = ast.literal_eval(value)
-
-            if type(new_value) not in (tuple, list):
-                raise ValueError, '%s has to be a tuple or list of pairs' % value
-
-            if type(new_value[0]) not in (tuple, list):
-                if len(new_value) != 2:
-                    raise ValueError, '%s has to be a tuple or list of pairs' % value
-                new_value = [new_value]
-
-            for thisPair in new_value:
-                if len(thisPair) != 2:
-                    raise ValueError, '%s has to be a tuple or list of pairs' % value
-
-            self.__formated_value = new_value
-
-            return self.__formated_value
-
-        if format == 'multilist':
-            '''
-            Example:
-                value = (0,1,2),(3,4,5)
-            '''
-            multiList = ast.literal_eval(value)
-
-            if type(multiList[0]) == int:
-                multiList = ast.literal_eval('(' + value + ')')
-
-            self.__formated_value = multiList
-
-            return self.__formated_value
-
-        if format == 'bool':
-            value = int(value)
-
-        if format == 'int':
-            value = float(value)
-
-        format_func = eval(format)
-
-        self.__formated_value = format_func(value)
-
-        return self.__formated_value
-
-    def updateId(self, new_id):
-
-        self.id = str(new_id)
-
-    def setup(self, id, name, value, format='str'):
-        self.id = str(id)
-        self.name = name
-        if format == 'obj':
-            self.value = value
-        else:
-            self.value = str(value)
-        self.format = str.lower(format)
-
-        self.getValue()
-
-        return 1
-
-    def update(self, name, value, format='str'):
-
-        self.name = name
-        self.value = str(value)
-        self.format = format
-
-    def makeXml(self, opElement):
-        if self.name not in ('queue',):
-            parmElement = SubElement(opElement, self.ELEMENTNAME)
-            parmElement.set('id', str(self.id))
-            parmElement.set('name', self.name)
-            parmElement.set('value', self.value)
-            parmElement.set('format', self.format)
-
-    def readXml(self, parmElement):
-
-        self.id = parmElement.get('id')
-        self.name = parmElement.get('name')
-        self.value = parmElement.get('value')
-        self.format = str.lower(parmElement.get('format'))
-
-        # Compatible with old signal chain version
-        if self.format == 'int' and self.name == 'idfigure':
-            self.name = 'id'
-
-    def printattr(self):
-
-        print 'Parameter[%s]: name = %s, value = %s, format = %s' % (self.id, self.name, self.value, self.format)
-
-
-class OperationConf():
-
-    id = None
-    name = None
-    priority = None
-    type = None
-
-    parmConfObjList = []
-
-    ELEMENTNAME = 'Operation'
+class ConfBase():
 
     def __init__(self):
 
         self.id = '0'
         self.name = None
         self.priority = None
-        self.type = 'self'
+        self.parameters = {}
+        self.object = None
+        self.operations = []
 
-    def __getNewId(self):
+    def getId(self):
 
-        return int(self.id) * 10 + len(self.parmConfObjList) + 1
+        return self.id
+    
+    def getNewId(self):
+
+        return int(self.id) * 10 + len(self.operations) + 1
 
     def updateId(self, new_id):
 
         self.id = str(new_id)
 
         n = 1
-        for parmObj in self.parmConfObjList:
-
-            idParm = str(int(new_id) * 10 + n)
-            parmObj.updateId(idParm)
-
+        for conf in self.operations:
+            conf_id = str(int(new_id) * 10 + n)
+            conf.updateId(conf_id)
             n += 1
-
-    def getElementName(self):
-
-        return self.ELEMENTNAME
-
-    def getParameterObjList(self):
-
-        return self.parmConfObjList
-
-    def getParameterObj(self, parameterName):
-
-        for parmConfObj in self.parmConfObjList:
-
-            if parmConfObj.name != parameterName:
-                continue
-
-            return parmConfObj
-
-        return None
-
-    def getParameterObjfromValue(self, parameterValue):
-
-        for parmConfObj in self.parmConfObjList:
-
-            if parmConfObj.getValue() != parameterValue:
-                continue
-
-            return parmConfObj.getValue()
-
-        return None
-
-    def getParameterValue(self, parameterName):
-
-        parameterObj = self.getParameterObj(parameterName)
-
-    #         if not parameterObj:
-    #             return None
-
-        value = parameterObj.getValue()
-
-        return value
 
     def getKwargs(self):
 
-        kwargs = {}
+        params = {}
 
-        for parmConfObj in self.parmConfObjList:
-            if self.name == 'run' and parmConfObj.name == 'datatype':
-                continue
+        for key, value in self.parameters.items():
+            if value not in (None, '', ' '):
+                params[key] = value
+        
+        return params
 
-            kwargs[parmConfObj.name] = parmConfObj.getValue()
+    def update(self, **kwargs):
 
-        return kwargs
+        for key, value in kwargs.items():
+            self.addParameter(name=key, value=value)
 
-    def setup(self, id, name, priority, type):
+    def addParameter(self, name, value, format=None):
+        '''
+        '''
+
+        if isinstance(value, str) and re.search(r'(\d+/\d+/\d+)', value):
+            self.parameters[name] = datetime.date(*[int(x) for x in value.split('/')])
+        elif isinstance(value, str) and re.search(r'(\d+:\d+:\d+)', value):
+            self.parameters[name] = datetime.time(*[int(x) for x in value.split(':')])
+        else:
+            try:
+                self.parameters[name] = ast.literal_eval(value)
+            except:
+                if isinstance(value, str) and ',' in value:
+                    self.parameters[name] = value.split(',')
+                else:
+                    self.parameters[name] = value
+
+    def getParameters(self):
+
+        params = {}
+        for key, value in self.parameters.items():
+            s = type(value).__name__
+            if s == 'date':
+                params[key] = value.strftime('%Y/%m/%d')
+            elif s == 'time':
+                params[key] = value.strftime('%H:%M:%S')
+            else:
+                params[key] = str(value)
+
+        return params
+    
+    def makeXml(self, element):
+
+        xml = SubElement(element, self.ELEMENTNAME)
+        for label in self.xml_labels:
+            xml.set(label, str(getattr(self, label)))
+        
+        for key, value in self.getParameters().items():
+            xml_param = SubElement(xml, 'Parameter')
+            xml_param.set('name', key)
+            xml_param.set('value', value)
+        
+        for conf in self.operations:
+            conf.makeXml(xml)
+            
+    def __str__(self):
+
+        if self.ELEMENTNAME == 'Operation':
+            s = '  {}[id={}]\n'.format(self.name, self.id)
+        else:
+            s = '{}[id={}, inputId={}]\n'.format(self.name, self.id, self.inputId)
+
+        for key, value in self.parameters.items():
+            if self.ELEMENTNAME == 'Operation':
+                s += '    {}: {}\n'.format(key, value)
+            else:
+                s += '  {}: {}\n'.format(key, value)
+        
+        for conf in self.operations:
+            s += str(conf)
+
+        return s
+
+class OperationConf(ConfBase):
+
+    ELEMENTNAME = 'Operation'
+    xml_labels = ['id', 'name']
+
+    def setup(self, id, name, priority, project_id, err_queue):
 
         self.id = str(id)
+        self.project_id = project_id
         self.name = name
-        self.type = type
-        self.priority = priority
+        self.type = 'other'
+        self.err_queue = err_queue
 
-        self.parmConfObjList = []
+    def readXml(self, element, project_id, err_queue):
 
-    def removeParameters(self):
+        self.id = element.get('id')
+        self.name = element.get('name')
+        self.type = 'other'
+        self.project_id = str(project_id)
+        self.err_queue = err_queue
 
-        for obj in self.parmConfObjList:
-            del obj
+        for elm in element.iter('Parameter'):
+            self.addParameter(elm.get('name'), elm.get('value'))
 
-        self.parmConfObjList = []
+    def createObject(self):
 
-    def addParameter(self, name, value, format='str'):
+        className = eval(self.name)
 
-        if value is None:
-            return None
-        id = self.__getNewId()
-
-        parmConfObj = ParameterConf()
-        if not parmConfObj.setup(id, name, value, format):
-            return None
-
-        self.parmConfObjList.append(parmConfObj)
-
-        return parmConfObj
-
-    def changeParameter(self, name, value, format='str'):
-
-        parmConfObj = self.getParameterObj(name)
-        parmConfObj.update(name, value, format)
-
-        return parmConfObj
-
-    def makeXml(self, procUnitElement):
-
-        opElement = SubElement(procUnitElement, self.ELEMENTNAME)
-        opElement.set('id', str(self.id))
-        opElement.set('name', self.name)
-        opElement.set('type', self.type)
-        opElement.set('priority', str(self.priority))
-
-        for parmConfObj in self.parmConfObjList:
-            parmConfObj.makeXml(opElement)
-
-    def readXml(self, opElement):
-
-        self.id = opElement.get('id')
-        self.name = opElement.get('name')
-        self.type = opElement.get('type')
-        self.priority = opElement.get('priority')
-
-        # Compatible with old signal chain version
-        # Use of 'run' method instead 'init'
-        if self.type == 'self' and self.name == 'init':
-            self.name = 'run'
-
-        self.parmConfObjList = []
-
-        parmElementList = opElement.iter(ParameterConf().getElementName())
-
-        for parmElement in parmElementList:
-            parmConfObj = ParameterConf()
-            parmConfObj.readXml(parmElement)
-
-            # Compatible with old signal chain version
-            # If an 'plot' OPERATION is found, changes name operation by the value of its type PARAMETER
-            if self.type != 'self' and self.name == 'Plot':
-                if parmConfObj.format == 'str' and parmConfObj.name == 'type':
-                    self.name = parmConfObj.value
-                    continue
-
-            self.parmConfObjList.append(parmConfObj)
-
-    def printattr(self):
-
-        print '%s[%s]: name = %s, type = %s, priority = %s' % (self.ELEMENTNAME,
-                                                               self.id,
-                                                               self.name,
-                                                               self.type,
-                                                               self.priority)
-
-        for parmConfObj in self.parmConfObjList:
-            parmConfObj.printattr()
-
-    def createObject(self, plotter_queue=None):
-
-        if self.type == 'self':
-            raise ValueError, 'This operation type cannot be created'
-
-        if self.type == 'plotter':
-            if not plotter_queue:
-                raise ValueError, 'plotter_queue is not defined. Use:\nmyProject = Project()\nmyProject.setPlotterQueue(plotter_queue)'
-
-            opObj = Plotter(self.name, plotter_queue)
-
-        if self.type == 'external' or self.type == 'other':
-
-            className = eval(self.name)
+        if 'Plot' in self.name or 'Writer' in self.name or 'Send' in self.name or 'print' in self.name:
             kwargs = self.getKwargs()
+            opObj = className(self.id, self.id, self.project_id, self.err_queue, **kwargs)
+            opObj.start()
+            self.type = 'external'
+        else:
+            opObj = className()
 
-            opObj = className(**kwargs)
-
+        self.object = opObj
         return opObj
 
-
-class ProcUnitConf():
-
-    id = None
-    name = None
-    datatype = None
-    inputId = None
-    parentId = None
-
-    opConfObjList = []
-
-    procUnitObj = None
-    opObjList = []
+class ProcUnitConf(ConfBase):
 
     ELEMENTNAME = 'ProcUnit'
+    xml_labels = ['id', 'inputId', 'name']
 
-    def __init__(self):
-
-        self.id = None
-        self.datatype = None
-        self.name = None
-        self.inputId = None
-
-        self.opConfObjList = []
-
-        self.procUnitObj = None
-        self.opObjDict = {}
-
-    def __getPriority(self):
-
-        return len(self.opConfObjList) + 1
-
-    def __getNewId(self):
-
-        return int(self.id) * 10 + len(self.opConfObjList) + 1
-
-    def getElementName(self):
-
-        return self.ELEMENTNAME
-
-    def getId(self):
-
-        return self.id
-
-    def updateId(self, new_id, parentId=parentId):
-
-        new_id = int(parentId) * 10 + (int(self.id) % 10)
-        new_inputId = int(parentId) * 10 + (int(self.inputId) % 10)
-
-        # If this proc unit has not inputs
-        if self.inputId == '0':
-            new_inputId = 0
-
-        n = 1
-        for opConfObj in self.opConfObjList:
-
-            idOp = str(int(new_id) * 10 + n)
-            opConfObj.updateId(idOp)
-
-            n += 1
-
-        self.parentId = str(parentId)
-        self.id = str(new_id)
-        self.inputId = str(new_inputId)
-
-    def getInputId(self):
-
-        return self.inputId
-
-    def getOperationObjList(self):
-
-        return self.opConfObjList
-
-    def getOperationObj(self, name=None):
-
-        for opConfObj in self.opConfObjList:
-
-            if opConfObj.name != name:
-                continue
-
-            return opConfObj
-
-        return None
-
-    def getOpObjfromParamValue(self, value=None):
-
-        for opConfObj in self.opConfObjList:
-            if opConfObj.getParameterObjfromValue(parameterValue=value) != value:
-                continue
-            return opConfObj
-        return None
-
-    def getProcUnitObj(self):
-
-        return self.procUnitObj
-
-    def setup(self, id, name, datatype, inputId, parentId=None):
-
-        # Compatible with old signal chain version
+    def setup(self, project_id, id, name, datatype, inputId, err_queue):
+        '''
+        '''
+        
         if datatype == None and name == None:
-            raise ValueError, 'datatype or name should be defined'
+            raise ValueError('datatype or name should be defined')
 
         if name == None:
             if 'Proc' in datatype:
@@ -575,166 +185,86 @@ class ProcUnitConf():
             datatype = name.replace('Proc', '')
 
         self.id = str(id)
+        self.project_id = project_id
         self.name = name
         self.datatype = datatype
         self.inputId = inputId
-        self.parentId = parentId
+        self.err_queue = err_queue
+        self.operations = []
+        self.parameters = {}
 
-        self.opConfObjList = []
+    def removeOperation(self, id):
 
-        self.addOperation(name='run', optype='self')
+        i = [1 if x.id==id else 0 for x in self.operations]
+        self.operations.pop(i.index(1))
+        
+    def getOperation(self, id):
 
-    def removeOperations(self):
-
-        for obj in self.opConfObjList:
-            del obj
-
-        self.opConfObjList = []
-        self.addOperation(name='run')
-
-    def addParameter(self, **kwargs):
-        '''
-        Add parameters to 'run' operation
-        '''
-        opObj = self.opConfObjList[0]
-
-        opObj.addParameter(**kwargs)
-
-        return opObj
+        for conf in self.operations:
+            if conf.id == id:
+                return conf
 
     def addOperation(self, name, optype='self'):
+        '''
+        '''
 
-        id = self.__getNewId()
-        priority = self.__getPriority()
+        id = self.getNewId()
+        conf = OperationConf()
+        conf.setup(id, name=name, priority='0', project_id=self.project_id, err_queue=self.err_queue)
+        self.operations.append(conf)
 
-        opConfObj = OperationConf()
-        opConfObj.setup(id, name=name, priority=priority, type=optype)
+        return conf
 
-        self.opConfObjList.append(opConfObj)
+    def readXml(self, element, project_id, err_queue):
 
-        return opConfObj
+        self.id = element.get('id')
+        self.name = element.get('name')
+        self.inputId = None if element.get('inputId') == 'None' else element.get('inputId')
+        self.datatype = element.get('datatype', self.name.replace(self.ELEMENTNAME.replace('Unit', ''), ''))
+        self.project_id = str(project_id)
+        self.err_queue = err_queue
+        self.operations = []
+        self.parameters = {}
+        
+        for elm in element:
+            if elm.tag == 'Parameter':
+                self.addParameter(elm.get('name'), elm.get('value'))
+            elif elm.tag == 'Operation':
+                conf = OperationConf()
+                conf.readXml(elm, project_id, err_queue)
+                self.operations.append(conf)
 
-    def makeXml(self, projectElement):
-
-        procUnitElement = SubElement(projectElement, self.ELEMENTNAME)
-        procUnitElement.set('id', str(self.id))
-        procUnitElement.set('name', self.name)
-        procUnitElement.set('datatype', self.datatype)
-        procUnitElement.set('inputId', str(self.inputId))
-
-        for opConfObj in self.opConfObjList:
-            opConfObj.makeXml(procUnitElement)
-
-    def readXml(self, upElement):
-
-        self.id = upElement.get('id')
-        self.name = upElement.get('name')
-        self.datatype = upElement.get('datatype')
-        self.inputId = upElement.get('inputId')
-
-        if self.ELEMENTNAME == 'ReadUnit':
-            self.datatype = self.datatype.replace('Reader', '')
-
-        if self.ELEMENTNAME == 'ProcUnit':
-            self.datatype = self.datatype.replace('Proc', '')
-
-        if self.inputId == 'None':
-            self.inputId = '0'
-
-        self.opConfObjList = []
-
-        opElementList = upElement.iter(OperationConf().getElementName())
-
-        for opElement in opElementList:
-            opConfObj = OperationConf()
-            opConfObj.readXml(opElement)
-            self.opConfObjList.append(opConfObj)
-
-    def printattr(self):
-
-        print '%s[%s]: name = %s, datatype = %s, inputId = %s' % (self.ELEMENTNAME,
-                                                                  self.id,
-                                                                  self.name,
-                                                                  self.datatype,
-                                                                  self.inputId)
-
-        for opConfObj in self.opConfObjList:
-            opConfObj.printattr()
-
-    def getKwargs(self):
-
-        opObj = self.opConfObjList[0]
-        kwargs = opObj.getKwargs()
-
-        return kwargs
-
-    def createObjects(self, plotter_queue=None):
+    def createObjects(self):
+        '''
+        Instancia de unidades de procesamiento.
+        '''
 
         className = eval(self.name)
         kwargs = self.getKwargs()
-        procUnitObj = className(**kwargs)
+        procUnitObj = className()
+        procUnitObj.name = self.name
+        log.success('creating process...', self.name)
 
-        for opConfObj in self.opConfObjList:
-
-            if opConfObj.type == 'self' and self.name == 'run':
-                continue
-            elif opConfObj.type == 'self':
-                procUnitObj.addOperationKwargs(
-                    opConfObj.id, **opConfObj.getKwargs())
-                continue
-
-            opObj = opConfObj.createObject(plotter_queue)
-
-            self.opObjDict[opConfObj.id] = opObj
-
-            procUnitObj.addOperation(opObj, opConfObj.id)
-
-        self.procUnitObj = procUnitObj
-
-        return procUnitObj
+        for conf in self.operations:
+            
+            opObj = conf.createObject()
+            
+            log.success('adding operation: {}, type:{}'.format(
+                conf.name,
+                conf.type), self.name)
+            
+            procUnitObj.addOperation(conf, opObj)
+     
+        self.object = procUnitObj
 
     def run(self):
-
-        is_ok = False
-
-        for opConfObj in self.opConfObjList:
-
-            kwargs = {}
-            for parmConfObj in opConfObj.getParameterObjList():
-                if opConfObj.name == 'run' and parmConfObj.name == 'datatype':
-                    continue
-
-                kwargs[parmConfObj.name] = parmConfObj.getValue()
-
-            sts = self.procUnitObj.call(opType=opConfObj.type,
-                                        opName=opConfObj.name,
-                                        opId=opConfObj.id)
-
-            is_ok = is_ok or sts
-
-        return is_ok
-
-    def close(self):
-
-        for opConfObj in self.opConfObjList:
-            if opConfObj.type == 'self':
-                continue
-
-            opObj = self.procUnitObj.getOperationObj(opConfObj.id)
-            opObj.close()
-
-        self.procUnitObj.close()
-
-        return
+        '''
+        '''
+        
+        return self.object.call(**self.getKwargs())
 
 
 class ReadUnitConf(ProcUnitConf):
-
-    path = None
-    startDate = None
-    endDate = None
-    startTime = None
-    endTime = None
 
     ELEMENTNAME = 'ReadUnit'
 
@@ -744,22 +274,14 @@ class ReadUnitConf(ProcUnitConf):
         self.datatype = None
         self.name = None
         self.inputId = None
-
-        self.parentId = None
-
-        self.opConfObjList = []
-        self.opObjList = []
-
-    def getElementName(self):
-
-        return self.ELEMENTNAME
-
-    def setup(self, id, name, datatype, path='', startDate='', endDate='',
-              startTime='', endTime='', parentId=None, server=None, **kwargs):
-
-        # Compatible with old signal chain version
+        self.operations = []
+        self.parameters = {}
+    
+    def setup(self, project_id, id, name, datatype, err_queue, path='', startDate='', endDate='',
+              startTime='', endTime='', server=None, **kwargs):
+        
         if datatype == None and name == None:
-            raise ValueError, 'datatype or name should be defined'
+            raise ValueError('datatype or name should be defined')
         if name == None:
             if 'Reader' in datatype:
                 name = datatype
@@ -774,148 +296,41 @@ class ReadUnitConf(ProcUnitConf):
                 name = '{}Reader'.format(name)
 
         self.id = id
+        self.project_id = project_id
         self.name = name
         self.datatype = datatype
-        if path != '':
-            self.path = os.path.abspath(path)
-        self.startDate = startDate
-        self.endDate = endDate
-        self.startTime = startTime
-        self.endTime = endTime
-        self.inputId = '0'
-        self.parentId = parentId
-        self.server = server
-        self.addRunOperation(**kwargs)
-
-    def update(self, **kwargs):
-
-        if 'datatype' in kwargs:
-            datatype = kwargs.pop('datatype')
-            if 'Reader' in datatype:
-                self.name = datatype
-            else:
-                self.name = '%sReader' % (datatype)
-            self.datatype = self.name.replace('Reader', '')
-
-        attrs = ('path', 'startDate', 'endDate',
-                 'startTime', 'endTime', 'parentId')
-
-        for attr in attrs:
-            if attr in kwargs:
-                setattr(self, attr, kwargs.pop(attr))
-
-        self.inputId = '0'
-        self.updateRunOperation(**kwargs)
-
-    def removeOperations(self):
-
-        for obj in self.opConfObjList:
-            del obj
-
-        self.opConfObjList = []
-
-    def addRunOperation(self, **kwargs):
-
-        opObj = self.addOperation(name='run', optype='self')
-
-        if self.server is None:
-            opObj.addParameter(
-                name='datatype', value=self.datatype, format='str')
-            opObj.addParameter(name='path', value=self.path, format='str')
-            opObj.addParameter(
-                name='startDate', value=self.startDate, format='date')
-            opObj.addParameter(
-                name='endDate', value=self.endDate, format='date')
-            opObj.addParameter(
-                name='startTime', value=self.startTime, format='time')
-            opObj.addParameter(
-                name='endTime', value=self.endTime, format='time')
-
-            for key, value in kwargs.items():
-                opObj.addParameter(name=key, value=value,
-                                   format=type(value).__name__)
-        else:
-            opObj.addParameter(name='server', value=self.server, format='str')
-
-        return opObj
-
-    def updateRunOperation(self, **kwargs):
-
-        opObj = self.getOperationObj(name='run')
-        opObj.removeParameters()
-
-        opObj.addParameter(name='datatype', value=self.datatype, format='str')
-        opObj.addParameter(name='path', value=self.path, format='str')
-        opObj.addParameter(
-            name='startDate', value=self.startDate, format='date')
-        opObj.addParameter(name='endDate', value=self.endDate, format='date')
-        opObj.addParameter(
-            name='startTime', value=self.startTime, format='time')
-        opObj.addParameter(name='endTime', value=self.endTime, format='time')
+        self.err_queue = err_queue        
+        
+        self.addParameter(name='path', value=path)
+        self.addParameter(name='startDate', value=startDate)
+        self.addParameter(name='endDate', value=endDate)
+        self.addParameter(name='startTime', value=startTime)
+        self.addParameter(name='endTime', value=endTime)
 
         for key, value in kwargs.items():
-            opObj.addParameter(name=key, value=value,
-                               format=type(value).__name__)
-
-        return opObj
-
-    def readXml(self, upElement):
-
-        self.id = upElement.get('id')
-        self.name = upElement.get('name')
-        self.datatype = upElement.get('datatype')
-        self.inputId = upElement.get('inputId')
-
-        if self.ELEMENTNAME == 'ReadUnit':
-            self.datatype = self.datatype.replace('Reader', '')
-
-        if self.inputId == 'None':
-            self.inputId = '0'
-
-        self.opConfObjList = []
-
-        opElementList = upElement.iter(OperationConf().getElementName())
-
-        for opElement in opElementList:
-            opConfObj = OperationConf()
-            opConfObj.readXml(opElement)
-            self.opConfObjList.append(opConfObj)
-
-            if opConfObj.name == 'run':
-                self.path = opConfObj.getParameterValue('path')
-                self.startDate = opConfObj.getParameterValue('startDate')
-                self.endDate = opConfObj.getParameterValue('endDate')
-                self.startTime = opConfObj.getParameterValue('startTime')
-                self.endTime = opConfObj.getParameterValue('endTime')
+            self.addParameter(name=key, value=value)
 
 
 class Project(Process):
 
-    id = None
-    # name = None
-    description = None
-    filename = None
-
-    procUnitConfObjDict = None
-
     ELEMENTNAME = 'Project'
 
-    plotterQueue = None
-
-    def __init__(self, plotter_queue=None):
+    def __init__(self):
 
         Process.__init__(self)
-        self.id = None        
+        self.id = None
+        self.filename = None
         self.description = None
         self.email = None
-        self.alarm = None
-        self.plotterQueue = plotter_queue
-        self.procUnitConfObjDict = {}
+        self.alarm = []
+        self.configurations = {}
+        # self.err_queue = Queue()
+        self.err_queue = None
+        self.started = False
 
-    def __getNewId(self):
+    def getNewId(self):
 
-        idList = self.procUnitConfObjDict.keys()
-
+        idList = list(self.configurations.keys())
         id = int(self.id) * 10
 
         while True:
@@ -928,45 +343,34 @@ class Project(Process):
 
         return str(id)
 
-    def getElementName(self):
-
-        return self.ELEMENTNAME
-
-    def getId(self):
-
-        return self.id
-
     def updateId(self, new_id):
 
         self.id = str(new_id)
 
-        keyList = self.procUnitConfObjDict.keys()
+        keyList = list(self.configurations.keys())
         keyList.sort()
 
         n = 1
-        newProcUnitConfObjDict = {}
+        new_confs = {}
 
         for procKey in keyList:
 
-            procUnitConfObj = self.procUnitConfObjDict[procKey]
+            conf = self.configurations[procKey]
             idProcUnit = str(int(self.id) * 10 + n)
-            procUnitConfObj.updateId(idProcUnit, parentId=self.id)
-            newProcUnitConfObjDict[idProcUnit] = procUnitConfObj
+            conf.updateId(idProcUnit)
+            new_confs[idProcUnit] = conf
             n += 1
 
-        self.procUnitConfObjDict = newProcUnitConfObjDict
+        self.configurations = new_confs
 
-    def setup(self, id, name='', description='', email=None, alarm=[]):
+    def setup(self, id=1, name='', description='', email=None, alarm=[]):
 
-        print
-        print '*' * 60
-        print '   Starting SIGNAL CHAIN PROCESSING v%s ' % schainpy.__version__
-        print '*' * 60
-        print
         self.id = str(id)
-        self.description = description
+        self.description = description 
         self.email = email
         self.alarm = alarm
+        if name:
+            self.name = '{} ({})'.format(Process.__name__, name)
 
     def update(self, **kwargs):
 
@@ -976,88 +380,85 @@ class Project(Process):
     def clone(self):
 
         p = Project()
-        p.procUnitConfObjDict = self.procUnitConfObjDict
+        p.id = self.id
+        p.name = self.name
+        p.description = self.description
+        p.configurations = self.configurations.copy()
+
         return p
 
     def addReadUnit(self, id=None, datatype=None, name=None, **kwargs):
 
+        '''
+        '''
+
         if id is None:
-            idReadUnit = self.__getNewId()
+            idReadUnit = self.getNewId()
         else:
             idReadUnit = str(id)
 
-        readUnitConfObj = ReadUnitConf()
-        readUnitConfObj.setup(idReadUnit, name, datatype,
-                              parentId=self.id, **kwargs)
+        conf = ReadUnitConf()
+        conf.setup(self.id, idReadUnit, name, datatype, self.err_queue, **kwargs)
+        self.configurations[conf.id] = conf
+        
+        return conf
 
-        self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
+    def addProcUnit(self, id=None, inputId='0', datatype=None, name=None):
 
-        return readUnitConfObj
+        '''
+        '''
 
-    def addProcUnit(self, inputId='0', datatype=None, name=None):
+        if id is None:
+            idProcUnit = self.getNewId()
+        else:
+            idProcUnit = id
+        
+        conf = ProcUnitConf()
+        conf.setup(self.id, idProcUnit, name, datatype, inputId, self.err_queue)
+        self.configurations[conf.id] = conf
 
-        idProcUnit = self.__getNewId()
-
-        procUnitConfObj = ProcUnitConf()
-        procUnitConfObj.setup(idProcUnit, name, datatype,
-                              inputId, parentId=self.id)
-
-        self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
-
-        return procUnitConfObj
+        return conf
 
     def removeProcUnit(self, id):
 
-        if id in self.procUnitConfObjDict.keys():
-            self.procUnitConfObjDict.pop(id)
+        if id in self.configurations:
+            self.configurations.pop(id)
 
-    def getReadUnitId(self):
+    def getReadUnit(self):
 
-        readUnitConfObj = self.getReadUnitObj()
-
-        return readUnitConfObj.id
-
-    def getReadUnitObj(self):
-
-        for obj in self.procUnitConfObjDict.values():
-            if obj.getElementName() == 'ReadUnit':
+        for obj in list(self.configurations.values()):
+            if obj.ELEMENTNAME == 'ReadUnit':
                 return obj
 
         return None
 
-    def getProcUnitObj(self, id=None, name=None):
+    def getProcUnit(self, id):
 
-        if id != None:
-            return self.procUnitConfObjDict[id]
+        return self.configurations[id]
 
-        if name != None:
-            return self.getProcUnitObjByName(name)
+    def getUnits(self):
 
-        return None
+        keys = list(self.configurations)
+        keys.sort()
 
-    def getProcUnitObjByName(self, name):
+        for key in keys:
+            yield self.configurations[key]
 
-        for obj in self.procUnitConfObjDict.values():
-            if obj.name == name:
-                return obj
+    def updateUnit(self, id, **kwargs):
 
-        return None
-
-    def procUnitItems(self):
-
-        return self.procUnitConfObjDict.items()
-
+        conf = self.configurations[id].update(**kwargs)
+    
     def makeXml(self):
 
-        projectElement = Element('Project')
-        projectElement.set('id', str(self.id))
-        projectElement.set('name', self.name)
-        projectElement.set('description', self.description)
+        xml = Element('Project')
+        xml.set('id', str(self.id))
+        xml.set('name', self.name)
+        xml.set('description', self.description)
 
-        for procUnitConfObj in self.procUnitConfObjDict.values():
-            procUnitConfObj.makeXml(projectElement)
+        for conf in self.configurations.values():
+            conf.makeXml(xml)
 
-        self.projectElement = projectElement
+        self.xml = xml
 
     def writeXml(self, filename=None):
 
@@ -1068,275 +469,180 @@ class Project(Process):
                 filename = 'schain.xml'
 
         if not filename:
-            print 'filename has not been defined. Use setFilename(filename) for do it.'
+            print('filename has not been defined. Use setFilename(filename) for do it.')
             return 0
 
         abs_file = os.path.abspath(filename)
 
         if not os.access(os.path.dirname(abs_file), os.W_OK):
-            print 'No write permission on %s' % os.path.dirname(abs_file)
+            print('No write permission on %s' % os.path.dirname(abs_file))
             return 0
 
         if os.path.isfile(abs_file) and not(os.access(abs_file, os.W_OK)):
-            print 'File %s already exists and it could not be overwriten' % abs_file
+            print('File %s already exists and it could not be overwriten' % abs_file)
             return 0
 
         self.makeXml()
 
-        ElementTree(self.projectElement).write(abs_file, method='xml')
+        ElementTree(self.xml).write(abs_file, method='xml')
 
         self.filename = abs_file
 
         return 1
 
-    def readXml(self, filename=None):
-
-        if not filename:
-            print 'filename is not defined'
-            return 0
+    def readXml(self, filename):
 
         abs_file = os.path.abspath(filename)
 
-        if not os.path.isfile(abs_file):
-            print '%s file does not exist' % abs_file
-            return 0
-
-        self.projectElement = None
-        self.procUnitConfObjDict = {}
+        self.configurations = {}
 
         try:
-            self.projectElement = ElementTree().parse(abs_file)
+            self.xml = ElementTree().parse(abs_file)
         except:
-            print 'Error reading %s, verify file format' % filename
+            log.error('Error reading %s, verify file format' % filename)
             return 0
 
-        self.project = self.projectElement.tag
+        self.id = self.xml.get('id')
+        self.name = self.xml.get('name')
+        self.description = self.xml.get('description')
 
-        self.id = self.projectElement.get('id')
-        self.name = self.projectElement.get('name')
-        self.description = self.projectElement.get('description')
-
-        readUnitElementList = self.projectElement.iter(
-            ReadUnitConf().getElementName())
-
-        for readUnitElement in readUnitElementList:
-            readUnitConfObj = ReadUnitConf()
-            readUnitConfObj.readXml(readUnitElement)
-
-            if readUnitConfObj.parentId == None:
-                readUnitConfObj.parentId = self.id
-
-            self.procUnitConfObjDict[readUnitConfObj.getId()] = readUnitConfObj
-
-        procUnitElementList = self.projectElement.iter(
-            ProcUnitConf().getElementName())
-
-        for procUnitElement in procUnitElementList:
-            procUnitConfObj = ProcUnitConf()
-            procUnitConfObj.readXml(procUnitElement)
-
-            if procUnitConfObj.parentId == None:
-                procUnitConfObj.parentId = self.id
-
-            self.procUnitConfObjDict[procUnitConfObj.getId()] = procUnitConfObj
+        for element in self.xml:
+            if element.tag == 'ReadUnit':
+                conf = ReadUnitConf()
+                conf.readXml(element, self.id, self.err_queue)
+                self.configurations[conf.id] = conf
+            elif element.tag == 'ProcUnit':
+                conf = ProcUnitConf()
+                input_proc = self.configurations[element.get('inputId')]
+                conf.readXml(element, self.id, self.err_queue)
+                self.configurations[conf.id] = conf
 
         self.filename = abs_file
-
+        
         return 1
 
-    def printattr(self):
+    def __str__(self):
 
-        print 'Project[%s]: name = %s, description = %s' % (self.id,
-                                                            self.name,
-                                                            self.description)
+        text = '\nProject[id=%s, name=%s, description=%s]\n\n' % (
+            self.id,
+            self.name,
+            self.description,
+            )
 
-        for procUnitConfObj in self.procUnitConfObjDict.values():
-            procUnitConfObj.printattr()
+        for conf in self.configurations.values():
+            text += '{}'.format(conf)
+
+        return text
 
     def createObjects(self):
 
-        for procUnitConfObj in self.procUnitConfObjDict.values():
-            procUnitConfObj.createObjects(self.plotterQueue)
+        keys = list(self.configurations.keys())
+        keys.sort()
+        for key in keys:
+            conf = self.configurations[key]
+            conf.createObjects()
+            if conf.inputId is not None:
+                conf.object.setInput(self.configurations[conf.inputId].object)
 
-    def __connect(self, objIN, thisObj):
+    def monitor(self):
 
-        thisObj.setInput(objIN.getOutputObj())
-
-    def connectObjects(self):
-
-        for thisPUConfObj in self.procUnitConfObjDict.values():
-
-            inputId = thisPUConfObj.getInputId()
-
-            if int(inputId) == 0:
-                continue
-
-            # Get input object
-            puConfINObj = self.procUnitConfObjDict[inputId]
-            puObjIN = puConfINObj.getProcUnitObj()
-
-            # Get current object
-            thisPUObj = thisPUConfObj.getProcUnitObj()
-
-            self.__connect(puObjIN, thisPUObj)
-
-    def __handleError(self, procUnitConfObj, modes=None, stdout=True):
+        t = Thread(target=self._monitor, args=(self.err_queue, self.ctx))
+        t.start()
+    
+    def _monitor(self, queue, ctx):
 
         import socket
-
-        if modes is None:
-            modes = self.alarm
         
-        if not self.alarm:
-            modes = []
-
-        err = traceback.format_exception(sys.exc_info()[0],
-                                         sys.exc_info()[1],
-                                         sys.exc_info()[2])
+        procs = 0
+        err_msg = ''
         
-        log.error('{}'.format(err[-1]), procUnitConfObj.name)
+        while True:
+            msg = queue.get()
+            if '#_start_#' in msg:
+                procs += 1
+            elif '#_end_#' in msg:
+                procs -=1
+            else:
+                err_msg = msg
+            
+            if procs == 0 or 'Traceback' in err_msg:                
+                break
+            time.sleep(0.1)
+        
+        if '|' in err_msg:
+            name, err = err_msg.split('|')
+            if 'SchainWarning' in err:
+                log.warning(err.split('SchainWarning:')[-1].split('\n')[0].strip(), name)
+            elif 'SchainError' in err:
+                log.error(err.split('SchainError:')[-1].split('\n')[0].strip(), name)
+            else:
+                log.error(err, name)
+        else:            
+            name, err = self.name, err_msg
+        
+        time.sleep(1)
+            
+        ctx.term()
 
         message = ''.join(err)
 
-        if stdout:
-            sys.stderr.write(message)
+        if err_msg:
+            subject = 'SChain v%s: Error running %s\n' % (
+                schainpy.__version__, self.name)
 
-        subject = 'SChain v%s: Error running %s\n' % (
-            schainpy.__version__, procUnitConfObj.name)
+            subtitle = 'Hostname: %s\n' % socket.gethostbyname(
+                socket.gethostname())
+            subtitle += 'Working directory: %s\n' % os.path.abspath('./')
+            subtitle += 'Configuration file: %s\n' % self.filename
+            subtitle += 'Time: %s\n' % str(datetime.datetime.now())
 
-        subtitle = '%s: %s\n' % (
-            procUnitConfObj.getElementName(), procUnitConfObj.name)
-        subtitle += 'Hostname: %s\n' % socket.gethostbyname(
-            socket.gethostname())
-        subtitle += 'Working directory: %s\n' % os.path.abspath('./')
-        subtitle += 'Configuration file: %s\n' % self.filename
-        subtitle += 'Time: %s\n' % str(datetime.datetime.now())
+            readUnitConfObj = self.getReadUnit()
+            if readUnitConfObj:
+                subtitle += '\nInput parameters:\n'
+                subtitle += '[Data path = %s]\n' % readUnitConfObj.parameters['path']
+                subtitle += '[Start date = %s]\n' % readUnitConfObj.parameters['startDate']
+                subtitle += '[End date = %s]\n' % readUnitConfObj.parameters['endDate']
+                subtitle += '[Start time = %s]\n' % readUnitConfObj.parameters['startTime']
+                subtitle += '[End time = %s]\n' % readUnitConfObj.parameters['endTime']
 
-        readUnitConfObj = self.getReadUnitObj()
-        if readUnitConfObj:
-            subtitle += '\nInput parameters:\n'
-            subtitle += '[Data path = %s]\n' % readUnitConfObj.path
-            subtitle += '[Data type = %s]\n' % readUnitConfObj.datatype
-            subtitle += '[Start date = %s]\n' % readUnitConfObj.startDate
-            subtitle += '[End date = %s]\n' % readUnitConfObj.endDate
-            subtitle += '[Start time = %s]\n' % readUnitConfObj.startTime
-            subtitle += '[End time = %s]\n' % readUnitConfObj.endTime
+            a = Alarm(
+                modes=self.alarm, 
+                email=self.email,
+                message=message,
+                subject=subject,
+                subtitle=subtitle,
+                filename=self.filename
+            )
 
-        a = Alarm(
-            modes=modes, 
-            email=self.email,
-            message=message,
-            subject=subject,
-            subtitle=subtitle,
-            filename=self.filename
-        )
-
-        return a
-
-    def isPaused(self):
-        return 0
-
-    def isStopped(self):
-        return 0
-
-    def runController(self):
-        '''
-        returns 0 when this process has been stopped, 1 otherwise
-        '''
-
-        if self.isPaused():
-            print 'Process suspended'
-
-            while True:
-                time.sleep(0.1)
-
-                if not self.isPaused():
-                    break
-
-                if self.isStopped():
-                    break
-
-            print 'Process reinitialized'
-
-        if self.isStopped():
-            print 'Process stopped'
-            return 0
-
-        return 1
+            a.start()
 
     def setFilename(self, filename):
 
         self.filename = filename
 
-    def setPlotterQueue(self, plotter_queue):
+    def runProcs(self):
 
-        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
-
-    def getPlotterQueue(self):
-
-        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
-
-    def useExternalPlotter(self):
-
-        raise NotImplementedError, 'Use schainpy.controller_api.ControllerThread instead Project class'
-
+        err = False
+        n = len(self.configurations)
+        
+        while not err:
+            for conf in self.getUnits():
+                ok = conf.run()                
+                if ok is 'Error':
+                    n -= 1
+                    continue
+                elif not ok:
+                    break
+            if n == 0:
+                err = True
+        
     def run(self):
 
-        log.success('Starting {}'.format(self.name), tag='')
-        self.start_time = time.time()
+        log.success('\nStarting Project {} [id={}]'.format(self.name, self.id), tag='')
+        self.started = True
+        self.start_time = time.time()        
         self.createObjects()
-        self.connectObjects()
-
-        keyList = self.procUnitConfObjDict.keys()
-        keyList.sort()
-
-        err = None
-
-        while(True):
-
-            is_ok = False
-
-            for procKey in keyList:
-
-                procUnitConfObj = self.procUnitConfObjDict[procKey]
-
-                try:
-                    sts = procUnitConfObj.run()
-                    is_ok = is_ok or sts
-                except SchainWarning:
-                    err = self.__handleError(procUnitConfObj, modes=[2, 3], stdout=False)
-                    is_ok = False
-                    break
-                except KeyboardInterrupt:
-                    is_ok = False
-                    break
-                except ValueError, e:
-                    time.sleep(0.5)
-                    err = self.__handleError(procUnitConfObj)
-                    is_ok = False
-                    break
-                except:
-                    time.sleep(0.5)
-                    err = self.__handleError(procUnitConfObj)
-                    is_ok = False
-                    break
-
-            # If every process unit finished so end process
-            if not(is_ok):
-                break
-
-            if not self.runController():
-                break
-
-        # Closing every process
-        for procKey in keyList:
-            procUnitConfObj = self.procUnitConfObjDict[procKey]
-            procUnitConfObj.close()
-
-        if err is not None:
-            err.start()
-            # err.join()
-
-        log.success('{} finished (time: {}s)'.format(
+        self.runProcs()
+        log.success('{} Done (Time: {:4.2f}s)'.format(
             self.name,
-            time.time()-self.start_time))
+            time.time()-self.start_time), '')

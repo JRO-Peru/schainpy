@@ -7,7 +7,7 @@ import sys
 import numpy
 import copy
 import datetime
-from __builtin__ import None
+
 
 SPEED_OF_LIGHT = 299792458
 SPEED_OF_LIGHT = 3e8
@@ -78,7 +78,7 @@ class Header(object):
         message += self.__class__.__name__.upper() + "\n"
         message += "#"*50 + "\n"
         
-        keyList = self.__dict__.keys()
+        keyList = list(self.__dict__.keys())
         keyList.sort()
         
         for key in keyList:
@@ -90,7 +90,7 @@ class Header(object):
             if attr:
                 message += "%s = %s" %("size", attr) + "\n"
         
-        print message
+        print(message)
 
 class FileHeader(Header):
     
@@ -134,9 +134,9 @@ class FileHeader(Header):
 
             '''
             
-        except Exception, e:
-            print "FileHeader: "
-            print eBasicHeader
+        except Exception as e:
+            print("FileHeader: ")
+            print(eBasicHeader)
             return 0
         
         self.FileMgcNumber= byte(header['FileMgcNumber'][0])
@@ -279,8 +279,8 @@ class RecordHeader(Header):
         
         try:
             header = numpy.fromfile(fp,RECORD_STRUCTURE,1)
-        except Exception, e:
-            print "System Header: " + e
+        except Exception as e:
+            print("System Header: " + e)
             return 0
         
         self.RecMgcNumber = header['RecMgcNumber'][0]     #0x23030001

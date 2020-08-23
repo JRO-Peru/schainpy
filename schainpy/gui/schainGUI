@@ -1,39 +1,325 @@
 #!/usr/bin/env python
 import os
 import sys
+import ast
+
+from schainpy.controller import Project
+from schainpy.cli import cli
 from schainpy.utils import log
 
 try:
-    from PyQt4 import QtCore, QtGui
-    from PyQt4.QtGui import QApplication
+    import kivy
+    from kivy.app import App
+    from kivy.uix.label import Label
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.gridlayout import GridLayout
+    from kivy.uix.textinput import TextInput
+    from kivy.uix.button import Button
+    from kivy.uix.dropdown import DropDown
+    from kivy.uix.togglebutton import ToggleButton
+    from kivy.uix.popup import Popup
+    from kivy.uix.filechooser import FileChooserListView
 except:
     log.error(
-        'You should install PyQt4 module in order to run the GUI. See the README.')
+        'You should install kivy module in order to run the GUI.')
     sys.exit()
 
-from schainpy.gui.viewcontroller.initwindow import InitWindow
-from schainpy.gui.viewcontroller.basicwindow import BasicWindow
-from schainpy.gui.viewcontroller.workspace import Workspace
+
+DEFAULTS = {
+    'path': os.path.expanduser('~'),
+    'startDate': '2018/01/01',
+    'endDate': '2020/01/01',
+    'startTime': '00:00:00',
+    'endTime': '23:59:59',
+    'online': '1',
+    'delay': '30',
+    'walk': '1',
+    'show': '1',
+    'zmin': '10',
+    'zmax': '40',
+}
 
 
-def main():
+class MainLayout(BoxLayout):
+    def __init__(self, **kwargs):
+        super(MainLayout, self).__init__(**kwargs)
+        
+        self.workspace = os.path.join(os.path.expanduser('~'), 'workspace/scripts')
+        self.current_unit_id = None
+        self._units = []
+        self.project = Project()
+        self.project.setup(id='1', name='test', description='')
 
-    app = QtGui.QApplication(sys.argv)
+        self.sidebar_left = BoxLayout(orientation='vertical', size_hint_x=0.4, spacing=5)
+        self.body = BoxLayout(orientation='vertical', spacing=5)
+        self.sidebar_right = BoxLayout(orientation='vertical', size_hint_x=0.6, spacing=5)
+        
+        bt_prj = Button(text='Project')
+        bt_prj.bind(on_press=self.show_project)
+        self.sidebar_left.add_widget(bt_prj)
 
-    Welcome = InitWindow()
+        bt_add_unit = Button(text='Add Unit')
+        bt_add_unit.bind(on_press=self.select_unit)
+        self.sidebar_left.add_widget(bt_add_unit)
 
-    if not Welcome.exec_():
-        sys.exit(-1)
+        bt_add_operation = Button(text='Add Operation')
+        bt_add_operation.bind(on_press=self.select_operation)
+        self.sidebar_left.add_widget(bt_add_operation)
 
-    WorkPathspace = Workspace()
-    if not WorkPathspace.exec_():
-        sys.exit(-1)
+        bt_import = Button(text='Import')
+        bt_import.bind(on_press=self.load)
+        self.sidebar_left.add_widget(bt_import)
 
-    MainGUI = BasicWindow()
-    MainGUI.setWorkSpaceGUI(WorkPathspace.dirComBox.currentText())
-    MainGUI.show()
-    sys.exit(app.exec_())
+        bt_export = Button(text='Export')
+        bt_export.bind(on_press=self.export)
+        self.sidebar_left.add_widget(bt_export)
+
+        bt_run = Button(text='Run')
+        bt_run.bind(on_press=self.run)
+        self.sidebar_left.add_widget(bt_run)
+
+        bt_stop = Button(text='Stop')
+        bt_stop.bind(on_press = self.stop)
+        self.sidebar_left.add_widget(bt_stop)
+
+        bt_exit = Button(text = 'Exit', height = 40, size_hint_y = None, background_color=(1, 0, 0, 1))
+        bt_exit.bind(on_press=App.get_running_app().stop)
+        self.sidebar_left.add_widget(bt_exit)
+
+        self.add_widget(self.sidebar_left)
+        self.add_widget(self.body)
+        self.add_widget(self.sidebar_right)
+
+    def update_body(self):
+
+        self._units = []
+        self.body.clear_widgets()
+        self.sidebar_right.clear_widgets()
+        
+        for unit in self.project.getUnits():
+            box = GridLayout(cols=3)
+            bt = ToggleButton(text=unit.name, group='units')
+            bt._obj = unit
+            bt.bind(on_press=self.show_parameters)
+            box.add_widget(bt)
+            self._units.append(bt)
+
+            for operation in unit.operations:
+                bt_op = Button(text = operation.name, background_color=(1, 0.5, 0, 1))
+                bt_op._id = unit.id
+                bt_op._obj = operation
+                bt_op.bind(on_press=self.show_parameters)
+                box.add_widget(bt_op)
+            
+            self.body.add_widget(box)
+        
+        print(self.project)
+    
+    def show_parameters(self, instance):
+        
+        obj = instance._obj
+        self.current_unit_id = obj.id
+        self.sidebar_right.clear_widgets()
+        
+        if obj and obj.parameters:
+            self._params = {}
+            
+            for key, value in obj.getParameters().items():
+                self.sidebar_right.add_widget(Label(text=key))
+                text = TextInput(text=value, multiline=False)
+                self._params[key] = text
+                self.sidebar_right.add_widget(text)
+            
+            bt_save = Button(text = 'Save', height = 40, size_hint_y = None, background_color=(0, 1, 0, 1))
+            bt_save._obj = obj
+            if hasattr(instance, '_id'):
+                bt_save._id = instance._id
+                self.current_unit_id = None
+            bt_save.bind(on_press=self.save_parameters)
+            self.sidebar_right.add_widget(bt_save)
+
+        bt_delete = Button(text = 'Delete', height = 40, size_hint_y = None, background_color=(1, 0, 0, 1))
+        bt_delete._obj = obj
+        if hasattr(instance, '_id'):
+            bt_delete._id = instance._id
+            self.current_unit_id = obj.id
+        bt_delete.bind(on_press=self.delete_object)
+        self.sidebar_right.add_widget(bt_delete)
+
+    def save_parameters(self, instance):
+        
+        obj = instance._obj
+        params = {}
+        for key in self._params:
+            if self._params[key]:
+                params[key] = self._params[key].text
+        
+        if hasattr(instance, '_id'):
+            unit = self.project.getProcUnit(instance._id)
+            op = unit.getOperation(obj.id)
+            op.update(**params)
+        else:
+            unit = self.project.getProcUnit(obj.id)
+            unit.update(**params)
+    
+    def delete_object(self, instance):
+        
+        obj = instance._obj
+        
+        if hasattr(instance, '_id'):
+            unit = self.project.getProcUnit(instance._id)
+            unit.removeOperation(obj.id)
+        else:
+            self.project.removeProcUnit(obj.id)
+
+        self.project.updateId(self.project.id)
+        self.update_body()
+
+    def show_project(self, instance):
+
+        self.sidebar_right.clear_widgets()
+        self._params = {}
+        for label in ['Id', 'Name', 'Description']:
+            self.sidebar_right.add_widget(Label(text=label))
+            text = TextInput(text=getattr(self.project, label.lower()), multiline=False)
+            self._params[label] = text
+            self.sidebar_right.add_widget(text)
+
+        self.sidebar_right.add_widget(Label(text='Workspace'))
+        text = TextInput(text=getattr(self, 'workspace'), multiline=False)
+        self._params['Workspace'] = text
+        self.sidebar_right.add_widget(text)
+
+        bt_save = Button(text = 'Save', height = 40, size_hint_y = None, background_color=(0, 1, 0, 1))
+        bt_save.bind(on_press = self.save_project_parameters)
+        self.sidebar_right.add_widget(bt_save)
+
+    def save_project_parameters(self, instance):
+
+        for label in ['Id', 'Name', 'Description']:
+            setattr(self.project, label.lower(), self._params[label].text)
+        
+        setattr(self, 'workspace', self._params['Workspace'].text)
+
+    def select_unit(self, instance):
+        
+        self.sidebar_right.clear_widgets()
+        bt_main = Button(text = 'Select Unit', height = 40, size_hint_y = None)
+        dropdown = DropDown()
+
+        for unit in cli.getProcs():
+    
+            btn = Button(text = unit, size_hint_y = None, height = 40) 
+            btn.bind(on_release = lambda btn: dropdown.select(btn.text)) 
+            dropdown.add_widget(btn)
+
+        bt_main.bind(on_release = dropdown.open)
+        dropdown.bind(on_select = lambda instance, x: setattr(bt_main, 'text', x)) 
+
+        bt_add = Button(text = 'Add', height = 40, size_hint_y = None, background_color=(0, 1, 0, 1))
+        bt_add.bind(on_press = lambda instance: self.add_unit(bt_main.text))
+
+        self.sidebar_right.add_widget(bt_main)
+        self.sidebar_right.add_widget(bt_add)
+
+    def add_unit(self, s):
+        
+        if s:
+            if 'Reader' in s:
+                unit = self.project.addReadUnit(name=s)
+            else:
+                *_, last = self.project.getUnits()
+                unit = self.project.addProcUnit(name=s, inputId=last.id)
+            
+            keys = cli.getArgs(unit.name)
+            values = [DEFAULTS[key] if key in DEFAULTS else '' for key in keys]
+            unit.update(**dict(zip(keys, values)))
+            self.update_body()
+    
+    def select_operation(self, instance):
+        
+        self.sidebar_right.clear_widgets()
+        btns = [bt.state == 'down' for bt in self._units]
+        if True in btns:
+            bt_main = Button(text = 'Select Operation', height = 40, size_hint_y = None)
+            dropdown = DropDown()
+
+            for unit in cli.getOperations():
+        
+                btn = Button(text = unit, size_hint_y = None, height = 40) 
+                btn.bind(on_release = lambda btn: dropdown.select(btn.text)) 
+                dropdown.add_widget(btn)
+
+            bt_main.bind(on_release = dropdown.open)
+            dropdown.bind(on_select = lambda instance, x: setattr(bt_main, 'text', x)) 
+
+            bt_add = Button(text = 'Add', height = 40, size_hint_y = None, background_color=(0, 1, 0, 1))
+            bt_add.bind(on_press = lambda instance: self.add_operation(bt_main.text))
+
+            self.sidebar_right.add_widget(bt_main)
+            self.sidebar_right.add_widget(bt_add)
+        else:
+            self.sidebar_right.add_widget(Label(text='Select Unit'))
+
+    def add_operation(self, s):
+        
+        if s:
+            unit = self.project.getProcUnit(self.current_unit_id)
+            op = unit.addOperation(name=s)
+            keys = cli.getArgs(op.name)
+            values = [DEFAULTS[key] if key in DEFAULTS else '' for key in keys]
+            op.update(**dict(zip(keys, values)))
+            self.update_body()
+
+    def run(self, instance):
+
+        if self.project and self.project.is_alive():
+            self.sidebar_right.clear_widgets()
+            self.sidebar_right.add_widget(Label(text='Project running'))
+        else:
+            if self.project.exitcode is None:
+                self.project.start()
+            else:
+                self.project = self.project.clone()
+                self.project.start()
+
+    def stop(self, instance):
+
+        if self.project and self.project.is_alive():
+            self.project.kill()
+            log.error('Project Stopped by user', 'GUI')
+        else:
+            self.sidebar_right.clear_widgets()
+            self.sidebar_right.add_widget(Label(text='Project not running'))
+
+    def load(self, instance):
+
+        self.sidebar_right.clear_widgets()
+        textinput = FileChooserListView(
+            path=self.workspace, size_hint=(1, 1), dirselect=False, filters=['*.xml'])
+
+        self.sidebar_right.add_widget(textinput)
+        bt_open = Button(text = 'Open', height = 40, size_hint_y = None, background_color=(0, 1, 0, 1))
+        bt_open.textinput = textinput
+        bt_open.bind(on_press = self.load_file)
+        self.sidebar_right.add_widget(bt_open)
+    
+    def load_file(self, instance):
+
+        self.project.readXml(instance.textinput.selection[0])
+        self.update_body()
+
+    def export(self, instance):
+
+        filename = os.path.join(self.workspace, '{}.xml'.format(self.project.name))
+        self.project.writeXml(filename)
+        log.success('File created: {}'.format(filename), 'GUI')
+
+
+class SignalChainApp(App):
+    def build(self):
+        return MainLayout(spacing=10)
 
 
 if __name__ == "__main__":
-    main()
+    SignalChainApp().run()

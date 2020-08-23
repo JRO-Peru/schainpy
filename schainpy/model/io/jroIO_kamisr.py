@@ -111,7 +111,7 @@ class AMISRReader(ProcessingUnit):
             self.searchFilesOnLine(path, startDate, endDate, startTime,endTime,walk)
         
         if not(self.filenameList):
-            print "There is no files into the folder: %s"%(path)
+            print("There is no files into the folder: %s"%(path))
                 
             sys.exit(-1)
             
@@ -177,7 +177,7 @@ class AMISRReader(ProcessingUnit):
         #filling system header parameters
         self.__nSamples = self.nsa
         self.newProfiles = self.nprofiles/self.nchannels 
-        self.__channelList = range(self.nchannels)
+        self.__channelList = list(range(self.nchannels))
         
         self.__frequency = self.frequency[0][0]
         
@@ -200,7 +200,7 @@ class AMISRReader(ProcessingUnit):
             self.status = 1
         else:
             self.status = 0
-            print 'Path:%s does not exists'%self.path
+            print('Path:%s does not exists'%self.path)
             
         return
     
@@ -225,11 +225,11 @@ class AMISRReader(ProcessingUnit):
         
         pat = '\d+.\d+'
         dirnameList = [re.search(pat,x) for x in os.listdir(self.path)]
-        dirnameList = filter(lambda x:x!=None,dirnameList)
+        dirnameList = [x for x in dirnameList if x!=None]
         dirnameList = [x.string for x in dirnameList]
         if not(online):
             dirnameList = [self.__selDates(x) for x in dirnameList]
-            dirnameList = filter(lambda x:x!=None,dirnameList)
+            dirnameList = [x for x in dirnameList if x!=None]
         if len(dirnameList)>0:
             self.status = 1
             self.dirnameList = dirnameList
@@ -242,8 +242,8 @@ class AMISRReader(ProcessingUnit):
         startDateTime_Reader = datetime.datetime.combine(self.startDate,self.startTime)
         endDateTime_Reader = datetime.datetime.combine(self.endDate,self.endTime)
 
-        print 'Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader)
-        print '........................................'
+        print('Filtering Files from %s to %s'%(startDateTime_Reader, endDateTime_Reader))
+        print('........................................')
         filter_filenameList = []
         self.filenameList.sort()
         #for i in range(len(self.filenameList)-1):
@@ -288,7 +288,7 @@ class AMISRReader(ProcessingUnit):
     
     def __getFilenameList(self, fileListInKeys, dirList):
         for value in fileListInKeys:
-            dirName = value.keys()[0]
+            dirName = list(value.keys())[0]
             for file in value[dirName]:
                 filename = os.path.join(dirName, file)
                 self.filenameList.append(filename)
@@ -366,7 +366,7 @@ class AMISRReader(ProcessingUnit):
         self.__selectDataForTimes()
         
         for i in range(len(self.filenameList)):
-            print "%s" %(self.filenameList[i])
+            print("%s" %(self.filenameList[i]))
         
         return 
         
@@ -377,7 +377,7 @@ class AMISRReader(ProcessingUnit):
             idFile += 1
             if not(idFile < len(self.filenameList)):
                 self.flagNoMoreFiles = 1
-                print "No more Files"
+                print("No more Files")
                 return 0
 
             filename = self.filenameList[idFile]
@@ -392,7 +392,7 @@ class AMISRReader(ProcessingUnit):
 
         self.amisrFilePointer = amisrFilePointer
 
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
 
         return 1
     
@@ -404,7 +404,7 @@ class AMISRReader(ProcessingUnit):
             filename = self.filenameList[0]
             wait = 0
             while self.__filename_online == filename:
-                print 'waiting %d seconds to get a new file...'%(self.__waitForNewFile)
+                print('waiting %d seconds to get a new file...'%(self.__waitForNewFile))
                 if wait == 5:
                     return 0
                 sleep(self.__waitForNewFile)
@@ -417,7 +417,7 @@ class AMISRReader(ProcessingUnit):
         self.amisrFilePointer = h5py.File(filename,'r')
         self.flagIsNewFile = 1
         self.filename = filename
-        print "Setting the file: %s"%self.filename
+        print("Setting the file: %s"%self.filename)
         return 1
     
     
@@ -585,7 +585,6 @@ class AMISRReader(ProcessingUnit):
         
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
             return 0
         
         if self.__hasNotDataInBuffer():
@@ -628,48 +627,3 @@ class AMISRReader(ProcessingUnit):
             self.isConfig = True
             
         self.getData()
-            
-class Writer(Operation):
-    '''
-    classdocs
-    '''
-    
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        self.dataOut = None
-        
-        self.isConfig = False
-    
-    def setup(self, dataIn, path, blocksPerFile, set=0, ext=None):
-        '''
-        In this method we should set all initial parameters.
-        
-        Input:
-            dataIn        :        Input data will also be outputa data
-        
-        '''
-        self.dataOut = dataIn
-        
-        
-        
-        
-        
-        self.isConfig = True
-        
-        return
-        
-    def run(self, dataIn, **kwargs):
-        '''
-        This method will be called many times so here you should put all your code
-        
-        Inputs:
-        
-            dataIn        :        object with the data
-            
-        '''
-        
-        if not self.isConfig:
-            self.setup(dataIn, **kwargs)
-        

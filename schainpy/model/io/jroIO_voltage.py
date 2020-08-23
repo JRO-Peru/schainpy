@@ -6,14 +6,10 @@ Created on Jul 2, 2014
 
 import numpy
 
-from jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
-from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation
+from .jroIO_base import LOCALTIME, JRODataReader, JRODataWriter
+from schainpy.model.proc.jroproc_base import ProcessingUnit, Operation, MPDecorator
 from schainpy.model.data.jroheaderIO import PROCFLAG, BasicHeader, SystemHeader, RadarControllerHeader, ProcessingHeader
 from schainpy.model.data.jrodata import Voltage
-import zmq
-import tempfile
-from StringIO import StringIO
-# from _sha import blocksize
 
 
 class VoltageReader(JRODataReader, ProcessingUnit):
@@ -57,12 +53,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
 
     """
 
-    ext = ".r"
-
-    optchar = "D"
-    dataOut = None
-
-    def __init__(self, **kwargs):
+    def __init__(self):
         """
         Inicializador de la clase VoltageReader para la lectura de datos de voltage.
 
@@ -81,89 +72,19 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             None
         """
 
-        ProcessingUnit.__init__(self, **kwargs)
-
-        self.isConfig = False
-
-        self.datablock = None
-
-        self.utc = 0
-
+        ProcessingUnit.__init__(self)
+        
         self.ext = ".r"
-
         self.optchar = "D"
-
         self.basicHeaderObj = BasicHeader(LOCALTIME)
-
         self.systemHeaderObj = SystemHeader()
-
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.processingHeaderObj = ProcessingHeader()
-
-        self.online = 0
-
-        self.fp = None
-
-        self.idFile = None
-
-        self.dtype = None
-
-        self.fileSizeByHeader = None
-
-        self.filenameList = []
-
-        self.filename = None
-
-        self.fileSize = None
-
-        self.firstHeaderSize = 0
-
-        self.basicHeaderSize = 24
-
-        self.pathList = []
-
-        self.filenameList = []
-
         self.lastUTTime = 0
-
-        self.maxTimeStep = 30
-
-        self.flagNoMoreFiles = 0
-
-        self.set = 0
-
-        self.path = None
-
-        self.profileIndex = 2**32 - 1
-
-        self.delay = 3  # seconds
-
-        self.nTries = 3  # quantity tries
-
-        self.nFiles = 3  # number of files for searching
-
-        self.nReadBlocks = 0
-
-        self.flagIsNewFile = 1
-
-        self.__isFirstTimeOnline = 1
-
-#         self.ippSeconds = 0
-
-        self.flagDiscontinuousBlock = 0
-
-        self.flagIsNewBlock = 0
-
-        self.nTotalBlocks = 0
-
-        self.blocksize = 0
-
-        self.dataOut = self.createObjByDefault()
-
-        self.nTxs = 1
-
-        self.txIndex = 0
+        self.profileIndex = 2**32 - 1        
+        self.dataOut = Voltage()
+        self.selBlocksize = None
+        self.selBlocktime = None
 
     def createObjByDefault(self):
 
@@ -286,7 +207,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.dataOut.heightList = numpy.arange(
             self.processingHeaderObj.nHeights) * self.processingHeaderObj.deltaHeight + self.processingHeaderObj.firstHeight
 
-        self.dataOut.channelList = range(self.systemHeaderObj.nChannels)
+        self.dataOut.channelList = list(range(self.systemHeaderObj.nChannels))
 
         self.dataOut.nCohInt = self.processingHeaderObj.nCohInt
 
@@ -307,15 +228,15 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             return
 
         if self.nTxs < 1 and self.processingHeaderObj.profilesPerBlock % (1. / self.nTxs) != 0:
-            raise ValueError, "1./nTxs (=%f), should be a multiple of nProfiles (=%d)" % (
-                1. / self.nTxs, self.processingHeaderObj.profilesPerBlock)
+            raise ValueError("1./nTxs (=%f), should be a multiple of nProfiles (=%d)" % (
+                1. / self.nTxs, self.processingHeaderObj.profilesPerBlock))
 
         if self.nTxs > 1 and self.processingHeaderObj.nHeights % self.nTxs != 0:
-            raise ValueError, "nTxs (=%d), should be a multiple of nHeights (=%d)" % (
-                self.nTxs, self.processingHeaderObj.nHeights)
+            raise ValueError("nTxs (=%d), should be a multiple of nHeights (=%d)" % (
+                self.nTxs, self.processingHeaderObj.nHeights))
 
         self.datablock = self.datablock.reshape(
-            (self.systemHeaderObj.nChannels, self.processingHeaderObj.profilesPerBlock * self.nTxs, self.processingHeaderObj.nHeights / self.nTxs))
+            (self.systemHeaderObj.nChannels, self.processingHeaderObj.profilesPerBlock * self.nTxs, int(self.processingHeaderObj.nHeights / self.nTxs)))
 
         self.dataOut.nProfiles = self.processingHeaderObj.profilesPerBlock * self.nTxs
         self.dataOut.heightList = numpy.arange(self.processingHeaderObj.nHeights / self.nTxs) * \
@@ -345,7 +266,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         elif datatype == 5:
             datatype_str = numpy.dtype([('real', '<f8'), ('imag', '<f8')])
         else:
-            raise ValueError, 'Data type was not defined'
+            raise ValueError('Data type was not defined')
 
         self.dtype = datatype_str
         #self.ippSeconds = 2 * 1000 * self.radarControllerHeaderObj.ipp / self.c
@@ -378,7 +299,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         self.readFirstHeaderFromServer()
 
         timestamp = self.basicHeaderObj.get_datatime()
-        print '[Reading] - Block {} - {}'.format(self.nTotalBlocks, timestamp)
+        print('[Reading] - Block {} - {}'.format(self.nTotalBlocks, timestamp))
         current_pointer_location = self.blockPointer
         junk = numpy.fromstring(
             block[self.blockPointer:], self.dtype, self.blocksize)
@@ -463,7 +384,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         """
         if self.flagNoMoreFiles:
             self.dataOut.flagNoData = True
-            print 'Process finished'
             return 0
         self.flagDiscontinuousBlock = 0
         self.flagIsNewBlock = 0
@@ -491,16 +411,6 @@ class VoltageReader(JRODataReader, ProcessingUnit):
             self.dataOut.profileIndex = self.profileIndex
 
             self.profileIndex += 1
-
-            #         elif self.selBlocksize==None or self.selBlocksize==self.dataOut.nProfiles:
-            #             """
-            #             Return all block
-            #             """
-            #             self.dataOut.flagDataAsBlock = True
-            #             self.dataOut.data = self.datablock
-            #             self.dataOut.profileIndex = self.dataOut.nProfiles - 1
-            #
-            #             self.profileIndex = self.dataOut.nProfiles
 
         else:
             """
@@ -557,6 +467,7 @@ class VoltageReader(JRODataReader, ProcessingUnit):
         return self.dataOut.data
 
 
+@MPDecorator
 class VoltageWriter(JRODataWriter, Operation):
     """
     Esta clase permite escribir datos de voltajes a archivos procesados (.r). La escritura
@@ -569,7 +480,7 @@ class VoltageWriter(JRODataWriter, Operation):
 
     shapeBuffer = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
         """
         Inicializador de la clase VoltageWriter para la escritura de datos de espectros.
 
@@ -578,7 +489,7 @@ class VoltageWriter(JRODataWriter, Operation):
 
         Return: None
         """
-        Operation.__init__(self, **kwargs)
+        Operation.__init__(self)#, **kwargs)
 
         self.nTotalBlocks = 0
 
@@ -762,3 +673,4 @@ class VoltageWriter(JRODataWriter, Operation):
         self.processingHeaderObj.processFlags = self.getProcessFlags()
 
         self.setBasicHeader()
+        

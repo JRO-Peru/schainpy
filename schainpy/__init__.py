@@ -1,7 +1,7 @@
 '''
-Created on Feb 7, 2012
+Created on Jul 3, 2018
 
 @author $Author$
 @version $Id$
 '''
-__version__ = '2.3'
+__version__ = '3.0'

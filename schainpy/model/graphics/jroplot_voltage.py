@@ -7,219 +7,296 @@ import os
 import datetime
 import numpy
 
-from figure import Figure
+from schainpy.model.graphics.jroplot_base import Plot, plt
 
-class Scope(Figure):
-    
-    isConfig = None
-    
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
-        self.isConfig = False
-        self.WIDTH = 300
-        self.HEIGHT = 200
-        self.counter_imagwr = 0
-    
-    def getSubplots(self):
-        
-        nrow = self.nplots
-        ncol = 3
-        return nrow, ncol
-    
-    def setup(self, id, nplots, wintitle, show):
-        
-        self.nplots = nplots
-        
-        self.createFigure(id=id, 
-                          wintitle=wintitle, 
-                          show=show)
-        
-        nrow,ncol = self.getSubplots()
-        colspan = 3
-        rowspan = 1
-        
-        for i in range(nplots):
-            self.addAxes(nrow, ncol, i, 0, colspan, rowspan)
-    
-    def plot_iq(self, x, y, id, channelIndexList, thisDatetime, wintitle, show, xmin, xmax, ymin, ymax):
+
+class ScopePlot(Plot):
+
+    '''
+       Plot for Scope
+    '''
+
+    CODE = 'scope'
+    plot_name = 'Scope'
+    plot_type = 'scatter'
+
+    def setup(self):
+
+        self.xaxis = 'Range (Km)'
+        self.ncols = 1
+        self.nrows = 1
+        self.nplots = 1
+        self.ylabel = 'Intensity [dB]'
+        self.titles = ['Scope']
+        self.colorbar = False
+        self.width = 6
+        self.height = 4
+
+    def plot_iq(self, x, y, channelIndexList, thisDatetime, wintitle):
+
         yreal = y[channelIndexList,:].real
         yimag = y[channelIndexList,:].imag
-        
-        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Range (Km)"
-        ylabel = "Intensity - IQ"
-        
-        if not self.isConfig:
-            nplots = len(channelIndexList)
-            
-            self.setup(id=id,
-                       nplots=nplots,
-                       wintitle='',
-                       show=show)
-            
-            if xmin == None: xmin = numpy.nanmin(x)
-            if xmax == None: xmax = numpy.nanmax(x)
-            if ymin == None: ymin = min(numpy.nanmin(yreal),numpy.nanmin(yimag))
-            if ymax == None: ymax = max(numpy.nanmax(yreal),numpy.nanmax(yimag))
-                
-            self.isConfig = True
-        
-        self.setWinTitle(title)
-        
-        for i in range(len(self.axesList)):
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        self.xlabel = "Range (Km)"
+        self.ylabel = "Intensity - IQ"
+
+        self.y = yreal
+        self.x = x
+        self.xmin = min(x)
+        self.xmax = max(x)
+
+
+        self.titles[0] = title
+
+        for i,ax in enumerate(self.axes):
             title = "Channel %d" %(i)
-            axes = self.axesList[i]
+            if ax.firsttime:
+                ax.plt_r = ax.plot(x, yreal[i,:], color='b')[0]
+                ax.plt_i = ax.plot(x, yimag[i,:], color='r')[0]
+            else:
+                ax.plt_r.set_data(x, yreal[i,:])
+                ax.plt_i.set_data(x, yimag[i,:])
 
-            axes.pline(x, yreal[i,:],
-                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                        xlabel=xlabel, ylabel=ylabel, title=title)
-
-            axes.addpline(x, yimag[i,:], idline=1, color="red", linestyle="solid", lw=2)
-            
-    def plot_power(self, x, y, id, channelIndexList, thisDatetime, wintitle, show, xmin, xmax, ymin, ymax):
+    def plot_power(self, x, y, channelIndexList, thisDatetime, wintitle):
         y = y[channelIndexList,:] * numpy.conjugate(y[channelIndexList,:])
         yreal = y.real
-        
-        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
-        xlabel = "Range (Km)"
-        ylabel = "Intensity"
-        
-        if not self.isConfig:
-            nplots = len(channelIndexList)
-            
-            self.setup(id=id,
-                       nplots=nplots,
-                       wintitle='',
-                       show=show)
-            
-            if xmin == None: xmin = numpy.nanmin(x)
-            if xmax == None: xmax = numpy.nanmax(x)
-            if ymin == None: ymin = numpy.nanmin(yreal)
-            if ymax == None: ymax = numpy.nanmax(yreal)
-                
-            self.isConfig = True
-        
-        self.setWinTitle(title)
-        
-        for i in range(len(self.axesList)):
-            title = "Channel %d" %(i)
-            axes = self.axesList[i]
-            ychannel = yreal[i,:]
-            axes.pline(x, ychannel,
-                        xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                        xlabel=xlabel, ylabel=ylabel, title=title)
+        yreal = 10*numpy.log10(yreal)
+        self.y = yreal
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y"))
+        self.xlabel = "Range (Km)"
+        self.ylabel = "Intensity"
+        self.xmin = min(x)
+        self.xmax = max(x)
 
-    
-    def run(self, dataOut, id, wintitle="", channelList=None,
-            xmin=None, xmax=None, ymin=None, ymax=None, save=False,
-            figpath='./', figfile=None, show=True, wr_period=1,
-            ftp=False, server=None, folder=None, username=None, password=None, type='power', **kwargs):
-        
-        """
-        
-        Input:
-            dataOut         :
-            id        :
-            wintitle        :
-            channelList     :
-            xmin            :    None,
-            xmax            :    None,
-            ymin            :    None,
-            ymax            :    None,
-        """
-        
-        if channelList == None:
-            channelIndexList = dataOut.channelIndexList
+
+        self.titles[0] = title
+
+        for i,ax in enumerate(self.axes):
+            title = "Channel %d" %(i)
+
+            ychannel = yreal[i,:]
+
+            if ax.firsttime:
+                ax.plt_r = ax.plot(x, ychannel)[0]
+            else:
+                #pass
+                ax.plt_r.set_data(x, ychannel)
+
+    def plot_weatherpower(self, x, y, channelIndexList, thisDatetime, wintitle):
+
+
+        y      = y[channelIndexList,:]
+        yreal  = y.real
+        yreal  = 10*numpy.log10(yreal)
+        self.y = yreal
+        title  = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        self.xlabel = "Range (Km)"
+        self.ylabel = "Intensity"
+        self.xmin   = min(x)
+        self.xmax   = max(x)
+
+        self.titles[0] =title
+        for i,ax in enumerate(self.axes):
+            title    = "Channel %d" %(i)
+
+            ychannel = yreal[i,:]
+
+            if ax.firsttime:
+                ax.plt_r = ax.plot(x, ychannel)[0]
+            else:
+                #pass
+                ax.plt_r.set_data(x, ychannel)
+
+    def plot_weathervelocity(self, x, y, channelIndexList, thisDatetime, wintitle):
+
+        x = x[channelIndexList,:]
+        yreal  = y
+        self.y = yreal
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        self.xlabel = "Velocity (m/s)"
+        self.ylabel = "Range (Km)"
+        self.xmin   = numpy.min(x)
+        self.xmax   = numpy.max(x)
+        self.titles[0] =title
+        for i,ax in enumerate(self.axes):
+            title    = "Channel %d" %(i)
+            xchannel    = x[i,:]
+            if ax.firsttime:
+                ax.plt_r = ax.plot(xchannel, yreal)[0]
+            else:
+                #pass
+                ax.plt_r.set_data(xchannel, yreal)
+
+    def plot_weatherspecwidth(self, x, y, channelIndexList, thisDatetime, wintitle):
+
+        x = x[channelIndexList,:]
+        yreal  = y
+        self.y = yreal
+        title = wintitle + " Scope: %s" %(thisDatetime.strftime("%d-%b-%Y %H:%M:%S"))
+        self.xlabel = "width "
+        self.ylabel = "Range (Km)"
+        self.xmin   = numpy.min(x)
+        self.xmax   = numpy.max(x)
+        self.titles[0] =title
+        for i,ax in enumerate(self.axes):
+            title    = "Channel %d" %(i)
+            xchannel    = x[i,:]
+            if ax.firsttime:
+                ax.plt_r = ax.plot(xchannel, yreal)[0]
+            else:
+                #pass
+                ax.plt_r.set_data(xchannel, yreal)
+
+    def plot(self):
+        if self.channels:
+            channels = self.channels
         else:
-            channelIndexList = []
-            for channel in channelList:
-                if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
-                channelIndexList.append(dataOut.channelList.index(channel))
-        
-        thisDatetime = datetime.datetime.utcfromtimestamp(dataOut.getTimeRange()[0])
-        
-        if dataOut.flagDataAsBlock:
-            
-            for i in range(dataOut.nProfiles):
-                
-                wintitle1 = wintitle + " [Profile = %d] " %i
-                
-                if type == "power":
-                    self.plot_power(dataOut.heightList, 
-                                    dataOut.data[:,i,:],
-                                    id, 
-                                    channelIndexList, 
-                                    thisDatetime,
-                                    wintitle1,
-                                    show,
-                                    xmin,
-                                    xmax,
-                                    ymin,
-                                    ymax)
-                
-                if type == "iq":
-                    self.plot_iq(dataOut.heightList, 
-                                 dataOut.data[:,i,:],
-                                 id, 
-                                 channelIndexList, 
-                                 thisDatetime,
-                                 wintitle1,
-                                 show,
-                                 xmin,
-                                 xmax,
-                                 ymin,
-                                 ymax)
-                    
-                self.draw()
-                
-                str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S")
-                figfile = self.getFilename(name = str_datetime) + "_" + str(i)
-        
-                self.save(figpath=figpath,
-                          figfile=figfile,
-                          save=save,
-                          ftp=ftp,
-                          wr_period=wr_period,
-                          thisDatetime=thisDatetime)
-        
+            channels = self.data.channels
+
+        thisDatetime = datetime.datetime.utcfromtimestamp(self.data.times[-1])
+        if self.CODE == "pp_power":
+            scope = self.data['pp_power']
+        elif self.CODE == "pp_signal":
+            scope = self.data["pp_signal"]
+        elif self.CODE == "pp_velocity":
+            scope = self.data["pp_velocity"]
+        elif self.CODE == "pp_specwidth":
+            scope = self.data["pp_specwidth"]
         else:
-            wintitle += " [Profile = %d] " %dataOut.profileIndex
-            
-            if type == "power":
-                self.plot_power(dataOut.heightList, 
-                                dataOut.data,
-                                id, 
-                                channelIndexList, 
+            scope =self.data["scope"]
+
+        if self.data.flagDataAsBlock:
+
+            for i in range(self.data.nProfiles):
+
+                wintitle1 = " [Profile = %d] " %i
+                if self.CODE =="scope":
+                    if self.type == "power":
+                        self.plot_power(self.data.heights,
+                                        scope[:,i,:],
+                                        channels,
+                                        thisDatetime,
+                                        wintitle1
+                                        )
+
+                    if self.type == "iq":
+                        self.plot_iq(self.data.heights,
+                                     scope[:,i,:],
+                                     channels,
+                                     thisDatetime,
+                                     wintitle1
+                                    )
+                if self.CODE=="pp_power":
+                    self.plot_weatherpower(self.data.heights,
+                               scope[:,i,:],
+                               channels,
+                               thisDatetime,
+                               wintitle
+                               )
+                if self.CODE=="pp_signal":
+                    self.plot_weatherpower(self.data.heights,
+                               scope[:,i,:],
+                               channels,
+                               thisDatetime,
+                               wintitle
+                               )
+                if self.CODE=="pp_velocity":
+                    self.plot_weathervelocity(scope[:,i,:],
+                               self.data.heights,
+                               channels,
+                               thisDatetime,
+                               wintitle
+                               )
+                if self.CODE=="pp_spcwidth":
+                    self.plot_weatherspecwidth(scope[:,i,:],
+                               self.data.heights,
+                               channels,
+                               thisDatetime,
+                               wintitle
+                               )
+        else:
+            wintitle = " [Profile = %d] " %self.data.profileIndex
+            if self.CODE== "scope":
+                if self.type == "power":
+                     self.plot_power(self.data.heights,
+                                scope,
+                                channels,
                                 thisDatetime,
-                                wintitle,
-                                show,
-                                xmin,
-                                xmax,
-                                ymin,
-                                ymax)
-            
-            if type == "iq":
-                self.plot_iq(dataOut.heightList, 
-                             dataOut.data,
-                             id, 
-                             channelIndexList, 
-                             thisDatetime,
-                             wintitle,
-                             show,
-                             xmin,
-                             xmax,
-                             ymin,
-                             ymax)
-        
-        self.draw()
-        
-        str_datetime = thisDatetime.strftime("%Y%m%d_%H%M%S") + "_" + str(dataOut.profileIndex)
-        figfile = self.getFilename(name = str_datetime) 
-                
-        self.save(figpath=figpath,
-                  figfile=figfile,
-                  save=save,
-                  ftp=ftp,
-                  wr_period=wr_period,
-                  thisDatetime=thisDatetime)
+                                wintitle
+                                )
+
+                if self.type == "iq":
+                    self.plot_iq(self.data.heights,
+                                scope,
+                                channels,
+                                thisDatetime,
+                                wintitle
+                                )
+            if self.CODE=="pp_power":
+                self.plot_weatherpower(self.data.heights,
+                                    scope,
+                                    channels,
+                                    thisDatetime,
+                                    wintitle
+                                       )
+            if self.CODE=="pp_signal":
+                self.plot_weatherpower(self.data.heights,
+                                    scope,
+                                    channels,
+                                    thisDatetime,
+                                    wintitle
+                                       )
+            if self.CODE=="pp_velocity":
+                self.plot_weathervelocity(scope,
+                                       self.data.heights,
+                                       channels,
+                                       thisDatetime,
+                                       wintitle
+                                       )
+            if self.CODE=="pp_specwidth":
+                self.plot_weatherspecwidth(scope,
+                                       self.data.heights,
+                                       channels,
+                                       thisDatetime,
+                                       wintitle
+                                       )
+
+
+
+class PulsepairPowerPlot(ScopePlot):
+    '''
+    Plot for  P= S+N
+    '''
+
+    CODE = 'pp_power'
+    plot_name = 'PulsepairPower'
+    plot_type = 'scatter'
+    buffering = False
+
+class PulsepairVelocityPlot(ScopePlot):
+    '''
+    Plot for VELOCITY
+    '''
+    CODE = 'pp_velocity'
+    plot_name = 'PulsepairVelocity'
+    plot_type = 'scatter'
+    buffering = False
+
+class PulsepairSpecwidthPlot(ScopePlot):
+    '''
+    Plot for WIDTH
+    '''
+    CODE = 'pp_specwidth'
+    plot_name = 'PulsepairSpecwidth'
+    plot_type = 'scatter'
+    buffering = False
+
+class PulsepairSignalPlot(ScopePlot):
+    '''
+    Plot for S
+    '''
+
+    CODE = 'pp_signal'
+    plot_name = 'PulsepairSignal'
+    plot_type = 'scatter'
+    buffering = False

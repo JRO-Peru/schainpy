@@ -7,10 +7,10 @@ import os
 import datetime
 import numpy
 
-from figure import Figure, isRealtime
-from plotting_codes import *
+from schainpy.model.graphics.jroplot_base import Plot
 
-class SpectraHeisScope(Figure):
+
+class SpectraHeisScope(Plot):
 
 
     isConfig = None
@@ -20,9 +20,9 @@ class SpectraHeisScope(Figure):
     HEIGHTPROF = None
     PREFIX = 'spc'
 
-    def __init__(self, **kwargs):
+    def __init__(self):#, **kwargs):
 
-        Figure.__init__(self, **kwargs)
+        Plot.__init__(self)#, **kwargs)
         self.isConfig = False
         self.__nsubplots = 1
 
@@ -96,9 +96,12 @@ class SpectraHeisScope(Figure):
             ymax            :    None,
         """
 
+        if dataOut.flagNoData:
+            return dataOut
+
         if dataOut.realtime:
             if not(isRealtime(utcdatatime = dataOut.utctime)):
-                print 'Skipping this plot function'
+                print('Skipping this plot function')
                 return
 
         if channelList == None:
@@ -107,7 +110,7 @@ class SpectraHeisScope(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
 #        x = dataOut.heightList
@@ -173,15 +176,18 @@ class SpectraHeisScope(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime)
 
-class RTIfromSpectraHeis(Figure):
+        return dataOut
+
+
+class RTIfromSpectraHeis(Plot):
 
     isConfig = None
     __nsubplots = None
 
     PREFIX = 'rtinoise'
 
-    def __init__(self, **kwargs):
-        Figure.__init__(self, **kwargs)
+    def __init__(self):#, **kwargs):
+        Plot.__init__(self)#, **kwargs)
         self.timerange = 24*60*60
         self.isConfig = False
         self.__nsubplots = 1
@@ -231,6 +237,10 @@ class RTIfromSpectraHeis(Figure):
             server=None, folder=None, username=None, password=None,
             ftp_wei=0, exp_code=0, sub_exp_code=0, plot_pos=0):
 
+        if dataOut.flagNoData:
+            return dataOut
+
+
         if channelList == None:
             channelIndexList = dataOut.channelIndexList
             channelList = dataOut.channelList
@@ -238,7 +248,7 @@ class RTIfromSpectraHeis(Figure):
             channelIndexList = []
             for channel in channelList:
                 if channel not in dataOut.channelList:
-                    raise ValueError, "Channel %d is not in dataOut.channelList"
+                    raise ValueError("Channel %d is not in dataOut.channelList")
                 channelIndexList.append(dataOut.channelList.index(channel))
 
         if timerange != None:
@@ -327,3 +337,6 @@ class RTIfromSpectraHeis(Figure):
                   wr_period=wr_period,
                   thisDatetime=thisDatetime,
                   update_figfile=update_figfile)
+
+
+        return dataOut

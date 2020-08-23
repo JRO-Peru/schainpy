@@ -1,289 +1,91 @@
 '''
-
-$Author: murco $
-$Id: jroproc_base.py 1 2012-11-12 18:56:07Z murco $
+Base clases to create Processing units and operations, the MPDecorator
+must be used in plotting and writing operations to allow to run as an
+external process.
 '''
+
 import inspect
-from fuzzywuzzy import process
+import zmq
+import time
+import pickle
+import traceback
+try:
+    from queue import Queue
+except:
+    from Queue import Queue
+from threading import Thread
+from multiprocessing import Process, Queue
+from schainpy.utils import log
 
-def checkKwargs(method, kwargs):
-    currentKwargs = kwargs
-    choices = inspect.getargspec(method).args
-    try:
-        choices.remove('self')
-    except Exception as e:
-        pass
-
-    try:
-        choices.remove('dataOut')
-    except Exception as e:
-        pass
-
-    for kwarg in kwargs:
-        fuzz = process.extractOne(kwarg, choices)
-        if fuzz is None:
-            continue
-        if fuzz[1] < 100:
-            raise Exception('\x1b[0;32;40mDid you mean {} instead of {} in {}? \x1b[0m'.
-                            format(fuzz[0], kwarg, method.__self__.__class__.__name__))
 
 class ProcessingUnit(object):
+    '''
+    Base class to create Signal Chain Units
+    '''
 
-    """
-    Esta es la clase base para el procesamiento de datos.
+    proc_type = 'processing'
 
-    Contiene el metodo "call" para llamar operaciones. Las operaciones pueden ser:
-        - Metodos internos (callMethod)
-        - Objetos del tipo Operation (callObject). Antes de ser llamados, estos objetos
-          tienen que ser agreagados con el metodo "add".
-
-    """
-    # objeto de datos de entrada (Voltage, Spectra o Correlation)
-    dataIn = None
-    dataInList = []
-
-    # objeto de datos de entrada (Voltage, Spectra o Correlation)
-    dataOut = None
-
-    operations2RunDict = None
-
-    isConfig = False
-
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
 
         self.dataIn = None
-        self.dataInList = []
-
         self.dataOut = None
-
-        self.operations2RunDict = {}
-        self.operationKwargs = {}
-
         self.isConfig = False
+        self.operations = []
+    
+    def setInput(self, unit):
 
-        self.args = args
-        self.kwargs = kwargs
-
-        if not hasattr(self, 'name'):
-            self.name = self.__class__.__name__
-
-        checkKwargs(self.run, kwargs)
-
+        self.dataIn = unit.dataOut
+    
     def getAllowedArgs(self):
         if hasattr(self, '__attrs__'):
             return self.__attrs__
         else:
             return inspect.getargspec(self.run).args
 
-    def addOperationKwargs(self, objId, **kwargs):
+    def addOperation(self, conf, operation):
         '''
         '''
-
-        self.operationKwargs[objId] = kwargs
-
-
-    def addOperation(self, opObj, objId):
-
-        """
-        Agrega un objeto del tipo "Operation" (opObj) a la lista de objetos "self.objectList" y retorna el
-        identificador asociado a este objeto.
-
-        Input:
-
-            object    :    objeto de la clase "Operation"
-
-        Return:
-
-            objId    :    identificador del objeto, necesario para ejecutar la operacion
-        """
-
-        self.operations2RunDict[objId] = opObj
-
-        return objId
+        
+        self.operations.append((operation, conf.type, conf.getKwargs()))
 
     def getOperationObj(self, objId):
 
-        if objId not in self.operations2RunDict.keys():
+        if objId not in list(self.operations.keys()):
             return None
 
-        return self.operations2RunDict[objId]
+        return self.operations[objId]
 
-    def operation(self, **kwargs):
+    def call(self, **kwargs):
+        '''
+        '''
 
-        """
-        Operacion directa sobre la data (dataOut.data). Es necesario actualizar los valores de los
-        atributos del objeto dataOut
-
-        Input:
-
-            **kwargs    :    Diccionario de argumentos de la funcion a ejecutar
-        """
-
-        raise NotImplementedError
-
-    def callMethod(self, name, opId):
-
-        """
-        Ejecuta el metodo con el nombre "name" y con argumentos **kwargs de la propia clase.
-
-        Input:
-            name        :    nombre del metodo a ejecutar
-
-            **kwargs     :    diccionario con los nombres y valores de la funcion a ejecutar.
-
-        """
-
-        #Checking the inputs
-        if name == 'run':
-
-            if not self.checkInputs():
+        try:
+            if self.dataIn is not None and self.dataIn.flagNoData and not self.dataIn.error:
+                return self.dataIn.isReady()
+            elif self.dataIn is None or not self.dataIn.error:
+                self.run(**kwargs)
+            elif self.dataIn.error:
+                self.dataOut.error = self.dataIn.error
                 self.dataOut.flagNoData = True
-                return False
-        else:
-            #Si no es un metodo RUN la entrada es la misma dataOut (interna)
-            if self.dataOut is not None and self.dataOut.isEmpty():
-                return False
-
-        #Getting the pointer to method
-        methodToCall = getattr(self, name)
-
-        #Executing the self method
-
-        if hasattr(self, 'mp'):
-            if name=='run':
-                if self.mp is False:
-                    self.mp = True
-                    self.start()
+        except:
+            err = traceback.format_exc()                    
+            if 'SchainWarning' in err:
+                log.warning(err.split('SchainWarning:')[-1].split('\n')[0].strip(), self.name)
+            elif 'SchainError' in err:
+                log.error(err.split('SchainError:')[-1].split('\n')[0].strip(), self.name)
             else:
-                self.operationKwargs[opId]['parent'] = self.kwargs
-                methodToCall(**self.operationKwargs[opId])
-        else:
-            if name=='run':
-                methodToCall(**self.kwargs)
-            else:
-                methodToCall(**self.operationKwargs[opId])
+                log.error(err, self.name)
+            self.dataOut.error = True
+        
+        for op, optype, opkwargs in self.operations:
+            if optype == 'other' and not self.dataOut.flagNoData:
+                self.dataOut = op.run(self.dataOut, **opkwargs)
+            elif optype == 'external' and not self.dataOut.flagNoData:
+                op.queue.put(self.dataOut)
+            elif optype == 'external' and self.dataOut.error:                        
+                op.queue.put(self.dataOut)
 
-        if self.dataOut is None:
-            return False
-
-        if self.dataOut.isEmpty():
-            return False
-
-        return True
-
-    def callObject(self, objId):
-
-        """
-        Ejecuta la operacion asociada al identificador del objeto "objId"
-
-        Input:
-
-            objId        :    identificador del objeto a ejecutar
-
-            **kwargs    :    diccionario con los nombres y valores de la funcion a ejecutar.
-
-        Return:
-
-            None
-        """
-
-        if self.dataOut is not None and self.dataOut.isEmpty():
-            return False
-
-        externalProcObj = self.operations2RunDict[objId]
-
-        if hasattr(externalProcObj, 'mp'):
-            if externalProcObj.mp is False:
-                externalProcObj.kwargs['parent'] = self.kwargs
-                self.operationKwargs[objId] = externalProcObj.kwargs
-                externalProcObj.mp = True
-                externalProcObj.start()
-        else:
-            externalProcObj.run(self.dataOut, **externalProcObj.kwargs)
-            self.operationKwargs[objId] = externalProcObj.kwargs
-
-
-        return True
-
-    def call(self, opType, opName=None, opId=None):
-        """
-        Return True si ejecuta la operacion interna nombrada "opName" o la operacion externa
-        identificada con el id "opId"; con los argumentos "**kwargs".
-
-        False si la operacion no se ha ejecutado.
-
-        Input:
-
-            opType    :    Puede ser "self" o "external"
-
-                Depende del tipo de operacion para llamar a:callMethod or callObject:
-
-                1. If opType = "self": Llama a un metodo propio de esta clase:
-
-                        name_method = getattr(self, name)
-                        name_method(**kwargs)
-
-
-                2. If opType = "other" o"external": Llama al metodo "run()" de una instancia de la
-                   clase "Operation" o de un derivado de ella:
-
-                        instanceName = self.operationList[opId]
-                        instanceName.run(**kwargs)
-
-            opName    : Si la operacion es interna (opType = 'self'), entonces el "opName" sera
-                        usada para llamar a un metodo interno de la clase Processing
-
-            opId    :    Si la operacion es externa (opType = 'other' o 'external), entonces el
-                        "opId" sera usada para llamar al metodo "run" de la clase Operation
-                        registrada anteriormente con ese Id
-
-        Exception:
-               Este objeto de tipo Operation debe de haber sido agregado antes con el metodo:
-               "addOperation" e identificado con el valor "opId"  = el id de la operacion.
-               De lo contrario retornara un error del tipo ValueError
-
-        """
-
-        if opType == 'self':
-
-            if not opName:
-                raise ValueError, "opName parameter should be defined"
-
-            sts = self.callMethod(opName, opId)
-
-        elif opType == 'other' or opType == 'external' or opType == 'plotter':
-
-            if not opId:
-                raise ValueError, "opId parameter should be defined"
-
-            if opId not in self.operations2RunDict.keys():
-                raise ValueError, "Any operation with id=%s has been added" %str(opId)
-
-            sts = self.callObject(opId)
-
-        else:
-            raise ValueError, "opType should be 'self', 'external' or 'plotter'; and not '%s'" %opType
-
-        return sts
-
-    def setInput(self, dataIn):
-
-        self.dataIn = dataIn
-        self.dataInList.append(dataIn)
-
-    def getOutputObj(self):
-
-        return self.dataOut
-
-    def checkInputs(self):
-
-        for thisDataIn in self.dataInList:
-
-            if thisDataIn.isEmpty():
-                return False
-
-        return True
+        return 'Error' if self.dataOut.error else self.dataOut.isReady()
 
     def setup(self):
 
@@ -294,31 +96,24 @@ class ProcessingUnit(object):
         raise NotImplementedError
 
     def close(self):
-        #Close every thread, queue or any other object here is it is neccesary.
+
         return
+
 
 class Operation(object):
 
-    """
-    Clase base para definir las operaciones adicionales que se pueden agregar a la clase ProcessingUnit
-    y necesiten acumular informacion previa de los datos a procesar. De preferencia usar un buffer de
-    acumulacion dentro de esta clase
+    '''
+    '''
+    
+    proc_type = 'operation'
 
-    Ejemplo: Integraciones coherentes, necesita la informacion previa de los n perfiles anteriores (bufffer)
+    def __init__(self):
 
-    """
-
-    __buffer = None
-    isConfig = False
-
-    def __init__(self, **kwargs):
-
-        self.__buffer = None
+        self.id = None
         self.isConfig = False
-        self.kwargs = kwargs
+
         if not hasattr(self, 'name'):
             self.name = self.__class__.__name__
-        checkKwargs(self.run, kwargs)
 
     def getAllowedArgs(self):
         if hasattr(self, '__attrs__'):
@@ -333,7 +128,6 @@ class Operation(object):
         raise NotImplementedError
 
     def run(self, dataIn, **kwargs):
-
         """
         Realiza las operaciones necesarias sobre la dataIn.data y actualiza los
         atributos del objeto dataIn.
@@ -357,4 +151,57 @@ class Operation(object):
 
     def close(self):
 
-        pass
+        return
+
+   
+def MPDecorator(BaseClass):
+    """
+    Multiprocessing class decorator
+
+    This function add multiprocessing features to a BaseClass.  
+    """
+
+    class MPClass(BaseClass, Process):
+
+        def __init__(self, *args, **kwargs):
+            super(MPClass, self).__init__()
+            Process.__init__(self)
+
+            self.args = args
+            self.kwargs = kwargs
+            self.t = time.time()
+            self.op_type = 'external'
+            self.name = BaseClass.__name__
+            self.__doc__ = BaseClass.__doc__
+            
+            if 'plot' in self.name.lower() and not self.name.endswith('_'):
+                self.name = '{}{}'.format(self.CODE.upper(), 'Plot')
+            
+            self.start_time = time.time()
+            self.err_queue = args[3]
+            self.queue = Queue(maxsize=1)
+            self.myrun = BaseClass.run
+
+        def run(self):
+            
+            while True:
+
+                dataOut = self.queue.get()
+
+                if not dataOut.error:
+                    try:
+                        BaseClass.run(self, dataOut, **self.kwargs)
+                    except:
+                        err = traceback.format_exc()  
+                        log.error(err, self.name)
+                else:
+                    break
+
+            self.close()
+
+        def close(self):
+
+            BaseClass.close(self)
+            log.success('Done...(Time:{:4.2f} secs)'.format(time.time()-self.start_time), self.name)
+
+    return MPClass

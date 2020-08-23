@@ -1,17 +1,20 @@
+import time
 import itertools
 
 import numpy
 
-from jroproc_base import ProcessingUnit, Operation
+from schainpy.model.proc.jroproc_base import ProcessingUnit, MPDecorator, Operation
 from schainpy.model.data.jrodata import Spectra
 from schainpy.model.data.jrodata import hildebrand_sekhon
+from schainpy.utils import log
 
 
 class SpectraProc(ProcessingUnit):
 
-    def __init__(self, **kwargs):
 
-        ProcessingUnit.__init__(self, **kwargs)
+    def __init__(self):
+
+        ProcessingUnit.__init__(self)
 
         self.buffer = None
         self.firstdatatime = None
@@ -19,6 +22,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut = Spectra()
         self.id_min = None
         self.id_max = None
+        self.setupReq = False #Agregar a todas las unidades de proc
 
     def __updateSpecFromVoltage(self):
 
@@ -99,11 +103,11 @@ class SpectraProc(ProcessingUnit):
                 (self.dataOut.nPairs, self.dataOut.nFFTPoints, self.dataOut.nHeights), dtype='complex')
             for pair in self.dataOut.pairsList:
                 if pair[0] not in self.dataOut.channelList:
-                    raise ValueError, "Error getting CrossSpectra: pair 0 of %s is not in channelList = %s" % (
-                        str(pair), str(self.dataOut.channelList))
+                    raise ValueError("Error getting CrossSpectra: pair 0 of %s is not in channelList = %s" % (
+                        str(pair), str(self.dataOut.channelList)))
                 if pair[1] not in self.dataOut.channelList:
-                    raise ValueError, "Error getting CrossSpectra: pair 1 of %s is not in channelList = %s" % (
-                        str(pair), str(self.dataOut.channelList))
+                    raise ValueError("Error getting CrossSpectra: pair 1 of %s is not in channelList = %s" % (
+                        str(pair), str(self.dataOut.channelList)))
 
                 cspc[pairIndex, :, :] = fft_volt[pair[0], :, :] * \
                     numpy.conjugate(fft_volt[pair[1], :, :])
@@ -114,18 +118,12 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_cspc = cspc
         self.dataOut.data_dc = dc
         self.dataOut.blockSize = blocksize
-        self.dataOut.flagShiftFFT = True
+        self.dataOut.flagShiftFFT = False
 
     def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None, shift_fft=False):
-
-        self.dataOut.flagNoData = True
-
+        
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
-            # if not pairsList:
-            #     pairsList = itertools.combinations(self.dataOut.channelList, 2)
-            # if self.dataOut.data_cspc is not None:
-            #     self.__selectPairs(pairsList)
             if shift_fft:
                 #desplaza a la derecha en el eje 2 determinadas posiciones
                 shift = int(self.dataOut.nFFTPoints/2)
@@ -134,13 +132,15 @@ class SpectraProc(ProcessingUnit):
                 if self.dataOut.data_cspc is not None:
                     #desplaza a la derecha en el eje 2 determinadas posiciones
                     self.dataOut.data_cspc = numpy.roll(self.dataOut.data_cspc, shift, axis=1)
-            
+
             return True
 
         if self.dataIn.type == "Voltage":
 
+            self.dataOut.flagNoData = True
+
             if nFFTPoints == None:
-                raise ValueError, "This SpectraProc.run() need nFFTPoints input variable"
+                raise ValueError("This SpectraProc.run() need nFFTPoints input variable")
 
             if nProfiles == None:
                 nProfiles = nFFTPoints
@@ -160,9 +160,7 @@ class SpectraProc(ProcessingUnit):
                                           dtype='complex')
 
             if self.dataIn.flagDataAsBlock:
-                # data dimension: [nChannels, nProfiles, nSamples]
                 nVoltProfiles = self.dataIn.data.shape[1]
-            #                 nVoltProfiles = self.dataIn.nProfiles
 
                 if nVoltProfiles == nProfiles:
                     self.buffer = self.dataIn.data.copy()
@@ -180,8 +178,8 @@ class SpectraProc(ProcessingUnit):
                     self.id_min += nVoltProfiles
                     self.id_max += nVoltProfiles
                 else:
-                    raise ValueError, "The type object %s has %d profiles, it should just has %d profiles" % (
-                        self.dataIn.type, self.dataIn.data.shape[1], nProfiles)
+                    raise ValueError("The type object %s has %d profiles, it should just has %d profiles" % (
+                        self.dataIn.type, self.dataIn.data.shape[1], nProfiles))
                     self.dataOut.flagNoData = True
                     return 0
             else:
@@ -201,8 +199,8 @@ class SpectraProc(ProcessingUnit):
 
             return True
 
-        raise ValueError, "The type of input object '%s' is not valid" % (
-            self.dataIn.type)
+        raise ValueError("The type of input object '%s' is not valid" % (
+            self.dataIn.type))
 
     def __selectPairs(self, pairsList):
 
@@ -222,113 +220,28 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.pairsList = pairs
 
         return
-
-    def __selectPairsByChannel(self, channelList=None):
-
-        if channelList == None:
-            return
-
-        pairsIndexListSelected = []
-        for pairIndex in self.dataOut.pairsIndexList:
-            # First pair
-            if self.dataOut.pairsList[pairIndex][0] not in channelList:
-                continue
-            # Second pair
-            if self.dataOut.pairsList[pairIndex][1] not in channelList:
-                continue
-
-            pairsIndexListSelected.append(pairIndex)
-
-        if not pairsIndexListSelected:
-            self.dataOut.data_cspc = None
-            self.dataOut.pairsList = []
-            return
-
-        self.dataOut.data_cspc = self.dataOut.data_cspc[pairsIndexListSelected]
-        self.dataOut.pairsList = [self.dataOut.pairsList[i]
-                                  for i in pairsIndexListSelected]
-
-        return
-
-    def selectChannels(self, channelList):
-
-        channelIndexList = []
-
-        for channel in channelList:
-            if channel not in self.dataOut.channelList:
-                raise ValueError, "Error selecting channels, Channel %d is not valid.\nAvailable channels = %s" % (
-                    channel, str(self.dataOut.channelList))
-
-            index = self.dataOut.channelList.index(channel)
-            channelIndexList.append(index)
-
-        self.selectChannelsByIndex(channelIndexList)
-
-    def selectChannelsByIndex(self, channelIndexList):
+    
+    def selectFFTs(self, minFFT, maxFFT ):
         """
-        Selecciona un bloque de datos en base a canales segun el channelIndexList
-
-        Input:
-            channelIndexList    :    lista sencilla de canales a seleccionar por ej. [2,3,7]
-
-        Affected:
-            self.dataOut.data_spc
-            self.dataOut.channelIndexList
-            self.dataOut.nChannels
-
-        Return:
-            None
+        Selecciona un bloque de datos en base a un grupo de valores de puntos FFTs segun el rango 
+        minFFT<= FFT <= maxFFT
         """
-
-        for channelIndex in channelIndexList:
-            if channelIndex not in self.dataOut.channelIndexList:
-                raise ValueError, "Error selecting channels: The value %d in channelIndexList is not valid.\nAvailable channel indexes = " % (
-                    channelIndex, self.dataOut.channelIndexList)
-
-        data_spc = self.dataOut.data_spc[channelIndexList, :]
-        data_dc = self.dataOut.data_dc[channelIndexList, :]
-
-        self.dataOut.data_spc = data_spc
-        self.dataOut.data_dc = data_dc
-
-        # self.dataOut.channelList = [self.dataOut.channelList[i] for i in channelIndexList]
-        self.dataOut.channelList = range(len(channelIndexList))
-        self.__selectPairsByChannel(channelIndexList)
         
-        return 1
+        if (minFFT > maxFFT):
+            raise ValueError("Error selecting heights: Height range (%d,%d) is not valid" % (minFFT, maxFFT))
 
-    def selectHeights(self, minHei, maxHei):
-        """
-        Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
-        minHei <= height <= maxHei
+        if (minFFT < self.dataOut.getFreqRange()[0]):
+            minFFT = self.dataOut.getFreqRange()[0]
 
-        Input:
-            minHei    :    valor minimo de altura a considerar
-            maxHei    :    valor maximo de altura a considerar
-
-        Affected:
-            Indirectamente son cambiados varios valores a travez del metodo selectHeightsByIndex
-
-        Return:
-            1 si el metodo se ejecuto con exito caso contrario devuelve 0
-        """
-
-        if (minHei > maxHei):
-            raise ValueError, "Error selecting heights: Height range (%d,%d) is not valid" % (
-                minHei, maxHei)
-
-        if (minHei < self.dataOut.heightList[0]):
-            minHei = self.dataOut.heightList[0]
-
-        if (maxHei > self.dataOut.heightList[-1]):
-            maxHei = self.dataOut.heightList[-1]
+        if (maxFFT > self.dataOut.getFreqRange()[-1]):
+            maxFFT = self.dataOut.getFreqRange()[-1]
 
         minIndex = 0
         maxIndex = 0
-        heights = self.dataOut.heightList
+        FFTs = self.dataOut.getFreqRange()
 
-        inda = numpy.where(heights >= minHei)
-        indb = numpy.where(heights <= maxHei)
+        inda = numpy.where(FFTs >= minFFT)
+        indb = numpy.where(FFTs <= maxFFT)
 
         try:
             minIndex = inda[0][0]
@@ -338,12 +251,12 @@ class SpectraProc(ProcessingUnit):
         try:
             maxIndex = indb[0][-1]
         except:
-            maxIndex = len(heights)
+            maxIndex = len(FFTs)
 
-        self.selectHeightsByIndex(minIndex, maxIndex)
+        self.selectFFTsByIndex(minIndex, maxIndex)
 
         return 1
-
+    
     def getBeaconSignal(self, tauindex=0, channelindex=0, hei_ref=None):
         newheis = numpy.where(
             self.dataOut.heightList > self.dataOut.radarControllerHeaderObj.Taus[tauindex])
@@ -386,52 +299,132 @@ class SpectraProc(ProcessingUnit):
 
         return 1
 
-    def selectHeightsByIndex(self, minIndex, maxIndex):
+    def selectFFTsByIndex(self, minIndex, maxIndex):
         """
-        Selecciona un bloque de datos en base a un grupo indices de alturas segun el rango
-        minIndex <= index <= maxIndex
-
-        Input:
-            minIndex    :    valor de indice minimo de altura a considerar
-            maxIndex    :    valor de indice maximo de altura a considerar
-
-        Affected:
-            self.dataOut.data_spc
-            self.dataOut.data_cspc
-            self.dataOut.data_dc
-            self.dataOut.heightList
-
-        Return:
-            1 si el metodo se ejecuto con exito caso contrario devuelve 0
+        
         """
 
         if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "Error selecting heights: Index range (%d,%d) is not valid" % (
-                minIndex, maxIndex)
+            raise ValueError("Error selecting heights: Index range (%d,%d) is not valid" % (minIndex, maxIndex))
 
-        if (maxIndex >= self.dataOut.nHeights):
-            maxIndex = self.dataOut.nHeights - 1
+        if (maxIndex >= self.dataOut.nProfiles):
+            maxIndex = self.dataOut.nProfiles-1
 
-        # Spectra
-        data_spc = self.dataOut.data_spc[:, :, minIndex:maxIndex + 1]
+        #Spectra
+        data_spc = self.dataOut.data_spc[:,minIndex:maxIndex+1,:]
 
         data_cspc = None
         if self.dataOut.data_cspc is not None:
-            data_cspc = self.dataOut.data_cspc[:, :, minIndex:maxIndex + 1]
+            data_cspc = self.dataOut.data_cspc[:,minIndex:maxIndex+1,:]
 
         data_dc = None
         if self.dataOut.data_dc is not None:
-            data_dc = self.dataOut.data_dc[:, minIndex:maxIndex + 1]
+            data_dc = self.dataOut.data_dc[minIndex:maxIndex+1,:]
 
         self.dataOut.data_spc = data_spc
         self.dataOut.data_cspc = data_cspc
         self.dataOut.data_dc = data_dc
-
-        self.dataOut.heightList = self.dataOut.heightList[minIndex:maxIndex + 1]
+        
+        self.dataOut.ippSeconds = self.dataOut.ippSeconds*(self.dataOut.nFFTPoints / numpy.shape(data_cspc)[1])
+        self.dataOut.nFFTPoints = numpy.shape(data_cspc)[1]
+        self.dataOut.profilesPerBlock = numpy.shape(data_cspc)[1]
 
         return 1
 
-    def removeDC(self, mode=2):
+    def getNoise(self, minHei=None, maxHei=None, minVel=None, maxVel=None):
+        # validacion de rango
+        if minHei == None:
+            minHei = self.dataOut.heightList[0]
+
+        if maxHei == None:
+            maxHei = self.dataOut.heightList[-1]
+
+        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
+            print('minHei: %.2f is out of the heights range' % (minHei))
+            print('minHei is setting to %.2f' % (self.dataOut.heightList[0]))
+            minHei = self.dataOut.heightList[0]
+
+        if (maxHei > self.dataOut.heightList[-1]) or (maxHei < minHei):
+            print('maxHei: %.2f is out of the heights range' % (maxHei))
+            print('maxHei is setting to %.2f' % (self.dataOut.heightList[-1]))
+            maxHei = self.dataOut.heightList[-1]
+
+        # validacion de velocidades
+        velrange = self.dataOut.getVelRange(1)
+
+        if minVel == None:
+            minVel = velrange[0]
+
+        if maxVel == None:
+            maxVel = velrange[-1]
+
+        if (minVel < velrange[0]) or (minVel > maxVel):
+            print('minVel: %.2f is out of the velocity range' % (minVel))
+            print('minVel is setting to %.2f' % (velrange[0]))
+            minVel = velrange[0]
+
+        if (maxVel > velrange[-1]) or (maxVel < minVel):
+            print('maxVel: %.2f is out of the velocity range' % (maxVel))
+            print('maxVel is setting to %.2f' % (velrange[-1]))
+            maxVel = velrange[-1]
+
+        # seleccion de indices para rango
+        minIndex = 0
+        maxIndex = 0
+        heights = self.dataOut.heightList
+
+        inda = numpy.where(heights >= minHei)
+        indb = numpy.where(heights <= maxHei)
+
+        try:
+            minIndex = inda[0][0]
+        except:
+            minIndex = 0
+
+        try:
+            maxIndex = indb[0][-1]
+        except:
+            maxIndex = len(heights)
+
+        if (minIndex < 0) or (minIndex > maxIndex):
+            raise ValueError("some value in (%d,%d) is not valid" % (
+                minIndex, maxIndex))
+
+        if (maxIndex >= self.dataOut.nHeights):
+            maxIndex = self.dataOut.nHeights - 1
+
+        # seleccion de indices para velocidades
+        indminvel = numpy.where(velrange >= minVel)
+        indmaxvel = numpy.where(velrange <= maxVel)
+        try:
+            minIndexVel = indminvel[0][0]
+        except:
+            minIndexVel = 0
+
+        try:
+            maxIndexVel = indmaxvel[0][-1]
+        except:
+            maxIndexVel = len(velrange)
+
+        # seleccion del espectro
+        data_spc = self.dataOut.data_spc[:,
+                                         minIndexVel:maxIndexVel + 1, minIndex:maxIndex + 1]
+        # estimacion de ruido
+        noise = numpy.zeros(self.dataOut.nChannels)
+
+        for channel in range(self.dataOut.nChannels):
+            daux = data_spc[channel, :, :]
+            sortdata = numpy.sort(daux, axis=None)
+            noise[channel] = hildebrand_sekhon(sortdata, self.dataOut.nIncohInt)
+
+        self.dataOut.noise_estimation = noise.copy()
+
+        return 1
+
+class removeDC(Operation):
+
+    def run(self, dataOut, mode=2):
+        self.dataOut = dataOut
         jspectra = self.dataOut.data_spc
         jcspectra = self.dataOut.data_cspc
 
@@ -444,11 +437,12 @@ class SpectraProc(ProcessingUnit):
         else:
             jcspectraExist = False
 
-        freq_dc = jspectra.shape[1] / 2
+        freq_dc = int(jspectra.shape[1] / 2)
         ind_vel = numpy.array([-2, -1, 1, 2]) + freq_dc
+        ind_vel = ind_vel.astype(int)
 
         if ind_vel[0] < 0:
-            ind_vel[range(0, 1)] = ind_vel[range(0, 1)] + self.num_prof
+            ind_vel[list(range(0, 1))] = ind_vel[list(range(0, 1))] + self.num_prof
 
         if mode == 1:
             jspectra[:, freq_dc, :] = (
@@ -464,12 +458,12 @@ class SpectraProc(ProcessingUnit):
             xx = numpy.zeros([4, 4])
 
             for fil in range(4):
-                xx[fil, :] = vel[fil]**numpy.asarray(range(4))
+                xx[fil, :] = vel[fil]**numpy.asarray(list(range(4)))
 
             xx_inv = numpy.linalg.inv(xx)
             xx_aux = xx_inv[0, :]
 
-            for ich in range(num_chan):
+            for ich in range(num_chan):                
                 yy = jspectra[ich, ind_vel, :]
                 jspectra[ich, freq_dc, :] = numpy.dot(xx_aux, yy)
 
@@ -488,9 +482,34 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.data_spc = jspectra
         self.dataOut.data_cspc = jcspectra
 
-        return 1
+        return self.dataOut
 
-    def removeInterference(self,  interf=2, hei_interf=None, nhei_interf=None, offhei_interf=None):
+class removeInterference(Operation):
+
+    def removeInterference2(self):
+        
+        cspc = self.dataOut.data_cspc
+        spc = self.dataOut.data_spc
+        Heights = numpy.arange(cspc.shape[2]) 
+        realCspc = numpy.abs(cspc)
+        
+        for i in range(cspc.shape[0]):
+            LinePower= numpy.sum(realCspc[i], axis=0)
+            Threshold = numpy.amax(LinePower)-numpy.sort(LinePower)[len(Heights)-int(len(Heights)*0.1)]
+            SelectedHeights = Heights[ numpy.where( LinePower < Threshold ) ]
+            InterferenceSum = numpy.sum( realCspc[i,:,SelectedHeights], axis=0 )
+            InterferenceThresholdMin = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.98)]
+            InterferenceThresholdMax = numpy.sort(InterferenceSum)[int(len(InterferenceSum)*0.99)]
+            
+            
+            InterferenceRange = numpy.where( ([InterferenceSum > InterferenceThresholdMin]))# , InterferenceSum < InterferenceThresholdMax]) )
+            #InterferenceRange = numpy.where( ([InterferenceRange < InterferenceThresholdMax]))
+            if len(InterferenceRange)<int(cspc.shape[1]*0.3):
+                cspc[i,InterferenceRange,:] = numpy.NaN
+            
+        self.dataOut.data_cspc = cspc
+        
+    def removeInterference(self, interf = 2, hei_interf = None, nhei_interf = None, offhei_interf = None):
 
         jspectra = self.dataOut.data_spc
         jcspectra = self.dataOut.data_cspc
@@ -503,8 +522,8 @@ class SpectraProc(ProcessingUnit):
 
         # hei_interf
         if hei_interf is None:
-            count_hei = num_hei / 2  # Como es entero no importa
-            hei_interf = numpy.asmatrix(range(count_hei)) + num_hei - count_hei
+            count_hei = int(num_hei / 2)
+            hei_interf = numpy.asmatrix(list(range(count_hei))) + num_hei - count_hei
             hei_interf = numpy.asarray(hei_interf)[0]
         # nhei_interf
         if (nhei_interf == None):
@@ -516,10 +535,10 @@ class SpectraProc(ProcessingUnit):
         if (offhei_interf == None):
             offhei_interf = 0
 
-        ind_hei = range(num_hei)
+        ind_hei = list(range(num_hei))
 #         mask_prof = numpy.asarray(range(num_prof - 2)) + 1
 #         mask_prof[range(num_prof/2 - 1,len(mask_prof))] += 1
-        mask_prof = numpy.asarray(range(num_prof))
+        mask_prof = numpy.asarray(list(range(num_prof)))
         num_mask_prof = mask_prof.size
         comp_mask_prof = [0, num_prof / 2]
 
@@ -537,8 +556,8 @@ class SpectraProc(ProcessingUnit):
             psort = power.ravel().argsort()
 
             # Se estima la interferencia promedio en los Espectros de Potencia empleando
-            junkspc_interf = jspectra[ich, :, hei_interf[psort[range(
-                offhei_interf, nhei_interf + offhei_interf)]]]
+            junkspc_interf = jspectra[ich, :, hei_interf[psort[list(range(
+                offhei_interf, nhei_interf + offhei_interf))]]]
 
             if noise_exist:
                 #    tmp_noise = jnoise[ich] / num_prof
@@ -575,7 +594,7 @@ class SpectraProc(ProcessingUnit):
             for ip in range(new_cinterfid):
                 ind = junkspc_interf[:, new_interfid[ip]].ravel().argsort()
                 jspc_interf[new_interfid[ip]
-                            ] = junkspc_interf[ind[nhei_interf / 2], new_interfid[ip]]
+                            ] = junkspc_interf[ind[nhei_interf // 2], new_interfid[ip]]
 
             jspectra[ich, :, ind_hei] = jspectra[ich, :,
                                                  ind_hei] - jspc_interf  # Corregir indices
@@ -599,7 +618,7 @@ class SpectraProc(ProcessingUnit):
                 xx = numpy.zeros([4, 4])
 
                 for id1 in range(4):
-                    xx[:, id1] = ind[id1]**numpy.asarray(range(4))
+                    xx[:, id1] = ind[id1]**numpy.asarray(list(range(4)))
 
                 xx_inv = numpy.linalg.inv(xx)
                 xx = xx_inv[:, 0]
@@ -616,7 +635,7 @@ class SpectraProc(ProcessingUnit):
         # Remocion de Interferencia en el Cross Spectra
         if jcspectra is None:
             return jspectra, jcspectra
-        num_pairs = jcspectra.size / (num_prof * num_hei)
+        num_pairs = int(jcspectra.size / (num_prof * num_hei))
         jcspectra = jcspectra.reshape(num_pairs, num_prof, num_hei)
 
         for ip in range(num_pairs):
@@ -628,24 +647,24 @@ class SpectraProc(ProcessingUnit):
             cspower = cspower.sum(axis=0)
 
             cspsort = cspower.ravel().argsort()
-            junkcspc_interf = jcspectra[ip, :, hei_interf[cspsort[range(
-                offhei_interf, nhei_interf + offhei_interf)]]]
+            junkcspc_interf = jcspectra[ip, :, hei_interf[cspsort[list(range(
+                offhei_interf, nhei_interf + offhei_interf))]]]
             junkcspc_interf = junkcspc_interf.transpose()
             jcspc_interf = junkcspc_interf.sum(axis=1) / nhei_interf
 
             ind = numpy.abs(jcspc_interf[mask_prof]).ravel().argsort()
 
-            median_real = numpy.median(numpy.real(
-                junkcspc_interf[mask_prof[ind[range(3 * num_prof / 4)]], :]))
-            median_imag = numpy.median(numpy.imag(
-                junkcspc_interf[mask_prof[ind[range(3 * num_prof / 4)]], :]))
+            median_real = int(numpy.median(numpy.real(
+                junkcspc_interf[mask_prof[ind[list(range(3 * num_prof // 4))]], :])))
+            median_imag = int(numpy.median(numpy.imag(
+                junkcspc_interf[mask_prof[ind[list(range(3 * num_prof // 4))]], :])))
+            comp_mask_prof = [int(e) for e in comp_mask_prof]
             junkcspc_interf[comp_mask_prof, :] = numpy.complex(
                 median_real, median_imag)
 
             for iprof in range(num_prof):
                 ind = numpy.abs(junkcspc_interf[iprof, :]).ravel().argsort()
-                jcspc_interf[iprof] = junkcspc_interf[iprof,
-                                                      ind[nhei_interf / 2]]
+                jcspc_interf[iprof] = junkcspc_interf[iprof, ind[nhei_interf // 2]]
 
             # Removiendo la Interferencia
             jcspectra[ip, :, ind_hei] = jcspectra[ip,
@@ -658,7 +677,7 @@ class SpectraProc(ProcessingUnit):
             xx = numpy.zeros([4, 4])
 
             for id1 in range(4):
-                xx[:, id1] = ind[id1]**numpy.asarray(range(4))
+                xx[:, id1] = ind[id1]**numpy.asarray(list(range(4)))
 
             xx_inv = numpy.linalg.inv(xx)
             xx = xx_inv[:, 0]
@@ -673,101 +692,16 @@ class SpectraProc(ProcessingUnit):
 
         return 1
 
-    def setRadarFrequency(self, frequency=None):
+    def run(self, dataOut, interf = 2,hei_interf = None, nhei_interf = None, offhei_interf = None, mode=1):
 
-        if frequency != None:
-            self.dataOut.frequency = frequency
+        self.dataOut = dataOut
 
-        return 1
+        if mode == 1:
+            self.removeInterference(interf = 2,hei_interf = None, nhei_interf = None, offhei_interf = None)
+        elif mode == 2:
+            self.removeInterference2()
 
-    def getNoise(self, minHei=None, maxHei=None, minVel=None, maxVel=None):
-        # validacion de rango
-        if minHei == None:
-            minHei = self.dataOut.heightList[0]
-
-        if maxHei == None:
-            maxHei = self.dataOut.heightList[-1]
-
-        if (minHei < self.dataOut.heightList[0]) or (minHei > maxHei):
-            print 'minHei: %.2f is out of the heights range' % (minHei)
-            print 'minHei is setting to %.2f' % (self.dataOut.heightList[0])
-            minHei = self.dataOut.heightList[0]
-
-        if (maxHei > self.dataOut.heightList[-1]) or (maxHei < minHei):
-            print 'maxHei: %.2f is out of the heights range' % (maxHei)
-            print 'maxHei is setting to %.2f' % (self.dataOut.heightList[-1])
-            maxHei = self.dataOut.heightList[-1]
-
-        # validacion de velocidades
-        velrange = self.dataOut.getVelRange(1)
-
-        if minVel == None:
-            minVel = velrange[0]
-
-        if maxVel == None:
-            maxVel = velrange[-1]
-
-        if (minVel < velrange[0]) or (minVel > maxVel):
-            print 'minVel: %.2f is out of the velocity range' % (minVel)
-            print 'minVel is setting to %.2f' % (velrange[0])
-            minVel = velrange[0]
-
-        if (maxVel > velrange[-1]) or (maxVel < minVel):
-            print 'maxVel: %.2f is out of the velocity range' % (maxVel)
-            print 'maxVel is setting to %.2f' % (velrange[-1])
-            maxVel = velrange[-1]
-
-        # seleccion de indices para rango
-        minIndex = 0
-        maxIndex = 0
-        heights = self.dataOut.heightList
-
-        inda = numpy.where(heights >= minHei)
-        indb = numpy.where(heights <= maxHei)
-
-        try:
-            minIndex = inda[0][0]
-        except:
-            minIndex = 0
-
-        try:
-            maxIndex = indb[0][-1]
-        except:
-            maxIndex = len(heights)
-
-        if (minIndex < 0) or (minIndex > maxIndex):
-            raise ValueError, "some value in (%d,%d) is not valid" % (
-                minIndex, maxIndex)
-
-        if (maxIndex >= self.dataOut.nHeights):
-            maxIndex = self.dataOut.nHeights - 1
-
-        # seleccion de indices para velocidades
-        indminvel = numpy.where(velrange >= minVel)
-        indmaxvel = numpy.where(velrange <= maxVel)
-        try:
-            minIndexVel = indminvel[0][0]
-        except:
-            minIndexVel = 0
-
-        try:
-            maxIndexVel = indmaxvel[0][-1]
-        except:
-            maxIndexVel = len(velrange)
-
-        # seleccion del espectro
-        data_spc = self.dataOut.data_spc[:,
-                                         minIndexVel:maxIndexVel + 1, minIndex:maxIndex + 1]
-        # estimacion de ruido
-        noise = numpy.zeros(self.dataOut.nChannels)
-
-        for channel in range(self.dataOut.nChannels):
-            daux = data_spc[channel, :, :]
-            noise[channel] = hildebrand_sekhon(daux, self.dataOut.nIncohInt)
-
-        self.dataOut.noise_estimation = noise.copy()
-
-        return 1
+        return self.dataOut
 
 
 class IncohInt(Operation):
@@ -790,10 +724,9 @@ class IncohInt(Operation):
 
     n = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):
 
-        Operation.__init__(self, **kwargs)
-#         self.isConfig = False
+        Operation.__init__(self)
 
     def setup(self, n=None, timeInterval=None, overlapping=False):
         """
@@ -819,12 +752,12 @@ class IncohInt(Operation):
         self.__byTime = False
 
         if n is None and timeInterval is None:
-            raise ValueError, "n or timeInterval should be specified ..."
+            raise ValueError("n or timeInterval should be specified ...")
 
         if n is not None:
             self.n = int(n)
         else:
-            # if (type(timeInterval)!=integer) -> change this line
+            
             self.__integrationtime = int(timeInterval)
             self.n = None
             self.__byTime = True
@@ -924,8 +857,8 @@ class IncohInt(Operation):
 
     def run(self, dataOut, n=None, timeInterval=None, overlapping=False):
         if n == 1:
-            return
-
+            return dataOut
+        
         dataOut.flagNoData = True
 
         if not self.isConfig:
@@ -941,8 +874,9 @@ class IncohInt(Operation):
 
             dataOut.data_spc = avgdata_spc
             dataOut.data_cspc = avgdata_cspc
-            dataOut.data_dc = avgdata_dc
-
+            dataOut.data_dc = avgdata_dc            
             dataOut.nIncohInt *= self.n
             dataOut.utctime = avgdatatime
             dataOut.flagNoData = False
+
+        return dataOut
