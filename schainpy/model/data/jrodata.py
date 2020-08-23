@@ -1114,7 +1114,7 @@ class PlotterData(object):
     MAXNUMX = 200
     MAXNUMY = 200
 
-    def __init__(self, code, throttle_value, exp_code, buffering=True, snr=False):
+    def __init__(self, code, throttle_value, exp_code, localtime=True, buffering=True, snr=False):
 
         self.key = code
         self.throttle = throttle_value
@@ -1122,7 +1122,7 @@ class PlotterData(object):
         self.buffering = buffering
         self.ready = False
         self.flagNoData = False
-        self.localtime = False
+        self.localtime = localtime
         self.data = {}
         self.meta = {}
         self.__heights = []
@@ -1143,7 +1143,6 @@ class PlotterData(object):
 
         for plot in self.plottypes:
             self.data[plot] = {}
-
 
     def __str__(self):
         dum = ['{}{}'.format(key, self.shape(key)) for key in self.data]
@@ -1222,7 +1221,6 @@ class PlotterData(object):
             self.pairs = dataOut.pairsList
 
         self.interval = dataOut.getTimeInterval()
-        self.localtime = dataOut.useLocalTime
         if True in ['spc' in ptype for ptype in self.plottypes]:
             self.xrange = (dataOut.getFreqRange(1)/1000.,
                            dataOut.getAcfRange(1), dataOut.getVelRange(1))

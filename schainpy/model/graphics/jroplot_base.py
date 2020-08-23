@@ -164,7 +164,7 @@ class Plot(Operation):
         self.sender_time = 0
         self.data = None
         self.firsttime = True
-        self.sender_queue = Queue(maxsize=10)
+        self.sender_queue = Queue(maxsize=60)
         self.plots_adjust = {'left': 0.125, 'right': 0.9, 'bottom': 0.15, 'top': 0.9, 'wspace': 0.2, 'hspace': 0.2}
 
     def __fmtTime(self, x, pos):
@@ -185,7 +185,6 @@ class Plot(Operation):
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
         self.save_period = kwargs.get('save_period', 1)
-        self.ftp = kwargs.get('ftp', False)
         self.colormap = kwargs.get('colormap', self.colormap)
         self.colormap_coh = kwargs.get('colormap_coh', 'jet')
         self.colormap_phase = kwargs.get('colormap_phase', 'RdBu_r')
@@ -223,7 +222,6 @@ class Plot(Operation):
         self.grid = kwargs.get('grid', False)
         self.pause = kwargs.get('pause', False)
         self.save_code = kwargs.get('save_code', None)
-        self.realtime = kwargs.get('realtime', True)
         self.throttle = kwargs.get('throttle', 0)
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
@@ -232,7 +230,7 @@ class Plot(Operation):
         self.height_index = kwargs.get('height_index', None)
         self.__throttle_plot = apply_throttle(self.throttle)
         self.data = PlotterData(
-            self.CODE, self.throttle, self.exp_code, self.buffering, snr=self.showSNR)
+            self.CODE, self.throttle, self.exp_code, self.localtime, self.buffering, snr=self.showSNR)
         
         if self.plot_server:
             if not self.plot_server.startswith('tcp://'):
@@ -485,7 +483,7 @@ class Plot(Operation):
         for ax in self.axes+self.pf_axes+self.cb_axes:
             ax.clear()
             ax.firsttime = True
-            if ax.cbar:
+            if hasattr(ax, 'cbar') and ax.cbar:
                 ax.cbar.remove()
 
     def __plot(self):
@@ -588,20 +586,27 @@ class Plot(Operation):
             self.data.meta['colormap'] = 'Viridis'
         self.data.meta['interval'] = int(interval)
         # msg = self.data.jsonify(self.data.tm, self.plot_name, self.plot_type)
-        self.sender_queue.put(self.data.tm)
+        try:
+            self.sender_queue.put(self.data.tm, block=False)
+        except:
+            tm = self.sender_queue.get()
+            self.sender_queue.put(self.data.tm)
         
         while True:
             if self.sender_queue.empty():
                 break
             tm = self.sender_queue.get()
-            msg = self.data.jsonify(tm, self.plot_name, self.plot_type)
+            try:
+                msg = self.data.jsonify(tm, self.plot_name, self.plot_type)
+            except:
+                continue
             self.socket.send_string(msg)
             socks = dict(self.poll.poll(5000))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_string()
                 if reply == 'ok':
                     log.log("Response from server ok", self.name)
-                    time.sleep(0.1)
+                    time.sleep(0.2)
                     continue
                 else:
                     log.warning(
@@ -649,14 +654,10 @@ class Plot(Operation):
             
             t = getattr(dataOut, self.attr_time)
 
-            if dataOut.useLocalTime:
+            if self.localtime:
                 self.getDateTime = datetime.datetime.fromtimestamp
-                if not self.localtime:
-                    t += time.timezone
             else:
                 self.getDateTime = datetime.datetime.utcfromtimestamp
-                if self.localtime:
-                    t -= time.timezone
             
             if self.xmin is None:
                 self.tmin = t
@@ -679,11 +680,6 @@ class Plot(Operation):
                 self.poll.register(self.socket, zmq.POLLIN)
 
         tm = getattr(dataOut, self.attr_time)
-
-        if not dataOut.useLocalTime and self.localtime:
-            tm -= time.timezone
-        if dataOut.useLocalTime and not self.localtime:
-            tm += time.timezone
         
         if self.data and (tm - self.tmin) >= self.xrange*60*60:    
             self.save_counter = self.save_period
