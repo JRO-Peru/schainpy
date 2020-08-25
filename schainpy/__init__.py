@@ -1,7 +1,5 @@
-'''
-Created on Jul 3, 2018
+"""Signal chain python package"""
 
-@author $Author$
-@version $Id$
-'''
-__version__ = '3.0'
+from .controller import Project
+
+__version__ = '3.0.0'

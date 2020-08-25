@@ -1,6 +1,11 @@
-'''
-Main routines to create a Signal Chain project
-'''
+# Copyright (c) 2012-2020 Jicamarca Radio Observatory
+# All rights reserved.
+#
+# Distributed under the terms of the BSD 3-clause license.
+"""API to create signal chain projects
+
+The API is provide through class: Project
+"""
 
 import re
 import sys
@@ -312,13 +317,16 @@ class ReadUnitConf(ProcUnitConf):
 
 
 class Project(Process):
+    """API to create signal chain projects"""
 
     ELEMENTNAME = 'Project'
 
-    def __init__(self):
+    def __init__(self, name=''):
 
         Process.__init__(self)
-        self.id = None
+        self.id = '1'
+        if name:
+            self.name = '{} ({})'.format(Process.__name__, name)
         self.filename = None
         self.description = None
         self.email = None
