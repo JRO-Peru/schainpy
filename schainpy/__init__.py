@@ -1,5 +1,8 @@
 """Signal chain python package"""
 
-from .controller import Project
+try:
+    from .controller import Project
+except:
+    pass
 
-__version__ = '3.0.0'
+__version__ = '3.0.0b1'
