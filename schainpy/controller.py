@@ -321,9 +321,9 @@ class Project(Process):
 
     ELEMENTNAME = 'Project'
 
-    def __init__(self):
+    def __init__(self, name=''):
 
-        Process.__init__(self, name='')
+        Process.__init__(self)
         self.id = '1'
         if name:
             self.name = '{} ({})'.format(Process.__name__, name)

@@ -155,7 +155,7 @@ def search(nextcommand):
         try:
             args = getArgs(nextcommand)
             doc = getDoc(nextcommand)
-            log.success('{}\n{}\n\narguments:\n  {}'.format(
+            log.success('{}\n{}\n\nparameters:\n  {}'.format(
                 nextcommand, doc, ', '.join(args)), ''
                 )
         except Exception as e:
