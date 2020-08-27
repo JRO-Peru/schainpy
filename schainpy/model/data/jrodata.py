@@ -1363,7 +1363,7 @@ class PlotterData(object):
         Return the list of times of the current data
         '''
 
-        ret = numpy.array([*self.data[self.key]])
+        ret = numpy.array([t for t in self.data[self.key]])
         if self:
             ret.sort()
         return ret

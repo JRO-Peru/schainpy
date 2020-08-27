@@ -5,7 +5,10 @@ import zmq
 import time
 import numpy
 import datetime
-from queue import Queue
+try:
+    from queue import Queue
+except:
+    from Queue import Queue
 from functools import wraps
 from threading import Thread
 import matplotlib

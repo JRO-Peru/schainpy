@@ -9,10 +9,6 @@ import zmq
 import time
 import pickle
 import traceback
-try:
-    from queue import Queue
-except:
-    from Queue import Queue
 from threading import Thread
 from multiprocessing import Process, Queue
 from schainpy.utils import log
