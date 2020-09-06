@@ -19,14 +19,13 @@ class SpectraPlot(Plot):
 
     CODE = 'spc'
     colormap = 'jet'
-    plot_name = 'Spectra'
     plot_type = 'pcolor'
 
     def setup(self):
         self.nplots = len(self.data.channels)
         self.ncols = int(numpy.sqrt(self.nplots) + 0.9)
         self.nrows = int((1.0 * self.nplots / self.ncols) + 0.9)
-        self.height = 3 * self.nrows
+        self.height = 2.6 * self.nrows
         self.cb_label = 'dB'
         if self.showprofile:
             self.width = 4 * self.ncols
@@ -92,7 +91,6 @@ class CrossSpectraPlot(Plot):
 
     CODE = 'cspc'
     colormap = 'jet'
-    plot_name = 'CrossSpectra'
     plot_type = 'pcolor'
     zmin_coh = None
     zmax_coh = None
@@ -104,11 +102,11 @@ class CrossSpectraPlot(Plot):
         self.ncols = 4
         self.nrows = len(self.data.pairs)
         self.nplots = self.nrows * 4
-        self.width = 3.4 * self.ncols
-        self.height = 3 * self.nrows
+        self.width = 3.1 * self.ncols
+        self.height = 2.6 * self.nrows
         self.ylabel = 'Range [km]'
         self.showprofile = False
-        self.plots_adjust.update({'bottom': 0.08})
+        self.plots_adjust.update({'left': 0.08, 'right': 0.92, 'wspace': 0.5, 'hspace':0.4, 'top':0.95, 'bottom': 0.08})
 
     def plot(self):
 
@@ -194,7 +192,6 @@ class RTIPlot(Plot):
 
     CODE = 'rti'
     colormap = 'jet'
-    plot_name = 'RTI'
     plot_type = 'pcolorbuffer'
 
     def setup(self):
@@ -253,7 +250,6 @@ class CoherencePlot(RTIPlot):
     '''
 
     CODE = 'coh'
-    plot_name = 'Coherence'
 
     def setup(self):
         self.xaxis = 'time'
@@ -280,7 +276,6 @@ class PhasePlot(CoherencePlot):
 
     CODE = 'phase'
     colormap = 'seismic'
-    plot_name = 'Phase'
 
 
 class NoisePlot(Plot):
@@ -289,7 +284,6 @@ class NoisePlot(Plot):
     '''
 
     CODE = 'noise'
-    plot_name = 'Noise'
     plot_type = 'scatterbuffer'
 
 
@@ -327,7 +321,6 @@ class NoisePlot(Plot):
 class PowerProfilePlot(Plot):
 
     CODE = 'spcprofile'
-    plot_name = 'Power Profile'
     plot_type = 'scatter'
     buffering = False
 
@@ -365,7 +358,6 @@ class PowerProfilePlot(Plot):
 class SpectraCutPlot(Plot):
 
     CODE = 'spc_cut'
-    plot_name = 'Spectra Cut'
     plot_type = 'scatter'
     buffering = False
 

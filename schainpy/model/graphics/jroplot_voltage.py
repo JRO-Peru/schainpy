@@ -17,7 +17,6 @@ class ScopePlot(Plot):
     '''
 
     CODE = 'scope'
-    plot_name = 'Scope'
     plot_type = 'scatter'
 
     def setup(self):
@@ -269,7 +268,6 @@ class PulsepairPowerPlot(ScopePlot):
     '''
 
     CODE = 'pp_power'
-    plot_name = 'PulsepairPower'
     plot_type = 'scatter'
     buffering = False
 
@@ -278,7 +276,6 @@ class PulsepairVelocityPlot(ScopePlot):
     Plot for VELOCITY
     '''
     CODE = 'pp_velocity'
-    plot_name = 'PulsepairVelocity'
     plot_type = 'scatter'
     buffering = False
 
@@ -287,7 +284,6 @@ class PulsepairSpecwidthPlot(ScopePlot):
     Plot for WIDTH
     '''
     CODE = 'pp_specwidth'
-    plot_name = 'PulsepairSpecwidth'
     plot_type = 'scatter'
     buffering = False
 
@@ -297,6 +293,5 @@ class PulsepairSignalPlot(ScopePlot):
     '''
 
     CODE = 'pp_signal'
-    plot_name = 'PulsepairSignal'
     plot_type = 'scatter'
     buffering = False

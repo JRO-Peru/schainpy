@@ -36,7 +36,6 @@ class SpectralMomentsPlot(SpectraPlot):
     '''
     CODE = 'spc_moments'
     colormap = 'jet'
-    plot_name = 'SpectralMoments'
     plot_type = 'pcolor'
 
 
@@ -47,7 +46,6 @@ class SnrPlot(RTIPlot):
 
     CODE = 'snr'
     colormap = 'jet'
-    plot_name = 'SNR'
 
 
 class DopplerPlot(RTIPlot):
@@ -57,7 +55,6 @@ class DopplerPlot(RTIPlot):
 
     CODE = 'dop'
     colormap = 'jet'
-    plot_name = 'DopplerShift'
 
 
 class PowerPlot(RTIPlot):
@@ -67,7 +64,6 @@ class PowerPlot(RTIPlot):
 
     CODE = 'pow'
     colormap = 'jet'
-    plot_name = 'TotalPower'
 
 
 class SpectralWidthPlot(RTIPlot):
@@ -77,7 +73,6 @@ class SpectralWidthPlot(RTIPlot):
 
     CODE = 'width'
     colormap = 'jet'
-    plot_name = 'SpectralWidth'
 
 
 class SkyMapPlot(Plot):
@@ -135,7 +130,6 @@ class ParametersPlot(RTIPlot):
 
     CODE = 'param'
     colormap = 'seismic'
-    plot_name = 'Parameters'
 
     def setup(self):
         self.xaxis = 'time'
@@ -210,7 +204,6 @@ class OutputPlot(ParametersPlot):
 
     CODE = 'output'
     colormap = 'seismic'
-    plot_name = 'Output'
 
 
 class PolarMapPlot(Plot):

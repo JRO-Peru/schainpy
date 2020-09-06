@@ -1,6 +1,9 @@
-'''
-@author: Juan C. Espinoza
-'''
+# Copyright (c) 2012-2020 Jicamarca Radio Observatory
+# All rights reserved.
+#
+# Distributed under the terms of the BSD 3-clause license.
+"""Utilities for publish/send data, files & plots over different protocols
+"""
 
 import os
 import glob
@@ -18,8 +21,6 @@ from schainpy.model.proc.jroproc_base import Operation, ProcessingUnit, MPDecora
 from schainpy.model.data.jrodata import JROData
 from schainpy.utils import log
 
-MAXNUMX = 500
-MAXNUMY = 500
 
 PLOT_CODES = {
     'rti': 0,            # Range time intensity (RTI).
@@ -51,11 +52,6 @@ def get_plot_code(s):
         return PLOT_CODES[codes[0]]
     else:
         return 24
-
-def decimate(z, MAXNUMY):
-    dy = int(len(z[0])/MAXNUMY) + 1
-
-    return z[::, ::dy]
 
 
 class PublishData(Operation):
@@ -150,12 +146,47 @@ class ReceiverData(ProcessingUnit):
 
 @MPDecorator
 class SendToFTP(Operation):
+    """Operation for send files over FTP
 
-    '''
-    Operation to send data over FTP.
-    patternX = 'local, remote, ext, period, exp_code, sub_exp_code'
-    '''
+    This operation is used to send files over FTP, you can send different files
+    from different folders by adding as many `pattern` as you wish.
 
+    Parameters:
+    -----------
+    server : str
+        FTP server address.
+    username : str
+        FTP username
+    password : str
+        FTP password
+    timeout : int
+        timeout to restart the connection
+    patternX : list
+        detail of files to be send must have the following order: local, remote
+        ext, period, exp_code, sub_exp_code 
+    
+    Example:
+    --------
+    
+    ftp = proc_unit.addOperation(name='SendToFTP', optype='external')
+    ftp.addParameter(name='server', value='jro-app.igp.gob.pe')
+    ftp.addParameter(name='username', value='wmaster')
+    ftp.addParameter(name='password', value='mst2010vhf')
+    ftp.addParameter(
+        name='pattern1', 
+        value='/local/path/rti,/remote/path,png,300,11,0'
+        )
+    ftp.addParameter(
+        name='pattern2',
+        value='/local/path/spc,/remote/path,png,300,11,0'
+        )
+    ftp.addParameter(
+        name='pattern3', 
+        value='/local/path/param,/remote/path,hdf5,300,,'
+        )
+
+    """
+    
     __attrs__ = ['server', 'username', 'password', 'timeout', 'patternX']
 
     def __init__(self):
@@ -179,7 +210,7 @@ class SendToFTP(Operation):
         for arg, value in kwargs.items():
             if 'pattern' in arg:
                 self.patterns.append(value)
-                self.times.append(time.time())
+                self.times.append(0)
                 self.latest.append('')
 
     def connect(self):
@@ -224,7 +255,7 @@ class SendToFTP(Operation):
 
     def find_files(self, path, ext):
 
-        files = glob.glob1(path, '*{}'.format(ext))
+        files = glob.glob1(path.strip(), '*{}'.format(ext.strip()))
         files.sort()
         if files:
             return files[-1]
@@ -256,18 +287,12 @@ class SendToFTP(Operation):
             self.ftp.storbinary(command, fp, blocksize=1024)
         except Exception as e:
             log.error('{}'.format(e), self.name)
-            if self.ftp is not None:
-                self.ftp.close()
-            self.ftp = None
             return 0
 
         try:
             self.ftp.sendcmd('SITE CHMOD 755 {}'.format(dst))
         except Exception as e:
             log.error('{}'.format(e), self.name)
-            if self.ftp is not None:
-                self.ftp.close()
-            self.ftp = None
             return 0
 
         fp.close()
@@ -278,30 +303,30 @@ class SendToFTP(Operation):
 
         for x, pattern in enumerate(self.patterns):
             local, remote, ext, period, exp_code, sub_exp_code = pattern
-            if time.time()-self.times[x] >= int(period):
-                srcname = self.find_files(local, ext)
-                src = os.path.join(local, srcname)
-                if os.path.getmtime(src) < time.time() - 30*60:
-                    log.warning('Skipping old file {}'.format(srcname))                  
-                    continue
+            
+            if (self.dataOut.utctime - self.times[x]) < int(period):
+                continue
 
-                if srcname is None or srcname == self.latest[x]:
-                    log.warning('File alreday uploaded {}'.format(srcname))                  
-                    continue
-                
-                if 'png' in ext:
-                    dstname = self.getftpname(srcname, int(exp_code), int(sub_exp_code))
-                else:
-                    dstname = srcname                
-                
-                dst = os.path.join(remote, dstname)
+            srcname = self.find_files(local, ext)
+            
+            if srcname is None:
+                continue
+            
+            if srcname == self.latest[x]:
+                log.warning('File alreday uploaded {}'.format(srcname))                  
+                continue
+            
+            if exp_code.strip():
+                dstname = self.getftpname(srcname, int(exp_code), int(sub_exp_code))
+            else:
+                dstname = srcname                
+            
+            src = os.path.join(local, srcname)
+            dst = os.path.join(remote.strip(), dstname)
 
-                if self.upload(src, dst):
-                    self.times[x] = time.time()
-                    self.latest[x] = srcname
-                else:                    
-                    self.ready = False
-                    break            
+            if self.upload(src, dst):
+                self.times[x] = self.dataOut.utctime
+                self.latest[x] = srcname            
 
     def run(self, dataOut, server, username, password, timeout=10, **kwargs):
 
@@ -314,11 +339,11 @@ class SendToFTP(Operation):
                 **kwargs
                 )
             self.isConfig = True
-        if not self.ready:
             self.connect()
-        if self.ftp is not None:
-            self.check()
-            self.send_files()
+        
+        self.dataOut = dataOut
+        self.check()
+        self.send_files()
 
     def close(self):
 

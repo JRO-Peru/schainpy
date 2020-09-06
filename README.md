@@ -94,7 +94,7 @@ op = proc_unit.addOperation(name='removeDC')
 op = proc_unit.addOperation(name='SpectraPlot')
 op.addParameter(name='wintitle', value='Spectra', format='str')
 
-op = procUnitConfObj1.addOperation(name='RTIPlot')
+op = proc_unit.addOperation(name='RTIPlot')
 op.addParameter(name='wintitle', value='RTI', format='str')
 
 prj.start()

@@ -1,3 +1,10 @@
+# Copyright (c) 2012-2020 Jicamarca Radio Observatory
+# All rights reserved.
+#
+# Distributed under the terms of the BSD 3-clause license.
+"""Base class to create plot operations
+
+"""
 
 import os
 import sys
@@ -5,10 +12,7 @@ import zmq
 import time
 import numpy
 import datetime
-try:
-    from queue import Queue
-except:
-    from Queue import Queue
+from multiprocessing import Queue
 from functools import wraps
 from threading import Thread
 import matplotlib
@@ -145,9 +149,24 @@ def apply_throttle(value):
 
 @MPDecorator
 class Plot(Operation):
-    '''
-    Base class for Schain plotting operations
-    '''
+    """Base class for Schain plotting operations
+
+    This class should never be use directtly you must subclass a new operation,
+    children classes must be defined as follow:
+
+    ExamplePlot(Plot):
+
+        CODE = 'code'
+        colormap = 'jet'
+        plot_type = 'pcolor' # options are ('pcolor', 'pcolorbuffer', 'scatter', 'scatterbuffer')
+
+        def setup(self):
+            pass
+
+        def plot(self):
+            pass
+
+    """
 
     CODE = 'Figure'
     colormap = 'jet'
@@ -163,7 +182,7 @@ class Plot(Operation):
         Operation.__init__(self)
         self.isConfig = False
         self.isPlotConfig = False
-        self.save_counter = 1
+        self.save_time = 0
         self.sender_time = 0
         self.data = None
         self.firsttime = True
@@ -187,7 +206,7 @@ class Plot(Operation):
         self.localtime = kwargs.pop('localtime', True)
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
-        self.save_period = kwargs.get('save_period', 1)
+        self.save_period = kwargs.get('save_period', 60)
         self.colormap = kwargs.get('colormap', self.colormap)
         self.colormap_coh = kwargs.get('colormap_coh', 'jet')
         self.colormap_phase = kwargs.get('colormap_phase', 'RdBu_r')
@@ -224,7 +243,7 @@ class Plot(Operation):
         self.type = kwargs.get('type', 'iq')
         self.grid = kwargs.get('grid', False)
         self.pause = kwargs.get('pause', False)
-        self.save_code = kwargs.get('save_code', None)
+        self.save_code = kwargs.get('save_code', self.CODE)
         self.throttle = kwargs.get('throttle', 0)
         self.exp_code = kwargs.get('exp_code', None)
         self.plot_server = kwargs.get('plot_server', False)
@@ -242,8 +261,6 @@ class Plot(Operation):
                 'Sending to server: {}'.format(self.plot_server),
                 self.name
             )
-        if 'plot_name' in kwargs:
-            self.plot_name = kwargs['plot_name']
 
     def __setup_plot(self):
         '''
@@ -357,86 +374,30 @@ class Plot(Operation):
         '''
         Set min and max values, labels, ticks and titles
         '''
-
-        if self.xmin is None:
-            xmin = self.data.min_time
-        else:
-            if self.xaxis is 'time':
-                dt = self.getDateTime(self.data.min_time)
-                xmin = (dt.replace(hour=int(self.xmin), minute=0, second=0) -
-                        datetime.datetime(1970, 1, 1)).total_seconds()
-                if self.data.localtime:
-                    xmin += time.timezone
-            else:
-                xmin = self.xmin
-
-        if self.xmax is None:
-            xmax = xmin + self.xrange * 60 * 60
-        else:
-            if self.xaxis is 'time':
-                dt = self.getDateTime(self.data.max_time)
-                xmax = self.xmax - 1
-                xmax = (dt.replace(hour=int(xmax), minute=59, second=59) -
-                        datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=1)).total_seconds()
-                if self.data.localtime:
-                    xmax += time.timezone
-            else:
-                xmax = self.xmax
-        
-        ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
-        ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
             
         for n, ax in enumerate(self.axes):
             if ax.firsttime:
-
-                dig = int(numpy.log10(ymax))
-                if dig == 0:
-                    digD = len(str(ymax)) - 2
-                    ydec = ymax*(10**digD)
-
-                    dig = int(numpy.log10(ydec))
-                    ystep = ((ydec + (10**(dig)))//10**(dig))*(10**(dig))
-                    ystep = ystep/5
-                    ystep = ystep/(10**digD)
-
-                else:        
-                    ystep = ((ymax + (10**(dig)))//10**(dig))*(10**(dig))
-                    ystep = ystep/5
-                    
-                if self.xaxis is not 'time':
-                    
-                    dig = int(numpy.log10(xmax))
-                    
-                    if dig <= 0:
-                        digD = len(str(xmax)) - 2
-                        xdec = xmax*(10**digD)
-
-                        dig = int(numpy.log10(xdec))
-                        xstep = ((xdec + (10**(dig)))//10**(dig))*(10**(dig))
-                        xstep = xstep*0.5
-                        xstep = xstep/(10**digD)
-                        
-                    else:        
-                        xstep = ((xmax + (10**(dig)))//10**(dig))*(10**(dig))
-                        xstep = xstep/5
-
+                if self.xaxis != 'time':
+                    xmin = self.xmin
+                    xmax = self.xmax
+                else:
+                    xmin = self.tmin
+                    xmax = self.tmin + self.xrange*60*60
+                    ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
+                    ax.xaxis.set_major_locator(LinearLocator(9))
+                ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
+                ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
                 ax.set_facecolor(self.bgcolor)
-                ax.yaxis.set_major_locator(MultipleLocator(ystep))
                 if self.xscale:
                     ax.xaxis.set_major_formatter(FuncFormatter(
                         lambda x, pos: '{0:g}'.format(x*self.xscale)))
-                if self.xscale:
+                if self.yscale:
                     ax.yaxis.set_major_formatter(FuncFormatter(
                         lambda x, pos: '{0:g}'.format(x*self.yscale)))
-                if self.xaxis is 'time':
-                    ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
-                    ax.xaxis.set_major_locator(LinearLocator(9))
-                else:
-                    ax.xaxis.set_major_locator(MultipleLocator(xstep))
                 if self.xlabel is not None:
                     ax.set_xlabel(self.xlabel)
-                ax.set_ylabel(self.ylabel)
-                ax.firsttime = False
+                if self.ylabel is not None:
+                    ax.set_ylabel(self.ylabel)
                 if self.showprofile:
                     self.pf_axes[n].set_ylim(ymin, ymax)
                     self.pf_axes[n].set_xlim(self.zmin, self.zmax)
@@ -455,12 +416,12 @@ class Plot(Operation):
                         ax.cbar.set_label(self.cb_labels[n], size=8)
                 else:
                     ax.cbar = None
-            if self.grid:
-                ax.grid(True)
-
-            if not self.polar:
                 ax.set_xlim(xmin, xmax)
                 ax.set_ylim(ymin, ymax)
+                ax.firsttime = False
+                if self.grid:
+                    ax.grid(True)
+            if not self.polar:
                 ax.set_title('{} {} {}'.format(
                     self.titles[n],
                     self.getDateTime(self.data.max_time).strftime(
@@ -521,27 +482,18 @@ class Plot(Operation):
         '''
         '''
 
-        if self.save_counter < self.save_period:
-            self.save_counter += 1
+        if (self.data.tm - self.save_time) < self.sender_period:
             return
 
-        self.save_counter = 1
+        self.save_time = self.data.tm
 
         fig = self.figures[n]
 
-        if self.save_code:
-            if isinstance(self.save_code, str):
-                labels = [self.save_code for x in self.figures]
-            else:
-                labels = self.save_code
-        else:
-            labels = [self.CODE for x in self.figures]
-
         figname = os.path.join(
             self.save,
-            labels[n],
+            self.save_code,
             '{}_{}.png'.format(                
-                labels[n],
+                self.save_code,
                 self.getDateTime(self.data.max_time).strftime(
                     '%Y%m%d_%H%M%S'
                     ),
@@ -556,7 +508,7 @@ class Plot(Operation):
             figname = os.path.join(
                 self.save,
                 '{}_{}.png'.format(
-                    labels[n],
+                    self.save_code,
                     self.getDateTime(self.data.min_time).strftime(
                         '%Y%m%d'
                         ),
@@ -588,7 +540,7 @@ class Plot(Operation):
         else:
             self.data.meta['colormap'] = 'Viridis'
         self.data.meta['interval'] = int(interval)
-        # msg = self.data.jsonify(self.data.tm, self.plot_name, self.plot_type)
+
         try:
             self.sender_queue.put(self.data.tm, block=False)
         except:
@@ -600,7 +552,7 @@ class Plot(Operation):
                 break
             tm = self.sender_queue.get()
             try:
-                msg = self.data.jsonify(tm, self.plot_name, self.plot_type)
+                msg = self.data.jsonify(tm, self.save_code, self.plot_type)
             except:
                 continue
             self.socket.send_string(msg)
@@ -654,24 +606,11 @@ class Plot(Operation):
 
         if self.isConfig is False:
             self.__setup(**kwargs)
-            
-            t = getattr(dataOut, self.attr_time)
 
             if self.localtime:
                 self.getDateTime = datetime.datetime.fromtimestamp
             else:
                 self.getDateTime = datetime.datetime.utcfromtimestamp
-            
-            if self.xmin is None:
-                self.tmin = t
-                if 'buffer' in self.plot_type:
-                    self.xmin = self.getDateTime(t).hour
-            else:
-                self.tmin = (
-                    self.getDateTime(t).replace(
-                        hour=int(self.xmin), 
-                        minute=0, 
-                        second=0) - self.getDateTime(0)).total_seconds()
 
             self.data.setup()
             self.isConfig = True
@@ -684,13 +623,9 @@ class Plot(Operation):
 
         tm = getattr(dataOut, self.attr_time)
         
-        if self.data and (tm - self.tmin) >= self.xrange*60*60:    
+        if self.data and 'time' in self.xaxis and (tm - self.tmin) >= self.xrange*60*60:    
             self.save_counter = self.save_period
             self.__plot()
-            if 'time' in self.xaxis:
-                self.xmin += self.xrange
-                if self.xmin >= 24:
-                    self.xmin -= 24
             self.tmin += self.xrange*60*60
             self.data.setup()
             self.clear_figures()
@@ -700,6 +635,20 @@ class Plot(Operation):
         if self.isPlotConfig is False:
             self.__setup_plot()
             self.isPlotConfig = True
+            if self.xaxis == 'time':
+                dt = self.getDateTime(tm)
+                if self.xmin is None:
+                    self.tmin = tm
+                    self.xmin = dt.hour    
+                minutes = (self.xmin-int(self.xmin)) * 60
+                seconds = (minutes - int(minutes)) * 60
+                self.tmin = (dt.replace(hour=int(self.xmin), minute=int(minutes), second=int(seconds)) -
+                        datetime.datetime(1970, 1, 1)).total_seconds()
+                if self.localtime:
+                    self.tmin += time.timezone
+
+                if self.xmin is not None and self.xmax is not None:
+                    self.xrange = self.xmax - self.xmin
 
         if self.throttle == 0:
             self.__plot()
