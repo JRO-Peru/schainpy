@@ -255,7 +255,7 @@ class RTIfromSpectraHeis(Plot):
             self.timerange = timerange
 
         x = dataOut.getTimeRange()
-        y = dataOut.getHeiRange()
+        y = dataOut.heightList
 
         factor = dataOut.normFactor
         data = dataOut.data_spc / factor

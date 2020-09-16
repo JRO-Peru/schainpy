@@ -114,7 +114,7 @@ class CorrelationPlot(Plot):
         factor = dataOut.normFactor
         lenfactor = factor.shape[1]
         x = dataOut.getLagTRange(1)
-        y = dataOut.getHeiRange()
+        y = dataOut.heightList
 
         z = copy.copy(dataOut.data_corr[:,:,0,:])
         for i in range(dataOut.data_corr.shape[0]):

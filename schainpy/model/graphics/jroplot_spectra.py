@@ -534,8 +534,6 @@ class BeaconPhase(Plot):
                 hmax_index = hmax_list[-1]+1
 
         x = dataOut.getTimeRange()
-        #y = dataOut.getHeiRange()
-
 
         thisDatetime = dataOut.datatime
 

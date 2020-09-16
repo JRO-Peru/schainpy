@@ -206,7 +206,7 @@ class Plot(Operation):
         self.localtime = kwargs.pop('localtime', True)
         self.show = kwargs.get('show', True)
         self.save = kwargs.get('save', False)
-        self.save_period = kwargs.get('save_period', 60)
+        self.save_period = kwargs.get('save_period', 0)
         self.colormap = kwargs.get('colormap', self.colormap)
         self.colormap_coh = kwargs.get('colormap_coh', 'jet')
         self.colormap_phase = kwargs.get('colormap_phase', 'RdBu_r')
@@ -246,7 +246,7 @@ class Plot(Operation):
         self.save_code = kwargs.get('save_code', self.CODE)
         self.throttle = kwargs.get('throttle', 0)
         self.exp_code = kwargs.get('exp_code', None)
-        self.plot_server = kwargs.get('plot_server', False)
+        self.server = kwargs.get('server', False)
         self.sender_period = kwargs.get('sender_period', 60)
         self.tag = kwargs.get('tag', '')
         self.height_index = kwargs.get('height_index', None)
@@ -254,11 +254,11 @@ class Plot(Operation):
         self.data = PlotterData(
             self.CODE, self.throttle, self.exp_code, self.localtime, self.buffering, snr=self.showSNR)
         
-        if self.plot_server:
-            if not self.plot_server.startswith('tcp://'):
-                self.plot_server = 'tcp://{}'.format(self.plot_server)
+        if self.server:
+            if not self.server.startswith('tcp://'):
+                self.server = 'tcp://{}'.format(self.server)
             log.success(
-                'Sending to server: {}'.format(self.plot_server),
+                'Sending to server: {}'.format(self.server),
                 self.name
             )
 
@@ -475,14 +475,14 @@ class Plot(Operation):
             if self.save:
                 self.save_figure(n)
         
-        if self.plot_server:
+        if self.server:
             self.send_to_server()
 
     def save_figure(self, n):
         '''
         '''
 
-        if (self.data.tm - self.save_time) < self.sender_period:
+        if (self.data.tm - self.save_time) <= self.save_period:
             return
 
         self.save_time = self.data.tm
@@ -575,7 +575,7 @@ class Plot(Operation):
             self.poll.unregister(self.socket)
             time.sleep(0.1)
             self.socket = self.context.socket(zmq.REQ)
-            self.socket.connect(self.plot_server)
+            self.socket.connect(self.server)
             self.poll.register(self.socket, zmq.POLLIN)
             break
 
@@ -614,17 +614,17 @@ class Plot(Operation):
 
             self.data.setup()
             self.isConfig = True
-            if self.plot_server:
+            if self.server:
                 self.context = zmq.Context()
                 self.socket = self.context.socket(zmq.REQ)
-                self.socket.connect(self.plot_server)
+                self.socket.connect(self.server)
                 self.poll = zmq.Poller()
                 self.poll.register(self.socket, zmq.POLLIN)
 
         tm = getattr(dataOut, self.attr_time)
         
         if self.data and 'time' in self.xaxis and (tm - self.tmin) >= self.xrange*60*60:    
-            self.save_counter = self.save_period
+            self.save_time = tm
             self.__plot()
             self.tmin += self.xrange*60*60
             self.data.setup()
@@ -658,7 +658,7 @@ class Plot(Operation):
     def close(self):
 
         if self.data and not self.data.flagNoData:
-            self.save_counter = self.save_period
+            self.save_time = self.data.tm
             self.__plot()
         if self.data and not self.data.flagNoData and self.pause:
             figpause(10)
