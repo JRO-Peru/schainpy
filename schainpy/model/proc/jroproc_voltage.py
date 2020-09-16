@@ -389,6 +389,8 @@ class printAttribute(Operation):
 
     def run(self, dataOut, attributes):
 
+        if isinstance(attributes, str):
+            attributes = [attributes]
         for attr in attributes:
             if hasattr(dataOut, attr):
                 log.log(getattr(dataOut, attr), attr)
@@ -1369,17 +1371,17 @@ class PulsePairVoltage(Operation):
         Return the PULSEPAIR and the profiles used in the operation
         Affected :  self.__profileIndex
         '''
-        #················· Remove DC···································
+        #----------------- Remove DC-----------------------------------
         if self.removeDC==True:
             mean    = numpy.mean(self.__buffer,1)
             tmp     = mean.reshape(self.__nch,1,self.__nHeis)
             dc= numpy.tile(tmp,[1,self.__nProf,1])
             self.__buffer = self.__buffer -  dc
-        #··················Calculo de Potencia ························
+        #------------------Calculo de Potencia ------------------------
         pair0       = self.__buffer*numpy.conj(self.__buffer)
         pair0       = pair0.real
         lag_0       = numpy.sum(pair0,1)
-        #··················Calculo de Ruido x canal····················
+        #------------------Calculo de Ruido x canal--------------------
         self.noise  = numpy.zeros(self.__nch)
         for i in range(self.__nch):
             daux         = numpy.sort(pair0[i,:,:],axis= None)
@@ -1389,11 +1391,11 @@ class PulsePairVoltage(Operation):
         self.noise       = numpy.tile(self.noise,[1,self.__nHeis])
         noise_buffer     = self.noise.reshape(self.__nch,1,self.__nHeis)
         noise_buffer     = numpy.tile(noise_buffer,[1,self.__nProf,1])
-        #·················· Potencia recibida= P , Potencia senal = S , Ruido= N··
-        #··················   P= S+N  ,P=lag_0/N ·································
-        #···················· Power ··················································
+        #------------------ Potencia recibida= P , Potencia senal = S , Ruido= N--
+        #------------------   P= S+N  ,P=lag_0/N ---------------------------------
+        #-------------------- Power --------------------------------------------------
         data_power       = lag_0/(self.n*self.nCohInt)
-        #------------------  Senal  ···················································
+        #------------------  Senal  ---------------------------------------------------
         data_intensity   = pair0 - noise_buffer
         data_intensity   = numpy.sum(data_intensity,axis=1)*(self.n*self.nCohInt)#*self.nCohInt)
         #data_intensity   = (lag_0-self.noise*self.n)*(self.n*self.nCohInt)
@@ -1402,28 +1404,28 @@ class PulsePairVoltage(Operation):
                 if data_intensity[i][j]  < 0:
                     data_intensity[i][j] = numpy.min(numpy.absolute(data_intensity[i][j]))
 
-        #················· Calculo de Frecuencia y Velocidad doppler········
+        #----------------- Calculo de Frecuencia y Velocidad doppler--------
         pair1            = self.__buffer[:,:-1,:]*numpy.conjugate(self.__buffer[:,1:,:])
         lag_1            = numpy.sum(pair1,1)
         data_freq        = (-1/(2.0*math.pi*self.ippSec*self.nCohInt))*numpy.angle(lag_1)
         data_velocity    = (self.lambda_/2.0)*data_freq
 
-        #················ Potencia promedio estimada de la Senal···········
+        #---------------- Potencia promedio estimada de la Senal-----------
         lag_0            = lag_0/self.n
         S                = lag_0-self.noise
 
-        #················ Frecuencia Doppler promedio ·····················
+        #---------------- Frecuencia Doppler promedio ---------------------
         lag_1            = lag_1/(self.n-1)
         R1               = numpy.abs(lag_1)
 
-        #················ Calculo del SNR··································
+        #---------------- Calculo del SNR----------------------------------
         data_snrPP       = S/self.noise
         for i in range(self.__nch):
             for j in range(self.__nHeis):
                 if data_snrPP[i][j]  < 1.e-20:
                     data_snrPP[i][j] = 1.e-20
 
-        #················· Calculo del ancho espectral ······················
+        #----------------- Calculo del ancho espectral ----------------------
         L                = S/R1
         L                = numpy.where(L<0,1,L)
         L                = numpy.log(L)

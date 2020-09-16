@@ -78,9 +78,9 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.dtype = numpy.dtype([('real','<f4'),('imag','<f4')])
 #         self.dataOut.nHeights = self.dataIn.nHeights
 #         self.dataOut.nChannels = self.dataIn.nChannels
-        self.dataOut.nBaud = self.dataIn.nBaud
-        self.dataOut.nCode = self.dataIn.nCode
-        self.dataOut.code = self.dataIn.code
+        # self.dataOut.nBaud = self.dataIn.nBaud
+        # self.dataOut.nCode = self.dataIn.nCode
+        # self.dataOut.code = self.dataIn.code
 #        self.dataOut.nProfiles = self.dataOut.nFFTPoints
         self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
 #         self.dataOut.utctime = self.firstdatatime
@@ -89,10 +89,10 @@ class ParametersProc(ProcessingUnit):
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData #asumo q la data esta sin flip
         self.dataOut.nCohInt = self.dataIn.nCohInt
 #        self.dataOut.nIncohInt = 1
-        self.dataOut.ippSeconds = self.dataIn.ippSeconds
+#        self.dataOut.ippSeconds = self.dataIn.ippSeconds
 #        self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
         self.dataOut.timeInterval1 = self.dataIn.timeInterval
-        self.dataOut.heightList = self.dataIn.getHeiRange()
+        self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.frequency = self.dataIn.frequency
         # self.dataOut.noise = self.dataIn.noise
 
@@ -2770,7 +2770,7 @@ class SMDetection(Operation):
             channelPositions = [(4.5,2), (2,4.5), (2,2), (2,0), (0,2)]   #Estrella
         meteorOps = SMOperations()
         pairslist0, distances = meteorOps.getPhasePairs(channelPositions)
-        heiRang = dataOut.getHeiRange()
+        heiRang = dataOut.heightList
         #Get Beacon signal - No Beacon signal anymore
 #         newheis = numpy.where(self.dataOut.heightList>self.dataOut.radarControllerHeaderObj.Taus[tauindex])
 #
@@ -2832,7 +2832,7 @@ class SMDetection(Operation):
 
         #************** REMOVE MULTIPLE DETECTIONS (3.5) ***************************
         #Parameters
-        heiRange = dataOut.getHeiRange()
+        heiRange = dataOut.heightList
         rangeInterval = heiRange[1] - heiRange[0]
         rangeLimit = multDet_rangeLimit/rangeInterval
         timeLimit = multDet_timeLimit/dataOut.timeInterval

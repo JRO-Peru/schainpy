@@ -764,7 +764,7 @@ class HFReader(ProcessingUnit):
 
         self.dataOut.nCohInt = 1
 
-        self.dataOut.blocksize = self.dataOut.getNChannels() * self.dataOut.getNHeights()
+        self.dataOut.blocksize = self.dataOut.nChannels * self.dataOut.nHeights
 
         self.dataOut.flagDecodeData = False #asumo que la data esta decodificada
 

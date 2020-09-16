@@ -136,10 +136,7 @@ class SpectraHeisProc(ProcessingUnit):
 
         for channelIndex in channelIndexList:
             if channelIndex not in self.dataOut.channelIndexList:
-                print(channelIndexList)
                 raise ValueError("The value %d in channelIndexList is not valid" %channelIndex)
-
-#         nChannels = len(channelIndexList)
 
         data_spc = self.dataOut.data_spc[channelIndexList,:]
 

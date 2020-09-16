@@ -699,7 +699,7 @@ class MIRA35CReader (ProcessingUnit, FileHeaderMIRA35c, SRVIHeader, RecordHeader
         self.dataOut.utctime = dwell
         self.dataOut.timeZone = 0
 
-        self.dataOut.outputInterval = self.dataOut.getTimeInterval()
+        self.dataOut.outputInterval = self.dataOut.timeInterval
         self.dataOut.heightList = self.SPARrawGate1 * self.__deltaHeigth + \
             numpy.array(list(range(self.Num_Hei))) * self.__deltaHeigth
 

@@ -115,7 +115,7 @@ class DigitalRFReader(ProcessingUnit):
 
         self.dataOut.channelList = list(range(self.__num_subchannels))
 
-        self.dataOut.blocksize   = self.dataOut.getNChannels() * self.dataOut.getNHeights()
+        self.dataOut.blocksize   = self.dataOut.nChannels * self.dataOut.nHeights
 
         # self.dataOut.channelIndexList = None
 

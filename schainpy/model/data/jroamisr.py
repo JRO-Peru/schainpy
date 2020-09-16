@@ -71,7 +71,8 @@ class AMISR:
         for key in list(inputObj.__dict__.keys()):
             self.__dict__[key] = inputObj.__dict__[key]
     
-    def getNHeights(self):
+    @property
+    def nHeights(self):
 
         return len(self.heightList)
 
@@ -80,11 +81,7 @@ class AMISR:
         
         return self.flagNoData
 
-    def getTimeInterval(self):
+    @property
+    def timeInterval(self):
         
-        timeInterval = self.ippSeconds * self.nCohInt
-        
-        return timeInterval
-    
-    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
-    nHeights = property(getNHeights, "I'm the 'nHeights' property.")
+        return self.ippSeconds * self.nCohInt

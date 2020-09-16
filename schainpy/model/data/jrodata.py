@@ -1,8 +1,14 @@
-'''
+# Copyright (c) 2012-2020 Jicamarca Radio Observatory
+# All rights reserved.
+#
+# Distributed under the terms of the BSD 3-clause license.
+"""Definition of diferent Data objects for different types of data
 
-$Author: murco $
-$Id: JROData.py 173 2012-11-20 15:06:21Z murco $
-'''
+Here you will find the diferent data objects for the different types
+of data, this data objects must be used as dataIn or dataOut objects in
+processing units and operations. Currently the supported data objects are:
+Voltage, Spectra, SpectraHeis, Fits, Correlation and Parameters
+"""
 
 import copy
 import numpy
@@ -152,17 +158,10 @@ class GenericData(object):
 
 class JROData(GenericData):
 
-    #    m_BasicHeader = BasicHeader()
-    #    m_ProcessingHeader = ProcessingHeader()
-
     systemHeaderObj = SystemHeader()
     radarControllerHeaderObj = RadarControllerHeader()
-#    data = None
     type = None
     datatype = None  # dtype but in string
-#     dtype = None
-#    nChannels = None
-#    nHeights = None
     nProfiles = None
     heightList = None
     channelList = None
@@ -173,18 +172,11 @@ class JROData(GenericData):
     dstFlag = None
     errorCount = None
     blocksize = None
-#     nCode = None
-#     nBaud = None
-#     code = None
     flagDecodeData = False  # asumo q la data no esta decodificada
     flagDeflipData = False  # asumo q la data no esta sin flip
     flagShiftFFT = False
-#     ippSeconds = None
-#     timeInterval = None
     nCohInt = None
-#     noise = None
     windowOfFilter = 1
-    # Speed of ligth
     C = 3e8
     frequency = 49.92e6
     realtime = False
@@ -198,50 +190,45 @@ class JROData(GenericData):
     error = None
     data = None
     nmodes = None
+    metadata_list = ['heightList', 'timeZone', 'type']
 
     def __str__(self):
 
-        return '{} - {}'.format(self.type, self.getDatatime())
+        return '{} - {}'.format(self.type, self.datatime())
 
     def getNoise(self):
 
         raise NotImplementedError
 
-    def getNChannels(self):
+    @property
+    def nChannels(self):
 
         return len(self.channelList)
 
-    def getChannelIndexList(self):
+    @property
+    def channelIndexList(self):
 
         return list(range(self.nChannels))
 
-    def getNHeights(self):
+    @property
+    def nHeights(self):
 
         return len(self.heightList)
 
-    def getHeiRange(self, extrapoints=0):
-
-        heis = self.heightList
-#        deltah = self.heightList[1] - self.heightList[0]
-#
-#        heis.append(self.heightList[-1])
-
-        return heis
-
     def getDeltaH(self):
 
-        delta = self.heightList[1] - self.heightList[0]
+        return self.heightList[1] - self.heightList[0]
 
-        return delta
-
-    def getltctime(self):
+    @property
+    def ltctime(self):
 
         if self.useLocalTime:
             return self.utctime - self.timeZone * 60
 
         return self.utctime
 
-    def getDatatime(self):
+    @property
+    def datatime(self):
 
         datatimeValue = datetime.datetime.utcfromtimestamp(self.ltctime)
         return datatimeValue
@@ -281,85 +268,76 @@ class JROData(GenericData):
 
         return vmax
 
-    def get_ippSeconds(self):
+    @property
+    def ippSeconds(self):
         '''
         '''
         return self.radarControllerHeaderObj.ippSeconds
-
-    def set_ippSeconds(self, ippSeconds):
+    
+    @ippSeconds.setter
+    def ippSeconds(self, ippSeconds):
         '''
         '''
-
         self.radarControllerHeaderObj.ippSeconds = ippSeconds
-
-        return
-
-    def get_dtype(self):
-        '''
-        '''
-        return getNumpyDtype(self.datatype)
-
-    def set_dtype(self, numpyDtype):
-        '''
-        '''
-
-        self.datatype = getDataTypeCode(numpyDtype)
-
-    def get_code(self):
+    
+    @property
+    def code(self):
         '''
         '''
         return self.radarControllerHeaderObj.code
 
-    def set_code(self, code):
+    @code.setter
+    def code(self, code):
         '''
         '''
         self.radarControllerHeaderObj.code = code
 
-        return
-
-    def get_ncode(self):
+    @property
+    def ncode(self):
         '''
         '''
         return self.radarControllerHeaderObj.nCode
 
-    def set_ncode(self, nCode):
+    @ncode.setter
+    def ncode(self, ncode):
         '''
         '''
-        self.radarControllerHeaderObj.nCode = nCode
+        self.radarControllerHeaderObj.nCode = ncode
 
-        return
-
-    def get_nbaud(self):
+    @property
+    def nbaud(self):
         '''
         '''
         return self.radarControllerHeaderObj.nBaud
 
-    def set_nbaud(self, nBaud):
+    @nbaud.setter
+    def nbaud(self, nbaud):
         '''
         '''
-        self.radarControllerHeaderObj.nBaud = nBaud
+        self.radarControllerHeaderObj.nBaud = nbaud
 
-        return
+    @property
+    def ipp(self):
+        '''
+        '''
+        return self.radarControllerHeaderObj.ipp
 
-    nChannels = property(getNChannels, "I'm the 'nChannel' property.")
-    channelIndexList = property(
-        getChannelIndexList, "I'm the 'channelIndexList' property.")
-    nHeights = property(getNHeights, "I'm the 'nHeights' property.")
-    #noise = property(getNoise, "I'm the 'nHeights' property.")
-    datatime = property(getDatatime, "I'm the 'datatime' property")
-    ltctime = property(getltctime, "I'm the 'ltctime' property")
-    ippSeconds = property(get_ippSeconds, set_ippSeconds)
-    dtype = property(get_dtype, set_dtype)
-#     timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
-    code = property(get_code, set_code)
-    nCode = property(get_ncode, set_ncode)
-    nBaud = property(get_nbaud, set_nbaud)
+    @ipp.setter
+    def ipp(self, ipp):
+        '''
+        '''
+        self.radarControllerHeaderObj.ipp = ipp
+
+    @property
+    def metadata(self):
+        '''
+        '''
+
+        return {attr: getattr(self, attr) for attr in self.metadata_list}
 
 
 class Voltage(JROData):
 
-    # data es un numpy array de 2 dmensiones (canales, alturas)
-    data = None
     dataPP_POW   = None
     dataPP_DOP   = None
     dataPP_WIDTH = None
@@ -375,13 +353,9 @@ class Voltage(JROData):
         self.systemHeaderObj = SystemHeader()
         self.type = "Voltage"
         self.data = None
-#         self.dtype = None
-#        self.nChannels = 0
-#        self.nHeights = 0
         self.nProfiles = None
         self.heightList = None
         self.channelList = None
-#        self.channelIndexList = None
         self.flagNoData = True
         self.flagDiscontinuousBlock = False
         self.utctime = None
@@ -396,6 +370,8 @@ class Voltage(JROData):
         self.flagShiftFFT = False
         self.flagDataAsBlock = False  # Asumo que la data es leida perfil a perfil
         self.profileIndex = 0
+        self.metadata_list = ['type', 'heightList', 'timeZone', 'nProfiles', 'channelList', 'nCohInt', 
+            'code', 'ncode', 'nbaud', 'ippSeconds', 'ipp']
 
     def getNoisebyHildebrand(self, channel=None):
         """
@@ -444,35 +420,15 @@ class Voltage(JROData):
 
         return powerdB
 
-    def getTimeInterval(self):
+    @property
+    def timeInterval(self):
 
-        timeInterval = self.ippSeconds * self.nCohInt
-
-        return timeInterval
+        return self.ippSeconds * self.nCohInt
 
     noise = property(getNoise, "I'm the 'nHeights' property.")
-    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
 
 
 class Spectra(JROData):
-
-    # data spc es un numpy array de 2 dmensiones (canales, perfiles, alturas)
-    data_spc = None
-    # data cspc es un numpy array de 2 dmensiones (canales, pares, alturas)
-    data_cspc = None
-    # data dc es un numpy array de 2 dmensiones (canales, alturas)
-    data_dc = None
-    # data power
-    data_pwr = None
-    nFFTPoints = None
-#     nPairs = None
-    pairsList = None
-    nIncohInt = None
-    wavelength = None  # Necesario para cacular el rango de velocidad desde la frecuencia
-    nCohInt = None  # se requiere para determinar el valor de timeInterval
-    ippFactor = None
-    profileIndex = 0
-    plotting = "spectra"
 
     def __init__(self):
         '''
@@ -484,14 +440,9 @@ class Spectra(JROData):
         self.systemHeaderObj = SystemHeader()
         self.type = "Spectra"
         self.timeZone = 0
-#        self.data = None
-#         self.dtype = None
-#        self.nChannels = 0
-#        self.nHeights = 0
         self.nProfiles = None
         self.heightList = None
         self.channelList = None
-#        self.channelIndexList = None
         self.pairsList = None
         self.flagNoData = True
         self.flagDiscontinuousBlock = False
@@ -505,9 +456,10 @@ class Spectra(JROData):
         self.flagDeflipData = False  # asumo q la data no esta sin flip
         self.flagShiftFFT = False
         self.ippFactor = 1
-        #self.noise = None
         self.beacon_heiIndexList = []
         self.noise_estimation = None
+        self.metadata_list = ['type', 'heightList', 'timeZone', 'pairsList', 'channelList', 'nCohInt', 
+            'code', 'ncode', 'nbaud', 'ippSeconds', 'ipp','nIncohInt', 'nFFTPoints', 'nProfiles']
 
     def getNoisebyHildebrand(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
         """
@@ -567,15 +519,18 @@ class Spectra(JROData):
         else:
             return velrange
 
-    def getNPairs(self):
+    @property
+    def nPairs(self):
 
         return len(self.pairsList)
 
-    def getPairsIndexList(self):
+    @property
+    def pairsIndexList(self):
 
         return list(range(self.nPairs))
 
-    def getNormFactor(self):
+    @property
+    def normFactor(self):
 
         pwcode = 1
 
@@ -586,21 +541,24 @@ class Spectra(JROData):
 
         return normFactor
 
-    def getFlagCspc(self):
+    @property
+    def flag_cspc(self):
 
         if self.data_cspc is None:
             return True
 
         return False
 
-    def getFlagDc(self):
+    @property
+    def flag_dc(self):
 
         if self.data_dc is None:
             return True
 
         return False
 
-    def getTimeInterval(self):
+    @property
+    def timeInterval(self):
 
         timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt * self.nProfiles * self.ippFactor
         if self.nmodes:
@@ -650,69 +608,30 @@ class Spectra(JROData):
         print("This property should not be initialized")
 
         return
-
-    nPairs = property(getNPairs, setValue, "I'm the 'nPairs' property.")
-    pairsIndexList = property(
-        getPairsIndexList, setValue, "I'm the 'pairsIndexList' property.")
-    normFactor = property(getNormFactor, setValue,
-                          "I'm the 'getNormFactor' property.")
-    flag_cspc = property(getFlagCspc, setValue)
-    flag_dc = property(getFlagDc, setValue)
+    
     noise = property(getNoise, setValue, "I'm the 'nHeights' property.")
-    timeInterval = property(getTimeInterval, setValue,
-                            "I'm the 'timeInterval' property")
 
 
 class SpectraHeis(Spectra):
 
-    data_spc = None
-    data_cspc = None
-    data_dc = None
-    nFFTPoints = None
-#     nPairs = None
-    pairsList = None
-    nCohInt = None
-    nIncohInt = None
-
     def __init__(self):
 
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.systemHeaderObj = SystemHeader()
-
         self.type = "SpectraHeis"
-
-#         self.dtype = None
-
-#        self.nChannels = 0
-
-#        self.nHeights = 0
-
         self.nProfiles = None
-
         self.heightList = None
-
         self.channelList = None
-
-#        self.channelIndexList = None
-
         self.flagNoData = True
-
         self.flagDiscontinuousBlock = False
-
-#         self.nPairs = 0
-
         self.utctime = None
-
         self.blocksize = None
-
         self.profileIndex = 0
-
         self.nCohInt = 1
-
         self.nIncohInt = 1
 
-    def getNormFactor(self):
+    @property
+    def normFactor(self):
         pwcode = 1
         if self.flagDecodeData:
             pwcode = numpy.sum(self.code[0]**2)
@@ -721,86 +640,27 @@ class SpectraHeis(Spectra):
 
         return normFactor
 
-    def getTimeInterval(self):
+    @property
+    def timeInterval(self):
 
-        timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
-
-        return timeInterval
-
-    normFactor = property(getNormFactor, "I'm the 'getNormFactor' property.")
-    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
+        return self.ippSeconds * self.nCohInt * self.nIncohInt
 
 
 class Fits(JROData):
 
-    heightList = None
-    channelList = None
-    flagNoData = True
-    flagDiscontinuousBlock = False
-    useLocalTime = False
-    utctime = None
-#     ippSeconds = None
-#     timeInterval = None
-    nCohInt = None
-    nIncohInt = None
-    noise = None
-    windowOfFilter = 1
-    # Speed of ligth
-    C = 3e8
-    frequency = 49.92e6
-    realtime = False
-
     def __init__(self):
 
         self.type = "Fits"
-
         self.nProfiles = None
-
         self.heightList = None
-
         self.channelList = None
-
-#         self.channelIndexList = None
-
         self.flagNoData = True
-
         self.utctime = None
-
         self.nCohInt = 1
-
         self.nIncohInt = 1
-
         self.useLocalTime = True
-
         self.profileIndex = 0
-
-#         self.utctime = None
         self.timeZone = 0
-#         self.ltctime = None
-#         self.timeInterval = None
-#         self.header = None
-#         self.data_header = None
-#         self.data = None
-#         self.datatime = None
-#         self.flagNoData = False
-#         self.expName = ''
-#         self.nChannels = None
-#         self.nSamples = None
-#         self.dataBlocksPerFile = None
-#         self.comments = ''
-#
-
-    def getltctime(self):
-
-        if self.useLocalTime:
-            return self.utctime - self.timeZone * 60
-
-        return self.utctime
-
-    def getDatatime(self):
-
-        datatime = datetime.datetime.utcfromtimestamp(self.ltctime)
-        return datatime
 
     def getTimeRange(self):
 
@@ -813,27 +673,12 @@ class Fits(JROData):
 
         return datatime
 
-    def getHeiRange(self):
-
-        heis = self.heightList
-
-        return heis
-
-    def getNHeights(self):
-
-        return len(self.heightList)
-
-    def getNChannels(self):
-
-        return len(self.channelList)
-
     def getChannelIndexList(self):
 
         return list(range(self.nChannels))
 
     def getNoise(self, type=1):
 
-        #noise = numpy.zeros(self.nChannels)
 
         if type == 1:
             noise = self.getNoisebyHildebrand()
@@ -846,87 +691,46 @@ class Fits(JROData):
 
         return noise
 
-    def getTimeInterval(self):
+    @property
+    def timeInterval(self):
 
         timeInterval = self.ippSeconds * self.nCohInt * self.nIncohInt
 
         return timeInterval
 
-    def get_ippSeconds(self):
+    @property
+    def ippSeconds(self):
         '''
         '''
         return self.ipp_sec
 
-
-    datatime = property(getDatatime, "I'm the 'datatime' property")
-    nHeights = property(getNHeights, "I'm the 'nHeights' property.")
-    nChannels = property(getNChannels, "I'm the 'nChannel' property.")
-    channelIndexList = property(
-        getChannelIndexList, "I'm the 'channelIndexList' property.")
     noise = property(getNoise, "I'm the 'nHeights' property.")
-
-    ltctime = property(getltctime, "I'm the 'ltctime' property")
-    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
-    ippSeconds = property(get_ippSeconds, '')
+    
 
 class Correlation(JROData):
-
-    noise = None
-    SNR = None
-    #--------------------------------------------------
-    mode = None
-    split = False
-    data_cf = None
-    lags = None
-    lagRange = None
-    pairsList = None
-    normFactor = None
-    #--------------------------------------------------
-#     calculateVelocity = None
-    nLags = None
-    nPairs = None
-    nAvg = None
 
     def __init__(self):
         '''
         Constructor
         '''
         self.radarControllerHeaderObj = RadarControllerHeader()
-
         self.systemHeaderObj = SystemHeader()
-
         self.type = "Correlation"
-
         self.data = None
-
         self.dtype = None
-
         self.nProfiles = None
-
         self.heightList = None
-
         self.channelList = None
-
         self.flagNoData = True
-
         self.flagDiscontinuousBlock = False
-
         self.utctime = None
-
         self.timeZone = 0
-
         self.dstFlag = None
-
         self.errorCount = None
-
         self.blocksize = None
-
         self.flagDecodeData = False  # asumo q la data no esta decodificada
-
         self.flagDeflipData = False  # asumo q la data no esta sin flip
-
         self.pairsList = None
-
         self.nPoints = None
 
     def getPairsList(self):
@@ -981,11 +785,10 @@ class Correlation(JROData):
 
         return noise
 
-    def getTimeInterval(self):
+    @property
+    def timeInterval(self):
 
-        timeInterval = self.ippSeconds * self.nCohInt * self.nProfiles
-
-        return timeInterval
+        return self.ippSeconds * self.nCohInt * self.nProfiles
 
     def splitFunctions(self):
 
@@ -1011,7 +814,8 @@ class Correlation(JROData):
 
         return acf_ind, ccf_ind, acf_pairs, ccf_pairs, data_acf, data_ccf
 
-    def getNormFactor(self):
+    @property
+    def normFactor(self):
         acf_ind, ccf_ind, acf_pairs, ccf_pairs, data_acf, data_ccf = self.splitFunctions()
         acf_pairs = numpy.array(acf_pairs)
         normFactor = numpy.zeros((self.nPairs, self.nHeights))
@@ -1028,25 +832,14 @@ class Correlation(JROData):
 
         return normFactor
 
-    timeInterval = property(getTimeInterval, "I'm the 'timeInterval' property")
-    normFactor = property(getNormFactor, "I'm the 'normFactor property'")
-
 
 class Parameters(Spectra):
 
-    experimentInfo = None  # Information about the experiment
-    # Information from previous data
-    inputUnit = None  # Type of data to be processed
-    operation = None  # Type of operation to parametrize
-    # normFactor = None       #Normalization Factor
     groupList = None  # List of Pairs, Groups, etc
-    # Parameters
     data_param = None  # Parameters obtained
     data_pre = None  # Data Pre Parametrization
     data_SNR = None  # Signal to Noise Ratio
-#     heightRange = None      #Heights
     abscissaList = None  # Abscissa, can be velocities, lags or time
-#    noise = None            #Noise Potency
     utctimeInit = None  # Initial UTC time
     paramInterval = None  # Time interval to calculate Parameters in seconds
     useLocalTime = True
@@ -1085,7 +878,8 @@ class Parameters(Spectra):
 
         return datatime
 
-    def getTimeInterval(self):
+    @property
+    def timeInterval(self):
 
         if hasattr(self, 'timeInterval1'):
             return self.timeInterval1
@@ -1102,7 +896,6 @@ class Parameters(Spectra):
 
         return self.spc_noise
 
-    timeInterval = property(getTimeInterval)
     noise = property(getNoise, setValue, "I'm the 'Noise' property.")
 
 
@@ -1220,7 +1013,7 @@ class PlotterData(object):
         if hasattr(dataOut, 'pairsList'):
             self.pairs = dataOut.pairsList
 
-        self.interval = dataOut.getTimeInterval()
+        self.interval = dataOut.timeInterval
         if True in ['spc' in ptype for ptype in self.plottypes]:
             self.xrange = (dataOut.getFreqRange(1)/1000.,
                            dataOut.getAcfRange(1), dataOut.getVelRange(1))

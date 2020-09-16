@@ -1,3 +1,13 @@
+# Copyright (c) 2012-2020 Jicamarca Radio Observatory
+# All rights reserved.
+#
+# Distributed under the terms of the BSD 3-clause license.
+"""Spectra processing Unit and operations
+
+Here you will find the processing unit `SpectraProc` and several operations
+to work with Spectra data type
+"""
+
 import time
 import itertools
 
@@ -10,7 +20,6 @@ from schainpy.utils import log
 
 
 class SpectraProc(ProcessingUnit):
-
 
     def __init__(self):
 
@@ -35,35 +44,24 @@ class SpectraProc(ProcessingUnit):
         except:
             pass
         self.dataOut.radarControllerHeaderObj = self.dataIn.radarControllerHeaderObj.copy()
+
         self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList
         self.dataOut.dtype = numpy.dtype([('real', '<f4'), ('imag', '<f4')])
-
-        self.dataOut.nBaud = self.dataIn.nBaud
-        self.dataOut.nCode = self.dataIn.nCode
-        self.dataOut.code = self.dataIn.code
         self.dataOut.nProfiles = self.dataOut.nFFTPoints
-
         self.dataOut.flagDiscontinuousBlock = self.dataIn.flagDiscontinuousBlock
         self.dataOut.utctime = self.firstdatatime
-        # asumo q la data esta decodificada
         self.dataOut.flagDecodeData = self.dataIn.flagDecodeData
-        # asumo q la data esta sin flip
         self.dataOut.flagDeflipData = self.dataIn.flagDeflipData
         self.dataOut.flagShiftFFT = False
-
         self.dataOut.nCohInt = self.dataIn.nCohInt
         self.dataOut.nIncohInt = 1
-
         self.dataOut.windowOfFilter = self.dataIn.windowOfFilter
-
         self.dataOut.frequency = self.dataIn.frequency
         self.dataOut.realtime = self.dataIn.realtime
-
         self.dataOut.azimuth = self.dataIn.azimuth
         self.dataOut.zenith = self.dataIn.zenith
-
         self.dataOut.beam.codeList = self.dataIn.beam.codeList
         self.dataOut.beam.azimuthList = self.dataIn.beam.azimuthList
         self.dataOut.beam.zenithList = self.dataIn.beam.zenithList
@@ -120,7 +118,7 @@ class SpectraProc(ProcessingUnit):
         self.dataOut.blockSize = blocksize
         self.dataOut.flagShiftFFT = False
 
-    def run(self, nProfiles=None, nFFTPoints=None, pairsList=[], ippFactor=None, shift_fft=False):
+    def run(self, nProfiles=None, nFFTPoints=None, pairsList=None, ippFactor=None, shift_fft=False):
         
         if self.dataIn.type == "Spectra":
             self.dataOut.copy(self.dataIn)
@@ -133,9 +131,7 @@ class SpectraProc(ProcessingUnit):
                     #desplaza a la derecha en el eje 2 determinadas posiciones
                     self.dataOut.data_cspc = numpy.roll(self.dataOut.data_cspc, shift, axis=1)
 
-            return True
-
-        if self.dataIn.type == "Voltage":
+        elif self.dataIn.type == "Voltage":
 
             self.dataOut.flagNoData = True
 
@@ -146,12 +142,9 @@ class SpectraProc(ProcessingUnit):
                 nProfiles = nFFTPoints
 
             if ippFactor == None:
-                ippFactor = 1
-
-            self.dataOut.ippFactor = ippFactor
-
+                self.dataOut.ippFactor = 1
+            
             self.dataOut.nFFTPoints = nFFTPoints
-            self.dataOut.pairsList = pairsList
 
             if self.buffer is None:
                 self.buffer = numpy.zeros((self.dataIn.nChannels,
@@ -181,7 +174,6 @@ class SpectraProc(ProcessingUnit):
                     raise ValueError("The type object %s has %d profiles, it should just has %d profiles" % (
                         self.dataIn.type, self.dataIn.data.shape[1], nProfiles))
                     self.dataOut.flagNoData = True
-                    return 0
             else:
                 self.buffer[:, self.profIndex, :] = self.dataIn.data.copy()
                 self.profIndex += 1
@@ -191,16 +183,16 @@ class SpectraProc(ProcessingUnit):
 
             if self.profIndex == nProfiles:
                 self.__updateSpecFromVoltage()
+                if pairsList == None:
+                    self.dataOut.pairsList = [pair for pair in itertools.combinations(self.dataOut.channelList, 2)]
                 self.__getFft()
 
                 self.dataOut.flagNoData = False
                 self.firstdatatime = None
                 self.profIndex = 0
-
-            return True
-
-        raise ValueError("The type of input object '%s' is not valid" % (
-            self.dataIn.type))
+        else:
+            raise ValueError("The type of input object '%s' is not valid".format(
+                self.dataIn.type))
 
     def __selectPairs(self, pairsList):
 

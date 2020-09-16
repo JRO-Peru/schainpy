@@ -335,31 +335,31 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         self.datablock = numpy.zeros([channels,prof_gen,Samples],dtype= numpy.complex64)
         for i in range(channels):
             for k in range(prof_gen):
-                #·······················NOISE···············
+                #-----------------------NOISE---------------
                 Noise_r    = numpy.random.normal(DC_level,stdev,Samples)
                 Noise_i    = numpy.random.normal(DC_level,stdev,Samples)
                 Noise      = numpy.zeros(Samples,dtype=complex)
                 Noise.real = Noise_r
                 Noise.imag = Noise_i
-                #·······················PULSOS··············
+                #-----------------------PULSOS--------------
                 Pulso      = numpy.zeros(pulse_size,dtype=complex)
                 Pulso.real =  pulses[k%num_codes]
                 Pulso.imag =  pulses[k%num_codes]
-                #····················· PULSES+NOISE··········
+                #--------------------- PULSES+NOISE----------
                 InBuffer                    = numpy.zeros(Samples,dtype=complex)
                 InBuffer[m_nR:m_nR+ps]      = Pulso
                 InBuffer                    =  InBuffer+Noise
-                #····················· ANGLE ·······························
+                #--------------------- ANGLE -------------------------------
                 InBuffer.real[m_nR:m_nR+ps] = InBuffer.real[m_nR:m_nR+ps]*(math.cos( self.fAngle)*5)
                 InBuffer.imag[m_nR:m_nR+ps] = InBuffer.imag[m_nR:m_nR+ps]*(math.sin( self.fAngle)*5)
                 InBuffer=InBuffer
                 self.datablock[i][k]= InBuffer
 
-        #················DOPPLER SIGNAL...............................................
+        #----------------DOPPLER SIGNAL...............................................
         time_vec   = numpy.linspace(0,(prof_gen-1)*ippSec,int(prof_gen))+self.nReadBlocks*ippSec*prof_gen+(self.nReadFiles-1)*ippSec*prof_gen
         fd         = Fdoppler #+(600.0/120)*self.nReadBlocks
         d_signal   = Adoppler*numpy.array(numpy.exp(1.0j*2.0*math.pi*fd*time_vec),dtype=numpy.complex64)
-        #·············Señal con ancho espectral····················
+        #-------------Senal con ancho espectral--------------------
         if prof_gen%2==0:
             min = int(prof_gen/2.0-1.0)
             max = int(prof_gen/2.0)
@@ -372,11 +372,11 @@ class SimulatorReader(JRODataReader, ProcessingUnit):
         specw_sig   = specw_sig/w
         specw_sig   = numpy.sinc(specw_sig)
         specw_sig   =  A*numpy.array(specw_sig,dtype=numpy.complex64)
-        #·················· DATABLOCK + DOPPLER····················
+        #------------------ DATABLOCK + DOPPLER--------------------
         HD=int(Hdoppler/self.AcqDH_0)
         for  i in range(12):
             self.datablock[0,:,HD+i]=self.datablock[0,:,HD+i]+ d_signal# RESULT
-        #·················· DATABLOCK + DOPPLER*Sinc(x)····················
+        #------------------ DATABLOCK + DOPPLER*Sinc(x)--------------------
         HD=int(Hdoppler/self.AcqDH_0)
         HD=int(HD/2)
         for  i in range(12):
