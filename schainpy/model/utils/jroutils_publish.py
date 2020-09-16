@@ -195,6 +195,7 @@ class SendToFTP(Operation):
         Operation.__init__(self)
         self.ftp = None
         self.ready = False
+        self.current_time = time.time()
 
     def setup(self, server, username, password, timeout, **kwargs):
         '''
@@ -219,7 +220,7 @@ class SendToFTP(Operation):
 
         log.log('Connecting to ftp://{}'.format(self.server), self.name)
         try:
-            self.ftp = ftplib.FTP(self.server, timeout=self.timeout)
+            self.ftp = ftplib.FTP(self.server, timeout=1)
         except ftplib.all_errors:
             log.error('Server connection fail: {}'.format(self.server), self.name)
             if self.ftp is not None:
@@ -245,6 +246,11 @@ class SendToFTP(Operation):
     def check(self):
 
         try:
+            if not self.ready:
+                if time.time()-self.current_time < self.timeout:
+                    return
+                else:
+                    self.current_time = time.time()
             self.ftp.voidcmd("NOOP")
         except:
             log.warning('Connection lost... trying to reconnect', self.name)
@@ -328,7 +334,7 @@ class SendToFTP(Operation):
                 self.times[x] = self.dataOut.utctime
                 self.latest[x] = srcname            
 
-    def run(self, dataOut, server, username, password, timeout=10, **kwargs):
+    def run(self, dataOut, server, username, password, timeout=60, **kwargs):
 
         if not self.isConfig:
             self.setup(
@@ -343,7 +349,8 @@ class SendToFTP(Operation):
         
         self.dataOut = dataOut
         self.check()
-        self.send_files()
+        if self.ready:
+            self.send_files()
 
     def close(self):
 
