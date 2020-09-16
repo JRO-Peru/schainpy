@@ -365,21 +365,24 @@ class HDFWriter(Operation):
         self.path = path
         self.blocksPerFile = blocksPerFile
         self.metadataList = metadataList
-        self.dataList = dataList
+        self.dataList = [s.strip() for s in dataList]
         self.setType = setType
         self.description = description
 
-        for s in ['type', 'timeZone', 'useLocalTime']:
-            if s not in self.metadataList:
-                self.metadataList.append(s)
+        if self.metadataList is None:
+            self.metadataList = self.dataOut.metadata_list
 
         tableList = []
         dsList = []
 
         for i in range(len(self.dataList)):
             dsDict = {}
-            dataAux = getattr(self.dataOut, self.dataList[i])
-            dsDict['variable'] = self.dataList[i]
+            if hasattr(self.dataOut, self.dataList[i]):
+                dataAux = getattr(self.dataOut, self.dataList[i])
+                dsDict['variable'] = self.dataList[i]
+            else:
+                log.warning('Attribute {} not found in dataOut', self.name)
+                continue
 
             if dataAux is None:
                 continue
@@ -419,7 +422,7 @@ class HDFWriter(Operation):
             self.lastTime = currentTime
             return False
 
-    def run(self, dataOut, path, blocksPerFile=10, metadataList=[],
+    def run(self, dataOut, path, blocksPerFile=10, metadataList=None,
             dataList=[], setType=None, description={}):
 
         self.dataOut = dataOut
@@ -516,7 +519,10 @@ class HDFWriter(Operation):
                 elif isinstance(meta[name], dict):
                     for key, value in meta[name].items():
                         return value[x]
-            return 'channel{:02d}'.format(x)
+            if 'cspc' in name:
+                return 'pair{:02d}'.format(x)
+            else:
+                return 'channel{:02d}'.format(x)
     
     def writeMetadata(self, fp):
 

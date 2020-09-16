@@ -29,9 +29,9 @@ setup(
     version = __version__,
     description = DOCLINES[0],
     long_description = "\n".join(DOCLINES[2:]),
-    url = "https://github.com/JRO-Peru/schain",
+    url = "https://github.com/JRO-Peru/schainpy",
     author = "Jicamarca Radio Observatory",
-    author_email = "jro-developers@igp.gob.pe",
+    author_email = "jro-developers@jro.igp.gob.pe",
     license="BSD-3-Clause",
     classifiers=[
         "Development Status :: 4 - Beta",

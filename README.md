@@ -13,7 +13,9 @@ data.
 
 ## Installation
 
-To get started the easiest way to install it is through [PyPI](https://pypi.org/project/schainpy/) with pip:
+To get started the easiest way to install it is through
+[PyPI](https://pypi.org/project/schainpy/) with pip. We strongly recommend to
+use an virtual environment like virtualenv or anaconda.
 
 ```bash
 pip install schainpy
@@ -25,7 +27,7 @@ First, ensure that you have the above-listed dependencies installed, then clone
 the repository and install as normal python package:
 
 ```bash
-git clone https://github.com/JRO-Peru/schain.git
+git clone https://github.com/JRO-Peru/schainpy.git
 cd schain
 git checkout `branch-name` (optional)
 sudo pip install ./
