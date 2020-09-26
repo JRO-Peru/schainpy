@@ -13,6 +13,7 @@ import ast
 import datetime
 import traceback
 import time
+import multiprocessing
 from multiprocessing import Process, Queue
 from threading import Thread
 from xml.etree.ElementTree import ElementTree, Element, SubElement
@@ -21,6 +22,8 @@ from schainpy.admin import Alarm, SchainWarning
 from schainpy.model import *
 from schainpy.utils import log
 
+if 'darwin' in sys.platform and sys.version_info[0] == 3 and sys.version_info[1] > 7:
+    multiprocessing.set_start_method('fork')
 
 class ConfBase():
 
@@ -636,7 +639,7 @@ class Project(Process):
         while not err:
             for conf in self.getUnits():
                 ok = conf.run()                
-                if ok is 'Error':
+                if ok == 'Error':
                     n -= 1
                     continue
                 elif not ok:
