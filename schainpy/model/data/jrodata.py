@@ -293,25 +293,25 @@ class JROData(GenericData):
         self.radarControllerHeaderObj.code = code
 
     @property
-    def ncode(self):
+    def nCode(self):
         '''
         '''
         return self.radarControllerHeaderObj.nCode
 
-    @ncode.setter
-    def ncode(self, ncode):
+    @nCode.setter
+    def nCode(self, ncode):
         '''
         '''
         self.radarControllerHeaderObj.nCode = ncode
 
     @property
-    def nbaud(self):
+    def nBaud(self):
         '''
         '''
         return self.radarControllerHeaderObj.nBaud
 
-    @nbaud.setter
-    def nbaud(self, nbaud):
+    @nBaud.setter
+    def nBaud(self, nbaud):
         '''
         '''
         self.radarControllerHeaderObj.nBaud = nbaud
@@ -371,7 +371,7 @@ class Voltage(JROData):
         self.flagDataAsBlock = False  # Asumo que la data es leida perfil a perfil
         self.profileIndex = 0
         self.metadata_list = ['type', 'heightList', 'timeZone', 'nProfiles', 'channelList', 'nCohInt', 
-            'code', 'ncode', 'nbaud', 'ippSeconds', 'ipp']
+            'code', 'nCode', 'nBaud', 'ippSeconds', 'ipp']
 
     def getNoisebyHildebrand(self, channel=None):
         """
@@ -459,7 +459,7 @@ class Spectra(JROData):
         self.beacon_heiIndexList = []
         self.noise_estimation = None
         self.metadata_list = ['type', 'heightList', 'timeZone', 'pairsList', 'channelList', 'nCohInt', 
-            'code', 'ncode', 'nbaud', 'ippSeconds', 'ipp','nIncohInt', 'nFFTPoints', 'nProfiles']
+            'code', 'nCode', 'nBaud', 'ippSeconds', 'ipp','nIncohInt', 'nFFTPoints', 'nProfiles']
 
     def getNoisebyHildebrand(self, xmin_index=None, xmax_index=None, ymin_index=None, ymax_index=None):
         """
