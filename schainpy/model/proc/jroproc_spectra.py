@@ -44,7 +44,6 @@ class SpectraProc(ProcessingUnit):
         except:
             pass
         self.dataOut.radarControllerHeaderObj = self.dataIn.radarControllerHeaderObj.copy()
-
         self.dataOut.systemHeaderObj = self.dataIn.systemHeaderObj.copy()
         self.dataOut.channelList = self.dataIn.channelList
         self.dataOut.heightList = self.dataIn.heightList
@@ -130,6 +129,8 @@ class SpectraProc(ProcessingUnit):
                 if self.dataOut.data_cspc is not None:
                     #desplaza a la derecha en el eje 2 determinadas posiciones
                     self.dataOut.data_cspc = numpy.roll(self.dataOut.data_cspc, shift, axis=1)
+            if pairsList:
+                self.__selectPairs(pairsList)
 
         elif self.dataIn.type == "Voltage":
 
@@ -185,8 +186,9 @@ class SpectraProc(ProcessingUnit):
                 self.__updateSpecFromVoltage()
                 if pairsList == None:
                     self.dataOut.pairsList = [pair for pair in itertools.combinations(self.dataOut.channelList, 2)]
+                else:
+                    self.dataOut.pairsList = pairsList
                 self.__getFft()
-
                 self.dataOut.flagNoData = False
                 self.firstdatatime = None
                 self.profIndex = 0
