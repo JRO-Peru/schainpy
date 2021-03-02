@@ -302,7 +302,7 @@ class RadarControllerHeader(Header):
                  nWindows=None, nHeights=None, firstHeight=None, deltaHeight=None,
                  numTaus=0, line6Function=0, line5Function=0, fClock=None,
                  prePulseBefore=0, prePulseAfter=0,
-                 codeType=0, nCode=0, nBaud=0, code=None,
+                 codeType=0, nCode=0, nBaud=0, code=[],
                  flip1=0, flip2=0):
 
         #         self.size = 116

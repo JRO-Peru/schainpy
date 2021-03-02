@@ -313,7 +313,7 @@ class JULIAParamReader(JRODataReader, ProcessingUnit):
         Storing data from databuffer to dataOut object
         '''
         
-        self.dataOut.data_SNR = self.buffer[4].reshape(1, -1)
+        self.dataOut.data_snr = self.buffer[4].reshape(1, -1)
         self.dataOut.heightList = self.heights
         self.dataOut.data_param = self.buffer[0:4,]
         self.dataOut.utctimeInit = self.time

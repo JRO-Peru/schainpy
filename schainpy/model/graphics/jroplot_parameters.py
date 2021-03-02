@@ -47,6 +47,13 @@ class SnrPlot(RTIPlot):
     CODE = 'snr'
     colormap = 'jet'
 
+    def update(self, dataOut):
+
+        data = {
+            'snr': 10*numpy.log10(dataOut.data_snr)    
+        }
+
+        return data, {}
 
 class DopplerPlot(RTIPlot):
     '''
@@ -56,6 +63,13 @@ class DopplerPlot(RTIPlot):
     CODE = 'dop'
     colormap = 'jet'
 
+    def update(self, dataOut):
+
+        data = {
+            'dop': 10*numpy.log10(dataOut.data_dop)    
+        }
+
+        return data, {}
 
 class PowerPlot(RTIPlot):
     '''
@@ -65,6 +79,13 @@ class PowerPlot(RTIPlot):
     CODE = 'pow'
     colormap = 'jet'
 
+    def update(self, dataOut):
+
+        data = {
+            'pow': 10*numpy.log10(dataOut.data_pow)    
+        }
+
+        return data, {}
 
 class SpectralWidthPlot(RTIPlot):
     '''
@@ -74,6 +95,13 @@ class SpectralWidthPlot(RTIPlot):
     CODE = 'width'
     colormap = 'jet'
 
+    def update(self, dataOut):
+
+        data = {
+            'width': dataOut.data_width
+        }
+
+        return data, {}
 
 class SkyMapPlot(Plot):
     '''
@@ -123,45 +151,45 @@ class SkyMapPlot(Plot):
         self.titles[0] = title
 
 
-class ParametersPlot(RTIPlot):
+class GenericRTIPlot(Plot):
     '''
-    Plot for data_param object
+    Plot for data_xxxx object
     '''
 
     CODE = 'param'
-    colormap = 'seismic'
+    colormap = 'viridis'
+    plot_type = 'pcolorbuffer'
 
     def setup(self):
         self.xaxis = 'time'
         self.ncols = 1
-        self.nrows = self.data.shape(self.CODE)[0]
+        self.nrows = self.data.shape(self.attr_data)[0]
         self.nplots = self.nrows
         self.plots_adjust.update({'hspace':0.8, 'left': 0.1, 'bottom': 0.08, 'right':0.95, 'top': 0.95})
         
         if not self.xlabel:
             self.xlabel = 'Time'
-        
-        if self.showSNR:
-            self.nrows += 1
-            self.nplots += 1
 
         self.ylabel = 'Height [km]'
         if not self.titles:
             self.titles = self.data.parameters \
                 if self.data.parameters else ['Param {}'.format(x) for x in range(self.nrows)]
-            if self.showSNR:
-                self.titles.append('SNR')
 
+    def update(self, dataOut):
+
+        data = {
+            self.attr_data : getattr(dataOut, self.attr_data)
+        }
+
+        meta = {}
+
+        return data, meta
+    
     def plot(self):
-        self.data.normalize_heights()
+        # self.data.normalize_heights()
         self.x = self.data.times
-        self.y = self.data.heights
-        if self.showSNR:
-            self.z = numpy.concatenate(
-                (self.data[self.CODE], self.data['snr'])
-            )
-        else:
-            self.z = self.data[self.CODE]
+        self.y = self.data.yrange
+        self.z = self.data[self.attr_data]
 
         self.z = numpy.ma.masked_invalid(self.z)
 
@@ -195,15 +223,6 @@ class ParametersPlot(RTIPlot):
                                        vmax=self.zmax,
                                        cmap=self.cmaps[n]
                                        )
-
-
-class OutputPlot(ParametersPlot):
-    '''
-    Plot data_output object
-    '''
-
-    CODE = 'output'
-    colormap = 'seismic'
 
 
 class PolarMapPlot(Plot):
@@ -251,14 +270,14 @@ class PolarMapPlot(Plot):
             zeniths = numpy.linspace(
                 0, self.data.meta['max_range'], data.shape[1])
             if self.mode == 'E':
-                azimuths = -numpy.radians(self.data.heights)+numpy.pi/2
+                azimuths = -numpy.radians(self.data.yrange)+numpy.pi/2
                 r, theta = numpy.meshgrid(zeniths, azimuths)
                 x, y = r*numpy.cos(theta)*numpy.cos(numpy.radians(self.data.meta['elevation'])), r*numpy.sin(
                     theta)*numpy.cos(numpy.radians(self.data.meta['elevation']))
                 x = km2deg(x) + self.lon
                 y = km2deg(y) + self.lat
             else:
-                azimuths = numpy.radians(self.data.heights)
+                azimuths = numpy.radians(self.data.yrange)
                 r, theta = numpy.meshgrid(zeniths, azimuths)
                 x, y = r*numpy.cos(theta), r*numpy.sin(theta)
             self.y = zeniths

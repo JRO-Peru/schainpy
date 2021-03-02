@@ -12,7 +12,7 @@ import zmq
 import time
 import numpy
 import datetime
-from multiprocessing import Queue
+from collections import deque
 from functools import wraps
 from threading import Thread
 import matplotlib
@@ -22,7 +22,7 @@ if 'BACKEND' in os.environ:
 elif 'linux' in sys.platform:
     matplotlib.use("TkAgg")
 elif 'darwin' in sys.platform:
-    matplotlib.use('WxAgg')
+    matplotlib.use('MacOSX')
 else:
     from schainpy.utils import log
     log.warning('Using default Backend="Agg"', 'INFO')
@@ -82,7 +82,6 @@ def figpause(interval):
             except:
                 pass
             return
-
 
 def popup(message):
     '''
@@ -186,7 +185,7 @@ class Plot(Operation):
         self.sender_time = 0
         self.data = None
         self.firsttime = True
-        self.sender_queue = Queue(maxsize=60)
+        self.sender_queue = deque(maxlen=10)
         self.plots_adjust = {'left': 0.125, 'right': 0.9, 'bottom': 0.15, 'top': 0.9, 'wspace': 0.2, 'hspace': 0.2}
 
     def __fmtTime(self, x, pos):
@@ -230,6 +229,7 @@ class Plot(Operation):
         self.yscale = kwargs.get('yscale', None)
         self.xlabel = kwargs.get('xlabel', None)
         self.attr_time = kwargs.get('attr_time', 'utctime')
+        self.attr_data = kwargs.get('attr_data', 'data_param')
         self.decimation = kwargs.get('decimation', None)
         self.showSNR = kwargs.get('showSNR', False)
         self.oneFigure = kwargs.get('oneFigure', True)
@@ -251,8 +251,8 @@ class Plot(Operation):
         self.tag = kwargs.get('tag', '')
         self.height_index = kwargs.get('height_index', None)
         self.__throttle_plot = apply_throttle(self.throttle)
-        self.data = PlotterData(
-            self.CODE, self.throttle, self.exp_code, self.localtime, self.buffering, snr=self.showSNR)
+        code = self.attr_data if self.attr_data else self.CODE
+        self.data = PlotterData(self.CODE, self.exp_code, self.localtime)
         
         if self.server:
             if not self.server.startswith('tcp://'):
@@ -385,8 +385,8 @@ class Plot(Operation):
                     xmax = self.tmin + self.xrange*60*60
                     ax.xaxis.set_major_formatter(FuncFormatter(self.__fmtTime))
                     ax.xaxis.set_major_locator(LinearLocator(9))
-                ymin = self.ymin if self.ymin else numpy.nanmin(self.y)
-                ymax = self.ymax if self.ymax else numpy.nanmax(self.y)
+                ymin = self.ymin if self.ymin is not None else numpy.nanmin(self.y[numpy.isfinite(self.y)])
+                ymax = self.ymax if self.ymax is not None else numpy.nanmax(self.y[numpy.isfinite(self.y)])
                 ax.set_facecolor(self.bgcolor)
                 if self.xscale:
                     ax.xaxis.set_major_formatter(FuncFormatter(
@@ -478,14 +478,28 @@ class Plot(Operation):
         if self.server:
             self.send_to_server()
 
+    def __update(self, dataOut, timestamp):
+        '''
+        '''
+
+        metadata = {
+            'yrange': dataOut.heightList,
+            'interval': dataOut.timeInterval,
+            'channels': dataOut.channelList
+        }
+        
+        data, meta = self.update(dataOut)
+        metadata.update(meta)
+        self.data.update(data, timestamp, metadata)
+    
     def save_figure(self, n):
         '''
         '''
 
-        if (self.data.tm - self.save_time) <= self.save_period:
+        if (self.data.max_time - self.save_time) <= self.save_period:
             return
 
-        self.save_time = self.data.tm
+        self.save_time = self.data.max_time
 
         fig = self.figures[n]
 
@@ -520,11 +534,15 @@ class Plot(Operation):
         '''
         '''
 
-        interval = self.data.tm - self.sender_time
+        if self.exp_code == None:
+            log.warning('Missing `exp_code` skipping sending to server...')
+        
+        last_time = self.data.max_time
+        interval = last_time - self.sender_time
         if interval < self.sender_period:
             return
 
-        self.sender_time = self.data.tm
+        self.sender_time = last_time
         
         attrs = ['titles', 'zmin', 'zmax', 'tag', 'ymin', 'ymax']
         for attr in attrs:
@@ -541,27 +559,21 @@ class Plot(Operation):
             self.data.meta['colormap'] = 'Viridis'
         self.data.meta['interval'] = int(interval)
 
-        try:
-            self.sender_queue.put(self.data.tm, block=False)
-        except:
-            tm = self.sender_queue.get()
-            self.sender_queue.put(self.data.tm)
+        self.sender_queue.append(last_time)
         
         while True:
-            if self.sender_queue.empty():
-                break
-            tm = self.sender_queue.get()
             try:
-                msg = self.data.jsonify(tm, self.save_code, self.plot_type)
-            except:
-                continue
+                tm = self.sender_queue.popleft()
+            except IndexError:
+                break
+            msg = self.data.jsonify(tm, self.save_code, self.plot_type)
             self.socket.send_string(msg)
-            socks = dict(self.poll.poll(5000))
+            socks = dict(self.poll.poll(2000))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_string()
                 if reply == 'ok':
                     log.log("Response from server ok", self.name)
-                    time.sleep(0.2)
+                    time.sleep(0.1)
                     continue
                 else:
                     log.warning(
@@ -569,11 +581,10 @@ class Plot(Operation):
             else:
                 log.warning(
                     "No response from server, retrying...", self.name)
-                self.sender_queue.put(self.data.tm)
+            self.sender_queue.appendleft(tm)
             self.socket.setsockopt(zmq.LINGER, 0)
             self.socket.close()
             self.poll.unregister(self.socket)
-            time.sleep(0.1)
             self.socket = self.context.socket(zmq.REQ)
             self.socket.connect(self.server)
             self.poll.register(self.socket, zmq.POLLIN)
@@ -595,9 +606,21 @@ class Plot(Operation):
 
     def plot(self):
         '''
-        Must be defined in the child class
+        Must be defined in the child class, the actual plotting method
         '''
         raise NotImplementedError
+
+    def update(self, dataOut):
+        '''
+        Must be defined in the child class, update self.data with new data
+        '''
+        
+        data = {
+            self.CODE: getattr(dataOut, 'data_{}'.format(self.CODE))
+        }
+        meta = {}
+
+        return data, meta
     
     def run(self, dataOut, **kwargs):
         '''
@@ -623,14 +646,14 @@ class Plot(Operation):
 
         tm = getattr(dataOut, self.attr_time)
         
-        if self.data and 'time' in self.xaxis and (tm - self.tmin) >= self.xrange*60*60:    
+        if self.data and 'time' in self.xaxis and (tm - self.tmin) >= self.xrange*60*60:
             self.save_time = tm
             self.__plot()
             self.tmin += self.xrange*60*60
             self.data.setup()
             self.clear_figures()
 
-        self.data.update(dataOut, tm)
+        self.__update(dataOut, tm)
 
         if self.isPlotConfig is False:
             self.__setup_plot()
@@ -658,7 +681,7 @@ class Plot(Operation):
     def close(self):
 
         if self.data and not self.data.flagNoData:
-            self.save_time = self.data.tm
+            self.save_time = self.data.max_time
             self.__plot()
         if self.data and not self.data.flagNoData and self.pause:
             figpause(10)

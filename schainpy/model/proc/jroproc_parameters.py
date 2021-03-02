@@ -174,7 +174,7 @@ class ParametersProc(ProcessingUnit):
 
             self.dataOut.abscissaList = self.dataIn.lagRange
             self.dataOut.noise = self.dataIn.noise
-            self.dataOut.data_SNR = self.dataIn.SNR
+            self.dataOut.data_snr = self.dataIn.SNR
             self.dataOut.flagNoData = False
             self.dataOut.nAvg = self.dataIn.nAvg
 
@@ -886,9 +886,9 @@ class FullSpectralAnalysis(Operation):
         data_SNR=numpy.zeros([nProfiles])
         noise = dataOut.noise
 
-        dataOut.data_SNR = (numpy.mean(SNRspc,axis=1)- noise[0]) / noise[0]
+        dataOut.data_snr = (numpy.mean(SNRspc,axis=1)- noise[0]) / noise[0]
 
-        dataOut.data_SNR[numpy.where( dataOut.data_SNR <0 )] = 1e-20
+        dataOut.data_snr[numpy.where( dataOut.data_snr <0 )] = 1e-20
 
 
         data_output=numpy.ones([spc.shape[0],spc.shape[2]])*numpy.NaN
@@ -897,7 +897,7 @@ class FullSpectralAnalysis(Operation):
         velocityY=[]
         velocityV=[]
 
-        dbSNR = 10*numpy.log10(dataOut.data_SNR)
+        dbSNR = 10*numpy.log10(dataOut.data_snr)
         dbSNR = numpy.average(dbSNR,0)
 
         '''***********************************************WIND ESTIMATION**************************************'''
@@ -1337,7 +1337,7 @@ class SpectralMoments(Operation):
 
         Affected:
             self.dataOut.moments        :    Parameters per channel
-            self.dataOut.data_SNR       :    SNR per channel
+            self.dataOut.data_snr       :    SNR per channel
 
     '''
 
@@ -1353,10 +1353,10 @@ class SpectralMoments(Operation):
             data_param[ind,:,:] = self.__calculateMoments( data[ind,:,:] , absc , noise[ind] )
 
         dataOut.moments = data_param[:,1:,:]
-        dataOut.data_SNR = data_param[:,0]
-        dataOut.data_POW = data_param[:,1]
-        dataOut.data_DOP = data_param[:,2]
-        dataOut.data_WIDTH = data_param[:,3]
+        dataOut.data_snr = data_param[:,0]
+        dataOut.data_pow = data_param[:,1]
+        dataOut.data_dop = data_param[:,2]
+        dataOut.data_width = data_param[:,3]
 
         return dataOut
 
@@ -1480,7 +1480,7 @@ class SALags(Operation):
         self.dataOut.abscissaList
         self.dataOut.noise
         self.dataOut.normFactor
-        self.dataOut.data_SNR
+        self.dataOut.data_snr
         self.dataOut.groupList
         self.dataOut.nChannels
 
@@ -1499,7 +1499,7 @@ class SALags(Operation):
         nHeights = dataOut.nHeights
         absc = dataOut.abscissaList
         noise = dataOut.noise
-        SNR = dataOut.data_SNR
+        SNR = dataOut.data_snr
         nChannels = dataOut.nChannels
 #         pairsList = dataOut.groupList
 #         pairsAutoCorr, pairsCrossCorr = self.__getPairsAutoCorr(pairsList, nChannels)
@@ -1614,7 +1614,7 @@ class SpectralFitting(Operation):
             listChannels = groupArray.reshape((groupArray.size))
             listChannels.sort()
             noise = self.dataIn.getNoise()
-            self.dataOut.data_SNR = self.__getSNR(self.dataIn.data_spc[listChannels,:,:], noise[listChannels])
+            self.dataOut.data_snr = self.__getSNR(self.dataIn.data_spc[listChannels,:,:], noise[listChannels])
 
         for i in range(nGroups):
             coord = groupArray[i,:]
@@ -2266,7 +2266,7 @@ class WindProfiler(Operation):
             absc = dataOut.abscissaList[:-1]
         # noise = dataOut.noise
         heightList = dataOut.heightList
-        SNR = dataOut.data_SNR
+        SNR = dataOut.data_snr
 
         if technique == 'DBS':
 
@@ -2274,7 +2274,7 @@ class WindProfiler(Operation):
             kwargs['heightList'] = heightList
             kwargs['SNR'] = SNR
 
-            dataOut.data_output, dataOut.heightList, dataOut.data_SNR = self.techniqueDBS(kwargs) #DBS Function
+            dataOut.data_output, dataOut.heightList, dataOut.data_snr = self.techniqueDBS(kwargs) #DBS Function
             dataOut.utctimeInit = dataOut.utctime
             dataOut.outputInterval = dataOut.paramInterval
 
@@ -2468,7 +2468,7 @@ class EWDriftsEstimation(Operation):
     def run(self, dataOut, zenith, zenithCorrection):
         heiRang = dataOut.heightList
         velRadial = dataOut.data_param[:,3,:]
-        SNR = dataOut.data_SNR
+        SNR = dataOut.data_snr
 
         zenith = numpy.array(zenith)
         zenith -= zenithCorrection
@@ -2489,7 +2489,7 @@ class EWDriftsEstimation(Operation):
 
         dataOut.heightList = heiRang1
         dataOut.data_output = winds
-        dataOut.data_SNR = SNR1
+        dataOut.data_snr = SNR1
 
         dataOut.utctimeInit = dataOut.utctime
         dataOut.outputInterval = dataOut.timeInterval

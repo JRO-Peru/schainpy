@@ -304,7 +304,7 @@ class BLTRParamReader(Reader, ProcessingUnit):
         Storing data from databuffer to dataOut object
         '''
 
-        self.dataOut.data_SNR = self.snr
+        self.dataOut.data_snr = self.snr
         self.dataOut.height = self.height
         self.dataOut.data = self.buffer
         self.dataOut.utctimeInit = self.time

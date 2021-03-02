@@ -1,15 +1,15 @@
-'''
-Created on Jul 9, 2014
-Modified on May 10, 2020
+# Copyright (c) 2012-2020 Jicamarca Radio Observatory
+# All rights reserved.
+#
+# Distributed under the terms of the BSD 3-clause license.
+"""Classes to plot Spectra data
 
-@author: Juan C. Espinoza
-'''
+"""
 
 import os
-import datetime
 import numpy
 
-from schainpy.model.graphics.jroplot_base import Plot, plt
+from schainpy.model.graphics.jroplot_base import Plot, plt, log
 
 
 class SpectraPlot(Plot):
@@ -20,6 +20,7 @@ class SpectraPlot(Plot):
     CODE = 'spc'
     colormap = 'jet'
     plot_type = 'pcolor'
+    buffering = False
 
     def setup(self):
         self.nplots = len(self.data.channels)
@@ -34,6 +35,20 @@ class SpectraPlot(Plot):
         self.plots_adjust.update({'wspace': 0.4, 'hspace':0.4, 'left': 0.1, 'right': 0.9, 'bottom': 0.08})
         self.ylabel = 'Range [km]'
 
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+        spc = 10*numpy.log10(dataOut.data_spc/dataOut.normFactor)
+        data['spc'] = spc
+        data['rti'] = dataOut.getPower()
+        data['noise'] = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
+        meta['xrange'] = (dataOut.getFreqRange(1)/1000., dataOut.getAcfRange(1), dataOut.getVelRange(1))
+        if self.CODE == 'spc_moments':
+            data['moments'] = dataOut.moments
+        
+        return data, meta 
+    
     def plot(self):
         if self.xaxis == "frequency":
             x = self.data.xrange[0]
@@ -51,14 +66,16 @@ class SpectraPlot(Plot):
 
         self.titles = []
 
-        y = self.data.heights
+        y = self.data.yrange
         self.y = y
-        z = self.data['spc']
+
+        data = self.data[-1]
+        z = data['spc']
 
         for n, ax in enumerate(self.axes):
-            noise = self.data['noise'][n][-1]
+            noise = data['noise'][n]
             if self.CODE == 'spc_moments':
-                mean = self.data['moments'][n, :, 1, :][-1]
+                mean = data['moments'][n, 2]
             if ax.firsttime:
                 self.xmax = self.xmax if self.xmax else numpy.nanmax(x)
                 self.xmin = self.xmin if self.xmin else -self.xmax
@@ -72,7 +89,7 @@ class SpectraPlot(Plot):
 
                 if self.showprofile:
                     ax.plt_profile = self.pf_axes[n].plot(
-                        self.data['rti'][n][-1], y)[0]
+                        data['rti'][n], y)[0]
                     ax.plt_noise = self.pf_axes[n].plot(numpy.repeat(noise, len(y)), y,
                                                         color="k", linestyle="dashed", lw=1)[0]
                 if self.CODE == 'spc_moments':
@@ -80,7 +97,7 @@ class SpectraPlot(Plot):
             else:
                 ax.plt.set_array(z[n].T.ravel())
                 if self.showprofile:
-                    ax.plt_profile.set_data(self.data['rti'][n][-1], y)
+                    ax.plt_profile.set_data(data['rti'][n], y)
                     ax.plt_noise.set_data(numpy.repeat(noise, len(y)), y)
                 if self.CODE == 'spc_moments':
                     ax.plt_mean.set_data(mean, y)
@@ -100,14 +117,37 @@ class CrossSpectraPlot(Plot):
     def setup(self):
 
         self.ncols = 4
-        self.nrows = len(self.data.pairs)
-        self.nplots = self.nrows * 4
+        self.nplots = len(self.data.pairs) * 2
+        self.nrows = int((1.0 * self.nplots / self.ncols) + 0.9)
         self.width = 3.1 * self.ncols
         self.height = 2.6 * self.nrows
         self.ylabel = 'Range [km]'
         self.showprofile = False
         self.plots_adjust.update({'left': 0.08, 'right': 0.92, 'wspace': 0.5, 'hspace':0.4, 'top':0.95, 'bottom': 0.08})
 
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+
+        spc = dataOut.data_spc
+        cspc = dataOut.data_cspc
+        meta['xrange'] = (dataOut.getFreqRange(1)/1000., dataOut.getAcfRange(1), dataOut.getVelRange(1))
+        meta['pairs'] = dataOut.pairsList
+
+        tmp = []
+
+        for n, pair in enumerate(meta['pairs']):
+            out = cspc[n] / numpy.sqrt(spc[pair[0]] * spc[pair[1]])
+            coh = numpy.abs(out)
+            phase = numpy.arctan2(out.imag, out.real) * 180 / numpy.pi
+            tmp.append(coh)
+            tmp.append(phase)
+
+        data['cspc'] = numpy.array(tmp)
+
+        return data, meta 
+    
     def plot(self):
 
         if self.xaxis == "frequency":
@@ -122,46 +162,17 @@ class CrossSpectraPlot(Plot):
         
         self.titles = []
 
-        y = self.data.heights
+        y = self.data.yrange
         self.y = y
-        nspc = self.data['spc']
-        spc = self.data['cspc'][0]
-        cspc = self.data['cspc'][1]
 
-        for n in range(self.nrows):
-            noise = self.data['noise'][:,-1]
+        data = self.data[-1]
+        cspc = data['cspc']
+
+        for n in range(len(self.data.pairs)):
             pair = self.data.pairs[n]
-            ax = self.axes[4 * n]
-            if ax.firsttime:                                               
-                self.xmax = self.xmax if self.xmax else numpy.nanmax(x)    
-                self.xmin = self.xmin if self.xmin else -self.xmax         
-                self.zmin = self.zmin if self.zmin else numpy.nanmin(nspc)  
-                self.zmax = self.zmax if self.zmax else numpy.nanmax(nspc)  
-                ax.plt = ax.pcolormesh(x , y , nspc[pair[0]].T,
-                                       vmin=self.zmin,
-                                       vmax=self.zmax,
-                                       cmap=plt.get_cmap(self.colormap)
-                                       )                                   
-            else:                                                          
-                ax.plt.set_array(nspc[pair[0]].T.ravel())
-            self.titles.append('CH {}: {:3.2f}dB'.format(pair[0], noise[pair[0]]))
-
-            ax = self.axes[4 * n + 1]
-            if ax.firsttime:
-                ax.plt = ax.pcolormesh(x , y, nspc[pair[1]].T,
-                                       vmin=self.zmin,
-                                       vmax=self.zmax,
-                                       cmap=plt.get_cmap(self.colormap)
-                                       )
-            else: 
-                ax.plt.set_array(nspc[pair[1]].T.ravel())
-            self.titles.append('CH {}: {:3.2f}dB'.format(pair[1], noise[pair[1]]))
-            
-            out = cspc[n] / numpy.sqrt(spc[pair[0]] * spc[pair[1]])
-            coh = numpy.abs(out)
-            phase = numpy.arctan2(out.imag, out.real) * 180 / numpy.pi
-
-            ax = self.axes[4 * n + 2]
+            coh = cspc[n*2]
+            phase = cspc[n*2+1]
+            ax = self.axes[2 * n]
             if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, coh.T,
                                        vmin=0,
@@ -173,7 +184,7 @@ class CrossSpectraPlot(Plot):
             self.titles.append(
                 'Coherence Ch{} * Ch{}'.format(pair[0], pair[1]))
                                    
-            ax = self.axes[4 * n + 3]
+            ax = self.axes[2 * n + 1]
             if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, phase.T,
                                        vmin=-180,
@@ -206,9 +217,18 @@ class RTIPlot(Plot):
         self.titles = ['{} Channel {}'.format(
             self.CODE.upper(), x) for x in range(self.nrows)]
 
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+        data['rti'] = dataOut.getPower()
+        data['noise'] = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
+
+        return data, meta
+
     def plot(self):
         self.x = self.data.times
-        self.y = self.data.heights
+        self.y = self.data.yrange
         self.z = self.data[self.CODE]
         self.z = numpy.ma.masked_invalid(self.z)
 
@@ -220,6 +240,7 @@ class RTIPlot(Plot):
         for n, ax in enumerate(self.axes):
             self.zmin = self.zmin if self.zmin else numpy.min(self.z)
             self.zmax = self.zmax if self.zmax else numpy.max(self.z)
+            data = self.data[-1]
             if ax.firsttime:
                 ax.plt = ax.pcolormesh(x, y, z[n].T,
                                        vmin=self.zmin,
@@ -228,8 +249,8 @@ class RTIPlot(Plot):
                                        )
                 if self.showprofile:
                     ax.plot_profile = self.pf_axes[n].plot(
-                        self.data['rti'][n][-1], self.y)[0]
-                    ax.plot_noise = self.pf_axes[n].plot(numpy.repeat(self.data['noise'][n][-1], len(self.y)), self.y,
+                        data['rti'][n], self.y)[0]
+                    ax.plot_noise = self.pf_axes[n].plot(numpy.repeat(data['noise'][n], len(self.y)), self.y,
                                                          color="k", linestyle="dashed", lw=1)[0]
             else:
                 ax.collections.remove(ax.collections[0])
@@ -239,9 +260,9 @@ class RTIPlot(Plot):
                                        cmap=plt.get_cmap(self.colormap)
                                        )
                 if self.showprofile:
-                    ax.plot_profile.set_data(self.data['rti'][n][-1], self.y)
+                    ax.plot_profile.set_data(data['rti'][n], self.y)
                     ax.plot_noise.set_data(numpy.repeat(
-                        self.data['noise'][n][-1], len(self.y)), self.y)
+                        data['noise'][n], len(self.y)), self.y)
 
 
 class CoherencePlot(RTIPlot):
@@ -268,6 +289,14 @@ class CoherencePlot(RTIPlot):
             self.titles = [
                 'Phase Map Ch{} * Ch{}'.format(x[0], x[1]) for x in self.data.pairs]
 
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+        data['coh'] = dataOut.getCoherence()
+        meta['pairs'] = dataOut.pairsList
+
+        return data, meta
 
 class PhasePlot(CoherencePlot):
     '''
@@ -277,6 +306,14 @@ class PhasePlot(CoherencePlot):
     CODE = 'phase'
     colormap = 'seismic'
 
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+        data['phase'] = dataOut.getCoherence(phase=True)
+        meta['pairs'] = dataOut.pairsList
+
+        return data, meta
 
 class NoisePlot(Plot):
     '''
@@ -285,7 +322,6 @@ class NoisePlot(Plot):
 
     CODE = 'noise'
     plot_type = 'scatterbuffer'
-
 
     def setup(self):
         self.xaxis = 'time'
@@ -296,33 +332,41 @@ class NoisePlot(Plot):
         self.xlabel = 'Time'
         self.titles = ['Noise']
         self.colorbar = False
+        self.plots_adjust.update({'right': 0.85 })
+
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+        data['noise'] = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor).reshape(dataOut.nChannels, 1)
+        meta['yrange'] = numpy.array([])
+
+        return data, meta
 
     def plot(self):
 
         x = self.data.times
         xmin = self.data.min_time
         xmax = xmin + self.xrange * 60 * 60
-        Y = self.data[self.CODE]
+        Y = self.data['noise']
 
         if self.axes[0].firsttime:
+            self.ymin = numpy.nanmin(Y) - 5
+            self.ymax = numpy.nanmax(Y) + 5
             for ch in self.data.channels:
                 y = Y[ch]
                 self.axes[0].plot(x, y, lw=1, label='Ch{}'.format(ch))
-            plt.legend()
+            plt.legend(bbox_to_anchor=(1.18, 1.0))
         else:
             for ch in self.data.channels:
                 y = Y[ch]
                 self.axes[0].lines[ch].set_data(x, y)
 
-        self.ymin = numpy.nanmin(Y) - 5
-        self.ymax = numpy.nanmax(Y) + 5
-
-
+        
 class PowerProfilePlot(Plot):
 
-    CODE = 'spcprofile'
+    CODE = 'pow_profile'
     plot_type = 'scatter'
-    buffering = False
 
     def setup(self):
 
@@ -336,12 +380,20 @@ class PowerProfilePlot(Plot):
         self.titles = ['Power Profile']
         self.colorbar = False
 
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+        data[self.CODE] = dataOut.getPower()
+
+        return data, meta
+
     def plot(self):
 
-        y = self.data.heights
+        y = self.data.yrange
         self.y = y
 
-        x = self.data['spcprofile']
+        x = self.data[-1][self.CODE]
         
         if self.xmin is None: self.xmin = numpy.nanmin(x)*0.9
         if self.xmax is None: self.xmax = numpy.nanmax(x)*1.1
@@ -372,6 +424,16 @@ class SpectraCutPlot(Plot):
         self.colorbar = False
         self.plots_adjust.update({'left':0.1, 'hspace':0.3, 'right': 0.75, 'bottom':0.08})
 
+    def update(self, dataOut):
+
+        data = {}
+        meta = {}
+        spc = 10*numpy.log10(dataOut.data_spc/dataOut.normFactor)
+        data['spc'] = spc
+        meta['xrange'] = (dataOut.getFreqRange(1)/1000., dataOut.getAcfRange(1), dataOut.getVelRange(1))
+
+        return data, meta
+
     def plot(self):
         if self.xaxis == "frequency":
             x = self.data.xrange[0][1:]
@@ -385,9 +447,8 @@ class SpectraCutPlot(Plot):
 
         self.titles = []
 
-        y = self.data.heights
-        #self.y = y
-        z = self.data['spc_cut']
+        y = self.data.yrange
+        z = self.data[-1]['spc']
 
         if self.height_index:
             index = numpy.array(self.height_index)

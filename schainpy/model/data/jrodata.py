@@ -907,12 +907,10 @@ class PlotterData(object):
     MAXNUMX = 200
     MAXNUMY = 200
 
-    def __init__(self, code, throttle_value, exp_code, localtime=True, buffering=True, snr=False):
+    def __init__(self, code, exp_code, localtime=True):
 
         self.key = code
-        self.throttle = throttle_value
         self.exp_code = exp_code
-        self.buffering = buffering
         self.ready = False
         self.flagNoData = False
         self.localtime = localtime
@@ -920,46 +918,24 @@ class PlotterData(object):
         self.meta = {}
         self.__heights = []
 
-        if 'snr' in code:
-            self.plottypes = ['snr']
-        elif code == 'spc':
-            self.plottypes = ['spc', 'noise', 'rti']
-        elif code == 'cspc':
-            self.plottypes = ['cspc', 'spc', 'noise', 'rti']
-        elif code == 'rti':
-            self.plottypes = ['noise', 'rti']
-        else:
-            self.plottypes = [code]
-
-        if 'snr' not in self.plottypes and snr:
-            self.plottypes.append('snr')
-
-        for plot in self.plottypes:
-            self.data[plot] = {}
-
     def __str__(self):
         dum = ['{}{}'.format(key, self.shape(key)) for key in self.data]
         return 'Data[{}][{}]'.format(';'.join(dum), len(self.times))
 
     def __len__(self):
-        return len(self.data[self.key])
+        return len(self.data)
 
     def __getitem__(self, key):
-
-        if key not in self.data:
-            raise KeyError(log.error('Missing key: {}'.format(key)))
-        if 'spc' in key or not self.buffering:
-            ret = self.data[key][self.tm]
-        elif 'scope' in key:
-            ret = numpy.array(self.data[key][float(self.tm)])
-        else:
-            ret = numpy.array([self.data[key][x] for x in self.times])
+        if isinstance(key, int):
+            return self.data[self.times[key]]
+        elif isinstance(key, str):
+            ret = numpy.array([self.data[x][key] for x in self.times])
             if ret.ndim > 1:
                 ret = numpy.swapaxes(ret, 0, 1)
-        return ret
+            return ret
 
     def __contains__(self, key):
-        return key in self.data
+        return key in self.data[self.min_time]
 
     def setup(self):
         '''
@@ -971,125 +947,25 @@ class PlotterData(object):
         self.data = {}
         self.__heights = []
         self.__all_heights = set()
-        for plot in self.plottypes:
-            if 'snr' in plot:
-                plot = 'snr'
-            elif 'spc_moments' == plot:
-                plot = 'moments'
-            self.data[plot] = {}
-
-        if 'spc' in self.data or 'rti' in self.data or 'cspc' in self.data or 'moments' in self.data:
-            self.data['noise'] = {}
-            self.data['rti'] = {}
-            if 'noise' not in self.plottypes:
-                self.plottypes.append('noise')
-            if 'rti' not in self.plottypes:
-                self.plottypes.append('rti')
 
     def shape(self, key):
         '''
         Get the shape of the one-element data for the given key
         '''
 
-        if len(self.data[key]):
-            if 'spc' in key or not self.buffering:
-                return self.data[key].shape
-            return self.data[key][self.times[0]].shape
+        if len(self.data[self.min_time][key]):
+            return self.data[self.min_time][key].shape
         return (0,)
 
-    def update(self, dataOut, tm):
+    def update(self, data, tm, meta={}):
         '''
         Update data object with new dataOut
         '''
 
-        self.profileIndex = dataOut.profileIndex
-        self.tm = tm
-        self.type = dataOut.type
-        self.parameters = getattr(dataOut, 'parameters', [])
-
-        if hasattr(dataOut, 'meta'):
-            self.meta.update(dataOut.meta)
-
-        if hasattr(dataOut, 'pairsList'):
-            self.pairs = dataOut.pairsList
-
-        self.interval = dataOut.timeInterval
-        if True in ['spc' in ptype for ptype in self.plottypes]:
-            self.xrange = (dataOut.getFreqRange(1)/1000.,
-                           dataOut.getAcfRange(1), dataOut.getVelRange(1))
-        self.__heights.append(dataOut.heightList)
-        self.__all_heights.update(dataOut.heightList)
-
-        for plot in self.plottypes:
-            if plot in ('spc', 'spc_moments', 'spc_cut'):
-                z = dataOut.data_spc/dataOut.normFactor
-                buffer = 10*numpy.log10(z)
-            if plot == 'cspc':
-                buffer = (dataOut.data_spc, dataOut.data_cspc)
-            if plot == 'noise':
-                buffer = 10*numpy.log10(dataOut.getNoise()/dataOut.normFactor)
-            if plot in ('rti', 'spcprofile'):
-                buffer = dataOut.getPower()
-            if plot == 'snr_db':
-                buffer = dataOut.data_SNR
-            if plot == 'snr':
-                buffer = 10*numpy.log10(dataOut.data_SNR)
-            if plot == 'dop':
-                buffer = dataOut.data_DOP
-            if plot == 'pow':
-                buffer = 10*numpy.log10(dataOut.data_POW)
-            if plot == 'width':
-                buffer = dataOut.data_WIDTH
-            if plot == 'coh':
-                buffer = dataOut.getCoherence()
-            if plot == 'phase':
-                buffer = dataOut.getCoherence(phase=True)
-            if plot == 'output':
-                buffer = dataOut.data_output
-            if plot == 'param':
-                buffer = dataOut.data_param
-            if plot == 'scope':
-                buffer = dataOut.data
-                self.flagDataAsBlock = dataOut.flagDataAsBlock
-                self.nProfiles = dataOut.nProfiles
-            if plot == 'pp_power':
-                buffer = dataOut.dataPP_POWER
-                self.flagDataAsBlock = dataOut.flagDataAsBlock
-                self.nProfiles = dataOut.nProfiles
-            if plot == 'pp_signal':
-                buffer = dataOut.dataPP_POW
-                self.flagDataAsBlock = dataOut.flagDataAsBlock
-                self.nProfiles = dataOut.nProfiles
-            if plot == 'pp_velocity':
-                buffer = dataOut.dataPP_DOP
-                self.flagDataAsBlock = dataOut.flagDataAsBlock
-                self.nProfiles = dataOut.nProfiles
-            if plot == 'pp_specwidth':
-                buffer = dataOut.dataPP_WIDTH
-                self.flagDataAsBlock = dataOut.flagDataAsBlock
-                self.nProfiles = dataOut.nProfiles
-
-            if plot == 'spc':
-                self.data['spc'][tm] = buffer
-            elif plot == 'cspc':
-                self.data['cspc'][tm] = buffer
-            elif plot == 'spc_moments':
-                self.data['spc'][tm] = buffer
-                self.data['moments'][tm] = dataOut.moments
-            else:
-                if self.buffering:
-                    self.data[plot][tm] = buffer
-                else:
-                    self.data[plot][tm] = buffer
-
-        if dataOut.channelList is None:
-            self.channels = range(buffer.shape[0])
-        else:
-            self.channels = dataOut.channelList
-
-        if buffer is None:
-            self.flagNoData = True
-            raise schainpy.admin.SchainWarning('Attribute data_{} is empty'.format(self.key))
+        self.data[tm] = data
+        
+        for key, value in meta.items():
+            setattr(self, key, value)
 
     def normalize_heights(self):
         '''
@@ -1119,18 +995,21 @@ class PlotterData(object):
         Convert data to json
         '''
 
-        dy = int(self.heights.size/self.MAXNUMY) + 1
-        if self.key in ('spc', 'cspc'):
-            dx = int(self.data[self.key][tm].shape[1]/self.MAXNUMX) + 1
-            data = self.roundFloats(
-                self.data[self.key][tm][::, ::dx, ::dy].tolist())
-        else:
-            if self.key is 'noise':
-                data = [[x] for x in self.roundFloats(self.data[self.key][tm].tolist())]
-            else:
-                data = self.roundFloats(self.data[self.key][tm][::, ::dy].tolist())
-
         meta = {}
+        meta['xrange'] = []
+        dy = int(len(self.yrange)/self.MAXNUMY) + 1
+        tmp = self.data[tm][self.key]
+        shape = tmp.shape
+        if len(shape) == 2:
+            data = self.roundFloats(self.data[tm][self.key][::, ::dy].tolist())
+        elif len(shape) == 3:
+            dx = int(self.data[tm][self.key].shape[1]/self.MAXNUMX) + 1
+            data = self.roundFloats(
+                self.data[tm][self.key][::, ::dx, ::dy].tolist())
+            meta['xrange'] = self.roundFloats(self.xrange[2][::dx].tolist())
+        else:
+            data = self.roundFloats(self.data[tm][self.key].tolist())
+        
         ret = {
             'plot': plot_name,
             'code': self.exp_code,
@@ -1140,12 +1019,7 @@ class PlotterData(object):
         meta['type'] = plot_type
         meta['interval'] = float(self.interval)
         meta['localtime'] = self.localtime
-        meta['yrange'] = self.roundFloats(self.heights[::dy].tolist())
-        if 'spc' in self.data or 'cspc' in self.data:
-            meta['xrange'] = self.roundFloats(self.xrange[2][::dx].tolist())
-        else:
-            meta['xrange'] = []
-
+        meta['yrange'] = self.roundFloats(self.yrange[::dy].tolist())
         meta.update(self.meta)
         ret['metadata'] = meta
         return json.dumps(ret)
@@ -1156,10 +1030,9 @@ class PlotterData(object):
         Return the list of times of the current data
         '''
 
-        ret = numpy.array([t for t in self.data[self.key]])
-        if self:
-            ret.sort()
-        return ret
+        ret = [t for t in self.data]
+        ret.sort()
+        return numpy.array(ret)
 
     @property
     def min_time(self):
@@ -1177,13 +1050,13 @@ class PlotterData(object):
 
         return self.times[-1]
 
-    @property
-    def heights(self):
-        '''
-        Return the list of heights of the current data
-        '''
+    # @property
+    # def heights(self):
+    #     '''
+    #     Return the list of heights of the current data
+    #     '''
 
-        return numpy.array(self.__heights[-1])
+    #     return numpy.array(self.__heights[-1])
 
     @staticmethod
     def roundFloats(obj):

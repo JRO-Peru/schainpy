@@ -25,7 +25,7 @@ class BLTRParametersProc(ProcessingUnit):
         self.dataOut.nchannels - Number of channels
         self.dataOut.nranges - Number of ranges
 
-        self.dataOut.data_SNR - SNR array 
+        self.dataOut.data_snr - SNR array 
         self.dataOut.data_output - Zonal, Vertical and Meridional velocity array
         self.dataOut.height - Height array (km)
         self.dataOut.time - Time array (seconds)
@@ -67,10 +67,10 @@ class BLTRParametersProc(ProcessingUnit):
         
         self.dataOut.data_param = self.dataOut.data[mode]
         self.dataOut.heightList = self.dataOut.height[0]
-        self.dataOut.data_SNR = self.dataOut.data_SNR[mode]
+        self.dataOut.data_snr = self.dataOut.data_snr[mode]
 
         if snr_threshold is not None:
-            SNRavg = numpy.average(self.dataOut.data_SNR, axis=0)
+            SNRavg = numpy.average(self.dataOut.data_snr, axis=0)
             SNRavgdB = 10*numpy.log10(SNRavg)
             for i in range(3):
                 self.dataOut.data_param[i][SNRavgdB <= snr_threshold] = numpy.nan

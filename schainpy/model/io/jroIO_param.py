@@ -618,8 +618,9 @@ class HDFWriter(Operation):
             for ds in self.ds:
                 ds.resize(self.blockIndex, axis=0)
 
-        self.fp.flush()
-        self.fp.close()
+        if self.fp:
+            self.fp.flush()
+            self.fp.close()
 
     def close(self):
 
