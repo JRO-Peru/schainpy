@@ -146,7 +146,7 @@ class selectChannels(Operation):
 
 class selectHeights(Operation):
 
-    def run(self, dataOut, minHei=None, maxHei=None):
+    def run(self, dataOut, minHei=None, maxHei=None, minIndex=None, maxIndex=None):
         """
         Selecciona un bloque de datos en base a un grupo de valores de alturas segun el rango
         minHei <= height <= maxHei
@@ -164,34 +164,30 @@ class selectHeights(Operation):
 
         self.dataOut = dataOut
 
-        if minHei == None:
-            minHei = self.dataOut.heightList[0]
+        if minHei and maxHei:
 
-        if maxHei == None:
-            maxHei = self.dataOut.heightList[-1]
+            if (minHei < self.dataOut.heightList[0]):
+                minHei = self.dataOut.heightList[0]
 
-        if (minHei < self.dataOut.heightList[0]):
-            minHei = self.dataOut.heightList[0]
+            if (maxHei > self.dataOut.heightList[-1]):
+                maxHei = self.dataOut.heightList[-1]
 
-        if (maxHei > self.dataOut.heightList[-1]):
-            maxHei = self.dataOut.heightList[-1]
-
-        minIndex = 0
-        maxIndex = 0
-        heights = self.dataOut.heightList
-
-        inda = numpy.where(heights >= minHei)
-        indb = numpy.where(heights <= maxHei)
-
-        try:
-            minIndex = inda[0][0]
-        except:
             minIndex = 0
+            maxIndex = 0
+            heights = self.dataOut.heightList
 
-        try:
-            maxIndex = indb[0][-1]
-        except:
-            maxIndex = len(heights)
+            inda = numpy.where(heights >= minHei)
+            indb = numpy.where(heights <= maxHei)
+
+            try:
+                minIndex = inda[0][0]
+            except:
+                minIndex = 0
+
+            try:
+                maxIndex = indb[0][-1]
+            except:
+                maxIndex = len(heights)
 
         self.selectHeightsByIndex(minIndex, maxIndex)
 
